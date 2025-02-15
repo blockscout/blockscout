@@ -7,11 +7,10 @@ defmodule BlockScoutWeb.GraphQL.Celo.Resolvers.TokenTransfer do
   alias Explorer.GraphQL.Celo, as: GraphQL
   alias Explorer.Repo
 
-  def get_by(_, args, _) do
-    connection_args = Map.take(args, [:after, :before, :first, :last])
-
-    GraphQL.token_tx_transfers_query()
-    |> Connection.from_query(&Repo.all/1, connection_args, options(args))
+  def get_by(%{transaction_hash: hash}, args, _) do
+    hash
+    |> GraphQL.token_transaction_transfers_query_by_transaction_hash()
+    |> Connection.from_query(&Repo.all/1, args, options(args))
   end
 
   defp options(%{before: _}), do: []

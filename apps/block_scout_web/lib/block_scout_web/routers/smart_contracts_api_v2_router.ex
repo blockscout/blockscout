@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
     Router for /api/v2/smart-contracts. This route has separate router in order to ignore sobelow's warning about missing CSRF protection
   """
   use BlockScoutWeb, :router
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias BlockScoutWeb.API.V2
   alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
 
@@ -53,6 +55,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
     get("/:address_hash/methods-write", V2.SmartContractController, :methods_write)
     get("/:address_hash/methods-read-proxy", V2.SmartContractController, :methods_read_proxy)
     get("/:address_hash/methods-write-proxy", V2.SmartContractController, :methods_write_proxy)
+    # todo: this endpoint should be removed in 7.1.0 release
     get("/:address_hash/solidityscan-report", V2.SmartContractController, :solidityscan_report)
     get("/:address_hash/audit-reports", V2.SmartContractController, :audit_reports_list)
 
@@ -71,13 +74,17 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
 
     post("/standard-input", V2.VerificationController, :verification_via_standard_input)
 
-    if Application.compile_env(:explorer, :chain_type) !== :zksync do
+    if @chain_type !== :zksync do
       post("/flattened-code", V2.VerificationController, :verification_via_flattened_code)
       post("/sourcify", V2.VerificationController, :verification_via_sourcify)
       post("/multi-part", V2.VerificationController, :verification_via_multi_part)
       post("/vyper-code", V2.VerificationController, :verification_via_vyper_code)
       post("/vyper-multi-part", V2.VerificationController, :verification_via_vyper_multipart)
       post("/vyper-standard-input", V2.VerificationController, :verification_via_vyper_standard_input)
+    end
+
+    if @chain_type === :arbitrum do
+      post("/stylus-github-repository", V2.VerificationController, :verification_via_stylus_github_repository)
     end
   end
 end

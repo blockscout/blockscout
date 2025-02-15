@@ -13,12 +13,12 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
     end
 
     test "non empty list", %{conn: conn} do
-      tx =
+      transaction =
         :transaction
         |> insert()
         |> with_block()
 
-      1 |> insert_list(:token_transfer, transaction: tx)
+      1 |> insert_list(:token_transfer, transaction: transaction)
 
       request = get(conn, "/api/v2/token-transfers")
 
@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
     end
 
     test "filters by type", %{conn: conn} do
-      tx =
+      transaction =
         :transaction
         |> insert()
         |> with_block()
@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
       token = insert(:token, type: "ERC-721")
 
       insert(:token_transfer,
-        transaction: tx,
+        transaction: transaction,
         token: token,
         token_type: "ERC-721"
       )
@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
     end
 
     test "returns all transfers if filter is incorrect", %{conn: conn} do
-      tx =
+      transaction =
         :transaction
         |> insert()
         |> with_block()
@@ -57,13 +57,14 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
       token = insert(:token, type: "ERC-100500")
 
       insert(:token_transfer,
-        transaction: tx,
+        transaction: transaction,
         token: token,
-        token_type: "ERC-721"
+        token_type: "ERC-721",
+        token_ids: [1]
       )
 
       insert(:token_transfer,
-        transaction: tx,
+        transaction: transaction,
         token: token,
         token_type: "ERC-20"
       )
@@ -78,12 +79,12 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
     test "token transfers with next_page_params", %{conn: conn} do
       token_transfers =
         for _i <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          transaction = insert(:transaction) |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number
           )
         end
 
@@ -97,32 +98,43 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
     end
 
     test "flatten erc1155 batch token transfer", %{conn: conn} do
-      tx = insert(:transaction) |> with_block()
+      transaction = insert(:transaction) |> with_block()
 
-      insert(:token_transfer,
-        transaction: tx,
-        block: tx.block,
-        block_number: tx.block_number,
-        token_ids: [1, 2, 3],
-        amounts: [500, 600, 700],
-        token_type: "ERC-1155"
+      transfer =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          token_ids: [1, 2, 3],
+          amounts: [500, 600, 700],
+          token_type: "ERC-1155"
+        )
+
+      insert(:token_instance,
+        token_id: 3,
+        token_contract_address_hash: transfer.token_contract_address_hash,
+        metadata: %{test: "test"}
       )
 
       request = get(conn, "/api/v2/token-transfers")
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 3
-      assert Enum.at(response["items"], 0)["total"] == %{"decimals" => "18", "value" => "700", "token_id" => "3"}
+
+      assert %{"decimals" => "18", "value" => "700", "token_id" => "3", "token_instance" => token_instance} =
+               Enum.at(response["items"], 0)["total"]
+
+      assert token_instance["metadata"] == %{"test" => "test"}
     end
 
     test "paginates erc1155 batch token transfers", %{conn: conn} do
       token_transfers =
         for _i <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+          transaction = insert(:transaction) |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             token_ids: [1, 2],
             amounts: [500, 600],
             token_type: "ERC-1155"
@@ -145,11 +157,11 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
   defp compare_item(%TokenTransfer{} = token_transfer, json) do
     assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
-    assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
+    assert to_string(token_transfer.transaction_hash) == json["transaction_hash"]
     assert token_transfer.transaction.block_timestamp == Timex.parse!(json["timestamp"], "{ISO:Extended:Z}")
     assert json["method"] == nil
-    assert to_string(token_transfer.block_number) == json["block_number"]
-    assert to_string(token_transfer.log_index) == json["log_index"]
+    assert token_transfer.block_number == json["block_number"]
+    assert token_transfer.log_index == json["log_index"]
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, third_page_resp, token_transfers) do

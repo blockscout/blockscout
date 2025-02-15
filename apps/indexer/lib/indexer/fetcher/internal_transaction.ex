@@ -76,13 +76,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   @impl BufferedTask
   def init(initial, reducer, _json_rpc_named_arguments) do
-    {:ok, final} =
-      Chain.stream_blocks_with_unfetched_internal_transactions(
-        initial,
-        fn block_number, acc ->
-          reducer.(block_number, acc)
-        end
-      )
+    stream_reducer = RangesHelper.stream_reducer_traceable(reducer)
+
+    {:ok, final} = Chain.stream_blocks_with_unfetched_internal_transactions(initial, stream_reducer)
 
     final
   end
@@ -211,7 +207,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         Logger.error(
           fn ->
             [
-              "failed to import first trace for tx: ",
+              "failed to import first trace for transaction: ",
               inspect(reason)
             ]
           end,

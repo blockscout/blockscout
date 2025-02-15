@@ -20,7 +20,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
 
   alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Arbitrum.Messaging
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: DbCommon
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
 
   require Logger
 
@@ -88,7 +90,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
       when is_integer(end_block) do
     start_block = max(rollup_first_block, end_block - missed_messages_blocks_depth + 1)
 
-    if Db.indexed_blocks?(start_block, end_block) do
+    if DbCommon.indexed_blocks?(start_block, end_block) do
       do_discover_historical_messages_from_l2(start_block, end_block)
     else
       log_warning(
@@ -119,7 +121,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   defp do_discover_historical_messages_from_l2(start_block, end_block) do
     log_info("Block range for discovery historical messages from L2: #{start_block}..#{end_block}")
 
-    logs = Db.logs_for_missed_messages_from_l2(start_block, end_block)
+    logs = DbMessages.logs_for_missed_messages_from_l2(start_block, end_block)
 
     unless logs == [] do
       messages =
@@ -203,7 +205,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
 
     # Although indexing blocks is not necessary to determine the completion of L1-to-L2 messages,
     # for database consistency, it is preferable to delay marking these messages as completed.
-    if Db.indexed_blocks?(start_block, end_block) do
+    if DbCommon.indexed_blocks?(start_block, end_block) do
       do_discover_historical_messages_to_l2(start_block, end_block, config)
     else
       log_warning(
@@ -259,16 +261,16 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
        ) do
     log_info("Block range for discovery historical messages to L2: #{start_block}..#{end_block}")
 
-    transactions = Db.transactions_for_missed_messages_to_l2(start_block, end_block)
+    transactions = DbMessages.transactions_for_missed_messages_to_l2(start_block, end_block)
     transactions_length = length(transactions)
 
     if transactions_length > 0 do
       log_debug("#{transactions_length} historical messages to L2 discovered")
 
-      {messages, txs_for_further_handling} =
+      {messages, transactions_for_further_handling} =
         transactions
         |> Enum.chunk_every(chunk_size)
-        |> Enum.reduce({[], []}, fn chunk, {messages_acc, txs_acc} ->
+        |> Enum.reduce({[], []}, fn chunk, {messages_acc, transactions_acc} ->
           # Since DB does not contain the field RequestId specific to Arbitrum
           # all transactions will be requested from the rollup RPC endpoint.
           # The catchup process intended to be run once and only for the BS instance
@@ -276,28 +278,28 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
           # the new field in DB
           requests = build_transaction_requests(chunk)
 
-          {messages, txs_with_hashed_message_id} =
+          {messages, transactions_with_hashed_message_id} =
             requests
             |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
             |> Enum.map(&transaction_json_to_map/1)
             |> Messaging.filter_l1_to_l2_messages(false)
 
-          {messages ++ messages_acc, txs_with_hashed_message_id ++ txs_acc}
+          {messages ++ messages_acc, transactions_with_hashed_message_id ++ transactions_acc}
         end)
 
       handle_messages(messages)
-      handle_txs_with_hashed_message_id(txs_for_further_handling)
+      handle_transactions_with_hashed_message_id(transactions_for_further_handling)
     end
 
     {:ok, start_block}
   end
 
   # Constructs a list of `eth_getTransactionByHash` requests for a given list of transaction hashes.
-  defp build_transaction_requests(tx_hashes) do
-    tx_hashes
-    |> Enum.reduce([], fn tx_hash, requests_list ->
+  defp build_transaction_requests(transaction_hashes) do
+    transaction_hashes
+    |> Enum.reduce([], fn transaction_hash, requests_list ->
       [
-        Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash})
+        Rpc.transaction_by_hash_request(%{id: 0, hash: transaction_hash})
         | requests_list
       ]
     end)
@@ -352,19 +354,19 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   # with the corresponding L1 message again.
   #
   # ## Parameters
-  # - `txs_with_hashed_message_id`: A list of transactions containing L1-to-L2
+  # - `transactions_with_hashed_message_id`: A list of transactions containing L1-to-L2
   #   messages with hashed message IDs.
   #
   # ## Returns
   # - `:ok`
-  @spec handle_txs_with_hashed_message_id([map()]) :: :ok
-  defp handle_txs_with_hashed_message_id([]), do: :ok
+  @spec handle_transactions_with_hashed_message_id([map()]) :: :ok
+  defp handle_transactions_with_hashed_message_id([]), do: :ok
 
-  defp handle_txs_with_hashed_message_id(txs_with_hashed_message_id) do
+  defp handle_transactions_with_hashed_message_id(transactions_with_hashed_message_id) do
     log_info(
-      "#{length(txs_with_hashed_message_id)} completions of L1-to-L2 messages require message ID matching discovery"
+      "#{length(transactions_with_hashed_message_id)} completions of L1-to-L2 messages require message ID matching discovery"
     )
 
-    ArbitrumMessagesToL2Matcher.async_discover_match(txs_with_hashed_message_id)
+    ArbitrumMessagesToL2Matcher.async_discover_match(transactions_with_hashed_message_id)
   end
 end

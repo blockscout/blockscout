@@ -2,16 +2,20 @@ defmodule BlockScoutWeb.PagingHelper do
   @moduledoc """
     Helper for fetching filters and other url query parameters
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{SmartContract, Transaction}
   alias Explorer.{Helper, PagingOptions, SortingHelper}
 
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :ethereum ->
       @allowed_type_labels [
         "coin_transfer",
@@ -52,7 +56,7 @@ defmodule BlockScoutWeb.PagingHelper do
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}, [:pending | _]) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_transaction_hash(hash_string) do
-      [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_tx: true}]
+      [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
     else
       _ ->
         [paging_options: @default_paging_options]
@@ -158,7 +162,7 @@ defmodule BlockScoutWeb.PagingHelper do
         [
           necessity_by_association: %{
             :transactions => :optional,
-            [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
+            [miner: [:names, :smart_contract, proxy_implementations_association()]] => :optional,
             :nephews => :required,
             :rewards => :optional
           },
@@ -169,7 +173,7 @@ defmodule BlockScoutWeb.PagingHelper do
         [
           necessity_by_association: %{
             :transactions => :optional,
-            [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
+            [miner: [:names, :smart_contract, proxy_implementations_association()]] => :optional,
             :rewards => :optional
           },
           block_type: "Reorg"
@@ -184,7 +188,7 @@ defmodule BlockScoutWeb.PagingHelper do
     do: [
       necessity_by_association: %{
         :transactions => :optional,
-        [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [miner: [:names, :smart_contract, proxy_implementations_association()]] => :optional,
         :rewards => :optional
       },
       block_type: "Block"
@@ -222,16 +226,13 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def delete_parameters_from_next_page_params(_), do: nil
 
-  def current_filter(%{"filter" => "solidity"}) do
-    [filter: :solidity]
-  end
-
-  def current_filter(%{"filter" => "vyper"}) do
-    [filter: :vyper]
-  end
-
-  def current_filter(%{"filter" => "yul"}) do
-    [filter: :yul]
+  def current_filter(%{"filter" => language_string}) do
+    SmartContract.language_string_to_atom()
+    |> Map.fetch(language_string)
+    |> case do
+      {:ok, language} -> [filter: language]
+      :error -> []
+    end
   end
 
   def current_filter(_), do: []
@@ -274,8 +275,8 @@ defmodule BlockScoutWeb.PagingHelper do
 
   defp do_smart_contracts_sorting("balance", "asc"), do: [{:asc_nulls_first, :fetched_coin_balance, :address}]
   defp do_smart_contracts_sorting("balance", "desc"), do: [{:desc_nulls_last, :fetched_coin_balance, :address}]
-  defp do_smart_contracts_sorting("txs_count", "asc"), do: [{:asc_nulls_first, :transactions_count, :address}]
-  defp do_smart_contracts_sorting("txs_count", "desc"), do: [{:desc_nulls_last, :transactions_count, :address}]
+  defp do_smart_contracts_sorting("transactions_count", "asc"), do: [{:asc_nulls_first, :transactions_count, :address}]
+  defp do_smart_contracts_sorting("transactions_count", "desc"), do: [{:desc_nulls_last, :transactions_count, :address}]
   defp do_smart_contracts_sorting(_, _), do: []
 
   @spec address_transactions_sorting(%{required(String.t()) => String.t()}) :: [
@@ -287,6 +288,8 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def address_transactions_sorting(_), do: []
 
+  defp do_address_transaction_sorting("block_number", "asc"), do: [asc: :block_number, asc: :index]
+  defp do_address_transaction_sorting("block_number", "desc"), do: [desc: :block_number, desc: :index]
   defp do_address_transaction_sorting("value", "asc"), do: [asc: :value]
   defp do_address_transaction_sorting("value", "desc"), do: [desc: :value]
   defp do_address_transaction_sorting("fee", "asc"), do: [{:dynamic, :fee, :asc_nulls_first, Transaction.dynamic_fee()}]

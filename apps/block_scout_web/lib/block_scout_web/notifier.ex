@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Notifier do
   @moduledoc """
   Responds to events by sending appropriate channel updates to front-end.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Logger
 
@@ -20,18 +21,33 @@ defmodule BlockScoutWeb.Notifier do
 
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.{Address, BlockNumberHelper, DenormalizationHelper, InternalTransaction, Transaction}
+
+  alias Explorer.Chain.{
+    Address,
+    BlockNumberHelper,
+    DenormalizationHelper,
+    InternalTransaction,
+    Token.Instance,
+    Transaction
+  }
+
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.{AverageBlockTime, Helper}
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Phoenix.View
 
-  @check_broadcast_sequence_period 500
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  case Application.compile_env(:explorer, :chain_type) do
+  @check_broadcast_sequence_period 500
+  @api_true [api?: true]
+
+  case @chain_type do
     :arbitrum ->
       @chain_type_specific_events ~w(new_arbitrum_batches new_messages_to_arbitrum_amount)a
+
+    :optimism ->
+      @chain_type_specific_events ~w(new_optimism_batches new_optimism_deposits)a
 
     _ ->
       nil
@@ -163,7 +179,7 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("transactions:#{transaction_hash}", "raw_trace", %{raw_trace_origin: transaction_hash})
   end
 
-  # internal txs broadcast disabled on the indexer level, therefore it out of scope of the refactoring within https://github.com/blockscout/blockscout/pull/7474
+  # internal transactions broadcast disabled on the indexer level, therefore it out of scope of the refactoring within https://github.com/blockscout/blockscout/pull/7474
   def handle_event({:chain_event, :internal_transactions, :realtime, internal_transactions}) do
     internal_transactions
     |> Stream.map(
@@ -181,10 +197,21 @@ defmodule BlockScoutWeb.Notifier do
         DenormalizationHelper.extend_transaction_preload([
           :token,
           :transaction,
-          from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-          to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
+          from_address: [
+            :scam_badge,
+            :names,
+            :smart_contract,
+            proxy_implementations_association()
+          ],
+          to_address: [
+            :scam_badge,
+            :names,
+            :smart_contract,
+            proxy_implementations_association()
+          ]
         ])
       )
+      |> Instance.preload_nft(@api_true)
 
     transfers_by_token = Enum.group_by(all_token_transfers_full, fn tt -> to_string(tt.token_contract_address_hash) end)
 
@@ -205,9 +232,9 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :transactions, :realtime, transactions}) do
     base_preloads = [
       :block,
-      created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-      from_address: [:names, :smart_contract, :proxy_implementations],
-      to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
+      created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
     ]
 
     preloads = if API_V2.enabled?(), do: [:token_transfers | base_preloads], else: base_preloads
@@ -215,9 +242,9 @@ defmodule BlockScoutWeb.Notifier do
     transactions
     |> Repo.preload(preloads)
     |> broadcast_transactions_websocket_v2()
-    |> Enum.map(fn tx ->
+    |> Enum.map(fn transaction ->
       # Disable parsing of token transfers from websocket for transaction tab because we display token transfers at a separate tab
-      Map.put(tx, :token_transfers, [])
+      Map.put(transaction, :token_transfers, [])
     end)
     |> Enum.each(&broadcast_transaction/1)
   end
@@ -263,10 +290,6 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "changed_bytecode", %{})
   end
 
-  def handle_event({:chain_event, :optimism_deposits, :realtime, deposits}) do
-    broadcast_optimism_deposits(deposits, "optimism_deposits:new_deposits", "deposits")
-  end
-
   def handle_event({:chain_event, :smart_contract_was_verified = event, :on_demand, [address_hash]}) do
     broadcast_automatic_verification_events(event, address_hash)
   end
@@ -285,11 +308,16 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :arbitrum ->
       def handle_event({:chain_event, topic, _, _} = event) when topic in @chain_type_specific_events,
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         do: BlockScoutWeb.Notifiers.Arbitrum.handle_event(event)
+
+    :optimism ->
+      def handle_event({:chain_event, topic, _, _} = event) when topic in @chain_type_specific_events,
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        do: BlockScoutWeb.Notifiers.Optimism.handle_event(event)
 
     _ ->
       nil
@@ -443,10 +471,6 @@ defmodule BlockScoutWeb.Notifier do
         internal_transaction: internal_transaction
       })
     end
-  end
-
-  defp broadcast_optimism_deposits(deposits, deposit_channel, event) do
-    Endpoint.broadcast(deposit_channel, event, %{deposits: deposits})
   end
 
   defp broadcast_transactions_websocket_v2(transactions) do

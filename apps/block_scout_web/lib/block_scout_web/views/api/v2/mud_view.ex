@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.API.V2.MudView do
   defp prepare_world_for_list(%Address{} = address) do
     %{
       "address" => Helper.address_with_info(address, address.hash),
-      "tx_count" => address.transactions_count,
+      "transaction_count" => address.transactions_count,
       "coin_balance" => if(address.fetched_coin_balance, do: address.fetched_coin_balance.value)
     }
   end

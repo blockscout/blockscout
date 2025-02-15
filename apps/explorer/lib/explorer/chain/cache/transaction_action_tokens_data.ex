@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Cache.TransactionActionTokensData do
   """
   use GenServer
 
-  @cache_name :tx_actions_tokens_data_cache
+  @cache_name :transaction_actions_tokens_data_cache
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do

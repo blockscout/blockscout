@@ -14,7 +14,14 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
       if Map.get(params, "cmc") == "true" do
         conn
         |> put_resp_content_type("text/plain")
-        |> send_resp(200, token.total_supply && to_cmc_total_supply(token.total_supply))
+        |> send_resp(
+          200,
+          token.total_supply &&
+            to_cmc_total_supply(
+              token.total_supply,
+              token.decimals
+            )
+        )
       else
         conn
         |> render(
@@ -89,11 +96,15 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     {:format, Chain.string_to_address_hash(address_hash_string)}
   end
 
-  @spec to_cmc_total_supply(Decimal.t()) :: String.t()
-  defp to_cmc_total_supply(total_supply) do
+  @spec to_cmc_total_supply(Decimal.t(), Decimal.t() | nil) :: String.t()
+  defp to_cmc_total_supply(total_supply, decimals) do
+    divider =
+      1
+      |> Decimal.new(1, Decimal.to_integer(decimals || Decimal.new(0)))
+      |> Decimal.to_integer()
+
     total_supply
-    |> Wei.from(:wei)
-    |> Wei.to(:ether)
+    |> Decimal.div(divider)
     |> Decimal.round(@cmc_token_supply_precision)
     |> Decimal.to_string()
   end

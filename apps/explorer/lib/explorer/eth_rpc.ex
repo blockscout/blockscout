@@ -1204,8 +1204,12 @@ defmodule Explorer.EthRPC do
     {:error, "Invalid params. Params must be a list."}
   end
 
+  defp do_eth_request(%{"jsonrpc" => jsonrpc, "method" => method}) do
+    do_eth_request(%{"jsonrpc" => jsonrpc, "method" => method, "params" => []})
+  end
+
   defp do_eth_request(_) do
-    {:error, "Method, params, and jsonrpc, are all required parameters."}
+    {:error, "Method, and jsonrpc are required parameters."}
   end
 
   defp get_action(action) do

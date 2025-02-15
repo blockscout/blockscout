@@ -617,23 +617,23 @@ defmodule EthereumJSONRPC.Filecoin do
   end
 
   defp to_transactions_params(blocks_responses, id_to_params) do
-    Enum.reduce(blocks_responses, [], fn %{id: id, result: tx_result}, blocks_acc ->
-      extract_transactions_params(Map.fetch!(id_to_params, id), tx_result) ++ blocks_acc
+    Enum.reduce(blocks_responses, [], fn %{id: id, result: transaction_result}, blocks_acc ->
+      extract_transactions_params(Map.fetch!(id_to_params, id), transaction_result) ++ blocks_acc
     end)
   end
 
-  defp extract_transactions_params(block_number, tx_result) do
-    tx_result
+  defp extract_transactions_params(block_number, transaction_result) do
+    transaction_result
     |> Enum.reduce(
       {[], 0},
       # counter is the index of the internal transaction in transaction
-      fn %{"transactionHash" => tx_hash, "transactionPosition" => transaction_index} = calls_result,
-         {tx_acc, counter} ->
-        last_tx_response_from_accumulator = List.first(tx_acc)
+      fn %{"transactionHash" => transaction_hash, "transactionPosition" => transaction_index} = calls_result,
+         {transaction_acc, counter} ->
+        last_transaction_response_from_accumulator = List.first(transaction_acc)
 
         next_counter =
-          with {:empty_accumulator, false} <- {:empty_accumulator, is_nil(last_tx_response_from_accumulator)},
-               true <- tx_hash !== last_tx_response_from_accumulator["transactionHash"] do
+          with {:empty_accumulator, false} <- {:empty_accumulator, is_nil(last_transaction_response_from_accumulator)},
+               true <- transaction_hash !== last_transaction_response_from_accumulator["transactionHash"] do
             0
           else
             {:empty_accumulator, true} ->
@@ -648,13 +648,13 @@ defmodule EthereumJSONRPC.Filecoin do
             Map.merge(
               %{
                 "blockNumber" => block_number,
-                "transactionHash" => tx_hash,
+                "transactionHash" => transaction_hash,
                 "transactionIndex" => transaction_index,
                 "index" => next_counter
               },
               calls_result
             )
-            | tx_acc
+            | transaction_acc
           ],
           next_counter
         }

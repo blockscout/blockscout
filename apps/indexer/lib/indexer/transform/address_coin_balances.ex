@@ -2,6 +2,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
   @moduledoc """
   Extracts `Explorer.Chain.Address.CoinBalance` params from other schema's params.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.TokenTransfer
 
@@ -17,11 +18,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
   end
 
   defp reducer({:blocks_params, blocks_params}, acc) when is_list(blocks_params) do
-    # a block MUST have a miner_hash and number
-    Enum.into(blocks_params, acc, fn %{miner_hash: address_hash, number: block_number}
-                                     when is_binary(address_hash) and is_integer(block_number) ->
-      %{address_hash: address_hash, block_number: block_number}
-    end)
+    Enum.reduce(blocks_params, acc, &blocks_params_reducer/2)
   end
 
   defp reducer({:internal_transactions_params, internal_transactions_params}, initial)
@@ -63,6 +60,13 @@ defmodule Indexer.Transform.AddressCoinBalances do
       %{address_hash: address_hash, block_number: block_number}
     end)
   end
+
+  defp blocks_params_reducer(%{miner_hash: address_hash, number: block_number}, acc)
+       when is_binary(address_hash) and is_integer(block_number) do
+    MapSet.put(acc, %{address_hash: address_hash, block_number: block_number})
+  end
+
+  defp blocks_params_reducer(_block_params, acc), do: acc
 
   defp internal_transactions_params_reducer(%{block_number: block_number} = internal_transaction_params, acc)
        when is_integer(block_number) do
@@ -114,7 +118,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
     |> (&transactions_params_chain_type_fields_reducer(transaction_params, &1)).()
   end
 
-  if Application.compile_env(:explorer, :chain_type) == :celo do
+  if @chain_type == :celo do
     import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
     @burn_address_hash_string burn_address_hash_string()

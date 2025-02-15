@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.AddressChannel do
   Establishes pub/sub channel for address page live updates.
   """
   use BlockScoutWeb, :channel
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
@@ -38,7 +39,7 @@ defmodule BlockScoutWeb.AddressChannel do
   @burn_address_hash burn_address_hash
   @current_token_balances_limit 50
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :celo ->
       @chain_type_transaction_associations [
         :gas_token
@@ -49,24 +50,30 @@ defmodule BlockScoutWeb.AddressChannel do
   end
 
   @transaction_associations [
-                              from_address: [:names, :smart_contract, :proxy_implementations],
+                              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
                               to_address: [
                                 :scam_badge,
                                 :names,
                                 :smart_contract,
-                                :proxy_implementations
+                                proxy_implementations_association()
                               ],
                               created_contract_address: [
                                 :scam_badge,
                                 :names,
                                 :smart_contract,
-                                :proxy_implementations
+                                proxy_implementations_association()
                               ]
                             ] ++
                               @chain_type_transaction_associations
 
-  def join("addresses:" <> address_hash, _params, socket) do
-    {:ok, %{}, assign(socket, :address_hash, address_hash)}
+  def join("addresses:" <> address_hash_string, _params, socket) do
+    case valid_address_hash_and_not_restricted_access?(address_hash_string) do
+      :ok ->
+        {:ok, %{}, assign(socket, :address_hash, address_hash_string)}
+
+      reason ->
+        {:error, %{reason: reason}}
+    end
   end
 
   def handle_in("get_balance", _, socket) do
@@ -410,14 +417,7 @@ defmodule BlockScoutWeb.AddressChannel do
       when is_list(token_transfers) do
     token_transfer_json =
       TransactionViewAPI.render("token_transfers.json", %{
-        token_transfers:
-          token_transfers
-          |> Repo.preload([
-            [
-              from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-              to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
-            ]
-          ]),
+        token_transfers: token_transfers,
         conn: nil
       })
 

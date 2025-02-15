@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   @moduledoc """
   View functions for rendering Celo-related data in JSON format.
   """
+  use BlockScoutWeb, :view
 
   require Logger
 
@@ -20,74 +21,66 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     necessity_by_association: %{
       :names => :optional,
       :smart_contract => :optional,
-      :proxy_implementations => :optional
+      proxy_implementations_association() => :optional
     },
     api?: true
   ]
 
-  def render("celo_epoch_distribution.json", %EpochReward{
-        reserve_bolster_transfer: reserve_bolster_transfer,
-        community_transfer: community_transfer,
-        carbon_offsetting_transfer: carbon_offsetting_transfer
-      }) do
-    Map.new(
-      [
-        reserve_bolster_transfer: reserve_bolster_transfer,
-        community_transfer: community_transfer,
-        carbon_offsetting_transfer: carbon_offsetting_transfer
-      ],
-      fn {field, token_transfer} ->
-        token_transfer_json =
-          token_transfer &&
-            TransactionView.render(
-              "token_transfer.json",
-              %{token_transfer: token_transfer, conn: nil}
-            )
-
-        {field, token_transfer_json}
-      end
-    )
+  def render("celo_epoch.json", %{epoch_number: epoch_number, epoch_distribution: nil}) do
+    %{
+      number: epoch_number,
+      distribution: nil,
+      aggregated_election_rewards: nil
+    }
   end
 
-  def render("celo_epoch_distribution.json", _distribution),
-    do: nil
+  def render(
+        "celo_epoch.json",
+        %{
+          epoch_number: epoch_number,
+          epoch_distribution: %EpochReward{
+            reserve_bolster_transfer: reserve_bolster_transfer,
+            community_transfer: community_transfer,
+            carbon_offsetting_transfer: carbon_offsetting_transfer
+          },
+          aggregated_election_rewards: aggregated_election_rewards
+        }
+      ) do
+    distribution_json =
+      Map.new(
+        [
+          reserve_bolster_transfer: reserve_bolster_transfer,
+          community_transfer: community_transfer,
+          carbon_offsetting_transfer: carbon_offsetting_transfer
+        ],
+        fn {field, token_transfer} ->
+          token_transfer_json =
+            token_transfer &&
+              TransactionView.render(
+                "token_transfer.json",
+                %{token_transfer: token_transfer, conn: nil}
+              )
 
-  def render("celo_aggregated_election_rewards.json", aggregated_election_rewards) do
-    Map.new(
-      aggregated_election_rewards,
-      fn {type, %{total: total, count: count, token: token}} ->
-        {type,
-         %{
-           total: total,
-           count: count,
-           token:
-             TokenView.render("token.json", %{
-               token: token,
-               contract_address_hash: token.contract_address_hash
-             })
-         }}
-      end
-    )
-  end
+          {field, token_transfer_json}
+        end
+      )
 
-  def render("celo_epoch.json", %{
-        epoch_number: epoch_number,
-        epoch_distribution: epoch_distribution,
-        aggregated_election_rewards: aggregated_election_rewards
-      }) do
-    distribution_json = render("celo_epoch_distribution.json", epoch_distribution)
-
-    # Workaround: we assume that if epoch rewards are not fetched for a block,
-    # we should not display aggregated election rewards for it.
-    #
-    # todo: consider checking pending block epoch operations to determine if
-    # epoch is fetched or not
     aggregated_election_rewards_json =
-      if distribution_json do
-        render("celo_aggregated_election_rewards.json", aggregated_election_rewards)
-      else
-        nil
-      end
+      Map.new(
+        aggregated_election_rewards,
+        fn {type, %{total: total, count: count, token: token}} ->
+          {type,
+           %{
+             total: total,
+             count: count,
+             token:
+               TokenView.render("token.json", %{
+                 token: token,
+                 contract_address_hash: token && token.contract_address_hash
+               })
+           }}
+        end
+      )
 
     %{
       number: epoch_number,
@@ -221,11 +214,12 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     }
   end
 
-  defp prepare_election_reward(%ElectionReward{token: %Token{}} = reward) do
+  defp prepare_election_reward(%ElectionReward{token: %Token{}, block: %Block{}} = reward) do
     %{
       amount: reward.amount,
       block_number: reward.block.number,
       block_hash: reward.block_hash,
+      block_timestamp: reward.block.timestamp,
       epoch_number: reward.block.number |> CeloHelper.block_number_to_epoch_number(),
       account:
         Helper.address_with_info(
@@ -244,15 +238,6 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           contract_address_hash: reward.token.contract_address_hash
         })
     }
-  end
-
-  # Convert the burn fraction from FixidityLib value to decimal.
-  @spec burn_fraction_decimal(integer()) :: Decimal.t()
-  defp burn_fraction_decimal(burn_fraction_fixidity_lib)
-       when is_integer(burn_fraction_fixidity_lib) do
-    base = Decimal.new(1, 10, 24)
-    fraction = Decimal.new(1, burn_fraction_fixidity_lib, 0)
-    Decimal.div(fraction, base)
   end
 
   # Get the breakdown of the base fee for the case when FeeHandler is a contract
@@ -278,7 +263,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
          {:ok, %{"value" => burn_fraction_fixidity_lib}} <-
            CeloCoreContracts.get_event(:fee_handler, :burn_fraction_set, block_number),
          {:ok, celo_token_address_hash} <- CeloCoreContracts.get_address(:celo_token, block_number) do
-      burn_fraction = burn_fraction_decimal(burn_fraction_fixidity_lib)
+      burn_fraction = CeloHelper.burn_fraction_decimal(burn_fraction_fixidity_lib)
 
       burnt_amount = Wei.mult(base_fee, burn_fraction)
       burnt_percentage = Decimal.mult(burn_fraction, 100)

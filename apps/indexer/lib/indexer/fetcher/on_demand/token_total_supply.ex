@@ -6,10 +6,10 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
   use GenServer
   use Indexer.Fetcher, restart: :permanent
 
-  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.{Hash, Token}
+  alias Explorer.Repo
   alias Explorer.Token.MetadataRetriever
 
   @ttl_in_blocks 1
@@ -42,21 +42,20 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
   ## Implementation
 
   defp do_fetch(address_hash) when not is_nil(address_hash) do
-    token =
-      Token
-      |> Repo.get_by(contract_address_hash: address_hash)
+    token = Repo.get_by(Token, contract_address_hash: address_hash)
 
-    if is_nil(token.total_supply_updated_at_block) or
+    if (token && !token.skip_metadata && is_nil(token.total_supply_updated_at_block)) or
          BlockNumber.get_max() - token.total_supply_updated_at_block > @ttl_in_blocks do
-      token_address_hash = "0x" <> Base.encode16(address_hash.bytes)
+      token_address_hash_string = "0x" <> Base.encode16(address_hash.bytes)
 
-      token_params =
-        token_address_hash
-        |> MetadataRetriever.get_total_supply_of()
+      token_params = MetadataRetriever.get_total_supply_of(token_address_hash_string)
 
-      {:ok, token} = Chain.update_token(token, token_params)
+      if token_params !== %{} do
+        {:ok, token} = Token.update(token, token_params)
 
-      Publisher.broadcast(%{token_total_supply: [token]}, :on_demand)
+        Publisher.broadcast(%{token_total_supply: [token]}, :on_demand)
+      end
+
       :ok
     end
   end

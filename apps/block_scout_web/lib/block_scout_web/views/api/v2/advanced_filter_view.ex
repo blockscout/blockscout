@@ -73,7 +73,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       |> Stream.map(fn advanced_filter ->
         method_id =
           case advanced_filter.input do
-            %{bytes: <<method_id::binary-size(4), _::binary>>} -> method_id
+            %{bytes: <<method_id::binary-size(4), _::binary>>} -> "0x" <> Base.encode16(method_id, case: :lower)
             _ -> nil
           end
 
@@ -87,18 +87,21 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
           Address.checksum(advanced_filter.from_address_hash),
           Address.checksum(advanced_filter.to_address_hash),
           Address.checksum(advanced_filter.created_contract_address_hash),
-          advanced_filter.value,
+          decimal_to_string_xsd(advanced_filter.value),
           if(advanced_filter.type != "coin_transfer",
-            do: advanced_filter.token_transfer.token.contract_address_hash,
+            do: Address.checksum(advanced_filter.token_transfer.token.contract_address_hash),
             else: nil
           ),
-          if(advanced_filter.type != "coin_transfer", do: advanced_filter.token_transfer.token.decimals, else: nil),
+          if(advanced_filter.type != "coin_transfer",
+            do: decimal_to_string_xsd(advanced_filter.token_transfer.token.decimals),
+            else: nil
+          ),
           if(advanced_filter.type != "coin_transfer", do: advanced_filter.token_transfer.token.symbol, else: nil),
           advanced_filter.block_number,
-          advanced_filter.fee,
-          exchange_rate.usd_value,
-          opening_price,
-          closing_price
+          decimal_to_string_xsd(advanced_filter.fee),
+          decimal_to_string_xsd(exchange_rate.usd_value),
+          decimal_to_string_xsd(opening_price),
+          decimal_to_string_xsd(closing_price)
         ]
       end)
 
@@ -178,4 +181,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
 
     %{methods: method_ids, tokens: tokens_map}
   end
+
+  defp decimal_to_string_xsd(nil), do: nil
+  defp decimal_to_string_xsd(decimal), do: Decimal.to_string(decimal, :xsd)
 end

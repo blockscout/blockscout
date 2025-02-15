@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
     full_options =
       [
         necessity_by_association: %{
-          [address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+          [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional,
           block: :optional
         },
         api?: true

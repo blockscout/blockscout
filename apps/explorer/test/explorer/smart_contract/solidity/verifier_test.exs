@@ -529,7 +529,7 @@ if Application.compile_env(:explorer, :chain_type) !== :zksync do
         assert abi != nil
       end
 
-      test "verifies smart-contract created from another contract using successful tx" do
+      test "verifies smart-contract created from another contract using successful transaction" do
         path = File.cwd!() <> "/test/support/fixture/smart_contract/contract_from_factory.sol"
         contract = File.read!(path)
 

@@ -3,16 +3,22 @@ defmodule BlockScoutWeb.Views.ScriptHelper do
   Helper for rendering view specific script tags.
   """
 
-  import Phoenix.HTML, only: [sigil_E: 2]
+  import Phoenix.LiveView.Helpers, only: [sigil_H: 2]
   import BlockScoutWeb.Router.Helpers, only: [static_path: 2]
+
+  alias Phoenix.HTML.Safe
 
   def render_scripts(conn, file_names) do
     conn
     |> files(file_names)
     |> Enum.map(fn file ->
-      ~E"""
-        <script src="<%= file %>"> </script>
+      assigns = %{file: file}
+
+      ~H"""
+        <script src="{@file}"> </script>
       """
+      |> Safe.to_iodata()
+      |> List.to_string()
     end)
   end
 

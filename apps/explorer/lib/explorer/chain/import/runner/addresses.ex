@@ -168,8 +168,8 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Address.t()]}
-  defp insert(repo, ordered_changes_list, %{timeout: timeout, timestamps: timestamps} = options)
-       when is_list(ordered_changes_list) do
+  def insert(repo, ordered_changes_list, %{timeout: timeout, timestamps: timestamps} = options)
+      when is_list(ordered_changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     Import.insert_changes_list(
@@ -282,7 +282,12 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   defp filecoin_pending_address_operations(repo, addresses, %{timeout: timeout, timestamps: timestamps}) do
     ordered_addresses =
       addresses
-      |> Enum.map(&%{address_hash: &1.hash})
+      |> Enum.map(
+        &%{
+          address_hash: &1.hash,
+          refetch_after: nil
+        }
+      )
       |> Enum.sort_by(& &1.address_hash)
       |> Enum.dedup_by(& &1.address_hash)
 

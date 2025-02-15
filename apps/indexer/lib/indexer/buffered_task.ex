@@ -304,7 +304,8 @@ defmodule Indexer.BufferedTask do
 
   import Indexer.Logger, only: [process: 1]
 
-  alias Indexer.{BoundQueue, Memory}
+  alias Explorer.BoundQueue
+  alias Indexer.Memory
 
   @enforce_keys [
     :callback_module,

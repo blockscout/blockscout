@@ -2,6 +2,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @moduledoc """
   Module for proxy smart-contract implementation detection
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias EthereumJSONRPC.Contract
   alias Explorer.Chain.{Address, Hash, SmartContract}
@@ -15,6 +16,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     EIP1822,
     EIP1967,
     EIP2535,
+    EIP7702,
     EIP930,
     MasterCopy
   }
@@ -92,21 +94,11 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         if options[:skip_implementation_fetch?] do
           false
         else
-          {implementation_address_hash_strings, _implementation_names, _proxy_type} =
-            get_implementation(smart_contract, options)
+          implementation = get_implementation(smart_contract, options)
 
-          with false <- is_nil(implementation_address_hash_strings),
-               false <- Enum.empty?(implementation_address_hash_strings) do
-            implementation_address_hash_strings
-            |> Enum.reduce_while(false, fn implementation_address_hash_string, acc ->
-              with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
-                   false <- implementation_address_hash.bytes == burn_address_hash.bytes do
-                {:halt, true}
-              else
-                _ ->
-                  {:cont, acc}
-              end
-            end)
+          with false <- is_nil(implementation),
+               false <- Enum.empty?(implementation.address_hashes) do
+            has_not_burn_address_hash?(implementation.address_hashes, burn_address_hash)
           else
             _ ->
               false
@@ -115,8 +107,29 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end
   end
 
+  @spec has_not_burn_address_hash?([Hash.Address.t()], Hash.Address.t()) :: boolean()
+  defp has_not_burn_address_hash?(address_hashes, burn_address_hash) do
+    address_hashes
+    |> Enum.reduce_while(false, fn implementation_address_hash, acc ->
+      if implementation_address_hash.bytes == burn_address_hash.bytes, do: {:cont, acc}, else: {:halt, true}
+    end)
+  end
+
   @doc """
-  Decodes address output into 20 bytes address hash
+    Decodes and formats an address output from a smart contract ABI.
+
+    This function handles various input formats and edge cases when decoding
+    address outputs from smart contract function calls or events.
+
+    ## Parameters
+    - `address`: The address output to decode. Can be `nil`, `"0x"`, a binary string, or `:error`.
+
+    ## Returns
+    - `nil` if the input is `nil`.
+    - The burn address hash string if the input is `"0x"`.
+    - A formatted address string if the input is a valid binary string.
+    - `:error` if the input is `:error`.
+    - `nil` for any other input type.
   """
   @spec abi_decode_address_output(any()) :: nil | :error | binary()
   def abi_decode_address_output(nil), do: nil
@@ -144,11 +157,12 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         options
       )
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
-    {implementation_address_hash_strings, _names, _proxy_type} = get_implementation(smart_contract, options)
+    implementation = get_implementation(smart_contract, options)
 
-    implementation_address_hash_strings
-    |> Enum.reduce([], fn implementation_address_hash_string, acc ->
-      SmartContract.get_smart_contract_abi(implementation_address_hash_string) ++ acc
+    ((implementation && implementation.address_hashes) ||
+       [])
+    |> Enum.reduce([], fn implementation_address_hash, acc ->
+      SmartContract.get_smart_contract_abi(implementation_address_hash) ++ acc
     end)
   end
 
@@ -250,6 +264,20 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         proxy_abi,
         go_to_fallback?
       ],
+      :get_implementation_address_hash_string_eip7702
+    )
+  end
+
+  @doc """
+  Returns EIP-7702 implementation address or tries next proxy pattern
+  """
+  @spec get_implementation_address_hash_string_eip7702(Hash.Address.t(), any(), bool()) ::
+          %{implementation_address_hash_strings: [String.t()] | :error | nil, proxy_type: atom() | :unknown}
+  def get_implementation_address_hash_string_eip7702(proxy_address_hash, proxy_abi, go_to_fallback?) do
+    get_implementation_address_hash_string_by_module(
+      EIP7702,
+      :eip7702,
+      [proxy_address_hash, proxy_abi, go_to_fallback?],
       :get_implementation_address_hash_string_eip1967
     )
   end
@@ -470,54 +498,15 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @doc """
   Returns combined ABI from proxy and implementation smart-contracts
   """
-  @spec combine_proxy_implementation_abi(any(), map(), boolean(), any()) :: SmartContract.abi()
+  @spec combine_proxy_implementation_abi(any(), any()) :: SmartContract.abi()
   def combine_proxy_implementation_abi(
         smart_contract,
-        proxy_implementation_addresses_map \\ %{},
-        fetch_proxy?,
         options \\ []
-      )
+      ) do
+    proxy_abi = (smart_contract && smart_contract.abi) || []
+    implementation_abi = Proxy.get_implementation_abi_from_proxy(smart_contract, options)
 
-  def combine_proxy_implementation_abi(
-        %SmartContract{abi: abi} = smart_contract,
-        proxy_implementation_addresses_map,
-        fetch_proxy?,
-        options
-      )
-      when not is_nil(abi) do
-    implementation_abi =
-      get_implementation_abi(smart_contract, options, proxy_implementation_addresses_map, fetch_proxy?)
-
-    if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
-  end
-
-  def combine_proxy_implementation_abi(smart_contract, proxy_implementation_addresses_map, fetch_proxy?, options) do
-    get_implementation_abi(smart_contract, options, proxy_implementation_addresses_map, fetch_proxy?)
-  end
-
-  defp get_implementation_abi(smart_contract, options, proxy_implementation_addresses_map, fetch_proxy?) do
-    if fetch_proxy? do
-      Proxy.get_implementation_abi_from_proxy(smart_contract, options)
-    else
-      implementations =
-        proxy_implementation_addresses_map
-        |> Map.get(smart_contract.address_hash)
-
-      parse_abi_from_proxy_implementations(implementations)
-    end
-  end
-
-  defp parse_abi_from_proxy_implementations(nil), do: []
-
-  defp parse_abi_from_proxy_implementations(implementations) do
-    implementations
-    |> Enum.reduce([], fn implementation, acc ->
-      if implementation.smart_contract && implementation.smart_contract.abi do
-        acc ++ implementation.smart_contract.abi
-      else
-        acc
-      end
-    end)
+    proxy_abi ++ implementation_abi
   end
 
   defp find_input_by_name(inputs, name) do
@@ -567,25 +556,54 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   A list of maps containing information about the proxy object.
 
   """
-  @spec proxy_object_info([String.t() | Hash.Address.t()], [String.t() | nil]) :: [map()]
-  def proxy_object_info([], []), do: []
+  @spec proxy_object_info(Implementation.t() | nil) :: [map()]
+  def proxy_object_info(nil), do: []
 
-  def proxy_object_info(implementation_addresses, implementation_names) do
+  def proxy_object_info(proxy_implementation) do
+    implementations_info = prepare_implementations(proxy_implementation)
+    implementation_addresses = proxy_implementation.address_hashes
+    implementation_names = proxy_implementation.names
+
     implementation_addresses
     |> Enum.zip(implementation_names)
     |> Enum.reduce([], fn {address, name}, acc ->
       case address do
         %Hash{} = address_hash ->
-          [%{"address" => Address.checksum(address_hash), "name" => name} | acc]
+          [
+            %{"address" => Address.checksum(address_hash), "name" => name} |> chain_type_fields(implementations_info)
+            | acc
+          ]
 
         _ ->
           with {:ok, address_hash} <- string_to_address_hash(address),
                checksummed_address <- Address.checksum(address_hash) do
-            [%{"address" => checksummed_address, "name" => name} | acc]
+            [%{"address" => checksummed_address, "name" => name} |> chain_type_fields(implementations_info) | acc]
           else
             _ -> acc
           end
       end
     end)
+  end
+
+  if @chain_type == :filecoin do
+    def chain_type_fields(%{"address" => address_hash} = address, implementations_info) do
+      Map.put(address, "filecoin_robust_address", implementations_info[address_hash])
+    end
+
+    def prepare_implementations(%Implementation{addresses: [_ | _] = addresses}) do
+      Enum.into(addresses, %{}, fn address -> {Address.checksum(address.hash), address.filecoin_robust} end)
+    end
+
+    def prepare_implementations(_) do
+      %{}
+    end
+  else
+    def chain_type_fields(address, _proxy_implementations) do
+      address
+    end
+
+    def prepare_implementations(_implementations_info) do
+      :ignore
+    end
   end
 end

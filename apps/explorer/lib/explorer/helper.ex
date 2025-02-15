@@ -5,9 +5,9 @@ defmodule Explorer.Helper do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain
-  alias Explorer.Chain.Data
+  alias Explorer.Chain.{Data, Hash}
 
-  import Ecto.Query, only: [join: 5, where: 3]
+  import Ecto.Query, only: [where: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   @max_safe_integer round(:math.pow(2, 63)) - 1
@@ -225,27 +225,93 @@ defmodule Explorer.Helper do
 
   The modified query with scam addresses hidden, if applicable.
   """
-  @spec maybe_hide_scam_addresses(nil | Ecto.Query.t(), atom()) :: Ecto.Query.t()
-  def maybe_hide_scam_addresses(nil, _address_hash_key), do: nil
+  @spec maybe_hide_scam_addresses(nil | Ecto.Query.t(), atom(), [
+          Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
+        ]) :: Ecto.Query.t()
+  def maybe_hide_scam_addresses(nil, _address_hash_key, _options), do: nil
 
-  def maybe_hide_scam_addresses(query, address_hash_key) do
-    if Application.get_env(:block_scout_web, :hide_scam_addresses) do
+  def maybe_hide_scam_addresses(query, address_hash_key, options) do
+    if Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] do
       query
-      |> join(
-        :inner,
+      |> where(
         [q],
-        q2 in fragment("""
-        (
-          SELECT hash
-          FROM addresses a
-          WHERE NOT EXISTS
-            (SELECT 1 FROM scam_address_badge_mappings sabm WHERE sabm.address_hash=a.hash)
+        fragment(
+          "NOT EXISTS (SELECT 1 FROM scam_address_badge_mappings sabm WHERE sabm.address_hash=?)",
+          field(q, ^address_hash_key)
         )
-        """),
-        on: field(q, ^address_hash_key) == q2.hash
       )
     else
       query
     end
   end
+
+  @doc """
+  Checks if a specified time interval has passed since a given datetime.
+
+  This function compares the given datetime plus the interval against the current
+  time. It returns `true` if the interval has passed, or the number of seconds
+  remaining if it hasn't.
+
+  ## Parameters
+  - `sent_at`: The reference datetime, or `nil`.
+  - `interval`: The time interval in milliseconds.
+
+  ## Returns
+  - `true` if the interval has passed or if `sent_at` is `nil`.
+  - An integer representing the number of seconds remaining in the interval if it
+    hasn't passed yet.
+  """
+  @spec check_time_interval(DateTime.t() | nil, integer()) :: true | integer()
+  def check_time_interval(nil, _interval), do: true
+
+  def check_time_interval(sent_at, interval) do
+    now = DateTime.utc_now()
+
+    if sent_at
+       |> DateTime.add(interval, :millisecond)
+       |> DateTime.compare(now) != :gt do
+      true
+    else
+      sent_at
+      |> DateTime.add(interval, :millisecond)
+      |> DateTime.diff(now, :second)
+    end
+  end
+
+  @doc """
+  Retrieves the host URL for the BlockScoutWeb application.
+
+  This function fetches the host URL from the application's configuration,
+  specifically from the `:block_scout_web` application's `BlockScoutWeb.Endpoint`
+  configuration.
+
+  ## Returns
+  A string containing the host URL for the BlockScoutWeb application.
+  """
+  @spec get_app_host :: String.t()
+  def get_app_host do
+    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+  end
+
+  @doc """
+  Converts `Explorer.Chain.Hash.t()` or string hash to DB-acceptable format.
+  For example "0xabcdef1234567890abcdef1234567890abcdef" -> "\\xabcdef1234567890abcdef1234567890abcdef"
+  """
+  @spec hash_to_query_string(Hash.t() | String.t()) :: String.t()
+  def hash_to_query_string(hash) do
+    s_hash =
+      hash
+      |> to_string()
+      |> String.trim_leading("0")
+
+    "\\#{s_hash}"
+  end
+
+  def parse_boolean("true"), do: true
+  def parse_boolean("false"), do: false
+
+  def parse_boolean(true), do: true
+  def parse_boolean(false), do: false
+
+  def parse_boolean(_), do: false
 end

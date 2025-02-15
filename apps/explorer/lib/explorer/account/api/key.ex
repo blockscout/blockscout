@@ -4,6 +4,7 @@ defmodule Explorer.Account.Api.Key do
   """
   use Explorer.Schema
 
+  alias Ecto.Multi
   alias Explorer.Account.Identity
   alias Ecto.{Changeset, UUID}
   alias Explorer.Repo
@@ -23,6 +24,8 @@ defmodule Explorer.Account.Api.Key do
 
   @attrs ~w(value name identity_id)a
 
+  @user_not_found "User not found"
+
   def changeset do
     %__MODULE__{}
     |> cast(%{}, @attrs)
@@ -34,14 +37,59 @@ defmodule Explorer.Account.Api.Key do
     |> validate_required(@attrs, message: "Required")
     |> validate_length(:name, min: 1, max: 255)
     |> unique_constraint(:value, message: "API key already exists")
-    |> foreign_key_constraint(:identity_id, message: "User not found")
+    |> foreign_key_constraint(:identity_id, message: @user_not_found)
     |> api_key_count_constraint()
   end
 
+  @doc """
+  Creates a new API key associated with an identity or returns an error when no identity is specified.
+
+  When `identity_id` is provided in the attributes, the function acquires a lock on the
+  identity record and creates a new API key within a transaction. If the identity is not
+  found or if the changeset validation fails, returns an error.
+
+  When `identity_id` is not provided, immediately returns an error with an invalid
+  changeset.
+
+  ## Parameters
+  - `attrs`: A map of attributes that may contain:
+    - `identity_id`: The ID of the identity to associate the API key with
+    - `name`: The name for the API key (required, 1 to 255 characters)
+    - `value`: Optional. If not provided, will be auto-generated using UUID v4
+
+  ## Returns
+  - `{:ok, api_key}` if the API key was created successfully
+  - `{:error, changeset}` if validation fails or when no identity is provided
+  """
+  @spec create(map()) :: {:ok, t()} | {:error, Changeset.t()}
+  def create(%{identity_id: identity_id} = attrs) do
+    Multi.new()
+    |> Identity.acquire_with_lock(identity_id)
+    |> Multi.insert(:api_key, fn _ ->
+      %__MODULE__{}
+      |> changeset(Map.put(attrs, :value, generate_api_key()))
+    end)
+    |> Repo.account_repo().transaction()
+    |> case do
+      {:ok, %{api_key: api_key}} ->
+        {:ok, api_key}
+
+      {:error, :acquire_identity, :not_found, _changes} ->
+        {:error,
+         %__MODULE__{}
+         |> changeset(Map.put(attrs, :value, generate_api_key()))
+         |> add_error(:identity_id, @user_not_found,
+           constraint: :foreign,
+           constraint_name: "account_api_keys_identity_id_fkey"
+         )}
+
+      {:error, _failed_operation, error, _changes} ->
+        {:error, error}
+    end
+  end
+
   def create(attrs) do
-    %__MODULE__{}
-    |> changeset(Map.put(attrs, :value, generate_api_key()))
-    |> Repo.account_repo().insert()
+    {:error, %__MODULE__{} |> changeset(Map.put(attrs, :value, generate_api_key()))}
   end
 
   def api_key_count_constraint(%Changeset{changes: %{identity_id: identity_id}} = api_key) do
@@ -126,4 +174,30 @@ defmodule Explorer.Account.Api.Key do
   def api_key_with_plan_by_value(_), do: nil
 
   def get_max_api_keys_count, do: @max_key_per_account
+
+  @doc """
+  Merges API keys from multiple identities into a primary identity.
+
+  This function updates the `identity_id` of all API keys belonging to the
+  identities specified in `ids_to_merge` to the `primary_id`. It's designed to
+  be used as part of an Ecto.Multi transaction.
+
+  ## Parameters
+  - `multi`: An Ecto.Multi struct to which this operation will be added.
+  - `primary_id`: The ID of the primary identity that will own the merged keys.
+  - `ids_to_merge`: A list of identity IDs whose API keys will be merged.
+
+  ## Returns
+  - An updated Ecto.Multi struct with the merge operation added.
+  """
+  @spec merge(Multi.t(), integer(), [integer()]) :: Multi.t()
+  def merge(multi, primary_id, ids_to_merge) do
+    Multi.run(multi, :merge_keys, fn repo, _ ->
+      {:ok,
+       repo.update_all(
+         from(key in __MODULE__, where: key.identity_id in ^ids_to_merge),
+         set: [identity_id: primary_id]
+       )}
+    end)
+  end
 end

@@ -207,7 +207,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
         else
           _ ->
             Logger.error(
-              "Failed to decode log: (tx_hash, block_hash, index) = #{to_string(log.transaction_hash)},  #{to_string(log.block_hash)}, #{to_string(log.index)}"
+              "Failed to decode log: (transaction_hash, block_hash, index) = #{to_string(log.transaction_hash)},  #{to_string(log.block_hash)}, #{to_string(log.index)}"
             )
 
             nil
