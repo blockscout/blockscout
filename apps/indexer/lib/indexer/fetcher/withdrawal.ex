@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.Withdrawal do
   require Logger
 
   alias EthereumJSONRPC.Blocks
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Withdrawal
   alias Explorer.Helper
@@ -44,7 +45,7 @@ defmodule Indexer.Fetcher.Withdrawal do
   @impl GenServer
   def init(opts) when is_list(opts) do
     Logger.metadata(fetcher: :withdrawal)
-    first_block = Application.get_env(:indexer, __MODULE__)[:first_block]
+    first_block = RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
     if first_block |> Helper.parse_integer() |> is_integer() do
       # withdrawals from all other blocks will be imported by realtime and catchup indexers

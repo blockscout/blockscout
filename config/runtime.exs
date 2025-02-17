@@ -722,6 +722,13 @@ config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
 ###############
 
 first_block = ConfigHelper.parse_integer_env_var("FIRST_BLOCK", 0)
+last_block = ConfigHelper.parse_integer_or_nil_env_var("LAST_BLOCK")
+
+block_ranges =
+  case ConfigHelper.safe_get_env("BLOCK_RANGES", nil) do
+    "" -> "#{first_block}..#{last_block || "latest"}"
+    ranges -> ranges
+  end
 
 trace_first_block = ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0)
 trace_last_block = ConfigHelper.parse_integer_or_nil_env_var("TRACE_LAST_BLOCK")
@@ -735,9 +742,9 @@ trace_block_ranges =
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
   metadata_updater_milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_METADATA_UPDATE_INTERVAL", "48h"),
-  block_ranges: System.get_env("BLOCK_RANGES"),
+  block_ranges: block_ranges,
   first_block: first_block,
-  last_block: ConfigHelper.parse_integer_or_nil_env_var("LAST_BLOCK"),
+  last_block: last_block,
   trace_block_ranges: trace_block_ranges,
   trace_first_block: trace_first_block,
   trace_last_block: trace_last_block,
