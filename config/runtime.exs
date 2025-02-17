@@ -286,6 +286,7 @@ precompiled_config_default_path =
 
 config :explorer, Explorer.ChainSpec.GenesisData,
   chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
+  genesis_processing_delay: ConfigHelper.parse_time_env_var("CHAIN_SPEC_PROCESSING_DELAY", "15s"),
   emission_format: System.get_env("EMISSION_FORMAT", "DEFAULT"),
   rewards_contract_address: System.get_env("REWARDS_CONTRACT", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5"),
   precompiled_config_path: System.get_env("PRECOMPILED_CONTRACTS_CONFIG_PATH", precompiled_config_default_path)
