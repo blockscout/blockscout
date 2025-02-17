@@ -105,4 +105,16 @@ defmodule Explorer.Chain.Cache.Counters.LastFetchedCounter do
       Chain.select_repo(options).one(query) || Decimal.new(0)
     end
   end
+
+  @spec get_multiple([binary()], Keyword.t()) :: integer() | [Decimal.t()] | nil
+  def get_multiple(types, options \\ []) do
+    query =
+      from(
+        last_fetched_counter in __MODULE__,
+        where: last_fetched_counter.counter_type in ^types,
+        select: {last_fetched_counter.counter_type, last_fetched_counter.value}
+      )
+
+    Chain.select_repo(options).all(query)
+  end
 end
