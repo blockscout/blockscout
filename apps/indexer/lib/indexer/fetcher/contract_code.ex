@@ -183,6 +183,9 @@ defmodule Indexer.Fetcher.ContractCode do
             zilliqa_verify_scilla_contracts(entries, addresses)
             :ok
 
+          {:ok, %{}} ->
+            {:retry, entries}
+
           {:error, step, reason, _changes_so_far} ->
             Logger.error(
               fn ->
