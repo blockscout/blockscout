@@ -379,6 +379,22 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     interop_import_internal(relay_chain_id, data_to_verify, signature, params, &InteropMessage.get_init_part/2, conn)
   end
 
+  # Implements import logic for the interop message's data sent to `/api/v2/optimism/interop/import` endpoint.
+  # Used by the public `interop_import` function. It requests a public key from the remote Blockscout instance,
+  # then after verifying the data with this key, imports the data to database and renders missed part of the message
+  # for the remote side (the request was sent from). In case of any error, responds with the corresponding HTTP code
+  # and renders the corresponding error message.
+  #
+  # ## Parameters
+  # - `remote_chain_id`: Chain ID of the remote instance which public key should be retrieved for data verifying.
+  # - `data_to_verify`: Signed binary data which needs to be verified with the public key.
+  # - `signature`: A string in hex representation (without 0x prefix) containing the signature.
+  # - `params`: JSON parameters got from the corresponding POST request sent by the remote instance.
+  # - `missed_part_fn`: Reference to the function that should return missed part of the message data (from db) for the remote side.
+  # - `conn`: The connection struct.
+  #
+  # ## Returns
+  # - The connection struct with the rendered response.
   @spec interop_import_internal(non_neg_integer(), String.t(), String.t(), map(), function(), Plug.Conn.t()) ::
           Plug.Conn.t()
   defp interop_import_internal(remote_chain_id, data_to_verify, signature, params, missed_part_fn, conn) do
@@ -411,6 +427,13 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     end
   end
 
+  # Prepares interop message's data to be imported to database. Converts POST request parameters to the map acceptable by `Chain.import`.
+  #
+  # ## Parameters
+  # - `params`: JSON parameters got from the corresponding POST request sent by the remote instance.
+  #
+  # ## Returns
+  # - Resulting map with the `op_interop_messages` table's fields.
   @spec interop_prepare_import(map()) :: map()
   defp interop_prepare_import(%{"init_transaction_hash" => init_transaction_hash} = params) do
     %{
@@ -435,6 +458,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     }
   end
 
+  # Renders HTTP error code and message.
+  #
+  # ## Parameters
+  # - `conn`: The connection struct.
+  # - `error_code`: The error code (e.g. 500 or :unauthorized).
+  # - `error_message`: The error description.
+  #
+  # ## Returns
+  # - The connection struct with the rendered response.
   @spec interop_render_http_error(Plug.Conn.t(), atom() | non_neg_integer(), String.t()) :: Plug.Conn.t()
   defp interop_render_http_error(conn, error_code, error_message) do
     Logger.error("Interop: #{error_message}")
@@ -445,29 +477,54 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     |> render(:message, %{message: error_message})
   end
 
+  # Fetches instance URL by chain ID using a request to Chainscout API which URL is defined in INDEXER_OPTIMISM_CHAINSCOUT_API_URL env variable.
+  # The successful response is cached in memory until the current instance is down.
+  #
+  # Firstly, it tries to read the instance URL from INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP env variable. If that's not defined, it tries to get
+  # the url from cache. If that's not found in cache, the HTTP request to Chainscout API is performed.
+  #
+  # ## Parameters
+  # - `chain_id`: The chain ID for which the instance URL needs to be retrieved.
+  #
+  # ## Returns
+  # - Instance URL if found (without trailing `/`).
+  # - `nil` if not found.
   @spec interop_chain_id_to_instance_url(non_neg_integer()) :: String.t() | nil
   defp interop_chain_id_to_instance_url(chain_id) do
-    instance_url = ConCache.get(@interop_chain_id_to_instance_url_cache, chain_id)
+    env = Application.get_all_env(:indexer)[InteropMessageQueue]
+    url_from_map = Map.get(env[:chainscout_fallback_map], chain_id)
 
-    if is_nil(instance_url) do
-      env = Application.get_all_env(:indexer)[InteropMessageQueue]
+    with {:not_in_map, true} <- {:not_in_map, is_nil(url_from_map)},
+         url_from_cache = ConCache.get(@interop_chain_id_to_instance_url_cache, chain_id),
+         {:not_in_cache, true, _} <- {:not_in_cache, is_nil(url_from_cache), url_from_cache} do
+      case Optimism.get_instance_url_by_chain_id(chain_id, env[:chainscout_api_url]) do
+        nil ->
+          nil
 
-      url =
-        case Map.get(env[:chainscout_fallback_map], chain_id) do
-          nil -> Optimism.get_instance_url_by_chain_id(chain_id, env[:chainscout_api_url])
-          url -> String.trim_trailing(url, "/")
-        end
-
-      if not is_nil(url) do
-        ConCache.put(@interop_chain_id_to_instance_url_cache, chain_id, url)
+        url ->
+          ConCache.put(@interop_chain_id_to_instance_url_cache, chain_id, url)
+          url
       end
-
-      url
     else
-      instance_url
+      {:not_in_map, false} ->
+        String.trim_trailing(url_from_map, "/")
+
+      {:not_in_cache, false, url_from_cache} ->
+        url_from_cache
     end
   end
 
+  # Fetches interop public key from the given instance using `/api/v2/optimism/interop/public-key` HTTP request to that instance.
+  # The successful response is cached in memory until the current instance is down.
+  #
+  # Firstly, it tries to read the public key from cache. If that's not found in cache, the HTTP request is performed.
+  #
+  # ## Parameters
+  # - `instance_url`: The instance URL previously got by the `interop_chain_id_to_instance_url` function.
+  #
+  # ## Returns
+  # - Public key as binary byte sequence in case of success.
+  # - `nil` in case of fail.
   @spec interop_fetch_public_key(String.t()) :: binary() | nil
   defp interop_fetch_public_key(instance_url) do
     public_key = ConCache.get(@interop_instance_url_to_public_key_cache, instance_url)
