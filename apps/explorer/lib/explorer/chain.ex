@@ -491,6 +491,18 @@ defmodule Explorer.Chain do
     Map.merge(initial_gas_payments, existing_data)
   end
 
+  @doc """
+    Fetches timestamps by the given block numbers from the `blocks` database table and returns
+    a `block_number -> timestamp` map. The number of keys in resulting map can be less than the
+    number of the given block numbers.
+
+    ## Parameters
+    - `block_numbers`: The list of block numbers.
+
+    ## Returns
+    - The resulting `block_number -> timestamp` map. Can be empty map (%{}).
+  """
+  @spec timestamp_by_block_number([non_neg_integer()]) :: map()
   def timestamp_by_block_number(block_numbers) when is_list(block_numbers) do
     query =
       from(

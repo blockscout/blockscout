@@ -41,9 +41,8 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
 
   @impl GenServer
   def init(args) do
-    :ignore
-    # json_rpc_named_arguments = args[:json_rpc_named_arguments]
-    # {:ok, %{}, {:continue, json_rpc_named_arguments}}
+    json_rpc_named_arguments = args[:json_rpc_named_arguments]
+    {:ok, %{}, {:continue, json_rpc_named_arguments}}
   end
 
   @impl GenServer
