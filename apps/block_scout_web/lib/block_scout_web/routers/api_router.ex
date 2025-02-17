@@ -301,6 +301,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/games", V2.OptimismController, :games)
         get("/games/count", V2.OptimismController, :games_count)
         get("/interop/public-key", V2.OptimismController, :interop_public_key)
+        post("/interop/import", V2.OptimismController, :interop_import)
       end
     end
 

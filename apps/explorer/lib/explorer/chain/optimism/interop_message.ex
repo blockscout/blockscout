@@ -136,4 +136,55 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
       )
     )
   end
+
+  @doc """
+    Returns relay transaction hash and failure status from the `op_interop_messages` table for the given
+    `init_chain_id` and `nonce`.
+
+    ## Parameters
+    - `init_chain_id`: The init chain ID of the message.
+    - `nonce`: The nonce of the message.
+
+    ## Returns
+    - `{relay_transaction_hash, failed}` tuple in case of success.
+    - `{nil, nil}` tuple if the message with the given `init_chain_id` and `nonce` is not found.
+  """
+  @spec get_relay_part(non_neg_integer(), non_neg_integer()) :: {Hash.t() | nil, boolean() | nil}
+  def get_relay_part(init_chain_id, nonce) do
+    query =
+      from(m in __MODULE__,
+        select: {m.relay_transaction_hash, m.failed},
+        where: m.init_chain_id == ^init_chain_id and m.nonce == ^nonce
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||({nil, nil})
+  end
+
+  @doc """
+    Returns sender and target address, init transaction hash, timestamp, and payload from the `op_interop_messages` table
+    for the given `init_chain_id` and `nonce`.
+
+    ## Parameters
+    - `init_chain_id`: The init chain ID of the message.
+    - `nonce`: The nonce of the message.
+
+    ## Returns
+    - `{sender, target, init_transaction_hash, timestamp, payload}` tuple in case of success.
+    - `{nil, nil, nil, nil, nil}` tuple if the message with the given `init_chain_id` and `nonce` is not found.
+  """
+  @spec get_init_part(non_neg_integer(), non_neg_integer()) ::
+          {Hash.t() | nil, Hash.t() | nil, Hash.t() | nil, DateTime.t() | nil, binary() | nil}
+  def get_init_part(init_chain_id, nonce) do
+    query =
+      from(m in __MODULE__,
+        select: {m.sender, m.target, m.init_transaction_hash, m.timestamp, m.payload},
+        where: m.init_chain_id == ^init_chain_id and m.nonce == ^nonce
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||({nil, nil, nil, nil, nil})
+  end
 end

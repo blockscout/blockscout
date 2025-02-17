@@ -246,6 +246,29 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     public_key
   end
 
+  @doc """
+    Function to render `relay` response for the POST request to `/api/v2/optimism/interop/import` endpoint.
+  """
+  def render("optimism_interop_response.json", {relay_transaction_hash, failed}) do
+    %{
+      "relay_transaction_hash" => relay_transaction_hash,
+      "failed" => failed
+    }
+  end
+
+  @doc """
+    Function to render `init` response for the POST request to `/api/v2/optimism/interop/import` endpoint.
+  """
+  def render("optimism_interop_response.json", {sender, target, init_transaction_hash, timestamp, payload}) do
+    %{
+      "sender" => sender,
+      "target" => target,
+      "init_transaction_hash" => init_transaction_hash,
+      "timestamp" => DateTime.to_unix(timestamp),
+      "payload" => "0x" <> Base.encode16(payload, case: :lower)
+    }
+  end
+
   # Transforms an L1 batch into a map format for HTTP response.
   #
   # This function processes an Optimism L1 batch and converts it into a map that

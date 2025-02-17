@@ -27,7 +27,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   alias Indexer.Fetcher.Optimism
 
   @fetcher_name :optimism_interop_messages_queue
-  @api_endpoint_send "/api/v2/optimism/interop/send"
+  @api_endpoint_import "/api/v2/optimism/interop/import"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -152,6 +152,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
               init_chain_id: message.init_chain_id,
               init_transaction_hash: message.init_transaction_hash,
               timestamp: timestamp,
+              relay_chain_id: message.relay_chain_id,
               payload: payload,
               signature: nil
             }
@@ -161,7 +162,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
                 message.target <>
                 Integer.to_string(message.nonce) <>
                 Integer.to_string(message.init_chain_id) <>
-                message.init_transaction_hash <> Integer.to_string(timestamp) <> payload
+                message.init_transaction_hash <>
+                Integer.to_string(timestamp) <> Integer.to_string(message.relay_chain_id) <> payload
 
             {message.relay_chain_id, data, data_to_sign}
           else
@@ -187,12 +189,12 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
 
         instance_url =
           case Map.get(chainscout_map_acc, instance_chain_id) do
-            nil -> get_instance_url_by_chain_id(instance_chain_id, chainscout_api_url)
+            nil -> Optimism.get_instance_url_by_chain_id(instance_chain_id, chainscout_api_url)
             url -> String.trim_trailing(url, "/")
           end
 
         with false <- is_nil(instance_url),
-             endpoint_url = instance_url <> @api_endpoint_send,
+             endpoint_url = instance_url <> @api_endpoint_import,
              response = post_json_request(endpoint_url, post_data_signed),
              false <- is_nil(response) do
           {:ok, _} =
@@ -299,50 +301,6 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
 
       other ->
         Logger.error("Cannot post HTTP request to #{url}. Reason: #{inspect(other)}. Body: #{inspect(body)}")
-        nil
-    end
-  end
-
-  # Sends HTTP request to Chainscout API to get instance URL by its chain ID.
-  #
-  # ## Parameters
-  # - `chain_id`: The chain ID for which the instance URL should be retrieved. Can be defined as String or Integer.
-  # - `chainscout_api_url`: URL defined in INDEXER_OPTIMISM_CHAINSCOUT_API_URL env variable. If `nil`, the function returns `nil`.
-  #
-  # ## Returns
-  # - Instance URL in case of success.
-  # - `nil` in case of failure.
-  @spec get_instance_url_by_chain_id(String.t() | non_neg_integer(), String.t() | nil) :: String.t() | nil
-  defp get_instance_url_by_chain_id(chain_id, nil) do
-    Logger.error(
-      "Unknown instance URL for chain ID #{chain_id}. Please, define that in INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP or define INDEXER_OPTIMISM_CHAINSCOUT_API_URL."
-    )
-
-    nil
-  end
-
-  defp get_instance_url_by_chain_id(chain_id, chainscout_api_url) do
-    url =
-      if is_integer(chain_id) do
-        chainscout_api_url <> Integer.to_string(chain_id)
-      else
-        chainscout_api_url <> chain_id
-      end
-
-    with {:ok, %HTTPoison.Response{body: body, status_code: 200}} <- HTTPoison.get(url),
-         {:ok, response} <- Jason.decode(body),
-         explorer = response |> Map.get("explorers", []) |> Enum.at(0),
-         false <- is_nil(explorer),
-         explorer_url = Map.get(explorer, "url"),
-         false <- is_nil(explorer_url) do
-      String.trim_trailing(explorer_url, "/")
-    else
-      true ->
-        Logger.error("Cannot get explorer URL from #{url}")
-        nil
-
-      other ->
-        Logger.error("Cannot get HTTP response from #{url}. Reason: #{inspect(other)}")
         nil
     end
   end

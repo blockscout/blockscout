@@ -461,4 +461,50 @@ defmodule Indexer.Fetcher.Optimism do
         get_last_item(layer, last_block_number_query_fun, remove_query_fun, json_rpc_named_arguments)
     end
   end
+
+  @doc """
+    Sends HTTP request to Chainscout API to get instance URL by its chain ID.
+
+    ## Parameters
+    - `chain_id`: The chain ID for which the instance URL should be retrieved. Can be defined as String or Integer.
+    - `chainscout_api_url`: URL defined in INDEXER_OPTIMISM_CHAINSCOUT_API_URL env variable. If `nil`, the function returns `nil`.
+
+    ## Returns
+    - Instance URL in case of success.
+    - `nil` in case of failure.
+  """
+  @spec get_instance_url_by_chain_id(String.t() | non_neg_integer(), String.t() | nil) :: String.t() | nil
+  def get_instance_url_by_chain_id(chain_id, nil) do
+    Logger.error(
+      "Unknown instance URL for chain ID #{chain_id}. Please, define that in INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP or define INDEXER_OPTIMISM_CHAINSCOUT_API_URL."
+    )
+
+    nil
+  end
+
+  def get_instance_url_by_chain_id(chain_id, chainscout_api_url) do
+    url =
+      if is_integer(chain_id) do
+        chainscout_api_url <> Integer.to_string(chain_id)
+      else
+        chainscout_api_url <> chain_id
+      end
+
+    with {:ok, %HTTPoison.Response{body: body, status_code: 200}} <- HTTPoison.get(url),
+         {:ok, response} <- Jason.decode(body),
+         explorer = response |> Map.get("explorers", []) |> Enum.at(0),
+         false <- is_nil(explorer),
+         explorer_url = Map.get(explorer, "url"),
+         false <- is_nil(explorer_url) do
+      String.trim_trailing(explorer_url, "/")
+    else
+      true ->
+        Logger.error("Cannot get explorer URL from #{url}")
+        nil
+
+      other ->
+        Logger.error("Cannot get HTTP response from #{url}. Reason: #{inspect(other)}")
+        nil
+    end
+  end
 end
