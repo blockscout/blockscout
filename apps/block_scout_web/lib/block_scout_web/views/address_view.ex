@@ -178,6 +178,8 @@ defmodule BlockScoutWeb.AddressView do
   @doc """
   Returns the primary name of an address if available. If there is no names on address function performs preload of names association.
   """
+  def primary_name(nil), do: nil
+
   def primary_name(%Address{names: [_ | _]} = address) do
     APIV2Helper.address_name(address)
   end

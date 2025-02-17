@@ -28,6 +28,7 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Explorer.Chain.Cache.PendingBlockOperation, as: PendingBlockOperationCache
@@ -145,82 +146,6 @@ defmodule Explorer.ChainTest do
       insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
 
       assert {:stale, _, _} = Chain.last_cache_block_status()
-    end
-  end
-
-  describe "nft_instance_from_token_id_and_token_address/2" do
-    test "return NFT instance" do
-      token = insert(:token)
-
-      token_id = 10
-
-      insert(:token_instance,
-        token_contract_address_hash: token.contract_address_hash,
-        token_id: token_id
-      )
-
-      assert {:ok, result} =
-               Chain.nft_instance_from_token_id_and_token_address(
-                 token_id,
-                 token.contract_address_hash
-               )
-
-      assert result.token_id == Decimal.new(token_id)
-    end
-  end
-
-  describe "batch_upsert_token_instances/1" do
-    test "insert a new token instance with valid params" do
-      token = insert(:token)
-
-      params = %{
-        token_id: 1,
-        token_contract_address_hash: token.contract_address_hash,
-        metadata: %{uri: "http://example.com"}
-      }
-
-      [result] = Chain.batch_upsert_token_instances([params])
-
-      assert result.token_id == Decimal.new(1)
-      assert result.metadata == %{"uri" => "http://example.com"}
-      assert result.token_contract_address_hash == token.contract_address_hash
-    end
-
-    test "inserts just an error without metadata" do
-      token = insert(:token)
-      error = "no uri"
-
-      params = %{
-        token_id: 1,
-        token_contract_address_hash: token.contract_address_hash,
-        error: error
-      }
-
-      [result] = Chain.batch_upsert_token_instances([params])
-
-      assert result.error == error
-    end
-
-    test "nillifies error" do
-      token = insert(:token)
-
-      insert(:token_instance,
-        token_id: 1,
-        token_contract_address_hash: token.contract_address_hash,
-        error: "no uri",
-        metadata: nil
-      )
-
-      params = %{
-        token_id: 1,
-        token_contract_address_hash: token.contract_address_hash,
-        metadata: %{uri: "http://example1.com"}
-      }
-
-      [result] = Chain.batch_upsert_token_instances([params])
-
-      assert is_nil(result.error)
-      assert result.metadata == %{"uri" => "http://example1.com"}
     end
   end
 
@@ -3674,61 +3599,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_unique_tokens/2" do
-    test "unique tokens can be paginated through token_id" do
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
-
-      insert(
-        :token_instance,
-        token_contract_address_hash: token_contract_address.hash,
-        token_id: 11
-      )
-
-      insert(
-        :token_instance,
-        token_contract_address_hash: token_contract_address.hash,
-        token_id: 29
-      )
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(insert(:block, number: 1))
-
-      first_page =
-        insert(
-          :token_transfer,
-          block_number: 1000,
-          to_address: build(:address),
-          transaction: transaction,
-          token_contract_address: token_contract_address,
-          token: token,
-          token_ids: [29]
-        )
-
-      second_page =
-        insert(
-          :token_transfer,
-          block_number: 999,
-          to_address: build(:address),
-          transaction: transaction,
-          token_contract_address: token_contract_address,
-          token: token,
-          token_ids: [11]
-        )
-
-      paging_options = %PagingOptions{key: {List.first(first_page.token_ids)}, page_size: 1}
-
-      unique_tokens_ids_paginated =
-        token_contract_address.hash
-        |> Chain.address_to_unique_tokens(token, paging_options: paging_options)
-        |> Enum.map(& &1.token_id)
-
-      assert unique_tokens_ids_paginated == [List.first(second_page.token_ids)]
-    end
-  end
-
   describe "address_to_balances_by_day/1" do
     test "return a list of balances by day" do
       address = insert(:address)
@@ -4218,18 +4088,6 @@ defmodule Explorer.ChainTest do
              }
 
       Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, init_config)
-    end
-  end
-
-  describe "timestamp_to_block_number/3" do
-    test "returns correct block number when given timestamp is equal to block timestamp" do
-      timestamp = DateTime.from_unix!(60 * 60 * 24 * 1, :second)
-      block = insert(:block, timestamp: timestamp)
-      expected = {:ok, block.number}
-
-      assert ^expected = Chain.timestamp_to_block_number(timestamp, :after, true)
-
-      assert ^expected = Chain.timestamp_to_block_number(timestamp, :before, true)
     end
   end
 end

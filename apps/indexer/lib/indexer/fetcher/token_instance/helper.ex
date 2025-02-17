@@ -3,6 +3,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     Common functions for Indexer.Fetcher.TokenInstance fetchers
   """
   alias Explorer.Chain
+  alias Explorer.Chain.Token.Instance
   alias Explorer.SmartContract.Reader
   alias Explorer.Token.MetadataRetriever
   alias Indexer.NFTMediaHandler.Queue
@@ -290,7 +291,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
 
   defp upsert_with_rescue(insert_params, retrying? \\ false) do
     insert_params
-    |> Chain.batch_upsert_token_instances()
+    |> Instance.batch_upsert_token_instances()
     |> Enum.map(&Queue.process_new_instance({:ok, &1}))
   rescue
     error in Postgrex.Error ->

@@ -89,12 +89,12 @@ defmodule BlockScoutWeb.NFTHelper do
       image_url_downcase =~ ~r/^ipfs:\/\/ipfs/ ->
         # take resource id after "ipfs://ipfs/" prefix
         resource_id = image_url |> String.slice(12..-1//1)
-        MetadataRetriever.ipfs_link(resource_id)
+        MetadataRetriever.ipfs_link(resource_id, true)
 
       image_url_downcase =~ ~r/^ipfs:\/\// ->
         # take resource id after "ipfs://" prefix
         resource_id = image_url |> String.slice(7..-1//1)
-        MetadataRetriever.ipfs_link(resource_id)
+        MetadataRetriever.ipfs_link(resource_id, true)
 
       image_url_downcase =~ ~r/^ar:\/\// ->
         # take resource id after "ar://" prefix

@@ -286,6 +286,7 @@ precompiled_config_default_path =
 
 config :explorer, Explorer.ChainSpec.GenesisData,
   chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
+  genesis_processing_delay: ConfigHelper.parse_time_env_var("CHAIN_SPEC_PROCESSING_DELAY", "15s"),
   emission_format: System.get_env("EMISSION_FORMAT", "DEFAULT"),
   rewards_contract_address: System.get_env("REWARDS_CONTRACT", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5"),
   precompiled_config_path: System.get_env("PRECOMPILED_CONTRACTS_CONFIG_PATH", precompiled_config_default_path)
@@ -514,10 +515,6 @@ config :explorer, Explorer.ThirdPartyIntegrations.NovesFi,
   chain_name: System.get_env("NOVES_FI_CHAIN_NAME"),
   api_key: System.get_env("NOVES_FI_API_TOKEN")
 
-config :explorer, Explorer.ThirdPartyIntegrations.Zerion,
-  service_url: System.get_env("ZERION_BASE_API_URL", "https://api.zerion.io/v1"),
-  api_key: System.get_env("ZERION_API_TOKEN")
-
 config :explorer, Explorer.ThirdPartyIntegrations.Xname,
   service_url: System.get_env("XNAME_BASE_API_URL", "https://gateway.xname.app"),
   api_key: System.get_env("XNAME_API_TOKEN")
@@ -594,11 +591,6 @@ config :explorer, Explorer.Account,
     ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_NOTIFICATIONS_LIMIT_FOR_30_DAYS", 1000),
   siwe_message: System.get_env("ACCOUNT_SIWE_MESSAGE", "Sign in to Blockscout Account V2")
 
-config :explorer, :token_id_migration,
-  first_block: ConfigHelper.parse_integer_env_var("TOKEN_ID_MIGRATION_FIRST_BLOCK", 0),
-  concurrency: ConfigHelper.parse_integer_env_var("TOKEN_ID_MIGRATION_CONCURRENCY", 1),
-  batch_size: ConfigHelper.parse_integer_env_var("TOKEN_ID_MIGRATION_BATCH_SIZE", 500)
-
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
   batch_size: ConfigHelper.parse_integer_env_var("MIN_MISSING_BLOCK_NUMBER_BATCH_SIZE", 100_000)
 
@@ -618,11 +610,6 @@ config :explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 
-config :explorer, Explorer.TokenInstanceOwnerAddressMigration,
-  concurrency: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_CONCURRENCY", 5),
-  batch_size: ConfigHelper.parse_integer_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_BATCH_SIZE", 50),
-  enabled: ConfigHelper.parse_bool_env_var("TOKEN_INSTANCE_OWNER_MIGRATION_ENABLED")
-
 config :explorer, Explorer.Chain.Transaction,
   rootstock_remasc_address: System.get_env("ROOTSTOCK_REMASC_ADDRESS"),
   rootstock_bridge_address: System.get_env("ROOTSTOCK_BRIDGE_ADDRESS")
@@ -630,28 +617,33 @@ config :explorer, Explorer.Chain.Transaction,
 config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
   ttl: ConfigHelper.parse_time_env_var("ADDRESSES_TABS_COUNTERS_TTL", "10m")
 
+config :explorer, Explorer.TokenInstanceOwnerAddressMigration,
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_OWNER_CONCURRENCY", 5),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_OWNER_BATCH_SIZE", 50),
+  enabled: ConfigHelper.parse_bool_env_var("MIGRATION_TOKEN_INSTANCE_OWNER_ENABLED")
+
 config :explorer, Explorer.Migrator.TransactionsDenormalization,
-  batch_size: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_BATCH_SIZE", 500),
-  concurrency: ConfigHelper.parse_integer_env_var("DENORMALIZATION_MIGRATION_CONCURRENCY", 10)
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTIONS_TABLE_DENORMALIZATION_BATCH_SIZE", 500),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTIONS_TABLE_DENORMALIZATION_CONCURRENCY", 10)
 
 config :explorer, Explorer.Migrator.TokenTransferTokenType,
-  batch_size: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_TOKEN_TYPE_MIGRATION_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_TOKEN_TYPE_MIGRATION_CONCURRENCY", 1)
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_TRANSFER_TOKEN_TYPE_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_TRANSFER_TOKEN_TYPE_CONCURRENCY", 1)
 
 config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
-  batch_size: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_NFT_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_NFT_CONCURRENCY", 1),
-  timeout: ConfigHelper.parse_time_env_var("SANITIZE_INCORRECT_NFT_TIMEOUT", "0s")
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_NFT_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_NFT_CONCURRENCY", 1),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_INCORRECT_NFT_TIMEOUT", "0s")
 
 config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
-  batch_size: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_WETH_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_WETH_CONCURRENCY", 1),
-  timeout: ConfigHelper.parse_time_env_var("SANITIZE_INCORRECT_WETH_TIMEOUT", "0s")
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_CONCURRENCY", 1),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_TIMEOUT", "0s")
 
 config :explorer, Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus,
-  batch_size: ConfigHelper.parse_integer_env_var("REINDEX_INTERNAL_TRANSACTIONS_STATUS_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("REINDEX_INTERNAL_TRANSACTIONS_STATUS_CONCURRENCY", 1),
-  timeout: ConfigHelper.parse_time_env_var("REINDEX_INTERNAL_TRANSACTIONS_STATUS_TIMEOUT", "0s")
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_REINDEX_INTERNAL_TRANSACTIONS_STATUS_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_REINDEX_INTERNAL_TRANSACTIONS_STATUS_CONCURRENCY", 1),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_REINDEX_INTERNAL_TRANSACTIONS_STATUS_TIMEOUT", "0s")
 
 config :explorer, Explorer.Migrator.RestoreOmittedWETHTransfers,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_RESTORE_OMITTED_WETH_TOKEN_TRANSFERS_CONCURRENCY", 5),
@@ -666,11 +658,6 @@ config :explorer, Explorer.Migrator.RefetchContractCodes,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_REFETCH_CONTRACT_CODES_CONCURRENCY", 5),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_REFETCH_CONTRACT_CODES_BATCH_SIZE", 100)
 
-config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
-  enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
-  batch_size: ConfigHelper.parse_integer_env_var("SHRINK_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("SHRINK_INTERNAL_TRANSACTIONS_CONCURRENCY", 10)
-
 config :explorer, Explorer.Migrator.BackfillMultichainSearchDB,
   concurrency: 1,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_BATCH_SIZE", 10)
@@ -678,16 +665,26 @@ config :explorer, Explorer.Migrator.BackfillMultichainSearchDB,
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation,
   check_interval: ConfigHelper.parse_time_env_var("MIGRATION_HEAVY_INDEX_OPERATIONS_CHECK_INTERVAL", "10m")
 
-config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
-  enabled: ConfigHelper.chain_type() == :arbitrum,
-  batch_size: ConfigHelper.parse_integer_env_var("ARBITRUM_DA_RECORDS_NORMALIZATION_MIGRATION_BATCH_SIZE", 500),
-  concurrency: ConfigHelper.parse_integer_env_var("ARBITRUM_DA_RECORDS_NORMALIZATION_MIGRATION_CONCURRENCY", 1)
-
 config :explorer, Explorer.Migrator.SanitizeVerifiedAddresses,
   enabled: !ConfigHelper.parse_bool_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_DISABLED"),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_BATCH_SIZE", 500),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_CONCURRENCY", 1),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_TIMEOUT", "0s")
+
+config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
+  enabled: ConfigHelper.chain_type() == :arbitrum,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_ARBITRUM_DA_RECORDS_NORMALIZATION_BATCH_SIZE", 500),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_ARBITRUM_DA_RECORDS_NORMALIZATION_CONCURRENCY", 1)
+
+config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
+  enabled: ConfigHelper.chain_type() == :filecoin,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_CONCURRENCY", 1)
+
+config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
+  enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_CONCURRENCY", 10)
 
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
@@ -709,11 +706,6 @@ config :explorer, Explorer.Chain.Metrics,
 
 config :explorer, Explorer.Chain.Filecoin.NativeAddress,
   network_prefix: ConfigHelper.parse_catalog_value("FILECOIN_NETWORK_PREFIX", ["f", "t"], true, "f")
-
-config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
-  enabled: ConfigHelper.chain_type() == :filecoin,
-  batch_size: ConfigHelper.parse_integer_env_var("FILECOIN_PENDING_ADDRESS_OPERATIONS_MIGRATION_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("FILECOIN_PENDING_ADDRESS_OPERATIONS_MIGRATION_CONCURRENCY", 1)
 
 config :explorer, Explorer.Chain.Blackfort.Validator, api_url: System.get_env("BLACKFORT_VALIDATOR_API_URL")
 
@@ -857,8 +849,8 @@ config :indexer, Indexer.Fetcher.TokenInstance.Retry.Supervisor,
 config :indexer, Indexer.Fetcher.TokenInstance.Sanitize.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_SANITIZE_FETCHER")
 
-config :indexer, Indexer.Fetcher.TokenInstance.LegacySanitize,
-  enabled: !ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_LEGACY_SANITIZE_FETCHER", "true")
+config :indexer, Indexer.Fetcher.TokenInstance.Refetch.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_REFETCH_FETCHER")
 
 config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC1155,
   enabled: !ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_ERC_1155_SANITIZE_FETCHER", "false")
@@ -905,19 +897,19 @@ config :indexer, Indexer.Fetcher.TokenInstance.Sanitize,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_CONCURRENCY", 10),
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_BATCH_SIZE", 10)
 
-config :indexer, Indexer.Fetcher.TokenInstance.LegacySanitize,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_LEGACY_SANITIZE_CONCURRENCY", 2),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_LEGACY_SANITIZE_BATCH_SIZE", 10)
+config :indexer, Indexer.Fetcher.TokenInstance.Refetch,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_REFETCH_CONCURRENCY", 10),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_REFETCH_BATCH_SIZE", 10)
 
 config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC1155,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_1155_SANITIZE_CONCURRENCY", 2),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_1155_SANITIZE_BATCH_SIZE", 10)
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_ERC_1155_SANITIZE_CONCURRENCY", 1),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_ERC_1155_SANITIZE_BATCH_SIZE", 500)
 
 config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC721,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_721_SANITIZE_CONCURRENCY", 2),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_721_SANITIZE_BATCH_SIZE", 10),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_ERC_721_SANITIZE_CONCURRENCY", 2),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_ERC_721_SANITIZE_BATCH_SIZE", 50),
   tokens_queue_size:
-    ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_721_SANITIZE_TOKENS_BATCH_SIZE", 100)
+    ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_ERC_721_SANITIZE_TOKENS_BATCH_SIZE", 100)
 
 config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", 10),

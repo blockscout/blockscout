@@ -31,6 +31,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
+  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
   alias Explorer.Chain.RollupReorgMonitorQueue
@@ -497,7 +498,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
     Logger.info("Trying to detect Holocene block number by its timestamp using indexed L2 blocks...")
 
-    case Chain.timestamp_to_block_number(timestamp_dt, :after, false) do
+    case BlockGeneralReader.timestamp_to_block_number(timestamp_dt, :after, false) do
       {:ok, block_number} ->
         Logger.info("Holocene block number is detected using indexed L2 blocks. The block number is #{block_number}")
         block_number
