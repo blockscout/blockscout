@@ -71,6 +71,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Runtime variable to manage chain spec processing delay ([#11874](https://github.com/blockscout/blockscout/pull/11874))
 - Replace composite id types usage ([#11861](https://github.com/blockscout/blockscout/pull/11861))
 - Correct the docker compose command for running an external frontend in README.md ([#11838](https://github.com/blockscout/blockscout/pull/11838))
 - Update link to the list of chains in README.md ([#11829](https://github.com/blockscout/blockscout/pull/11829))
