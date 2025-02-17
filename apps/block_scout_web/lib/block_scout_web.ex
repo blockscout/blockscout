@@ -34,6 +34,9 @@ defmodule BlockScoutWeb do
         only: [proxy_implementations_association: 0, proxy_implementations_smart_contracts_association: 0]
 
       alias BlockScoutWeb.Routers.AdminRouter.Helpers, as: AdminRoutes
+
+      alias BlockScoutWeb.Schemas.API.V2, as: Schemas
+      alias OpenApiSpex.{Schema, Reference}
     end
   end
 

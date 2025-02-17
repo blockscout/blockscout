@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
   use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
@@ -130,12 +131,31 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags ["addresses"]
+
+  operation :address,
+    summary: "Get address details",
+    description: "Returns detailed information about address",
+    parameters: [
+      address_hash_param: [
+        in: :path,
+        type: Schemas.General.AddressHash,
+        required: true
+      ]
+    ],
+    responses: [
+      ok: {"Address response", "application/json", Schemas.Address.Response},
+      unprocessable_entity: OpenApiSpex.JsonErrorResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/addresses/:address_hash_param` endpoint.
   Returns 200 on any valid address_hash, even if the address is not found in the database.
   """
   @spec address(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def address(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def address(conn, %{address_hash_param: address_hash_string} = params) do
     ip = AccessHelper.conn_to_ip_string(conn)
 
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
