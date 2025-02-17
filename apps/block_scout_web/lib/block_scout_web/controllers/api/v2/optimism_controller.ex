@@ -35,6 +35,9 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  @interop_chain_id_to_instance_url_cache :interop_chain_id_to_instance_url_cache
+  @interop_instance_url_to_public_key_cache :interop_instance_url_to_public_key_cache
+
   @doc """
     Function to handle GET requests to `/api/v2/optimism/txn-batches` and
     `/api/v2/optimism/txn-batches/:l2_block_range_start/:l2_block_range_end` endpoints.
@@ -408,6 +411,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     end
   end
 
+  @spec interop_prepare_import(map()) :: map()
   defp interop_prepare_import(%{"init_transaction_hash" => init_transaction_hash} = params) do
     %{
       sender: params["sender"],
@@ -431,6 +435,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     }
   end
 
+  @spec interop_render_http_error(Plug.Conn.t(), atom() | non_neg_integer(), String.t()) :: Plug.Conn.t()
   defp interop_render_http_error(conn, error_code, error_message) do
     Logger.error("Interop: #{error_message}")
 
@@ -440,26 +445,48 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     |> render(:message, %{message: error_message})
   end
 
+  @spec interop_chain_id_to_instance_url(non_neg_integer()) :: String.t() | nil
   defp interop_chain_id_to_instance_url(chain_id) do
-    env = Application.get_all_env(:indexer)[InteropMessageQueue]
+    instance_url = ConCache.get(@interop_chain_id_to_instance_url_cache, chain_id)
 
-    case Map.get(env[:chainscout_fallback_map], chain_id) do
-      nil -> Optimism.get_instance_url_by_chain_id(chain_id, env[:chainscout_api_url])
-      url -> String.trim_trailing(url, "/")
+    if is_nil(instance_url) do
+      env = Application.get_all_env(:indexer)[InteropMessageQueue]
+
+      url =
+        case Map.get(env[:chainscout_fallback_map], chain_id) do
+          nil -> Optimism.get_instance_url_by_chain_id(chain_id, env[:chainscout_api_url])
+          url -> String.trim_trailing(url, "/")
+        end
+
+      if not is_nil(url) do
+        ConCache.put(@interop_chain_id_to_instance_url_cache, chain_id, url)
+      end
+
+      url
+    else
+      instance_url
     end
   end
 
+  @spec interop_fetch_public_key(String.t()) :: binary() | nil
   defp interop_fetch_public_key(instance_url) do
-    url = instance_url <> "/api/v2/optimism/interop/public-key"
+    public_key = ConCache.get(@interop_instance_url_to_public_key_cache, instance_url)
 
-    with {:ok, %HTTPoison.Response{body: "0x" <> key, status_code: 200}} <- HTTPoison.get(url),
-         {:ok, key_binary} <- Base.decode16(key, case: :mixed),
-         true <- byte_size(key_binary) > 0 do
-      key_binary
+    if is_nil(public_key) do
+      url = instance_url <> "/api/v2/optimism/interop/public-key"
+
+      with {:ok, %HTTPoison.Response{body: "0x" <> key, status_code: 200}} <- HTTPoison.get(url),
+           {:ok, key_binary} <- Base.decode16(key, case: :mixed),
+           true <- byte_size(key_binary) > 0 do
+        ConCache.put(@interop_instance_url_to_public_key_cache, instance_url, key_binary)
+        key_binary
+      else
+        _ ->
+          Logger.error("Interop: unable to get public key from #{url}")
+          nil
+      end
     else
-      _ ->
-        Logger.error("Interop: unable to get public key from #{url}")
-        nil
+      public_key
     end
   end
 
