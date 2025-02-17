@@ -3,9 +3,9 @@
   <div class="verify-other-explorers">
     <h2>Verify with other Explorers:</h2>
     <div class="verify-other-explorers-row">
-      <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Etherscan.io", class: "etherscan", address_link: "https://etherscan.io/address/", tx_link: "https://etherscan.io/tx/" %>
-      <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Blockchair.com", class: "blockchair", address_link: "https://blockchair.com/ethereum/address/", tx_link: "https://blockchair.com/ethereum/transaction/" %>
-      <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Etherchain.org", class: "etherchain", address_link: "https://www.etherchain.org/account/", tx_link: "https://www.etherchain.org/tx/" %>
+      <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Etherscan.io", class: "etherscan", address_link: "https://etherscan.io/address/", transaction_link: "https://etherscan.io/tx/" %>
+      <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Blockchair.com", class: "blockchair", address_link: "https://blockchair.com/ethereum/address/", transaction_link: "https://blockchair.com/ethereum/transaction/" %>
+      <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Etherchain.org", class: "etherchain", address_link: "https://www.etherchain.org/account/", transaction_link: "https://www.etherchain.org/tx/" %>
       <a href="#" class="verify-other-explorers-more" data-toggle="modal" data-target="#explorersModal">
         <span data-toggle="tooltip" data-placement="top" data-original-title="Explorers"></span>
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="4">
@@ -26,9 +26,9 @@
         </div>
         <div class="modal-body">
           <div class="verify-other-explorers-table">
-            <%= render "_verify_other_explorer_modal.html", hash: @hash, type: @type, header: "Etherscan.io", class: "etherscan", address_link: "https://etherscan.io/address/", tx_link: "https://etherscan.io/tx/" %>
-            <%= render "_verify_other_explorer_modal.html", hash: @hash, type: @type, header: "Blockchair.com", class: "blockchair", address_link: "https://blockchair.com/ethereum/address/", tx_link: "https://blockchair.com/ethereum/transaction/" %>
-            <%= render "_verify_other_explorer_modal.html", hash: @hash, type: @type, header: "Etherchain.org", class: "etherchain", address_link: "https://www.etherchain.org/account/", tx_link: "https://www.etherchain.org/tx/" %>
+            <%= render "_verify_other_explorer_modal.html", hash: @hash, type: @type, header: "Etherscan.io", class: "etherscan", address_link: "https://etherscan.io/address/", transaction_link: "https://etherscan.io/tx/" %>
+            <%= render "_verify_other_explorer_modal.html", hash: @hash, type: @type, header: "Blockchair.com", class: "blockchair", address_link: "https://blockchair.com/ethereum/address/", transaction_link: "https://blockchair.com/ethereum/transaction/" %>
+            <%= render "_verify_other_explorer_modal.html", hash: @hash, type: @type, header: "Etherchain.org", class: "etherchain", address_link: "https://www.etherchain.org/account/", transaction_link: "https://www.etherchain.org/tx/" %>
           </div>
         </div>
       </div>

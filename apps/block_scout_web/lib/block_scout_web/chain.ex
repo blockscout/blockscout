@@ -2,10 +2,10 @@ defmodule BlockScoutWeb.Chain do
   @moduledoc """
   Converts the `param` to the corresponding resource that uses that format of param.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Explorer.Chain,
     only: [
-      find_or_insert_address_from_hash: 1,
       hash_to_block: 1,
       hash_to_transaction: 1,
       number_to_block: 1,
@@ -14,14 +14,18 @@ defmodule BlockScoutWeb.Chain do
       string_to_transaction_hash: 1
     ]
 
-  import Explorer.Helper, only: [parse_integer: 1]
+  import Explorer.PagingOptions,
+    only: [
+      default_paging_options: 0,
+      page_size: 0
+    ]
+
+  import Explorer.Helper, only: [parse_boolean: 1, parse_integer: 1]
 
   alias BlockScoutWeb.PagingHelper
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.UserOperation
   alias Explorer.Account.{TagAddress, TagTransaction, WatchlistAddress}
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
-  alias Explorer.Chain.Block.Reward
 
   alias Explorer.Chain.{
     Address,
@@ -29,6 +33,7 @@ defmodule BlockScoutWeb.Chain do
     Address.CurrentTokenBalance,
     Beacon.Blob,
     Block,
+    Block.Reward,
     Hash,
     InternalTransaction,
     Log,
@@ -46,8 +51,7 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
-
-  alias Explorer.Chain.PolygonZkevm.TransactionBatch
+  alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.PagingOptions
 
   defimpl Poison.Encoder, for: Decimal do
@@ -59,14 +63,10 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @page_size 50
-  @default_paging_options %PagingOptions{page_size: @page_size + 1}
+  @page_size page_size()
+  @default_paging_options default_paging_options()
   @address_hash_len 40
   @full_hash_len 64
-
-  def default_paging_options do
-    @default_paging_options
-  end
 
   def current_filter(%{paging_options: paging_options} = params) do
     params
@@ -104,10 +104,37 @@ defmodule BlockScoutWeb.Chain do
   def from_param(param) when byte_size(param) == @full_hash_len,
     do: block_or_transaction_or_operation_or_blob_from_param("0x" <> param)
 
-  def from_param(string) when is_binary(string) do
-    case param_to_block_number(string) do
-      {:ok, number} -> number_to_block(number)
-      _ -> search_ens_domain(string)
+  if @chain_type == :filecoin do
+    def from_param(string) when is_binary(string) do
+      case param_to_block_number(string) do
+        {:ok, number} ->
+          number_to_block(number)
+
+        _ ->
+          case Search.maybe_parse_filecoin_address(string) do
+            {:ok, filecoin_address} ->
+              result =
+                filecoin_address
+                |> Search.address_by_filecoin_id_or_robust()
+                # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+                |> Explorer.Chain.select_repo(api?: true).one()
+
+              (result && {:ok, result}) || {:error, :not_found}
+
+            _ ->
+              search_ens_domain(string)
+          end
+      end
+    end
+  else
+    def from_param(string) when is_binary(string) do
+      case param_to_block_number(string) do
+        {:ok, number} ->
+          number_to_block(number)
+
+        _ ->
+          search_ens_domain(string)
+      end
     end
   end
 
@@ -176,28 +203,6 @@ defmodule BlockScoutWeb.Chain do
     else
       _ -> [paging_options: @default_paging_options]
     end
-  end
-
-  def paging_options(%{
-        "address_hash" => address_hash_string,
-        "tx_hash" => tx_hash_string,
-        "block_hash" => block_hash_string,
-        "holder_count" => holder_count_string,
-        "name" => name_string,
-        "inserted_at" => inserted_at_string,
-        "item_type" => item_type_string
-      })
-      when is_binary(address_hash_string) and is_binary(tx_hash_string) and is_binary(block_hash_string) and
-             is_binary(holder_count_string) and is_binary(name_string) and is_binary(inserted_at_string) and
-             is_binary(item_type_string) do
-    [
-      paging_options: %{
-        @default_paging_options
-        | key:
-            {address_hash_string, tx_hash_string, block_hash_string, holder_count_string, name_string,
-             inserted_at_string, item_type_string}
-      }
-    ]
   end
 
   def paging_options(
@@ -375,7 +380,7 @@ defmodule BlockScoutWeb.Chain do
       when is_binary(inserted_at_string) and is_binary(hash_string) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_transaction_hash(hash_string) do
-      [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_tx: true}]
+      [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
     else
       _ ->
         [paging_options: @default_paging_options]
@@ -404,8 +409,19 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def paging_options(%{"value" => value_string, "id" => id_string})
+      when is_binary(value_string) and is_binary(id_string) do
+    with {id, ""} <- Integer.parse(id_string),
+         {value, ""} <- Decimal.parse(value_string) do
+      [paging_options: %{@default_paging_options | key: {nil, value, id}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
   def paging_options(%{"smart_contract_id" => id_str} = params) do
-    transactions_count = parse_integer(params["tx_count"])
+    transactions_count = parse_integer(params["transaction_count"])
     coin_balance = parse_integer(params["coin_balance"])
     id = parse_integer(id_str)
 
@@ -424,10 +440,10 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def paging_options(%{"l1_block_number" => block_number, "tx_hash" => tx_hash}) do
+  def paging_options(%{"l1_block_number" => block_number, "transaction_hash" => transaction_hash}) do
     with {block_number, ""} <- Integer.parse(block_number),
-         {:ok, tx_hash} <- string_to_transaction_hash(tx_hash) do
-      [paging_options: %{@default_paging_options | key: {block_number, tx_hash}}]
+         {:ok, transaction_hash} <- string_to_transaction_hash(transaction_hash) do
+      [paging_options: %{@default_paging_options | key: {block_number, transaction_hash}}]
     else
       _ ->
         [paging_options: @default_paging_options]
@@ -440,6 +456,7 @@ defmodule BlockScoutWeb.Chain do
   # - Polygon Edge Deposits
   # - Polygon Edge Withdrawals
   # - Arbitrum cross chain messages
+  # - Scroll cross chain messages
   def paging_options(%{"id" => id_string}) when is_binary(id_string) do
     case Integer.parse(id_string) do
       {id, ""} ->
@@ -456,6 +473,7 @@ defmodule BlockScoutWeb.Chain do
   # - Polygon Edge Deposits
   # - Polygon Edge Withdrawals
   # - Arbitrum cross chain messages
+  # - Scroll cross chain messages
   def paging_options(%{"id" => id}) when is_integer(id) do
     [paging_options: %{@default_paging_options | key: {id}}]
   end
@@ -505,6 +523,21 @@ defmodule BlockScoutWeb.Chain do
 
   def paging_options(%{"block_index" => index}) when is_integer(index) do
     [paging_options: %{@default_paging_options | key: %{block_index: index}}]
+  end
+
+  # Clause for `Explorer.Chain.Blackfort.Validator`,
+  #  returned by `BlockScoutWeb.API.V2.ValidatorController.blackfort_validators_list/2` (`/api/v2/validators/blackfort`)
+  def paging_options(%{
+        "address_hash" => address_hash_string
+      }) do
+    [
+      paging_options: %{
+        @default_paging_options
+        | key: %{
+            address_hash: parse_address_hash(address_hash_string)
+          }
+      }
+    ]
   end
 
   def paging_options(_params), do: [paging_options: @default_paging_options]
@@ -575,7 +608,7 @@ defmodule BlockScoutWeb.Chain do
   defp address_from_param(param) do
     case string_to_address_hash(param) do
       {:ok, hash} ->
-        find_or_insert_address_from_hash(hash)
+        {:ok, %Address{hash: hash}}
 
       :error ->
         {:error, :not_found}
@@ -587,7 +620,7 @@ defmodule BlockScoutWeb.Chain do
       nil ->
         {:error, :not_found}
 
-      result ->
+      {result, _address_hash} ->
         {:ok, result}
     end
   end
@@ -691,8 +724,8 @@ defmodule BlockScoutWeb.Chain do
     %{"smart_contract_id" => smart_contract.id}
   end
 
-  defp paging_params(%OptimismDeposit{l1_block_number: l1_block_number, l2_transaction_hash: l2_tx_hash}) do
-    %{"l1_block_number" => l1_block_number, "tx_hash" => l2_tx_hash}
+  defp paging_params(%OptimismDeposit{l1_block_number: l1_block_number, l2_transaction_hash: l2_transaction_hash}) do
+    %{"l1_block_number" => l1_block_number, "transaction_hash" => l2_transaction_hash}
   end
 
   defp paging_params(%OptimismOutputRoot{l2_output_index: index}) do
@@ -702,10 +735,14 @@ defmodule BlockScoutWeb.Chain do
   defp paging_params(%SmartContract{} = smart_contract) do
     %{
       "smart_contract_id" => smart_contract.id,
-      "tx_count" => smart_contract.address.transactions_count,
+      "transaction_count" => smart_contract.address.transactions_count,
       "coin_balance" =>
         smart_contract.address.fetched_coin_balance && Wei.to(smart_contract.address.fetched_coin_balance, :wei)
     }
+  end
+
+  defp paging_params(%ScrollBridge{index: id}) do
+    %{"id" => id}
   end
 
   defp paging_params(%{index: index}) do
@@ -720,32 +757,9 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number}
   end
 
-  # clause for zkEVM batches pagination
-  defp paging_params(%TransactionBatch{number: number}) do
+  # clause for zkEVM & Scroll batches pagination
+  defp paging_params(%{number: number}) do
     %{"number" => number}
-  end
-
-  # clause for search results pagination
-  defp paging_params(%{
-         address_hash: address_hash,
-         tx_hash: tx_hash,
-         block_hash: block_hash,
-         holder_count: holder_count,
-         name: name,
-         inserted_at: inserted_at,
-         type: type
-       }) do
-    inserted_at_datetime = DateTime.to_iso8601(inserted_at)
-
-    %{
-      "address_hash" => address_hash,
-      "tx_hash" => tx_hash,
-      "block_hash" => block_hash,
-      "holder_count" => holder_count,
-      "name" => name,
-      "inserted_at" => inserted_at_datetime,
-      "item_type" => type
-    }
   end
 
   defp paging_params(%Instance{token_id: token_id}) do
@@ -876,4 +890,20 @@ defmodule BlockScoutWeb.Chain do
         {:error, {:invalid, :number}}
     end
   end
+
+  @doc """
+  Fetches the scam token toggle from conn.cookies["show_scam_tokens"]. And put it to the params keyword.
+
+  ## Parameters
+
+    - params: Initial params to append scam token toggle info.
+    - conn: The connection.
+
+  ## Returns
+
+  Provided params keyword with the new field `show_scam_tokens?`.
+  """
+  @spec fetch_scam_token_toggle(Keyword.t(), Plug.Conn.t()) :: Keyword.t()
+  def fetch_scam_token_toggle(params, conn),
+    do: Keyword.put(params, :show_scam_tokens?, conn.cookies["show_scam_tokens"] |> parse_boolean())
 end

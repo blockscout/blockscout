@@ -1,0 +1,320 @@
+#!/bin/bash
+
+# Blockscout Development Helper Script
+# 
+# This script provides a unified interface for common development tasks when working
+# with the Blockscout backend server. It handles environment configuration, project
+# initialization, and various development workflows.
+#
+# Main usage scenarios:
+# 1. Project Setup
+#    - Initialize project directory: bs --init
+#    - Setup/reset database:         bs --db-init
+#
+# 2. Development Tasks
+#    - Run backend server:           bs
+#    - Run server (API only):        bs --no-sync
+#    - Compile/recompile changes:    bs --compile
+#    - Recompile dependencies:       bs --recompile
+#
+# 3. Code Quality
+#    - Run formatter:                bs --format
+#    - Run static analysis:          bs --dialyzer
+#    - Run code style checks:        bs --credo
+#    - Run spell checker:            bs --spellcheck
+#
+# 4. Documentation
+#    - Generate project docs:        bs --docs
+#    - Show usage help:              bs --help
+#
+# Environment:
+# - Loads configuration from .devcontainer/.blockscout_config if present
+# - Uses default DATABASE_URL if not specified
+# - Supports chain-specific configurations via CHAIN_TYPE
+
+source $(dirname $0)/utils
+
+# Source and export environment variables related to the backend configuration
+BLOCKSCOUT_CONFIG_FILE=".devcontainer/.blockscout_config"
+if [ -f "./${BLOCKSCOUT_CONFIG_FILE}" ]; then
+    set -a  # Automatically export all variables
+    source ./${BLOCKSCOUT_CONFIG_FILE}
+    set +a  # Disable automatic export
+else
+    echo "Warning: ${BLOCKSCOUT_CONFIG_FILE} file not found. Skipping configuration loading."
+fi
+
+if [ "${DATABASE_URL}" == "" ]; then
+    export DATABASE_URL="postgresql://postgres:postgres@db:5432/app"
+fi
+
+# Initialize variables
+INIT=false
+NO_SYNC=false
+DB_INIT=false
+COMPILE=false
+RECOMPILE=false
+SPELLCHECK=false
+DIALYZER=false
+CREDO=false
+FORMAT=false
+DOCS=false
+HELP=false
+
+# Define the help function
+show_help() {
+    echo "Usage: bs [OPTION]"
+    echo "Orchestrate typical tasks when developing Blockscout backend server"
+    echo
+    echo "Options:"
+    echo "  --help        Show this help message and exit"
+    echo "  --init        Initialize the project directory"
+    echo "  --format      Run code formatter"
+    echo "  --spellcheck  Run spellcheck"
+    echo "  --dialyzer    Run dialyzer"
+    echo "  --credo       Run credo"
+    echo "  --docs        Generate documentation"
+    echo "  --compile     Compile/recompile changes"
+    echo "  --recompile   Re-fetch dependencies and recompile"
+    echo "  --db-init     (Re)initialize the database"
+    echo "  --no-sync     Run the server with disabled indexer, so only the API is available"
+    echo
+    echo "If no option is provided, the script will run the backend server."
+}
+
+# Define valid arguments
+VALID_ARGS=(
+    "--help"
+    "--init"
+    "--no-sync"
+    "--db-init"
+    "--compile"
+    "--recompile"
+    "--spellcheck"
+    "--dialyzer"
+    "--credo"
+    "--format"
+    "--docs"
+)
+
+# Validate arguments
+for arg in "$@"
+do
+    if [[ ! " ${VALID_ARGS[@]} " =~ " ${arg} " ]]; then
+        echo "Error: Unknown argument '${arg}'"
+        echo
+        show_help
+        exit 1
+    fi
+done
+
+# Parse command line arguments
+for arg in "$@"
+do
+    case $arg in
+        --help)
+        HELP=true
+        shift # Remove --help from processing
+        ;;
+        --init)
+        INIT=true
+        shift # Remove --init from processing
+        ;;
+        --no-sync)
+        NO_SYNC=true
+        shift # Remove --no-sync from processing
+        ;;
+        --db-init)
+        DB_INIT=true
+        shift # Remove --db-init from processing
+        ;;
+        --compile)
+        COMPILE=true
+        shift # Remove --compile from processing
+        ;;
+        --recompile)
+        RECOMPILE=true
+        shift # Remove --recompile from processing
+        ;;
+        --spellcheck)
+        SPELLCHECK=true
+        shift # Remove --spellcheck from processing
+        ;;
+        --dialyzer)
+        DIALYZER=true
+        shift # Remove --dialyzer from processing
+        ;;
+        --credo)
+        CREDO=true
+        shift # Remove --credo from processing
+        ;;
+        --format)
+        FORMAT=true
+        shift # Remove --format from processing
+        ;;
+        --docs)
+        DOCS=true
+        shift # Remove --docs from processing
+        ;;
+    esac
+done
+
+# If --help argument is passed, show help and exit
+if [ "$HELP" = true ]; then
+    show_help
+    exit 0
+fi
+
+# Define the project directory initialization subroutine
+initialize_project() {
+    if [ ! -d "apps/block_scout_web/priv/cert" ]; then
+        mix local.rebar --force
+        mix deps.compile
+        mix compile
+
+        # cd apps/block_scout_web/assets
+        # npm install && node_modules/webpack/bin/webpack.js --mode production
+        # cd -
+        # cd apps/explorer
+        # npm install
+        # cd -
+
+        cd apps/block_scout_web
+        mix phx.gen.cert blockscout blockscout.local
+        cd -
+    else
+        echo "Looks like the project directory is already initialized"
+    fi
+}
+
+# Define the initialization subroutine
+initialize_db() {
+    echo "Initializing database. Step 1 of 2: Dropping database"
+    if OUTPUT=$(mix ecto.drop 2>&1); then
+        echo "Initializing database. Step 2 of 2: Creating database"
+        mix do ecto.create, ecto.migrate | grep Runn
+    else
+        echo "Failed to drop database. Initialization aborted."
+        echo "Error output:"
+        echo "$OUTPUT"
+        return 1
+    fi
+}
+
+# Define the compile subroutine
+compile() {
+    mix compile
+}
+
+# Define the recompile subroutine
+recompile() {
+    FALLBACK_APPS="block_scout_web ethereum_jsonrpc explorer indexer utils nft_media_handler"
+    APPS=$($(dirname $0)/extract_apps.exs) || APPS="$FALLBACK_APPS"
+    [ -z "$APPS" ] && APPS="$FALLBACK_APPS"
+    mix deps.clean $APPS
+    mix deps.get
+    mix deps.compile --force
+}
+
+# Define the spellcheck subroutine
+spellcheck() {
+    cspell | less
+}
+
+# Define the dialyzer subroutine
+dialyzer() {
+    if ! mix dialyzer; then
+        echo -e "\nDepending on the error you see, try either:"
+        echo "  rm -rf 'priv/plts'"
+        echo "  MIX_ENV=test bs --recompile"
+        return 1
+    fi
+}
+
+# Define the credo subroutine
+credo() {
+    mix credo
+}
+
+# Define the format subroutine
+format() {
+    mix format
+}
+
+# Define the generate_docs subroutine
+generate_docs() {
+    mix docs
+}
+
+# If --init argument is passed, run the project dir initialization subroutine and exit
+if [ "$INIT" = true ]; then
+    initialize_project
+    exit 0
+fi
+
+# If --db-init argument is passed, run the database initialization subroutine and exit
+if [ "$DB_INIT" = true ]; then
+    initialize_db
+    exit 0
+fi
+
+# If --compile argument is passed, run the compile subroutine and exit
+if [ "$COMPILE" = true ]; then
+    compile
+    exit 0
+fi
+
+# If --recompile argument is passed, run the recompile subroutine and exit
+if [ "$RECOMPILE" = true ]; then
+    recompile
+    exit 0
+fi
+
+# If --spellcheck argument is passed, run the spellcheck subroutine and exit
+if [ "$SPELLCHECK" = true ]; then
+    spellcheck
+    exit 0
+fi
+
+# If --dialyzer argument is passed, run the dialyzer subroutine and exit
+if [ "$DIALYZER" = true ]; then
+    dialyzer
+    exit 0
+fi
+
+# If --credo argument is passed, run the credo subroutine and exit
+if [ "$CREDO" = true ]; then
+    credo
+    exit 0
+fi
+
+# If --format argument is passed, run the format subroutine and exit
+if [ "$FORMAT" = true ]; then
+    format
+    exit 0
+fi
+
+# If --doc argument is passed, run the format subroutine and exit
+if [ "$DOCS" = true ]; then
+    generate_docs
+    exit 0
+fi
+
+if [ "${ETHEREUM_JSONRPC_HTTP_URL}" != "" ]; then
+    check_server_availability ${ETHEREUM_JSONRPC_HTTP_URL}
+    check_server_accessibility ${ETHEREUM_JSONRPC_HTTP_URL}
+fi
+
+if [ "${CHAIN_TYPE}" != "" -o "${CHAIN_TYPE}" != "ethereum" -o "${CHAIN_TYPE}" != "default" ]; then
+    source $(dirname $0)/chain-specific-checks
+fi
+
+if [ ! -d "apps/block_scout_web/priv/cert" ]; then
+    echo "Project directory is not initialized"
+    echo "Run 'bs --init' to initialize the project directory"
+    exit 1
+fi
+
+export DISABLE_INDEXER=${NO_SYNC}
+
+mix phx.server

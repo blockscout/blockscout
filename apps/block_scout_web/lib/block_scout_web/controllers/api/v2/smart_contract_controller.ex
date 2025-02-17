@@ -1,19 +1,21 @@
 defmodule BlockScoutWeb.API.V2.SmartContractController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain,
+    only: [fetch_scam_token_toggle: 2, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   import BlockScoutWeb.PagingHelper,
     only: [current_filter: 1, delete_parameters_from_next_page_params: 1, search_query: 1, smart_contracts_sorting: 1]
 
-  import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
+  import Explorer.Helper, only: [parse_boolean: 1]
 
-  alias BlockScoutWeb.{AccessHelper, AddressView}
+  alias BlockScoutWeb.{AccessHelper, AddressView, CaptchaHelper}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.AuditReport
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.SmartContract.{Reader, Writer}
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.ThirdPartyIntegrations.SolidityScan
@@ -37,9 +39,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          _ <- PublishHelper.sourcify_check(address_hash_string),
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options, false)} do
+      implementations = SmartContractHelper.pre_fetch_implementations(address)
+
       conn
       |> put_status(200)
-      |> render(:smart_contract, %{address: address})
+      |> render(:smart_contract, %{address: %Address{address | proxy_implementations: implementations}})
     end
   end
 
@@ -100,11 +104,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)},
          {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
-      implementation_address_hash_strings =
-        address.smart_contract
-        |> Implementation.get_implementation(@api_true)
-        |> Tuple.to_list()
-        |> List.first()
+      implementation_address_hash_strings = get_implementations_address_hashes(address)
 
       functions =
         implementation_address_hash_strings
@@ -131,11 +131,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)},
          {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
-      implementation_address_hash_strings =
-        address.smart_contract
-        |> Implementation.get_implementation(@api_true)
-        |> Tuple.to_list()
-        |> List.first()
+      implementation_address_hash_strings = get_implementations_address_hashes(address)
 
       functions =
         implementation_address_hash_strings
@@ -206,7 +202,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   end
 
   @doc """
-  /api/v2/smart-contracts/${address_hash_string}/solidityscan-report logic
+  /api/v2/smart-contracts/:address_hash_string/solidityscan-report logic
   """
   @spec solidityscan_report(Plug.Conn.t(), map()) ::
           {:address, {:error, :not_found}}
@@ -246,6 +242,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       |> Keyword.merge(search_query(params))
       |> Keyword.merge(smart_contracts_sorting(params))
       |> Keyword.merge(@api_true)
+      |> fetch_scam_token_toggle(conn)
 
     smart_contracts_plus_one = SmartContract.verified_contracts(full_options)
     {smart_contracts, next_page} = split_list_by_page(smart_contracts_plus_one)
@@ -270,11 +267,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
           | {:restricted_access, true}
           | Plug.Conn.t()
   def audit_report_submission(conn, %{"address_hash" => address_hash_string} = params) do
-    captcha_helper = Application.get_env(:block_scout_web, :captcha_helper)
-
     with {:disabled, true} <- {:disabled, Application.get_env(:explorer, :air_table_audit_reports)[:enabled]},
          {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
-         {:recaptcha, _} <- {:recaptcha, captcha_helper.recaptcha_passed?(params["recaptcha_response"])},
+         {:recaptcha, _} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)},
          audit_report_params <- %{
            address_hash: address_hash,
            submitter_name: params["submitter_name"],
@@ -331,5 +326,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
            {:not_found, SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, @api_true)} do
       {:ok, address_hash, smart_contract}
     end
+  end
+
+  defp get_implementations_address_hashes(proxy_address) do
+    implementation =
+      proxy_address.smart_contract
+      |> Implementation.get_implementation(@api_true)
+
+    (implementation && implementation.address_hashes) || []
   end
 end

@@ -13,7 +13,7 @@ defmodule Explorer.Market.History.Source.Price.CoinMarketCap do
   def fetch_price_history(_previous_days \\ nil, secondary_coin? \\ false) do
     url =
       if secondary_coin?,
-        do: ExchangeRatesSourceCoinMarketCap.source_url(:secondary_coin),
+        do: ExchangeRatesSourceCoinMarketCap.secondary_source_url(),
         else: ExchangeRatesSourceCoinMarketCap.source_url()
 
     if url do

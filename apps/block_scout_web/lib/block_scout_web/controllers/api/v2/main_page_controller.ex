@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.MainPageController do
-  use Phoenix.Controller
+  use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.{Chain, PagingOptions}
   alias BlockScoutWeb.API.V2.{BlockView, OptimismView, TransactionView}
@@ -10,13 +11,26 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
+  case @chain_type do
+    :celo ->
+      @chain_type_transaction_necessity_by_association %{
+        :gas_token => :optional
+      }
+
+    _ ->
+      @chain_type_transaction_necessity_by_association %{}
+  end
+
   @transactions_options [
-    necessity_by_association: %{
-      :block => :required,
-      [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-      [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
-    },
+    necessity_by_association:
+      %{
+        :block => :required,
+        [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
+          :optional,
+        [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+        [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
+      }
+      |> Map.merge(@chain_type_transaction_necessity_by_association),
     paging_options: %PagingOptions{page_size: 6},
     api?: true
   ]
@@ -27,7 +41,11 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     blocks =
       [paging_options: %PagingOptions{page_size: 4}, api?: true]
       |> Chain.list_blocks()
-      |> Repo.replica().preload([[miner: [:names, :smart_contract, :proxy_implementations]], :transactions, :rewards])
+      |> Repo.replica().preload([
+        [miner: [:names, :smart_contract, proxy_implementations_association()]],
+        :transactions,
+        :rewards
+      ])
 
     conn
     |> put_status(200)

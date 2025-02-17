@@ -5,7 +5,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
   require Logger
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Reader
@@ -13,8 +13,8 @@ defmodule Explorer.Token.MetadataRetriever do
 
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
-  @ipfs_protocol "ipfs://"
   @invalid_base64_data "invalid data:application/json;base64"
+  @default_headers [{"User-Agent", "blockscout-7.0.0"}]
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -23,6 +23,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
   @ignored_hosts ["localhost", "127.0.0.1", "0.0.0.0", "", nil]
 
+  # TODO: Consider using the `EthereumJSONRPC.ERC20` module to retrieve token metadata
   @contract_abi [
     %{
       "constant" => true,
@@ -255,7 +256,8 @@ defmodule Explorer.Token.MetadataRetriever do
 
       case erc_1155_name_uri do
         %{:name => name} when is_binary(name) ->
-          uri = {:ok, [name]}
+          sanitized_name = String.trim(name)
+          uri = {:ok, [sanitized_name]}
 
           with {:ok, %{metadata: metadata}} <- fetch_json(uri, nil, nil, false),
                true <- Map.has_key?(metadata, "name"),
@@ -275,8 +277,8 @@ defmodule Explorer.Token.MetadataRetriever do
     end
   end
 
-  def set_skip_metadata(token_to_update) do
-    Chain.update_token(token_to_update, %{skip_metadata: true})
+  defp set_skip_metadata(token_to_update) do
+    Token.update(token_to_update, %{skip_metadata: true})
   end
 
   def get_total_supply_of(contract_address_hash) when is_binary(contract_address_hash) do
@@ -355,6 +357,7 @@ defmodule Explorer.Token.MetadataRetriever do
     contract_functions
     |> handle_invalid_strings(contract_address_hash)
     |> handle_large_strings
+    |> limit_decimals
   end
 
   defp atomized_key(@name_signature), do: :name
@@ -436,20 +439,78 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp handle_large_string(string, _size), do: string
 
+  defp limit_decimals(%{decimals: decimals} = contract_functions) do
+    if decimals > 78 do
+      %{contract_functions | decimals: nil}
+    else
+      contract_functions
+    end
+  end
+
+  defp limit_decimals(contract_functions), do: contract_functions
+
   defp remove_null_bytes(string) do
     String.replace(string, "\0", "")
   end
 
-  @spec ipfs_link(uid :: any()) :: String.t()
-  defp ipfs_link(uid) do
+  @doc """
+  Generates an IPFS link for the given unique identifier (UID).
+
+  ## Parameters
+
+    - uid: The unique identifier for which the IPFS link is to be generated.
+    - public_gateway?: A boolean indicating whether to use the public IPFS gateway.
+
+  ## Returns
+
+    - A string representing the IPFS link for the given UID.
+
+  ## Examples
+
+      iex> ipfs_link("QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5", true)
+      "https://ipfs.io/ipfs/QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5"
+
+      iex> ipfs_link("QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5", false)
+      "https://public_ipfs_gateway.io/QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5"
+  """
+  @spec ipfs_link(uid :: any(), public_gateway? :: boolean) :: String.t()
+  def ipfs_link(uid, public_gateway? \\ false) do
+    key = if public_gateway?, do: :public_gateway_url, else: :gateway_url
+
     base_url =
       :indexer
       |> Application.get_env(:ipfs)
-      |> Keyword.get(:gateway_url)
+      |> Keyword.get(key)
       |> String.trim_trailing("/")
 
-    url = base_url <> "/" <> uid
+    url = "#{base_url}/#{uid}"
 
+    url |> maybe_add_ipfs_gateway_params_to_url?(public_gateway?)
+  end
+
+  @doc """
+  Generates an Arweave link for the given UID.
+
+  ## Parameters
+  - uid: The unique identifier for the resource.
+
+  ## Returns
+  - A string representing the full URL to the resource on Arweave.
+
+  ## Examples
+
+      iex> arweave_link("some-uid")
+      "https://arweave.net/some-uid"
+
+  """
+  @spec arweave_link(uid :: any()) :: String.t()
+  def arweave_link(uid) do
+    "https://arweave.net/#{uid}"
+  end
+
+  defp maybe_add_ipfs_gateway_params_to_url?(url, true), do: url
+
+  defp maybe_add_ipfs_gateway_params_to_url?(url, _) do
     ipfs_params = Application.get_env(:indexer, :ipfs)
 
     if ipfs_params[:gateway_url_param_location] == :query do
@@ -466,8 +527,24 @@ defmodule Explorer.Token.MetadataRetriever do
     end
   end
 
+  defp public_ipfs_link(uid) do
+    "ipfs://" <> uid
+  end
+
+  @doc """
+  Returns the headers required for making requests to IPFS.
+
+  ## Examples
+
+      iex> Explorer.Token.MetadataRetriever.ipfs_headers()
+      [
+        {"User-Agent", "blockscout-6.9.0"},
+        {"Authorization", "Bearer <token>"}
+      ]
+
+  """
   @spec ipfs_headers() :: [{binary(), binary()}]
-  defp ipfs_headers do
+  def ipfs_headers do
     ipfs_params = Application.get_env(:indexer, :ipfs)
 
     if ipfs_params[:gateway_url_param_location] == :header do
@@ -475,13 +552,29 @@ defmodule Explorer.Token.MetadataRetriever do
       gateway_url_param_value = ipfs_params[:gateway_url_param_value]
 
       if gateway_url_param_key && gateway_url_param_value do
-        [{gateway_url_param_key, gateway_url_param_value}]
+        [{gateway_url_param_key, gateway_url_param_value} | @default_headers]
       else
-        []
+        @default_headers
       end
     else
-      []
+      @default_headers
     end
+  end
+
+  @doc """
+  Returns the headers for making requests to Arweave.
+
+  ## Examples
+
+      iex> Explorer.Token.MetadataRetriever.ar_headers()
+      [
+        {"User-Agent", "blockscout-6.9.0"}
+      ]
+
+  """
+  @spec ar_headers() :: [{binary(), binary()}]
+  def ar_headers do
+    @default_headers
   end
 
   @doc """
@@ -496,12 +589,12 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   def fetch_json(uri, token_id, hex_token_id, from_base_uri?) do
-    fetch_json_from_uri(uri, false, token_id, hex_token_id, from_base_uri?)
+    fetch_json_from_uri(uri, [ipfs?: false], token_id, hex_token_id, from_base_uri?)
   end
 
-  defp fetch_json_from_uri(_uri, _ipfs?, _token_id, _hex_token_id, _from_base_uri?)
+  defp fetch_json_from_uri(_uri, _ipfs_params, _token_id, _hex_token_id, _from_base_uri?)
 
-  defp fetch_json_from_uri({:error, error}, _ipfs?, _token_id, _hex_token_id, _from_base_uri?) do
+  defp fetch_json_from_uri({:error, error}, _ipfs_params, _token_id, _hex_token_id, _from_base_uri?) do
     error = to_string(error)
 
     if error =~ "execution reverted" or error =~ @vm_execution_error do
@@ -514,61 +607,41 @@ defmodule Explorer.Token.MetadataRetriever do
     end
   end
 
-  # CIDv0 IPFS links # https://docs.ipfs.tech/concepts/content-addressing/#version-0-v0
-  defp fetch_json_from_uri({:ok, ["Qm" <> _ = result]}, _, token_id, hex_token_id, from_base_uri?) do
-    if String.length(result) == 46 do
-      ipfs? = true
-      fetch_json_from_uri({:ok, [ipfs_link(result)]}, ipfs?, token_id, hex_token_id, from_base_uri?)
-    else
-      Logger.warning(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
-
-      {:error, truncate_error(result)}
-    end
-  end
-
-  defp fetch_json_from_uri({:ok, ["'" <> token_uri]}, ipfs?, token_id, hex_token_id, from_base_uri?) do
+  defp fetch_json_from_uri({:ok, ["'" <> token_uri]}, ipfs_params, token_id, hex_token_id, from_base_uri?) do
     token_uri = token_uri |> String.split("'") |> List.first()
-    fetch_metadata_inner(token_uri, ipfs?, token_id, hex_token_id, from_base_uri?)
-  end
-
-  defp fetch_json_from_uri({:ok, ["http://" <> _ = token_uri]}, ipfs?, token_id, hex_token_id, from_base_uri?) do
-    fetch_metadata_inner(token_uri, ipfs?, token_id, hex_token_id, from_base_uri?)
-  end
-
-  defp fetch_json_from_uri({:ok, ["https://" <> _ = token_uri]}, ipfs?, token_id, hex_token_id, from_base_uri?) do
-    fetch_metadata_inner(token_uri, ipfs?, token_id, hex_token_id, from_base_uri?)
+    fetch_metadata_inner(token_uri, ipfs_params, token_id, hex_token_id, from_base_uri?)
   end
 
   defp fetch_json_from_uri(
          {:ok, [type = "data:application/json;utf8," <> json]},
-         ipfs?,
+         ipfs_params,
          token_id,
          hex_token_id,
          from_base_uri?
        ) do
-    fetch_json_from_json_string(json, ipfs?, token_id, hex_token_id, from_base_uri?, type)
+    fetch_json_from_json_string(json, ipfs_params, token_id, hex_token_id, from_base_uri?, type)
   end
 
   defp fetch_json_from_uri(
          {:ok, [type = "data:application/json," <> json]},
-         ipfs?,
+         ipfs_params,
          token_id,
          hex_token_id,
          from_base_uri?
        ) do
-    fetch_json_from_json_string(json, ipfs?, token_id, hex_token_id, from_base_uri?, type)
+    fetch_json_from_json_string(json, ipfs_params, token_id, hex_token_id, from_base_uri?, type)
   end
 
   defp fetch_json_from_uri(
          {:ok, ["data:application/json;base64," <> base64_encoded_json]},
-         ipfs?,
+         ipfs_params,
          token_id,
          hex_token_id,
          from_base_uri?
        ) do
     case Base.decode64(base64_encoded_json) do
       {:ok, base64_decoded} ->
-        fetch_json_from_uri({:ok, [base64_decoded]}, ipfs?, token_id, hex_token_id, from_base_uri?)
+        fetch_json_from_uri({:ok, [base64_decoded]}, ipfs_params, token_id, hex_token_id, from_base_uri?)
 
       _ ->
         {:error, @invalid_base64_data}
@@ -586,41 +659,72 @@ defmodule Explorer.Token.MetadataRetriever do
       {:error, @invalid_base64_data}
   end
 
-  defp fetch_json_from_uri({:ok, ["#{@ipfs_protocol}ipfs/" <> right]}, _ipfs?, _token_id, hex_token_id, _from_base_uri?) do
-    fetch_from_ipfs(right, hex_token_id)
+  defp fetch_json_from_uri({:ok, [token_uri_string]}, ipfs_params, token_id, hex_token_id, from_base_uri?) do
+    fetch_from_ipfs_or_ar?(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?)
   end
 
-  defp fetch_json_from_uri({:ok, ["ipfs/" <> right]}, _ipfs?, _token_id, hex_token_id, _from_base_uri?) do
-    fetch_from_ipfs(right, hex_token_id)
-  end
-
-  defp fetch_json_from_uri({:ok, [@ipfs_protocol <> right]}, _ipfs?, _token_id, hex_token_id, _from_base_uri?) do
-    fetch_from_ipfs(right, hex_token_id)
-  end
-
-  defp fetch_json_from_uri({:ok, [json]}, _ipfs?, _token_id, hex_token_id, _from_base_uri?) do
-    json = ExplorerHelper.decode_json(json, true)
-
-    check_type(json, hex_token_id)
-  rescue
-    e ->
-      Logger.warning(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
-        fetcher: :token_instances
-      )
-
-      {:error, "invalid json"}
-  end
-
-  defp fetch_json_from_uri(uri, _ipfs?, _token_id, _hex_token_id, _from_base_uri?) do
+  defp fetch_json_from_uri(uri, _ipfs_params, _token_id, _hex_token_id, _from_base_uri?) do
     Logger.warning(["Unknown metadata uri format #{inspect(uri)}."], fetcher: :token_instances)
 
     {:error, "unknown metadata uri format"}
   end
 
-  defp fetch_json_from_json_string(json, ipfs?, token_id, hex_token_id, from_base_uri?, type) do
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  defp fetch_from_ipfs_or_ar?(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?) do
+    case URI.parse(token_uri_string) do
+      %URI{scheme: "ipfs", host: host, path: path} ->
+        resource_id =
+          if host == "ipfs" do
+            "/" <> resource_id = path
+            resource_id
+          else
+            # credo:disable-for-next-line
+            if is_nil(path), do: host, else: host <> path
+          end
+
+        fetch_from_ipfs(resource_id, hex_token_id)
+
+      %URI{scheme: "ar", host: _host, path: resource_id} ->
+        fetch_from_arweave(resource_id, hex_token_id)
+
+      %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
+        fetch_from_ipfs(resource_id, hex_token_id)
+
+      %URI{scheme: _, path: "ipfs/" <> resource_id} ->
+        fetch_from_ipfs(resource_id, hex_token_id)
+
+      %URI{scheme: scheme} when not is_nil(scheme) ->
+        fetch_metadata_inner(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?)
+
+      %URI{path: path} ->
+        case path do
+          "Qm" <> <<_::binary-size(44)>> = resource_id ->
+            fetch_from_ipfs(resource_id, hex_token_id)
+
+          # todo: rewrite for strict CID v1 support
+          "bafybe" <> _ = resource_id ->
+            fetch_from_ipfs(resource_id, hex_token_id)
+
+          _ ->
+            json = ExplorerHelper.decode_json(token_uri_string, true)
+
+            check_type(json, hex_token_id)
+        end
+    end
+  rescue
+    e ->
+      Logger.warning(
+        ["Unknown metadata format #{inspect(token_uri_string)}.", Exception.format(:error, e, __STACKTRACE__)],
+        fetcher: :token_instances
+      )
+
+      {:error, "invalid token_uri_string"}
+  end
+
+  defp fetch_json_from_json_string(json, ipfs_params, token_id, hex_token_id, from_base_uri?, type) do
     decoded_json = URI.decode(json)
 
-    fetch_json_from_uri({:ok, [decoded_json]}, ipfs?, token_id, hex_token_id, from_base_uri?)
+    fetch_json_from_uri({:ok, [decoded_json]}, ipfs_params, token_id, hex_token_id, from_base_uri?)
   rescue
     e ->
       Logger.warning(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
@@ -632,15 +736,25 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp fetch_from_ipfs(ipfs_uid, hex_token_id) do
     ipfs_url = ipfs_link(ipfs_uid)
-    ipfs? = true
-    fetch_metadata_inner(ipfs_url, ipfs?, nil, hex_token_id)
+    public_ipfs_url = public_ipfs_link(ipfs_uid)
+
+    ipfs_params = [ipfs?: true, public_ipfs_url: public_ipfs_url]
+
+    fetch_metadata_inner(ipfs_url, ipfs_params, nil, hex_token_id)
   end
 
-  defp fetch_metadata_inner(uri, ipfs?, token_id, hex_token_id, from_base_uri? \\ false)
+  defp fetch_from_arweave(uid, hex_token_id) do
+    arweave_url = arweave_link(uid)
 
-  defp fetch_metadata_inner(uri, ipfs?, token_id, hex_token_id, from_base_uri?) do
+    ipfs_params = [ipfs?: false]
+    fetch_metadata_inner(arweave_url, ipfs_params, nil, hex_token_id)
+  end
+
+  defp fetch_metadata_inner(uri, ipfs_params, token_id, hex_token_id, from_base_uri? \\ false)
+
+  defp fetch_metadata_inner(uri, ipfs_params, token_id, hex_token_id, from_base_uri?) do
     prepared_uri = substitute_token_id_to_token_uri(uri, token_id, hex_token_id, from_base_uri?)
-    fetch_metadata_from_uri(prepared_uri, ipfs?, hex_token_id)
+    fetch_metadata_from_uri(prepared_uri, ipfs_params, hex_token_id)
   rescue
     e ->
       Logger.warning(
@@ -651,18 +765,42 @@ defmodule Explorer.Token.MetadataRetriever do
       {:error, "preparation error"}
   end
 
-  def fetch_metadata_from_uri(uri, ipfs?, hex_token_id \\ nil) do
+  @doc """
+  Fetches metadata from a given URI.
+
+  ## Parameters
+
+    - `uri` (String): The URI from which to fetch metadata.
+    - `ipfs_params` (keyword): Params for cases when metadata should be fetched from IPFS. Example: [ipfs?: true, public_ipfs_url: "https://ipfs.io/ipfs/{id}"]
+    - `hex_token_id` (String, optional): A hexadecimal token ID, defaults to `nil`.
+
+  ## Returns
+
+    - `{:ok, metadata}` on success.
+    - `{:error, reason}` on failure.
+
+  ## Examples
+
+      iex> fetch_metadata_from_uri("http://example.com/metadata", [ipfs?: false])
+      {:ok, %{"name" => "Example Token", "description" => "An example token"}}
+
+      iex> fetch_metadata_from_uri("http://localhost/metadata", [ipfs?: false])
+      {:error, "ignored host localhost"}
+
+  """
+  @spec fetch_metadata_from_uri(String.t(), keyword(), String.t() | nil) :: {:ok, %{metadata: any}} | {:error, binary}
+  def fetch_metadata_from_uri(uri, ipfs_params, hex_token_id \\ nil) do
     case Mix.env() != :test && URI.parse(uri) do
       %URI{host: host} when host in @ignored_hosts ->
         {:error, "ignored host #{host}"}
 
       _ ->
-        fetch_metadata_from_uri_request(uri, hex_token_id, ipfs?)
+        fetch_metadata_from_uri_request(uri, hex_token_id, ipfs_params)
     end
   end
 
-  defp fetch_metadata_from_uri_request(uri, hex_token_id, ipfs?) do
-    headers = if ipfs?, do: ipfs_headers(), else: []
+  defp fetch_metadata_from_uri_request(uri, hex_token_id, ipfs_params) do
+    headers = if ipfs?(ipfs_params), do: ipfs_headers(), else: @default_headers
 
     case Application.get_env(:explorer, :http_adapter).get(uri, headers,
            recv_timeout: 30_000,
@@ -672,7 +810,7 @@ defmodule Explorer.Token.MetadataRetriever do
       {:ok, %Response{body: body, status_code: 200, headers: response_headers}} ->
         content_type = get_content_type_from_headers(response_headers)
 
-        check_content_type(content_type, uri, hex_token_id, body)
+        check_content_type(content_type, uri, hex_token_id, body, ipfs_params)
 
       {:ok, %Response{body: body, status_code: code}} ->
         Logger.debug(
@@ -700,12 +838,17 @@ defmodule Explorer.Token.MetadataRetriever do
       {:error, "request error"}
   end
 
-  defp check_content_type(content_type, uri, hex_token_id, body) do
+  defp ipfs?(ipfs_params) do
+    Keyword.get(ipfs_params, :ipfs?)
+  end
+
+  defp check_content_type(content_type, uri, hex_token_id, body, ipfs_params) do
     image = image?(content_type)
     video = video?(content_type)
+    public_ipfs_url = Keyword.get(ipfs_params, :public_ipfs_url)
 
     if content_type && (image || video) do
-      json = if image, do: %{"image" => uri}, else: %{"animation_url" => uri}
+      json = if image, do: %{"image" => public_ipfs_url || uri}, else: %{"animation_url" => public_ipfs_url || uri}
 
       check_type(json, nil)
     else
@@ -718,7 +861,7 @@ defmodule Explorer.Token.MetadataRetriever do
   defp get_content_type_from_headers(headers) do
     {_, content_type} =
       Enum.find(headers, fn {header_name, _header_value} ->
-        header_name == "Content-Type"
+        String.downcase(header_name) == "content-type"
       end) || {nil, nil}
 
     content_type

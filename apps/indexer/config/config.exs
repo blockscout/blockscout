@@ -5,8 +5,6 @@ import Config
 config :indexer,
   ecto_repos: [Explorer.Repo]
 
-# config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
-
 config :indexer, Indexer.Tracer,
   service: :indexer,
   adapter: SpandexDatadog.Adapter,
@@ -21,6 +19,11 @@ config :logger, :indexer,
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :indexer]
+
+config :os_mon,
+  start_cpu_sup: false,
+  start_disksup: false,
+  start_memsup: true
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

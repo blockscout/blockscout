@@ -25,14 +25,7 @@ defmodule BlockScoutWeb.TransactionStateController do
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do
     with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
          {:ok, transaction} <-
-           Chain.hash_to_transaction(
-             transaction_hash,
-             necessity_by_association: %{
-               [block: :miner] => :optional,
-               from_address: :optional,
-               to_address: :optional
-             }
-           ),
+           Chain.hash_to_transaction(transaction_hash),
          {:ok, false} <-
            AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <-
@@ -80,9 +73,6 @@ defmodule BlockScoutWeb.TransactionStateController do
 
       {:error, :not_found} ->
         TransactionController.set_not_found_view(conn, transaction_hash_string)
-
-      :not_found ->
-        TransactionController.set_not_found_view(conn, transaction_hash_string)
     end
   end
 
@@ -114,7 +104,7 @@ defmodule BlockScoutWeb.TransactionStateController do
         transaction: transaction,
         from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
         to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
-        tx_tags:
+        transaction_tags:
           get_transaction_with_addresses_tags(
             transaction,
             current_user(conn)
@@ -122,9 +112,6 @@ defmodule BlockScoutWeb.TransactionStateController do
         current_user: current_user(conn)
       )
     else
-      :not_found ->
-        TransactionController.set_not_found_view(conn, transaction_hash_string)
-
       :error ->
         unprocessable_entity(conn)
 

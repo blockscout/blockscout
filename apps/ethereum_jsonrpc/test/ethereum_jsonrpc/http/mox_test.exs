@@ -16,7 +16,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
         transport: EthereumJSONRPC.HTTP,
         transport_options: [
           http: EthereumJSONRPC.HTTP.Mox,
-          url: url(),
+          urls: [url()],
           http_options: http_options()
         ],
         # Which one does not matter, so pick one
@@ -289,7 +289,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
     transport_options = Keyword.fetch!(json_rpc_named_arguments, :transport_options)
 
     http = Keyword.fetch!(transport_options, :http)
-    url = Keyword.fetch!(transport_options, :url)
+    url = transport_options |> Keyword.fetch!(:urls) |> List.first()
     json = Jason.encode_to_iodata!(payload)
     http_options = Keyword.fetch!(transport_options, :http_options)
 

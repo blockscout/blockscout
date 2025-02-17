@@ -18,13 +18,16 @@ defmodule Explorer.Migrator.TokenTransferTokenType do
   def migration_name, do: @migration_name
 
   @impl FillingMigration
-  def last_unprocessed_identifiers do
+  def last_unprocessed_identifiers(state) do
     limit = batch_size() * concurrency()
 
-    unprocessed_data_query()
-    |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
-    |> limit(^limit)
-    |> Repo.all(timeout: :infinity)
+    ids =
+      unprocessed_data_query()
+      |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
+      |> limit(^limit)
+      |> Repo.all(timeout: :infinity)
+
+    {ids, state}
   end
 
   @impl FillingMigration
@@ -34,27 +37,34 @@ defmodule Explorer.Migrator.TokenTransferTokenType do
 
   @impl FillingMigration
   def update_batch(token_transfer_ids) do
-    token_transfer_ids
-    |> build_update_query()
-    |> Repo.query!([], timeout: :infinity)
+    query =
+      token_transfer_ids
+      |> TokenTransfer.by_ids_query()
+      |> join(:inner, [tt], b in assoc(tt, :block))
+      |> join(:inner, [tt, b], t in assoc(tt, :token))
+      |> update([tt, b, t],
+        set: [
+          block_consensus: b.consensus,
+          token_type:
+            fragment(
+              """
+              CASE WHEN ? = 'ERC-1155' AND ? IS NULL
+              THEN 'ERC-20'
+              ELSE ?
+              END
+              """,
+              t.type,
+              tt.token_ids,
+              t.type
+            )
+        ]
+      )
+
+    Repo.update_all(query, [], timeout: :infinity)
   end
 
   @impl FillingMigration
   def update_cache do
     BackgroundMigrations.set_tt_denormalization_finished(true)
-  end
-
-  defp build_update_query(token_transfer_ids) do
-    """
-    UPDATE token_transfers tt
-    SET token_type = CASE WHEN t.type = 'ERC-1155' AND token_ids IS NULL THEN 'ERC-20'
-                          ELSE t.type
-                     END,
-        block_consensus = b.consensus
-    FROM tokens t, blocks b
-    WHERE tt.block_hash = b.hash
-      AND tt.token_contract_address_hash = t.contract_address_hash
-      AND (tt.transaction_hash, tt.block_hash, tt.log_index) IN #{TokenTransfer.encode_token_transfer_ids(token_transfer_ids)};
-    """
   end
 end

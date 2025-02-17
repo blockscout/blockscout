@@ -17,13 +17,16 @@ defmodule Explorer.Migrator.TokenTransferBlockConsensus do
   def migration_name, do: @migration_name
 
   @impl FillingMigration
-  def last_unprocessed_identifiers do
+  def last_unprocessed_identifiers(state) do
     limit = batch_size() * concurrency()
 
-    unprocessed_data_query()
-    |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
-    |> limit(^limit)
-    |> Repo.all(timeout: :infinity)
+    ids =
+      unprocessed_data_query()
+      |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
+      |> limit(^limit)
+      |> Repo.all(timeout: :infinity)
+
+    {ids, state}
   end
 
   @impl FillingMigration
@@ -37,21 +40,15 @@ defmodule Explorer.Migrator.TokenTransferBlockConsensus do
 
   @impl FillingMigration
   def update_batch(token_transfer_ids) do
-    token_transfer_ids
-    |> build_update_query()
-    |> Repo.query!([], timeout: :infinity)
+    query =
+      token_transfer_ids
+      |> TokenTransfer.by_ids_query()
+      |> join(:inner, [tt], b in assoc(tt, :block))
+      |> update([tt, b], set: [block_consensus: b.consensus])
+
+    Repo.update_all(query, [], timeout: :infinity)
   end
 
   @impl FillingMigration
   def update_cache, do: :ok
-
-  defp build_update_query(token_transfer_ids) do
-    """
-    UPDATE token_transfers tt
-    SET block_consensus = b.consensus
-    FROM blocks b
-    WHERE tt.block_hash = b.hash
-      AND (tt.transaction_hash, tt.block_hash, tt.log_index) IN #{TokenTransfer.encode_token_transfer_ids(token_transfer_ids)};
-    """
-  end
 end

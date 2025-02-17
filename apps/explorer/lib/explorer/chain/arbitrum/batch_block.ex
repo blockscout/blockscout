@@ -18,7 +18,7 @@ defmodule Explorer.Chain.Arbitrum.BatchBlock do
   @required_attrs ~w(batch_number block_number)a
 
   @typedoc """
-  Descriptor of the a rollup block included in an Arbitrum batch:
+  Descriptor of the rollup block included in an Arbitrum batch:
     * `batch_number` - The number of the Arbitrum batch.
     * `block_number` - The number of the rollup block.
     * `confirmation_id` - The ID of the confirmation L1 transaction from

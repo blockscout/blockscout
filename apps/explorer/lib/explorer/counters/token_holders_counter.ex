@@ -3,6 +3,7 @@ defmodule Explorer.Counters.TokenHoldersCounter do
   Caches Token holders counter.
   """
   use GenServer
+  use Utils.CompileTimeEnvHelper, enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]]
 
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Token
@@ -11,9 +12,6 @@ defmodule Explorer.Counters.TokenHoldersCounter do
   @api_true [api?: true]
   @cache_name :token_holders_count
   @ets_last_update_key "last_update"
-
-  config = Application.compile_env(:explorer, Explorer.Counters.TokenHoldersCounter)
-  @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do

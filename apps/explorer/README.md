@@ -1,6 +1,6 @@
 # BlockScout
 
-This is a tool for inspecting and analyzing the POA Network blockchain.
+Blockscout is a robust open-source tool for exploring, confirming, and inspecting transactions on any EVM blockchain.
 
 ## Machine Requirements
 

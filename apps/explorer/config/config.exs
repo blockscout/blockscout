@@ -81,12 +81,14 @@ config :explorer, Explorer.Chain.Cache.StabilityValidatorsCounters,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
+config :explorer, Explorer.Chain.Cache.BlackfortValidatorsCounters,
+  enabled: true,
+  enable_consolidation: true,
+  update_interval_in_milliseconds: update_interval_in_milliseconds_default
+
 config :explorer, Explorer.Chain.Cache.TransactionActionTokensData, enabled: true
 
 config :explorer, Explorer.Chain.Cache.TransactionActionUniswapPools, enabled: true
-
-config :explorer, Explorer.ExchangeRates,
-  cache_period: ConfigHelper.parse_time_env_var("CACHE_EXCHANGE_RATES_PERIOD", "10m")
 
 config :explorer, Explorer.ExchangeRates.TokenExchangeRates, enabled: true
 
@@ -116,15 +118,45 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
 
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: true
 
-config :explorer, Explorer.Migrator.TransactionsDenormalization, enabled: true
-config :explorer, Explorer.Migrator.AddressCurrentTokenBalanceTokenType, enabled: true
-config :explorer, Explorer.Migrator.AddressTokenBalanceTokenType, enabled: true
-config :explorer, Explorer.Migrator.SanitizeMissingBlockRanges, enabled: true
-config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers, enabled: true
-config :explorer, Explorer.Migrator.TokenTransferTokenType, enabled: true
-config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, enabled: true
-config :explorer, Explorer.Migrator.TransactionBlockConsensus, enabled: true
-config :explorer, Explorer.Migrator.TokenTransferBlockConsensus, enabled: true
+for migrator <- [
+      # Background migrations
+      Explorer.Migrator.TransactionsDenormalization,
+      Explorer.Migrator.AddressCurrentTokenBalanceTokenType,
+      Explorer.Migrator.AddressTokenBalanceTokenType,
+      Explorer.Migrator.SanitizeMissingBlockRanges,
+      Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
+      Explorer.Migrator.TokenTransferTokenType,
+      Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
+      Explorer.Migrator.TransactionBlockConsensus,
+      Explorer.Migrator.TokenTransferBlockConsensus,
+      Explorer.Migrator.RestoreOmittedWETHTransfers,
+      Explorer.Migrator.SanitizeMissingTokenBalances,
+      Explorer.Migrator.SanitizeReplacedTransactions,
+      Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus,
+      Explorer.Migrator.SanitizeDuplicatedLogIndexLogs,
+      Explorer.Migrator.RefetchContractCodes,
+      Explorer.Migrator.BackfillMultichainSearchDB,
+      Explorer.Migrator.SanitizeVerifiedAddresses,
+
+      # Heavy DB index operations
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberAscLogIndexAscIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersFromAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex
+    ] do
+  config :explorer, migrator, enabled: true
+end
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 

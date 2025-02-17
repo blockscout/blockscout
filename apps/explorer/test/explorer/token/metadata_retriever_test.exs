@@ -763,7 +763,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
       Explorer.Mox.HTTPoison
       |> expect(:get, fn "https://ipfs.io/ipfs/QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP",
-                         [{"x-apikey", "mykey"}],
+                         [{"x-apikey", "mykey"}, {"User-Agent", _}],
                          _options ->
         {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(result)}}
       end)
@@ -885,7 +885,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                 }}
     end
 
-    test "fetches image from ipfs link directly", %{bypass: bypass} do
+    test "fetches image from ipfs link directly" do
       path = "/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
 
       json = """
@@ -894,14 +894,19 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       }
       """
 
-      Bypass.expect(bypass, "GET", path, fn conn ->
-        Conn.resp(conn, 200, json)
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu",
+                         _headers,
+                         _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: json}}
       end)
 
       data =
         {:ok,
          [
-           "http://localhost:#{bypass.port}#{path}"
+           path
          ]}
 
       assert {:ok,
@@ -910,9 +915,11 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                   "image" => "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
                 }
               }} == MetadataRetriever.fetch_json(data)
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
-    test "Fetches metadata from ipfs", %{bypass: bypass} do
+    test "Fetches metadata from ipfs" do
       path = "/ipfs/bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json"
 
       json = """
@@ -921,14 +928,19 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       }
       """
 
-      Bypass.expect(bypass, "GET", path, fn conn ->
-        Conn.resp(conn, 200, json)
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn "https://ipfs.io/ipfs/bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json",
+                         _headers,
+                         _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: json}}
       end)
 
       data =
         {:ok,
          [
-           "http://localhost:#{bypass.port}#{path}"
+           path
          ]}
 
       {:ok,
@@ -937,6 +949,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
        }} = MetadataRetriever.fetch_json(data)
 
       assert "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png" == Map.get(metadata, "image")
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
     test "Fetches metadata from '${url}'", %{bypass: bypass} do
@@ -1054,6 +1067,100 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                 metadata: Jason.decode!(json)
               }} ==
                MetadataRetriever.fetch_json({:ok, ["http://localhost:#{bypass.port}#{path}"]})
+    end
+  end
+
+  describe "ipfs_link/1" do
+    test "returns correct ipfs link for given data" do
+      data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+      expected_link = "https://ipfs.io/ipfs/QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+
+      assert MetadataRetriever.ipfs_link(data) == expected_link
+    end
+
+    test "returns correct ipfs link for given data at public IPFS gateway URL" do
+      original = Application.get_env(:indexer, :ipfs)
+
+      Application.put_env(:indexer, :ipfs,
+        gateway_url: "https://ipfs.io/ipfs/",
+        public_gateway_url: "https://public_ipfs_gateway.io/ipfs/"
+      )
+
+      data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+      expected_link = "https://public_ipfs_gateway.io/ipfs/QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+
+      assert MetadataRetriever.ipfs_link(data, true) == expected_link
+
+      Application.put_env(:indexer, :ipfs, original)
+    end
+
+    test "returns correct ipfs link for given data with IPFS gateway params" do
+      original = Application.get_env(:indexer, :ipfs)
+
+      Application.put_env(:indexer, :ipfs,
+        gateway_url: "https://ipfs.io/ipfs/",
+        gateway_url_param_key: "user",
+        gateway_url_param_value: "pass",
+        gateway_url_param_location: :query
+      )
+
+      data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+      expected_link = "https://ipfs.io/ipfs/QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP?user=pass"
+
+      assert MetadataRetriever.ipfs_link(data) == expected_link
+
+      Application.put_env(:indexer, :ipfs, original)
+    end
+
+    test "returns correct ipfs link for empty data" do
+      data = ""
+      expected_link = "https://ipfs.io/ipfs/"
+
+      assert MetadataRetriever.ipfs_link(data) == expected_link
+    end
+
+    test "returns correct ipfs link for nil data" do
+      data = nil
+      expected_link = "https://ipfs.io/ipfs/"
+
+      assert MetadataRetriever.ipfs_link(data) == expected_link
+    end
+
+    test "returns correct ipfs link for data with special characters" do
+      data = "data_with_special_chars!@#$%^&*()"
+      expected_link = "https://ipfs.io/ipfs/data_with_special_chars!@#$%^&*()"
+
+      assert MetadataRetriever.ipfs_link(data) == expected_link
+    end
+  end
+
+  describe "arweave_link/1" do
+    test "returns correct arweave link for given data" do
+      data = "some_arweave_data"
+      expected_link = "https://arweave.net/some_arweave_data"
+
+      assert MetadataRetriever.arweave_link(data) == expected_link
+    end
+
+    test "returns correct arweave link for empty data" do
+      data = ""
+      expected_link = "https://arweave.net/"
+
+      assert MetadataRetriever.arweave_link(data) == expected_link
+    end
+
+    test "returns correct arweave link for nil data" do
+      data = nil
+      expected_link = "https://arweave.net/"
+
+      assert MetadataRetriever.arweave_link(data) == expected_link
+    end
+
+    test "returns correct arweave link for data with special characters" do
+      data = "data_with_special_chars!@#$%^&*()"
+      expected_link = "https://arweave.net/data_with_special_chars!@#$%^&*()"
+
+      assert MetadataRetriever.arweave_link(data) == expected_link
     end
   end
 end

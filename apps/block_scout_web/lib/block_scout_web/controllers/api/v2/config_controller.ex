@@ -8,4 +8,20 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     |> put_status(200)
     |> render(:backend_version, %{version: backend_version})
   end
+
+  def csv_export(conn, _params) do
+    limit = Application.get_env(:explorer, :csv_export_limit)
+
+    conn
+    |> put_status(200)
+    |> json(%{limit: limit})
+  end
+
+  def public_metrics(conn, _params) do
+    public_metrics_update_period_hours = Application.get_env(:explorer, Explorer.Chain.Metrics)[:update_period_hours]
+
+    conn
+    |> put_status(200)
+    |> json(%{update_period_hours: public_metrics_update_period_hours})
+  end
 end

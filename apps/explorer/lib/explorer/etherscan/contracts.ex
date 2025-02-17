@@ -90,14 +90,13 @@ defmodule Explorer.Etherscan.Contracts do
   def append_proxy_info(%Address{smart_contract: smart_contract} = address) when not is_nil(smart_contract) do
     updated_smart_contract =
       if Proxy.proxy_contract?(smart_contract) do
+        implementation = Implementation.get_implementation(smart_contract)
+
         smart_contract
         |> Map.put(:is_proxy, true)
         |> Map.put(
           :implementation_address_hash_strings,
-          smart_contract
-          |> Implementation.get_implementation()
-          |> Tuple.to_list()
-          |> List.first()
+          implementation.address_hashes
         )
       else
         smart_contract
@@ -153,7 +152,7 @@ defmodule Explorer.Etherscan.Contracts do
     query =
       from(
         address in Address,
-        where: address.contract_code != <<>>,
+        where: address.contract_code != ^%Explorer.Chain.Data{bytes: <<>>},
         where: not is_nil(address.contract_code),
         where: address.decompiled == true,
         limit: ^limit,
@@ -171,7 +170,7 @@ defmodule Explorer.Etherscan.Contracts do
     query =
       from(
         address in Address,
-        where: address.contract_code != <<>>,
+        where: address.contract_code != ^%Explorer.Chain.Data{bytes: <<>>},
         where: not is_nil(address.contract_code),
         where: fragment("? IS NOT TRUE", address.verified),
         limit: ^limit,
@@ -191,7 +190,7 @@ defmodule Explorer.Etherscan.Contracts do
         address in Address,
         where: fragment("? IS NOT TRUE", address.verified),
         where: fragment("? IS NOT TRUE", address.decompiled),
-        where: address.contract_code != <<>>,
+        where: address.contract_code != ^%Explorer.Chain.Data{bytes: <<>>},
         where: not is_nil(address.contract_code),
         limit: ^limit,
         offset: ^offset
@@ -207,7 +206,7 @@ defmodule Explorer.Etherscan.Contracts do
   def list_empty_contracts(limit, offset) do
     query =
       from(address in Address,
-        where: address.contract_code == <<>>,
+        where: address.contract_code == ^%Explorer.Chain.Data{bytes: <<>>},
         preload: [:smart_contract, :decompiled_smart_contracts],
         order_by: [asc: address.inserted_at],
         limit: ^limit,

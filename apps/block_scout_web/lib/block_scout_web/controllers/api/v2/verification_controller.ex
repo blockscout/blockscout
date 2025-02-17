@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.V2.VerificationController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
+  import Explorer.Helper, only: [parse_boolean: 1]
 
   require Logger
 
@@ -11,19 +12,52 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Solidity.PublishHelper
+  alias Explorer.SmartContract.Stylus.PublisherWorker, as: StylusPublisherWorker
   alias Explorer.SmartContract.Vyper.PublisherWorker, as: VyperPublisherWorker
-  alias Explorer.SmartContract.{CompilerVersion, RustVerifierInterface, Solidity.CodeCompiler}
+  alias Explorer.SmartContract.{CompilerVersion, RustVerifierInterface, Solidity.CodeCompiler, StylusVerifierInterface}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @api_true [api?: true]
   @sc_verification_started "Smart-contract verification started"
+  @zk_optimization_modes ["0", "1", "2", "3", "s", "z"]
+
+  if @chain_type == :zksync do
+    @optimization_runs "0"
+  else
+    @optimization_runs 200
+  end
 
   def config(conn, _params) do
     solidity_compiler_versions = CompilerVersion.fetch_version_list(:solc)
     vyper_compiler_versions = CompilerVersion.fetch_version_list(:vyper)
 
-    verification_options =
+    verification_options = get_verification_options()
+
+    base_config =
+      %{
+        solidity_evm_versions: CodeCompiler.evm_versions(:solidity),
+        solidity_compiler_versions: solidity_compiler_versions,
+        vyper_compiler_versions: vyper_compiler_versions,
+        verification_options: verification_options,
+        vyper_evm_versions: CodeCompiler.evm_versions(:vyper),
+        is_rust_verifier_microservice_enabled: RustVerifierInterface.enabled?(),
+        license_types: Enum.into(SmartContract.license_types_enum(), %{})
+      }
+
+    config =
+      base_config
+      |> maybe_add_zk_options()
+      |> maybe_add_stylus_options()
+
+    conn
+    |> json(config)
+  end
+
+  defp get_verification_options do
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      ["standard-input"]
+    else
       ["flattened-code", "standard-input", "vyper-code"]
       |> (&if(Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled],
             do: ["sourcify" | &1],
@@ -33,17 +67,33 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
             do: ["multi-part", "vyper-multi-part", "vyper-standard-input"] ++ &1,
             else: &1
           )).()
+      |> (&if(StylusVerifierInterface.enabled?(),
+            do: ["stylus-github-repository" | &1],
+            else: &1
+          )).()
+    end
+  end
 
-    conn
-    |> json(%{
-      solidity_evm_versions: CodeCompiler.evm_versions(:solidity),
-      solidity_compiler_versions: solidity_compiler_versions,
-      vyper_compiler_versions: vyper_compiler_versions,
-      verification_options: verification_options,
-      vyper_evm_versions: CodeCompiler.evm_versions(:vyper),
-      is_rust_verifier_microservice_enabled: RustVerifierInterface.enabled?(),
-      license_types: Enum.into(SmartContract.license_types_enum(), %{})
-    })
+  defp maybe_add_zk_options(config) do
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      zk_compiler_versions = CompilerVersion.fetch_version_list(:zk)
+
+      config
+      |> Map.put(:zk_compiler_versions, zk_compiler_versions)
+      |> Map.put(:zk_optimization_modes, @zk_optimization_modes)
+    else
+      config
+    end
+  end
+
+  # Adds Stylus compiler versions to config if Stylus verification is enabled
+  defp maybe_add_stylus_options(config) do
+    if StylusVerifierInterface.enabled?() do
+      config
+      |> Map.put(:stylus_compiler_versions, CompilerVersion.fetch_version_list(:stylus))
+    else
+      config
+    end
   end
 
   def verification_via_flattened_code(
@@ -62,7 +112,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         }
         |> Map.put("optimization", Map.get(params, "is_optimization_enabled", false))
         |> (&if(params |> Map.get("is_optimization_enabled", false) |> parse_boolean(),
-              do: Map.put(&1, "optimization_runs", Map.get(params, "optimization_runs", 200)),
+              do: Map.put(&1, "optimization_runs", Map.get(params, "optimization_runs", @optimization_runs)),
               else: &1
             )).()
         |> Map.put("evm_version", Map.get(params, "evm_version", "default"))
@@ -98,6 +148,10 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", ""))
         |> Map.put("name", Map.get(params, "contract_name", ""))
         |> Map.put("license_type", Map.get(params, "license_type"))
+        |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+              do: Map.put(&1, "zk_compiler_version", Map.get(params, "zk_compiler_version")),
+              else: &1
+            )).()
 
       log_sc_verification_started(address_hash_string)
       Que.add(SolidityPublisherWorker, {"json_api_v2", verification_params, json_input})
@@ -150,7 +204,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         }
         |> Map.put("optimization", Map.get(params, "is_optimization_enabled", false))
         |> (&if(params |> Map.get("is_optimization_enabled", false) |> parse_boolean(),
-              do: Map.put(&1, "optimization_runs", Map.get(params, "optimization_runs", 200)),
+              do: Map.put(&1, "optimization_runs", Map.get(params, "optimization_runs", @optimization_runs)),
               else: &1
             )).()
         |> Map.put("evm_version", Map.get(params, "evm_version", "default"))
@@ -254,6 +308,59 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     end
   end
 
+  @doc """
+    Initiates verification of a Stylus smart contract using its GitHub repository source code.
+
+    Validates the request parameters and queues the verification job to be processed
+    asynchronously by the Stylus publisher worker.
+
+    ## Parameters
+    - `conn`: The connection struct
+    - `params`: A map containing:
+      - `address_hash`: Contract address to verify
+      - `cargo_stylus_version`: Version of cargo-stylus used for deployment
+      - `repository_url`: GitHub repository URL containing contract code
+      - `commit`: Git commit hash used for deployment
+      - `path_prefix`: Optional path prefix if contract is not in repository root
+
+    ## Returns
+    - JSON response with:
+      - Success message if verification request is queued successfully
+      - Error message if:
+        - Stylus verification is not enabled
+        - Address format is invalid
+        - Contract is already verified
+        - Access is restricted
+  """
+  @spec verification_via_stylus_github_repository(Plug.Conn.t(), %{String.t() => any()}) ::
+          {:already_verified, true}
+          | {:format, :error}
+          | {:not_found, false | nil}
+          | {:restricted_access, true}
+          | Plug.Conn.t()
+  def verification_via_stylus_github_repository(
+        conn,
+        %{
+          "address_hash" => address_hash_string,
+          "cargo_stylus_version" => _,
+          "repository_url" => _,
+          "commit" => _,
+          "path_prefix" => _
+        } = params
+      ) do
+    Logger.info("API v2 stylus smart-contract #{address_hash_string} verification via github repository")
+
+    with {:not_found, true} <- {:not_found, StylusVerifierInterface.enabled?()},
+         :validated <- validate_address(params) do
+      log_sc_verification_started(address_hash_string)
+      Que.add(StylusPublisherWorker, {"github_repository", params})
+
+      conn
+      |> put_view(ApiView)
+      |> render(:message, %{message: @sc_verification_started})
+    end
+  end
+
   defp parse_interfaces(interfaces) do
     cond do
       is_binary(interfaces) ->
@@ -288,6 +395,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
 
   defp validate_address(%{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:not_a_smart_contract, bytecode} when bytecode != "0x" <-
+           {:not_a_smart_contract, Chain.smart_contract_bytecode(address_hash, @api_true)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:already_verified, false} <-
            {:already_verified, SmartContract.verified_with_full_match?(address_hash, @api_true)} do

@@ -11,6 +11,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     Block,
     InternalTransaction,
     Log,
+    Token.Instance,
     TokenTransfer,
     Transaction,
     Withdrawal
@@ -68,6 +69,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
       |> Enum.reduce([], fn item, acc ->
         item_to_address_hash_strings(item) ++ acc
       end)
+      |> Enum.filter(&(&1 != ""))
       |> Enum.uniq()
 
     case BENS.ens_names_batch_request(address_hash_strings) do
@@ -86,9 +88,8 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   def preload_metadata_to_list(items) do
     address_hash_strings =
       items
-      |> Enum.reduce([], fn item, acc ->
-        item_to_address_hash_strings(item) ++ acc
-      end)
+      |> Enum.flat_map(&item_to_address_hash_strings/1)
+      |> Enum.filter(&(&1 != ""))
       |> Enum.uniq()
 
     case Metadata.get_addresses_tags(address_hash_strings) do
@@ -126,6 +127,8 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
         search_result
     end)
   end
+
+  defp item_to_address_hash_strings(nil), do: []
 
   defp item_to_address_hash_strings(%Transaction{
          to_address_hash: to_address_hash,
@@ -185,6 +188,10 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     [to_string(hash)]
   end
 
+  defp item_to_address_hash_strings(%Instance{owner_address_hash: owner_address_hash}) do
+    [to_string(owner_address_hash)]
+  end
+
   defp put_ens_names(names, items) do
     Enum.map(items, &put_meta_to_item(&1, names, :ens_domain_name))
   end
@@ -198,12 +205,12 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
            to_address_hash: to_address_hash,
            created_contract_address_hash: created_contract_address_hash,
            from_address_hash: from_address_hash
-         } = tx,
+         } = transaction,
          names,
          field_to_put_info
        ) do
     token_transfers =
-      case tx.token_transfers do
+      case transaction.token_transfers do
         token_transfers_list when is_list(token_transfers_list) ->
           Enum.map(token_transfers_list, &put_meta_to_item(&1, names, field_to_put_info))
 
@@ -212,11 +219,11 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
       end
 
     %Transaction{
-      tx
-      | to_address: alter_address(tx.to_address, to_address_hash, names, field_to_put_info),
+      transaction
+      | to_address: alter_address(transaction.to_address, to_address_hash, names, field_to_put_info),
         created_contract_address:
-          alter_address(tx.created_contract_address, created_contract_address_hash, names, field_to_put_info),
-        from_address: alter_address(tx.from_address, from_address_hash, names, field_to_put_info),
+          alter_address(transaction.created_contract_address, created_contract_address_hash, names, field_to_put_info),
+        from_address: alter_address(transaction.from_address, from_address_hash, names, field_to_put_info),
         token_transfers: token_transfers
     }
   end
@@ -241,16 +248,16 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
            to_address_hash: to_address_hash,
            created_contract_address_hash: created_contract_address_hash,
            from_address_hash: from_address_hash
-         } = tx,
+         } = transaction,
          names,
          field_to_put_info
        ) do
     %InternalTransaction{
-      tx
-      | to_address: alter_address(tx.to_address, to_address_hash, names, field_to_put_info),
+      transaction
+      | to_address: alter_address(transaction.to_address, to_address_hash, names, field_to_put_info),
         created_contract_address:
-          alter_address(tx.created_contract_address, created_contract_address_hash, names, field_to_put_info),
-        from_address: alter_address(tx.from_address, from_address_hash, names, field_to_put_info)
+          alter_address(transaction.created_contract_address, created_contract_address_hash, names, field_to_put_info),
+        from_address: alter_address(transaction.from_address, from_address_hash, names, field_to_put_info)
     }
   end
 
@@ -285,11 +292,21 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     alter_address(address, address.hash, names, field_to_put_info)
   end
 
-  defp alter_address(_, nil, _names, _field) do
-    nil
+  defp put_meta_to_item(
+         %Instance{owner: owner_address, owner_address_hash: owner_address_hash} = instance,
+         names,
+         field_to_put_info
+       ) do
+    %Instance{instance | owner: alter_address(owner_address, owner_address_hash, names, field_to_put_info)}
   end
 
+  defp alter_address(address, nil, _names, _field), do: address
+
   defp alter_address(%NotLoaded{}, address_hash, names, field) do
+    %{field => names[Address.checksum(address_hash)]}
+  end
+
+  defp alter_address(nil, address_hash, names, field) do
     %{field => names[Address.checksum(address_hash)]}
   end
 

@@ -1,8 +1,10 @@
 defmodule BlockScoutWeb.API.RPC.ContractController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Logger
 
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.RPC.{AddressController, Helper}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, SmartContract}
@@ -15,7 +17,12 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
-  import BlockScoutWeb.API.V2.AddressController, only: [validate_address: 2, validate_address: 3]
+
+  if @chain_type == :zksync do
+    @optimization_runs "0"
+  else
+    @optimization_runs 200
+  end
 
   @smth_went_wrong "Something went wrong while publishing the contract"
   @verified "Smart-contract already verified."
@@ -25,6 +32,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   @addresses_required "Query parameter contractaddresses is required"
   @contract_not_found "Smart-contract not found or is not verified"
   @restricted_access "Access to this address is restricted"
+  @not_a_smart_contract "The address is not a smart contract"
 
   @addresses_limit 10
   @api_true [api?: true]
@@ -64,6 +72,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:params, external_libraries} <-
            {:params, fetch_external_libraries(params)},
+         {:not_a_smart_contract, bytecode} when bytecode != "0x" <-
+           {:not_a_smart_contract, Chain.smart_contract_bytecode(casted_address_hash, @api_true)},
          {:publish, {:ok, _}} <-
            {:publish, Publisher.publish(address_hash, fetched_params, external_libraries)} do
       address = Contracts.address_hash_to_address_with_source_code(casted_address_hash)
@@ -95,22 +105,14 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
         render(conn, :error, error: "#{@smth_went_wrong}: #{inspect(error.errors)}")
 
-      {:publish, error} ->
-        Logger.error(fn ->
-          [
-            @smth_went_wrong,
-            ": ",
-            inspect(error)
-          ]
-        end)
-
-        render(conn, :error, error: @smth_went_wrong)
-
       {:format, :error} ->
         render(conn, :error, error: @invalid_address)
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error)
+
+      {:not_a_smart_contract, _} ->
+        render(conn, :error, error: @not_a_smart_contract, data: @not_a_smart_contract)
     end
   end
 
@@ -136,9 +138,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
           else
             {:error, error} ->
               render(conn, :error, error: error)
-
-            _ ->
-              render(conn, :error, error: "Invalid body")
           end
       end
     end
@@ -154,8 +153,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       ) do
     with {:check_verified_status, false} <-
            {:check_verified_status, SmartContract.verified_with_full_match?(address_hash)},
-         {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
+         {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
+         {:not_a_smart_contract, bytecode} when bytecode != "0x" <-
+           {:not_a_smart_contract, Chain.smart_contract_bytecode(casted_address_hash, @api_true)},
          uid <- VerificationStatus.generate_uid(address_hash) do
       Que.add(SolidityPublisherWorker, {"json_api", fetched_params, json_input, uid})
 
@@ -169,6 +170,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error, data: error)
+
+      {:not_a_smart_contract, _} ->
+        render(conn, :error, error: @not_a_smart_contract, data: @not_a_smart_contract)
     end
   end
 
@@ -185,8 +189,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       ) do
     with {:check_verified_status, false} <-
            {:check_verified_status, SmartContract.verified_with_full_match?(address_hash)},
-         {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
+         {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_solidity_single_file_params(params)},
+         {:not_a_smart_contract, bytecode} when bytecode != "0x" <-
+           {:not_a_smart_contract, Chain.smart_contract_bytecode(casted_address_hash, @api_true)},
          external_libraries <- fetch_external_libraries_for_verifysourcecode(params),
          uid <- VerificationStatus.generate_uid(address_hash) do
       Que.add(SolidityPublisherWorker, {"flattened_api", fetched_params, external_libraries, uid})
@@ -201,6 +207,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error, data: error)
+
+      {:not_a_smart_contract, _} ->
+        render(conn, :error, error: @not_a_smart_contract, data: @not_a_smart_contract)
     end
   end
 
@@ -420,6 +429,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def verify_vyper_contract(conn, %{"addressHash" => address_hash} = params) do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_vyper_verify_params(params)},
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
+         {:not_a_smart_contract, bytecode} when bytecode != "0x" <-
+           {:not_a_smart_contract, Chain.smart_contract_bytecode(casted_address_hash, @api_true)},
          {:publish, {:ok, _}} <-
            {:publish, VyperPublisher.publish(address_hash, fetched_params)} do
       address = Contracts.address_hash_to_address_with_source_code(casted_address_hash)
@@ -448,6 +459,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error)
+
+      {:not_a_smart_contract, _} ->
+        render(conn, :error, error: @not_a_smart_contract, data: @not_a_smart_contract)
     end
   end
 
@@ -639,6 +653,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "compilerversion", "compiler_version")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
     |> optional_param(params, "licenseType", "license_type")
+    |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+          do: optional_param(&1, params, "zksolcVersion", "zk_compiler_version"),
+          else: &1
+        )).()
   end
 
   defp fetch_verifysourcecode_solidity_single_file_params(params) do
@@ -661,7 +679,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         {:ok, Map.put(opts, "optimization_runs", runs_int)}
 
       _ ->
-        {:ok, Map.put(opts, "optimization_runs", 200)}
+        {:ok, Map.put(opts, "optimization_runs", @optimization_runs)}
     end
   end
 
@@ -670,7 +688,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   defp parse_optimization_runs({:ok, opts}) do
-    {:ok, Map.put(opts, "optimization_runs", 200)}
+    {:ok, Map.put(opts, "optimization_runs", @optimization_runs)}
   end
 
   defp parse_optimization_runs(other), do: other
@@ -750,4 +768,21 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp parse_optimization(true), do: true
 
   defp parse_optimization(_), do: :error
+
+  @doc """
+   Checks if this valid address hash string, and this address is not prohibited address.
+   Returns the `{:ok, address_hash, address}` if address hash passed all the checks.
+  """
+  @spec validate_address(String.t(), any(), Keyword.t()) ::
+          {:format, :error}
+          | {:not_found, {:error, :not_found}}
+          | {:restricted_access, true}
+          | {:ok, Hash.t(), Address.t()}
+  def validate_address(address_hash_string, params, options \\ @api_true) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, options, false)} do
+      {:ok, address_hash, address}
+    end
+  end
 end

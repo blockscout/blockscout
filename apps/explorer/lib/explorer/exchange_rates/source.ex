@@ -4,7 +4,7 @@ defmodule Explorer.ExchangeRates.Source do
   """
 
   alias Explorer.Chain.Hash
-  alias Explorer.ExchangeRates.Source.CoinGecko
+  alias Explorer.ExchangeRates.Source.{CoinGecko, Cryptorank}
   alias Explorer.ExchangeRates.Token
   alias Explorer.Helper
   alias HTTPoison.{Error, Response}
@@ -16,6 +16,17 @@ defmodule Explorer.ExchangeRates.Source do
   def fetch_exchange_rates(source \\ exchange_rates_source()) do
     source_url = source.source_url()
     fetch_exchange_rates_request(source, source_url, source.headers())
+  end
+
+  @doc """
+  Fetches exchange rates for secondary coin.
+  """
+  @spec fetch_secondary_exchange_rates(module) :: {:ok, [Token.t()]} | {:error, any}
+  def fetch_secondary_exchange_rates(source \\ secondary_exchange_rates_source()) do
+    case source.secondary_source_url() do
+      :ignore -> {:error, "Secondary coin fetching is not implemented for source #{inspect(source)}"}
+      source_url -> fetch_exchange_rates_request(source, source_url, source.headers())
+    end
   end
 
   @spec fetch_exchange_rates_for_token(String.t()) :: {:ok, [Token.t()]} | {:error, any}
@@ -56,6 +67,26 @@ defmodule Explorer.ExchangeRates.Source do
     end
   end
 
+  @doc """
+  Fetches exchange rates for tokens from cryptorank.
+  """
+  @spec cryptorank_fetch_currencies(integer(), integer()) ::
+          {:error, any()}
+          | {:ok, map()}
+  def cryptorank_fetch_currencies(limit, offset) do
+    source_url = Cryptorank.source_url(:currencies, limit, offset)
+
+    case http_request(source_url, []) do
+      {:ok, result} ->
+        {:ok,
+         result
+         |> Cryptorank.format_data()}
+
+      resp ->
+        resp
+    end
+  end
+
   defp fetch_exchange_rates_request(_source, source_url, _headers) when is_nil(source_url),
     do: {:error, "Source URL is nil"}
 
@@ -85,6 +116,11 @@ defmodule Explorer.ExchangeRates.Source do
 
   @callback source_url(String.t()) :: String.t() | :ignore
 
+  @doc """
+  Url for the api to query to get the market info for secondary coin.
+  """
+  @callback secondary_source_url :: String.t() | nil | :ignore
+
   @callback headers :: [any]
 
   def headers do
@@ -106,6 +142,11 @@ defmodule Explorer.ExchangeRates.Source do
   @spec exchange_rates_source() :: module()
   defp exchange_rates_source do
     config(:source) || Explorer.ExchangeRates.Source.CoinGecko
+  end
+
+  @spec secondary_exchange_rates_source() :: module()
+  defp secondary_exchange_rates_source do
+    config(:secondary_coin_source) || exchange_rates_source()
   end
 
   @spec config(atom()) :: term
@@ -145,6 +186,29 @@ defmodule Explorer.ExchangeRates.Source do
       {:error, "#{status_code}: #{body_json["error"]}"}
     else
       {:error, "#{status_code}: #{body}"}
+    end
+  end
+
+  @doc """
+  Returns `nil` if the date is `nil`, otherwise returns the parsed date.
+  Date should be in ISO8601 format
+  """
+  @spec maybe_get_date(String.t() | nil) :: DateTime.t() | nil
+  def maybe_get_date(nil), do: nil
+
+  def maybe_get_date(date) do
+    {:ok, parsed_date, 0} = DateTime.from_iso8601(date)
+    parsed_date
+  end
+
+  @doc """
+  Returns `nil` if the url is invalid, otherwise returns the parsed url.
+  """
+  @spec handle_image_url(String.t() | nil) :: String.t() | nil
+  def handle_image_url(url) do
+    case Helper.validate_url(url) do
+      {:ok, url} -> url
+      _ -> nil
     end
   end
 end

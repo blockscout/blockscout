@@ -88,6 +88,19 @@ defmodule Explorer.History.Process do
   # Helper
   @typep milliseconds :: non_neg_integer()
 
+  @doc """
+    Retrieves a configuration value from the `:explorer` application or returns a default if not set.
+
+    ## Parameters
+    - `key`: The configuration key to look up.
+    - `default`: The default value to return if the configuration is not found.
+    - `module`: The module to look up the configuration for. Defaults to the
+      calling module.
+
+    ## Returns
+    - The configuration value if found in the :explorer application settings,
+      otherwise the default value.
+  """
   @spec config_or_default(atom(), term(), module()) :: term()
   def config_or_default(key, default, module \\ __MODULE__) do
     Application.get_env(:explorer, module, [])[key] || default

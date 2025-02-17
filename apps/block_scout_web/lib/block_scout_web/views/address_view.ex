@@ -4,12 +4,12 @@ defmodule BlockScoutWeb.AddressView do
   require Logger
 
   alias BlockScoutWeb.{AccessHelper, LayoutView}
+  alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.AddressView do
   def address_partial_selector(struct_to_render_from, direction, current_address, truncate \\ false)
 
   def address_partial_selector(%Address{} = address, _, current_address, truncate) do
-    matching_address_check(current_address, address, contract?(address), truncate)
+    matching_address_check(current_address, address, Address.smart_contract?(address), truncate)
   end
 
   def address_partial_selector(
@@ -58,19 +58,19 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def address_partial_selector(%InternalTransaction{to_address: address}, :to, current_address, truncate) do
-    matching_address_check(current_address, address, contract?(address), truncate)
+    matching_address_check(current_address, address, Address.smart_contract?(address), truncate)
   end
 
   def address_partial_selector(%InternalTransaction{from_address: address}, :from, current_address, truncate) do
-    matching_address_check(current_address, address, contract?(address), truncate)
+    matching_address_check(current_address, address, Address.smart_contract?(address), truncate)
   end
 
   def address_partial_selector(%TokenTransfer{to_address: address}, :to, current_address, truncate) do
-    matching_address_check(current_address, address, contract?(address), truncate)
+    matching_address_check(current_address, address, Address.smart_contract?(address), truncate)
   end
 
   def address_partial_selector(%TokenTransfer{from_address: address}, :from, current_address, truncate) do
-    matching_address_check(current_address, address, contract?(address), truncate)
+    matching_address_check(current_address, address, Address.smart_contract?(address), truncate)
   end
 
   def address_partial_selector(
@@ -92,11 +92,11 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def address_partial_selector(%Transaction{to_address: address}, :to, current_address, truncate) do
-    matching_address_check(current_address, address, contract?(address), truncate)
+    matching_address_check(current_address, address, Address.smart_contract?(address), truncate)
   end
 
   def address_partial_selector(%Transaction{from_address: address}, :from, current_address, truncate) do
-    matching_address_check(current_address, address, contract?(address), truncate)
+    matching_address_check(current_address, address, Address.smart_contract?(address), truncate)
   end
 
   def address_partial_selector(%Reward{address: address}, _, current_address, truncate) do
@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def address_title(%Address{} = address) do
-    if contract?(address) do
+    if Address.smart_contract?(address) do
       gettext("Contract Address")
     else
       gettext("Address")
@@ -167,12 +167,6 @@ defmodule BlockScoutWeb.AddressView do
     to_string(fetched_coin_balance_block_number)
   end
 
-  def contract?(%Address{contract_code: nil}), do: false
-
-  def contract?(%Address{contract_code: _}), do: true
-
-  def contract?(nil), do: true
-
   def validator?(val) when val > 0, do: true
 
   def validator?(_), do: false
@@ -184,15 +178,10 @@ defmodule BlockScoutWeb.AddressView do
   @doc """
   Returns the primary name of an address if available. If there is no names on address function performs preload of names association.
   """
-  def primary_name(%Address{names: [_ | _] = address_names}) do
-    case Enum.find(address_names, &(&1.primary == true)) do
-      nil ->
-        %Address.Name{name: name} = Enum.at(address_names, 0)
-        name
+  def primary_name(nil), do: nil
 
-      %Address.Name{name: name} ->
-        name
-    end
+  def primary_name(%Address{names: [_ | _]} = address) do
+    APIV2Helper.address_name(address)
   end
 
   def primary_name(%Address{names: %Ecto.Association.NotLoaded{}} = address) do
@@ -257,15 +246,7 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: _}), do: false
 
-  def read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
-
-  def smart_contract_is_proxy?(address, options \\ [])
-
-  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}, options) do
-    Proxy.proxy_contract?(smart_contract, options)
-  end
-
-  def smart_contract_is_proxy?(%Address{smart_contract: _}, _), do: false
+  def read_function?(function), do: Helper.queryable_method?(function) || Helper.read_with_wallet_method?(function)
 
   def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
     !contract_interaction_disabled?() &&
@@ -447,16 +428,10 @@ defmodule BlockScoutWeb.AddressView do
   def address_page_title(address) do
     cond do
       smart_contract_verified?(address) -> "#{address.smart_contract.name} (#{to_string(address)})"
-      contract?(address) -> "Contract #{to_string(address)}"
+      Address.smart_contract?(address) -> "Contract #{to_string(address)}"
       true -> "#{to_string(address)}"
     end
   end
-
-  def smart_contract_is_gnosis_safe_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
-    address.smart_contract.name == "GnosisSafeProxy" && Proxy.gnosis_safe_contract?(address.smart_contract.abi)
-  end
-
-  def smart_contract_is_gnosis_safe_proxy?(_address), do: false
 
   def tag_name_to_label(tag_name) do
     tag_name

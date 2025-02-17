@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
     only: [get_logs_all: 3, import_operations: 1, prepare_operations: 7]
 
   alias Explorer.Chain.PolygonZkevm.{Bridge, Reader}
+  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
@@ -56,7 +57,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
     env_l2 = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonZkevm.BridgeL2]
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
-         {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
+         _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
          {:rollup_network_id_l1_is_valid, true} <-
@@ -77,8 +78,10 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
            {:start_block_valid,
             (start_block <= last_l1_block_number || last_l1_block_number == 0) && start_block <= safe_block,
             last_l1_block_number, safe_block},
-         {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)} do
+         {:ok, last_l1_transaction} <-
+           Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:l1_transaction_not_found, false} <-
+           {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)} do
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -96,10 +99,6 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
     else
       {:start_block_undefined, true} ->
         # the process shouldn't start if the start block is not defined
-        {:stop, :normal, %{}}
-
-      {:reorg_monitor_started, false} ->
-        Logger.error("Cannot start this process as Indexer.Fetcher.RollupL1ReorgMonitor is not started.")
         {:stop, :normal, %{}}
 
       {:rpc_undefined, true} ->
@@ -144,7 +143,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
 
         {:stop, :normal, %{}}
 
-      {:l1_tx_not_found, true} ->
+      {:l1_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check polygon_zkevm_bridge table."
         )
@@ -208,7 +207,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)
@@ -219,7 +218,9 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
       end)
 
     new_start_block = last_written_block + 1
-    {:ok, new_end_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+
+    {:ok, new_end_block} =
+      Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
     delay =
       if new_end_block == last_written_block do
@@ -238,6 +239,27 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary()
+  def l1_rpc_url do
+    Application.get_all_env(:indexer)[__MODULE__][:rpc]
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    for this module.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    module_config = Application.get_all_env(:indexer)[__MODULE__]
+    not is_nil(module_config[:start_block])
   end
 
   defp reorg_handle(reorg_block) do

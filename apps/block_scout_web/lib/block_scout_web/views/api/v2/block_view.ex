@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.BlockView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.BlockView
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
@@ -36,7 +37,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     %{
       "height" => block.number,
       "timestamp" => block.timestamp,
-      "tx_count" => count_transactions(block),
+      "transaction_count" => count_transactions(block),
       "miner" => Helper.address_with_info(nil, block.miner, block.miner_hash, false),
       "size" => block.size,
       "hash" => block.hash,
@@ -57,7 +58,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "gas_used_percentage" => Block.gas_used_percentage(block),
       "burnt_fees_percentage" => burnt_fees_percentage(burnt_fees, transaction_fees),
       "type" => block |> BlockView.block_type() |> String.downcase(),
-      "tx_fees" => transaction_fees,
+      "transaction_fees" => transaction_fees,
       "withdrawals_count" => count_withdrawals(block)
     }
     |> chain_type_fields(block, single_block?)
@@ -93,13 +94,13 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
   def burnt_fees_percentage(_, _), do: nil
 
-  def count_transactions(%Block{transactions: txs}) when is_list(txs), do: Enum.count(txs)
+  def count_transactions(%Block{transactions: transactions}) when is_list(transactions), do: Enum.count(transactions)
   def count_transactions(_), do: nil
 
   def count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
   def count_withdrawals(_), do: nil
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :rsk ->
       defp chain_type_fields(result, block, single_block?) do
         if single_block? do
@@ -144,6 +145,18 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       defp chain_type_fields(result, block, single_block?) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.EthereumView.extend_block_json_response(result, block, single_block?)
+      end
+
+    :celo ->
+      defp chain_type_fields(result, block, single_block?) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.CeloView.extend_block_json_response(result, block, single_block?)
+      end
+
+    :zilliqa ->
+      defp chain_type_fields(result, block, single_block?) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.ZilliqaView.extend_block_json_response(result, block, single_block?)
       end
 
     _ ->

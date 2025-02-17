@@ -42,7 +42,8 @@ defmodule Explorer.Account.Notifier.EmailTest do
 
   describe "composing email" do
     test "compose_email" do
-      {:ok, tx_hash} = string_to_transaction_hash("0x5d5ff210261f1b2d6e4af22ea494f428f9997d4ab614a629d4f1390004b3e80d")
+      {:ok, transaction_hash} =
+        string_to_transaction_hash("0x5d5ff210261f1b2d6e4af22ea494f428f9997d4ab614a629d4f1390004b3e80d")
 
       {:ok, from_hash} = string_to_address_hash("0x092D537737E767Dae48c28aE509f34094496f030")
 
@@ -67,14 +68,14 @@ defmodule Explorer.Account.Notifier.EmailTest do
 
       watchlist_notification = %WatchlistNotification{
         watchlist_address: watchlist_address,
-        transaction_hash: tx_hash,
+        transaction_hash: transaction_hash,
         from_address_hash: from_hash,
         to_address_hash: to_hash,
         direction: "incoming",
         method: "transfer",
         block_number: 24_121_177,
         amount: Decimal.new(1),
-        tx_fee: Decimal.new(210_000),
+        transaction_fee: Decimal.new(210_000),
         name: "wallet",
         type: "COIN"
       }
@@ -108,7 +109,7 @@ defmodule Explorer.Account.Notifier.EmailTest do
                        "transaction_hash" => "0x5d5ff210261f1b2d6e4af22ea494f428f9997d4ab614a629d4f1390004b3e80d",
                        "transaction_url" =>
                          "https://eth.blockscout.com/tx/0x5d5ff210261f1b2d6e4af22ea494f428f9997d4ab614a629d4f1390004b3e80d",
-                       "tx_fee" => Decimal.new(210_000),
+                       "transaction_fee" => Decimal.new(210_000),
                        "username" => "John Snow"
                      },
                      template_id: "d-666"

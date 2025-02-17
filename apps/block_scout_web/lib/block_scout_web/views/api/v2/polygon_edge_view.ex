@@ -52,10 +52,10 @@ defmodule BlockScoutWeb.API.V2.PolygonEdgeView do
     count
   end
 
-  def extend_transaction_json_response(out_json, tx_hash, connection) do
+  def extend_transaction_json_response(out_json, transaction_hash, connection) do
     out_json
-    |> Map.put("polygon_edge_deposit", polygon_edge_deposit(tx_hash, connection))
-    |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(tx_hash, connection))
+    |> Map.put("polygon_edge_deposit", polygon_edge_deposit(transaction_hash, connection))
+    |> Map.put("polygon_edge_withdrawal", polygon_edge_withdrawal(transaction_hash, connection))
   end
 
   defp polygon_edge_deposit(transaction_hash, conn) do
@@ -90,7 +90,7 @@ defmodule BlockScoutWeb.API.V2.PolygonEdgeView do
                necessity_by_association: %{
                  :names => :optional,
                  :smart_contract => :optional,
-                 :proxy_implementations => :optional
+                 proxy_implementations_association() => :optional
                },
                api?: true
              ],
