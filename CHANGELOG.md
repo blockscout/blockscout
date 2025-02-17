@@ -71,6 +71,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Replace composite id types usage ([#11861](https://github.com/blockscout/blockscout/pull/11861))
 - Correct the docker compose command for running an external frontend in README.md ([#11838](https://github.com/blockscout/blockscout/pull/11838))
 - Update link to the list of chains in README.md ([#11829](https://github.com/blockscout/blockscout/pull/11829))
 - Create /api/v2/proxy/3dparty/ root path for 3dparty proxy API endpoints ([#11808](https://github.com/blockscout/blockscout/issues/11808))
