@@ -5,6 +5,17 @@ defmodule Explorer.QueryHelper do
 
   import Ecto.Query
 
+  @doc """
+  Generates a fragment for multi column filtering.
+
+  ## Example
+
+  This clause
+  `where: ^QueryHelper.tuple_in([:address_hash, :token_contract_address_hash, :token_id], ids)`
+  will be transformed to such SQL:
+  `WHERE (address_hash, token_contract_address_hash, token_id) IN ((*hash_bytes*, *hash_bytes*, *token_id*), ...)`
+  """
+  @spec tuple_in([atom()], [any()]) :: any()
   def tuple_in(_fields, []), do: false
 
   # sobelow_skip ["RCE.CodeModule"]
