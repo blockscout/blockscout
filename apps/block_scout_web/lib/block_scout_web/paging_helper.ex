@@ -81,13 +81,19 @@ defmodule BlockScoutWeb.PagingHelper do
     ]
   end
 
+  def token_transfers_types_options(%{type: filters}) do
+    [
+      token_type: filters_to_list(filters, @allowed_token_transfer_type_labels)
+    ]
+  end
+
   def token_transfers_types_options(_), do: [token_type: []]
 
   @doc """
     Parse 'type' query parameter from request option map
   """
   @spec nft_types_options(map()) :: [{:token_type, list}]
-  def nft_types_options(%{"type" => filters}) do
+  def nft_types_options(%{type: filters}) do
     [
       token_type: filters_to_list(filters, @allowed_nft_type_labels)
     ]
@@ -222,6 +228,7 @@ defmodule BlockScoutWeb.PagingHelper do
   def delete_parameters_from_next_page_params(params) when is_map(params) do
     params
     |> Map.drop([
+      :address_hash_param,
       "block_hash_or_number",
       "transaction_hash_param",
       "address_hash_param",
@@ -283,10 +290,10 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_tokens_sorting("circulating_market_cap", "desc"), do: [desc_nulls_last: :circulating_market_cap]
   defp do_tokens_sorting(_, _), do: []
 
-  @spec address_transactions_sorting(%{required(String.t()) => String.t()}) :: [
+  @spec address_transactions_sorting(%{required(atom()) => String.t()}) :: [
           {:sorting, SortingHelper.sorting_params()}
         ]
-  def address_transactions_sorting(%{"sort" => sort_field, "order" => order}) do
+  def address_transactions_sorting(%{sort: sort_field, order: order}) do
     [sorting: do_address_transaction_sorting(sort_field, order)]
   end
 
@@ -395,7 +402,7 @@ defmodule BlockScoutWeb.PagingHelper do
   @spec addresses_sorting(%{required(String.t()) => String.t()}) :: [
           {:sorting, SortingHelper.sorting_params()}
         ]
-  def addresses_sorting(%{"sort" => sort_field, "order" => order}) do
+  def addresses_sorting(%{sort: sort_field, order: order}) do
     [sorting: do_addresses_sorting(sort_field, order)]
   end
 

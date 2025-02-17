@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
+  import Ecto.Query, only: [from: 2]
 
   alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
@@ -2019,7 +2020,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    "indexed" => false,
                    "name" => "option",
                    "type" => "address",
-                   "value" => "0xAeB81cbe6b19CeEB0dBE0d230CFFE35Bb40a13a7"
+                   "value" => Address.checksum("0xAeB81cbe6b19CeEB0dBE0d230CFFE35Bb40a13a7")
                  },
                  %{
                    "indexed" => false,
