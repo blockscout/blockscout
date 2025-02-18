@@ -22,7 +22,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
   require Logger
 
   import EthereumJSONRPC, only: [id_to_params: 1, quantity_to_integer: 1, integer_to_quantity: 1]
-  import Explorer.Helper, only: [decode_data: 2]
+  import Explorer.Helper, only: [decode_data: 2, truncate_address_hash: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
@@ -413,7 +413,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
 
           %{
             sender: sender,
-            target: Enum.at(event["topics"], 2),
+            target: truncate_address_hash(Enum.at(event["topics"], 2)),
             nonce: quantity_to_integer(Enum.at(event["topics"], 3)),
             init_chain_id: current_chain_id,
             init_transaction_hash: event["transactionHash"],

@@ -95,7 +95,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
       true ->
         # Chainscout API URL and fallback map are not defined, so we don't start this module
         Logger.warning(
-          "Both INDEXER_OPTIMISM_CHAINSCOUT_API_URL and INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP are not defined. The module #{__MODULE__} will not start"
+          "Both INDEXER_OPTIMISM_CHAINSCOUT_API_URL and INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP are not defined. The module #{__MODULE__} will not start."
         )
 
         {:stop, :normal, %{}}

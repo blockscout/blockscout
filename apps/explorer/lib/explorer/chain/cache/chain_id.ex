@@ -16,7 +16,7 @@ defmodule Explorer.Chain.Cache.ChainId do
 
       {:error, reason} ->
         Logger.debug([
-          "Couldn't fetch net_version, reason: #{inspect(reason)}"
+          "Couldn't fetch eth_chainId, reason: #{inspect(reason)}"
         ])
 
         {:return, nil}
