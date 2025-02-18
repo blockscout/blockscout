@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.Transaction
 
   alias Explorer.Chain.Optimism.{
@@ -35,7 +36,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
-  @interop_chain_id_to_instance_url_cache :interop_chain_id_to_instance_url_cache
+  @api_true [api?: true]
+  @interop_chain_id_to_instance_info_cache :interop_chain_id_to_instance_info_cache
   @interop_instance_url_to_public_key_cache :interop_instance_url_to_public_key_cache
 
   @doc """
@@ -273,6 +275,60 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
+    Function to handle GET requests to `/api/v2/optimism/interop/messages` endpoint.
+  """
+  @spec interop_messages(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def interop_messages(conn, params) do
+    {messages, next_page} =
+      params
+      |> paging_options()
+      |> Keyword.put(:api?, true)
+      |> InteropMessage.list()
+      |> split_list_by_page()
+
+    next_page_params = next_page_params(next_page, messages, params)
+
+    current_chain_id =
+      case ChainId.get_id() do
+        nil -> Application.get_env(:block_scout_web, :chain_id)
+        chain_id -> chain_id
+      end
+
+    messages_extended =
+      messages
+      |> Enum.map(fn message ->
+        cond do
+          message.init_chain_id != current_chain_id and not is_nil(current_chain_id) ->
+            Map.put(message, :init_chain, interop_chain_id_to_instance_info(message.init_chain_id))
+
+          message.relay_chain_id != current_chain_id and not is_nil(current_chain_id) ->
+            Map.put(message, :relay_chain, interop_chain_id_to_instance_info(message.relay_chain_id))
+
+          true ->
+            message
+        end
+      end)
+      |> Enum.map(&interop_message_extend_with_status(&1))
+
+    conn
+    |> put_status(200)
+    |> render(:optimism_interop_messages, %{
+      messages: messages_extended,
+      next_page_params: next_page_params
+    })
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/optimism/interop/messages/count` endpoint.
+  """
+  @spec interop_messages_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def interop_messages_count(conn, _params) do
+    conn
+    |> put_status(200)
+    |> render(:optimism_items_count, %{count: InteropMessage.count(@api_true)})
+  end
+
+  @doc """
     Function to handle GET requests to `/api/v2/optimism/withdrawals` endpoint.
   """
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -458,6 +514,25 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     }
   end
 
+  # Extends interop message map with :status field.
+  #
+  # ## Parameters
+  # - `message`: The map with message info.
+  #
+  # ## Returns
+  # - Extended map.
+  @spec interop_message_extend_with_status(map()) :: map()
+  defp interop_message_extend_with_status(message) do
+    status =
+      cond do
+        is_nil(message.relay_transaction_hash) -> "Sent"
+        message.failed -> "Failed"
+        true -> "Relayed"
+      end
+
+    Map.put(message, :status, status)
+  end
+
   # Renders HTTP error code and message.
   #
   # ## Parameters
@@ -495,22 +570,67 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     url_from_map = Map.get(env[:chainscout_fallback_map], chain_id)
 
     with {:not_in_map, true} <- {:not_in_map, is_nil(url_from_map)},
-         url_from_cache = ConCache.get(@interop_chain_id_to_instance_url_cache, chain_id),
-         {:not_in_cache, true, _} <- {:not_in_cache, is_nil(url_from_cache), url_from_cache} do
-      case Optimism.get_instance_url_by_chain_id(chain_id, env[:chainscout_api_url]) do
+         info_from_cache = ConCache.get(@interop_chain_id_to_instance_info_cache, chain_id),
+         {:not_in_cache, true, _} <- {:not_in_cache, is_nil(info_from_cache), info_from_cache} do
+      case Optimism.get_instance_info_by_chain_id(chain_id, env[:chainscout_api_url]) do
         nil ->
           nil
 
-        url ->
-          ConCache.put(@interop_chain_id_to_instance_url_cache, chain_id, url)
-          url
+        info ->
+          ConCache.put(@interop_chain_id_to_instance_info_cache, chain_id, info)
+          info.instance_url
       end
     else
       {:not_in_map, false} ->
         String.trim_trailing(url_from_map, "/")
 
-      {:not_in_cache, false, url_from_cache} ->
-        url_from_cache
+      {:not_in_cache, false, info_from_cache} ->
+        info_from_cache.instance_url
+    end
+  end
+
+  # Fetches instance info by chain ID using a request to Chainscout API which URL is defined in INDEXER_OPTIMISM_CHAINSCOUT_API_URL env variable.
+  # The successful response is cached in memory until the current instance is down.
+  #
+  # Firstly, it tries to read the instance info from cache. If that's not found in cache, the HTTP request to Chainscout API is performed.
+  # If the request fails, it tries to take the instance URL from INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP (but chain name and logo left unknown).
+  #
+  # ## Parameters
+  # - `chain_id`: The chain ID for which the instance info needs to be retrieved.
+  #
+  # ## Returns
+  # - Instance info map if found.
+  # - `nil` if not found.
+  @spec interop_chain_id_to_instance_info(non_neg_integer()) :: map() | nil
+  defp interop_chain_id_to_instance_info(chain_id) do
+    info_from_cache = ConCache.get(@interop_chain_id_to_instance_info_cache, chain_id)
+
+    with {:not_in_cache, true, _} <- {:not_in_cache, is_nil(info_from_cache), info_from_cache},
+         env = Application.get_all_env(:indexer)[InteropMessageQueue],
+         info_from_chainscout = Optimism.get_instance_info_by_chain_id(chain_id, env[:chainscout_api_url]),
+         {:not_in_chainscout, true, _} <- {:not_in_chainscout, is_nil(info_from_chainscout), info_from_chainscout},
+         url_from_map = Map.get(env[:chainscout_fallback_map], chain_id),
+         {:in_fallback, true} <- {:in_fallback, not is_nil(url_from_map)} do
+      info =
+        %{
+          instance_url: url_from_map,
+          chain_id: chain_id,
+          chain_name: nil,
+          chain_logo: nil
+        }
+
+      ConCache.put(@interop_chain_id_to_instance_info_cache, chain_id, info)
+      info
+    else
+      {:not_in_cache, false, info_from_cache} ->
+        info_from_cache
+
+      {:not_in_chainscout, false, info_from_chainscout} ->
+        ConCache.put(@interop_chain_id_to_instance_info_cache, chain_id, info_from_chainscout)
+        info_from_chainscout
+
+      {:in_fallback, false} ->
+        nil
     end
   end
 

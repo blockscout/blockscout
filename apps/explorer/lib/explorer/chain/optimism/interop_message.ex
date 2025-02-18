@@ -3,8 +3,10 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
   use Explorer.Schema
 
+  import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
+
   alias Explorer.Chain.Hash
-  alias Explorer.Repo
+  alias Explorer.{PagingOptions, Repo}
 
   @required_attrs ~w(nonce init_chain_id relay_chain_id)a
   @optional_attrs ~w(sender target init_transaction_hash block_number timestamp relay_transaction_hash payload failed)a
@@ -186,5 +188,49 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     query
     |> Repo.one()
     |> Kernel.||({nil, nil, nil, nil, nil})
+  end
+
+  @doc """
+  Lists `t:Explorer.Chain.Optimism.InteropMessage.t/0`'s' in descending order based on `timestamp` and `init_transaction_hash`.
+  """
+  @spec list :: [__MODULE__.t()]
+  def list(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, default_paging_options())
+
+    case paging_options do
+      %PagingOptions{key: {0, _init_transaction_hash}} ->
+        []
+
+      _ ->
+        base_query =
+          from(m in __MODULE__,
+            where: not is_nil(m.init_transaction_hash),
+            order_by: [desc: m.timestamp, desc: m.init_transaction_hash]
+          )
+
+        base_query
+        |> page_messages(paging_options)
+        |> limit(^paging_options.page_size)
+        |> select_repo(options).all(timeout: :infinity)
+    end
+  end
+
+  def count(options \\ []) do
+    query =
+      from(
+        m in __MODULE__,
+        where: not is_nil(m.init_transaction_hash)
+      )
+
+    select_repo(options).aggregate(query, :count, timeout: :infinity)
+  end
+
+  defp page_messages(query, %PagingOptions{key: nil}), do: query
+
+  defp page_messages(query, %PagingOptions{key: {timestamp, init_transaction_hash}}) do
+    from(m in query,
+      where: m.timestamp < ^timestamp,
+      or_where: m.timestamp == ^timestamp and m.init_transaction_hash < ^init_transaction_hash
+    )
   end
 end

@@ -59,7 +59,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   # When the initialization succeeds, the `:continue` message is sent to GenServer to start the queue handler loop.
   #
   # ## Parameters
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to RPC node.
+  # - `_json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to RPC node.
   # - `_state`: Initial state of the fetcher (empty map when starting).
   #
   # ## Returns
@@ -69,7 +69,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   @impl GenServer
   @spec handle_continue(EthereumJSONRPC.json_rpc_named_arguments(), map()) ::
           {:noreply, map()} | {:stop, :normal, map()}
-  def handle_continue(json_rpc_named_arguments, _state) do
+  def handle_continue(_json_rpc_named_arguments, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
     # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
@@ -80,7 +80,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
     with false <- is_nil(env[:chainscout_api_url]) and env[:chainscout_fallback_map] == %{},
          private_key = env[:private_key] |> String.trim_leading("0x") |> Base.decode16!(case: :mixed),
          {:ok, _} <- ExSecp256k1.create_public_key(private_key),
-         chain_id = Optimism.fetch_chain_id(json_rpc_named_arguments),
+         chain_id = Optimism.fetch_chain_id(),
          {:chain_id_is_nil, false} <- {:chain_id_is_nil, is_nil(chain_id)} do
       Process.send(self(), :continue, [])
 
@@ -187,10 +187,19 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
         {:ok, {signature, _}} = ExSecp256k1.sign_compact(post_data_to_sign, private_key)
         post_data_signed = %{post_data | signature: "0x" <> Base.encode16(signature, case: :lower)}
 
+        url_from_map = Map.get(chainscout_map_acc, instance_chain_id)
+
         instance_url =
-          case Map.get(chainscout_map_acc, instance_chain_id) do
-            nil -> Optimism.get_instance_url_by_chain_id(instance_chain_id, chainscout_api_url)
-            url -> String.trim_trailing(url, "/")
+          with {:url_from_map_is_nil, true, _} <- {:url_from_map_is_nil, is_nil(url_from_map), url_from_map},
+               info = Optimism.get_instance_info_by_chain_id(instance_chain_id, chainscout_api_url),
+               {:url_from_chainscout_avail, true} <- {:url_from_chainscout_avail, not is_nil(info)} do
+            info.instance_url
+          else
+            {:url_from_map_is_nil, false, url_from_map} ->
+              String.trim_trailing(url_from_map, "/")
+
+            {:url_from_chainscout_avail, false} ->
+              nil
           end
 
         with false <- is_nil(instance_url),

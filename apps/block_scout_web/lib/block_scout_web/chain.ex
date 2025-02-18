@@ -456,6 +456,16 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def paging_options(%{"timestamp" => timestamp, "init_transaction_hash" => init_transaction_hash}) do
+    with {ts, ""} <- Integer.parse(timestamp),
+         {:ok, transaction_hash} <- string_to_transaction_hash(init_transaction_hash) do
+      [paging_options: %{@default_paging_options | key: {ts, transaction_hash}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
   # clause for pagination of entities:
   # - Account's entities
   # - Optimism frame sequences

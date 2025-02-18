@@ -123,13 +123,18 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
            Optimism.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
 
-      chain_id_l1 = Optimism.fetch_chain_id(json_rpc_named_arguments)
+      chain_id_l1 =
+        case EthereumJSONRPC.fetch_chain_id(json_rpc_named_arguments) do
+          {:ok, id} ->
+            id
 
-      if is_nil(chain_id_l1) do
-        Logger.warning(
-          "Cannot get Chain ID from the L1 RPC. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables."
-        )
-      end
+          _ ->
+            Logger.warning(
+              "Cannot get Chain ID from the L1 RPC. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables."
+            )
+
+            nil
+        end
 
       Process.send(self(), :continue, [])
 

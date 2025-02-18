@@ -240,6 +240,54 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   @doc """
+    Function to render GET requests to `/api/v2/optimism/interop/messages` endpoint.
+  """
+  def render("optimism_interop_messages.json", %{
+        messages: messages,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(messages, fn message ->
+          msg =
+            %{
+              "nonce" => message.nonce,
+              "timestamp" => message.timestamp,
+              "status" => message.status,
+              "init_transaction_hash" => message.init_transaction_hash,
+              "relay_transaction_hash" => message.relay_transaction_hash,
+              "sender" => message.sender,
+              "target" => message.target,
+              "payload" => "0x" <> Base.encode16(message.payload, case: :lower)
+            }
+
+          msg =
+            case Map.get(message, :init_chain) do
+              nil ->
+                msg
+
+              init_chain ->
+                # this is incoming message
+                Map.put(msg, "init_chain", init_chain)
+            end
+
+          msg =
+            case Map.get(message, :relay_chain) do
+              nil ->
+                msg
+
+              relay_chain ->
+                # this is outgoing message
+                Map.put(msg, "relay_chain", relay_chain)
+            end
+
+          msg
+        end),
+      next_page_params: next_page_params
+    }
+  end
+
+  @doc """
     Function to render GET requests to `/api/v2/optimism/interop/public-key` endpoint.
   """
   def render("optimism_interop_public_key.json", %{public_key: public_key}) do

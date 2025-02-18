@@ -17,6 +17,7 @@ defmodule Indexer.Fetcher.Optimism do
     ]
 
   alias EthereumJSONRPC.Contract
+  alias Explorer.Chain.Cache.ChainId
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
@@ -47,32 +48,22 @@ defmodule Indexer.Fetcher.Optimism do
   end
 
   @doc """
-  Fetches the chain id from the RPC.
-
-  ## Parameters
-  - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  Fetches the chain id from the RPC (or cache).
 
   ## Returns
   - The chain id as unsigned integer.
   - `nil` if the request failed.
   """
-  @spec fetch_chain_id(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer() | nil
-  def fetch_chain_id(json_rpc_named_arguments) do
-    error_message = &"Cannot read `eth_chainId`. Error: #{inspect(&1)}"
+  @spec fetch_chain_id() :: non_neg_integer() | nil
+  def fetch_chain_id do
+    case ChainId.get_id() do
+      nil ->
+        Logger.error("Cannot read `eth_chainId`. Retrying...")
+        :timer.sleep(3000)
+        fetch_chain_id()
 
-    request = request(%{id: 0, method: "eth_chainId", params: []})
-
-    case Helper.repeated_call(
-           &json_rpc/2,
-           [request, json_rpc_named_arguments],
-           error_message,
-           Helper.infinite_retries_number()
-         ) do
-      {:ok, response} ->
-        quantity_to_integer(response)
-
-      _ ->
-        nil
+      chain_id ->
+        chain_id
     end
   end
 
@@ -463,18 +454,18 @@ defmodule Indexer.Fetcher.Optimism do
   end
 
   @doc """
-    Sends HTTP request to Chainscout API to get instance URL by its chain ID.
+    Sends HTTP request to Chainscout API to get instance info by its chain ID.
 
     ## Parameters
-    - `chain_id`: The chain ID for which the instance URL should be retrieved. Can be defined as String or Integer.
+    - `chain_id`: The chain ID for which the instance info should be retrieved. Can be defined as String or Integer.
     - `chainscout_api_url`: URL defined in INDEXER_OPTIMISM_CHAINSCOUT_API_URL env variable. If `nil`, the function returns `nil`.
 
     ## Returns
-    - Instance URL in case of success.
+    - A map with instance info (instance_url, chain_id, chain_name, chain_logo) in case of success.
     - `nil` in case of failure.
   """
-  @spec get_instance_url_by_chain_id(String.t() | non_neg_integer(), String.t() | nil) :: String.t() | nil
-  def get_instance_url_by_chain_id(chain_id, nil) do
+  @spec get_instance_info_by_chain_id(String.t() | non_neg_integer(), String.t() | nil) :: map() | nil
+  def get_instance_info_by_chain_id(chain_id, nil) do
     Logger.error(
       "Unknown instance URL for chain ID #{chain_id}. Please, define that in INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP or define INDEXER_OPTIMISM_CHAINSCOUT_API_URL."
     )
@@ -482,7 +473,7 @@ defmodule Indexer.Fetcher.Optimism do
     nil
   end
 
-  def get_instance_url_by_chain_id(chain_id, chainscout_api_url) do
+  def get_instance_info_by_chain_id(chain_id, chainscout_api_url) do
     url =
       if is_integer(chain_id) do
         chainscout_api_url <> Integer.to_string(chain_id)
@@ -496,7 +487,12 @@ defmodule Indexer.Fetcher.Optimism do
          false <- is_nil(explorer),
          explorer_url = Map.get(explorer, "url"),
          false <- is_nil(explorer_url) do
-      String.trim_trailing(explorer_url, "/")
+      %{
+        instance_url: String.trim_trailing(explorer_url, "/"),
+        chain_id: chain_id,
+        chain_name: Map.get(response, "name"),
+        chain_logo: Map.get(response, "logo")
+      }
     else
       true ->
         Logger.error("Cannot get explorer URL from #{url}")

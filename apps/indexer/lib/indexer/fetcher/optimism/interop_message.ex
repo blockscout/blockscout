@@ -99,7 +99,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
     block_number = env[:start_block]
 
     with false <- is_nil(block_number),
-         chain_id = Optimism.fetch_chain_id(json_rpc_named_arguments),
+         chain_id = Optimism.fetch_chain_id(),
          {:chain_id_is_nil, false} <- {:chain_id_is_nil, is_nil(chain_id)},
          Subscriber.to(:blocks, :realtime),
          {:ok, latest_block_number} =
