@@ -191,7 +191,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
 
         instance_url =
           with {:url_from_map_is_nil, true, _} <- {:url_from_map_is_nil, is_nil(url_from_map), url_from_map},
-               info = Optimism.get_instance_info_by_chain_id(instance_chain_id, chainscout_api_url),
+               info = InteropMessage.get_instance_info_by_chain_id(instance_chain_id, chainscout_api_url),
                {:url_from_chainscout_avail, true} <- {:url_from_chainscout_avail, not is_nil(info)} do
             info.instance_url
           else

@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.{Chain, Repo}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Block, Transaction}
-  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob, Withdrawal}
+  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
 
   @doc """
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
@@ -452,6 +452,16 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         }
       end)
 
-    Map.put(out_json, "op_withdrawals", withdrawals)
+    interop_message =
+      transaction_hash
+      |> InteropMessage.message_by_transaction()
+
+    out_json = Map.put(out_json, "op_withdrawals", withdrawals)
+
+    if is_nil(interop_message) do
+      out_json
+    else
+      Map.put(out_json, "op_interop", interop_message)
+    end
   end
 end
