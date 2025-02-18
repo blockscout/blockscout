@@ -375,6 +375,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
         Logger.error("Interop: cannot derive a public key from the private key. Private key is invalid or undefined.")
 
         conn
+        |> put_view(ApiView)
         |> put_status(:not_found)
         |> render(:message, %{message: "private key is invalid or undefined"})
     end
@@ -466,7 +467,6 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
          {:ok, _} <-
            Chain.import(%{optimism_interop_messages: %{params: [interop_prepare_import(params)]}, timeout: :infinity}) do
       conn
-      |> put_view(ApiView)
       |> put_status(200)
       |> render(:optimism_interop_response, missed_part_fn.(params["init_chain_id"], params["nonce"]))
     else

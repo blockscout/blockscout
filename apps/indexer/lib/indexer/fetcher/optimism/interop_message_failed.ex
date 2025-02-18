@@ -378,10 +378,14 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageFailed do
     relay_message_transactions =
       transactions_params
       |> Enum.filter(fn transaction ->
+        to_address_hash = Map.get(transaction, :to_address_hash, "")
+
         to_address =
-          transaction
-          |> Map.get(:to_address_hash, "")
-          |> String.downcase()
+          if is_nil(to_address_hash) do
+            ""
+          else
+            String.downcase(to_address_hash)
+          end
 
         is_relay_message_method =
           transaction
