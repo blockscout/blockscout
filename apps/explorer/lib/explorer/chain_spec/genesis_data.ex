@@ -309,9 +309,7 @@ defmodule Explorer.ChainSpec.GenesisData do
         verified_via_eth_bytecode_db: false,
         verified_via_verifier_alliance: false,
         partially_verified: false,
-        is_vyper_contract: false,
         autodetect_constructor_args: nil,
-        is_yul: false,
         compiler_settings: nil,
         license_type: :none
       }
