@@ -6,6 +6,7 @@ defmodule Explorer.Counters.AverageBlockTime do
 
   import Ecto.Query, only: [from: 2, where: 2]
 
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.Block
   alias Explorer.Repo
   alias Timex.Duration
@@ -69,7 +70,8 @@ defmodule Explorer.Counters.AverageBlockTime do
   end
 
   defp refresh_timestamps do
-    first_block_from_config = Application.get_env(:indexer, :first_block)
+    first_block_from_config =
+      RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
     base_query =
       from(block in Block,

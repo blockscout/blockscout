@@ -95,28 +95,32 @@ defmodule Explorer.Utility.MissingBlockRange do
       {%__MODULE__{} = same_range, %__MODULE__{} = same_range} ->
         Repo.delete(same_range)
 
-        insert_if_needed(%{
-          from_number: same_range.from_number,
-          to_number: BlockNumberHelper.next_block_number(max_number)
-        })
+        if same_range.from_number > max_number do
+          insert_range(%{
+            from_number: same_range.from_number,
+            to_number: BlockNumberHelper.next_block_number(max_number)
+          })
+        end
 
-        insert_if_needed(%{
-          from_number: BlockNumberHelper.previous_block_number(min_number),
-          to_number: same_range.to_number
-        })
+        if same_range.to_number < min_number do
+          insert_range(%{
+            from_number: BlockNumberHelper.previous_block_number(min_number),
+            to_number: same_range.to_number
+          })
+        end
 
       {%__MODULE__{} = range, nil} ->
         delete_ranges_between(max_number, range.from_number)
-        update_from_number_or_delete_range(range, BlockNumberHelper.previous_block_number(min_number))
+        update_from_number_or_delete_range(range, min_number)
 
       {nil, %__MODULE__{} = range} ->
         delete_ranges_between(range.to_number, min_number)
-        update_to_number_or_delete_range(range, BlockNumberHelper.next_block_number(max_number))
+        update_to_number_or_delete_range(range, max_number)
 
       {%__MODULE__{} = range_1, %__MODULE__{} = range_2} ->
         delete_ranges_between(range_2.to_number, range_1.from_number)
-        update_from_number_or_delete_range(range_1, BlockNumberHelper.previous_block_number(min_number))
-        update_to_number_or_delete_range(range_2, BlockNumberHelper.next_block_number(max_number))
+        update_from_number_or_delete_range(range_1, min_number)
+        update_to_number_or_delete_range(range_2, max_number)
 
       _ ->
         delete_ranges_between(max_number, min_number)
@@ -178,13 +182,10 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> Repo.update()
   end
 
-  defp insert_if_needed(%{from_number: from, to_number: to} = params) when from >= to, do: insert_range(params)
-  defp insert_if_needed(_params), do: :ok
-
-  defp update_from_number_or_delete_range(%{to_number: to} = range, from) when from < to, do: Repo.delete(range)
+  defp update_from_number_or_delete_range(%{to_number: to} = range, from) when from <= to, do: Repo.delete(range)
   defp update_from_number_or_delete_range(range, from), do: update_range(range, %{from_number: from})
 
-  defp update_to_number_or_delete_range(%{from_number: from} = range, to) when to > from, do: Repo.delete(range)
+  defp update_to_number_or_delete_range(%{from_number: from} = range, to) when to >= from, do: Repo.delete(range)
   defp update_to_number_or_delete_range(range, to), do: update_range(range, %{to_number: to})
 
   @doc """

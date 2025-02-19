@@ -72,6 +72,36 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
   end
 
   @doc """
+  Extracts the minimum block number from a given block ranges string.
+
+  ## Parameters
+
+    - block_ranges_string: A string representing block ranges.
+
+  ## Returns
+
+    - The minimum block number as an integer.
+
+  ## Examples
+
+      iex> get_min_block_number_from_range_string("100..200,300..400")
+      100
+
+  """
+  @spec get_min_block_number_from_range_string(binary()) :: integer()
+  def get_min_block_number_from_range_string(block_ranges_string) do
+    min_block_number =
+      case block_ranges_string
+           |> parse_block_ranges()
+           |> Enum.at(0) do
+        block_number.._//_ -> block_number
+        block_number -> block_number
+      end
+
+    min_block_number
+  end
+
+  @doc """
   Checks if `number` is present in `ranges`
   """
   @spec number_in_ranges?(integer(), [Range.t()]) :: boolean()

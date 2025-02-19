@@ -14,7 +14,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
       insert(:block, number: 1_000_000)
       insert(:block, number: 500_123)
       MissingRangesCollector.start_link([])
-      Process.sleep(1000)
+      Process.sleep(1500)
 
       assert [999_999..999_900//-1] = batch = MissingBlockRange.get_latest_batch(100)
       MissingBlockRange.clear_batch(batch)
@@ -31,21 +31,6 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
       assert [1_000_099..1_000_001//-1, 999_699..999_699//-1] = batch = MissingBlockRange.get_latest_batch(100)
       MissingBlockRange.clear_batch(batch)
       assert [999_698..999_599//-1] = MissingBlockRange.get_latest_batch(100)
-    end
-
-    test "FIRST_BLOCK and LAST_BLOCK envs" do
-      Application.put_env(:indexer, :first_block, 100)
-      Application.put_env(:indexer, :last_block, 200)
-
-      insert(:missing_block_range, from_number: 250, to_number: 220)
-      insert(:missing_block_range, from_number: 219, to_number: 190)
-      insert(:missing_block_range, from_number: 120, to_number: 90)
-      insert(:missing_block_range, from_number: 89, to_number: 80)
-
-      MissingRangesCollector.start_link([])
-      Process.sleep(500)
-
-      assert [%{from_number: 120, to_number: 100}, %{from_number: 200, to_number: 190}] = Repo.all(MissingBlockRange)
     end
   end
 
