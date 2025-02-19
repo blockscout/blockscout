@@ -49,6 +49,11 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("token1155tx.json", %{token_transfers: token_transfers, max_block_number: max_block_number}) do
+    data = Enum.map(token_transfers, &prepare_erc1155_transfer(&1, max_block_number))
+    RPCView.render("show.json", data: data)
+  end
+
   def render("tokenbalance.json", %{token_balance: token_balance}) do
     RPCView.render("show.json", data: to_string(token_balance))
   end
@@ -241,6 +246,20 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "confirmations" => to_string(max_block_number - token_transfer.block_number)
     }
   end
+
+  defp prepare_erc1155_transfer(token_transfer, max_block_number) do
+    token_transfer
+    |> prepare_nft_transfer(max_block_number)
+    |> Map.put_new(:tokenValue, calculate_token_value(token_transfer))
+  end
+
+  defp calculate_erc1155_token_value(%{amounts: amounts}) when is_list(amounts) do
+    amounts
+    |> Enum.sum()
+    |> to_string()
+  end
+
+  defp calculate_token_value(%{amount: amount}), do: to_string(amount)
 
   defp prepare_block(block) do
     %{
