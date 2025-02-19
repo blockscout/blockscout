@@ -551,14 +551,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     if is_nil(public_key) do
       url = instance_url <> "/api/v2/optimism/interop/public-key"
 
-      with {:ok, %HTTPoison.Response{body: "0x" <> key, status_code: 200}} <- HTTPoison.get(url),
+      with {:ok, %HTTPoison.Response{body: response_body, status_code: 200}} <- HTTPoison.get(url),
+           {:ok, %{"public_key" => "0x" <> key}} <- Jason.decode(response_body),
            {:ok, key_binary} <- Base.decode16(key, case: :mixed),
            true <- byte_size(key_binary) > 0 do
         ConCache.put(InteropMessage.interop_instance_url_to_public_key_cache(), instance_url, key_binary)
         key_binary
       else
-        _ ->
-          Logger.error("Interop: unable to get public key from #{url}")
+        reason ->
+          Logger.error("Interop: unable to get public key from #{url}. Reason: #{inspect(reason)}")
           nil
       end
     else

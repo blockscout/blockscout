@@ -160,13 +160,13 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   def get_relay_part(init_chain_id, nonce) do
     query =
       from(m in __MODULE__,
-        select: {m.relay_transaction_hash, m.failed},
+        select: %{relay_transaction_hash: m.relay_transaction_hash, failed: m.failed},
         where: m.init_chain_id == ^init_chain_id and m.nonce == ^nonce
       )
 
     query
     |> Repo.one()
-    |> Kernel.||({nil, nil})
+    |> Kernel.||(%{relay_transaction_hash: nil, failed: nil})
   end
 
   @doc """
@@ -186,13 +186,13 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   def get_init_part(init_chain_id, nonce) do
     query =
       from(m in __MODULE__,
-        select: {m.sender, m.target, m.init_transaction_hash, m.timestamp, m.payload},
+        select: %{sender: m.sender, target: m.target, init_transaction_hash: m.init_transaction_hash, timestamp: m.timestamp, payload: m.payload},
         where: m.init_chain_id == ^init_chain_id and m.nonce == ^nonce
       )
 
     query
     |> Repo.one()
-    |> Kernel.||({nil, nil, nil, nil, nil})
+    |> Kernel.||(%{sender: nil, target: nil, init_transaction_hash: nil, timestamp: nil, payload: nil})
   end
 
   @doc """

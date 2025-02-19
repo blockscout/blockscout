@@ -291,13 +291,13 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     Function to render GET requests to `/api/v2/optimism/interop/public-key` endpoint.
   """
   def render("optimism_interop_public_key.json", %{public_key: public_key}) do
-    public_key
+    %{"public_key" => public_key}
   end
 
   @doc """
     Function to render `relay` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
   """
-  def render("optimism_interop_response.json", {relay_transaction_hash, failed}) do
+  def render("optimism_interop_response.json", %{relay_transaction_hash: relay_transaction_hash, failed: failed}) do
     %{
       "relay_transaction_hash" => relay_transaction_hash,
       "failed" => failed
@@ -307,7 +307,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   @doc """
     Function to render `init` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
   """
-  def render("optimism_interop_response.json", {sender, target, init_transaction_hash, timestamp, payload}) do
+  def render("optimism_interop_response.json", %{sender: sender, target: target, init_transaction_hash: init_transaction_hash, timestamp: timestamp, payload: payload}) do
     %{
       "sender" => sender,
       "target" => target,

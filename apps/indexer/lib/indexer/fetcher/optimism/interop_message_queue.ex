@@ -263,6 +263,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
       %{
         nonce: message.nonce,
         init_chain_id: message.init_chain_id,
+        relay_chain_id: message.relay_chain_id,
         relay_transaction_hash: Map.get(response, "relay_transaction_hash"),
         failed: Map.get(response, "failed")
       }
@@ -287,6 +288,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
         nonce: message.nonce,
         init_chain_id: message.init_chain_id,
         init_transaction_hash: Map.get(response, "init_transaction_hash"),
+        relay_chain_id: message.relay_chain_id,
         timestamp: timestamp,
         payload: payload
       }
