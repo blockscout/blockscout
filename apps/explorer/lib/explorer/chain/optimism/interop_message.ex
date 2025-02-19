@@ -248,7 +248,9 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
   defp page_messages(query, %PagingOptions{key: nil}), do: query
 
-  defp page_messages(query, %PagingOptions{key: {timestamp, init_transaction_hash}}) do
+  defp page_messages(query, %PagingOptions{key: {timestamp_unix, init_transaction_hash}}) do
+    timestamp = DateTime.from_unix!(timestamp_unix)
+
     from(m in query,
       where: m.timestamp < ^timestamp,
       or_where: m.timestamp == ^timestamp and m.init_transaction_hash < ^init_transaction_hash

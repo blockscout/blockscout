@@ -262,23 +262,23 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             }
 
           msg =
-            case Map.get(message, :init_chain) do
-              nil ->
-                msg
-
-              init_chain ->
+            case Map.fetch(message, :init_chain) do
+              {:ok, init_chain} ->
                 # this is incoming message
                 Map.put(msg, "init_chain", init_chain)
+
+              _ ->
+                msg
             end
 
           msg =
-            case Map.get(message, :relay_chain) do
-              nil ->
-                msg
-
-              relay_chain ->
+            case Map.fetch(message, :relay_chain) do
+              {:ok, relay_chain} ->
                 # this is outgoing message
                 Map.put(msg, "relay_chain", relay_chain)
+
+              _ ->
+                msg
             end
 
           msg
