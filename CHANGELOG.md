@@ -27,6 +27,7 @@
 
 ### 🐛 Bug Fixes
 
+- Add BRIDGED_TOKENS_ENABLED to custom Gnosis chain docker images ([#11895](https://github.com/blockscout/blockscout/pull/11895))
 - Fix /verified-contracts in old UI ([#11854](https://github.com/blockscout/blockscout/pull/11854))
 - Cleanup token instance metadata on nft collection metadata refetch ([#11848](https://github.com/blockscout/blockscout/pull/11848))
 - Allow skip fiat_value in /api/v2/addresses/{hash}/tokens endpoint ([#11837](https://github.com/blockscout/blockscout/pull/11837))
