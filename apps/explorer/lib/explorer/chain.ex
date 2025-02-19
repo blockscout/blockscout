@@ -419,6 +419,46 @@ defmodule Explorer.Chain do
     )
   end
 
+  @doc """
+  Filters the `base_query` to include only the records where the `block_number` falls within the specified period.
+
+  ## Parameters
+
+    - `base_query`: The initial query to be filtered.
+    - `from_block`: The starting block number of the period. Can be `nil`.
+    - `to_block`: The ending block number of the period. Can be `nil`.
+
+  ## Returns
+
+    - A query filtered by the specified block number period.
+
+  ## Examples
+
+    - When `from_block` is `nil` and `to_block` is not `nil`:
+      ```elixir
+      where_block_number_in_period(query, nil, 100)
+      # Filters the query to include records with block_number <= 100
+      ```
+
+    - When `from_block` is not `nil` and `to_block` is `nil`:
+      ```elixir
+      where_block_number_in_period(query, 50, nil)
+      # Filters the query to include records with block_number >= 50
+      ```
+
+    - When both `from_block` and `to_block` are `nil`:
+      ```elixir
+      where_block_number_in_period(query, nil, nil)
+      # Returns the base query without any filtering
+      ```
+
+    - When both `from_block` and `to_block` are not `nil`:
+      ```elixir
+      where_block_number_in_period(query, 50, 100)
+      # Filters the query to include records with block_number between 50 and 100 (inclusive)
+      ```
+  """
+  @spec where_block_number_in_period(Ecto.Query.t(), non_neg_integer() | nil, non_neg_integer() | nil) :: Ecto.Query.t()
   def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and not is_nil(to_block) do
     from(q in base_query,
       where: q.block_number <= ^to_block
@@ -427,7 +467,7 @@ defmodule Explorer.Chain do
 
   def where_block_number_in_period(base_query, from_block, to_block) when not is_nil(from_block) and is_nil(to_block) do
     from(q in base_query,
-      where: q.block_number > ^from_block
+      where: q.block_number >= ^from_block
     )
   end
 
@@ -437,7 +477,7 @@ defmodule Explorer.Chain do
 
   def where_block_number_in_period(base_query, from_block, to_block) do
     from(q in base_query,
-      where: q.block_number > ^from_block and q.block_number <= ^to_block
+      where: q.block_number >= ^from_block and q.block_number <= ^to_block
     )
   end
 
@@ -4681,32 +4721,6 @@ defmodule Explorer.Chain do
   @spec to_block(keyword) :: any
   def to_block(options) do
     Keyword.get(options, :to_block) || nil
-  end
-
-  def convert_date_to_min_block(date_str) do
-    date_format = "%Y-%m-%d"
-
-    {:ok, date} =
-      date_str
-      |> Timex.parse(date_format, :strftime)
-
-    {:ok, day_before} =
-      date
-      |> Timex.shift(days: -1)
-      |> Timex.format(date_format, :strftime)
-
-    convert_date_to_max_block(day_before)
-  end
-
-  def convert_date_to_max_block(date) do
-    query =
-      from(block in Block,
-        where: fragment("DATE(timestamp) = TO_DATE(?, 'YYYY-MM-DD')", ^date),
-        select: max(block.number)
-      )
-
-    query
-    |> Repo.one()
   end
 
   def address_hash_is_smart_contract?(nil), do: false

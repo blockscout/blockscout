@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
+defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
   @moduledoc """
   Exports token transfers to a csv file.
   """
@@ -13,7 +13,7 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
 
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, TokenTransfer, Transaction}
-  alias Explorer.Chain.CSVExport.Helper
+  alias Explorer.Chain.CsvExport.Helper
 
   @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
   def export(address_hash, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do

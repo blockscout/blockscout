@@ -1,11 +1,11 @@
-defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter do
+defmodule Explorer.Chain.CsvExport.Address.InternalTransactions do
   @moduledoc """
   Exports internal transactions to a csv file.
   """
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, Transaction, Wei}
-  alias Explorer.Chain.CSVExport.Helper
+  alias Explorer.Chain.CsvExport.Helper
 
   @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
   def export(address_hash, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do

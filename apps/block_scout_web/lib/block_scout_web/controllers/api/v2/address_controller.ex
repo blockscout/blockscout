@@ -30,6 +30,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Hash, Transaction}
   alias Explorer.Chain.Address.Counters
+
   alias Explorer.Chain.Token.Instance
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
