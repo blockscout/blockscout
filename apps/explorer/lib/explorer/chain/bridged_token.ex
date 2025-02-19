@@ -28,6 +28,8 @@ defmodule Explorer.Chain.BridgedToken do
     Transaction
   }
 
+  alias Explorer.Helper, as: ExplorerHelper
+
   require Logger
 
   # TODO: Consider using the `EthereumJSONRPC.ERC20` module to retrieve token metadata
@@ -587,8 +589,8 @@ defmodule Explorer.Chain.BridgedToken do
          token1_hash <- parse_contract_response(token1_encoded, :address),
          false <- is_nil(token0_hash),
          false <- is_nil(token1_hash),
-         token0_hash_str <- "0x" <> Base.encode16(token0_hash, case: :lower),
-         token1_hash_str <- "0x" <> Base.encode16(token1_hash, case: :lower),
+         token0_hash_str <- ExplorerHelper.adds_0x_prefix(token0_hash),
+         token1_hash_str <- ExplorerHelper.adds_0x_prefix(token1_hash),
          {:ok, "0x" <> token0_name_encoded} <-
            @name_signature
            |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
@@ -708,7 +710,7 @@ defmodule Explorer.Chain.BridgedToken do
       {:ok, "0x" <> token_encoded} ->
         with token_hash <- parse_contract_response(token_encoded, :address),
              false <- is_nil(token_hash),
-             token_hash_str <- "0x" <> Base.encode16(token_hash, case: :lower),
+             token_hash_str <- ExplorerHelper.adds_0x_prefix(token_hash),
              {:ok, "0x" <> token_decimals_encoded} <-
                @decimals_signature
                |> Contract.eth_call_request(token_hash_str, 1, nil, nil)

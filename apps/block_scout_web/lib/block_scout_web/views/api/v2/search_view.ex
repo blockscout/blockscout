@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   alias BlockScoutWeb.{BlockView, Endpoint}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Beacon.Blob, Block, Hash, Transaction, UserOperation}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Plug.Conn.Query
 
   def render("search_results.json", %{search_results: search_results, next_page_params: next_page_params}) do
@@ -145,7 +146,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   defp hash_to_string(%Hash{bytes: bytes}), do: hash_to_string(bytes)
-  defp hash_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
+  defp hash_to_string(hash), do: ExplorerHelper.adds_0x_prefix(hash)
 
   defp hash(%Hash{} = hash), do: hash
 

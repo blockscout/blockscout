@@ -23,6 +23,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Plug.Conn
 
@@ -291,6 +292,73 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "creator_address_hash" => ^from,
                "creation_transaction_hash" => ^transaction_hash,
                "proxy_type" => "eip1967",
+               "implementations" => [%{"address" => ^implementation_address_hash_string, "name" => nil}]
+             } = json_response(request, 200)
+    end
+
+    test "get Resolved Delegate Proxy contract info", %{conn: conn} do
+      address_manager_address = insert(:address)
+
+      "0x" <> address_manager_address_hash_string_without_0x = to_string(address_manager_address.hash)
+
+      owner_address = insert(:address)
+
+      "0x" <> owner_address_hash_string_without_0x = to_string(owner_address.hash)
+
+      proxy_smart_contract =
+        insert(:smart_contract,
+          abi: ResolvedDelegateProxy.resolved_delegate_proxy_abi(),
+          constructor_arguments:
+            "0x000000000000000000000000" <>
+              address_manager_address_hash_string_without_0x <>
+              "0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000001a4f564d5f4c3143726f7373446f6d61696e4d657373656e676572000000000000"
+        )
+
+      transaction =
+        insert(:transaction,
+          to_address_hash: nil,
+          to_address: nil,
+          created_contract_address_hash: proxy_smart_contract.address_hash,
+          created_contract_address: proxy_smart_contract.address
+        )
+
+      insert(:address_name,
+        address: proxy_smart_contract.address,
+        primary: true,
+        name: proxy_smart_contract.name,
+        address_hash: proxy_smart_contract.address_hash
+      )
+
+      name = proxy_smart_contract.name
+      from = Address.checksum(transaction.from_address_hash)
+      transaction_hash = to_string(transaction.hash)
+      checksummed_proxy_address_hash = Address.checksum(proxy_smart_contract.address_hash)
+      "0x" <> proxy_address_hash_string_without_0x = to_string(proxy_smart_contract.address_hash)
+
+      implementation_address = insert(:address)
+
+      "0x" <> implementation_address_hash_string_without_0x = to_string(implementation_address.hash)
+      implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
+
+      TestHelper.get_resolved_delegate_proxy_implementation_non_zero_address(
+        owner_address_hash_string_without_0x,
+        implementation_address_hash_string_without_0x,
+        proxy_address_hash_string_without_0x
+      )
+
+      request = get(conn, "/api/v2/addresses/#{checksummed_proxy_address_hash}")
+
+      assert %{
+               "hash" => ^checksummed_proxy_address_hash,
+               "is_contract" => true,
+               "is_verified" => true,
+               "name" => ^name,
+               "private_tags" => [],
+               "public_tags" => [],
+               "watchlist_names" => [],
+               "creator_address_hash" => ^from,
+               "creation_transaction_hash" => ^transaction_hash,
+               "proxy_type" => "resolved_delegate_proxy",
                "implementations" => [%{"address" => ^implementation_address_hash_string, "name" => nil}]
              } = json_response(request, 200)
     end

@@ -185,7 +185,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
     end
 
     test "filter by methods", %{conn: conn} do
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       transaction = :transaction |> insert() |> with_block()
 
