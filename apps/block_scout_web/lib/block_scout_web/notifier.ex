@@ -153,14 +153,14 @@ defmodule BlockScoutWeb.Notifier do
 
     market_history_data =
       case Market.fetch_recent_history() do
-        [today | the_rest] -> [%{today | closing_price: exchange_rate.usd_value} | the_rest]
+        [today | the_rest] -> [%{today | closing_price: exchange_rate.fiat_value} | the_rest]
         data -> data
       end
 
     exchange_rate_with_available_supply =
       case Application.get_env(:explorer, :supply) do
         RSK ->
-          %{exchange_rate | available_supply: nil, market_cap_usd: RSK.market_cap(exchange_rate)}
+          %{exchange_rate | available_supply: nil, market_cap: RSK.market_cap(exchange_rate)}
 
         _ ->
           Map.from_struct(exchange_rate)

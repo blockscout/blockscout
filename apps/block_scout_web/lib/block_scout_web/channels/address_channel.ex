@@ -105,7 +105,7 @@ defmodule BlockScoutWeb.AddressChannel do
     push(socket, "balance", %{
       balance: address.fetched_coin_balance.value,
       block_number: address.fetched_coin_balance_block_number,
-      exchange_rate: exchange_rate.usd_value
+      exchange_rate: exchange_rate.fiat_value
     })
 
     {:noreply, socket}
@@ -326,7 +326,7 @@ defmodule BlockScoutWeb.AddressChannel do
       ) do
     push(socket, "current_coin_balance", %{
       coin_balance: (coin_balance && coin_balance.value) || %Wei{value: Decimal.new(0)},
-      exchange_rate: Market.get_coin_exchange_rate().usd_value,
+      exchange_rate: Market.get_coin_exchange_rate().fiat_value,
       block_number: block_number
     })
   end
