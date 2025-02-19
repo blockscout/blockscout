@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.API.V2.TokenController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
@@ -48,7 +48,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  if @bridged_token_enabled do
+  if @bridged_tokens_enabled do
     defp token_response(conn, token, address_hash) do
       if token.bridged do
         bridged_token =

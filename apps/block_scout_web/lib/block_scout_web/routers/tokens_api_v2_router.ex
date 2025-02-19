@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     Router for /api/v2/tokens. This route has separate router in order to ignore sobelow's warning about missing CSRF protection
   """
   use BlockScoutWeb, :router
-  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias BlockScoutWeb.API.V2
   alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
   scope "/", as: :api_v2 do
     pipe_through(:api_v2)
 
-    if @bridged_token_enabled do
+    if @bridged_tokens_enabled do
       get("/bridged", V2.TokenController, :bridged_tokens_list)
     end
 
