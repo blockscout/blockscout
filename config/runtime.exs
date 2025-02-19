@@ -266,9 +266,10 @@ config :explorer,
   shrink_internal_transactions_enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
   replica_max_lag: ConfigHelper.parse_time_env_var("REPLICA_MAX_LAG", "5m")
 
-config :explorer, Explorer.Chain.Health,
-  healthy_blocks_period: ConfigHelper.parse_time_env_var("HEALTHY_BLOCKS_PERIOD", "5m"),
-  healthy_batches_period: ConfigHelper.parse_time_env_var("HEALTHY_BATCHES_PERIOD", "4h")
+config :explorer, Explorer.Chain.Health.Monitor,
+  check_interval: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_CHECK_INTERVAL", "5m"),
+  healthy_blocks_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_BLOCKS_PERIOD", "5m"),
+  healthy_batches_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_BATCHES_PERIOD", "4h")
 
 config :explorer, :proxy,
   caching_implementation_data_enabled: true,
@@ -675,9 +676,6 @@ config :explorer, Explorer.Migrator.BackfillMultichainSearchDB,
 
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation,
   check_interval: ConfigHelper.parse_time_env_var("MIGRATION_HEAVY_INDEX_OPERATIONS_CHECK_INTERVAL", "10m")
-
-config :explorer, Explorer.Chain.Health.Monitor,
-  check_interval: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_CHECK_INTERVAL", "5m")
 
 config :explorer, Explorer.Migrator.SanitizeVerifiedAddresses,
   enabled: !ConfigHelper.parse_bool_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_DISABLED"),

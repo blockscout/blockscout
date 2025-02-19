@@ -9,18 +9,27 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
   setup :set_mox_from_context
 
   setup do
+    old_env = Application.get_env(:explorer, Explorer.Chain.Health.Monitor)
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Health.Monitor)
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
 
-    Application.put_env(:explorer, Explorer.Chain.Health.Monitor, check_interval: 100)
+    new_env =
+      old_env
+      |> Keyword.replace(:check_interval, 100)
+
+    Application.put_env(:explorer, Explorer.Chain.Health.Monitor, new_env)
     start_supervised!(Explorer.Chain.Health.Monitor)
 
-    current_block_number = 1_000
+    current_block_number = 100_500
     current_block_number_hex = integer_to_quantity(current_block_number)
 
     expect(EthereumJSONRPC.Mox, :json_rpc, fn %{method: "eth_blockNumber"}, _options ->
       {:ok, current_block_number_hex}
+    end)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.Chain.Health.Monitor, old_env)
     end)
 
     %{current_block_number: current_block_number}
