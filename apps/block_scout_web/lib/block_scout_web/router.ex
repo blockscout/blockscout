@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.Router do
     api_router_reading_enabled: [:block_scout_web, [BlockScoutWeb.Routers.ApiRouter, :reading_enabled]],
     web_router_enabled: [:block_scout_web, [BlockScoutWeb.Routers.WebRouter, :enabled]]
 
-  alias BlockScoutWeb.Plug.{GraphQL, RateLimit}
   alias BlockScoutWeb.Routers.{AccountRouter, ApiRouter}
 
   @max_query_string_length 5_000
@@ -58,7 +57,7 @@ defmodule BlockScoutWeb.Router do
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
-    plug(RateLimit, graphql?: true)
+    plug(BlockScoutWeb.Plug.RateLimit, graphql?: true)
   end
 
   match(:*, "/auth/*path", AccountRouter, [])
@@ -72,7 +71,7 @@ defmodule BlockScoutWeb.Router do
       forward("/", Absinthe.Plug.GraphiQL,
         schema: BlockScoutWeb.GraphQL.Schema,
         interface: :advanced,
-        default_query: GraphQL.default_query(),
+        default_query: BlockScoutWeb.Plug.GraphQL.default_query(),
         socket: BlockScoutWeb.UserSocket
       )
     end
@@ -90,6 +89,10 @@ defmodule BlockScoutWeb.Router do
     else
       get("/api-docs", PageNotFoundController, :index)
       get("/eth-rpc-api-docs", PageNotFoundController, :index)
+    end
+
+    if @graphql_enabled do
+      get("/schema.graphql", GraphQL.SchemaController, :index)
     end
   end
 
