@@ -2571,7 +2571,7 @@
 - [#5921](https://github.com/blockscout/blockscout/pull/5921) - Bump briefly from 25942fb to 1dd66ee
 - [#6033](https://github.com/blockscout/blockscout/pull/6033) - Bump sass from 1.54.7 to 1.54.8 in /apps/block_scout_web/assets
 - [#6046](https://github.com/blockscout/blockscout/pull/6046) - Bump credo from 1.6.6 to 1.6.7
-- [#6045](https://github.com/blockscout/blockscout/pull/6045) - Re-use _btn_copy.html for raw trace page
+- [#6045](https://github.com/blockscout/blockscout/pull/6045) - Reuse _btn_copy.html for raw trace page
 - [#6035](https://github.com/blockscout/blockscout/pull/6035) - Hide copy btn if no raw trace
 - [#6034](https://github.com/blockscout/blockscout/pull/6034) - Suppress empty sections in supported chain dropdown
 - [#5939](https://github.com/blockscout/blockscout/pull/5939) - Bump sweetalert2 from 11.4.26 to 11.4.27 in /apps/block_scout_web/assets
@@ -3159,7 +3159,7 @@
 - [#4307](https://github.com/blockscout/blockscout/pull/4307) - Fix for composing IPFS URLs for NFTs images
 - [#4306](https://github.com/blockscout/blockscout/pull/4306) - Check token instance images MIME types
 - [#4295](https://github.com/blockscout/blockscout/pull/4295) - Mobile view fix: transaction tile tx hash overflow
-- [#4294](https://github.com/blockscout/blockscout/pull/4294) - User wont be able to open verification pages for verified smart-contract
+- [#4294](https://github.com/blockscout/blockscout/pull/4294) - User won't be able to open verification pages for verified smart-contract
 - [#4240](https://github.com/blockscout/blockscout/pull/4240) - `[]` is accepted in write contract page
 - [#4236](https://github.com/blockscout/blockscout/pull/4236), [#4242](https://github.com/blockscout/blockscout/pull/4242) - Fix typo, constructor instead of constructor
 - [#4167](https://github.com/blockscout/blockscout/pull/4167) - Deduplicate block numbers in acquire_blocks function
