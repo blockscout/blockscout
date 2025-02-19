@@ -113,7 +113,7 @@ defmodule Explorer.Chain.Health.Helper do
     - `{:stale, non_neg_integer(), DateTime.t()}` if the block is outside the healthy period.
     - `{:error, atom}` if the input is `nil`.
 
-  The healthy period is defined by the `:healthy_blocks_period` configuration in the `:explorer` application for `Explorer.Chain.Health` module.
+  The healthy period is defined by the `:healthy_blocks_period` configuration in the `:explorer` application for `Explorer.Chain.Health.Monitor` module.
   """
   @spec block_status({non_neg_integer(), DateTime.t()} | nil) ::
           {:ok, non_neg_integer(), DateTime.t()} | {:stale, non_neg_integer(), DateTime.t()} | {:error, atom}
@@ -121,7 +121,7 @@ defmodule Explorer.Chain.Health.Helper do
     now = DateTime.utc_now()
     last_block_period = DateTime.diff(now, timestamp, :millisecond)
 
-    if last_block_period > Application.get_env(:explorer, Explorer.Chain.Health)[:healthy_blocks_period] do
+    if last_block_period > Application.get_env(:explorer, Explorer.Chain.Health.Monitor)[:healthy_blocks_period] do
       {:stale, number, timestamp}
     else
       {:ok, number, timestamp}
@@ -198,7 +198,8 @@ defmodule Explorer.Chain.Health.Helper do
     if health_status[:health_latest_block_timestamp_from_db] do
       last_block_db_delay = get_last_item_delay(health_status, :health_latest_block_timestamp_from_db)
 
-      blocks_indexing_delay_threshold = Application.get_env(:explorer, Explorer.Chain.Health)[:healthy_blocks_period]
+      blocks_indexing_delay_threshold =
+        Application.get_env(:explorer, Explorer.Chain.Health.Monitor)[:healthy_blocks_period]
 
       with true <- last_block_db_delay > blocks_indexing_delay_threshold,
            true <-
@@ -227,7 +228,7 @@ defmodule Explorer.Chain.Health.Helper do
       last_batch_db_delay = get_last_item_delay(health_status, :health_latest_batch_timestamp_from_db)
 
       batches_indexing_delay_threshold =
-        Application.get_env(:explorer, Explorer.Chain.Health)[:healthy_batches_period]
+        Application.get_env(:explorer, Explorer.Chain.Health.Monitor)[:healthy_batches_period]
 
       if last_batch_db_delay > batches_indexing_delay_threshold do
         {false, @no_new_items_error_code,
