@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
 
   alias BlockScoutWeb.Chain
   alias Explorer.Chain.{Hash, Wei}
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
 
   describe "getblockreward" do
     test "with missing block number", %{conn: conn} do

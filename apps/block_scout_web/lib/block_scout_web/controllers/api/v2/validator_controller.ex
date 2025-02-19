@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
   use BlockScoutWeb, :controller
 
   alias Explorer.Chain.Blackfort.Validator, as: ValidatorBlackfort
-  alias Explorer.Chain.Cache.{BlackfortValidatorsCounters, StabilityValidatorsCounters}
+  alias Explorer.Chain.Cache.Counters.{Blackfort, Stability}
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
 
   import BlockScoutWeb.PagingHelper,
@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       validators_counter: validators_counter,
       new_validators_counter: new_validators_counter,
       active_validators_counter: active_validators_counter
-    } = StabilityValidatorsCounters.get_counters(@api_true)
+    } = Stability.ValidatorsCount.get_counters(@api_true)
 
     conn
     |> json(%{
@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     %{
       validators_counter: validators_counter,
       new_validators_counter: new_validators_counter
-    } = BlackfortValidatorsCounters.get_counters(@api_true)
+    } = Blackfort.ValidatorsCount.get_counters(@api_true)
 
     conn
     |> json(%{

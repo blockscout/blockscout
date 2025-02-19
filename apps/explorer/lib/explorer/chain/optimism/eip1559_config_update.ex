@@ -3,8 +3,7 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
 
   use Explorer.Schema
 
-  import Explorer.Chain, only: [get_last_fetched_counter: 1, upsert_last_fetched_counter: 1]
-
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Hash
   alias Explorer.Repo
 
@@ -120,7 +119,7 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
   def last_l2_block_hash do
     "0x" <>
       (@counter_type
-       |> get_last_fetched_counter()
+       |> LastFetchedCounter.get()
        |> Decimal.to_integer()
        |> Integer.to_string(16)
        |> String.pad_leading(64, "0"))
@@ -143,7 +142,7 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
       |> String.trim_leading("0x")
       |> Integer.parse(16)
 
-    upsert_last_fetched_counter(%{
+    LastFetchedCounter.upsert(%{
       counter_type: @counter_type,
       value: block_hash_integer
     })
