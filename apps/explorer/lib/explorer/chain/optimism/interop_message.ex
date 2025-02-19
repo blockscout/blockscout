@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
   @required_attrs ~w(nonce init_chain_id relay_chain_id)a
   @optional_attrs ~w(sender target init_transaction_hash block_number timestamp relay_transaction_hash payload failed)a
+  @interop_instance_url_to_public_key_cache :interop_instance_url_to_public_key_cache
   @interop_chain_id_to_instance_info_cache :interop_chain_id_to_instance_info_cache
 
   @typedoc """
@@ -401,7 +402,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   @spec interop_chain_id_to_instance_url(non_neg_integer()) :: String.t() | nil
   def interop_chain_id_to_instance_url(chain_id) do
     env = Application.get_all_env(:indexer)[InteropMessageQueue]
-    url_from_map = Map.get(env[:chainscout_fallback_map], chain_id)
+    url_from_map = Map.get(env[:chainscout_fallback_map], Integer.to_string(chain_id))
 
     with {:not_in_map, true} <- {:not_in_map, is_nil(url_from_map)},
          info_from_cache = ConCache.get(@interop_chain_id_to_instance_info_cache, chain_id),
@@ -445,7 +446,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
          env = Application.get_all_env(:indexer)[InteropMessageQueue],
          info_from_chainscout = get_instance_info_by_chain_id(chain_id, env[:chainscout_api_url]),
          {:not_in_chainscout, true, _} <- {:not_in_chainscout, is_nil(info_from_chainscout), info_from_chainscout},
-         url_from_map = Map.get(env[:chainscout_fallback_map], chain_id),
+         url_from_map = Map.get(env[:chainscout_fallback_map], Integer.to_string(chain_id)),
          {:in_fallback, true} <- {:in_fallback, not is_nil(url_from_map)} do
       info =
         %{
@@ -469,4 +470,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
         nil
     end
   end
+
+  def interop_instance_url_to_public_key_cache, do: @interop_instance_url_to_public_key_cache
+  def interop_chain_id_to_instance_info_cache, do: @interop_chain_id_to_instance_info_cache
 end

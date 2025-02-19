@@ -23,11 +23,12 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   require Logger
 
   alias Explorer.Chain
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.Optimism.InteropMessage
   alias Indexer.Fetcher.Optimism
 
   @fetcher_name :optimism_interop_messages_queue
-  @api_endpoint_import "/api/v2/optimism/interop/import"
+  @api_endpoint_import "/api/v2/import/optimism/interop/"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -82,13 +83,18 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
          {:ok, _} <- ExSecp256k1.create_public_key(private_key),
          chain_id = Optimism.fetch_chain_id(),
          {:chain_id_is_nil, false} <- {:chain_id_is_nil, is_nil(chain_id)} do
+      chainscout_map =
+        env[:chainscout_fallback_map]
+        |> Enum.map(fn {id, url} -> {String.to_integer(id), url} end)
+        |> Enum.into(%{})
+
       Process.send(self(), :continue, [])
 
       {:noreply,
        %{
          chain_id: chain_id,
          chainscout_api_url: env[:chainscout_api_url],
-         chainscout_map: env[:chainscout_fallback_map],
+         chainscout_map: chainscout_map,
          private_key: private_key
        }}
     else
@@ -146,11 +152,11 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
             payload = "0x" <> Base.encode16(message.payload, case: :lower)
 
             data = %{
-              sender: message.sender,
-              target: message.target,
+              sender: Hash.to_string(message.sender),
+              target: Hash.to_string(message.target),
               nonce: message.nonce,
               init_chain_id: message.init_chain_id,
-              init_transaction_hash: message.init_transaction_hash,
+              init_transaction_hash: Hash.to_string(message.init_transaction_hash),
               timestamp: timestamp,
               relay_chain_id: message.relay_chain_id,
               payload: payload,
@@ -158,11 +164,11 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
             }
 
             data_to_sign =
-              message.sender <>
-                message.target <>
+              data.sender <>
+              data.target <>
                 Integer.to_string(message.nonce) <>
                 Integer.to_string(message.init_chain_id) <>
-                message.init_transaction_hash <>
+                data.init_transaction_hash <>
                 Integer.to_string(timestamp) <> Integer.to_string(message.relay_chain_id) <> payload
 
             {message.relay_chain_id, data, data_to_sign}
@@ -171,7 +177,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
               nonce: message.nonce,
               init_chain_id: message.init_chain_id,
               relay_chain_id: message.relay_chain_id,
-              relay_transaction_hash: message.relay_transaction_hash,
+              relay_transaction_hash: Hash.to_string(message.relay_transaction_hash),
               failed: message.failed,
               signature: nil
             }
@@ -179,12 +185,16 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
             data_to_sign =
               Integer.to_string(message.nonce) <>
                 Integer.to_string(message.init_chain_id) <>
-                Integer.to_string(message.relay_chain_id) <> message.relay_transaction_hash <> to_string(message.failed)
+                Integer.to_string(message.relay_chain_id) <> data.relay_transaction_hash <> to_string(message.failed)
 
             {message.init_chain_id, data, data_to_sign}
           end
 
-        {:ok, {signature, _}} = ExSecp256k1.sign_compact(post_data_to_sign, private_key)
+        {:ok, {signature, _}} =
+          post_data_to_sign
+          |> ExKeccak.hash_256()
+          |> ExSecp256k1.sign_compact(private_key)
+
         post_data_signed = %{post_data | signature: "0x" <> Base.encode16(signature, case: :lower)}
 
         url_from_map = Map.get(chainscout_map_acc, instance_chain_id)

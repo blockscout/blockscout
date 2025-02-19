@@ -295,7 +295,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   @doc """
-    Function to render `relay` response for the POST request to `/api/v2/optimism/interop/import` endpoint.
+    Function to render `relay` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
   """
   def render("optimism_interop_response.json", {relay_transaction_hash, failed}) do
     %{
@@ -305,7 +305,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   @doc """
-    Function to render `init` response for the POST request to `/api/v2/optimism/interop/import` endpoint.
+    Function to render `init` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
   """
   def render("optimism_interop_response.json", {sender, target, init_transaction_hash, timestamp, payload}) do
     %{

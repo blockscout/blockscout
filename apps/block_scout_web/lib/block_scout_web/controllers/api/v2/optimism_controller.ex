@@ -36,7 +36,6 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @api_true [api?: true]
-  @interop_instance_url_to_public_key_cache :interop_instance_url_to_public_key_cache
 
   @doc """
     Function to handle GET requests to `/api/v2/optimism/txn-batches` and
@@ -382,7 +381,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle POST request to `/api/v2/optimism/interop/import` endpoint.
+    Function to handle POST request to `/api/v2/import/optimism/interop/` endpoint.
     Accepts `init` part of the interop message from the source instance or
     `relay` part of the interop message from the target instance.
   """
@@ -434,7 +433,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     interop_import_internal(relay_chain_id, data_to_verify, signature, params, &InteropMessage.get_init_part/2, conn)
   end
 
-  # Implements import logic for the interop message's data sent to `/api/v2/optimism/interop/import` endpoint.
+  # Implements import logic for the interop message's data sent to `/api/v2/import/optimism/interop/` endpoint.
   # Used by the public `interop_import` function. It requests a public key from the remote Blockscout instance,
   # then after verifying the data with this key, imports the data to database and renders missed part of the message
   # for the remote side (the request was sent from). In case of any error, responds with the corresponding HTTP code
@@ -462,7 +461,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     with {:empty_public_key, false} <- {:empty_public_key, is_nil(public_key)},
          {:wrong_signature, false} <-
            {:wrong_signature,
-            ExSecp256k1.verify(data_to_verify, Base.decode16!(signature, case: :mixed), public_key) != :ok},
+            ExSecp256k1.verify(ExKeccak.hash_256(data_to_verify), Base.decode16!(signature, case: :mixed), public_key) != :ok},
          # the data is verified, so now we can import that to the database
          {:ok, _} <-
            Chain.import(%{optimism_interop_messages: %{params: [interop_prepare_import(params)]}, timeout: :infinity}) do
@@ -538,13 +537,16 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   #
   # ## Parameters
   # - `instance_url`: The instance URL previously got by the `InteropMessage.interop_chain_id_to_instance_url` function.
+  #                   Can be `nil` in case of failure.
   #
   # ## Returns
   # - Public key as binary byte sequence in case of success.
   # - `nil` in case of fail.
-  @spec interop_fetch_public_key(String.t()) :: binary() | nil
+  @spec interop_fetch_public_key(String.t() | nil) :: binary() | nil
+  defp interop_fetch_public_key(nil), do: nil
+
   defp interop_fetch_public_key(instance_url) do
-    public_key = ConCache.get(@interop_instance_url_to_public_key_cache, instance_url)
+    public_key = ConCache.get(InteropMessage.interop_instance_url_to_public_key_cache(), instance_url)
 
     if is_nil(public_key) do
       url = instance_url <> "/api/v2/optimism/interop/public-key"
@@ -552,7 +554,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       with {:ok, %HTTPoison.Response{body: "0x" <> key, status_code: 200}} <- HTTPoison.get(url),
            {:ok, key_binary} <- Base.decode16(key, case: :mixed),
            true <- byte_size(key_binary) > 0 do
-        ConCache.put(@interop_instance_url_to_public_key_cache, instance_url, key_binary)
+        ConCache.put(InteropMessage.interop_instance_url_to_public_key_cache(), instance_url, key_binary)
         key_binary
       else
         _ ->
