@@ -686,6 +686,11 @@ config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_CONCURRENCY", 10)
 
+config :explorer, Explorer.Migrator.TransactionHasTokenTransfers,
+  enabled: ConfigHelper.parse_bool_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_ENABLED", "true"),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_CONCURRENCY", 10)
+
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
   bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
