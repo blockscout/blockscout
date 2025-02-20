@@ -50,8 +50,8 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
-  alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
   alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
+  alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.PagingOptions
 

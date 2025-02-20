@@ -186,7 +186,13 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   def get_init_part(init_chain_id, nonce) do
     query =
       from(m in __MODULE__,
-        select: %{sender: m.sender, target: m.target, init_transaction_hash: m.init_transaction_hash, timestamp: m.timestamp, payload: m.payload},
+        select: %{
+          sender: m.sender,
+          target: m.target,
+          init_transaction_hash: m.init_transaction_hash,
+          timestamp: m.timestamp,
+          payload: m.payload
+        },
         where: m.init_chain_id == ^init_chain_id and m.nonce == ^nonce
       )
 

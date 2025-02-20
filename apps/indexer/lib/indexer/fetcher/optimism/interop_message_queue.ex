@@ -95,7 +95,9 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
          chain_id: chain_id,
          chainscout_api_url: env[:chainscout_api_url],
          chainscout_map: chainscout_map,
-         private_key: private_key
+         private_key: private_key,
+         timeout: :timer.seconds(env[:connect_timeout]),
+         recv_timeout: :timer.seconds(env[:recv_timeout])
        }}
     else
       true ->
@@ -128,7 +130,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   # ## Parameters
   # - `:continue`: The GenServer message.
   # - `state`: The current state of the fetcher containing the current chain ID, Chainscout map and API URL,
-  #            and a private key for signing details.
+  #            a private key for signing details, and HTTP timeouts.
   #
   # ## Returns
   # - `{:noreply, state}` tuple where `state` is the new state of the fetcher which can have updated Chainscout map.
@@ -139,7 +141,9 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
           chain_id: current_chain_id,
           chainscout_api_url: chainscout_api_url,
           chainscout_map: chainscout_map,
-          private_key: private_key
+          private_key: private_key,
+          timeout: timeout,
+          recv_timeout: recv_timeout
         } = state
       ) do
     updated_chainscout_map =
@@ -165,7 +169,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
 
             data_to_sign =
               data.sender <>
-              data.target <>
+                data.target <>
                 Integer.to_string(message.nonce) <>
                 Integer.to_string(message.init_chain_id) <>
                 data.init_transaction_hash <>
@@ -214,7 +218,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
 
         with false <- is_nil(instance_url),
              endpoint_url = instance_url <> @api_endpoint_import,
-             response = post_json_request(endpoint_url, post_data_signed),
+             response = post_json_request(endpoint_url, post_data_signed, timeout, recv_timeout),
              false <- is_nil(response) do
           {:ok, _} =
             Chain.import(%{
@@ -300,13 +304,18 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   # ## Parameters
   # - `url`: URL of the remote API endpoint to send the data to.
   # - `body`: A map with message's data.
+  # - `timeout`: Connect timeout, in milliseconds.
+  # - `recv_timeout`: timeout for receiving an HTTP response from the socket, in milliseconds.
   #
   # ## Returns
   # - A response map in case of success.
   # - `nil` in case of failure (failed HTTP request or invalid JSON response).
-  @spec post_json_request(String.t(), map()) :: map() | nil
-  defp post_json_request(url, body) do
-    case HTTPoison.post(url, Jason.encode!(body), [{"Content-Type", "application/json"}]) do
+  @spec post_json_request(String.t(), map(), non_neg_integer(), non_neg_integer()) :: map() | nil
+  defp post_json_request(url, body, timeout, recv_timeout) do
+    case HTTPoison.post(url, Jason.encode!(body), [{"Content-Type", "application/json"}],
+           timeout: timeout,
+           recv_timeout: recv_timeout
+         ) do
       {:ok, %HTTPoison.Response{body: response_body, status_code: 200}} ->
         case Jason.decode(response_body) do
           {:ok, response} ->

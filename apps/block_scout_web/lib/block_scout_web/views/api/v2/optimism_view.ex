@@ -307,7 +307,13 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   @doc """
     Function to render `init` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
   """
-  def render("optimism_interop_response.json", %{sender: sender, target: target, init_transaction_hash: init_transaction_hash, timestamp: timestamp, payload: payload}) do
+  def render("optimism_interop_response.json", %{
+        sender: sender,
+        target: target,
+        init_transaction_hash: init_transaction_hash,
+        timestamp: timestamp,
+        payload: payload
+      }) do
     %{
       "sender" => sender,
       "target" => target,

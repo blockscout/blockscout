@@ -1018,7 +1018,9 @@ config :indexer, Indexer.Fetcher.Optimism.InteropMessage,
 config :indexer, Indexer.Fetcher.Optimism.InteropMessageQueue,
   chainscout_api_url: ConfigHelper.parse_url_env_var("INDEXER_OPTIMISM_CHAINSCOUT_API_URL", nil, true),
   chainscout_fallback_map: ConfigHelper.parse_json_env_var("INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP"),
-  private_key: System.get_env("INDEXER_OPTIMISM_INTEROP_PRIVATE_KEY", "")
+  private_key: System.get_env("INDEXER_OPTIMISM_INTEROP_PRIVATE_KEY", ""),
+  connect_timeout: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_INTEROP_CONNECT_TIMEOUT", 8),
+  recv_timeout: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_INTEROP_RECV_TIMEOUT", 10)
 
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"
