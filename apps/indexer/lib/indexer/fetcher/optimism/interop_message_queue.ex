@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
     is available in Chainscout API (which URL is defined in INDEXER_OPTIMISM_CHAINSCOUT_API_URL env variable) or
     can be defined with INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP env variable in form of JSON object, e.g.:
 
-    {10: "https://optimism.blockscout.com/", 8453: "https://base.blockscout.com/"}
+    {"10": "https://optimism.blockscout.com/", "8453": "https://base.blockscout.com/"}
 
     In production chains INDEXER_OPTIMISM_CHAINSCOUT_API_URL env should be defined as `https://chains.blockscout.com/api/chains/`.
     In local dev chains INDEXER_OPTIMISM_CHAINSCOUT_API_URL env should be omitted as the Chainscout doesn't have any info about
