@@ -1,10 +1,10 @@
 defmodule Explorer.Chain.Token.Schema do
   @moduledoc false
-  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias Explorer.Chain.{Address, Hash}
 
-  if @bridged_token_enabled do
+  if @bridged_tokens_enabled do
     @bridged_field [
       quote do
         field(:bridged, :boolean)
@@ -388,7 +388,7 @@ defmodule Explorer.Chain.Token do
   end
 
   @doc """
-    For usage in Indexer.Fetcher.TokenInstance.LegacySanitizeERC721
+    For usage in Indexer.Fetcher.TokenInstance.SanitizeERC721
   """
   @spec ordered_erc_721_token_address_hashes_list_query(integer(), Hash.Address.t() | nil) :: Ecto.Query.t()
   def ordered_erc_721_token_address_hashes_list_query(limit, last_address_hash \\ nil) do

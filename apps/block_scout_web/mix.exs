@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.10.1",
+      version: "7.0.0",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.Mixfile do
       "lib/block_scout_web/application.ex",
       "lib/block_scout_web/endpoint.ex",
       "lib/block_scout_web/health_router.ex",
-      "lib/block_scout_web/controllers/api/v1/health_controller.ex",
+      "lib/block_scout_web/controllers/api/health_controller.ex",
       "lib/block_scout_web/prometheus/exporter.ex"
     ]
 

@@ -17,15 +17,13 @@ defmodule Explorer.ChainSpec.GenesisData do
   alias Explorer.Helper
   alias HTTPoison.Response
 
-  @interval :timer.minutes(2)
-
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @impl GenServer
   def init(_) do
-    Process.send_after(self(), :import, @interval)
+    Process.send_after(self(), :import, Application.get_env(:explorer, __MODULE__)[:genesis_processing_delay])
 
     {:ok, %{}}
   end
@@ -86,6 +84,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   @spec fetch_genesis_data() :: Task.t() | :ok
   def fetch_genesis_data do
     chain_spec_path = get_path(:chain_spec_path)
+    Logger.info(fn -> "Fetching chain spec path: #{inspect(chain_spec_path)}." end)
     precompiled_config_path = get_path(:precompiled_config_path)
     Logger.info(fn -> "Fetching precompiled config path: #{inspect(precompiled_config_path)}." end)
 
