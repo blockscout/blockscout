@@ -36,24 +36,58 @@ defmodule EthereumJSONRPC.Zilliqa.Helper do
   end
 
   @doc """
-  Converts a bit vector string to a list of indexes where the bit corresponding
-  to signing validator is 1.
+  Converts a list of bits to a list of indexes where the bit is equal 1.
 
   ## Examples
 
-      iex> bit_vector_to_signers("[1, 0, 1, 0]")
+      iex> EthereumJSONRPC.Zilliqa.Helper.legacy_bit_vector_to_signers("[1, 0, 1, 0]")
       [0, 2]
 
-      iex> bit_vector_to_signers("[1, 1, 1, 1]")
+      iex> EthereumJSONRPC.Zilliqa.Helper.legacy_bit_vector_to_signers("[1, 1, 1, 1]")
       [0, 1, 2, 3]
+
+  TODO: Remove once aggregate quorum certificate also relies on new hex format
   """
-  @spec bit_vector_to_signers(Zilliqa.bit_vector()) :: Zilliqa.signers()
-  def bit_vector_to_signers(bit_vector_string) do
-    bit_vector_string
+  @spec legacy_bit_vector_to_signers(binary()) :: Zilliqa.signers()
+  def legacy_bit_vector_to_signers(bit_list_json_string) do
+    bit_list_json_string
     |> Jason.decode!()
     |> Enum.with_index()
     |> Enum.filter(fn {bit, _} -> bit == 1 end)
     |> Enum.map(fn {_, index} -> index end)
+  end
+
+  @doc """
+  Converts a number in hex to a list of indexes where the bit in the binary
+  representation of this number is equal 1.
+
+  ## Examples
+
+      iex> EthereumJSONRPC.Zilliqa.Helper.bit_vector_to_signers("0xa000000000000000000000000000000000000000000000000000000000000000")
+      [0, 2]
+
+      iex> EthereumJSONRPC.Zilliqa.Helper.bit_vector_to_signers("0xf000000000000000000000000000000000000000000000000000000000000000")
+      [0, 1, 2, 3]
+  """
+  @spec bit_vector_to_signers(EthereumJSONRPC.data()) :: Zilliqa.signers()
+  def bit_vector_to_signers(hex) when is_binary(hex) do
+    hex
+    |> String.trim_leading("0x")
+    |> String.graphemes()
+    |> Enum.flat_map(&hex_char_to_bits/1)
+    |> Enum.with_index()
+    |> Enum.filter(fn {bit, _} -> bit == 1 end)
+    |> Enum.map(fn {_, index} -> index end)
+  end
+
+  @spec hex_char_to_bits(binary()) :: [integer()]
+  defp hex_char_to_bits(char) do
+    char
+    |> String.to_integer(16)
+    |> Integer.to_string(2)
+    |> String.pad_leading(4, "0")
+    |> String.graphemes()
+    |> Enum.map(&String.to_integer/1)
   end
 
   @spec reduce_to_consensus_data(
