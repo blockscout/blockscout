@@ -58,6 +58,7 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     PendingBlockOperation,
+    PendingTransactionOperation,
     SmartContract,
     Token,
     TokenTransfer,
@@ -80,13 +81,13 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Helper, as: CacheHelper
-  alias Explorer.Chain.Cache.PendingBlockOperation, as: PendingBlockOperationCache
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.MicroserviceInterfaces.MultichainSearch
+  alias Explorer.Utility.SwitchPendingOperations
   alias Explorer.{PagingOptions, Repo}
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -874,7 +875,10 @@ defmodule Explorer.Chain do
   end
 
   defp check_indexing_internal_transactions_threshold do
-    pbo_count = PendingBlockOperationCache.estimated_count()
+    min_blockchain_trace_block_number = Application.get_env(:indexer, :trace_first_block)
+    %{max: max_saved_block_number} = BlockNumber.get_all()
+    pending_ops_entity = SwitchPendingOperations.actual_entity()
+    pbo_count = pending_ops_entity.blocks_count_in_range(min_blockchain_trace_block_number, max_saved_block_number)
 
     if pbo_count <
          Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction)[:indexing_finished_threshold] do
@@ -1522,7 +1526,10 @@ defmodule Explorer.Chain do
           full_blocks_range =
             max_saved_block_number - min_blockchain_trace_block_number - BlockNumberHelper.null_rounds_count() + 1
 
-          pbo_count = PendingBlockOperation.count_in_range(min_blockchain_trace_block_number, max_saved_block_number)
+          pending_ops_entity = SwitchPendingOperations.actual_entity()
+
+          pbo_count =
+            pending_ops_entity.blocks_count_in_range(min_blockchain_trace_block_number, max_saved_block_number)
 
           processed_int_transactions_for_blocks_count = max(0, full_blocks_range - pbo_count)
 
@@ -1772,6 +1779,15 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Finds all transactions of a certain block numbers
+  """
+  def get_transactions_of_block_numbers(block_numbers) do
+    block_numbers
+    |> Transaction.transactions_for_block_numbers()
+    |> Repo.all()
+  end
+
+  @doc """
   Finds all Blocks validated by the address with the given hash.
 
     ## Options
@@ -1898,51 +1914,22 @@ defmodule Explorer.Chain do
     |> Repo.stream_reduce(initial, reducer)
   end
 
-  @doc """
-  Returns a stream of all blocks with unfetched internal transactions, using
-  the `pending_block_operation` table.
-
-      iex> unfetched = insert(:block)
-      iex> insert(:pending_block_operation, block: unfetched, block_number: unfetched.number)
-      iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
-      ...>   MapSet.new(),
-      ...>   fn number, acc ->
-      ...>     MapSet.put(acc, number)
-      ...>   end
-      ...> )
-      iex> unfetched.number in number_set
-      true
-
-  """
-  @spec stream_blocks_with_unfetched_internal_transactions(
-          initial :: accumulator,
-          reducer :: (entry :: term(), accumulator -> accumulator),
-          limited? :: boolean()
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_blocks_with_unfetched_internal_transactions(initial, reducer, limited? \\ false)
-      when is_function(reducer, 2) do
-    direction = Application.get_env(:indexer, :internal_transactions_fetch_order)
-
-    query =
-      from(
-        po in PendingBlockOperation,
-        where: not is_nil(po.block_number),
-        select: po.block_number,
-        order_by: [{^direction, po.block_number}]
-      )
-
-    query
-    |> add_fetcher_limit(limited?)
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
   def remove_nonconsensus_blocks_from_pending_ops(block_hashes) do
     query =
-      from(
-        po in PendingBlockOperation,
-        where: po.block_hash in ^block_hashes
-      )
+      case SwitchPendingOperations.pending_operations_type() do
+        "blocks" ->
+          from(
+            po in PendingBlockOperation,
+            where: po.block_hash in ^block_hashes
+          )
+
+        "transactions" ->
+          from(
+            po in PendingTransactionOperation,
+            join: t in assoc(po, :transaction),
+            where: t.block_hash in ^block_hashes
+          )
+      end
 
     {_, _} = Repo.delete_all(query)
 
@@ -1951,12 +1938,22 @@ defmodule Explorer.Chain do
 
   def remove_nonconsensus_blocks_from_pending_ops do
     query =
-      from(
-        po in PendingBlockOperation,
-        inner_join: block in Block,
-        on: block.hash == po.block_hash,
-        where: block.consensus == false
-      )
+      case SwitchPendingOperations.pending_operations_type() do
+        "blocks" ->
+          from(
+            po in PendingBlockOperation,
+            inner_join: block in Block,
+            on: block.hash == po.block_hash,
+            where: block.consensus == false
+          )
+
+        "transactions" ->
+          from(
+            po in PendingTransactionOperation,
+            join: t in assoc(po, :transaction),
+            where: t.block_consensus == false
+          )
+      end
 
     {_, _} = Repo.delete_all(query)
 

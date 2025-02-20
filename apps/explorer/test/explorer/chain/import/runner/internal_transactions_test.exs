@@ -5,6 +5,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
   alias Explorer.Chain.{Block, Data, Wei, PendingBlockOperation, Transaction, InternalTransaction}
   alias Explorer.Chain.Import.Runner.InternalTransactions
 
+  setup do
+    config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+    on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+  end
+
   describe "run/1" do
     test "transaction's status doesn't become :error when its internal_transaction has an error" do
       transaction = insert(:transaction) |> with_block(status: :ok)
