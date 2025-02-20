@@ -32,6 +32,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :arbitrum_da_records_normalization_finished,
     key: :sanitize_verified_addresses_finished,
     key: :backfill_call_type_enum_finished,
+    key: :transaction_has_token_transfers_finished,
     key: :heavy_indexes_create_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
     key: :heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished,
@@ -70,7 +71,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished,
     key: :heavy_indexes_create_addresses_hash_contract_code_not_null_index_finished,
     key: :heavy_indexes_create_address_ids_internal_transactions_indexes_finished,
-    key: :fill_internal_transactions_address_ids_finished
+    key: :fill_internal_transactions_address_ids_finished,
+    key: :heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished
 
   @dialyzer :no_match
 
@@ -84,6 +86,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     FillInternalTransactionsAddressIds,
     SanitizeDuplicatedLogIndexLogs,
     TokenTransferTokenType,
+    TransactionHasTokenTransfers,
     TransactionsDenormalization
   }
 
@@ -107,6 +110,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateTokensOrdHolderNameIndex,
     CreateTokensOrdMcapFiatHolderNameIndex,
     CreateTransactionsCreatedContractAddressHashWPendingIndex,
+    CreateTransactionsTokenTransferMethodIdOrderedIndex,
     DropInternalTransactionsCreatedContractAddressHashPartialIndex,
     DropInternalTransactionsFromAddressHashIndex,
     DropLogsAddressHashIndex,
@@ -172,6 +176,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       BackfillMultichainSearchDbCurrentTokenBalances,
       &set_backfill_multichain_search_db_current_token_balances_finished/1
+    )
+  end
+
+  defp handle_fallback(:transaction_has_token_transfers_finished) do
+    set_and_return_migration_status(
+      TransactionHasTokenTransfers,
+      &set_transaction_has_token_transfers_finished/1
     )
   end
 
@@ -449,6 +460,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       CreateInternalTransactionsBlockNumberCreatedContractAddressIdPartialIndex,
       &set_heavy_indexes_create_address_ids_internal_transactions_indexes_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished) do
+    set_and_return_migration_status(
+      CreateTransactionsTokenTransferMethodIdOrderedIndex,
+      &set_heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished/1
     )
   end
 
