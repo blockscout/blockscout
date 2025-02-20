@@ -261,6 +261,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
         blocks,
         %{realtime_range: realtime_range, mode: mode, last_realtime_block_number: last_realtime_block_number} = state
       ) do
+    # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
     {new_min, new_max} =
       blocks
       |> Enum.map(fn block -> block.number end)
