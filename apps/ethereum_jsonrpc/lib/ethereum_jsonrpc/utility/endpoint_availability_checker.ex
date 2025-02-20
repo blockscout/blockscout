@@ -132,7 +132,8 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
     {:noreply, %{state | unavailable_endpoints_arguments: new_unavailable_endpoints}}
   end
 
-  # Retrieves the latest block number from an Ethereum node to check endpoint availability.
+  @doc """
+  <!-- # Retrieves the latest block number from an Ethereum node to check endpoint availability.
   #
   # Removes fallback URLs from the arguments to ensure checking only the primary endpoint.
   #
@@ -141,10 +142,11 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
   #
   # ## Returns
   # - `{:ok, number}` if the endpoint is available
-  # - `{:error, reason}` if the endpoint is unavailable
+  # - `{:error, reason}` if the endpoint is unavailable -->
+  """
   @spec fetch_latest_block_number(EthereumJSONRPC.json_rpc_named_arguments()) ::
           {:ok, EthereumJSONRPC.Transport.result()} | {:error, reason :: term()}
-  defp fetch_latest_block_number(json_rpc_named_arguments) do
+  def fetch_latest_block_number(json_rpc_named_arguments) do
     {_, arguments_without_fallback} = pop_in(json_rpc_named_arguments, [:transport_options, :fallback_urls])
 
     %{id: 0, method: "eth_blockNumber", params: []}

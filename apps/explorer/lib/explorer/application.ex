@@ -61,6 +61,7 @@ defmodule Explorer.Application do
       Supervisor.child_spec({Task.Supervisor, name: Explorer.WETHMigratorSupervisor}, id: WETHMigratorSupervisor),
       Explorer.SmartContract.SolcDownloader,
       Explorer.SmartContract.VyperDownloader,
+      Explorer.Chain.Health.Monitor,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
       Accounts,
