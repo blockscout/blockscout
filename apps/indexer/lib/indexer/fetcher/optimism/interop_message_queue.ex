@@ -86,7 +86,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
          chain_id = Optimism.fetch_chain_id(),
          {:chain_id_is_nil, false} <- {:chain_id_is_nil, is_nil(chain_id)},
          block_duration = Application.get_env(:indexer, Indexer.Fetcher.Optimism)[:block_duration],
-         {:block_duration_is_invalid, false} <- {:block_duration_is_invalid, not is_integer(block_duration) or block_duration <= 0} do
+         {:block_duration_is_invalid, false} <-
+           {:block_duration_is_invalid, not is_integer(block_duration) or block_duration <= 0} do
       chainscout_map =
         env[:chainscout_fallback_map]
         |> Enum.map(fn {id, url} -> {String.to_integer(id), url} end)
@@ -158,7 +159,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
-    {:ok, latest_block_number} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+    {:ok, latest_block_number} =
+      Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
     updated_chainscout_map =
       current_chain_id
