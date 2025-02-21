@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
           token_transfers,
           &render("token_transfer.json", %{
             token_transfer: &1,
-            decoded_transaction_input: decoded_transactions_map[&1.transaction.hash],
+            decoded_transaction_input: &1.transaction && decoded_transactions_map[&1.transaction.hash],
             conn: conn
           })
         ),
