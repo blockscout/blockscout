@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Etherscan do
   @moduledoc """
   Documentation data for Etherscan-compatible API.
   """
-  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:block_scout_web, [Explorer.Chain.BridgedToken, :enabled]]
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:block_scout_web, [Explorer.Chain.BridgedToken, :enabled]]
 
   @account_balance_example_value %{
     "status" => "1",
@@ -2009,7 +2009,7 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
-  if @bridged_token_enabled do
+  if @bridged_tokens_enabled do
     @success_status_type %{
       type: "status",
       enum: ~s(["1"]),
@@ -3063,7 +3063,7 @@ defmodule BlockScoutWeb.Etherscan do
     @token_gettokenholders_action
   ]
 
-  @token_actions if @bridged_token_enabled,
+  @token_actions if @bridged_tokens_enabled,
                    do: [@token_bridgedtokenlist_action, @base_token_actions],
                    else: @base_token_actions
 

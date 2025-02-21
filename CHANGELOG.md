@@ -27,6 +27,7 @@
 
 ### 🐛 Bug Fixes
 
+- Add BRIDGED_TOKENS_ENABLED to custom Gnosis chain docker images ([#11895](https://github.com/blockscout/blockscout/pull/11895))
 - Fix /verified-contracts in old UI ([#11854](https://github.com/blockscout/blockscout/pull/11854))
 - Cleanup token instance metadata on nft collection metadata refetch ([#11848](https://github.com/blockscout/blockscout/pull/11848))
 - Allow skip fiat_value in /api/v2/addresses/{hash}/tokens endpoint ([#11837](https://github.com/blockscout/blockscout/pull/11837))
@@ -136,6 +137,7 @@
 | `MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_BATCH_SIZE`  | Specifies the number of address records processed per batch during the backfill of pending address fetch operations. Implemented in [#11798](https://github.com/blockscout/blockscout/pull/11798).                                                                                                                                           | <p>Version: v7.0.0+<br>Default: <code>100</code><br>Applications: Indexer</p>                               |
 | `MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_CONCURRENCY` | Specifies the number of concurrent processes used during the backfill of pending address fetch operations. Implemented in [#11798](https://github.com/blockscout/blockscout/pull/11798).                                                                                                                                                     | <p>Version: v7.0.0+<br>Default: <code>1</code><br>Applications: Indexer</p>                                 |
 | `MICROSERVICE_METADATA_PROXY_REQUESTS_TIMEOUT` | Timeout for request forwarding from `/api/v2/proxy/metadata/`. Implemented in [#11656](https://github.com/blockscout/blockscout/pull/11656) | <p>Version: v7.0.0+<br>Default: <code>30s</code><br>Applications: API</p> |
+| `CHAIN_SPEC_PROCESSING_DELAY`                           | Chain specification path processing delay. [Time format](backend-env-variables.md#time-format). Implemented in [#11874](https://github.com/blockscout/blockscout/pull/11874).                                                                                                                                                                                                                           | <p>Version: v7.0.0+<br>Default: 15s<br>Applications: API, Indexer</p>                                                                                                  |
 
 ### Deprecated ENV variables
 
