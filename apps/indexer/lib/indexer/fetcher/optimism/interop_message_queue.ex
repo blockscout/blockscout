@@ -3,6 +3,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
     Searches for incomplete messages in the `op_interop_messages` database table and sends message's data to the
     remote instance through API post request to fill missed part and notify the remote side about the known part.
     An incomplete message is the message for which an init transaction or relay transaction is unknown yet.
+    The number of incomplete messages considered depends on INDEXER_OPTIMISM_INTEROP_EXPORT_EXPIRATION_DAYS env variable.
 
     The data being sent is signed with a private key defined in INDEXER_OPTIMISM_INTEROP_PRIVATE_KEY env variable.
 
@@ -10,7 +11,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
     is available in Chainscout API (which URL is defined in INDEXER_OPTIMISM_CHAINSCOUT_API_URL env variable) or
     can be defined with INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP env variable in form of JSON object, e.g.:
 
-    {"10": "https://optimism.blockscout.com/", "8453": "https://base.blockscout.com/"}
+    {"10":"https://optimism.blockscout.com/","8453":"https://base.blockscout.com/"}
 
     In production chains INDEXER_OPTIMISM_CHAINSCOUT_API_URL env should be defined as `https://chains.blockscout.com/api/chains/`.
     In local dev chains INDEXER_OPTIMISM_CHAINSCOUT_API_URL env should be omitted as the Chainscout doesn't have any info about
@@ -26,6 +27,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Optimism.InteropMessage
   alias Indexer.Fetcher.Optimism
+  alias Indexer.Helper
 
   @fetcher_name :optimism_interop_messages_queue
   @api_endpoint_import "/api/v2/import/optimism/interop/"
@@ -60,7 +62,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   # When the initialization succeeds, the `:continue` message is sent to GenServer to start the queue handler loop.
   #
   # ## Parameters
-  # - `_json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to RPC node.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to RPC node.
   # - `_state`: Initial state of the fetcher (empty map when starting).
   #
   # ## Returns
@@ -70,7 +72,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   @impl GenServer
   @spec handle_continue(EthereumJSONRPC.json_rpc_named_arguments(), map()) ::
           {:noreply, map()} | {:stop, :normal, map()}
-  def handle_continue(_json_rpc_named_arguments, _state) do
+  def handle_continue(json_rpc_named_arguments, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
     # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
@@ -82,7 +84,9 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
          private_key = env[:private_key] |> String.trim_leading("0x") |> Base.decode16!(case: :mixed),
          {:ok, _} <- ExSecp256k1.create_public_key(private_key),
          chain_id = Optimism.fetch_chain_id(),
-         {:chain_id_is_nil, false} <- {:chain_id_is_nil, is_nil(chain_id)} do
+         {:chain_id_is_nil, false} <- {:chain_id_is_nil, is_nil(chain_id)},
+         block_duration = Application.get_env(:indexer, Indexer.Fetcher.Optimism)[:block_duration],
+         {:block_duration_is_invalid, false} <- {:block_duration_is_invalid, not is_integer(block_duration) or block_duration <= 0} do
       chainscout_map =
         env[:chainscout_fallback_map]
         |> Enum.map(fn {id, url} -> {String.to_integer(id), url} end)
@@ -97,7 +101,9 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
          chainscout_map: chainscout_map,
          private_key: private_key,
          timeout: :timer.seconds(env[:connect_timeout]),
-         recv_timeout: :timer.seconds(env[:recv_timeout])
+         recv_timeout: :timer.seconds(env[:recv_timeout]),
+         export_expiration_blocks: div(env[:export_expiration] * 24 * 3600, block_duration),
+         json_rpc_named_arguments: json_rpc_named_arguments
        }}
     else
       true ->
@@ -110,6 +116,10 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
 
       {:chain_id_is_nil, true} ->
         Logger.error("Cannot get chain ID from RPC.")
+        {:stop, :normal, %{}}
+
+      {:block_duration_is_invalid, true} ->
+        Logger.error("Please, check INDEXER_OPTIMISM_BLOCK_DURATION env variable. It is invalid or undefined.")
         {:stop, :normal, %{}}
 
       _ ->
@@ -143,12 +153,16 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
           chainscout_map: chainscout_map,
           private_key: private_key,
           timeout: timeout,
-          recv_timeout: recv_timeout
+          recv_timeout: recv_timeout,
+          export_expiration_blocks: export_expiration_blocks,
+          json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
+    {:ok, latest_block_number} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+
     updated_chainscout_map =
       current_chain_id
-      |> InteropMessage.get_incomplete_messages()
+      |> InteropMessage.get_incomplete_messages(max(latest_block_number - export_expiration_blocks, 0))
       |> Enum.reduce(chainscout_map, fn message, chainscout_map_acc ->
         {instance_chain_id, post_data, post_data_to_sign} =
           if is_nil(message.relay_transaction_hash) do

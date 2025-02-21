@@ -126,20 +126,23 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   @doc """
     Returns a list of incomplete messages from the `op_interop_messages` table.
     An incomplete message is the message for which an init transaction or relay transaction is unknown.
+    The selection is limited by a min block number.
 
     ## Parameters
     - `current_chain_id`: The current chain ID to make correct query to the database.
+    - `min_block_number`: The block number starting from which the messages should be considered.
 
     ## Returns
     - A list of the incomplete messages. Returns an empty list if they are not found.
   """
-  @spec get_incomplete_messages(non_neg_integer()) :: list()
-  def get_incomplete_messages(current_chain_id) do
+  @spec get_incomplete_messages(non_neg_integer(), non_neg_integer()) :: list()
+  def get_incomplete_messages(current_chain_id, min_block_number) do
     Repo.all(
       from(m in __MODULE__,
         where:
-          (is_nil(m.relay_transaction_hash) and m.init_chain_id == ^current_chain_id) or
-            (is_nil(m.init_transaction_hash) and m.relay_chain_id == ^current_chain_id)
+          ((is_nil(m.relay_transaction_hash) and m.init_chain_id == ^current_chain_id) or
+            (is_nil(m.init_transaction_hash) and m.relay_chain_id == ^current_chain_id)) and
+              m.block_number >= min_block_number
       )
     )
   end
