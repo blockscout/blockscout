@@ -2,7 +2,7 @@ defmodule Explorer.Migrator.SmartContractLanguageTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Migrator.{MigrationStatus, SmartContractLanguage}
-  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.{Cache.BackgroundMigrations, SmartContract}
   alias Explorer.Repo
 
   defp create_contracts(attrs) do
@@ -45,6 +45,7 @@ defmodule Explorer.Migrator.SmartContractLanguageTest do
 
       # Confirm the migration status has been marked as completed
       assert MigrationStatus.get_status("smart_contract_language") == "completed"
+      assert BackgroundMigrations.get_smart_contract_language_finished()
     end
   end
 end

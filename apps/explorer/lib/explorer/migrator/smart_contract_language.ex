@@ -9,6 +9,7 @@ defmodule Explorer.Migrator.SmartContractLanguage do
   import Ecto.Query
 
   alias Ecto.Enum
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.SmartContract
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Repo
@@ -62,9 +63,11 @@ defmodule Explorer.Migrator.SmartContractLanguage do
           )
       ]
     )
-    |> Repo.update_all([])
+    |> Repo.update_all([], timeout: :infinity)
   end
 
   @impl FillingMigration
-  def update_cache, do: :ok
+  def update_cache do
+    BackgroundMigrations.set_smart_contract_language_finished(true)
+  end
 end

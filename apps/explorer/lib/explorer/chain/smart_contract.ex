@@ -1460,21 +1460,25 @@ defmodule Explorer.Chain.SmartContract do
   # TODO: This function is a temporary measure during background migration of
   # the `language` field and should be removed in the future releases.
   defp filter_contracts_on_legacy_fields(basic_query, language) do
-    case language do
-      :solidity ->
-        basic_query
-        |> or_where([sc], not sc.is_vyper_contract and is_nil(sc.language))
+    if BackgroundMigrations.get_smart_contract_language_finished() do
+      case language do
+        :solidity ->
+          basic_query
+          |> or_where([sc], not sc.is_vyper_contract and is_nil(sc.language))
 
-      :vyper ->
-        basic_query
-        |> or_where([sc], sc.is_vyper_contract and is_nil(sc.language))
+        :vyper ->
+          basic_query
+          |> or_where([sc], sc.is_vyper_contract and is_nil(sc.language))
 
-      :yul ->
-        basic_query
-        |> or_where([sc], is_nil(sc.abi) and is_nil(sc.language))
+        :yul ->
+          basic_query
+          |> or_where([sc], is_nil(sc.abi) and is_nil(sc.language))
 
-      _ ->
-        basic_query
+        _ ->
+          basic_query
+      end
+    else
+      basic_query
     end
   end
 
