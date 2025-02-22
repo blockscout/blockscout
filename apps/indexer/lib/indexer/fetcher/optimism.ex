@@ -17,6 +17,7 @@ defmodule Indexer.Fetcher.Optimism do
     ]
 
   alias EthereumJSONRPC.Contract
+  alias Explorer.Chain.Cache.ChainId
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
@@ -44,6 +45,26 @@ defmodule Indexer.Fetcher.Optimism do
   def init(_args) do
     Logger.metadata(fetcher: @fetcher_name)
     :ignore
+  end
+
+  @doc """
+  Fetches the chain id from the RPC (or cache).
+
+  ## Returns
+  - The chain id as unsigned integer.
+  - `nil` if the request failed.
+  """
+  @spec fetch_chain_id() :: non_neg_integer() | nil
+  def fetch_chain_id do
+    case ChainId.get_id() do
+      nil ->
+        Logger.error("Cannot read `eth_chainId`. Retrying...")
+        :timer.sleep(3000)
+        fetch_chain_id()
+
+      chain_id ->
+        chain_id
+    end
   end
 
   @doc """
