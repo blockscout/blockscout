@@ -13,6 +13,10 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
 
     {"10":"https://optimism.blockscout.com/","8453":"https://base.blockscout.com/"}
 
+    or extended case (when API and UI have different URLs):
+
+    {"123" : {"api" : "http://localhost:4000/", "ui" : "http://localhost:3000/"}, "456" : {"api" : "http://localhost:4100/", "ui" : "http://localhost:3100/"}}
+
     In production chains INDEXER_OPTIMISM_CHAINSCOUT_API_URL env should be defined as `https://chains.blockscout.com/api/chains/`.
     In local dev chains INDEXER_OPTIMISM_CHAINSCOUT_API_URL env should be omitted as the Chainscout doesn't have any info about
     some dev chain. For local dev case INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP must be used.
@@ -90,7 +94,9 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
            {:block_duration_is_invalid, not is_integer(block_duration) or block_duration <= 0} do
       chainscout_map =
         env[:chainscout_fallback_map]
-        |> Enum.map(fn {id, url} -> {String.to_integer(id), url} end)
+        |> Enum.map(fn {id, url} ->
+          {String.to_integer(id), String.trim_trailing(if(is_map(url), do: url["api"], else: url), "/")}
+        end)
         |> Enum.into(%{})
 
       Process.send(self(), :continue, [])
@@ -226,7 +232,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
             info.instance_url
           else
             {:url_from_map_is_nil, false, url_from_map} ->
-              String.trim_trailing(url_from_map, "/")
+              url_from_map
 
             {:url_from_chainscout_avail, false} ->
               nil

@@ -452,10 +452,10 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   @spec interop_import_internal(non_neg_integer(), String.t(), String.t(), map(), function(), Plug.Conn.t()) ::
           Plug.Conn.t()
   defp interop_import_internal(remote_chain_id, data_to_verify, signature, params, missed_part_fn, conn) do
-    # we need to know the remote instance URL to get public key from that
+    # we need to know the remote instance API URL to get public key from that
     public_key =
       remote_chain_id
-      |> InteropMessage.interop_chain_id_to_instance_url()
+      |> InteropMessage.interop_chain_id_to_instance_api_url()
       |> interop_fetch_public_key()
 
     with {:empty_public_key, false} <- {:empty_public_key, is_nil(public_key)},
@@ -537,8 +537,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   # Firstly, it tries to read the public key from cache. If that's not found in cache, the HTTP request is performed.
   #
   # ## Parameters
-  # - `instance_url`: The instance URL previously got by the `InteropMessage.interop_chain_id_to_instance_url` function.
-  #                   Can be `nil` in case of failure.
+  # - `instance_api_url`: The instance API URL previously got by the `InteropMessage.interop_chain_id_to_instance_api_url` function.
+  #                       Can be `nil` in case of failure.
   #
   # ## Returns
   # - Public key as binary byte sequence in case of success.
@@ -546,12 +546,12 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   @spec interop_fetch_public_key(String.t() | nil) :: binary() | nil
   defp interop_fetch_public_key(nil), do: nil
 
-  defp interop_fetch_public_key(instance_url) do
-    public_key = ConCache.get(InteropMessage.interop_instance_url_to_public_key_cache(), instance_url)
+  defp interop_fetch_public_key(instance_api_url) do
+    public_key = ConCache.get(InteropMessage.interop_instance_api_url_to_public_key_cache(), instance_api_url)
 
     if is_nil(public_key) do
       env = Application.get_all_env(:indexer)[InteropMessageQueue]
-      url = instance_url <> "/api/v2/optimism/interop/public-key"
+      url = instance_api_url <> "/api/v2/optimism/interop/public-key"
 
       with {:ok, %HTTPoison.Response{body: response_body, status_code: 200}} <-
              HTTPoison.get(url, [],
@@ -561,7 +561,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
            {:ok, %{"public_key" => "0x" <> key}} <- Jason.decode(response_body),
            {:ok, key_binary} <- Base.decode16(key, case: :mixed),
            true <- byte_size(key_binary) > 0 do
-        ConCache.put(InteropMessage.interop_instance_url_to_public_key_cache(), instance_url, key_binary)
+        ConCache.put(InteropMessage.interop_instance_api_url_to_public_key_cache(), instance_api_url, key_binary)
         key_binary
       else
         reason ->

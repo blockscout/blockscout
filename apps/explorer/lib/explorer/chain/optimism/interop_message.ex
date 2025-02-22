@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
   @required_attrs ~w(nonce init_chain_id relay_chain_id)a
   @optional_attrs ~w(sender target init_transaction_hash block_number timestamp relay_transaction_hash payload failed)a
-  @interop_instance_url_to_public_key_cache :interop_instance_url_to_public_key_cache
+  @interop_instance_api_url_to_public_key_cache :interop_instance_api_url_to_public_key_cache
   @interop_chain_id_to_instance_info_cache :interop_chain_id_to_instance_info_cache
 
   @typedoc """
@@ -397,41 +397,50 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   end
 
   @doc """
-    Fetches instance URL by chain ID using a request to Chainscout API which URL is defined in INDEXER_OPTIMISM_CHAINSCOUT_API_URL env variable.
+    Fetches instance API URL by chain ID using a request to Chainscout API which URL is defined in INDEXER_OPTIMISM_CHAINSCOUT_API_URL env variable.
     The successful response is cached in memory until the current instance is down.
 
-    Firstly, it tries to read the instance URL from INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP env variable. If that's not defined, it tries to get
+    Firstly, it tries to read the instance API URL from INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP env variable. If that's not defined, it tries to get
     the url from cache. If that's not found in cache, the HTTP request to Chainscout API is performed.
 
     ## Parameters
     - `chain_id`: The chain ID for which the instance URL needs to be retrieved.
 
     ## Returns
-    - Instance URL if found (without trailing `/`).
+    - Instance API URL if found (without trailing `/`).
     - `nil` if not found.
   """
-  @spec interop_chain_id_to_instance_url(non_neg_integer()) :: String.t() | nil
-  def interop_chain_id_to_instance_url(chain_id) do
+  @spec interop_chain_id_to_instance_api_url(non_neg_integer()) :: String.t() | nil
+  def interop_chain_id_to_instance_api_url(chain_id) do
     env = Application.get_all_env(:indexer)[InteropMessageQueue]
     url_from_map = Map.get(env[:chainscout_fallback_map], Integer.to_string(chain_id))
 
-    with {:not_in_map, true} <- {:not_in_map, is_nil(url_from_map)},
-         info_from_cache = ConCache.get(@interop_chain_id_to_instance_info_cache, chain_id),
-         {:not_in_cache, true, _} <- {:not_in_cache, is_nil(info_from_cache), info_from_cache} do
-      case get_instance_info_by_chain_id(chain_id, env[:chainscout_api_url]) do
-        nil ->
-          nil
+    url =
+      with {:not_in_map, true} <- {:not_in_map, is_nil(url_from_map)},
+           info_from_cache = ConCache.get(@interop_chain_id_to_instance_info_cache, chain_id),
+           {:not_in_cache, true, _} <- {:not_in_cache, is_nil(info_from_cache), info_from_cache} do
+        case get_instance_info_by_chain_id(chain_id, env[:chainscout_api_url]) do
+          nil ->
+            nil
 
-        info ->
-          ConCache.put(@interop_chain_id_to_instance_info_cache, chain_id, info)
-          info.instance_url
+          info ->
+            ConCache.put(@interop_chain_id_to_instance_info_cache, chain_id, info)
+            info.instance_url
+        end
+      else
+        {:not_in_map, false} ->
+          url_from_map
+
+        {:not_in_cache, false, info_from_cache} ->
+          info_from_cache.instance_url
       end
-    else
-      {:not_in_map, false} ->
-        String.trim_trailing(url_from_map, "/")
 
-      {:not_in_cache, false, info_from_cache} ->
-        info_from_cache.instance_url
+    if is_map(url) do
+      String.trim_trailing(Map.get(url, "api", ""), "/")
+    else
+      if not is_nil(url) do
+        String.trim_trailing(url, "/")
+      end
     end
   end
 
@@ -444,44 +453,62 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
     ## Parameters
     - `chain_id`: The chain ID for which the instance info needs to be retrieved.
+    - `instance_ui_url_only`: Set to `true` if `instance_url` in the info map must point to UI URL.
 
     ## Returns
     - Instance info map if found.
     - `nil` if not found.
   """
   @spec interop_chain_id_to_instance_info(non_neg_integer()) :: map() | nil
-  def interop_chain_id_to_instance_info(chain_id) do
+  def interop_chain_id_to_instance_info(chain_id, instance_ui_url_only \\ true) do
     info_from_cache = ConCache.get(@interop_chain_id_to_instance_info_cache, chain_id)
 
-    with {:not_in_cache, true, _} <- {:not_in_cache, is_nil(info_from_cache), info_from_cache},
-         env = Application.get_all_env(:indexer)[InteropMessageQueue],
-         info_from_chainscout = get_instance_info_by_chain_id(chain_id, env[:chainscout_api_url]),
-         {:not_in_chainscout, true, _} <- {:not_in_chainscout, is_nil(info_from_chainscout), info_from_chainscout},
-         url_from_map = Map.get(env[:chainscout_fallback_map], Integer.to_string(chain_id)),
-         {:in_fallback, true} <- {:in_fallback, not is_nil(url_from_map)} do
-      info =
-        %{
-          instance_url: url_from_map,
-          chain_id: chain_id,
-          chain_name: nil,
-          chain_logo: nil
-        }
+    result =
+      with {:not_in_cache, true, _} <- {:not_in_cache, is_nil(info_from_cache), info_from_cache},
+           env = Application.get_all_env(:indexer)[InteropMessageQueue],
+           info_from_chainscout = get_instance_info_by_chain_id(chain_id, env[:chainscout_api_url]),
+           {:not_in_chainscout, true, _} <- {:not_in_chainscout, is_nil(info_from_chainscout), info_from_chainscout},
+           url_from_map = Map.get(env[:chainscout_fallback_map], Integer.to_string(chain_id)),
+           {:in_fallback, true} <- {:in_fallback, not is_nil(url_from_map)} do
+        instance_url =
+          if is_map(url_from_map) do
+            %{
+              "api" => String.trim_trailing(Map.get(url_from_map, "api", ""), "/"),
+              "ui" => String.trim_trailing(Map.get(url_from_map, "ui", ""), "/")
+            }
+          else
+            String.trim_trailing(url_from_map, "/")
+          end
 
-      ConCache.put(@interop_chain_id_to_instance_info_cache, chain_id, info)
-      info
+        info =
+          %{
+            instance_url: instance_url,
+            chain_id: chain_id,
+            chain_name: nil,
+            chain_logo: nil
+          }
+
+        ConCache.put(@interop_chain_id_to_instance_info_cache, chain_id, info)
+        info
+      else
+        {:not_in_cache, false, info_from_cache} ->
+          info_from_cache
+
+        {:not_in_chainscout, false, info_from_chainscout} ->
+          ConCache.put(@interop_chain_id_to_instance_info_cache, chain_id, info_from_chainscout)
+          info_from_chainscout
+
+        {:in_fallback, false} ->
+          nil
+      end
+
+    if instance_ui_url_only and not is_nil(result) and is_map(result.instance_url) do
+      %{result | instance_url: result.instance_url["ui"]}
     else
-      {:not_in_cache, false, info_from_cache} ->
-        info_from_cache
-
-      {:not_in_chainscout, false, info_from_chainscout} ->
-        ConCache.put(@interop_chain_id_to_instance_info_cache, chain_id, info_from_chainscout)
-        info_from_chainscout
-
-      {:in_fallback, false} ->
-        nil
+      result
     end
   end
 
-  def interop_instance_url_to_public_key_cache, do: @interop_instance_url_to_public_key_cache
+  def interop_instance_api_url_to_public_key_cache, do: @interop_instance_api_url_to_public_key_cache
   def interop_chain_id_to_instance_info_cache, do: @interop_chain_id_to_instance_info_cache
 end
