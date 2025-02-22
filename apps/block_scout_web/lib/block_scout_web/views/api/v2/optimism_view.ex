@@ -318,8 +318,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       "sender" => sender,
       "target" => target,
       "init_transaction_hash" => init_transaction_hash,
-      "timestamp" => DateTime.to_unix(timestamp),
-      "payload" => "0x" <> Base.encode16(payload, case: :lower)
+      "timestamp" => (if not is_nil(timestamp), do: DateTime.to_unix(timestamp)),
+      "payload" => (if not is_nil(payload), do: "0x" <> Base.encode16(payload, case: :lower))
     }
   end
 

@@ -35,7 +35,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
 
   @fetcher_name :optimism_interop_messages
   @l2tol2_cross_domain_messenger "0x4200000000000000000000000000000000000023"
-  @blocks_batch_request_max_size 25
+  @blocks_batch_request_max_size 8
 
   # 32-byte signature of the event SentMessage(uint256 indexed destination, address indexed target, uint256 indexed messageNonce, address sender, bytes message)
   @sent_message_event "0x382409ac69001e11931a28435afef442cbfd20d9891907e8fa373ba7d351f320"
