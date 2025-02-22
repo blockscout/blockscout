@@ -56,7 +56,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     BackfillMultichainSearchDB,
     SanitizeDuplicatedLogIndexLogs,
     TokenTransferTokenType,
-    TransactionsDenormalization
+    TransactionsDenormalization,
+    SmartContractLanguage
   }
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
@@ -222,6 +223,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     start_migration_status_task(
       ArbitrumDaRecordsNormalization,
       &set_arbitrum_da_records_normalization_finished/1
+    )
+  end
+
+  defp handle_fallback(:smart_contract_language_finished) do
+    start_migration_status_task(
+      SmartContractLanguage,
+      &set_smart_contract_language_finished/1
     )
   end
 
