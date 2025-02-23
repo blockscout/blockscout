@@ -55,9 +55,9 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     ArbitrumDaRecordsNormalization,
     BackfillMultichainSearchDB,
     SanitizeDuplicatedLogIndexLogs,
+    SmartContractLanguage,
     TokenTransferTokenType,
-    TransactionsDenormalization,
-    SmartContractLanguage
+    TransactionsDenormalization
   }
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{

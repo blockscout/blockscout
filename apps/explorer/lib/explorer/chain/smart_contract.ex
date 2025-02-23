@@ -1461,6 +1461,8 @@ defmodule Explorer.Chain.SmartContract do
   # the `language` field and should be removed in the future releases.
   defp filter_contracts_on_legacy_fields(basic_query, language) do
     if BackgroundMigrations.get_smart_contract_language_finished() do
+      basic_query
+    else
       case language do
         :solidity ->
           basic_query
@@ -1477,8 +1479,6 @@ defmodule Explorer.Chain.SmartContract do
         _ ->
           basic_query
       end
-    else
-      basic_query
     end
   end
 
