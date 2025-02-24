@@ -114,8 +114,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
     end
   end
 
-  defp get_owner_from_address_manager(nil), do: nil
-
   defp get_owner_from_address_manager(address_manager_hash_string) do
     case @owner_signature
          |> SmartContractHelper.get_binary_string_from_contract_getter(

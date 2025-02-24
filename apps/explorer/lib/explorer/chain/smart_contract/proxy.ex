@@ -335,76 +335,75 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   defp fallback_proxy_detection(proxy_address_hash, proxy_abi, fallback_value) do
     proxy_type = define_fallback_proxy_type(proxy_abi)
 
-    if proxy_type do
-      case proxy_type do
-        :diamond ->
-          implementation_address_hash_strings = EIP2535.get_implementation_address_hash_strings(proxy_address_hash)
+    case proxy_type do
+      :diamond ->
+        implementation_address_hash_strings = EIP2535.get_implementation_address_hash_strings(proxy_address_hash)
 
-          %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: :eip2535}
+        %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: :eip2535}
 
-        :implementation ->
-          implementation_address_hash_string =
-            SmartContractHelper.get_binary_string_from_contract_getter(
-              @implementation_signature,
-              to_string(proxy_address_hash),
-              proxy_abi
-            )
+      :implementation ->
+        implementation_address_hash_string =
+          SmartContractHelper.get_binary_string_from_contract_getter(
+            @implementation_signature,
+            to_string(proxy_address_hash),
+            proxy_abi
+          )
 
-          %{
-            implementation_address_hash_strings:
-              implementation_address_hash_string_to_list(implementation_address_hash_string),
-            proxy_type: :basic_implementation
-          }
+        %{
+          implementation_address_hash_strings:
+            implementation_address_hash_string_to_list(implementation_address_hash_string),
+          proxy_type: :basic_implementation
+        }
 
-        :get_implementation ->
-          implementation_address_hash_string =
-            SmartContractHelper.get_binary_string_from_contract_getter(
-              @get_implementation_signature,
-              to_string(proxy_address_hash),
-              proxy_abi
-            )
+      :get_implementation ->
+        implementation_address_hash_string =
+          SmartContractHelper.get_binary_string_from_contract_getter(
+            @get_implementation_signature,
+            to_string(proxy_address_hash),
+            proxy_abi
+          )
 
-          %{
-            implementation_address_hash_strings:
-              implementation_address_hash_string_to_list(implementation_address_hash_string),
-            proxy_type: :basic_get_implementation
-          }
+        %{
+          implementation_address_hash_strings:
+            implementation_address_hash_string_to_list(implementation_address_hash_string),
+          proxy_type: :basic_get_implementation
+        }
 
-        :master_copy ->
-          implementation_address_hash_string = MasterCopy.get_implementation_address_hash_string(proxy_address_hash)
+      :master_copy ->
+        implementation_address_hash_string = MasterCopy.get_implementation_address_hash_string(proxy_address_hash)
 
-          %{
-            implementation_address_hash_strings:
-              implementation_address_hash_string_to_list(implementation_address_hash_string),
-            proxy_type: :master_copy
-          }
+        %{
+          implementation_address_hash_strings:
+            implementation_address_hash_string_to_list(implementation_address_hash_string),
+          proxy_type: :master_copy
+        }
 
-        :comptroller ->
-          implementation_address_hash_string =
-            SmartContractHelper.get_binary_string_from_contract_getter(
-              @comptroller_implementation_signature,
-              proxy_address_hash,
-              proxy_abi
-            )
+      :comptroller ->
+        implementation_address_hash_string =
+          SmartContractHelper.get_binary_string_from_contract_getter(
+            @comptroller_implementation_signature,
+            proxy_address_hash,
+            proxy_abi
+          )
 
-          %{
-            implementation_address_hash_strings:
-              implementation_address_hash_string_to_list(implementation_address_hash_string),
-            proxy_type: :comptroller
-          }
+        %{
+          implementation_address_hash_strings:
+            implementation_address_hash_string_to_list(implementation_address_hash_string),
+          proxy_type: :comptroller
+        }
 
-        :eip_930 ->
-          implementation_address_hash_string =
-            EIP930.get_implementation_address_hash_string(@get_address_signature, proxy_address_hash, proxy_abi)
+      :eip_930 ->
+        implementation_address_hash_string =
+          EIP930.get_implementation_address_hash_string(@get_address_signature, proxy_address_hash, proxy_abi)
 
-          %{
-            implementation_address_hash_strings:
-              implementation_address_hash_string_to_list(implementation_address_hash_string),
-            proxy_type: :eip_930
-          }
-      end
-    else
-      fallback_value
+        %{
+          implementation_address_hash_strings:
+            implementation_address_hash_string_to_list(implementation_address_hash_string),
+          proxy_type: :eip_930
+        }
+
+      _ ->
+        fallback_value
     end
   end
 
