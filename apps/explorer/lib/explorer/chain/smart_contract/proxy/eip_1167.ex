@@ -18,11 +18,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
     end
   end
 
-  @doc """
   # Get implementation address hash string following EIP-1167
-  """
   @spec get_implementation_address_hash_string(Hash.Address.t(), Keyword.t()) :: binary() | nil
-  def get_implementation_address_hash_string(proxy_address_hash, options \\ []) do
+  defp get_implementation_address_hash_string(proxy_address_hash, options) do
     case Chain.select_repo(options).get(Address, proxy_address_hash) do
       nil ->
         nil

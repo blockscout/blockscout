@@ -1035,7 +1035,7 @@ defmodule Explorer.Chain.Transaction do
           parse_method_name(decoded_func)
 
         {:error, :contract_not_verified, []} ->
-          ExplorerHelper.adds_0x_prefix(method_id)
+          ExplorerHelper.add_0x_prefix(method_id)
 
         _ ->
           "Transfer"
@@ -2114,7 +2114,7 @@ defmodule Explorer.Chain.Transaction do
         skip_sc_check?
       ) do
     if skip_sc_check? || Address.smart_contract?(to_address) do
-      ExplorerHelper.adds_0x_prefix(method_id)
+      ExplorerHelper.add_0x_prefix(method_id)
     else
       nil
     end

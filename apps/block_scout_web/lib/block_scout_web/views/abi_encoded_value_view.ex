@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   end
 
   defp do_copy_text({:bytes, _type}, value) do
-    ExplorerHelper.adds_0x_prefix(value)
+    ExplorerHelper.add_0x_prefix(value)
   end
 
   defp do_copy_text({:array, type, _}, value) do
@@ -66,11 +66,11 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   end
 
   defp do_copy_text(_, {:dynamic, value}) do
-    ExplorerHelper.adds_0x_prefix(value)
+    ExplorerHelper.add_0x_prefix(value)
   end
 
   defp do_copy_text(type, value) when type in [:bytes, :address] do
-    ExplorerHelper.adds_0x_prefix(value)
+    ExplorerHelper.add_0x_prefix(value)
   end
 
   defp do_copy_text({:tuple, types}, value) do
@@ -161,14 +161,14 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   defp base_value_html(_, {:dynamic, value}, _no_links) do
     assigns = %{value: value}
 
-    ~H|<%= ExplorerHelper.adds_0x_prefix(@value) %>|
+    ~H|<%= ExplorerHelper.add_0x_prefix(@value) %>|
   end
 
   defp base_value_html(:address, value, no_links) do
     if no_links do
       base_value_html(:address_text, value, no_links)
     else
-      address = ExplorerHelper.adds_0x_prefix(value)
+      address = ExplorerHelper.add_0x_prefix(value)
       path = address_path(BlockScoutWeb.Endpoint, :show, address)
 
       assigns = %{address: address, path: path}
@@ -180,13 +180,13 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   defp base_value_html(:address_text, value, _no_links) do
     assigns = %{value: value}
 
-    ~H|<%= ExplorerHelper.adds_0x_prefix(@value) %>|
+    ~H|<%= ExplorerHelper.add_0x_prefix(@value) %>|
   end
 
   defp base_value_html(:bytes, value, _no_links) do
     assigns = %{value: value}
 
-    ~H|<%= ExplorerHelper.adds_0x_prefix(@value) %>|
+    ~H|<%= ExplorerHelper.add_0x_prefix(@value) %>|
   end
 
   defp base_value_html(_, value, _no_links), do: HTML.html_escape(value)

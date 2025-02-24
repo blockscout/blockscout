@@ -63,9 +63,9 @@ defmodule Indexer.Transform.Celo.ValidatorEpochPaymentDistributions do
        ]} = Log.find_and_decode(@event_abi, log, log.block_hash)
 
       %{
-        validator_address: ExplorerHelper.adds_0x_prefix(validator_address),
+        validator_address: ExplorerHelper.add_0x_prefix(validator_address),
         validator_payment: validator_payment,
-        group_address: ExplorerHelper.adds_0x_prefix(group_address),
+        group_address: ExplorerHelper.add_0x_prefix(group_address),
         group_payment: group_payment
       }
     end)

@@ -85,8 +85,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
                                                                                     acc ->
         prepared_ctb = %{
           token_contract_address_hash:
-            ExplorerHelper.adds_0x_prefix(stale_current_token_balance.token.contract_address_hash),
-          address_hash: ExplorerHelper.adds_0x_prefix(address_hash),
+            ExplorerHelper.add_0x_prefix(stale_current_token_balance.token.contract_address_hash),
+          address_hash: ExplorerHelper.add_0x_prefix(address_hash),
           block_number: block_number,
           token_id: token_id && Decimal.to_integer(token_id),
           token_type: stale_current_token_balance.token_type

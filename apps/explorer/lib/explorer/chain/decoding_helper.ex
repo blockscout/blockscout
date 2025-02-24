@@ -55,7 +55,7 @@ defmodule Explorer.Chain.DecodingHelper do
   end
 
   defp base_value_json(_, {:dynamic, value}) do
-    ExplorerHelper.adds_0x_prefix(value)
+    ExplorerHelper.add_0x_prefix(value)
   end
 
   defp base_value_json(:address, value) do
@@ -66,7 +66,7 @@ defmodule Explorer.Chain.DecodingHelper do
   end
 
   defp base_value_json(:bytes, value) do
-    ExplorerHelper.adds_0x_prefix(value)
+    ExplorerHelper.add_0x_prefix(value)
   end
 
   defp base_value_json(_, value), do: to_string(value)

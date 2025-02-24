@@ -71,7 +71,7 @@ defmodule Explorer.Tags.AddressToTag do
       current_address_hashes_strings =
         current_address_hashes
         |> Enum.map(fn address_hash ->
-          ExplorerHelper.adds_0x_prefix(address_hash.bytes)
+          ExplorerHelper.add_0x_prefix(address_hash.bytes)
         end)
 
       current_address_hashes_strings_tuples = MapSet.new(current_address_hashes_strings)

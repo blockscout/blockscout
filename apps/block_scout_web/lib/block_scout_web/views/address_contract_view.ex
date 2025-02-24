@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.AddressContractView do
         val_to_string_if_array(val, type, conn)
 
       type =~ "address" ->
-        address_hash = ExplorerHelper.adds_0x_prefix(val)
+        address_hash = ExplorerHelper.add_0x_prefix(val)
 
         address = Chain.string_to_address_hash_or_nil(address_hash)
 

@@ -146,7 +146,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   defp hash_to_string(%Hash{bytes: bytes}), do: hash_to_string(bytes)
-  defp hash_to_string(hash), do: ExplorerHelper.adds_0x_prefix(hash)
+  defp hash_to_string(hash), do: ExplorerHelper.add_0x_prefix(hash)
 
   defp hash(%Hash{} = hash), do: hash
 

@@ -26,6 +26,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP930 do
         _ -> nil
       end
 
-    ExplorerHelper.adds_0x_prefix(implementation_address_hash_string)
+    ExplorerHelper.add_0x_prefix(implementation_address_hash_string)
   end
 end

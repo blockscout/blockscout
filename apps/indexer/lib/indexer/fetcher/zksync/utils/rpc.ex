@@ -382,7 +382,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   defp prepare_transaction_hash(raw_hash) do
     case raw_hash do
       "0x" <> <<_::binary-size(64)>> -> raw_hash
-      _ -> ExplorerHelper.adds_0x_prefix(raw_hash)
+      _ -> ExplorerHelper.add_0x_prefix(raw_hash)
     end
   end
 end

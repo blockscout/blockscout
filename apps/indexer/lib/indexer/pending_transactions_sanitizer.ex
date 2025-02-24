@@ -122,7 +122,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
   end
 
   defp fetch_pending_transaction_and_delete(transaction) do
-    pending_transaction_hash_string = ExplorerHelper.adds_0x_prefix(transaction.hash)
+    pending_transaction_hash_string = ExplorerHelper.add_0x_prefix(transaction.hash)
 
     case transaction
          |> Changeset.change()
@@ -182,7 +182,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
       Repo.update(changeset)
 
       Logger.debug(
-        "Pending transaction with hash #{ExplorerHelper.adds_0x_prefix(pending_transaction.hash.bytes)} assigned to block ##{block.number} with hash #{block.hash}"
+        "Pending transaction with hash #{ExplorerHelper.add_0x_prefix(pending_transaction.hash.bytes)} assigned to block ##{block.number} with hash #{block.hash}"
       )
     end
   end

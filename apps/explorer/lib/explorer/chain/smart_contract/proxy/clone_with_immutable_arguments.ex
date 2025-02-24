@@ -4,7 +4,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArguments do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Hash, SmartContract}
+  alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.SmartContract.Proxy
 
   @doc """
@@ -50,15 +50,5 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArguments do
       _ ->
         nil
     end
-  end
-
-  @doc """
-  Get implementation address following "Clone with immutable arguments" pattern. It is used in old UI.
-  """
-  @spec get_implementation_smart_contract(Hash.Address.t(), Keyword.t()) :: SmartContract.t() | nil
-  def get_implementation_smart_contract(address_hash, options \\ []) do
-    address_hash
-    |> get_implementation_address_hash_string(options)
-    |> Proxy.implementation_to_smart_contract(options)
   end
 end
