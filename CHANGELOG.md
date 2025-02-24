@@ -1,5 +1,7 @@
 # Changelog
 
+## 7.0.1
+
 ### 🐛 Bug Fixes
 
 - Show scam ENS in search ([#11933](https://github.com/blockscout/blockscout/issues/11933))
