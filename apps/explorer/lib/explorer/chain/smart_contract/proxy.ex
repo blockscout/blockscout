@@ -337,11 +337,6 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     proxy_type = define_fallback_proxy_type(proxy_abi)
 
     case proxy_type do
-      :diamond ->
-        implementation_address_hash_strings = EIP2535.get_implementation_address_hash_strings(proxy_address_hash)
-
-        %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: :eip2535}
-
       :implementation ->
         implementation_address_hash_string =
           SmartContractHelper.get_binary_string_from_contract_getter(
