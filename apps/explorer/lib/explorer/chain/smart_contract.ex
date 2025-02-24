@@ -920,7 +920,8 @@ defmodule Explorer.Chain.SmartContract do
     - `{:ok, smart_contract}` on successful insertion.
     - `{:error, data}` on failure, returning the changeset or, if any issues happen during setting the address as verified, an error message.
   """
-  @spec create_smart_contract(map(), list(), list()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_smart_contract(map(), list(), list()) ::
+          {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def create_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
     new_contract = %__MODULE__{}
 
