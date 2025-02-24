@@ -37,7 +37,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
         type: "ERC-721"
       )
 
-      [{:ok, %Instance{metadata: metadata}}] =
+      [%Instance{metadata: metadata}] =
         Helper.batch_fetch_instances([{"0x06012c8cf97bead5deae237070f9587f8e7a266d", 100_500}])
 
       assert Map.get(metadata, "name") == "KittyBlue_2_Lemonade"
@@ -104,12 +104,11 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       )
 
       assert [
-               {:ok,
-                %Instance{
-                  metadata: %{
-                    "name" => "Sérgio Mendonça 0000000000000000000000000000000000000000000000000000000000000309"
-                  }
-                }}
+               %Instance{
+                 metadata: %{
+                   "name" => "Sérgio Mendonça 0000000000000000000000000000000000000000000000000000000000000309"
+                 }
+               }
              ] = Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 777}])
     end
 
@@ -155,12 +154,11 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       )
 
       assert [
-               {:ok,
-                %Instance{
-                  metadata: %{
-                    "image" => "ipfs://Qmd9pvThEwgjTBbEkNmmGFbcpJKw17fnRBAT4Td4rcog22"
-                  }
-                }}
+               %Instance{
+                 metadata: %{
+                   "image" => "ipfs://Qmd9pvThEwgjTBbEkNmmGFbcpJKw17fnRBAT4Td4rcog22"
+                 }
+               }
              ] = Helper.batch_fetch_instances([{"0x7e01CC81fCfdf6a71323900288A69e234C464f63", 0}])
 
       Application.put_env(:explorer, :http_adapter, HTTPoison)
@@ -253,12 +251,11 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, base_uri_retry?: true)
 
       assert [
-               {:ok,
-                %Instance{
-                  metadata: %{
-                    "name" => "123"
-                  }
-                }}
+               %Instance{
+                 metadata: %{
+                   "name" => "123"
+                 }
+               }
              ] =
                Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 5_710_384_980_761_197_878}])
 
@@ -301,16 +298,15 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       )
 
       assert [
-               {:ok,
-                %Instance{
-                  metadata: %{
-                    "name" => "OMNI404 #300067000000000000",
-                    "description" => "The frontier of permissionless assets.",
-                    "external_url" => "https://twitter.com/omnichain404",
-                    "image" =>
-                      "https://ipfs.io/ipfs/QmU6DGXciSZXTH1fUKkEqj74P8FeXPRKxSTjgRsVKUQa95/base/300067000000000000.JPG"
-                  }
-                }}
+               %Instance{
+                 metadata: %{
+                   "name" => "OMNI404 #300067000000000000",
+                   "description" => "The frontier of permissionless assets.",
+                   "external_url" => "https://twitter.com/omnichain404",
+                   "image" =>
+                     "https://ipfs.io/ipfs/QmU6DGXciSZXTH1fUKkEqj74P8FeXPRKxSTjgRsVKUQa95/base/300067000000000000.JPG"
+                 }
+               }
              ] = Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 300_067_000_000_000_000}])
     end
 
@@ -456,12 +452,11 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       )
 
       assert [
-               {:ok,
-                %Instance{
-                  metadata: %{
-                    "image" => img_url
-                  }
-                }}
+               %Instance{
+                 metadata: %{
+                   "image" => img_url
+                 }
+               }
              ] = Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 777}])
 
       refute String.contains?(img_url, "secret_key") || String.contains?(img_url, "secret_value")
