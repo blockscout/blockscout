@@ -18,7 +18,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP930 do
              proxy_address_hash,
              abi,
              %{
-               "#{signature}" => EIP1967.storage_slot_logic_contract_address()
+               "#{signature}" => [EIP1967.storage_slot_logic_contract_address()]
              },
              false
            ) do
