@@ -318,21 +318,23 @@ defmodule Explorer.Helper do
   @doc """
   Adds 0x at the beginning of the binary hash, if it is not already there.
   """
-  @spec adds_0x_prefix(nil | :error | binary() | Hash.t()) :: nil | :error | binary() | [binary()]
-  def adds_0x_prefix(nil), do: nil
+  @spec add_0x_prefix(input) :: output
+        when input: nil | :error | binary() | Hash.t() | [input],
+             output: nil | :error | binary() | [output]
+  def add_0x_prefix(nil), do: nil
 
-  def adds_0x_prefix(:error), do: :error
+  def add_0x_prefix(:error), do: :error
 
-  def adds_0x_prefix(binary_hashes) when is_list(binary_hashes) do
+  def add_0x_prefix(binary_hashes) when is_list(binary_hashes) do
     binary_hashes
-    |> Enum.map(fn binary_hash -> adds_0x_prefix(binary_hash) end)
+    |> Enum.map(fn binary_hash -> add_0x_prefix(binary_hash) end)
   end
 
-  def adds_0x_prefix(%Hash{bytes: bytes}) do
+  def add_0x_prefix(%Hash{bytes: bytes}) do
     "0x" <> Base.encode16(bytes, case: :lower)
   end
 
-  def adds_0x_prefix(binary_hash) when is_binary(binary_hash) do
+  def add_0x_prefix(binary_hash) when is_binary(binary_hash) do
     if String.starts_with?(binary_hash, "0x") do
       binary_hash
     else

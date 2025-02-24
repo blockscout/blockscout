@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeView do
     badge_to_address_list
     |> Enum.map(fn badge_to_address ->
       %{
-        address_hash: ExplorerHelper.adds_0x_prefix(badge_to_address.address_hash)
+        address_hash: ExplorerHelper.add_0x_prefix(badge_to_address.address_hash)
       }
     end)
   end

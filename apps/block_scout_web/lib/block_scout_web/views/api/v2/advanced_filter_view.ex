@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       |> Stream.map(fn advanced_filter ->
         method_id =
           case advanced_filter.input do
-            %{bytes: <<method_id::binary-size(4), _::binary>>} -> ExplorerHelper.adds_0x_prefix(method_id)
+            %{bytes: <<method_id::binary-size(4), _::binary>>} -> ExplorerHelper.add_0x_prefix(method_id)
             _ -> nil
           end
 

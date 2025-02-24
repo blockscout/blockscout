@@ -304,6 +304,6 @@ defmodule Explorer.SmartContract.Helper do
           nil
       end
 
-    ExplorerHelper.adds_0x_prefix(binary_hash)
+    ExplorerHelper.add_0x_prefix(binary_hash)
   end
 end

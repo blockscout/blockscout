@@ -173,7 +173,7 @@ defmodule BlockScoutWeb.SmartContractView do
 
       _ ->
         if is_binary(item) do
-          ExplorerHelper.adds_0x_prefix(item)
+          ExplorerHelper.add_0x_prefix(item)
         else
           to_string(item)
         end

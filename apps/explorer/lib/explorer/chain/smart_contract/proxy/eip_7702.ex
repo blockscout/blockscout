@@ -75,7 +75,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
   def get_delegate_address(contract_code_bytes) do
     case contract_code_bytes do
       # 0xef0100 <> address
-      <<239, 1, 0>> <> <<address::binary-size(20)>> -> ExplorerHelper.adds_0x_prefix(address)
+      <<239, 1, 0>> <> <<address::binary-size(20)>> -> ExplorerHelper.add_0x_prefix(address)
       _ -> nil
     end
   end

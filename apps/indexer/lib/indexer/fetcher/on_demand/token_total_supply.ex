@@ -47,7 +47,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
 
     if (token && !token.skip_metadata && is_nil(token.total_supply_updated_at_block)) or
          BlockNumber.get_max() - token.total_supply_updated_at_block > @ttl_in_blocks do
-      token_address_hash_string = ExplorerHelper.adds_0x_prefix(address_hash.bytes)
+      token_address_hash_string = ExplorerHelper.add_0x_prefix(address_hash.bytes)
 
       token_params = MetadataRetriever.get_total_supply_of(token_address_hash_string)
 

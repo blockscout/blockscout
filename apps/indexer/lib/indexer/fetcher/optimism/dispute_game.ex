@@ -344,7 +344,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
             ]
           })
 
-        calldata = ExplorerHelper.adds_0x_prefix(encoded_call)
+        calldata = ExplorerHelper.add_0x_prefix(encoded_call)
 
         Contract.eth_call_request(calldata, dispute_game_factory, index, nil, nil)
       end)
@@ -366,7 +366,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
         [extra_data] = Helper.decode_data(extra_data_by_index[game.index], [:bytes])
 
         game
-        |> Map.put(:extra_data, ExplorerHelper.adds_0x_prefix(extra_data))
+        |> Map.put(:extra_data, ExplorerHelper.add_0x_prefix(extra_data))
         |> Map.put(:resolved_at, sanitize_resolved_at(resolved_at_by_index[game.index]))
         |> Map.put(:status, quantity_to_integer(status_by_index[game.index]))
       end)
@@ -402,7 +402,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       |> Enum.map(fn game ->
         address =
           if is_binary(game.address) do
-            ExplorerHelper.adds_0x_prefix(game.address)
+            ExplorerHelper.add_0x_prefix(game.address)
           else
             game.address
           end
