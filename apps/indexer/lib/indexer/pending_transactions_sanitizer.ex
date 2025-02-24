@@ -182,7 +182,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
       Repo.update(changeset)
 
       Logger.debug(
-        "Pending transaction with hash #{ExplorerHelper.add_0x_prefix(pending_transaction.hash.bytes)} assigned to block ##{block.number} with hash #{block.hash}"
+        "Pending transaction with hash #{ExplorerHelper.add_0x_prefix(pending_transaction.hash)} assigned to block ##{block.number} with hash #{block.hash}"
       )
     end
   end
