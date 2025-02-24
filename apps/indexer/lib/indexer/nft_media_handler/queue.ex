@@ -28,22 +28,26 @@ defmodule Indexer.NFTMediaHandler.Queue do
   """
   @spec process_new_instances([Instance.t()]) :: [Instance.t()]
   def process_new_instances(token_instances) do
-    if Application.get_env(:nft_media_handler, :enabled?) do
-      filtered_token_instances =
-        Enum.flat_map(token_instances, fn token_instance ->
-          url = Instance.get_media_url_from_metadata_for_nft_media_handler(token_instance.metadata)
-
-          if url do
-            [{token_instance.token_contract_address_hash, token_instance.token_id, url}]
-          else
-            []
-          end
-        end)
-
-      GenServer.cast(__MODULE__, {:add_to_queue, filtered_token_instances})
-    end
+    process_new_instances_inner(token_instances, Application.get_env(:nft_media_handler, :enabled?))
 
     token_instances
+  end
+
+  defp process_new_instances_inner(_token_instances, false), do: :ignore
+
+  defp process_new_instances_inner(token_instances, true) do
+    filtered_token_instances =
+      Enum.flat_map(token_instances, fn token_instance ->
+        url = Instance.get_media_url_from_metadata_for_nft_media_handler(token_instance.metadata)
+
+        if url do
+          [{token_instance.token_contract_address_hash, token_instance.token_id, url}]
+        else
+          []
+        end
+      end)
+
+    GenServer.cast(__MODULE__, {:add_to_queue, filtered_token_instances})
   end
 
   def get_urls_to_fetch(amount) do
@@ -193,6 +197,7 @@ defmodule Indexer.NFTMediaHandler.Queue do
             Logger.debug("Media url already fetched: #{url}, will copy from cache to: #{inspect(backfill_instances)}")
             now = DateTime.utc_now()
 
+            # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
             new_instances_to_upsert =
               Enum.map(backfill_instances, fn {token_address_hash, token_id} ->
                 Map.merge(cached_result, %{
@@ -228,6 +233,7 @@ defmodule Indexer.NFTMediaHandler.Queue do
             :dets.delete(in_progress_cache, url)
             {result_base, result_for_cache} = process_result(result, url, start_time, updated_at)
 
+            # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
             instances_to_upsert =
               Enum.map(instances, fn {token_contract_address_hash, token_id} ->
                 Map.merge(result_base, %{token_contract_address_hash: token_contract_address_hash, token_id: token_id})
