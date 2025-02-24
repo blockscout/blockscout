@@ -14,7 +14,7 @@ defmodule Explorer.Token.MetadataRetriever do
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
   @invalid_base64_data "invalid data:application/json;base64"
-  @default_headers [{"User-Agent", "blockscout-7.0.0"}]
+  @default_headers [{"User-Agent", "blockscout-7.0.1"}]
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"

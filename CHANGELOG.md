@@ -1,5 +1,10 @@
 # Changelog
 
+### 🐛 Bug Fixes
+
+- Replace unique filecoin addresses indexes with not unique ([#11905](https://github.com/blockscout/blockscout/issues/11905))
+- Render token transfers from celo epoch logs ([#11915](https://github.com/blockscout/blockscout/issues/11915))
+
 ## 7.0.0
 
 ### 🚀 Features

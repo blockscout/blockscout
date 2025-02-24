@@ -23,7 +23,7 @@ defmodule EthereumJSONRPC.MixProject do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "7.0.0"
+      version: "7.0.1"
     ]
   end
 
