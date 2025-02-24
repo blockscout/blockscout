@@ -1483,15 +1483,12 @@ defmodule Explorer.Chain.SmartContract do
 
     input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1)
 
-    result =
-      constructor_arguments
-      |> ExplorerHelper.decode_data(input_types)
-      |> Enum.zip(constructor_abi["inputs"])
-      |> Enum.map(fn {value, %{"type" => type} = input_arg} ->
-        [DecodingHelper.value_json(type, value), input_arg]
-      end)
-
-    result
+    constructor_arguments
+    |> ExplorerHelper.decode_data(input_types)
+    |> Enum.zip(constructor_abi["inputs"])
+    |> Enum.map(fn {value, %{"type" => type} = input_arg} ->
+      [DecodingHelper.value_json(type, value), input_arg]
+    end)
   rescue
     exception ->
       Logger.warning(fn ->
