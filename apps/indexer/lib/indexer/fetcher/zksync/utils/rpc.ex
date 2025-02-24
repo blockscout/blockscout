@@ -204,7 +204,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   @spec fetch_transaction_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
   def fetch_transaction_by_hash(raw_hash, json_rpc_named_arguments)
       when is_binary(raw_hash) and is_list(json_rpc_named_arguments) do
-    hash = prepare_transaction_hash(raw_hash)
+    hash = ExplorerHelper.add_0x_prefix(raw_hash)
 
     req =
       EthereumJSONRPC.request(%{
@@ -235,7 +235,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   @spec fetch_transaction_receipt_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
   def fetch_transaction_receipt_by_hash(raw_hash, json_rpc_named_arguments)
       when is_binary(raw_hash) and is_list(json_rpc_named_arguments) do
-    hash = prepare_transaction_hash(raw_hash)
+    hash = ExplorerHelper.add_0x_prefix(raw_hash)
 
     req =
       EthereumJSONRPC.request(%{
@@ -375,14 +375,5 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
       )
 
     responses
-  end
-
-  # Converts a transaction hash represented as binary to a hexadecimal string
-  @spec prepare_transaction_hash(binary()) :: binary()
-  defp prepare_transaction_hash(raw_hash) do
-    case raw_hash do
-      "0x" <> <<_::binary-size(64)>> -> raw_hash
-      _ -> ExplorerHelper.add_0x_prefix(raw_hash)
-    end
   end
 end
