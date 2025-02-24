@@ -63,7 +63,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       try_to_get_implementation_from_known_proxy_patterns(
         proxy_address_hash,
         proxy_abi,
-        true
+        options[:proxy_without_abi?]
       )
 
     save_implementation_data(
@@ -202,7 +202,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @spec try_to_get_implementation_from_known_proxy_patterns(Hash.Address.t(), list() | nil, bool()) ::
           %{implementation_address_hash_strings: [String.t()] | :error, proxy_type: atom()}
 
-  def try_to_get_implementation_from_known_proxy_patterns(proxy_address_hash, proxy_abi, true) do
+  def try_to_get_implementation_from_known_proxy_patterns(proxy_address_hash, proxy_abi, proxy_without_abi?)
+      when not is_nil(proxy_abi) or proxy_without_abi? == true do
     functions =
       [
         :get_implementation_address_hash_string_eip1167,
@@ -242,7 +243,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end
   end
 
-  def try_to_get_implementation_from_known_proxy_patterns(proxy_address_hash, proxy_abi, false) do
+  def try_to_get_implementation_from_known_proxy_patterns(proxy_address_hash, proxy_abi, _proxy_without_abi?) do
     fallback_proxy_detection(proxy_address_hash, proxy_abi, implementation_address_hash_strings_fallback(nil))
   end
 

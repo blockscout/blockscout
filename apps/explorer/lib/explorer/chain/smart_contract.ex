@@ -1120,7 +1120,7 @@ defmodule Explorer.Chain.SmartContract do
                 implementation_address_fetched?: false,
                 refetch_necessity_checked?: false
               },
-              options
+              Keyword.put(options, :proxy_without_abi?, true)
             )
 
           {implementation_smart_contract, true}
