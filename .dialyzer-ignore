@@ -6,6 +6,6 @@ lib/explorer/smart_contract/solidity/publisher_worker.ex:8
 lib/explorer/smart_contract/vyper/publisher_worker.ex:8
 lib/explorer/smart_contract/stylus/publisher_worker.ex:8
 lib/phoenix/router.ex:402
-lib/explorer/chain/search.ex:81
-lib/explorer/chain/search.ex:228
-lib/explorer/chain/search.ex:324
+lib/explorer/chain/search.ex:80
+lib/explorer/chain/search.ex:227
+lib/explorer/chain/search.ex:322
