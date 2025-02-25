@@ -234,15 +234,62 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
             log,
             %Transaction{hash: log.transaction_hash},
             @api_true,
-            skip_sig_provider?,
             contracts_acc,
             events_acc
           )
 
-        {[format_decoded_log_input(result) | results], contracts_acc, events_acc}
+        {[result | results], contracts_acc, events_acc}
       end)
 
-    Enum.reverse(result)
+    all_logs = Enum.reverse(result)
+
+    already_decoded_logs =
+      all_logs
+      |> Enum.filter(fn result ->
+        case result do
+          {:error, :try_with_sig_provider, {_log, _transaction_hash}} ->
+            false
+
+          _ ->
+            true
+        end
+      end)
+
+    logs_for_sig_provider =
+      all_logs
+      |> Enum.filter(fn result ->
+        case result do
+          {:error, :try_with_sig_provider, {_log, _transaction_hash}} ->
+            true
+
+          _ ->
+            false
+        end
+      end)
+
+    tasks =
+      logs_for_sig_provider
+      |> Enum.map(fn {:error, :try_with_sig_provider, {log, transaction_hash}} ->
+        Task.async(fn ->
+          Log.decode_event_via_sig_provider(
+            log,
+            transaction_hash,
+            skip_sig_provider?
+          )
+        end)
+      end)
+
+    decoded_with_sig_provider_logs =
+      tasks
+      |> Task.yield_many(:infinity)
+      |> Enum.map(fn {_task, {:ok, res}} -> res end)
+
+    full_logs = already_decoded_logs ++ decoded_with_sig_provider_logs
+
+    full_logs
+    |> Enum.map(fn log ->
+      format_decoded_log_input(log)
+    end)
   end
 
   def prepare_transaction_action(action) do
@@ -538,6 +585,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp format_decoded_log_input({:error, :could_not_decode}), do: nil
   defp format_decoded_log_input({:ok, _method_id, _text, _mapping} = decoded), do: decoded
+
+  # defp format_decoded_log_input({:error, :try_with_sig_provider, candidates}), do: {:try_with_sig_provider, candidates}
   defp format_decoded_log_input({:error, _, candidates}), do: Enum.at(candidates, 0)
 
   def format_confirmations({:ok, confirmations}), do: confirmations

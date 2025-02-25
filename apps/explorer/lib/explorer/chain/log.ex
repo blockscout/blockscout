@@ -167,12 +167,12 @@ defmodule Explorer.Chain.Log do
   @doc """
   Decode transaction log data.
   """
-  @spec decode(Log.t(), Transaction.t(), any(), boolean, map(), map()) ::
+  @spec decode(Log.t(), Transaction.t(), any(), map(), map()) ::
           {{:ok, String.t(), String.t(), map()}
            | {:error, atom()}
            | {:error, atom(), list()}
-           | {{:error, :contract_not_verified, list()}, any()}, map(), map()}
-  def decode(log, transaction, options, skip_sig_provider?, contracts_acc \\ %{}, events_acc \\ %{}) do
+           | {{:error, :try_with_sig_provider, tuple()}, any()}, map(), map()}
+  def decode(log, transaction, options, contracts_acc \\ %{}, events_acc \\ %{}) do
     with {full_abi, contracts_acc} <- check_cache(contracts_acc, log.address_hash, options),
          {:no_abi, false} <- {:no_abi, is_nil(full_abi)},
          {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction.hash),
@@ -181,7 +181,7 @@ defmodule Explorer.Chain.Log do
       {{:ok, identifier, text, mapping}, contracts_acc, events_acc}
     else
       {:error, _} = error ->
-        handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, contracts_acc, events_acc)
+        handle_method_decode_error(error, log, transaction, options, contracts_acc, events_acc)
 
       {:no_abi, true} ->
         handle_method_decode_error(
@@ -189,25 +189,24 @@ defmodule Explorer.Chain.Log do
           log,
           transaction,
           options,
-          skip_sig_provider?,
           contracts_acc,
           events_acc
         )
     end
   end
 
-  defp handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, contracts_acc, events_acc) do
+  defp handle_method_decode_error(error, log, transaction, options, contracts_acc, events_acc) do
     case error do
       {:error, _reason} ->
         case find_method_candidates(log, transaction, options, events_acc) do
           {{:error, :contract_not_verified, []}, events_acc} ->
-            {decode_event_via_sig_provider(log, transaction, false, skip_sig_provider?), contracts_acc, events_acc}
+            {try_decode_event_later_via_sig_provider(log, transaction.hash), contracts_acc, events_acc}
 
           {{:error, :contract_not_verified, candidates}, events_acc} ->
             {{:error, :contract_not_verified, candidates}, contracts_acc, events_acc}
 
           {_, events_acc} ->
-            {decode_event_via_sig_provider(log, transaction, false, skip_sig_provider?), contracts_acc, events_acc}
+            {try_decode_event_later_via_sig_provider(log, transaction.hash), contracts_acc, events_acc}
         end
     end
   end
@@ -346,12 +345,18 @@ defmodule Explorer.Chain.Log do
 
   defp alter_mapping_names(mapping), do: mapping
 
-  defp decode_event_via_sig_provider(
+  defp try_decode_event_later_via_sig_provider(
          log,
-         transaction,
-         only_candidates?,
-         skip_sig_provider?
+         transaction_hash
        ) do
+    {:error, :try_with_sig_provider, {log, transaction_hash}}
+  end
+
+  def decode_event_via_sig_provider(
+        log,
+        transaction_hash,
+        skip_sig_provider?
+      ) do
     with true <- SigProviderInterface.enabled?(),
          false <- skip_sig_provider?,
          {:ok, result} <-
@@ -367,21 +372,13 @@ defmodule Explorer.Chain.Log do
          true <- is_list(result),
          false <- Enum.empty?(result),
          abi <- [result |> List.first() |> Map.put("type", "event")],
-         {:ok, selector, mapping} <- find_and_decode(abi, log, transaction.hash),
+         {:ok, selector, mapping} <- find_and_decode(abi, log, transaction_hash),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping) do
-      if only_candidates? do
-        [{:ok, identifier, text, mapping}]
-      else
-        {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}
-      end
+      {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}
     else
       _ ->
-        if only_candidates? do
-          []
-        else
-          {:error, :could_not_decode}
-        end
+        {:error, :could_not_decode}
     end
   end
 
