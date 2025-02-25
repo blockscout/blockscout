@@ -386,26 +386,24 @@ defmodule Explorer.Chain do
             where: block.consensus == true
           )
 
-        preloaded_query =
-          if csv_export? do
-            base
-          else
-            base
-            |> preload(
-              transaction: [
-                from_address: ^Implementation.proxy_implementations_association(),
-                to_address: ^Implementation.proxy_implementations_association()
-              ]
-            )
-          end
-
-        preloaded_query
+        base
         |> page_logs(paging_options)
         |> filter_topic(Keyword.get(options, :topic))
         |> where_block_number_in_period(from_block, to_block)
         |> join_associations(necessity_by_association)
         |> select_repo(options).all()
         |> Enum.take(paging_options.page_size)
+        |> (&if(csv_export?,
+              do: &1,
+              else:
+                &1
+                |> Repo.preload(
+                  transaction: [
+                    from_address: Implementation.proxy_implementations_association(),
+                    to_address: Implementation.proxy_implementations_association()
+                  ]
+                )
+            )).()
     end
   end
 
