@@ -23,29 +23,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.ChainTypeCustomizations do
         |> put_in([:properties, :filecoin], %Schema{
           type: :object,
           properties: %{
-            id: %Schema{type: :string, example: "f03248220"},
-            robust: %Schema{type: :string, example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq"},
+            id: %Schema{type: :string, example: "f03248220", nullable: true},
+            robust: %Schema{type: :string, example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq", nullable: true},
             actor_type: %Schema{
               type: :string,
-              enum: [
-                "account",
-                "cron",
-                "datacap",
-                "eam",
-                "ethaccount",
-                "evm",
-                "init",
-                "market",
-                "miner",
-                "multisig",
-                "paych",
-                "placeholder",
-                "power",
-                "reward",
-                "system",
-                "verifreg",
-                "paymentchannel"
-              ]
+              enum: Ecto.Enum.values(Explorer.Chain.Address, :filecoin_actor_type),
+              nullable: true
             }
           }
         })
