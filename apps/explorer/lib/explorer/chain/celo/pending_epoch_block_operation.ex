@@ -68,13 +68,13 @@ defmodule Explorer.Chain.Celo.PendingEpochBlockOperation do
       )
 
     query
-    |> maybe_filter_postmigration_epoch_blocks()
+    |> maybe_filter_premigration_epoch_blocks()
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
 
-  @spec maybe_filter_postmigration_epoch_blocks(Ecto.Query.t()) :: Ecto.Query.t()
-  defp maybe_filter_postmigration_epoch_blocks(query) do
+  @spec maybe_filter_premigration_epoch_blocks(Ecto.Query.t()) :: Ecto.Query.t()
+  defp maybe_filter_premigration_epoch_blocks(query) do
     l2_migration_block_number = Application.get_env(:explorer, :celo)[:l2_migration_block]
 
     if l2_migration_block_number do

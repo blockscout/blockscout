@@ -45,28 +45,26 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
         ) :: Logs.t()
   def fetch(blocks, json_rpc_named_arguments)
 
-  def fetch(blocks, json_rpc_named_arguments) do
-    if @chain_type == :celo do
-      do_fetch(blocks, json_rpc_named_arguments)
-    else
-      []
+  if @chain_type == :celo do
+    def fetch(blocks, json_rpc_named_arguments) do
+      requests =
+        blocks
+        |> Enum.filter(&premigration_block_number?(&1.number))
+        |> Enum.reduce({[], 0}, &blocks_reducer/2)
+        |> elem(0)
+        |> Enum.reverse()
+        |> Enum.concat()
+
+      with {:ok, responses} <- do_requests(requests, json_rpc_named_arguments),
+           {:ok, logs} <- Logs.from_responses(responses) do
+        logs
+        |> Enum.filter(&(&1.transaction_hash == &1.block_hash))
+        |> Enum.map(&Map.put(&1, :transaction_hash, nil))
+      end
     end
-  end
-
-  defp do_fetch(blocks, json_rpc_named_arguments) do
-    requests =
-      blocks
-      |> Enum.filter(&premigration_block_number?(&1.number))
-      |> Enum.reduce({[], 0}, &blocks_reducer/2)
-      |> elem(0)
-      |> Enum.reverse()
-      |> Enum.concat()
-
-    with {:ok, responses} <- do_requests(requests, json_rpc_named_arguments),
-         {:ok, logs} <- Logs.from_responses(responses) do
-      logs
-      |> Enum.filter(&(&1.transaction_hash == &1.block_hash))
-      |> Enum.map(&Map.put(&1, :transaction_hash, nil))
+  else
+    def fetch(_blocks, _json_rpc_named_arguments) do
+      []
     end
   end
 
