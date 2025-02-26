@@ -79,15 +79,14 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
       |> Enum.uniq_by(& &1.block_number)
       |> Enum.map(&Map.merge(&1, %{inserted_at: now, updated_at: now}))
 
-    result = Repo.insert_all(PendingBlockOperation, params, on_conflict: :nothing)
+    {_total, inserted} =
+      Repo.insert_all(PendingBlockOperation, params, on_conflict: :nothing, returning: [:block_number])
 
     unless is_nil(Process.whereis(InternalTransactionFetcher)) do
-      params
+      inserted
       |> Enum.map(& &1.block_number)
       |> InternalTransactionFetcher.async_fetch(false)
     end
-
-    result
   end
 
   @impl FillingMigration
