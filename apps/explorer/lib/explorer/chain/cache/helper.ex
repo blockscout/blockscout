@@ -2,6 +2,7 @@ defmodule Explorer.Chain.Cache.Helper do
   @moduledoc """
   Common helper functions for cache modules
   """
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
 
   @block_number_threshold_1 10_000
@@ -48,7 +49,9 @@ defmodule Explorer.Chain.Cache.Helper do
   """
   @spec ttl(atom, String.t()) :: non_neg_integer()
   def ttl(module, management_variable) do
-    min_blockchain_block_number = Application.get_env(:indexer, :first_block)
+    min_blockchain_block_number =
+      RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
+
     max_block_number = Chain.fetch_max_block_number()
     blocks_amount = max_block_number - min_blockchain_block_number
     global_ttl_from_var = Application.get_env(:explorer, module)[:global_ttl]

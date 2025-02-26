@@ -966,7 +966,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "returns 1.0 if fully indexed blocks starting from given FIRST_BLOCK" do
-      Application.put_env(:indexer, :first_block, 5)
+      Application.put_env(:indexer, :block_ranges, "5..latest")
 
       for index <- 5..9 do
         insert(:block, number: index, consensus: true)
