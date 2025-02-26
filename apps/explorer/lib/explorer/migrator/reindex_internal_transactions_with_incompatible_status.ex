@@ -11,6 +11,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
   alias Explorer.Chain.{Block, InternalTransaction, PendingBlockOperation, Transaction}
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Repo
+  alias Indexer.Fetcher.InternalTransaction, as: InternalTransactionFetcher
 
   @migration_name "reindex_internal_transactions_with_incompatible_status"
 
@@ -78,7 +79,15 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
       |> Enum.uniq_by(& &1.block_number)
       |> Enum.map(&Map.merge(&1, %{inserted_at: now, updated_at: now}))
 
-    Repo.insert_all(PendingBlockOperation, params, on_conflict: :nothing)
+    result = Repo.insert_all(PendingBlockOperation, params, on_conflict: :nothing)
+
+    unless is_nil(Process.whereis(InternalTransactionFetcher)) do
+      params
+      |> Enum.map(& &1.block_number)
+      |> InternalTransactionFetcher.async_fetch(false)
+    end
+
+    result
   end
 
   @impl FillingMigration
