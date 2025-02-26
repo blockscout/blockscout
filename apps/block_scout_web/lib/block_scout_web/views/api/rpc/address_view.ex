@@ -250,16 +250,8 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   defp prepare_erc1155_transfer(token_transfer, max_block_number) do
     token_transfer
     |> prepare_nft_transfer(max_block_number)
-    |> Map.put_new(:tokenValue, calculate_token_value(token_transfer))
+    |> Map.put_new(:tokenValue, to_string(token_transfer.amount))
   end
-
-  defp calculate_erc1155_token_value(%{amounts: amounts}) when is_list(amounts) do
-    amounts
-    |> Enum.sum()
-    |> to_string()
-  end
-
-  defp calculate_token_value(%{amount: amount}), do: to_string(amount)
 
   defp prepare_block(block) do
     %{
