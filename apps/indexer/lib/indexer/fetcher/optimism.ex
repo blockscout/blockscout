@@ -200,7 +200,6 @@ defmodule Indexer.Fetcher.Optimism do
              Indexer.Fetcher.Optimism.WithdrawalEvent,
              Indexer.Fetcher.Optimism.OutputRoot
            ] do
-
     if caller != Indexer.Fetcher.Optimism.OutputRoot do
       # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
       :timer.sleep(2000)
