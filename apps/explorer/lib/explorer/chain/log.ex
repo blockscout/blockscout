@@ -478,13 +478,20 @@ defmodule Explorer.Chain.Log do
                          :log => log,
                          :transaction_hash => transaction_hash
                        }}, %{"abi" => abi}} ->
-        abi = [abi |> List.first() |> Map.put("type", "event")]
-        {:ok, selector, mapping} = find_and_decode(abi, log, transaction_hash)
+        abi_first_item = abi |> List.first()
 
-        identifier = Base.encode16(selector.method_id, case: :lower)
-        text = function_call(selector.function, mapping)
+        if is_map(abi_first_item) do
+          abi = [abi_first_item |> Map.put("type", "event")]
 
-        {index, {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}}
+          {:ok, selector, mapping} = find_and_decode(abi, log, transaction_hash)
+
+          identifier = Base.encode16(selector.method_id, case: :lower)
+          text = function_call(selector.function, mapping)
+
+          {index, {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}}
+        else
+          {index, {:error, :could_not_decode}}
+        end
       end)
     else
       _ ->
