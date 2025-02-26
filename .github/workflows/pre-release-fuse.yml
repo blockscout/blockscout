@@ -43,7 +43,7 @@ jobs:
           build-args: |
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=fuse
+            BRIDGED_TOKENS_ENABLED=true
 
       - name: Build and push Docker image for Fuse (indexer)
         uses: docker/build-push-action@v6
@@ -60,7 +60,7 @@ jobs:
             DISABLE_API=true
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=fuse
+            BRIDGED_TOKENS_ENABLED=true
 
       - name: Build and push Docker image for Fuse (API)
         uses: docker/build-push-action@v6
@@ -77,4 +77,4 @@ jobs:
             DISABLE_INDEXER=true
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=fuse
+            BRIDGED_TOKENS_ENABLED=true
