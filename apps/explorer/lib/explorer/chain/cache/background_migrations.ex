@@ -31,6 +31,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :backfill_multichain_search_db_finished,
     key: :arbitrum_da_records_normalization_finished,
     key: :sanitize_verified_addresses_finished,
+    key: :transaction_has_token_transfers_finished,
     key: :heavy_indexes_create_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
     key: :heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished,
@@ -55,6 +56,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     BackfillMultichainSearchDB,
     SanitizeDuplicatedLogIndexLogs,
     TokenTransferTokenType,
+    TransactionHasTokenTransfers,
     TransactionsDenormalization
   }
 
@@ -114,6 +116,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     start_migration_status_task(
       BackfillMultichainSearchDB,
       &set_backfill_multichain_search_db_finished/1
+    )
+  end
+
+  defp handle_fallback(:transaction_has_token_transfers_finished) do
+    start_migration_status_task(
+      TransactionHasTokenTransfers,
+      &set_transaction_has_token_transfers_finished/1
     )
   end
 
