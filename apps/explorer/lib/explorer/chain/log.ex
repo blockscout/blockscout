@@ -167,12 +167,12 @@ defmodule Explorer.Chain.Log do
   @doc """
   Decode transaction log data.
   """
-  @spec decode(Log.t(), Transaction.t(), any(), boolean, map(), map()) ::
+  @spec decode(Log.t(), Transaction.t(), any(), boolean(), boolean(), map(), map()) ::
           {{:ok, String.t(), String.t(), map()}
-           | {:error, atom()}
+           | {:error, :could_not_decode}
            | {:error, atom(), list()}
-           | {{:error, :contract_not_verified, list()}, any()}, map(), map()}
-  def decode(log, transaction, options, skip_sig_provider?, contracts_acc \\ %{}, events_acc \\ %{}) do
+           | {{:error, :contract_not_verified | :try_with_sig_provider, [any()]}, any()}, map(), map()}
+  def decode(log, transaction, options, skip_sig_provider?, from_list?, contracts_acc \\ %{}, events_acc \\ %{}) do
     with {full_abi, contracts_acc} <- check_cache(contracts_acc, log.address_hash, options),
          {:no_abi, false} <- {:no_abi, is_nil(full_abi)},
          {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction.hash),
@@ -181,33 +181,58 @@ defmodule Explorer.Chain.Log do
       {{:ok, identifier, text, mapping}, contracts_acc, events_acc}
     else
       {:error, _} = error ->
-        handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, contracts_acc, events_acc)
+        handle_method_decode_error(
+          error,
+          log,
+          transaction,
+          skip_sig_provider?,
+          from_list?,
+          options,
+          contracts_acc,
+          events_acc
+        )
 
       {:no_abi, true} ->
         handle_method_decode_error(
           {:error, :could_not_decode},
           log,
           transaction,
-          options,
           skip_sig_provider?,
+          from_list?,
+          options,
           contracts_acc,
           events_acc
         )
     end
   end
 
-  defp handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, contracts_acc, events_acc) do
+  defp handle_method_decode_error(
+         error,
+         log,
+         transaction,
+         skip_sig_provider?,
+         from_list?,
+         options,
+         contracts_acc,
+         events_acc
+       ) do
     case error do
       {:error, _reason} ->
-        case find_method_candidates(log, transaction, options, events_acc) do
-          {{:error, :contract_not_verified, []}, events_acc} ->
-            {decode_event_via_sig_provider(log, transaction, false, skip_sig_provider?), contracts_acc, events_acc}
-
-          {{:error, :contract_not_verified, candidates}, events_acc} ->
-            {{:error, :contract_not_verified, candidates}, contracts_acc, events_acc}
-
+        with {{:error, :contract_not_verified, candidates}, events_acc} <-
+               find_method_candidates(log, transaction, options, events_acc),
+             {true, events_acc} <- {is_list(candidates), events_acc},
+             {false, events_acc} <- {Enum.empty?(candidates), events_acc} do
+          {{:error, :contract_not_verified, candidates}, contracts_acc, events_acc}
+        else
           {_, events_acc} ->
-            {decode_event_via_sig_provider(log, transaction, false, skip_sig_provider?), contracts_acc, events_acc}
+            result =
+              if from_list? do
+                mark_events_to_decode_later_via_sig_provider_in_batch(log, transaction.hash)
+              else
+                decode_event_via_sig_provider(log, transaction.hash, skip_sig_provider?)
+              end
+
+            {result, contracts_acc, events_acc}
         end
     end
   end
@@ -346,12 +371,44 @@ defmodule Explorer.Chain.Log do
 
   defp alter_mapping_names(mapping), do: mapping
 
-  defp decode_event_via_sig_provider(
+  defp mark_events_to_decode_later_via_sig_provider_in_batch(
          log,
-         transaction,
-         only_candidates?,
-         skip_sig_provider?
+         transaction_hash
        ) do
+    {:error, :try_with_sig_provider, {log, transaction_hash}}
+  end
+
+  @doc """
+  Decodes an event log using the Sig-provider microservice.
+
+  ## Parameters
+
+    - `log`: The log containing the event data and topics.
+    - `transaction_hash`: The hash of the transaction containing the log.
+    - `skip_sig_provider?`: A boolean indicating whether to skip using the signature provider.
+
+  ## Returns
+
+    - `{:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}` if the event is successfully decoded but the contract is not verified.
+    - `{:error, :could_not_decode}` if the event could not be decoded.
+
+  ## Conditions
+
+    - The signature provider must be enabled.
+    - The `skip_sig_provider?` flag must be `false`.
+    - The result from the signature provider must be a non-empty list.
+  """
+  @spec decode_event_via_sig_provider(
+          __MODULE__.t(),
+          Hash.t(),
+          boolean()
+        ) ::
+          {:error, :could_not_decode} | {:error, :contract_not_verified, list()}
+  def decode_event_via_sig_provider(
+        log,
+        transaction_hash,
+        skip_sig_provider?
+      ) do
     with true <- SigProviderInterface.enabled?(),
          false <- skip_sig_provider?,
          {:ok, result} <-
@@ -367,30 +424,93 @@ defmodule Explorer.Chain.Log do
          true <- is_list(result),
          false <- Enum.empty?(result),
          abi <- [result |> List.first() |> Map.put("type", "event")],
-         {:ok, selector, mapping} <- find_and_decode(abi, log, transaction.hash),
+         {:ok, selector, mapping} <- find_and_decode(abi, log, transaction_hash),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping) do
-      if only_candidates? do
-        [{:ok, identifier, text, mapping}]
-      else
-        {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}
-      end
+      {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}
     else
       _ ->
-        if only_candidates? do
-          []
-        else
-          {:error, :could_not_decode}
-        end
+        {:error, :could_not_decode}
     end
   end
 
-  def decode16!(nil), do: nil
+  @doc """
+  Decodes a batch of events using the Sig-provider microservice.
 
-  def decode16!(value) do
-    value
-    |> String.trim_leading("0x")
-    |> Base.decode16!(case: :lower)
+  This function attempts to decode a batch of events by leveraging the signature provider interface.
+  It first checks if the signature provider is enabled and if it should not be skipped.
+  If these conditions are met, it prepares the input for the signature provider batch request and decodes the events.
+  The decoded results are then processed and mapped to their corresponding logs and transaction hashes.
+
+  ## Parameters
+
+    - `input`: The input data to be decoded, expected to be a list of maps containing `:log` and `:transaction_hash`.
+    - `skip_sig_provider?`: A boolean flag indicating whether to skip the signature provider.
+
+  ## Returns
+
+    - On success: A list of tuples containing the decoded event information.
+    - On failure: `{:error, :could_not_decode}` if the decoding process fails at any step.
+  """
+  @spec decode_events_batch_via_sig_provider(
+          [
+            %{
+              :log => __MODULE__.t(),
+              :transaction_hash => Hash.t()
+            }
+          ],
+          boolean()
+        ) ::
+          {:error, :contract_not_verified, list()} | list()
+  def decode_events_batch_via_sig_provider([], _skip_sig_provider?), do: []
+
+  def decode_events_batch_via_sig_provider(input, skip_sig_provider?) do
+    with true <- SigProviderInterface.enabled?(),
+         false <- skip_sig_provider?,
+         {:ok, result} <-
+           SigProviderInterface.decode_events_in_batch(prepare_input_for_sig_provider_batch_request(input)),
+         true <- is_list(result),
+         false <- Enum.empty?(result) do
+      input
+      |> Enum.zip(result)
+      |> Enum.map(fn {{index,
+                       %{
+                         :log => log,
+                         :transaction_hash => transaction_hash
+                       }}, %{"abi" => abi}} ->
+        abi = [abi |> List.first() |> Map.put("type", "event")]
+        {:ok, selector, mapping} = find_and_decode(abi, log, transaction_hash)
+
+        identifier = Base.encode16(selector.method_id, case: :lower)
+        text = function_call(selector.function, mapping)
+
+        {index, {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}}
+      end)
+    else
+      _ ->
+        input
+        |> Enum.map(fn {index, _} -> {index, {:error, :could_not_decode}} end)
+    end
+  end
+
+  defp prepare_input_for_sig_provider_batch_request(input) do
+    input
+    |> Enum.map(fn {_index, %{:log => log, :transaction_hash => _transaction_hash}} ->
+      topics = [
+        log.first_topic,
+        log.second_topic,
+        log.third_topic,
+        log.fourth_topic
+      ]
+
+      formatted_topics =
+        topics |> Enum.reject(&is_nil/1) |> Enum.join(",")
+
+      %{
+        :topics => formatted_topics,
+        :data => to_string(log.data)
+      }
+    end)
   end
 
   def fetch_log_by_transaction_hash_and_first_topic(transaction_hash, first_topic, options \\ []) do
