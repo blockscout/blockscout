@@ -169,6 +169,9 @@ defmodule Indexer.Fetcher.ContractCode do
     )
     |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, BlockNumber.get_max())
     |> case do
+      {:ok, %{params_list: []}} ->
+        {:retry, entries}
+
       {:ok, fetched_balances} ->
         balance_addresses_params = CoinBalanceHelper.balances_params_to_address_params(fetched_balances.params_list)
 
@@ -182,9 +185,6 @@ defmodule Indexer.Fetcher.ContractCode do
             Accounts.drop(addresses)
             zilliqa_verify_scilla_contracts(entries, addresses)
             :ok
-
-          {:ok, %{}} ->
-            {:retry, entries}
 
           {:error, step, reason, _changes_so_far} ->
             Logger.error(
