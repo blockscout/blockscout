@@ -169,6 +169,9 @@ defmodule Indexer.Fetcher.ContractCode do
     )
     |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, BlockNumber.get_max())
     |> case do
+      {:ok, %{params_list: []}} ->
+        {:retry, entries}
+
       {:ok, fetched_balances} ->
         balance_addresses_params = CoinBalanceHelper.balances_params_to_address_params(fetched_balances.params_list)
 
