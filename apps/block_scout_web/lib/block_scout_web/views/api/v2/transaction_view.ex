@@ -492,7 +492,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     cond do
       reverted? && single_transaction? ->
-        prepare_revert_reason(transaction)
+        prepare_revert_reason_for_single_transaction(transaction)
 
       reverted? && !single_transaction? ->
         %Transaction{revert_reason: revert_reason} = transaction
@@ -506,7 +506,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       nil
   end
 
-  defp prepare_revert_reason(transaction) do
+  defp prepare_revert_reason_for_single_transaction(transaction) do
     case TransactionView.transaction_revert_reason(transaction, @api_true) do
       {:error, _contract_not_verified, candidates} when candidates != [] ->
         {:ok, method_id, text, mapping} = Enum.at(candidates, 0)
