@@ -363,7 +363,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     status = transaction |> Chain.transaction_to_status() |> format_status()
 
-    revert_reason = revert_reason(status, transaction)
+    revert_reason = revert_reason(status, transaction, single_transaction?)
 
     decoded_input_data = decoded_input(decoded_input)
 
@@ -487,24 +487,38 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  defp revert_reason(status, transaction) do
-    if is_binary(status) && status |> String.downcase() |> String.contains?("reverted") do
-      case TransactionView.transaction_revert_reason(transaction, @api_true) do
-        {:error, _contract_not_verified, candidates} when candidates != [] ->
-          {:ok, method_id, text, mapping} = Enum.at(candidates, 0)
-          render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
+  defp revert_reason(status, transaction, single_transaction?) do
+    reverted? = is_binary(status) && status |> String.downcase() |> String.contains?("reverted")
 
-        {:ok, method_id, text, mapping} ->
-          render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
+    cond do
+      reverted? && single_transaction? ->
+        prepare_revert_reason_for_single_transaction(transaction)
 
-        _ ->
-          hex = TransactionView.get_pure_transaction_revert_reason(transaction)
-          render(__MODULE__, "revert_reason.json", raw: hex)
-      end
+      reverted? && !single_transaction? ->
+        %Transaction{revert_reason: revert_reason} = transaction
+        render(__MODULE__, "revert_reason.json", raw: revert_reason)
+
+      true ->
+        nil
     end
   rescue
     _ ->
       nil
+  end
+
+  defp prepare_revert_reason_for_single_transaction(transaction) do
+    case TransactionView.transaction_revert_reason(transaction, @api_true) do
+      {:error, _contract_not_verified, candidates} when candidates != [] ->
+        {:ok, method_id, text, mapping} = Enum.at(candidates, 0)
+        render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
+
+      {:ok, method_id, text, mapping} ->
+        render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
+
+      _ ->
+        hex = TransactionView.get_pure_transaction_revert_reason(transaction)
+        render(__MODULE__, "revert_reason.json", raw: hex)
+    end
   end
 
   @doc """
