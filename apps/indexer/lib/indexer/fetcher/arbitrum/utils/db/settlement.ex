@@ -487,4 +487,23 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
     [:batch_number, :block_number, :confirmation_id]
     |> DbTools.db_record_to_map(block)
   end
+
+  @doc """
+    Retrieves the L1 block number where the confirmation transaction for a specific rollup block was included.
+
+    ## Parameters
+    - `rollup_block_number`: The number of the rollup block for which to find the confirmation L1 block.
+
+    ## Returns
+    - The L1 block number if the rollup block is confirmed and the confirmation transaction is indexed;
+      `nil` otherwise.
+  """
+  @spec l1_block_of_confirmation_for_rollup_block(FullBlock.block_number()) :: FullBlock.block_number() | nil
+  def l1_block_of_confirmation_for_rollup_block(rollup_block_number)
+      when is_integer(rollup_block_number) and rollup_block_number >= 0 do
+    case Reader.l1_block_of_confirmation_for_rollup_block(rollup_block_number) do
+      {:ok, block_number} -> block_number
+      _ -> nil
+    end
+  end
 end
