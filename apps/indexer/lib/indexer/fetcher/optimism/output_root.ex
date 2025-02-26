@@ -49,6 +49,9 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
   def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+    :timer.sleep(2000)
+
     if Constants.get_constant_value(@stop_constant_key) == "true" do
       Logger.warning("#{__MODULE__} will not start because dispute games exist.")
       {:stop, :normal, %{}}

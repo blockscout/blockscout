@@ -200,8 +200,11 @@ defmodule Indexer.Fetcher.Optimism do
              Indexer.Fetcher.Optimism.WithdrawalEvent,
              Indexer.Fetcher.Optimism.OutputRoot
            ] do
-    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
-    :timer.sleep(2000)
+
+    if caller != Indexer.Fetcher.Optimism.OutputRoot do
+      # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+      :timer.sleep(2000)
+    end
 
     {contract_name, table_name, start_block_note} =
       case caller do
