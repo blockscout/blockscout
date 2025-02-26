@@ -243,29 +243,35 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         {[result | results], contracts_acc, events_acc}
       end)
 
+    all_logs_with_index =
+      all_logs
+      |> Enum.reverse()
+      |> Enum.with_index(fn element, index -> {index, element} end)
+
     %{
       :already_decoded_logs => already_decoded_logs,
       :input_for_sig_provider_batched_request => input_for_sig_provider_batched_request
     } =
-      all_logs
+      all_logs_with_index
       |> Enum.reduce(
         %{
           :already_decoded_logs => [],
           :input_for_sig_provider_batched_request => []
         },
-        fn result, acc ->
+        fn {index, result}, acc ->
           case result do
             {:error, :try_with_sig_provider, {log, transaction_hash}} ->
               Map.put(acc, :input_for_sig_provider_batched_request, [
-                %{
-                  :log => log,
-                  :transaction_hash => transaction_hash
-                }
+                {index,
+                 %{
+                   :log => log,
+                   :transaction_hash => transaction_hash
+                 }}
                 | acc.input_for_sig_provider_batched_request
               ])
 
             _ ->
-              Map.put(acc, :already_decoded_logs, [result | acc.already_decoded_logs])
+              Map.put(acc, :already_decoded_logs, [{index, result} | acc.already_decoded_logs])
           end
         end
       )
@@ -276,7 +282,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     full_logs = already_decoded_logs ++ decoded_with_sig_provider_logs
 
     full_logs
-    |> Enum.map(fn log ->
+    |> Enum.sort_by(fn {index, _log} -> index end, :asc)
+    |> Enum.map(fn {_index, log} ->
       format_decoded_log_input(log)
     end)
   end

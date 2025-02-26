@@ -473,28 +473,29 @@ defmodule Explorer.Chain.Log do
          false <- Enum.empty?(result) do
       input
       |> Enum.zip(result)
-      |> Enum.map(fn {%{
-                        :log => log,
-                        :transaction_hash => transaction_hash
-                      }, %{"abi" => abi}} ->
+      |> Enum.map(fn {{index,
+                       %{
+                         :log => log,
+                         :transaction_hash => transaction_hash
+                       }}, %{"abi" => abi}} ->
         abi = [abi |> List.first() |> Map.put("type", "event")]
         {:ok, selector, mapping} = find_and_decode(abi, log, transaction_hash)
 
         identifier = Base.encode16(selector.method_id, case: :lower)
         text = function_call(selector.function, mapping)
 
-        {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}
+        {index, {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}}
       end)
     else
       _ ->
         input
-        |> Enum.map(fn _ -> {:error, :could_not_decode} end)
+        |> Enum.map(fn {index, _} -> {index, {:error, :could_not_decode}} end)
     end
   end
 
   defp prepare_input_for_sig_provider_batch_request(input) do
     input
-    |> Enum.map(fn %{:log => log, :transaction_hash => _transaction_hash} ->
+    |> Enum.map(fn {_index, %{:log => log, :transaction_hash => _transaction_hash}} ->
       topics = [
         log.first_topic,
         log.second_topic,
