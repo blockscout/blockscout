@@ -231,6 +231,31 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
+  def token1155tx(conn, params) do
+    options = optional_params(params)
+
+    with {:address, {:ok, address_hash}} <- {:address, to_address_hash_optional(params["address"])},
+         {:contract_address, {:ok, contract_address_hash}} <-
+           {:contract_address, to_address_hash_optional(params["contractaddress"])},
+         true <- !is_nil(address_hash) or !is_nil(contract_address_hash),
+         {:ok, token_transfers, max_block_number} <-
+           list_erc1155_transfers(address_hash, contract_address_hash, options) do
+      render(conn, :token1155tx, %{token_transfers: token_transfers, max_block_number: max_block_number})
+    else
+      false ->
+        render(conn, :error, error: "Query parameter address or contractaddress is required")
+
+      {:address, :error} ->
+        render(conn, :error, error: @invalid_address_message)
+
+      {:contract_address, :error} ->
+        render(conn, :error, error: @invalid_contract_address_message)
+
+      {_, :not_found} ->
+        render(conn, :error, error: @no_token_transfers_message, data: [])
+    end
+  end
+
   @tokenbalance_required_params ~w(contractaddress address)
 
   def tokenbalance(conn, params) do
@@ -568,6 +593,29 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
          {:ok, max_block_number} <- Chain.max_consensus_block_number(),
          token_transfers when token_transfers != [] <-
            Etherscan.list_nft_transfers(address_hash, contract_address_hash, options) do
+      {:ok, token_transfers, max_block_number}
+    else
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
+  defp list_erc1155_transfers(nil, contract_address_hash, options) do
+    with {:ok, max_block_number} <- Chain.max_consensus_block_number(),
+         token_transfers when token_transfers != [] <-
+           Etherscan.list_erc1155_transfers_by_token(contract_address_hash, options) do
+      {:ok, token_transfers, max_block_number}
+    else
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
+  defp list_erc1155_transfers(address_hash, contract_address_hash, options) do
+    with {:address, :ok} <- {:address, Address.check_address_exists(address_hash, @api_true)},
+         {:ok, max_block_number} <- Chain.max_consensus_block_number(),
+         token_transfers when token_transfers != [] <-
+           Etherscan.list_erc1155_transfers(address_hash, contract_address_hash, options) do
       {:ok, token_transfers, max_block_number}
     else
       _ ->
