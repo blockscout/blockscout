@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.Optimism do
     ]
 
   alias EthereumJSONRPC.Contract
-  alias Explorer.Chain.Cache.ChainId
+  alias Explorer.Chain.Cache.{ChainId, LatestL1BlockNumber}
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
@@ -389,6 +389,30 @@ defmodule Indexer.Fetcher.Optimism do
   def requires_l1_reorg_monitor? do
     optimism_config = Application.get_all_env(:indexer)[__MODULE__]
     not is_nil(optimism_config[:optimism_l1_system_config])
+  end
+
+  @doc """
+    Fetches the `latest` block number from L1. If the block number is cached in `Explorer.Chain.Cache.LatestL1BlockNumber`,
+    the cached value is used. The cached value is updated in `Indexer.Fetcher.RollupL1ReorgMonitor` module.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection on L1.
+
+    ## Returns
+    - The block number.
+  """
+  @spec fetch_latest_l1_block_number(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer()
+  def fetch_latest_l1_block_number(json_rpc_named_arguments) do
+    case LatestL1BlockNumber.get_block_number() do
+      nil ->
+        {:ok, latest} =
+          Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+
+        latest
+
+      latest_from_cache ->
+        latest_from_cache
+    end
   end
 
   @doc """
