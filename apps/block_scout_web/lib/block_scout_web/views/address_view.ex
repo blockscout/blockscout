@@ -477,7 +477,7 @@ defmodule BlockScoutWeb.AddressView do
           | {:error, atom(), list()}
           | {{:error, :contract_not_verified, list()}, any()}
   def decode(log, transaction) do
-    {result, _contracts_acc, _events_acc} = Log.decode(log, transaction, [], true, false)
+    {result, _full_abi_per_address_hash_contracts_acc, _events_acc} = Log.decode(log, transaction, [], true, false)
     result
   end
 end
