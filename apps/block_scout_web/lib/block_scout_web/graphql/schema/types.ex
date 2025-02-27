@@ -79,8 +79,37 @@ defmodule BlockScoutWeb.GraphQL.Schema.SmartContracts do
       @chain_type_fields quote(do: [field(:optimization_runs, :integer)])
   end
 
+  case @chain_type do
+    :zilliqa ->
+      @language_enum_type (quote do
+                             enum :language do
+                               description("The programming language of this smart contract")
+
+                               value(:solidity, description: "Solidity")
+                               value(:vyper, description: "Vyper")
+                               value(:yul, description: "Yul")
+                               value(:stylus_rust, description: "Stylus Rust")
+                               value(:scilla, description: "Scilla")
+                             end
+                           end)
+
+    _ ->
+      @language_enum_type (quote do
+                             enum :language do
+                               description("The programming language of this smart contract")
+
+                               value(:solidity, description: "Solidity")
+                               value(:vyper, description: "Vyper")
+                               value(:yul, description: "Yul")
+                               value(:stylus_rust, description: "Stylus Rust")
+                             end
+                           end)
+  end
+
   defmacro generate do
     quote do
+      unquote(@language_enum_type)
+
       object :smart_contract do
         field(:name, :string)
         field(:compiler_version, :string)
@@ -94,10 +123,10 @@ defmodule BlockScoutWeb.GraphQL.Schema.SmartContracts do
         field(:verified_via_sourcify, :boolean)
         field(:partially_verified, :boolean)
         field(:file_path, :string)
-        field(:is_vyper_contract, :boolean)
         field(:is_changed_bytecode, :boolean)
         field(:compiler_settings, :json)
         field(:verified_via_eth_bytecode_db, :boolean)
+        field(:language, :language)
 
         unquote_splicing(@chain_type_fields)
       end
