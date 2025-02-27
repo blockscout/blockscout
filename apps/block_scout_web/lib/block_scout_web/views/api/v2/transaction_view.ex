@@ -233,10 +233,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       |> Enum.uniq()
 
     full_abi_per_address_hash =
-      unique_log_address_hashes
-      |> Enum.reduce(%{}, fn address_hash, full_abi_per_address_hash_acc ->
-        Log.accumulate_abi_by_address_hash(full_abi_per_address_hash_acc, address_hash, @api_true)
-      end)
+      Log.accumulate_abi_by_address_hashes(%{}, unique_log_address_hashes, @api_true)
 
     {all_logs, _, _} =
       Enum.reduce(logs, {[], full_abi_per_address_hash, %{}}, fn log,

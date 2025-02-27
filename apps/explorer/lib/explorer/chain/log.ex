@@ -255,25 +255,23 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  @doc """
-  Accumulates the ABI (Application Binary Interface) by the given address hash.
+  # Accumulates the ABI (Application Binary Interface) by the given address hash.
 
-  ## Parameters
+  # ## Parameters
 
-    - `acc` (map): The accumulator map where the ABIs are stored.
-    - `address_hash` (binary): The address hash for which the ABI needs to be accumulated.
-    - `db_options` (keyword list): Database options to be used for querying the contract address.
+  #   - `acc` (map): The accumulator map where the ABIs are stored.
+  #   - `address_hash` (binary): The address hash for which the ABI needs to be accumulated.
+  #   - `db_options` (keyword list): Database options to be used for querying the contract address.
 
-  ## Returns
+  # ## Returns
 
-    - `map`: The updated accumulator map with the ABI for the given address hash.
+  #   - `map`: The updated accumulator map with the ABI for the given address hash.
 
-  If the address hash is `nil` or already exists in the accumulator, it returns the accumulator as is.
-  If the contract address is found, it combines the proxy implementation ABI and stores it in the accumulator.
-  If the contract address is not found, it stores `nil` in the accumulator for the given address hash.
-  """
+  # If the address hash is `nil` or already exists in the accumulator, it returns the accumulator as is.
+  # If the contract address is found, it combines the proxy implementation ABI and stores it in the accumulator.
+  # If the contract address is not found, it stores `nil` in the accumulator for the given address hash.
   @spec accumulate_abi_by_address_hash(map(), Hash.t(), Keyword.t()) :: map()
-  def accumulate_abi_by_address_hash(acc, address_hash, db_options) do
+  defp accumulate_abi_by_address_hash(acc, address_hash, db_options) do
     address_options =
       [
         necessity_by_association: %{
@@ -294,6 +292,67 @@ defmodule Explorer.Chain.Log do
           Map.put(acc, address_hash, nil)
       end
     end
+  end
+
+  @doc """
+  Accumulates the ABI (Application Binary Interface) by the given list of address hashes.
+
+  ## Parameters
+
+    - `acc` (map): The accumulator map where the ABIs are stored.
+    - `address_hash` (binary): The address hash for which the ABI needs to be accumulated.
+    - `db_options` (keyword list): Database options to be used for querying the contract address.
+
+  ## Returns
+
+    - `map`: The updated accumulator map with the ABI for the given address hash.
+
+  If the address hash is `nil` or already exists in the accumulator, it returns the accumulator as is.
+  If the contract address is found, it combines the proxy implementation ABI and stores it in the accumulator.
+  If the contract address is not found, it stores `nil` in the accumulator for the given address hash.
+  """
+  @spec accumulate_abi_by_address_hashes(map(), [Hash.t()], Keyword.t()) :: map()
+  def accumulate_abi_by_address_hashes(address_hash_abi_map, address_hashes, db_options) do
+    address_options =
+      [
+        necessity_by_association: %{
+          :smart_contract => :optional
+        }
+      ]
+      |> Keyword.merge(db_options)
+
+    address_hashes_without_abi =
+      address_hashes
+      |> Enum.filter(fn address_hash ->
+        is_nil(address_hash_abi_map[address_hash])
+      end)
+
+    if Enum.empty?(address_hashes_without_abi) do
+      case Chain.find_contract_addresses(address_hashes_without_abi, address_options) do
+        {:ok, addresses} when is_list(addresses) ->
+          update_address_hash_abi_map_with_implementations_abi(address_hash_abi_map, addresses, db_options)
+
+        _ ->
+          empty_address_hash_abi_map(address_hash_abi_map, address_hashes_without_abi)
+      end
+    else
+      address_hash_abi_map
+    end
+  end
+
+  defp empty_address_hash_abi_map(address_hash_abi_map, address_hashes) do
+    address_hashes
+    |> Enum.reduce(address_hash_abi_map, fn address, acc ->
+      Map.put(acc, address.hash, nil)
+    end)
+  end
+
+  defp update_address_hash_abi_map_with_implementations_abi(address_hash_abi_map, addresses, db_options) do
+    addresses
+    |> Enum.reduce(address_hash_abi_map, fn %{smart_contract: smart_contract} = address, acc ->
+      full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, db_options)
+      Map.put(acc, address.hash, full_abi)
+    end)
   end
 
   defp find_method_candidates(log, transaction, options, events_acc) do
