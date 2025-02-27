@@ -1148,7 +1148,7 @@ defmodule Explorer.Chain do
       |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
       |> select_repo(options).one()
 
-    updated_address_result = update_address_result(address_result, options)
+    updated_address_result = update_address_result(address_result, options, false)
 
     updated_address_result
     |> case do
@@ -1158,7 +1158,22 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The same as `find_contract_address/3` but for the list of addresses.
+  Finds contract addresses from a list of hashes.
+
+  ## Parameters
+
+    - `hashes`: A list of hashes to search for contract addresses.
+    - `options`: An optional keyword list of options.
+
+  ## Options
+
+    - `:necessity_by_association`: A map of associations with their necessity (default: `%{}`).
+
+  ## Returns
+
+    - `{:ok, addresses}`: A tuple with `:ok` and a list of found addresses.
+    - `{:error, :not_found}`: A tuple with `:error` and `:not_found` if no addresses are found.
+
   """
   @spec find_contract_addresses([Hash.Address.t()], [necessity_by_association_option]) ::
           {:ok, [Address.t()]} | {:error, :not_found}
@@ -1170,7 +1185,6 @@ defmodule Explorer.Chain do
       options
       |> Keyword.get(:necessity_by_association, %{})
       |> Map.merge(%{
-        [smart_contract: :smart_contract_additional_sources] => :optional,
         Implementation.proxy_implementations_association() => :optional
       })
 
@@ -1188,7 +1202,7 @@ defmodule Explorer.Chain do
     updated_addresses_result =
       addresses_result
       |> Enum.map(fn address_result ->
-        update_address_result(address_result, options)
+        update_address_result(address_result, options, true)
       end)
 
     updated_addresses_result
@@ -1198,7 +1212,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp update_address_result(address_result, options) do
+  defp update_address_result(address_result, options, decoding_from_list?) do
     case address_result do
       %{smart_contract: smart_contract} ->
         if smart_contract do
@@ -1218,7 +1232,12 @@ defmodule Explorer.Chain do
             nil
           )
 
-          add_bytecode_twin_to_result(address_result, options)
+          # credo:disable-for-next-line
+          if decoding_from_list? do
+            address_result
+          else
+            add_bytecode_twin_to_result(address_result, options)
+          end
         end
 
       _ ->
