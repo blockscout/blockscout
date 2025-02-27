@@ -342,8 +342,8 @@ defmodule Explorer.Chain.Log do
 
   defp empty_address_hash_abi_map(address_hash_abi_map, address_hashes) do
     address_hashes
-    |> Enum.reduce(address_hash_abi_map, fn address, acc ->
-      Map.put(acc, address.hash, nil)
+    |> Enum.reduce(address_hash_abi_map, fn address_hash, acc ->
+      Map.put(acc, address_hash, nil)
     end)
   end
 
