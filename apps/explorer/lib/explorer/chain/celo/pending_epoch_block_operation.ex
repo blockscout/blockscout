@@ -79,7 +79,7 @@ defmodule Explorer.Chain.Celo.PendingEpochBlockOperation do
 
     if l2_migration_block_number do
       query
-      |> where([op, block], block.number < ^l2_migration_block_number)
+      |> where([op, block], block.number <= ^l2_migration_block_number)
     else
       query
     end
