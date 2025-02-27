@@ -3,7 +3,11 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   Tracks epoch blocks awaiting processing by the epoch fetcher.
   """
 
-  import Explorer.Chain.Celo.Helper, only: [epoch_block_number?: 1]
+  import Explorer.Chain.Celo.Helper,
+    only: [
+      epoch_block_number?: 1,
+      premigration_block_number?: 1
+    ]
 
   alias Explorer.Chain
   alias Explorer.Chain.Block
@@ -67,7 +71,13 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
     if EpochBlockOperationsSupervisor.disabled?() do
       :ok
     else
-      filtered_entries = Enum.filter(entries, &epoch_block_number?(&1.block_number))
+      filtered_entries =
+        Enum.filter(
+          entries,
+          &(epoch_block_number?(&1.block_number) &&
+              premigration_block_number?(&1.block_number))
+        )
+
       BufferedTask.buffer(__MODULE__, filtered_entries, realtime?, timeout)
     end
   end
@@ -75,7 +85,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   @impl BufferedTask
   def init(initial, reducer, _json_rpc_named_arguments) do
     {:ok, final} =
-      PendingEpochBlockOperation.stream_epoch_blocks_with_unfetched_rewards(
+      PendingEpochBlockOperation.stream_premigration_epoch_blocks_with_unfetched_rewards(
         initial,
         reducer,
         true

@@ -36,12 +36,12 @@ defmodule Explorer.Chain.Celo.PendingEpochBlockOperation do
   end
 
   @doc """
-  Returns a stream of all blocks with unfetched epochs, using
-  the `celo_pending_epoch_block_operations` table.
+  Returns a stream of all blocks prior to Celo L2 migration with unfetched
+  epochs, using the `celo_pending_epoch_block_operations` table.
 
       iex> unfetched = insert(:block, number: 1 * blocks_per_epoch())
       iex> insert(:celo_pending_epoch_block_operation, block: unfetched)
-      iex> {:ok, blocks} = PendingEpochBlockOperation.stream_epoch_blocks_with_unfetched_rewards(
+      iex> {:ok, blocks} = PendingEpochBlockOperation.stream_premigration_epoch_blocks_with_unfetched_rewards(
       ...>   [],
       ...>   fn block, acc ->
       ...>     [block | acc]
@@ -50,13 +50,13 @@ defmodule Explorer.Chain.Celo.PendingEpochBlockOperation do
       iex> [{unfetched.number, unfetched.hash}] == blocks
       true
   """
-  @spec stream_epoch_blocks_with_unfetched_rewards(
+  @spec stream_premigration_epoch_blocks_with_unfetched_rewards(
           initial :: accumulator,
           reducer :: (entry :: term(), accumulator -> accumulator),
           limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_epoch_blocks_with_unfetched_rewards(initial, reducer, limited? \\ false)
+  def stream_premigration_epoch_blocks_with_unfetched_rewards(initial, reducer, limited? \\ false)
       when is_function(reducer, 2) do
     query =
       from(
@@ -68,7 +68,20 @@ defmodule Explorer.Chain.Celo.PendingEpochBlockOperation do
       )
 
     query
+    |> maybe_filter_premigration_epoch_blocks()
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @spec maybe_filter_premigration_epoch_blocks(Ecto.Query.t()) :: Ecto.Query.t()
+  defp maybe_filter_premigration_epoch_blocks(query) do
+    l2_migration_block_number = Application.get_env(:explorer, :celo)[:l2_migration_block]
+
+    if l2_migration_block_number do
+      query
+      |> where([op, block], block.number <= ^l2_migration_block_number)
+    else
+      query
+    end
   end
 end
