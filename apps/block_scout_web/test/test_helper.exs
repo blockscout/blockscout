@@ -22,7 +22,7 @@ Bureaucrat.start(
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter, Bureaucrat.Formatter])
 ExUnit.start()
 
-Mox.defmock(Explorer.ExchangeRates.Source.TestSource, for: Explorer.ExchangeRates.Source)
+Mox.defmock(Explorer.Market.Source.TestSource, for: Explorer.Market.Source)
 
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, :manual)

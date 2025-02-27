@@ -4,39 +4,40 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
   import Mox
 
   alias BlockScoutWeb.Notifier
-  alias Explorer.ExchangeRates
-  alias Explorer.ExchangeRates.Token
-  alias Explorer.ExchangeRates.Source.TestSource
   alias Explorer.Market
+  alias Explorer.Market.Fetcher.Coin
+  alias Explorer.Market.{MarketHistory, Token}
+  alias Explorer.Market.Source.TestSource
 
   setup :verify_on_exit!
 
   setup do
     # Use TestSource mock and ets table for this test set
-    configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
-    Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
-    Application.put_env(:explorer, Explorer.ExchangeRates, table_name: :rates)
-    Application.put_env(:explorer, Explorer.ExchangeRates, enabled: true)
+    coin_fetcher_configuration = Application.get_env(:explorer, Coin)
+    market_source_configuration = Application.get_env(:explorer, Explorer.Market.Source)
 
-    ExchangeRates.init([])
+    Application.put_env(:explorer, Explorer.Market.Source, native_coin_source: TestSource)
+    Application.put_env(:explorer, Coin, Keyword.merge(coin_fetcher_configuration, table_name: :rates, enabled: true))
+
+    Coin.init([])
 
     token = %Token{
       available_supply: Decimal.new("1000000.0"),
       total_supply: Decimal.new("1000000.0"),
       btc_value: Decimal.new("1.000"),
-      id: "test",
       last_updated: DateTime.utc_now(),
-      market_cap_usd: Decimal.new("1000000.0"),
-      tvl_usd: Decimal.new("2000000.0"),
+      market_cap: Decimal.new("1000000.0"),
+      tvl: Decimal.new("2000000.0"),
       name: "test",
       symbol: Explorer.coin(),
-      usd_value: Decimal.new("2.5"),
-      volume_24h_usd: Decimal.new("1000.0"),
+      fiat_value: Decimal.new("2.5"),
+      volume_24h: Decimal.new("1000.0"),
       image_url: nil
     }
 
     on_exit(fn ->
-      Application.put_env(:explorer, Explorer.ExchangeRates, configuration)
+      Application.put_env(:explorer, Coin, coin_fetcher_configuration)
+      Application.put_env(:explorer, Explorer.Market.Source, market_source_configuration)
     end)
 
     {:ok, %{token: token}}
@@ -44,7 +45,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
 
   describe "new_rate" do
     test "subscribed user is notified", %{token: token} do
-      ExchangeRates.handle_info({nil, {:ok, false, [token]}}, %{})
+      Coin.handle_info({nil, {{:ok, token}, false}}, %{})
       Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
       Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
 
@@ -64,7 +65,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
     end
 
     test "subscribed user is notified with market history", %{token: token} do
-      ExchangeRates.handle_info({nil, {:ok, false, [token]}}, %{})
+      Coin.handle_info({nil, {{:ok, token}, false}}, %{})
       Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
       Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
 
@@ -78,9 +79,9 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
           }
         end
 
-      records = [%{date: today, closing_price: token.usd_value} | old_records]
+      records = [%{date: today, closing_price: token.fiat_value} | old_records]
 
-      Market.bulk_insert_history(records)
+      MarketHistory.bulk_insert(records)
 
       Market.fetch_recent_history()
 
