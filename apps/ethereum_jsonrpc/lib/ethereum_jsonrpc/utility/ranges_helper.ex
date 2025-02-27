@@ -31,6 +31,15 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     end
   end
 
+  @spec filter_by_height_range([any()], (any() -> boolean())) :: [any()]
+  def filter_by_height_range(elements, filter_func) do
+    if trace_ranges_present?() do
+      Enum.filter(elements, &filter_func.(&1))
+    else
+      elements
+    end
+  end
+
   @doc """
   Checks if trace ranges are defined via env variables
   """
