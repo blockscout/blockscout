@@ -136,4 +136,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   @impl Ecto.Type
   @spec type() :: :string
   def type, do: :string
+
+  @spec values :: [String.t()]
+  def values, do: @call_types |> Enum.map(&to_string/1)
 end

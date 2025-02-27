@@ -13,7 +13,13 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     ]
 
   import BlockScoutWeb.PagingHelper,
-    only: [delete_parameters_from_next_page_params: 1, select_block_type: 1, type_filter_options: 1]
+    only: [
+      delete_parameters_from_next_page_params: 1,
+      select_block_type: 1,
+      type_filter_options: 1,
+      internal_transaction_type_options: 1,
+      internal_transaction_call_type_options: 1
+    ]
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
@@ -298,6 +304,10 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/internal-transactions` endpoint.
+  Query params:
+   - `type` - Filters internal transactions by type. Possible values: (#{Explorer.Chain.InternalTransaction.Type.values()})
+   - `call_type` - Filters internal transactions by call type. Possible values: (#{Explorer.Chain.InternalTransaction.CallType.values()})
+  These two filters are mutually exclusive. If both are set, call_type takes priority, and type will be ignored.
   """
   @spec internal_transactions(Plug.Conn.t(), map()) ::
           {:error, :not_found | {:invalid, :hash | :number}}
@@ -309,6 +319,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         @internal_transaction_necessity_by_association
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(@api_true)
+        |> Keyword.merge(internal_transaction_type_options(params))
+        |> Keyword.merge(internal_transaction_call_type_options(params))
 
       internal_transactions_plus_one = InternalTransaction.block_to_internal_transactions(block.hash, full_options)
 
