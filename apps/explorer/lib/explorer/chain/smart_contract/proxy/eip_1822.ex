@@ -9,10 +9,20 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1822 do
   @storage_slot_proxiable "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7"
 
   @doc """
-  Get implementation address hash string following EIP-1822
+  Get implementation address hash string following EIP-1822. It returns the value as array of the strings.
   """
-  @spec get_implementation_address_hash_string(Hash.Address.t()) :: nil | :error | binary
-  def get_implementation_address_hash_string(proxy_address_hash) do
+  @spec get_implementation_address_hash_strings(Hash.Address.t()) :: [binary()] | :error
+  def get_implementation_address_hash_strings(proxy_address_hash) do
+    case get_implementation_address_hash_string(proxy_address_hash) do
+      nil -> []
+      :error -> :error
+      implementation_address_hash_string -> [implementation_address_hash_string]
+    end
+  end
+
+  # Get implementation address hash string following EIP-1822
+  @spec get_implementation_address_hash_string(Hash.Address.t()) :: binary() | nil | :error
+  defp get_implementation_address_hash_string(proxy_address_hash) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     proxiable_contract_address_hash_string =

@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   alias BlockScoutWeb.{BlockView, Endpoint}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Beacon.Blob, Block, Hash, Transaction, UserOperation}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Plug.Conn.Query
 
   def render("search_results.json", %{search_results: search_results, next_page_params: next_page_params}) do
@@ -89,7 +90,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   def prepare_search_result(%{type: "block"} = search_result) do
-    block_hash = hash_to_string(search_result.block_hash)
+    block_hash = ExplorerHelper.add_0x_prefix(search_result.block_hash)
 
     {:ok, block} =
       Chain.hash_to_block(hash(search_result.block_hash),
@@ -111,7 +112,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   def prepare_search_result(%{type: "transaction"} = search_result) do
-    transaction_hash = hash_to_string(search_result.transaction_hash)
+    transaction_hash = ExplorerHelper.add_0x_prefix(search_result.transaction_hash)
 
     %{
       "type" => search_result.type,
@@ -123,7 +124,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   def prepare_search_result(%{type: "user_operation"} = search_result) do
-    user_operation_hash = hash_to_string(search_result.user_operation_hash)
+    user_operation_hash = ExplorerHelper.add_0x_prefix(search_result.user_operation_hash)
 
     %{
       "type" => search_result.type,
@@ -134,7 +135,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   def prepare_search_result(%{type: "blob"} = search_result) do
-    blob_hash = hash_to_string(search_result.blob_hash)
+    blob_hash = ExplorerHelper.add_0x_prefix(search_result.blob_hash)
 
     %{
       "type" => search_result.type,
@@ -143,9 +144,6 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "priority" => search_result.priority
     }
   end
-
-  defp hash_to_string(%Hash{bytes: bytes}), do: hash_to_string(bytes)
-  defp hash_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
   defp hash(%Hash{} = hash), do: hash
 

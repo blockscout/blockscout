@@ -241,7 +241,7 @@ defmodule Explorer.SmartContract.Reader do
   def read_only_functions(nil, _, _, _), do: []
 
   def read_only_functions_proxy(contract_address_hash, implementation_address_hash_string, from, options \\ []) do
-    implementation_abi = SmartContract.get_smart_contract_abi(implementation_address_hash_string, options)
+    implementation_abi = SmartContract.get_abi(implementation_address_hash_string, options)
 
     case implementation_abi do
       nil ->
@@ -257,7 +257,7 @@ defmodule Explorer.SmartContract.Reader do
   """
   @spec read_functions_required_wallet_proxy(String.t()) :: [%{}]
   def read_functions_required_wallet_proxy(implementation_address_hash_string) do
-    implementation_abi = SmartContract.get_smart_contract_abi(implementation_address_hash_string)
+    implementation_abi = SmartContract.get_abi(implementation_address_hash_string)
 
     case implementation_abi do
       nil ->

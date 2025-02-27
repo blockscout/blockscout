@@ -26,7 +26,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   import EthereumJSONRPC, only: [fetch_blocks_by_range: 2, json_rpc: 2, quantity_to_integer: 1]
 
-  import Explorer.Helper, only: [parse_integer: 1]
+  import Explorer.Helper, only: [add_0x_prefix: 1, parse_integer: 1]
 
   alias Ecto.Multi
   alias EthereumJSONRPC.Block.ByHash
@@ -391,7 +391,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       |> Enum.filter(fn hash -> is_nil(Map.get(number_by_hash, hash)) end)
       |> Enum.with_index()
       |> Enum.map(fn {hash, id} ->
-        ByHash.request(%{hash: "0x" <> Base.encode16(hash, case: :lower), id: id}, false)
+        ByHash.request(%{hash: add_0x_prefix(hash), id: id}, false)
       end)
 
     chunk_size = 50

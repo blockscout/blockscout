@@ -115,7 +115,7 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
         ExplorerHelper.decode_data(bid_event.data, [{:bytes, 16}, {:uint, 64}, {:array, :address}])
 
       Enum.map(allowed_peekers, fn peeker ->
-        "0x" <> Base.encode16(peeker, case: :lower)
+        ExplorerHelper.add_0x_prefix(peeker)
       end)
     end
   end

@@ -126,14 +126,113 @@ defmodule Explorer.TestHelper do
     end)
   end
 
-  def get_eip1967_implementation_non_zero_address(address_hash_string) do
+  def mock_resolved_delegate_proxy_get_owner_request(
+        mox,
+        error?,
+        resp \\ "0x0000000000000000000000000000000000000000000000000000000000000000"
+      ) do
+    response =
+      if error?,
+        do: {:error, "error"},
+        else:
+          {:ok,
+           [
+             %{
+               id: 0,
+               jsonrpc: "2.0",
+               result: resp
+             }
+           ]}
+
+    expect(mox, :json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data: "0x8da5cb5b",
+                                      to: _
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+      response
+    end)
+  end
+
+  def mock_resolved_delegate_proxy_get_implementation_from_owner_request(
+        mox,
+        error?,
+        proxy_address_hash_string_without_0x,
+        resp \\ "0x0000000000000000000000000000000000000000000000000000000000000000"
+      ) do
+    data = "0x204e1c7a" <> "000000000000000000000000" <> proxy_address_hash_string_without_0x
+
+    response =
+      if error?,
+        do: {:error, "error"},
+        else:
+          {:ok,
+           [
+             %{
+               id: 0,
+               jsonrpc: "2.0",
+               result: resp
+             }
+           ]}
+
+    expect(mox, :json_rpc, fn [
+                                %{
+                                  id: _,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data: ^data,
+                                      to: _
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+      response
+    end)
+  end
+
+  def get_eip1967_implementation_non_zero_address(implementation_address_hash_string) do
     EthereumJSONRPC.Mox
     |> mock_logic_storage_pointer_request(false)
     |> mock_beacon_storage_pointer_request(false)
-    |> mock_oz_storage_pointer_request(false, "0x000000000000000000000000" <> address_hash_string)
+    |> mock_oz_storage_pointer_request(false, "0x000000000000000000000000" <> implementation_address_hash_string)
   end
 
-  def get_eip1967_implementation_zero_addresses do
+  def get_resolved_delegate_proxy_implementation_non_zero_address(
+        owner_address_hash_string_without_0x,
+        implementation_address_hash_string_without_0x,
+        proxy_address_hash_string_without_0x
+      ) do
+    EthereumJSONRPC.Mox
+    |> mock_logic_storage_pointer_request(false)
+    |> mock_beacon_storage_pointer_request(false)
+    |> mock_oz_storage_pointer_request(false)
+    |> mock_eip_1822_storage_pointer_request(false)
+    |> mock_eip_2535_storage_pointer_request(false)
+    |> mock_resolved_delegate_proxy_get_owner_request(
+      false,
+      "0x000000000000000000000000" <> owner_address_hash_string_without_0x
+    )
+    |> mock_resolved_delegate_proxy_get_implementation_from_owner_request(
+      false,
+      proxy_address_hash_string_without_0x,
+      "0x000000000000000000000000" <> implementation_address_hash_string_without_0x
+    )
+  end
+
+  def get_all_proxies_implementation_zero_addresses do
     EthereumJSONRPC.Mox
     |> mock_logic_storage_pointer_request(false)
     |> mock_beacon_storage_pointer_request(false)
@@ -147,8 +246,6 @@ defmodule Explorer.TestHelper do
     |> mock_logic_storage_pointer_request(true)
     |> mock_beacon_storage_pointer_request(true)
     |> mock_oz_storage_pointer_request(true)
-    |> mock_eip_1822_storage_pointer_request(true)
-    |> mock_eip_2535_storage_pointer_request(true)
   end
 
   def fetch_token_uri_mock(url, token_contract_address_hash_string) do
