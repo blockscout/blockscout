@@ -328,6 +328,8 @@ defmodule Explorer.Chain.Log do
       end)
 
     if Enum.empty?(address_hashes_without_abi) do
+      address_hash_abi_map
+    else
       case Chain.find_contract_addresses(address_hashes_without_abi, address_options) do
         {:ok, addresses} when is_list(addresses) ->
           update_address_hash_abi_map_with_implementations_abi(address_hash_abi_map, addresses, db_options)
@@ -335,8 +337,6 @@ defmodule Explorer.Chain.Log do
         _ ->
           empty_address_hash_abi_map(address_hash_abi_map, address_hashes_without_abi)
       end
-    else
-      address_hash_abi_map
     end
   end
 
