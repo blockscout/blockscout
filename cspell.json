@@ -340,6 +340,7 @@
         "lastname",
         "lastword",
         "lformat",
+        "libp",
         "libraryaddress",
         "libraryname",
         "libsecp",
