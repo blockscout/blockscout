@@ -31,7 +31,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
 
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
-    DaMultiPurposeRecord
+    DaMultiPurposeRecord,
+    L1Batch
   }
 
   alias Explorer.Chain.Block, as: FullBlock
@@ -86,6 +87,76 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
     case select_repo(options).one(query) do
       nil -> %{}
       keyset -> keyset.data
+    end
+  end
+
+  @doc """
+    Retrieves information about the latest batches including:
+    - The latest batch number
+    - The timestamp when the latest batch was committed to the parent chain
+    - The average time between parent chain transactions for the latest 10 batches
+
+    ## Parameters
+    - `options`: A keyword list of options:
+      - `:api?` - Whether the function is being called from an API context.
+
+    ## Returns
+    - `{:ok, %{latest_batch_number: number, latest_batch_timestamp: timestamp, average_batch_time: seconds}}`
+      if batches are found
+    - `{:error, :not_found}` if no batches are found
+  """
+  @spec get_latest_batch_info(api?: boolean()) ::
+          {:ok,
+           %{
+             latest_batch_number: non_neg_integer(),
+             latest_batch_timestamp: DateTime.t(),
+             average_batch_time: non_neg_integer()
+           }}
+          | {:error, :not_found}
+  def get_latest_batch_info(options) do
+    import Ecto.Query
+
+    # Query to get the latest 10 batches with their commitment transactions
+    latest_batches_query =
+      from(batch in L1Batch,
+        join: tx in assoc(batch, :commitment_transaction),
+        order_by: [desc: batch.number],
+        limit: 10,
+        select: %{
+          number: batch.number,
+          timestamp: tx.timestamp
+        }
+      )
+
+    case select_repo(options).all(latest_batches_query) do
+      [] ->
+        {:error, :not_found}
+
+      [latest_batch | other_batches] ->
+        # Calculate average time between batches
+        average_time =
+          case other_batches do
+            [] ->
+              0
+
+            batches ->
+              batches
+              |> Enum.zip(tl([latest_batch | batches]))
+              |> Enum.map(fn {newer, older} ->
+                DateTime.diff(newer.timestamp, older.timestamp, :second)
+              end)
+              # credo:disable-for-next-line
+              |> then(fn diffs ->
+                div(Enum.sum(diffs), length(diffs))
+              end)
+          end
+
+        {:ok,
+         %{
+           latest_batch_number: latest_batch.number,
+           latest_batch_timestamp: latest_batch.timestamp,
+           average_batch_time: average_time
+         }}
     end
   end
 end

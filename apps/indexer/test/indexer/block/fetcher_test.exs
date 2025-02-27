@@ -673,7 +673,7 @@ defmodule Indexer.Block.FetcherTest do
 
           assert Repo.aggregate(Chain.Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 2
-          assert Chain.log_count() == 1
+          assert Repo.aggregate(Log, :count) == 1
           assert Repo.aggregate(Transaction, :count, :hash) == 1
 
           first_address = Repo.get!(Address, first_address_hash)
@@ -1163,7 +1163,7 @@ defmodule Indexer.Block.FetcherTest do
 
             assert Repo.aggregate(Chain.Block, :count, :hash) == 1
             assert Repo.aggregate(Address, :count, :hash) == 2
-            assert Chain.log_count() == 1
+            assert Repo.aggregate(Log, :count) == 1
             assert Repo.aggregate(Transaction, :count, :hash) == 1
 
             first_address = Repo.get!(Address, first_address_hash)
