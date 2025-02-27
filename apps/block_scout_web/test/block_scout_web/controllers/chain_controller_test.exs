@@ -1,21 +1,21 @@
 defmodule BlockScoutWeb.ChainControllerTest do
   use BlockScoutWeb.ConnCase,
-    # ETS table is shared in `Explorer.Counters.AddressesCounter`
+    # ETS table is shared in `Explorer.Chain.Cache.Counters.AddressesCount`
     async: false
 
   import BlockScoutWeb.Routers.WebRouter.Helpers,
     only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
 
   alias Explorer.Chain.Block
-  alias Explorer.Counters.AddressesCounter
+  alias Explorer.Chain.Cache.Counters.AddressesCount
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Uncles.child_id())
     Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Uncles.child_id())
-    start_supervised!(AddressesCounter)
-    AddressesCounter.consolidate()
+    start_supervised!(AddressesCount)
+    AddressesCount.consolidate()
 
     :ok
   end

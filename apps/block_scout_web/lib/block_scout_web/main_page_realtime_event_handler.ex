@@ -6,8 +6,8 @@ defmodule BlockScoutWeb.MainPageRealtimeEventHandler do
   use GenServer
 
   alias BlockScoutWeb.Notifier
+  alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Counters.Helper
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)

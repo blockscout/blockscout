@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.AddressController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Cache.Counters.AddressesCount
   alias Explorer.Chain.{Address, Wei}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
@@ -84,7 +85,7 @@ defmodule BlockScoutWeb.AddressController do
 
     render(conn, "index.html",
       current_path: Controller.current_full_path(conn),
-      address_count: Counters.address_estimated_count(),
+      address_count: AddressesCount.fetch(),
       total_supply: total_supply
     )
   end

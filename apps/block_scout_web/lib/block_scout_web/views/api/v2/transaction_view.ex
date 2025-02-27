@@ -11,8 +11,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, Log, SignedAuthorization, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.Transaction.StateChange
-  alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]

@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Cache.MinMissingBlockNumber do
 
   alias Explorer.Chain
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
 
   @default_batch_size 100_000
   @normal_interval 10
@@ -43,7 +44,7 @@ defmodule Explorer.Chain.Cache.MinMissingBlockNumber do
           value: result
         }
 
-        Chain.upsert_last_fetched_counter(params)
+        LastFetchedCounter.upsert(params)
         schedule_next_consolidation(@increased_interval)
         @default_last_fetched_number
 
