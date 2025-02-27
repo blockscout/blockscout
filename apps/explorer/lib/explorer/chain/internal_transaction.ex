@@ -770,6 +770,8 @@ defmodule Explorer.Chain.InternalTransaction do
   def block_to_internal_transactions(hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    type_filter = Keyword.get(options, :type)
+    call_type_filter = Keyword.get(options, :call_type)
 
     __MODULE__
     |> where([internal_transaction], internal_transaction.block_hash == ^hash)
@@ -777,6 +779,8 @@ defmodule Explorer.Chain.InternalTransaction do
     |> where_is_different_from_parent_transaction()
     |> where_nonpending_block()
     |> page_block_internal_transaction(paging_options)
+    |> filter_by_type(type_filter, call_type_filter)
+    |> filter_by_call_type(call_type_filter)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.block_index)
     |> Chain.select_repo(options).all()
@@ -789,6 +793,23 @@ defmodule Explorer.Chain.InternalTransaction do
       where: transaction.hash == ^hash,
       where: child.block_hash == transaction.block_hash
     )
+  end
+
+  # filter by `type` is automatically ignored if `call_type_filter` is not empty,
+  # as applying both filter simultaneously have no sense
+  defp filter_by_type(query, _, [_ | _]), do: query
+  defp filter_by_type(query, [], _), do: query
+
+  defp filter_by_type(query, types, _) do
+    query
+    |> where([internal_transaction], internal_transaction.type in ^types)
+  end
+
+  defp filter_by_call_type(query, []), do: query
+
+  defp filter_by_call_type(query, call_types) do
+    query
+    |> where([internal_transaction], internal_transaction.call_type in ^call_types)
   end
 
   @doc """
