@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.{Chain, Repo}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Block, Transaction}
-  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob, Withdrawal}
+  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
 
   @doc """
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
@@ -238,6 +238,90 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     count
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/interop/messages` endpoint.
+  """
+  def render("optimism_interop_messages.json", %{
+        messages: messages,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(messages, fn message ->
+          msg =
+            %{
+              "nonce" => message.nonce,
+              "timestamp" => message.timestamp,
+              "status" => message.status,
+              "init_transaction_hash" => message.init_transaction_hash,
+              "relay_transaction_hash" => message.relay_transaction_hash,
+              "sender" => message.sender,
+              "target" => message.target,
+              "payload" => "0x" <> Base.encode16(message.payload, case: :lower)
+            }
+
+          msg =
+            case Map.fetch(message, :init_chain) do
+              {:ok, init_chain} ->
+                # this is incoming message
+                Map.put(msg, "init_chain", init_chain)
+
+              _ ->
+                msg
+            end
+
+          msg =
+            case Map.fetch(message, :relay_chain) do
+              {:ok, relay_chain} ->
+                # this is outgoing message
+                Map.put(msg, "relay_chain", relay_chain)
+
+              _ ->
+                msg
+            end
+
+          msg
+        end),
+      next_page_params: next_page_params
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/interop/public-key` endpoint.
+  """
+  def render("optimism_interop_public_key.json", %{public_key: public_key}) do
+    %{"public_key" => public_key}
+  end
+
+  @doc """
+    Function to render `relay` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
+  """
+  def render("optimism_interop_response.json", %{relay_transaction_hash: relay_transaction_hash, failed: failed}) do
+    %{
+      "relay_transaction_hash" => relay_transaction_hash,
+      "failed" => failed
+    }
+  end
+
+  @doc """
+    Function to render `init` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
+  """
+  def render("optimism_interop_response.json", %{
+        sender: sender,
+        target: target,
+        init_transaction_hash: init_transaction_hash,
+        timestamp: timestamp,
+        payload: payload
+      }) do
+    %{
+      "sender" => sender,
+      "target" => target,
+      "init_transaction_hash" => init_transaction_hash,
+      "timestamp" => if(not is_nil(timestamp), do: DateTime.to_unix(timestamp)),
+      "payload" => if(not is_nil(payload), do: "0x" <> Base.encode16(payload, case: :lower))
+    }
+  end
+
   # Transforms an L1 batch into a map format for HTTP response.
   #
   # This function processes an Optimism L1 batch and converts it into a map that
@@ -368,6 +452,16 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         }
       end)
 
-    Map.put(out_json, "op_withdrawals", withdrawals)
+    interop_message =
+      transaction_hash
+      |> InteropMessage.message_by_transaction()
+
+    out_json = Map.put(out_json, "op_withdrawals", withdrawals)
+
+    if is_nil(interop_message) do
+      out_json
+    else
+      Map.put(out_json, "op_interop", interop_message)
+    end
   end
 end

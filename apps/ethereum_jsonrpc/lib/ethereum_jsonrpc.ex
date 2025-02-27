@@ -368,6 +368,19 @@ defmodule EthereumJSONRPC do
     end
   end
 
+  @spec fetch_chain_id(json_rpc_named_arguments) :: {:ok, non_neg_integer()} | {:error, reason :: term}
+  def fetch_chain_id(json_rpc_named_arguments) do
+    result =
+      %{id: 0, method: "eth_chainId", params: []}
+      |> request()
+      |> json_rpc(json_rpc_named_arguments)
+
+    case result do
+      {:ok, id} -> {:ok, quantity_to_integer(id)}
+      other -> other
+    end
+  end
+
   @doc """
   Fetches block number by `t:tag/0`.
 
