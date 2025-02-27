@@ -37,7 +37,7 @@ services:
         CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
         ADMIN_PANEL_ENABLED: ""
-        RELEASE_VERSION: 7.0.1
+        RELEASE_VERSION: 7.0.2
     links:
       - db:database
     environment:

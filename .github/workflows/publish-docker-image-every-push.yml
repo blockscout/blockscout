@@ -11,7 +11,7 @@ on:
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
-  RELEASE_VERSION: 7.0.1
+  RELEASE_VERSION: 7.0.2
 
 jobs:
   push_to_registry:

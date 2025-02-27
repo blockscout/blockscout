@@ -1,5 +1,16 @@
 # Changelog
 
+## 7.0.2
+
+### 🐛 Bug Fixes
+
+- Fix logs decoding issue ([#11963](https://github.com/blockscout/blockscout/issues/11963))
+- Don't fetch revert reason for txs list ([#11935](https://github.com/blockscout/blockscout/issues/11935))
+
+### ⚡ Performance
+
+- Use Sig provider microservice batched request ([#11956](https://github.com/blockscout/blockscout/issues/11956))
+
 ## 7.0.1
 
 ### 🐛 Bug Fixes
