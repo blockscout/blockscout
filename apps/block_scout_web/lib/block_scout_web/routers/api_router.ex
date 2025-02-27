@@ -74,6 +74,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(:fetch_session)
     plug(:protect_from_forgery)
     plug(RateLimit)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.ApiSpec)
   end
 
   pipeline :api_v2_no_session do
@@ -119,6 +120,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
   scope "/v2", as: :api_v2 do
     pipe_through(:api_v2)
+    get("/openapi", OpenApiSpex.Plug.RenderSpec, [])
 
     scope "/search" do
       get("/", V2.SearchController, :search)
