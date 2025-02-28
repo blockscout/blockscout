@@ -420,7 +420,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   # Cut off implementations per proxy up to @max_implementations_number_per_proxy number
   # before insert into the DB to prevent DoS via the verification endpoint of Diamond smart contracts.
   defp sanitize_implementation_address_hash_strings(implementation_address_hash_strings) do
-    Enum.slice(implementation_address_hash_strings, 0, @max_implementations_number_per_proxy)
+    Enum.take(implementation_address_hash_strings, @max_implementations_number_per_proxy)
   end
 
   @doc """
