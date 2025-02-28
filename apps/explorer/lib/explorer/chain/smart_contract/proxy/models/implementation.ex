@@ -387,7 +387,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     end
   end
 
-  @spec insert_implementations(Hash.Address.t(), atom() | nil, [EthereumJSONRPC.hash()], [String.t()]) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+  @spec insert_implementations(Hash.Address.t(), atom() | nil, [EthereumJSONRPC.hash()], [String.t()]) ::
+          {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
   defp insert_implementations(proxy_address_hash, proxy_type, implementation_address_hash_strings, names)
        when not is_nil(proxy_address_hash) do
     sanitized_implementation_address_hash_strings =
@@ -405,7 +406,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     |> Repo.insert()
   end
 
-  @spec update_implementations(__MODULE__.t(), atom() | nil, [EthereumJSONRPC.hash()], [String.t()]) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_implementations(__MODULE__.t(), atom() | nil, [EthereumJSONRPC.hash()], [String.t()]) ::
+          {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
   defp update_implementations(proxy, proxy_type, implementation_address_hash_strings, names) do
     sanitized_implementation_address_hash_strings =
       sanitize_implementation_address_hash_strings(implementation_address_hash_strings)
