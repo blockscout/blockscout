@@ -405,6 +405,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(paging_options)
             |> Keyword.merge(current_filter(params))
             |> Keyword.merge(token_transfers_types_options(params))
+            |> fetch_scam_token_toggle(conn)
 
           results =
             address_hash
@@ -744,6 +745,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               |> paging_options()
               |> Keyword.merge(token_transfers_types_options(params))
               |> Keyword.merge(@api_true)
+              |> fetch_scam_token_toggle(conn)
             )
 
           Task.start_link(fn ->
@@ -835,7 +837,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       params
       |> paging_options()
       |> Keyword.merge(@api_true)
-      |> fetch_scam_token_toggle(conn)
       |> Address.list_top_addresses()
       |> split_list_by_page()
 
@@ -945,6 +946,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               |> Keyword.merge(nft_types_options(params))
               |> Keyword.merge(@api_true)
               |> Keyword.merge(@nft_necessity_by_association)
+              |> fetch_scam_token_toggle(conn)
             )
 
           {nfts, next_page} = split_list_by_page(results_plus_one)
@@ -996,6 +998,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               |> Keyword.merge(nft_types_options(params))
               |> Keyword.merge(@api_true)
               |> Keyword.merge(@nft_necessity_by_association)
+              |> fetch_scam_token_toggle(conn)
             )
 
           {collections, next_page} = split_list_by_page(results_plus_one)

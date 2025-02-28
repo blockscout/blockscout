@@ -11,8 +11,8 @@ defmodule Explorer.Chain.CsvExport.Address.Celo.ElectionRewards do
   alias Explorer.Chain.CsvExport.Helper
   alias Explorer.Chain.{Hash, Wei}
 
-  @spec export(Hash.Address.t(), String.t() | nil, String.t() | nil, any(), any()) :: Enumerable.t()
-  def export(address_hash, from_period, to_period, _filter_type, _filter_value) do
+  @spec export(Hash.Address.t(), String.t() | nil, String.t() | nil, Keyword.t(), any(), any()) :: Enumerable.t()
+  def export(address_hash, from_period, to_period, _options, _filter_type, _filter_value) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 
     options = [
