@@ -387,6 +387,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     end
   end
 
+  @spec insert_implementations(Hash.Address.t(), atom() | nil, [EthereumJSONRPC.hash()], [String.t()]) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
   defp insert_implementations(proxy_address_hash, proxy_type, implementation_address_hash_strings, names)
        when not is_nil(proxy_address_hash) do
     sanitized_implementation_address_hash_strings =
@@ -404,6 +405,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     |> Repo.insert()
   end
 
+  @spec update_implementations(__MODULE__.t(), atom() | nil, [EthereumJSONRPC.hash()], [String.t()]) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
   defp update_implementations(proxy, proxy_type, implementation_address_hash_strings, names) do
     sanitized_implementation_address_hash_strings =
       sanitize_implementation_address_hash_strings(implementation_address_hash_strings)
@@ -419,6 +421,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   # Cut off implementations per proxy up to @max_implementations_number_per_proxy number
   # before insert into the DB to prevent DoS via the verification endpoint of Diamond smart contracts.
+  @spec sanitize_implementation_address_hash_strings([EthereumJSONRPC.hash()]) :: [EthereumJSONRPC.hash()]
   defp sanitize_implementation_address_hash_strings(implementation_address_hash_strings) do
     Enum.take(implementation_address_hash_strings, @max_implementations_number_per_proxy)
   end
