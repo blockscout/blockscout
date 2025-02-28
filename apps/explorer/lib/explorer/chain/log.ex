@@ -335,16 +335,9 @@ defmodule Explorer.Chain.Log do
           update_address_hash_abi_map_with_implementations_abi(address_hash_abi_map, addresses, db_options)
 
         _ ->
-          empty_address_hash_abi_map(address_hash_abi_map, address_hashes_without_abi)
+          %{}
       end
     end
-  end
-
-  defp empty_address_hash_abi_map(address_hash_abi_map, address_hashes) do
-    address_hashes
-    |> Enum.reduce(address_hash_abi_map, fn address_hash, acc ->
-      Map.put(acc, address_hash, nil)
-    end)
   end
 
   defp update_address_hash_abi_map_with_implementations_abi(address_hash_abi_map, addresses, db_options) do
