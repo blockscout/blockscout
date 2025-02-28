@@ -1545,7 +1545,8 @@ defmodule Explorer.Chain do
     if indexer_running?() do
       %{min: min_saved_block_number, max: max_saved_block_number} = BlockNumber.get_all()
 
-      min_blockchain_block_number = Application.get_env(:indexer, :first_block)
+      min_blockchain_block_number =
+        RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
       case {min_saved_block_number, max_saved_block_number} do
         {0, 0} ->
