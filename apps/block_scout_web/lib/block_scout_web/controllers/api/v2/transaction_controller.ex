@@ -11,7 +11,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       put_key_value_to_paging_options: 3,
       token_transfers_next_page_params: 3,
       paging_options: 1,
-      split_list_by_page: 1
+      split_list_by_page: 1,
+      fetch_scam_token_toggle: 2
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -174,8 +175,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            Chain.preload_token_transfers(
              transaction,
              @token_transfers_in_transaction_necessity_by_association,
-             @api_true,
-             false
+             @api_true |> fetch_scam_token_toggle(conn)
            ) do
       conn
       |> put_status(200)
@@ -477,6 +477,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         |> Keyword.merge(paging_options)
         |> Keyword.merge(token_transfers_types_options(params))
         |> Keyword.merge(@api_true)
+        |> fetch_scam_token_toggle(conn)
 
       results =
         transaction_hash
