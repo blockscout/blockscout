@@ -1148,54 +1148,117 @@ defmodule Explorer.Chain do
       |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
       |> select_repo(options).one()
 
-    address_updated_result =
-      case address_result do
-        %{smart_contract: smart_contract} ->
-          if smart_contract do
-            CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+    updated_address_result = update_address_result(address_result, options, false)
 
-            LookUpSmartContractSourcesOnDemand.trigger_fetch(
-              to_string(address_result.hash),
-              address_result.contract_code,
-              smart_contract
-            )
-
-            SmartContract.check_and_update_constructor_args(address_result)
-          else
-            LookUpSmartContractSourcesOnDemand.trigger_fetch(
-              to_string(address_result.hash),
-              address_result.contract_code,
-              nil
-            )
-
-            add_bytecode_twin_to_result(address_result, hash, options)
-          end
-
-        _ ->
-          if address_result do
-            LookUpSmartContractSourcesOnDemand.trigger_fetch(
-              to_string(address_result.hash),
-              address_result.contract_code,
-              nil
-            )
-          end
-
-          address_result
-      end
-
-    address_updated_result
+    updated_address_result
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
     end
   end
 
-  defp add_bytecode_twin_to_result(address_result, hash, options) do
+  @doc """
+  Finds contract addresses from a list of hashes.
+
+  ## Parameters
+
+    - `hashes`: A list of hashes to search for contract addresses.
+    - `options`: An optional keyword list of options.
+
+  ## Options
+
+    - `:necessity_by_association`: A map of associations with their necessity (default: `%{}`).
+
+  ## Returns
+
+    - `{:ok, addresses}`: A tuple with `:ok` and a list of found addresses.
+    - `{:error, :not_found}`: A tuple with `:error` and `:not_found` if no addresses are found.
+
+  """
+  @spec find_contract_addresses([Hash.Address.t()], [necessity_by_association_option]) ::
+          {:ok, [Address.t()]} | {:error, :not_found}
+  def find_contract_addresses(
+        hashes,
+        options \\ []
+      ) do
+    necessity_by_association =
+      options
+      |> Keyword.get(:necessity_by_association, %{})
+      |> Map.merge(%{
+        Implementation.proxy_implementations_association() => :optional
+      })
+
+    query =
+      from(
+        address in Address,
+        where: address.hash in ^hashes and not is_nil(address.contract_code)
+      )
+
+    addresses_result =
+      query
+      |> join_associations(necessity_by_association)
+      |> select_repo(options).all()
+
+    updated_addresses_result =
+      addresses_result
+      |> Enum.map(fn address_result ->
+        update_address_result(address_result, options, true)
+      end)
+
+    updated_addresses_result
+    |> case do
+      [] -> {:error, :not_found}
+      addresses -> {:ok, addresses}
+    end
+  end
+
+  defp update_address_result(address_result, options, decoding_from_list?) do
+    case address_result do
+      %{smart_contract: smart_contract} ->
+        if smart_contract do
+          CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+
+          LookUpSmartContractSourcesOnDemand.trigger_fetch(
+            to_string(address_result.hash),
+            address_result.contract_code,
+            smart_contract
+          )
+
+          SmartContract.check_and_update_constructor_args(address_result)
+        else
+          LookUpSmartContractSourcesOnDemand.trigger_fetch(
+            to_string(address_result.hash),
+            address_result.contract_code,
+            nil
+          )
+
+          # credo:disable-for-next-line
+          if decoding_from_list? do
+            address_result
+          else
+            add_bytecode_twin_to_result(address_result, options)
+          end
+        end
+
+      _ ->
+        if address_result do
+          LookUpSmartContractSourcesOnDemand.trigger_fetch(
+            to_string(address_result.hash),
+            address_result.contract_code,
+            nil
+          )
+        end
+
+        address_result
+    end
+  end
+
+  defp add_bytecode_twin_to_result(address_result, options) do
     address_verified_bytecode_twin_contract =
-      SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
+      SmartContract.get_address_verified_bytecode_twin_contract(address_result.hash, options).verified_contract
 
     address_result
-    |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
+    |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, address_result.hash)
   end
 
   @spec find_decompiled_contract_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}

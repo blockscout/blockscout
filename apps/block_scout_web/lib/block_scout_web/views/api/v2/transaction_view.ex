@@ -227,20 +227,30 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   """
   @spec decode_logs([Log.t()], boolean) :: [tuple]
   def decode_logs(logs, skip_sig_provider?) do
+    unique_log_address_hashes =
+      logs
+      |> Enum.map(fn log -> log.address_hash end)
+      |> Enum.uniq()
+
+    full_abi_per_address_hash =
+      Log.accumulate_abi_by_address_hashes(%{}, unique_log_address_hashes, @api_true)
+
     {all_logs, _, _} =
-      Enum.reduce(logs, {[], %{}, %{}}, fn log, {results, contracts_acc, events_acc} ->
-        {result, contracts_acc, events_acc} =
+      Enum.reduce(logs, {[], full_abi_per_address_hash, %{}}, fn log,
+                                                                 {results, full_abi_per_address_hash_acc, events_acc} ->
+        {result, full_abi_per_address_hash_acc, events_acc} =
           Log.decode(
             log,
             %Transaction{hash: log.transaction_hash},
             @api_true,
             skip_sig_provider?,
             true,
-            contracts_acc,
+            full_abi_per_address_hash_acc[log.address_hash],
+            full_abi_per_address_hash_acc,
             events_acc
           )
 
-        {[result | results], contracts_acc, events_acc}
+        {[result | results], full_abi_per_address_hash_acc, events_acc}
       end)
 
     all_logs_with_index =
