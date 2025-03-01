@@ -122,7 +122,6 @@ defmodule Explorer.Chain.SmartContract do
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper
   alias Explorer.SmartContract.Solidity.Verifier
 
