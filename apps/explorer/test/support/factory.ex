@@ -36,7 +36,6 @@ defmodule Explorer.Factory do
     Block,
     ContractMethod,
     Data,
-    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     Log,

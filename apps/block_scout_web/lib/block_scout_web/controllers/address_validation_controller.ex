@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.AddressValidationController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, _} <- Chain.find_or_insert_address_from_hash(address_hash, [], false),
+         {:ok, _} <- Chain.find_or_insert_address_from_hash(address_hash, []),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       full_options =
         Keyword.merge(

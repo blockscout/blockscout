@@ -8,7 +8,6 @@ defmodule Explorer.Chain.SmartContract.Schema do
 
   alias Explorer.Chain.{
     Address,
-    DecompiledSmartContract,
     Hash,
     SmartContractAdditionalSource
   }
@@ -63,12 +62,6 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:certified, :boolean)
         field(:is_blueprint, :boolean)
         field(:language, Ecto.Enum, values: @languages_enum, default: :solidity)
-
-        has_many(
-          :decompiled_smart_contracts,
-          DecompiledSmartContract,
-          foreign_key: :address_hash
-        )
 
         belongs_to(
           :address,

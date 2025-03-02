@@ -3,8 +3,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
   alias BlockScoutWeb.AddressView
   alias BlockScoutWeb.API.RPC.RPCView
-  alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.{Address, DecompiledSmartContract, SmartContract}
+  alias Explorer.Chain.{Address, SmartContract}
 
   defguardp is_empty_string(input) when input == "" or input == nil
 
@@ -235,9 +234,6 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       smart_contract_info
     end
   end
-
-  defp decompiler_version(nil), do: ""
-  defp decompiler_version(%DecompiledSmartContract{decompiler_version: decompiler_version}), do: decompiler_version
 
   defp address_to_response(address) do
     creator_hash = AddressView.from_address_hash(address)

@@ -15,7 +15,6 @@ defmodule Explorer.ChainTest do
     Address,
     Block,
     Data,
-    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     Log,
@@ -2528,7 +2527,7 @@ defmodule Explorer.ChainTest do
         }
       ]
 
-      response = Chain.find_contract_address(address.hash, options, true)
+      response = Chain.find_contract_address(address.hash, options)
 
       assert response == {:ok, address}
     end

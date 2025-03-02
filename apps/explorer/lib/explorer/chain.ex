@@ -30,7 +30,7 @@ defmodule Explorer.Chain do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.Changeset
 
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
   alias EthereumJSONRPC.Utility.RangesHelper
@@ -51,7 +51,6 @@ defmodule Explorer.Chain do
     BlockNumberHelper,
     CurrencyHelper,
     Data,
-    DecompiledSmartContract,
     DenormalizationHelper,
     Hash,
     Import,
@@ -886,7 +885,7 @@ defmodule Explorer.Chain do
       then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
 
   """
-  @spec hash_to_address(Hash.Address.t() | binary(), [necessity_by_association_option | api?], boolean()) ::
+  @spec hash_to_address(Hash.Address.t() | binary(), [necessity_by_association_option | api?]) ::
           {:ok, Address.t()} | {:error, :not_found}
   def hash_to_address(
         hash,
@@ -971,7 +970,7 @@ defmodule Explorer.Chain do
       then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
 
   """
-  @spec find_or_insert_address_from_hash(Hash.Address.t(), [necessity_by_association_option], boolean()) ::
+  @spec find_or_insert_address_from_hash(Hash.Address.t(), [necessity_by_association_option]) ::
           {:ok, Address.t()}
   def find_or_insert_address_from_hash(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
@@ -1047,7 +1046,7 @@ defmodule Explorer.Chain do
       then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
 
   """
-  @spec find_contract_address(Hash.Address.t(), [necessity_by_association_option], boolean()) ::
+  @spec find_contract_address(Hash.Address.t(), [necessity_by_association_option]) ::
           {:ok, Address.t()} | {:error, :not_found}
   def find_contract_address(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,

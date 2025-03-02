@@ -1019,8 +1019,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     #              contract_source_code
 
     #   assert result["ContractName"] == name
-    #   assert result["DecompiledSourceCode"] == nil
-    #   assert result["DecompilerVersion"] == nil
     #   assert result["OptimizationUsed"] == "true"
     #   assert :ok = ExJsonSchema.Validator.validate(verify_schema(), response)
     # end
@@ -1308,9 +1306,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "ABI" => %{"type" => "string"},
           "ContractName" => %{"type" => "string"},
           "CompilerVersion" => %{"type" => "string"},
-          "OptimizationUsed" => %{"type" => "string"},
-          "DecompiledSourceCode" => %{"type" => "string"},
-          "DecompilerVersion" => %{"type" => "string"}
+          "OptimizationUsed" => %{"type" => "string"}
         }
       }
     })
@@ -1325,8 +1321,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   #       "ABI" => %{"type" => "string"},
   #       "ContractName" => %{"type" => "string"},
   #       "CompilerVersion" => %{"type" => "string"},
-  #       "DecompiledSourceCode" => %{"type" => "string"},
-  #       "DecompilerVersion" => %{"type" => "string"},
   #       "OptimizationUsed" => %{"type" => "string"}
   #     }
   #   })

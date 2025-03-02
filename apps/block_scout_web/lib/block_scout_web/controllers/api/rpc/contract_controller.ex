@@ -507,7 +507,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
       _ = PublishHelper.check_and_verify(address_param)
-      address = Contracts.address_hash_to_address_with_source_code(address_hash, false)
+      address = Contracts.address_hash_to_address_with_source_code(address_hash)
 
       render(conn, :getsourcecode, %{
         contract: address || %Address{hash: address_hash, smart_contract: nil}
@@ -554,17 +554,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       {:param, :error} -> {:ok, options}
       {:validation, {:error, error}} -> {:error, error}
     end
-  end
-
-  defp add_param({:ok, options}, params, key) do
-    case Map.fetch(params, Atom.to_string(key)) do
-      {:ok, value} -> {:ok, Map.put(options, key, value)}
-      :error -> {:ok, options}
-    end
-  end
-
-  defp add_param(options, _params, _key) do
-    options
   end
 
   defp contracts_filter(nil), do: {:ok, nil}
@@ -769,7 +758,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def validate_address(address_hash_string, params, options \\ @api_true) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, options, false)} do
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, options)} do
       {:ok, address_hash, address}
     end
   end

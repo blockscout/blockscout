@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <-
-           Chain.hash_to_address(address_hash, [necessity_by_association: %{:smart_contract => :optional}], false),
+           Chain.hash_to_address(address_hash, necessity_by_association: %{:smart_contract => :optional}),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       full_options =
         [

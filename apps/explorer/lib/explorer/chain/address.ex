@@ -11,7 +11,6 @@ defmodule Explorer.Chain.Address.Schema do
     Address,
     Block,
     Data,
-    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     SignedAuthorization,
@@ -110,7 +109,6 @@ defmodule Explorer.Chain.Address.Schema do
 
         has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
         has_one(:scam_badge, Address.ScamBadgeToAddress, foreign_key: :address_hash, references: :hash)
-        has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
 
         # In practice, this is a one-to-many relationship, but we only need to check if any signed authorization
@@ -146,7 +144,7 @@ defmodule Explorer.Chain.Address do
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
+  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce verified gas_used transactions_count token_transfers_count)a
   @chain_type_optional_attrs (case @chain_type do
                                 :filecoin ->
                                   ~w(filecoin_id filecoin_robust filecoin_actor_type)a
@@ -169,7 +167,6 @@ defmodule Explorer.Chain.Address do
            except: [
              :__meta__,
              :smart_contract,
-             :decompiled_smart_contracts,
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
@@ -180,7 +177,6 @@ defmodule Explorer.Chain.Address do
            except: [
              :__meta__,
              :smart_contract,
-             :decompiled_smart_contracts,
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
@@ -531,10 +527,7 @@ defmodule Explorer.Chain.Address do
   def get_by_hash(address_hash) do
     case Chain.hash_to_address(
            address_hash,
-           [
-             necessity_by_association: %{:smart_contract => :optional, proxy_implementations_association() => :optional}
-           ],
-           false
+           necessity_by_association: %{:smart_contract => :optional, proxy_implementations_association() => :optional}
          ) do
       {:ok, address} -> address
       _ -> nil
