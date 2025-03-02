@@ -83,7 +83,6 @@ defmodule Explorer.Chain.Address.Schema do
         field(:nonce, :integer)
         field(:decompiled, :boolean, default: false)
         field(:verified, :boolean, default: false)
-        field(:has_decompiled_code?, :boolean, virtual: true)
         field(:stale?, :boolean, virtual: true)
         field(:transactions_count, :integer)
         field(:token_transfers_count, :integer)

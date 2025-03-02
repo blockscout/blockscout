@@ -157,29 +157,6 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
                          |> Enum.reduce("", fn el, acc -> acc <> "|" <> el end)
                          |> Regex.compile!()
 
-  def highlight_decompiled_code(code) do
-    {_, result} =
-      @colors
-      |> Enum.reduce(code, fn {symbol, rgb}, acc ->
-        String.replace(acc, symbol, rgb)
-      end)
-      |> String.replace("\e[1m", "<span style=\"font-weight:bold\">")
-      |> String.replace("»", "&raquo;")
-      |> String.replace("\e[0m", "</span>")
-      |> String.split(~r/\<span style=.*?\)"\>|\<span style=\"font-weight:bold\"\>|\<\/span\>/,
-        include_captures: true,
-        trim: true
-      )
-      |> add_styles_to_every_line()
-
-    result
-    |> Enum.reduce("", fn part, acc ->
-      part <> acc
-    end)
-    |> add_styles_to_reserved_words()
-    |> add_line_numbers()
-  end
-
   defp add_styles_to_every_line(lines) do
     lines
     |> Enum.reduce({"", []}, fn part, {style, acc} ->
@@ -229,14 +206,6 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     |> Enum.reduce("", fn el, acc ->
       acc <> el
     end)
-  end
-
-  def last_decompiled_contract_version(decompiled_contracts) when is_nil(decompiled_contracts), do: nil
-
-  def last_decompiled_contract_version(decompiled_contracts) when decompiled_contracts == [], do: nil
-
-  def last_decompiled_contract_version(decompiled_contracts) do
-    Enum.max_by(decompiled_contracts, & &1.decompiler_version)
   end
 
   defp add_line_numbers(code) do

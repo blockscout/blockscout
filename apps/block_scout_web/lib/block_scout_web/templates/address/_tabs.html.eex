@@ -76,14 +76,6 @@
       <% end %>
     <% end %>
   <% end %>
-  <%= if has_decompiled_code?(@address) do %>
-    <%= link(
-        to: AccessHelper.get_path(@conn, :address_decompiled_contract_path, :index, @address.hash),
-        class: "card-tab #{tab_status("decompiled-contracts", @conn.request_path)}") do %>
-        <%= gettext("Decompiled code") %>
-        <i class="fa-regular fa-check-circle"></i>
-    <% end %>
-  <% end %>
   <%= if smart_contract_with_read_only_functions?(@address) || has_address_custom_abi_with_read_functions?(@conn, @address.hash) do %>
     <%= link(
         gettext("Read Contract"),

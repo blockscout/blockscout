@@ -489,10 +489,6 @@ defmodule Explorer.Chain.SmartContract do
   """
   Explorer.Chain.SmartContract.Schema.generate()
 
-  def preload_decompiled_smart_contract(contract) do
-    Repo.preload(contract, :decompiled_smart_contracts)
-  end
-
   def changeset(%__MODULE__{} = smart_contract, attrs) do
     attrs_to_cast =
       @required_attrs ++
