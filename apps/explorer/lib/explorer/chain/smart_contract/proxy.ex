@@ -16,7 +16,6 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     EIP1967,
     EIP2535,
     EIP7702,
-    EIP930,
     MasterCopy,
     ResolvedDelegateProxy
   }
@@ -47,8 +46,6 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @get_implementation_signature "aaf10f42"
   # bb82aa5e = keccak256(comptrollerImplementation()) Compound protocol proxy pattern
   @comptroller_implementation_signature "bb82aa5e"
-  # 21f8a721 = keccak256(getAddress(bytes32))
-  @get_address_signature "21f8a721"
 
   @typep options :: [{:api?, true | false}, {:proxy_without_abi?, true | false}]
 
@@ -293,6 +290,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     get_implementation_address_hash_string_by_module(EIP2535, :eip2535, proxy_address_hash)
   end
 
+  @spec get_implementation_address_hash_string_resolved_delegate_proxy(Hash.Address.t()) ::
+          %{implementation_address_hash_strings: [String.t() | :error | nil], proxy_type: atom()}
   def get_implementation_address_hash_string_resolved_delegate_proxy(proxy_address_hash) do
     get_implementation_address_hash_string_by_module(
       ResolvedDelegateProxy,
@@ -388,16 +387,6 @@ defmodule Explorer.Chain.SmartContract.Proxy do
           proxy_type: :comptroller
         }
 
-      :eip_930 ->
-        implementation_address_hash_string =
-          EIP930.get_implementation_address_hash_string(@get_address_signature, proxy_address_hash, proxy_abi)
-
-        %{
-          implementation_address_hash_strings:
-            implementation_address_hash_string_to_list(implementation_address_hash_string),
-          proxy_type: :eip_930
-        }
-
       _ ->
         fallback_value
     end
@@ -418,8 +407,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       "implementation" => :implementation,
       "getImplementation" => :get_implementation,
       "comptrollerImplementation" => :comptroller,
-      "facetAddresses" => :diamond,
-      "getAddress" => :eip_930
+      "facetAddresses" => :diamond
     }
 
     proxy_abi
