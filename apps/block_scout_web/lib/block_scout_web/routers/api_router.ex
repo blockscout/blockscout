@@ -100,6 +100,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
     plug(RateLimit, graphql?: true)
+    plug(BlockScoutWeb.Plug.GraphQLSchemaIntrospection)
   end
 
   alias BlockScoutWeb.API.V2
