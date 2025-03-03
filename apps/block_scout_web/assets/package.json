@@ -94,7 +94,7 @@
     "eslint-formatter-junit": "^8.40.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^6.6.0",
+    "eslint-plugin-promise": "^7.2.1",
     "file-loader": "^6.2.0",
     "globals": "^16.0.0",
     "jest": "^29.7.0",
