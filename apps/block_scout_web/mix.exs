@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Mixfile do
       description: "Web interface for BlockScout.",
       dialyzer: [
         plt_add_deps: :app_tree,
-        ignore_warnings: "../../.dialyzer-ignore"
+        ignore_warnings: "../../.dialyzer_ignore.exs"
       ],
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env(), Application.get_env(:block_scout_web, :disable_api?)),

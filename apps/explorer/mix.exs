@@ -9,11 +9,11 @@ defmodule Explorer.Mixfile do
       config_path: "../../config/config.exs",
       deps: deps(),
       deps_path: "../../deps",
-      description: "Read-access to indexed block chain data.",
+      description: "Read-access to indexed blockchain data.",
       dialyzer: [
         plt_add_deps: :app_tree,
         plt_add_apps: ~w(ex_unit mix)a,
-        ignore_warnings: "../../.dialyzer-ignore"
+        ignore_warnings: "../../.dialyzer_ignore.exs"
       ],
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
