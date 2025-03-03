@@ -323,6 +323,8 @@ defmodule Explorer.Chain.Transaction do
     Wei
   }
 
+  alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
+
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   alias Explorer.Helper, as: ExplorerHelper
@@ -1646,7 +1648,7 @@ defmodule Explorer.Chain.Transaction do
   def fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, with_pending? \\ false) do
     __MODULE__
     |> order_for_transactions(with_pending?)
-    |> Chain.where_block_number_in_period(from_block, to_block)
+    |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
   end
 
@@ -1671,7 +1673,7 @@ defmodule Explorer.Chain.Transaction do
     query = from(transaction in __MODULE__)
 
     query
-    |> Chain.where_block_number_in_period(from_block, to_block)
+    |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
     |> SortingHelper.apply_sorting(sorting, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
   end
