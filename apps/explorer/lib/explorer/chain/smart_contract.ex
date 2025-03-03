@@ -1370,37 +1370,37 @@ defmodule Explorer.Chain.SmartContract do
       |> Enum.map(&Chain.string_to_address_hash_or_nil(&1))
       |> Enum.reject(&is_nil/1)
 
-    currently_certified_contracts_addresses_hashes_query =
+    currently_certified_address_hashes_query =
       from(
         contract in __MODULE__,
         where: contract.certified == true,
         select: contract.address_hash
       )
 
-    currently_certified_contracts_addresses_hashes =
-      currently_certified_contracts_addresses_hashes_query
+    currently_certified_address_hashes =
+      currently_certified_address_hashes_query
       |> Chain.select_repo(api?: true).all()
 
-    contracts_addresses_hashes_clear_certified_flag_for =
-      currently_certified_contracts_addresses_hashes -- address_hashes
+    address_hashes_clear_certified_flag_for =
+      currently_certified_address_hashes -- address_hashes
 
-    contracts_addresses_hashes_set_certified_flag_for = address_hashes -- currently_certified_contracts_addresses_hashes
+    address_hashes_set_certified_flag_for = address_hashes -- currently_certified_address_hashes
 
-    query_to_clear_certified_flag =
+    address_hashes_to_clear_query =
       from(
         contract in __MODULE__,
-        where: contract.address_hash in ^contracts_addresses_hashes_clear_certified_flag_for
+        where: contract.address_hash in ^address_hashes_clear_certified_flag_for
       )
 
-    Repo.update_all(query_to_clear_certified_flag, set: [certified: false])
+    Repo.update_all(address_hashes_to_clear_query, set: [certified: false])
 
-    query_to_set_certified_flag =
+    address_hashes_to_set_query =
       from(
         contract in __MODULE__,
-        where: contract.address_hash in ^contracts_addresses_hashes_set_certified_flag_for
+        where: contract.address_hash in ^address_hashes_set_certified_flag_for
       )
 
-    Repo.update_all(query_to_set_certified_flag, set: [certified: true])
+    Repo.update_all(address_hashes_to_set_query, set: [certified: true])
   end
 
   defp check_verified_with_full_match(address_hash, options) do
