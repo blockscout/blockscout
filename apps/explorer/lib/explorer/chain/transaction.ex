@@ -325,6 +325,8 @@ defmodule Explorer.Chain.Transaction do
 
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
+  alias Explorer.Helper, as: ExplorerHelper
+
   alias Explorer.SmartContract.SigProviderInterface
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number
@@ -1033,7 +1035,7 @@ defmodule Explorer.Chain.Transaction do
           parse_method_name(decoded_func)
 
         {:error, :contract_not_verified, []} ->
-          "0x" <> Base.encode16(method_id, case: :lower)
+          ExplorerHelper.add_0x_prefix(method_id)
 
         _ ->
           "Transfer"
@@ -2112,7 +2114,7 @@ defmodule Explorer.Chain.Transaction do
         skip_sc_check?
       ) do
     if skip_sc_check? || Address.smart_contract?(to_address) do
-      "0x" <> Base.encode16(method_id, case: :lower)
+      ExplorerHelper.add_0x_prefix(method_id)
     else
       nil
     end

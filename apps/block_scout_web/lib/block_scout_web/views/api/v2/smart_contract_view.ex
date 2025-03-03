@@ -2,13 +2,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   use BlockScoutWeb, :view
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  import Explorer.Helper, only: [decode_data: 2]
   import Explorer.SmartContract.Reader, only: [zip_tuple_values_with_types: 2]
 
   alias ABI.FunctionSelector
   alias BlockScoutWeb.API.V2.{Helper, TransactionView}
   alias BlockScoutWeb.SmartContractView
-  alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
+  alias BlockScoutWeb.{AddressContractView, AddressView}
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
@@ -223,7 +222,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "decoded_constructor_args" =>
         if(smart_contract_verified,
           do:
-            target_contract && format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
+            target_contract &&
+              SmartContract.format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
         ),
       "language" => smart_contract_language(smart_contract),
       "license_type" => smart_contract.license_type,
@@ -305,35 +305,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "file_path" => source.file_name
     }
   end
-
-  def format_constructor_arguments(abi, constructor_arguments)
-      when not is_nil(abi) and not is_nil(constructor_arguments) do
-    constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
-
-    input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1)
-
-    result =
-      constructor_arguments
-      |> decode_data(input_types)
-      |> Enum.zip(constructor_abi["inputs"])
-      |> Enum.map(fn {value, %{"type" => type} = input_arg} ->
-        [ABIEncodedValueView.value_json(type, value), input_arg]
-      end)
-
-    result
-  rescue
-    exception ->
-      Logger.warning(fn ->
-        [
-          "Error formatting constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
-          Exception.format(:error, exception)
-        ]
-      end)
-
-      nil
-  end
-
-  def format_constructor_arguments(_abi, _constructor_arguments), do: nil
 
   defp prepare_smart_contract_for_list(%SmartContract{} = smart_contract) do
     token = smart_contract.address.token

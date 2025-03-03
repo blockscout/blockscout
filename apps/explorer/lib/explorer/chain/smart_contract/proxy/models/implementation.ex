@@ -42,6 +42,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         :eip1167,
         :eip1967,
         :eip1822,
+        # todo: it is obsolete. Consider re-define the custom type in the future to remove this value.
         :eip930,
         :master_copy,
         :basic_implementation,
@@ -50,6 +51,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         :eip2535,
         :clone_with_immutable_arguments,
         :eip7702,
+        :resolved_delegate_proxy,
         :unknown
       ],
       null: true
@@ -312,8 +314,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   end
 
   def save_implementation_data(implementation_address_hash_strings, proxy_address_hash, proxy_type, options)
-      when is_nil(implementation_address_hash_strings) or
-             implementation_address_hash_strings == [] do
+      when implementation_address_hash_strings == [] do
     upsert_implementations(proxy_address_hash, proxy_type, [], [], options)
 
     :empty
