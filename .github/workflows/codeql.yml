@@ -10,7 +10,6 @@
 # supported CodeQL languages.
 #
 name: "CodeQL Advanced"
-
 on:
   push:
     branches: [ "master" ]
