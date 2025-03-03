@@ -360,20 +360,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         end
       end
 
-      # todo: this endpoint should be removed in 7.1.0 release
-      scope "/noves-fi" do
-        get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
-
-        get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
-
-        get("/transaction-descriptions", V2.Proxy.NovesFiController, :describe_transactions)
-      end
-
-      # todo: this endpoint should be removed in 7.1.0 release
-      scope "/xname" do
-        get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
-      end
-
       scope "/account-abstraction" do
         get("/operations/:operation_hash_param", V2.Proxy.AccountAbstractionController, :operation)
         get("/operations/:operation_hash_param/summary", V2.Proxy.AccountAbstractionController, :summary)
