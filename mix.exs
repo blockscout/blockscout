@@ -35,7 +35,6 @@ defmodule BlockScout.Mixfile do
   end
 
   ## Private Functions
-
   defp copy_prod_runtime_config(%Mix.Release{path: path} = release) do
     File.mkdir_p!(Path.join([path, "config", "runtime"]))
     File.cp!(Path.join(["config", "runtime", "prod.exs"]), Path.join([path, "config", "runtime", "prod.exs"]))
