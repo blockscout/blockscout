@@ -3506,16 +3506,20 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
 
     test "get filtered smart contracts when flag is set and language is not set", %{conn: conn} do
-      smart_contract = insert(:smart_contract, abi: nil, language: nil)
-      insert(:smart_contract, is_vyper_contract: true, language: nil)
-      insert(:smart_contract, is_vyper_contract: false, language: nil)
+      smart_contracts = [
+        {"solidity", insert(:smart_contract, is_vyper_contract: false, language: nil)},
+        {"vyper", insert(:smart_contract, is_vyper_contract: true, language: nil)},
+        {"yul", insert(:smart_contract, abi: nil, is_vyper_contract: false, language: nil)}
+      ]
 
-      request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
+      for {filter, smart_contract} <- smart_contracts do
+        request = get(conn, "/api/v2/smart-contracts", %{"filter" => filter})
 
-      assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
-      compare_item(smart_contract, sc)
-      assert sc["address"]["is_verified"] == true
-      assert sc["address"]["is_contract"] == true
+        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+        compare_item(smart_contract, sc)
+        assert sc["address"]["is_verified"] == true
+        assert sc["address"]["is_contract"] == true
+      end
     end
 
     test "get filtered smart contracts when flag is set and language is set", %{conn: conn} do

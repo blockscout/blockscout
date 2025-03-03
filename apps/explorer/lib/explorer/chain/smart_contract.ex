@@ -195,8 +195,11 @@ defmodule Explorer.Chain.SmartContract do
     }
   ]
 
-  @default_languages ~w(solidity vyper yul stylus_rust)a
+  @default_languages ~w(solidity vyper yul)a
   @chain_type_languages (case @chain_type do
+                           :arbitrum ->
+                             ~w(stylus_rust)a
+
                            :zilliqa ->
                              ~w(scilla)a
 
@@ -208,12 +211,17 @@ defmodule Explorer.Chain.SmartContract do
   @languages_enum @languages |> Enum.with_index(1)
   @language_string_to_atom @languages |> Map.new(&{to_string(&1), &1})
 
+  @type base_language :: :solidity | :vyper | :yul
+
   case @chain_type do
+    :arbitrum ->
+      @type language :: base_language() | :stylus_rust
+
     :zilliqa ->
-      @type language :: :solidity | :vyper | :yul | :stylus_rust | :scilla
+      @type language :: base_language() | :scilla
 
     _ ->
-      @type language :: :solidity | :vyper | :yul | :stylus_rust
+      @type language :: base_language()
   end
 
   @doc """
@@ -1450,37 +1458,37 @@ defmodule Explorer.Chain.SmartContract do
   defp filter_contracts(basic_query, language) do
     basic_query
     |> where(language: ^language)
-    |> filter_contracts_on_legacy_fields(language)
+    |> maybe_filter_contracts_on_legacy_fields(language)
   end
 
   # Applies language-specific filtering based on legacy fields for backward
   # compatibility. This ensures the correct results when the `language` field is
   # not yet populated.
   #
-  # TODO: This function is a temporary measure during background migration of
-  # the `language` field and should be removed in the future releases.
-  defp filter_contracts_on_legacy_fields(basic_query, language) do
+  # TODO: This and `apply_legacy_language_filter/2` functions are a temporary
+  # measure during background migration of the `language` field and should be
+  # removed in the future releases.
+  defp maybe_filter_contracts_on_legacy_fields(basic_query, language) do
     if BackgroundMigrations.get_smart_contract_language_finished() do
       basic_query
     else
-      case language do
-        :solidity ->
-          basic_query
-          |> or_where([sc], not sc.is_vyper_contract and is_nil(sc.language))
-
-        :vyper ->
-          basic_query
-          |> or_where([sc], sc.is_vyper_contract and is_nil(sc.language))
-
-        :yul ->
-          basic_query
-          |> or_where([sc], is_nil(sc.abi) and is_nil(sc.language))
-
-        _ ->
-          basic_query
-      end
+      apply_legacy_language_filter(basic_query, language)
     end
   end
+
+  defp apply_legacy_language_filter(query, :solidity) do
+    query |> or_where([sc], not sc.is_vyper_contract and not is_nil(sc.abi) and is_nil(sc.language))
+  end
+
+  defp apply_legacy_language_filter(query, :vyper) do
+    query |> or_where([sc], sc.is_vyper_contract and is_nil(sc.language))
+  end
+
+  defp apply_legacy_language_filter(query, :yul) do
+    query |> or_where([sc], is_nil(sc.abi) and is_nil(sc.language))
+  end
+
+  defp apply_legacy_language_filter(query, _), do: query
 
   @doc """
   Retrieves the constructor arguments for a zkSync smart contract.
@@ -1514,7 +1522,8 @@ defmodule Explorer.Chain.SmartContract do
   ## TODO
   This function is a temporary measure during background migration of the
   `language` field and should be removed in the future releases. Afterward, the
-  language will be retrieved directly from the `language` field.
+  language will be retrieved directly from the `language` field. Tracked in
+  [#11822](https://github.com/blockscout/blockscout/issues/11822).
 
   ## Parameters
 
