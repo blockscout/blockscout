@@ -55,8 +55,8 @@ defmodule Explorer.Chain.CsvExport.Helper do
   """
   @spec block_from_period(String.t(), String.t()) :: {Block.block_number(), Block.block_number()}
   def block_from_period(from_period, to_period) do
-    from_block = convert_date_string_to_block(from_period, :before)
-    to_block = convert_date_string_to_block(to_period, :after)
+    from_block = convert_date_string_to_block(from_period, :after)
+    to_block = convert_date_string_to_block(to_period, :before)
 
     {from_block, to_block}
   end
