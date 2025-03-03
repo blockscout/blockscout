@@ -123,6 +123,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "metadata" => nil
       }
 
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:ok, []}
+      end)
+
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
       check_response(correct_response, json_response(request, 200))
 
@@ -386,6 +390,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           watch_erc_1155_output: true,
           notify_email: true
         })
+
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:ok, []}
+      end)
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)

@@ -62,24 +62,40 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
     test "treats all addresses as current if the average block time is disabled", %{stale_address: address} do
       Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
 
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, []}
+      end)
+
       assert CoinBalanceOnDemand.trigger_fetch(address) == :current
     end
 
     test "if the address has not been fetched within the last 24 hours of blocks it is considered stale", %{
       stale_address: address
     } do
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, []}
+      end)
+
       assert CoinBalanceOnDemand.trigger_fetch(address) == {:stale, 102}
     end
 
     test "if the address has been fetched within the last 24 hours of blocks it is considered current", %{
       current_address: address
     } do
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, []}
+      end)
+
       assert CoinBalanceOnDemand.trigger_fetch(address) == :current
     end
 
     test "if there is an unfetched balance within the window for an address, it is considered pending", %{
       pending_address: pending_address
     } do
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, []}
+      end)
+
       assert CoinBalanceOnDemand.trigger_fetch(pending_address) == {:pending, 103}
     end
   end
