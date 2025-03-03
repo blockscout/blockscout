@@ -178,6 +178,8 @@ defmodule BlockScoutWeb.AddressView do
   @doc """
   Returns the primary name of an address if available. If there is no names on address function performs preload of names association.
   """
+  def primary_name(nil), do: nil
+
   def primary_name(%Address{names: [_ | _]} = address) do
     APIV2Helper.address_name(address)
   end
@@ -244,7 +246,7 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: _}), do: false
 
-  def read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
+  def read_function?(function), do: Helper.queryable_method?(function) || Helper.read_with_wallet_method?(function)
 
   def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
     !contract_interaction_disabled?() &&
@@ -475,7 +477,7 @@ defmodule BlockScoutWeb.AddressView do
           | {:error, atom(), list()}
           | {{:error, :contract_not_verified, list()}, any()}
   def decode(log, transaction) do
-    {result, _contracts_acc, _events_acc} = Log.decode(log, transaction, [], true)
+    {result, _full_abi_per_address_hash_contracts_acc, _events_acc} = Log.decode(log, transaction, [], true, false)
     result
   end
 end

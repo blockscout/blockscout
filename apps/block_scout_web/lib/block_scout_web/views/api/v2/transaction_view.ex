@@ -227,22 +227,75 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   """
   @spec decode_logs([Log.t()], boolean) :: [tuple]
   def decode_logs(logs, skip_sig_provider?) do
-    {result, _, _} =
-      Enum.reduce(logs, {[], %{}, %{}}, fn log, {results, contracts_acc, events_acc} ->
-        {result, contracts_acc, events_acc} =
+    unique_log_address_hashes =
+      logs
+      |> Enum.map(fn log -> log.address_hash end)
+      |> Enum.uniq()
+
+    full_abi_per_address_hash =
+      Log.accumulate_abi_by_address_hashes(%{}, unique_log_address_hashes, @api_true)
+
+    {all_logs, _, _} =
+      Enum.reduce(logs, {[], full_abi_per_address_hash, %{}}, fn log,
+                                                                 {results, full_abi_per_address_hash_acc, events_acc} ->
+        {result, full_abi_per_address_hash_acc, events_acc} =
           Log.decode(
             log,
             %Transaction{hash: log.transaction_hash},
             @api_true,
             skip_sig_provider?,
-            contracts_acc,
+            true,
+            full_abi_per_address_hash_acc[log.address_hash],
+            full_abi_per_address_hash_acc,
             events_acc
           )
 
-        {[format_decoded_log_input(result) | results], contracts_acc, events_acc}
+        {[result | results], full_abi_per_address_hash_acc, events_acc}
       end)
 
-    Enum.reverse(result)
+    all_logs_with_index =
+      all_logs
+      |> Enum.reverse()
+      |> Enum.with_index(fn element, index -> {index, element} end)
+
+    %{
+      :already_decoded_logs => already_decoded_logs,
+      :input_for_sig_provider_batched_request => input_for_sig_provider_batched_request
+    } =
+      all_logs_with_index
+      |> Enum.reduce(
+        %{
+          :already_decoded_logs => [],
+          :input_for_sig_provider_batched_request => []
+        },
+        fn {index, result}, acc ->
+          case result do
+            {:error, :try_with_sig_provider, {log, transaction_hash}} ->
+              Map.put(acc, :input_for_sig_provider_batched_request, [
+                {index,
+                 %{
+                   :log => log,
+                   :transaction_hash => transaction_hash
+                 }}
+                | acc.input_for_sig_provider_batched_request
+              ])
+
+            _ ->
+              Map.put(acc, :already_decoded_logs, [{index, result} | acc.already_decoded_logs])
+          end
+        end
+      )
+
+    decoded_with_sig_provider_logs =
+      Log.decode_events_batch_via_sig_provider(input_for_sig_provider_batched_request, skip_sig_provider?)
+
+    full_logs = already_decoded_logs ++ decoded_with_sig_provider_logs
+
+    full_logs
+    |> Enum.sort_by(fn {index, _log} -> index end, :asc)
+    |> Enum.map(fn {_index, log} ->
+      format_decoded_log_input(log)
+    end)
   end
 
   def prepare_transaction_action(action) do
@@ -363,7 +416,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     status = transaction |> Chain.transaction_to_status() |> format_status()
 
-    revert_reason = revert_reason(status, transaction)
+    revert_reason = revert_reason(status, transaction, single_transaction?)
 
     decoded_input_data = decoded_input(decoded_input)
 
@@ -487,24 +540,38 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  defp revert_reason(status, transaction) do
-    if is_binary(status) && status |> String.downcase() |> String.contains?("reverted") do
-      case TransactionView.transaction_revert_reason(transaction, @api_true) do
-        {:error, _contract_not_verified, candidates} when candidates != [] ->
-          {:ok, method_id, text, mapping} = Enum.at(candidates, 0)
-          render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
+  defp revert_reason(status, transaction, single_transaction?) do
+    reverted? = is_binary(status) && status |> String.downcase() |> String.contains?("reverted")
 
-        {:ok, method_id, text, mapping} ->
-          render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
+    cond do
+      reverted? && single_transaction? ->
+        prepare_revert_reason_for_single_transaction(transaction)
 
-        _ ->
-          hex = TransactionView.get_pure_transaction_revert_reason(transaction)
-          render(__MODULE__, "revert_reason.json", raw: hex)
-      end
+      reverted? && !single_transaction? ->
+        %Transaction{revert_reason: revert_reason} = transaction
+        render(__MODULE__, "revert_reason.json", raw: revert_reason)
+
+      true ->
+        nil
     end
   rescue
     _ ->
       nil
+  end
+
+  defp prepare_revert_reason_for_single_transaction(transaction) do
+    case TransactionView.transaction_revert_reason(transaction, @api_true) do
+      {:error, _contract_not_verified, candidates} when candidates != [] ->
+        {:ok, method_id, text, mapping} = Enum.at(candidates, 0)
+        render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
+
+      {:ok, method_id, text, mapping} ->
+        render(__MODULE__, "decoded_input.json", method_id: method_id, text: text, mapping: mapping, error?: true)
+
+      _ ->
+        hex = TransactionView.get_pure_transaction_revert_reason(transaction)
+        render(__MODULE__, "revert_reason.json", raw: hex)
+    end
   end
 
   @doc """

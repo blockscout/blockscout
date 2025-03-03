@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.Proxy.XnameController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.API.V2.AddressController
+  alias BlockScoutWeb.API.RPC.ContractController
 
   alias Explorer.ThirdPartyIntegrations.Xname
 
@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.XnameController do
   """
   @spec address(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def address(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, _address_hash, _address} <- AddressController.validate_address(address_hash_string, params),
+    with {:ok, _address_hash, _address} <- ContractController.validate_address(address_hash_string, params),
          url = Xname.address_url(address_hash_string),
          {response, status} <- Xname.api_request(url, conn),
          {:is_empty_response, false} <- {:is_empty_response, is_nil(response)} do

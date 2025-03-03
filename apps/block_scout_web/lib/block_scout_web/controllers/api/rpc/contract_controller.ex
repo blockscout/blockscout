@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   require Logger
 
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.RPC.{AddressController, Helper}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, SmartContract}
@@ -16,7 +17,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
-  import BlockScoutWeb.API.V2.AddressController, only: [validate_address: 2, validate_address: 3]
 
   if @chain_type == :zksync do
     @optimization_runs "0"
@@ -768,4 +768,21 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp parse_optimization(true), do: true
 
   defp parse_optimization(_), do: :error
+
+  @doc """
+   Checks if this valid address hash string, and this address is not prohibited address.
+   Returns the `{:ok, address_hash, address}` if address hash passed all the checks.
+  """
+  @spec validate_address(String.t(), any(), Keyword.t()) ::
+          {:format, :error}
+          | {:not_found, {:error, :not_found}}
+          | {:restricted_access, true}
+          | {:ok, Hash.t(), Address.t()}
+  def validate_address(address_hash_string, params, options \\ @api_true) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, options, false)} do
+      {:ok, address_hash, address}
+    end
+  end
 end

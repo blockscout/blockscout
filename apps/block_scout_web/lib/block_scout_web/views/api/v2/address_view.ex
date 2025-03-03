@@ -216,20 +216,26 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         ) :: map()
   def fetch_and_render_token_instance(token_id, token, address_hash, token_balance) do
     token_instance =
-      case Chain.nft_instance_from_token_id_and_token_address(
+      case Instance.nft_instance_by_token_id_and_token_address(
              token_id,
              token.contract_address_hash,
              @api_true
            ) do
         # `%{hash: address_hash}` will match with `address_with_info(_, address_hash)` clause in `BlockScoutWeb.API.V2.Helper`
         {:ok, token_instance} ->
-          %Instance{token_instance | owner: %{hash: address_hash}, current_token_balance: token_balance}
+          %Instance{
+            token_instance
+            | owner: %{hash: address_hash},
+              owner_address_hash: address_hash,
+              current_token_balance: token_balance
+          }
 
         {:error, :not_found} ->
           %Instance{
             token_id: token_id,
             metadata: nil,
             owner: %Address{hash: address_hash},
+            owner_address_hash: address_hash,
             current_token_balance: token_balance,
             token_contract_address_hash: token.contract_address_hash
           }

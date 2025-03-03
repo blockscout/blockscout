@@ -20,6 +20,8 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
+  alias Explorer.Chain.Token.Instance
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @api_true [api?: true]
@@ -53,9 +55,11 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
 
     transactions =
       token_transfers
-      |> Enum.map(fn token_transfer ->
-        token_transfer.transaction
-      end)
+      |> Enum.map(& &1.transaction)
+      # Celo's Epoch logs does not have an associated transaction and linked to
+      # the block instead, so we discard these token transfers for transaction
+      # decoding
+      |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
 
     decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
@@ -71,7 +75,8 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
     conn
     |> put_status(200)
     |> render(:token_transfers, %{
-      token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
+      token_transfers:
+        token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
       decoded_transactions_map: decoded_transactions_map,
       next_page_params: next_page_params
     })

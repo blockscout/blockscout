@@ -60,7 +60,6 @@ defmodule Explorer.Chain do
     PendingBlockOperation,
     SmartContract,
     Token,
-    Token.Instance,
     TokenTransfer,
     Transaction,
     Wei,
@@ -83,7 +82,6 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Cache.Helper, as: CacheHelper
   alias Explorer.Chain.Cache.PendingBlockOperation, as: PendingBlockOperationCache
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
-  alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
@@ -165,6 +163,7 @@ defmodule Explorer.Chain do
   @type paging_options :: {:paging_options, PagingOptions.t()}
   @typep balance_by_day :: %{date: String.t(), value: Wei.t()}
   @type api? :: {:api?, true | false}
+  @type show_scam_tokens? :: {:show_scam_tokens?, true | false}
 
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from the address with the given `hash`.
@@ -1082,17 +1081,32 @@ defmodule Explorer.Chain do
   def hashes_to_addresses(hashes, options) when is_list(hashes) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    query =
-      from(
-        address in Address,
-        where: address.hash in ^hashes,
-        # https://stackoverflow.com/a/29598910/470451
-        order_by: fragment("array_position(?, ?)", type(^hashes, {:array, Hash.Address}), address.hash)
-      )
-
-    query
+    hashes
+    |> hashes_to_addresses_query()
     |> join_associations(necessity_by_association)
     |> select_repo(options).all()
+  end
+
+  @doc """
+  Generates a query to convert a list of hashes to their corresponding addresses.
+
+  ## Parameters
+
+    - hashes: A list of hashes to be converted.
+
+  ## Returns
+
+    - A query that can be executed to retrieve the addresses corresponding to the provided hashes.
+  """
+  @spec hashes_to_addresses_query([Hash.Address.t()]) :: Ecto.Query.t()
+  def hashes_to_addresses_query(hashes) do
+    from(
+      address in Address,
+      as: :address,
+      where: address.hash in ^hashes,
+      # https://stackoverflow.com/a/29598910/470451
+      order_by: fragment("array_position(?, ?)", type(^hashes, {:array, Hash.Address}), address.hash)
+    )
   end
 
   @doc """
@@ -1134,54 +1148,117 @@ defmodule Explorer.Chain do
       |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
       |> select_repo(options).one()
 
-    address_updated_result =
-      case address_result do
-        %{smart_contract: smart_contract} ->
-          if smart_contract do
-            CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+    updated_address_result = update_address_result(address_result, options, false)
 
-            LookUpSmartContractSourcesOnDemand.trigger_fetch(
-              to_string(address_result.hash),
-              address_result.contract_code,
-              smart_contract
-            )
-
-            SmartContract.check_and_update_constructor_args(address_result)
-          else
-            LookUpSmartContractSourcesOnDemand.trigger_fetch(
-              to_string(address_result.hash),
-              address_result.contract_code,
-              nil
-            )
-
-            add_bytecode_twin_to_result(address_result, hash, options)
-          end
-
-        _ ->
-          if address_result do
-            LookUpSmartContractSourcesOnDemand.trigger_fetch(
-              to_string(address_result.hash),
-              address_result.contract_code,
-              nil
-            )
-          end
-
-          address_result
-      end
-
-    address_updated_result
+    updated_address_result
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
     end
   end
 
-  defp add_bytecode_twin_to_result(address_result, hash, options) do
+  @doc """
+  Finds contract addresses from a list of hashes.
+
+  ## Parameters
+
+    - `hashes`: A list of hashes to search for contract addresses.
+    - `options`: An optional keyword list of options.
+
+  ## Options
+
+    - `:necessity_by_association`: A map of associations with their necessity (default: `%{}`).
+
+  ## Returns
+
+    - `{:ok, addresses}`: A tuple with `:ok` and a list of found addresses.
+    - `{:error, :not_found}`: A tuple with `:error` and `:not_found` if no addresses are found.
+
+  """
+  @spec find_contract_addresses([Hash.Address.t()], [necessity_by_association_option]) ::
+          {:ok, [Address.t()]} | {:error, :not_found}
+  def find_contract_addresses(
+        hashes,
+        options \\ []
+      ) do
+    necessity_by_association =
+      options
+      |> Keyword.get(:necessity_by_association, %{})
+      |> Map.merge(%{
+        Implementation.proxy_implementations_association() => :optional
+      })
+
+    query =
+      from(
+        address in Address,
+        where: address.hash in ^hashes and not is_nil(address.contract_code)
+      )
+
+    addresses_result =
+      query
+      |> join_associations(necessity_by_association)
+      |> select_repo(options).all()
+
+    updated_addresses_result =
+      addresses_result
+      |> Enum.map(fn address_result ->
+        update_address_result(address_result, options, true)
+      end)
+
+    updated_addresses_result
+    |> case do
+      [] -> {:error, :not_found}
+      addresses -> {:ok, addresses}
+    end
+  end
+
+  defp update_address_result(address_result, options, decoding_from_list?) do
+    case address_result do
+      %{smart_contract: smart_contract} ->
+        if smart_contract do
+          CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+
+          LookUpSmartContractSourcesOnDemand.trigger_fetch(
+            to_string(address_result.hash),
+            address_result.contract_code,
+            smart_contract
+          )
+
+          SmartContract.check_and_update_constructor_args(address_result)
+        else
+          LookUpSmartContractSourcesOnDemand.trigger_fetch(
+            to_string(address_result.hash),
+            address_result.contract_code,
+            nil
+          )
+
+          # credo:disable-for-next-line
+          if decoding_from_list? do
+            address_result
+          else
+            add_bytecode_twin_to_result(address_result, options)
+          end
+        end
+
+      _ ->
+        if address_result do
+          LookUpSmartContractSourcesOnDemand.trigger_fetch(
+            to_string(address_result.hash),
+            address_result.contract_code,
+            nil
+          )
+        end
+
+        address_result
+    end
+  end
+
+  defp add_bytecode_twin_to_result(address_result, options) do
     address_verified_bytecode_twin_contract =
-      SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
+      SmartContract.get_address_verified_bytecode_twin_contract(address_result.hash, options).verified_contract
 
     address_result
-    |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
+    |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, address_result.hash)
   end
 
   @spec find_decompiled_contract_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
@@ -1468,7 +1545,8 @@ defmodule Explorer.Chain do
     if indexer_running?() do
       %{min: min_saved_block_number, max: max_saved_block_number} = BlockNumber.get_all()
 
-      min_blockchain_block_number = Application.get_env(:indexer, :first_block)
+      min_blockchain_block_number =
+        RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
       case {min_saved_block_number, max_saved_block_number} do
         {0, 0} ->
@@ -2463,96 +2541,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Finds the block number closest to a given timestamp, optionally adjusting
-    based on whether the block should be before or after the timestamp.
-
-    ## Parameters
-    - `given_timestamp`: The timestamp for which the closest block number is
-      being sought.
-    - `closest`: A direction indicator (`:before` or `:after`) specifying
-                whether the block number returned should be before or after the
-                given timestamp.
-    - `from_api`: A boolean flag indicating whether to use the replica database
-                  or the primary one for the query.
-
-    ## Returns
-    - `{:ok, block_number}` where `block_number` is the block number closest to
-      the specified timestamp.
-    - `{:error, :not_found}` if no block is found within the specified criteria.
-  """
-  @spec timestamp_to_block_number(DateTime.t(), :before | :after, boolean()) ::
-          {:ok, Block.block_number()} | {:error, :not_found}
-  def timestamp_to_block_number(given_timestamp, closest, from_api) do
-    consensus_blocks_query =
-      from(
-        block in Block,
-        where: block.consensus == true
-      )
-
-    gt_timestamp_query =
-      from(
-        block in consensus_blocks_query,
-        where: block.timestamp >= ^given_timestamp,
-        order_by: [asc: block.timestamp],
-        limit: 1,
-        select: block
-      )
-
-    lt_timestamp_query =
-      from(
-        block in consensus_blocks_query,
-        where: block.timestamp <= ^given_timestamp,
-        order_by: [desc: block.timestamp],
-        limit: 1,
-        select: block
-      )
-
-    union_query = lt_timestamp_query |> subquery() |> union(^gt_timestamp_query)
-
-    query =
-      from(
-        block in subquery(union_query),
-        select: block,
-        order_by: fragment("abs(extract(epoch from (? - ?)))", block.timestamp, ^given_timestamp),
-        limit: 1
-      )
-
-    repo = if from_api, do: Repo.replica(), else: Repo
-
-    query
-    |> repo.one(timeout: :infinity)
-    |> case do
-      nil ->
-        {:error, :not_found}
-
-      %{:number => number, :timestamp => timestamp} ->
-        block_number = get_block_number_based_on_closest(closest, timestamp, given_timestamp, number)
-
-        {:ok, block_number}
-    end
-  end
-
-  defp get_block_number_based_on_closest(closest, timestamp, given_timestamp, number) do
-    case closest do
-      :before ->
-        if DateTime.compare(timestamp, given_timestamp) == :lt ||
-             DateTime.compare(timestamp, given_timestamp) == :eq do
-          number
-        else
-          BlockNumberHelper.previous_block_number(number)
-        end
-
-      :after ->
-        if DateTime.compare(timestamp, given_timestamp) == :gt ||
-             DateTime.compare(timestamp, given_timestamp) == :eq do
-          number
-        else
-          BlockNumberHelper.next_block_number(number)
-        end
-    end
-  end
-
-  @doc """
   Count of pending `t:Explorer.Chain.Transaction.t/0`.
 
   A count of all pending transactions.
@@ -3158,7 +3146,7 @@ defmodule Explorer.Chain do
 
   - `binary()`: The bytecode of the smart contract.
   """
-  @spec smart_contract_bytecode(binary() | Hash.Address.t()) :: binary()
+  @spec smart_contract_bytecode(binary() | Hash.Address.t(), [api?]) :: binary()
   def smart_contract_bytecode(address_hash, options \\ []) do
     query =
       from(
@@ -3741,72 +3729,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Finds all token instances where metadata never tried to fetch
-  """
-  @spec stream_token_instances_with_unfetched_metadata(
-          initial :: accumulator,
-          reducer :: (entry :: map(), accumulator -> accumulator)
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_token_instances_with_unfetched_metadata(initial, reducer) when is_function(reducer, 2) do
-    Instance
-    |> where([instance], is_nil(instance.error) and is_nil(instance.metadata))
-    |> select([instance], %{
-      contract_address_hash: instance.token_contract_address_hash,
-      token_id: instance.token_id
-    })
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @spec stream_token_instances_with_error(
-          initial :: accumulator,
-          reducer :: (entry :: map(), accumulator -> accumulator),
-          limited? :: boolean()
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_token_instances_with_error(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
-    # likely to get valid metadata
-    high_priority = ["request error: 429", ":checkout_timeout"]
-    # almost impossible to get valid metadata
-    negative_priority = ["VM execution error", "no uri", "invalid json"]
-
-    Instance
-    |> where([instance], is_nil(instance.is_banned) or not instance.is_banned)
-    |> where([instance], not is_nil(instance.error))
-    |> where([instance], is_nil(instance.refetch_after) or instance.refetch_after < ^DateTime.utc_now())
-    |> select([instance], %{
-      contract_address_hash: instance.token_contract_address_hash,
-      token_id: instance.token_id
-    })
-    |> order_by([instance],
-      asc: instance.refetch_after,
-      desc: instance.error in ^high_priority,
-      asc: instance.error in ^negative_priority
-    )
-    |> add_fetcher_limit(limited?)
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @doc """
-  Streams a list of tokens that have been cataloged.
-  """
-  @spec stream_cataloged_tokens(
-          initial :: accumulator,
-          reducer :: (entry :: Token.t(), accumulator -> accumulator),
-          some_time_ago_updated :: integer(),
-          limited? :: boolean()
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_cataloged_tokens(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
-      when is_function(reducer, 2) do
-    some_time_ago_updated
-    |> Token.cataloged_tokens()
-    |> add_fetcher_limit(limited?)
-    |> order_by(asc: :updated_at)
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @doc """
   Fetches a `t:Token.t/0` by an address hash.
 
   ## Options
@@ -3967,142 +3889,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  @doc """
-    Expects map of change params. Inserts using on_conflict: `token_instance_metadata_on_conflict/0`
-    !!! Supposed to be used ONLY for import of `metadata` or `error`.
-  """
-  @spec upsert_token_instance(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def upsert_token_instance(params) do
-    changeset = Instance.changeset(%Instance{}, params)
-    max_retries_count_before_ban = Instance.error_to_max_retries_count_before_ban(params[:error])
-
-    Repo.insert(changeset,
-      on_conflict: token_instance_metadata_on_conflict(max_retries_count_before_ban),
-      conflict_target: [:token_id, :token_contract_address_hash]
-    )
-  end
-
-  defp token_instance_metadata_on_conflict(max_retries_count_before_ban) do
-    config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
-
-    coef = config[:exp_timeout_coeff]
-    base = config[:exp_timeout_base]
-    max_refetch_interval = config[:max_refetch_interval]
-
-    max_retry_count = :math.log(max_refetch_interval / 1000 / coef) / :math.log(base)
-
-    from(
-      token_instance in Instance,
-      update: [
-        set: [
-          metadata: fragment("EXCLUDED.metadata"),
-          error: fragment("EXCLUDED.error"),
-          owner_updated_at_block: token_instance.owner_updated_at_block,
-          owner_updated_at_log_index: token_instance.owner_updated_at_log_index,
-          owner_address_hash: token_instance.owner_address_hash,
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_instance.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at),
-          retries_count: token_instance.retries_count + 1,
-          refetch_after:
-            fragment(
-              """
-              CASE
-                WHEN ? > ? THEN
-                  NULL
-                WHEN EXCLUDED.metadata IS NULL THEN
-                  NOW() AT TIME ZONE 'UTC' + interval '1 seconds' * (? * ? ^ LEAST(? + 1.0, ?))
-              ELSE
-                NULL
-              END
-              """,
-              token_instance.retries_count + 1,
-              ^max_retries_count_before_ban,
-              ^coef,
-              ^base,
-              token_instance.retries_count,
-              ^max_retry_count
-            ),
-          is_banned:
-            fragment(
-              """
-              CASE WHEN ? > ? THEN TRUE ELSE FALSE END
-              """,
-              token_instance.retries_count + 1,
-              ^max_retries_count_before_ban
-            )
-        ]
-      ],
-      where: is_nil(token_instance.metadata)
-    )
-  end
-
-  @doc """
-  Update a new `t:Token.t/0` record.
-
-  As part of updating token, an additional record is inserted for
-  naming the address for reference if a name is provided for a token.
-  """
-  @spec update_token(Token.t(), map(), boolean()) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
-  def update_token(%Token{contract_address_hash: address_hash} = token, params \\ %{}, info_from_admin_panel? \\ false) do
-    params =
-      if Map.has_key?(params, :total_supply) do
-        Map.put(params, :total_supply_updated_at_block, BlockNumber.get_max())
-      else
-        params
-      end
-
-    filtered_params = for({key, value} <- params, value !== "" && !is_nil(value), do: {key, value}) |> Enum.into(%{})
-
-    token_changeset =
-      token
-      |> Token.changeset(Map.put(filtered_params, :updated_at, DateTime.utc_now()))
-      |> (&if(token.is_verified_via_admin_panel && !info_from_admin_panel?,
-            do: &1 |> Changeset.delete_change(:symbol) |> Changeset.delete_change(:name),
-            else: &1
-          )).()
-
-    address_name_changeset =
-      Address.Name.changeset(%Address.Name{}, Map.put(filtered_params, :address_hash, address_hash))
-
-    stale_error_field = :contract_address_hash
-    stale_error_message = "is up to date"
-
-    token_opts = [
-      on_conflict: Runner.Tokens.default_on_conflict(),
-      conflict_target: :contract_address_hash,
-      stale_error_field: stale_error_field,
-      stale_error_message: stale_error_message
-    ]
-
-    address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
-
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    insert_result =
-      Multi.new()
-      |> Multi.run(
-        :address_name,
-        fn repo, _ ->
-          {:ok, repo.insert(address_name_changeset, address_name_opts)}
-        end
-      )
-      |> Multi.run(:token, fn repo, _ ->
-        with {:error, %Changeset{errors: [{^stale_error_field, {^stale_error_message, [_]}}]}} <-
-               repo.update(token_changeset, token_opts) do
-          # the original token passed into `update_token/2` as stale error means it is unchanged
-          {:ok, token}
-        end
-      end)
-      |> Repo.transaction()
-
-    case insert_result do
-      {:ok, %{token: token}} ->
-        {:ok, token}
-
-      {:error, :token, changeset, _} ->
-        {:error, changeset}
-    end
-  end
-
   @spec fetch_last_token_balances_include_unfetched(Hash.Address.t(), [api?]) :: []
   def fetch_last_token_balances_include_unfetched(address_hash, options \\ []) do
     address_hash
@@ -4133,39 +3919,6 @@ defmodule Explorer.Chain do
         |> page_current_token_balances(paging_options)
         |> select_repo(options).all()
     end
-  end
-
-  @spec nft_instance_from_token_id_and_token_address(
-          Decimal.t() | non_neg_integer(),
-          Hash.Address.t(),
-          [api?]
-        ) ::
-          {:ok, Instance.t()} | {:error, :not_found}
-  def nft_instance_from_token_id_and_token_address(token_id, token_contract_address, options \\ []) do
-    query = Instance.token_instance_query(token_id, token_contract_address)
-
-    case select_repo(options).one(query) do
-      nil -> {:error, :not_found}
-      token_instance -> {:ok, token_instance}
-    end
-  end
-
-  @spec token_instance_exists?(non_neg_integer, Hash.Address.t(), [api?]) :: boolean
-  def token_instance_exists?(token_id, token_contract_address, options \\ []) do
-    query = Instance.token_instance_query(token_id, token_contract_address)
-
-    select_repo(options).exists?(query)
-  end
-
-  @spec token_instance_with_unfetched_metadata?(non_neg_integer, Hash.Address.t(), [api?]) :: boolean
-  def token_instance_with_unfetched_metadata?(token_id, token_contract_address, options \\ []) do
-    Instance
-    |> where([instance], is_nil(instance.error) and is_nil(instance.metadata))
-    |> where(
-      [instance],
-      instance.token_id == ^token_id and instance.token_contract_address_hash == ^token_contract_address
-    )
-    |> select_repo(options).exists?()
   end
 
   defp fetch_coin_balances(address, paging_options) do
@@ -4432,58 +4185,6 @@ defmodule Explorer.Chain do
     |> CurrentTokenBalance.token_ids_query()
     |> Repo.all()
   end
-
-  @spec address_to_unique_tokens(Hash.Address.t(), Token.t(), [paging_options | api?]) :: [Instance.t()]
-  def address_to_unique_tokens(contract_address_hash, token, options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    contract_address_hash
-    |> Instance.address_to_unique_token_instances()
-    |> Instance.page_token_instance(paging_options)
-    |> limit(^paging_options.page_size)
-    |> preload([_], owner: [:names, :smart_contract, ^Implementation.proxy_implementations_association()])
-    |> select_repo(options).all()
-    |> Enum.map(&put_owner_to_token_instance(&1, token, options))
-  end
-
-  @doc """
-    Put owner address to unique token instance. If not unique, return original instance.
-  """
-  @spec put_owner_to_token_instance(Instance.t(), Token.t(), [api?]) :: Instance.t()
-  def put_owner_to_token_instance(token_instance, token, options \\ [])
-
-  def put_owner_to_token_instance(%Instance{is_unique: nil} = token_instance, token, options) do
-    put_owner_to_token_instance(Instance.put_is_unique(token_instance, token, options), token, options)
-  end
-
-  def put_owner_to_token_instance(
-        %Instance{owner: nil, is_unique: true} = token_instance,
-        %Token{type: type},
-        options
-      )
-      when type in ["ERC-1155", "ERC-404"] do
-    owner_address_hash =
-      token_instance
-      |> Instance.owner_query()
-      |> select_repo(options).one()
-
-    owner =
-      Address.get(
-        owner_address_hash,
-        options
-        |> Keyword.merge(
-          necessity_by_association: %{
-            :names => :optional,
-            :smart_contract => :optional,
-            Implementation.proxy_implementations_association() => :optional
-          }
-        )
-      )
-
-    %{token_instance | owner: owner}
-  end
-
-  def put_owner_to_token_instance(%Instance{} = token_instance, _token, _options), do: token_instance
 
   @spec data() :: Dataloader.Ecto.t()
   def data, do: DataloaderEcto.new(Repo)
@@ -4841,64 +4542,6 @@ defmodule Explorer.Chain do
       from(
         token in Token,
         where: token.contract_address_hash == ^hash
-      )
-
-    Repo.exists?(query)
-  end
-
-  @doc """
-  Checks if a `t:Explorer.Chain.Token.Instance.t/0` with the given `hash` and `token_id` exists.
-
-  Returns `:ok` if found
-
-      iex> token = insert(:token)
-      iex> token_id = 10
-      iex> insert(:token_instance,
-      ...>  token_contract_address_hash: token.contract_address_hash,
-      ...>  token_id: token_id
-      ...> )
-      iex> Explorer.Chain.check_nft_instance_exists(token_id, token.contract_address_hash)
-      :ok
-
-  Returns `:not_found` if not found
-
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.check_nft_instance_exists(10, hash)
-      :not_found
-  """
-  @spec check_nft_instance_exists(binary() | non_neg_integer(), Hash.Address.t()) ::
-          :ok | :not_found
-  def check_nft_instance_exists(token_id, hash) do
-    token_id
-    |> nft_instance_exist?(hash)
-    |> boolean_to_check_result()
-  end
-
-  @doc """
-  Checks if a `t:Explorer.Chain.Token.Instance.t/0` with the given `hash` and `token_id` exists.
-
-  Returns `true` if found
-
-      iex> token = insert(:token)
-      iex> token_id = 10
-      iex> insert(:token_instance,
-      ...>  token_contract_address_hash: token.contract_address_hash,
-      ...>  token_id: token_id
-      ...> )
-      iex> Explorer.Chain.nft_instance_exist?(token_id, token.contract_address_hash)
-      true
-
-  Returns `false` if not found
-
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.nft_instance_exist?(10, hash)
-      false
-  """
-  @spec nft_instance_exist?(binary() | non_neg_integer(), Hash.Address.t()) :: boolean()
-  def nft_instance_exist?(token_id, hash) do
-    query =
-      from(i in Instance,
-        where: i.token_contract_address_hash == ^hash and i.token_id == ^Decimal.new(token_id)
       )
 
     Repo.exists?(query)

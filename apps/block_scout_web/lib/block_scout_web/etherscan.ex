@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Etherscan do
   @moduledoc """
   Documentation data for Etherscan-compatible API.
   """
-  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:block_scout_web, [Explorer.Chain.BridgedToken, :enabled]]
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:block_scout_web, [Explorer.Chain.BridgedToken, :enabled]]
 
   @account_balance_example_value %{
     "status" => "1",
@@ -1491,16 +1491,15 @@ defmodule BlockScoutWeb.Etherscan do
     name: "txlistinternal",
     description:
       "Get internal transactions by transaction or address hash. Up to a maximum of 10,000 internal transactions. Also available through a GraphQL 'transaction' query.",
-    required_params: [
+    required_params: [],
+    optional_params: [
       %{
         key: "txhash",
         placeholder: "transactionHash",
         type: "string",
         description:
-          "Transaction hash. Hash of contents of the transaction. A transaction hash or address hash is required."
-      }
-    ],
-    optional_params: [
+          "Transaction hash. Hash of contents of the transaction. Optional parameter to filter results by a specific transaction hash."
+      },
       %{
         key: "address",
         placeholder: "addressHash",
@@ -2010,7 +2009,7 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
-  if @bridged_token_enabled do
+  if @bridged_tokens_enabled do
     @success_status_type %{
       type: "status",
       enum: ~s(["1"]),
@@ -3064,7 +3063,7 @@ defmodule BlockScoutWeb.Etherscan do
     @token_gettokenholders_action
   ]
 
-  @token_actions if @bridged_token_enabled,
+  @token_actions if @bridged_tokens_enabled,
                    do: [@token_bridgedtokenlist_action, @base_token_actions],
                    else: @base_token_actions
 

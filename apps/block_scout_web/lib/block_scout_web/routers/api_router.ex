@@ -169,6 +169,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:transaction_hash_param/state-changes", V2.TransactionController, :state_changes)
       get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
 
+      if @chain_type == :neon do
+        get("/:transaction_hash_param/external-transactions", V2.TransactionController, :external_transactions)
+      end
+
       if @chain_type == :ethereum do
         get("/:transaction_hash_param/blobs", V2.TransactionController, :blobs)
       end
@@ -178,10 +182,9 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/", V2.TokenTransferController, :token_transfers)
     end
 
-    # todo: enable this endpoint when DB index for underlying DB query will be installed.
-    # scope "/internal-transactions" do
-    #   get("/", V2.InternalTransactionController, :internal_transactions)
-    # end
+    scope "/internal-transactions" do
+      get("/", V2.InternalTransactionController, :internal_transactions)
+    end
 
     scope "/blocks" do
       get("/", V2.BlockController, :blocks)
@@ -336,12 +339,36 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/proxy" do
+      scope "/3dparty" do
+        scope "/noves-fi" do
+          get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
+
+          get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+
+          get("/transaction-descriptions", V2.Proxy.NovesFiController, :describe_transactions)
+        end
+
+        scope "/xname" do
+          get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
+        end
+
+        scope "/solidityscan" do
+          get("/smart-contracts/:address_hash/report", V2.SmartContractController, :solidityscan_report)
+        end
+      end
+
+      # todo: this endpoint should be removed in 7.1.0 release
       scope "/noves-fi" do
         get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
 
         get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
 
         get("/transaction-descriptions", V2.Proxy.NovesFiController, :describe_transactions)
+      end
+
+      # todo: this endpoint should be removed in 7.1.0 release
+      scope "/xname" do
+        get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
       end
 
       scope "/account-abstraction" do
@@ -357,14 +384,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/accounts", V2.Proxy.AccountAbstractionController, :accounts)
         get("/bundles", V2.Proxy.AccountAbstractionController, :bundles)
         get("/operations", V2.Proxy.AccountAbstractionController, :operations)
-      end
-
-      scope "/zerion" do
-        get("/wallets/:address_hash_param/portfolio", V2.Proxy.ZerionController, :wallet_portfolio)
-      end
-
-      scope "/xname" do
-        get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
+        get("/status", V2.Proxy.AccountAbstractionController, :status)
       end
 
       scope "/metadata" do
@@ -467,7 +487,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   scope "/v1", as: :api_v1 do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC, V1}
-    alias BlockScoutWeb.API.V1.{GasPriceOracleController, HealthController}
+    alias BlockScoutWeb.API.V1.GasPriceOracleController
     alias BlockScoutWeb.API.V2.SearchController
 
     # leave the same endpoint in v1 in order to keep backward compatibility
@@ -483,13 +503,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     if @chain_type == :celo do
       get("/celo-election-rewards-csv", AddressTransactionController, :celo_election_rewards_csv)
-    end
-
-    # todo: remove it in the future. Path /api/health should be used instead.
-    scope "/health" do
-      get("/", HealthController, :health_old)
-      get("/liveness", HealthController, :liveness)
-      get("/readiness", HealthController, :readiness)
     end
 
     get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)
@@ -518,11 +531,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   end
 
   scope "/health" do
-    alias BlockScoutWeb.API.V1.HealthController
-    get("/", HealthController, :health)
-    get("/liveness", HealthController, :liveness)
-    get("/readiness", HealthController, :readiness)
-    get("/multichain-search-export", HealthController, :multichain_search_db_export)
+    get("/", BlockScoutWeb.API.HealthController, :health)
+    get("/liveness", BlockScoutWeb.API.HealthController, :liveness)
+    get("/readiness", BlockScoutWeb.API.HealthController, :readiness)
+    get("/multichain-search-export", BlockScoutWeb.API.HealthController, :multichain_search_db_export)
   end
 
   # For backward compatibility. Should be removed

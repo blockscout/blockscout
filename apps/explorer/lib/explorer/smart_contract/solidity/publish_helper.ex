@@ -211,7 +211,7 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
     params = process_params(input)
 
     address_hash
-    |> Publisher.publish_smart_contract(params, abi, file_path)
+    |> Publisher.publish_smart_contract(params, abi, true, file_path)
     |> process_response()
   end
 
@@ -219,7 +219,7 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
     params = process_params(input)
 
     address_hash
-    |> Publisher.publish_smart_contract(params, abi)
+    |> Publisher.publish_smart_contract(params, abi, false)
     |> process_response()
   end
 

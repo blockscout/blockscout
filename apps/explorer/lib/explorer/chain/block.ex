@@ -283,12 +283,6 @@ defmodule Explorer.Chain.Block do
   end
 
   def blocks_without_reward_query do
-    consensus_blocks_query =
-      from(
-        block in __MODULE__,
-        where: block.consensus == true
-      )
-
     validator_rewards =
       from(
         r in Reward,
@@ -296,10 +290,24 @@ defmodule Explorer.Chain.Block do
       )
 
     from(
-      b in subquery(consensus_blocks_query),
+      b in subquery(consensus_blocks_query()),
       left_join: r in subquery(validator_rewards),
       on: [block_hash: b.hash],
       where: is_nil(r.block_hash)
+    )
+  end
+
+  @doc """
+    Returns a query that filters blocks where consensus is true.
+
+    ## Returns
+    - An `Ecto.Query.t()` that can be used to fetch consensus blocks.
+  """
+  @spec consensus_blocks_query() :: Ecto.Query.t()
+  def consensus_blocks_query do
+    from(
+      block in __MODULE__,
+      where: block.consensus == true
     )
   end
 

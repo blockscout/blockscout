@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.TokenInstance.Retry do
 
   import Indexer.Fetcher.TokenInstance.Helper
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Token.Instance
   alias Indexer.BufferedTask
 
   @behaviour BufferedTask
@@ -31,7 +31,7 @@ defmodule Indexer.Fetcher.TokenInstance.Retry do
   @impl BufferedTask
   def init(initial_acc, reducer, _) do
     {:ok, acc} =
-      Chain.stream_token_instances_with_error(
+      Instance.stream_token_instances_with_error(
         initial_acc,
         fn data, acc ->
           reduce_if_queue_is_not_full(data, acc, reducer)

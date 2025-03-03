@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   alias Explorer.Chain.Events.Subscriber
 
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
+  alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
 
   describe "/tokens/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -1077,6 +1078,43 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
                  "https://ipfs.io/ipfs/QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/gm%20gm%20feelin%20blue%204k.png"
              } = json_response(request, 200)
     end
+
+    # https://github.com/blockscout/blockscout/issues/11149
+    test "regression for #11149", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      old_env = Application.get_env(:indexer, :ipfs)
+
+      public_ipfs_gateway = "https://ipfs_custom.io/ipfs"
+
+      Application.put_env(
+        :indexer,
+        :ipfs,
+        Keyword.merge(old_env,
+          gateway_url_param_key: "secret_key",
+          gateway_url_param_value: "secret_value",
+          gateway_url_param_location: :query,
+          gateway_url: "http://localhost/",
+          public_gateway_url: public_ipfs_gateway
+        )
+      )
+
+      insert(:token_instance,
+        token_id: 0,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{
+          "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/123.png"
+        }
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
+
+      assert %{
+               "image_url" => "https://ipfs_custom.io/ipfs/QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/123.png"
+             } = json_response(request, 200)
+
+      Application.put_env(:indexer, :ipfs, old_env)
+    end
   end
 
   describe "/tokens/{address_hash}/instances/{token_id}/transfers" do
@@ -1661,6 +1699,75 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert token_instance_from_db.metadata == metadata
 
       Application.put_env(:explorer, :http_adapter, HTTPoison)
+    end
+  end
+
+  describe "/tokens/{address_hash}/instances/refetch-metadata" do
+    setup :set_mox_from_context
+
+    setup :verify_on_exit!
+
+    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      Application.put_env(:block_scout_web, :sensitive_endpoints_api_key, "abc")
+      mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
+      start_supervised!(
+        {NFTCollectionMetadataRefetchOnDemand,
+         [mocked_json_rpc_named_arguments, [name: NFTCollectionMetadataRefetchOnDemand]]}
+      )
+
+      %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :sensitive_endpoints_api_key, nil)
+      end)
+
+      :ok
+    end
+
+    test "token instance metadata on-demand re-fetcher is called", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      for id <- 1..5 do
+        insert(:token_instance,
+          token_id: id,
+          token_contract_address_hash: token.contract_address_hash,
+          metadata: %{}
+        )
+      end
+
+      request =
+        patch(
+          conn,
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/refetch-metadata",
+          %{
+            "api_key" => "abc"
+          }
+        )
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+
+      :timer.sleep(100)
+
+      token_instances_from_db = Repo.all(Instance, token_contract_address_hash: token.contract_address_hash)
+
+      assert(token_instances_from_db)
+
+      for token_instance_from_db <- token_instances_from_db do
+        assert token_instance_from_db.metadata == nil
+        assert token_instance_from_db.error == ":marked_to_refetch"
+      end
+    end
+
+    test "don't trigger metadata re-fetch, if no admin api key is provided", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      request =
+        patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/refetch-metadata")
+
+      assert %{"message" => "Wrong API key"} = json_response(request, 401)
     end
   end
 
