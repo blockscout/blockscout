@@ -1367,12 +1367,7 @@ defmodule Explorer.Chain.SmartContract do
   def set_smart_contracts_certified_flag(address_hash_strings) do
     address_hashes =
       address_hash_strings
-      |> Enum.map(fn address_hash_string ->
-        case Chain.string_to_address_hash(address_hash_string) do
-          {:ok, address_hash} -> address_hash
-          _ -> nil
-        end
-      end)
+      |> Enum.map(&Chain.string_to_address_hash_or_nil(&1))
       |> Enum.reject(&is_nil/1)
 
     currently_certified_contracts_addresses_hashes_query =
