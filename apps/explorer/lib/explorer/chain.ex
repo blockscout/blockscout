@@ -66,6 +66,8 @@ defmodule Explorer.Chain do
     Withdrawal
   }
 
+  alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
+
   alias Explorer.Chain.Cache.{
     BlockNumber,
     Blocks,
@@ -207,7 +209,7 @@ defmodule Explorer.Chain do
             InternalTransaction
             |> InternalTransaction.where_nonpending_block()
             |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
-            |> where_block_number_in_period(from_block, to_block)
+            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
             |> common_where_limit_order(paging_options)
             |> wrapped_union_subquery()
 
@@ -215,7 +217,7 @@ defmodule Explorer.Chain do
             InternalTransaction
             |> InternalTransaction.where_nonpending_block()
             |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
-            |> where_block_number_in_period(from_block, to_block)
+            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
             |> common_where_limit_order(paging_options)
             |> wrapped_union_subquery()
 
@@ -223,7 +225,7 @@ defmodule Explorer.Chain do
             InternalTransaction
             |> InternalTransaction.where_nonpending_block()
             |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
-            |> where_block_number_in_period(from_block, to_block)
+            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
             |> common_where_limit_order(paging_options)
             |> wrapped_union_subquery()
 
@@ -239,7 +241,7 @@ defmodule Explorer.Chain do
           InternalTransaction
           |> InternalTransaction.where_nonpending_block()
           |> InternalTransaction.where_address_fields_match(hash, direction)
-          |> where_block_number_in_period(from_block, to_block)
+          |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
           |> common_where_limit_order(paging_options)
           |> preload(:block)
           |> join_associations(necessity_by_association)
@@ -402,7 +404,7 @@ defmodule Explorer.Chain do
         preloaded_query
         |> page_logs(paging_options)
         |> filter_topic(Keyword.get(options, :topic))
-        |> where_block_number_in_period(from_block, to_block)
+        |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
         |> join_associations(necessity_by_association)
         |> select_repo(options).all()
         |> Enum.take(paging_options.page_size)
@@ -416,28 +418,6 @@ defmodule Explorer.Chain do
       where:
         log.first_topic == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
           log.fourth_topic == ^topic
-    )
-  end
-
-  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and not is_nil(to_block) do
-    from(q in base_query,
-      where: q.block_number <= ^to_block
-    )
-  end
-
-  def where_block_number_in_period(base_query, from_block, to_block) when not is_nil(from_block) and is_nil(to_block) do
-    from(q in base_query,
-      where: q.block_number > ^from_block
-    )
-  end
-
-  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block) do
-    base_query
-  end
-
-  def where_block_number_in_period(base_query, from_block, to_block) do
-    from(q in base_query,
-      where: q.block_number > ^from_block and q.block_number <= ^to_block
     )
   end
 
@@ -4745,32 +4725,6 @@ defmodule Explorer.Chain do
   @spec to_block(keyword) :: any
   def to_block(options) do
     Keyword.get(options, :to_block) || nil
-  end
-
-  def convert_date_to_min_block(date_str) do
-    date_format = "%Y-%m-%d"
-
-    {:ok, date} =
-      date_str
-      |> Timex.parse(date_format, :strftime)
-
-    {:ok, day_before} =
-      date
-      |> Timex.shift(days: -1)
-      |> Timex.format(date_format, :strftime)
-
-    convert_date_to_max_block(day_before)
-  end
-
-  def convert_date_to_max_block(date) do
-    query =
-      from(block in Block,
-        where: fragment("DATE(timestamp) = TO_DATE(?, 'YYYY-MM-DD')", ^date),
-        select: max(block.number)
-      )
-
-    query
-    |> Repo.one()
   end
 
   def address_hash_is_smart_contract?(nil), do: false
