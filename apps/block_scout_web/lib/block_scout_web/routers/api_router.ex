@@ -55,6 +55,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
+    plug(:fetch_cookies)
   end
 
   pipeline :api_v2 do
