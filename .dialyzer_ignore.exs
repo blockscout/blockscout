@@ -6,5 +6,11 @@
     {"lib/explorer/smart_contract/vyper/publisher_worker.ex", :pattern_match, 1},
     {"lib/explorer/smart_contract/vyper/publisher_worker.ex", :exact_eq, 8},
     {"lib/explorer/smart_contract/vyper/publisher_worker.ex", :pattern_match, 8},
-    {"lib/phoenix/router.ex", :pattern_match, 402}
+    {"lib/explorer/smart_contract/stylus/publisher_worker.ex", :pattern_match, 1},
+    {"lib/explorer/smart_contract/stylus/publisher_worker.ex", :exact_eq, 14},
+    {"lib/explorer/smart_contract/stylus/publisher_worker.ex", :pattern_match, 14},
+    ~r/lib\/phoenix\/router.ex/,
+    {"lib/explorer/chain/search.ex", :pattern_match, 80},
+    {"lib/explorer/chain/search.ex", :pattern_match, 227},
+    {"lib/explorer/chain/search.ex", :pattern_match, 322}
 ]
