@@ -37,6 +37,7 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
 
   require Logger
 
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: ArbitrumDbUtils
   alias Indexer.Fetcher.Arbitrum.Workers.Backfill
@@ -63,7 +64,9 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
               "to allow for json_rpc calls when running."
     end
 
-    indexer_first_block = Application.get_all_env(:indexer)[:first_block]
+    indexer_first_block =
+      RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
+
     rollup_chunk_size = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum][:rollup_chunk_size]
     backfill_blocks_depth = Application.get_all_env(:indexer)[__MODULE__][:backfill_blocks_depth]
     recheck_interval = Application.get_all_env(:indexer)[__MODULE__][:recheck_interval]

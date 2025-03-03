@@ -23,8 +23,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     reading_enabled: [:block_scout_web, [__MODULE__, :reading_enabled]],
     writing_enabled: [:block_scout_web, [__MODULE__, :writing_enabled]]
 
-  alias BlockScoutWeb.AddressTransactionController
-
   alias BlockScoutWeb.Routers.{
     AddressBadgesApiV2Router,
     APIKeyV2Router,
@@ -102,6 +100,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
     plug(RateLimit, graphql?: true)
+    plug(BlockScoutWeb.Plug.GraphQLSchemaIntrospection)
   end
 
   alias BlockScoutWeb.API.V2
@@ -219,9 +218,13 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:address_hash_param/token-balances", V2.AddressController, :token_balances)
       get("/:address_hash_param/tokens", V2.AddressController, :tokens)
       get("/:address_hash_param/transactions", V2.AddressController, :transactions)
+      get("/:address_hash_param/transactions/csv", V2.CsvExportController, :transactions_csv)
       get("/:address_hash_param/token-transfers", V2.AddressController, :token_transfers)
+      get("/:address_hash_param/token-transfers/csv", V2.CsvExportController, :token_transfers_csv)
       get("/:address_hash_param/internal-transactions", V2.AddressController, :internal_transactions)
+      get("/:address_hash_param/internal-transactions/csv", V2.CsvExportController, :internal_transactions_csv)
       get("/:address_hash_param/logs", V2.AddressController, :logs)
+      get("/:address_hash_param/logs/csv", V2.CsvExportController, :logs_csv)
       get("/:address_hash_param/blocks-validated", V2.AddressController, :blocks_validated)
       get("/:address_hash_param/coin-balance-history", V2.AddressController, :coin_balance_history)
       get("/:address_hash_param/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
@@ -231,6 +234,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
       if @chain_type == :celo do
         get("/:address_hash_param/election-rewards", V2.AddressController, :celo_election_rewards)
+        get("/:address_hash_param/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
       end
     end
 
@@ -357,20 +361,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         end
       end
 
-      # todo: this endpoint should be removed in 7.1.0 release
-      scope "/noves-fi" do
-        get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
-
-        get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
-
-        get("/transaction-descriptions", V2.Proxy.NovesFiController, :describe_transactions)
-      end
-
-      # todo: this endpoint should be removed in 7.1.0 release
-      scope "/xname" do
-        get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
-      end
-
       scope "/account-abstraction" do
         get("/operations/:operation_hash_param", V2.Proxy.AccountAbstractionController, :operation)
         get("/operations/:operation_hash_param/summary", V2.Proxy.AccountAbstractionController, :summary)
@@ -487,16 +477,14 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
 
-    get("/transactions-csv", AddressTransactionController, :transactions_csv)
-
-    get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)
-
-    get("/internal-transactions-csv", AddressTransactionController, :internal_transactions_csv)
-
-    get("/logs-csv", AddressTransactionController, :logs_csv)
+    # todo: remove these old CSV export related endpoints in 7.2.0 or higher since they are moved to /api/v2/** path
+    get("/transactions-csv", V2.CsvExportController, :transactions_csv)
+    get("/token-transfers-csv", V2.CsvExportController, :token_transfers_csv)
+    get("/internal-transactions-csv", V2.CsvExportController, :internal_transactions_csv)
+    get("/logs-csv", V2.CsvExportController, :logs_csv)
 
     if @chain_type == :celo do
-      get("/celo-election-rewards-csv", AddressTransactionController, :celo_election_rewards_csv)
+      get("/celo-election-rewards-csv", V2.CsvExportController, :celo_election_rewards_csv)
     end
 
     get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)

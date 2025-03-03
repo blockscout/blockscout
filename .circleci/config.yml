@@ -107,7 +107,7 @@ jobs:
           paths:
             - .circleci
             - .credo.exs
-            - .dialyzer-ignore
+            - .dialyzer_ignore.exs
             - .formatter.exs
             - .git
             - .gitignore

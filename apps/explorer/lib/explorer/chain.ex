@@ -66,6 +66,8 @@ defmodule Explorer.Chain do
     Withdrawal
   }
 
+  alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
+
   alias Explorer.Chain.Cache.{
     BlockNumber,
     Blocks,
@@ -207,7 +209,7 @@ defmodule Explorer.Chain do
             InternalTransaction
             |> InternalTransaction.where_nonpending_block()
             |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
-            |> where_block_number_in_period(from_block, to_block)
+            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
             |> common_where_limit_order(paging_options)
             |> wrapped_union_subquery()
 
@@ -215,7 +217,7 @@ defmodule Explorer.Chain do
             InternalTransaction
             |> InternalTransaction.where_nonpending_block()
             |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
-            |> where_block_number_in_period(from_block, to_block)
+            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
             |> common_where_limit_order(paging_options)
             |> wrapped_union_subquery()
 
@@ -223,7 +225,7 @@ defmodule Explorer.Chain do
             InternalTransaction
             |> InternalTransaction.where_nonpending_block()
             |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
-            |> where_block_number_in_period(from_block, to_block)
+            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
             |> common_where_limit_order(paging_options)
             |> wrapped_union_subquery()
 
@@ -239,7 +241,7 @@ defmodule Explorer.Chain do
           InternalTransaction
           |> InternalTransaction.where_nonpending_block()
           |> InternalTransaction.where_address_fields_match(hash, direction)
-          |> where_block_number_in_period(from_block, to_block)
+          |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
           |> common_where_limit_order(paging_options)
           |> preload(:block)
           |> join_associations(necessity_by_association)
@@ -402,7 +404,7 @@ defmodule Explorer.Chain do
         preloaded_query
         |> page_logs(paging_options)
         |> filter_topic(Keyword.get(options, :topic))
-        |> where_block_number_in_period(from_block, to_block)
+        |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
         |> join_associations(necessity_by_association)
         |> select_repo(options).all()
         |> Enum.take(paging_options.page_size)
@@ -416,28 +418,6 @@ defmodule Explorer.Chain do
       where:
         log.first_topic == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
           log.fourth_topic == ^topic
-    )
-  end
-
-  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and not is_nil(to_block) do
-    from(q in base_query,
-      where: q.block_number <= ^to_block
-    )
-  end
-
-  def where_block_number_in_period(base_query, from_block, to_block) when not is_nil(from_block) and is_nil(to_block) do
-    from(q in base_query,
-      where: q.block_number > ^from_block
-    )
-  end
-
-  def where_block_number_in_period(base_query, from_block, to_block) when is_nil(from_block) and is_nil(to_block) do
-    base_query
-  end
-
-  def where_block_number_in_period(base_query, from_block, to_block) do
-    from(q in base_query,
-      where: q.block_number > ^from_block and q.block_number <= ^to_block
     )
   end
 
@@ -1148,54 +1128,117 @@ defmodule Explorer.Chain do
       |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
       |> select_repo(options).one()
 
-    address_updated_result =
-      case address_result do
-        %{smart_contract: smart_contract} ->
-          if smart_contract do
-            CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+    updated_address_result = update_address_result(address_result, options, false)
 
-            LookUpSmartContractSourcesOnDemand.trigger_fetch(
-              to_string(address_result.hash),
-              address_result.contract_code,
-              smart_contract
-            )
-
-            SmartContract.check_and_update_constructor_args(address_result)
-          else
-            LookUpSmartContractSourcesOnDemand.trigger_fetch(
-              to_string(address_result.hash),
-              address_result.contract_code,
-              nil
-            )
-
-            add_bytecode_twin_to_result(address_result, hash, options)
-          end
-
-        _ ->
-          if address_result do
-            LookUpSmartContractSourcesOnDemand.trigger_fetch(
-              to_string(address_result.hash),
-              address_result.contract_code,
-              nil
-            )
-          end
-
-          address_result
-      end
-
-    address_updated_result
+    updated_address_result
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
     end
   end
 
-  defp add_bytecode_twin_to_result(address_result, hash, options) do
+  @doc """
+  Finds contract addresses from a list of hashes.
+
+  ## Parameters
+
+    - `hashes`: A list of hashes to search for contract addresses.
+    - `options`: An optional keyword list of options.
+
+  ## Options
+
+    - `:necessity_by_association`: A map of associations with their necessity (default: `%{}`).
+
+  ## Returns
+
+    - `{:ok, addresses}`: A tuple with `:ok` and a list of found addresses.
+    - `{:error, :not_found}`: A tuple with `:error` and `:not_found` if no addresses are found.
+
+  """
+  @spec find_contract_addresses([Hash.Address.t()], [necessity_by_association_option]) ::
+          {:ok, [Address.t()]} | {:error, :not_found}
+  def find_contract_addresses(
+        hashes,
+        options \\ []
+      ) do
+    necessity_by_association =
+      options
+      |> Keyword.get(:necessity_by_association, %{})
+      |> Map.merge(%{
+        Implementation.proxy_implementations_association() => :optional
+      })
+
+    query =
+      from(
+        address in Address,
+        where: address.hash in ^hashes and not is_nil(address.contract_code)
+      )
+
+    addresses_result =
+      query
+      |> join_associations(necessity_by_association)
+      |> select_repo(options).all()
+
+    updated_addresses_result =
+      addresses_result
+      |> Enum.map(fn address_result ->
+        update_address_result(address_result, options, true)
+      end)
+
+    updated_addresses_result
+    |> case do
+      [] -> {:error, :not_found}
+      addresses -> {:ok, addresses}
+    end
+  end
+
+  defp update_address_result(address_result, options, decoding_from_list?) do
+    case address_result do
+      %{smart_contract: smart_contract} ->
+        if smart_contract do
+          CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+
+          LookUpSmartContractSourcesOnDemand.trigger_fetch(
+            to_string(address_result.hash),
+            address_result.contract_code,
+            smart_contract
+          )
+
+          SmartContract.check_and_update_constructor_args(address_result)
+        else
+          LookUpSmartContractSourcesOnDemand.trigger_fetch(
+            to_string(address_result.hash),
+            address_result.contract_code,
+            nil
+          )
+
+          # credo:disable-for-next-line
+          if decoding_from_list? do
+            address_result
+          else
+            add_bytecode_twin_to_result(address_result, options)
+          end
+        end
+
+      _ ->
+        if address_result do
+          LookUpSmartContractSourcesOnDemand.trigger_fetch(
+            to_string(address_result.hash),
+            address_result.contract_code,
+            nil
+          )
+        end
+
+        address_result
+    end
+  end
+
+  defp add_bytecode_twin_to_result(address_result, options) do
     address_verified_bytecode_twin_contract =
-      SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
+      SmartContract.get_address_verified_bytecode_twin_contract(address_result.hash, options).verified_contract
 
     address_result
-    |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
+    |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, address_result.hash)
   end
 
   @spec find_decompiled_contract_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
@@ -1482,7 +1525,8 @@ defmodule Explorer.Chain do
     if indexer_running?() do
       %{min: min_saved_block_number, max: max_saved_block_number} = BlockNumber.get_all()
 
-      min_blockchain_block_number = Application.get_env(:indexer, :first_block)
+      min_blockchain_block_number =
+        RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
       case {min_saved_block_number, max_saved_block_number} do
         {0, 0} ->
@@ -4681,32 +4725,6 @@ defmodule Explorer.Chain do
   @spec to_block(keyword) :: any
   def to_block(options) do
     Keyword.get(options, :to_block) || nil
-  end
-
-  def convert_date_to_min_block(date_str) do
-    date_format = "%Y-%m-%d"
-
-    {:ok, date} =
-      date_str
-      |> Timex.parse(date_format, :strftime)
-
-    {:ok, day_before} =
-      date
-      |> Timex.shift(days: -1)
-      |> Timex.format(date_format, :strftime)
-
-    convert_date_to_max_block(day_before)
-  end
-
-  def convert_date_to_max_block(date) do
-    query =
-      from(block in Block,
-        where: fragment("DATE(timestamp) = TO_DATE(?, 'YYYY-MM-DD')", ^date),
-        select: max(block.number)
-      )
-
-    query
-    |> Repo.one()
   end
 
   def address_hash_is_smart_contract?(nil), do: false
