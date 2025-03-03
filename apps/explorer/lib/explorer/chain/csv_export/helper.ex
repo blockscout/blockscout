@@ -55,55 +55,35 @@ defmodule Explorer.Chain.CsvExport.Helper do
   """
   @spec block_from_period(String.t(), String.t()) :: {Block.block_number(), Block.block_number()}
   def block_from_period(from_period, to_period) do
-    from_block = convert_timestamp_to_min_block(from_period)
-    to_block = convert_timestamp_to_max_block(to_period)
+    from_block = convert_date_string_to_block(from_period, :before)
+    to_block = convert_date_string_to_block(to_period, :after)
 
     {from_block, to_block}
   end
 
-  defp convert_timestamp_to_min_block(date_string) do
-    timestamp_string = date_string_to_timestamp_string(date_string)
-
-    case DateTime.from_iso8601(timestamp_string) do
-      {:ok, timestamp, _utc_offset} ->
-        case BlockGeneralReader.timestamp_to_block_number(timestamp, :after, true) do
-          {:ok, min_block} -> min_block
-          _ -> 0
-        end
-
-      _ ->
-        0
-    end
-  end
-
-  defp convert_timestamp_to_max_block(date_string) do
-    timestamp_string = date_string_to_timestamp_string(date_string)
-
-    case DateTime.from_iso8601(timestamp_string) do
-      {:ok, timestamp, _utc_offset} ->
-        case BlockGeneralReader.timestamp_to_block_number(timestamp, :before, true) do
-          {:ok, max_block} -> max_block
-          _ -> 0
-        end
-
-      _ ->
-        0
-    end
-  end
-
-  defp date?(date_string) do
-    case Date.from_iso8601(date_string) do
-      {:ok, _} -> true
-      _ -> false
-    end
-  end
-
-  defp date_string_to_timestamp_string(date_string) do
-    if date?(date_string) do
-      date_string <> "T00:00:00Z"
+  @spec convert_date_string_to_block(String.t(), :before | :after) :: integer()
+  defp convert_date_string_to_block(date_string, direction) do
+    with {:ok, timestamp, _utc_offset} <- date_string_to_timestamp(date_string),
+         {:ok, block} <- BlockGeneralReader.timestamp_to_block_number(timestamp, direction, true) do
+      block
     else
-      date_string
+      _ -> 0
     end
+  end
+
+  @spec date_string_to_timestamp(String.t()) ::
+          {:ok, DateTime.t(), Calendar.utc_offset()} | {:error, atom()}
+  defp date_string_to_timestamp(date_string) do
+    date_string
+    |> Date.from_iso8601()
+    |> case do
+      {:ok, _date} ->
+        date_string <> "T00:00:00Z"
+
+      _ ->
+        date_string
+    end
+    |> DateTime.from_iso8601()
   end
 
   def where_address_hash(query, address_hash, filter_type, filter_value) do
