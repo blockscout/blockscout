@@ -42,7 +42,7 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
 
       [result] =
         address.hash
-        |> AddressLogCsvExporter.export(from_period, to_period)
+        |> AddressLogCsvExporter.export(from_period, to_period, [])
         |> Enum.to_list()
         |> Enum.drop(1)
         |> Enum.map(fn [
@@ -118,7 +118,7 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
 
       result =
         address.hash
-        |> AddressLogCsvExporter.export(from_period, to_period)
+        |> AddressLogCsvExporter.export(from_period, to_period, [])
         |> Enum.to_list()
         |> Enum.drop(1)
 

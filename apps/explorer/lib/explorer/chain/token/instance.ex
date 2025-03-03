@@ -10,6 +10,7 @@ defmodule Explorer.Chain.Token.Instance do
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Token.Instance.Thumbnails
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.PagingOptions
 
   @default_page_size 50
@@ -188,6 +189,7 @@ defmodule Explorer.Chain.Token.Instance do
         |> where([ti], ti.owner_address_hash == ^address_hash)
         |> order_by([ti], asc: ti.token_contract_address_hash, desc: ti.token_id)
         |> limit(^paging_options.page_size)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> page_erc_721_token_instances(paging_options)
         |> Chain.join_associations(necessity_by_association)
         |> Chain.select_repo(options).all()
@@ -221,6 +223,7 @@ defmodule Explorer.Chain.Token.Instance do
         |> where([ctb: ctb], ctb.value > 0 and ctb.token_type == "ERC-1155")
         |> order_by([ti], asc: ti.token_contract_address_hash, desc: ti.token_id)
         |> limit(^paging_options.page_size)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> page_erc_1155_token_instances(paging_options)
         |> select_merge([ctb: ctb], %{current_token_balance: ctb})
         |> Chain.join_associations(necessity_by_association)
@@ -255,6 +258,7 @@ defmodule Explorer.Chain.Token.Instance do
         |> where([ctb: ctb], ctb.value > 0 and ctb.token_type == "ERC-404")
         |> order_by([ti], asc: ti.token_contract_address_hash, desc: ti.token_id)
         |> limit(^paging_options.page_size)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> page_erc_404_token_instances(paging_options)
         |> select_merge([ctb: ctb], %{current_token_balance: ctb})
         |> Chain.join_associations(necessity_by_association)
@@ -346,6 +350,7 @@ defmodule Explorer.Chain.Token.Instance do
 
     CurrentTokenBalance
     |> where([ctb], ctb.address_hash == ^address_hash and ctb.value > 0 and ctb.token_type == "ERC-721")
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> order_by([ctb], asc: ctb.token_contract_address_hash)
     |> page_erc_721_nft_collections(paging_options)
     |> limit(^paging_options.page_size)
@@ -372,6 +377,7 @@ defmodule Explorer.Chain.Token.Instance do
 
     CurrentTokenBalance
     |> where([ctb], ctb.address_hash == ^address_hash and ctb.value > 0 and ctb.token_type == "ERC-1155")
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> group_by([ctb], ctb.token_contract_address_hash)
     |> order_by([ctb], asc: ctb.token_contract_address_hash)
     |> select([ctb], %{
@@ -404,6 +410,7 @@ defmodule Explorer.Chain.Token.Instance do
 
     CurrentTokenBalance
     |> where([ctb], ctb.address_hash == ^address_hash and not is_nil(ctb.token_id) and ctb.token_type == "ERC-404")
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> group_by([ctb], ctb.token_contract_address_hash)
     |> order_by([ctb], asc: ctb.token_contract_address_hash)
     |> select([ctb], %{

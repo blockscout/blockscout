@@ -129,7 +129,6 @@ defmodule Explorer.Chain.SmartContract do
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper
   alias Explorer.SmartContract.Solidity.Verifier
 
@@ -1407,7 +1406,6 @@ defmodule Explorer.Chain.SmartContract do
     |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
     |> Chain.join_associations(necessity_by_association)
-    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
     |> maybe_filter_verified_addresses()
     |> Chain.select_repo(options).all()
   end

@@ -29,7 +29,7 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
 
       res =
         address.hash
-        |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
+        |> AddressInternalTransactionCsvExporter.export(from_period, to_period, [])
         |> Enum.to_list()
         |> Enum.drop(1)
 
@@ -190,7 +190,7 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
 
       result =
         address.hash
-        |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
+        |> AddressInternalTransactionCsvExporter.export(from_period, to_period, [])
         |> Enum.to_list()
         |> Enum.drop(1)
 
@@ -224,7 +224,7 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
 
       res =
         address.hash
-        |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
+        |> AddressInternalTransactionCsvExporter.export(from_period, to_period, [])
         |> Enum.to_list()
         |> Enum.drop(1)
 
