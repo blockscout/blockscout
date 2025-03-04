@@ -677,7 +677,7 @@ defmodule Indexer.Helper do
   ## Returns
   - Nothing.
   """
-  @spec pause_before_retry(non_neg_integer()) :: any()
+  @spec pause_before_retry(non_neg_integer()) :: :ok
   def pause_before_retry(retries_done) do
     :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
   end

@@ -171,56 +171,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
       current_chain_id
       |> InteropMessage.get_incomplete_messages(max(latest_block_number - export_expiration_blocks, 0))
       |> Enum.reduce(chainscout_map, fn message, chainscout_map_acc ->
-        {instance_chain_id, post_data, post_data_to_sign} =
-          if is_nil(message.relay_transaction_hash) do
-            timestamp = DateTime.to_unix(message.timestamp)
-            payload = "0x" <> Base.encode16(message.payload, case: :lower)
-
-            data = %{
-              sender: Hash.to_string(message.sender),
-              target: Hash.to_string(message.target),
-              nonce: message.nonce,
-              init_chain_id: message.init_chain_id,
-              init_transaction_hash: Hash.to_string(message.init_transaction_hash),
-              timestamp: timestamp,
-              relay_chain_id: message.relay_chain_id,
-              payload: payload,
-              signature: nil
-            }
-
-            data_to_sign =
-              data.sender <>
-                data.target <>
-                Integer.to_string(message.nonce) <>
-                Integer.to_string(message.init_chain_id) <>
-                data.init_transaction_hash <>
-                Integer.to_string(timestamp) <> Integer.to_string(message.relay_chain_id) <> payload
-
-            {message.relay_chain_id, data, data_to_sign}
-          else
-            data = %{
-              nonce: message.nonce,
-              init_chain_id: message.init_chain_id,
-              relay_chain_id: message.relay_chain_id,
-              relay_transaction_hash: Hash.to_string(message.relay_transaction_hash),
-              failed: message.failed,
-              signature: nil
-            }
-
-            data_to_sign =
-              Integer.to_string(message.nonce) <>
-                Integer.to_string(message.init_chain_id) <>
-                Integer.to_string(message.relay_chain_id) <> data.relay_transaction_hash <> to_string(message.failed)
-
-            {message.init_chain_id, data, data_to_sign}
-          end
-
-        {:ok, {signature, _}} =
-          post_data_to_sign
-          |> ExKeccak.hash_256()
-          |> ExSecp256k1.sign_compact(private_key)
-
-        post_data_signed = %{post_data | signature: "0x" <> Base.encode16(signature, case: :lower)}
+        {instance_chain_id, post_data_signed} = prepare_post_data(message, private_key)
 
         url_from_map = Map.get(chainscout_map_acc, instance_chain_id)
 
@@ -268,6 +219,76 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  # Prepares data to send as POST request to the remote API endpoint.
+  #
+  # ## Parameters
+  # - `message`: A map containing the existing message data.
+  # - `private_key`: A private key to sign the data with.
+  #
+  # ## Returns
+  # - `{instance_chain_id, post_data_signed}` tuple where
+  #   `instance_chain_id` is the chain id of the remote instance,
+  #   `post_data_signed` is the data map with the `signature` field.
+  @spec prepare_post_data(map(), binary()) :: {non_neg_integer(), map()}
+  defp prepare_post_data(message, private_key) when is_nil(message.relay_transaction_hash) do
+    timestamp = DateTime.to_unix(message.timestamp)
+    payload = "0x" <> Base.encode16(message.payload, case: :lower)
+
+    data = %{
+      sender: Hash.to_string(message.sender),
+      target: Hash.to_string(message.target),
+      nonce: message.nonce,
+      init_chain_id: message.init_chain_id,
+      init_transaction_hash: Hash.to_string(message.init_transaction_hash),
+      timestamp: timestamp,
+      relay_chain_id: message.relay_chain_id,
+      payload: payload,
+      signature: nil
+    }
+
+    data_to_sign =
+      data.sender <>
+        data.target <>
+        Integer.to_string(message.nonce) <>
+        Integer.to_string(message.init_chain_id) <>
+        data.init_transaction_hash <>
+        Integer.to_string(timestamp) <> Integer.to_string(message.relay_chain_id) <> payload
+
+    {:ok, {signature, _}} =
+      data_to_sign
+      |> ExKeccak.hash_256()
+      |> ExSecp256k1.sign_compact(private_key)
+
+    data_signed = %{data | signature: "0x" <> Base.encode16(signature, case: :lower)}
+
+    {message.relay_chain_id, data_signed}
+  end
+
+  defp prepare_post_data(message, private_key) do
+    data = %{
+      nonce: message.nonce,
+      init_chain_id: message.init_chain_id,
+      relay_chain_id: message.relay_chain_id,
+      relay_transaction_hash: Hash.to_string(message.relay_transaction_hash),
+      failed: message.failed,
+      signature: nil
+    }
+
+    data_to_sign =
+      Integer.to_string(message.nonce) <>
+        Integer.to_string(message.init_chain_id) <>
+        Integer.to_string(message.relay_chain_id) <> data.relay_transaction_hash <> to_string(message.failed)
+
+    {:ok, {signature, _}} =
+      data_to_sign
+      |> ExKeccak.hash_256()
+      |> ExSecp256k1.sign_compact(private_key)
+
+    data_signed = %{data | signature: "0x" <> Base.encode16(signature, case: :lower)}
+
+    {message.init_chain_id, data_signed}
   end
 
   # Prepares a map to import to the `op_interop_messages` table based on the current handling message and

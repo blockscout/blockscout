@@ -129,9 +129,9 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           {:ok, id} ->
             id
 
-          _ ->
+          {:error, reason} ->
             Logger.warning(
-              "Cannot get Chain ID from the L1 RPC. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables."
+              "Cannot get Chain ID from L1 RPC. Reason: #{inspect(reason)}. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables."
             )
 
             nil
