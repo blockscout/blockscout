@@ -8,6 +8,7 @@
 
 </div>
 
+---
 
 ## 🚀 Introduction
 
@@ -44,8 +45,7 @@ Blockscout currently supports **hundreds of chains & rollups** across the blockc
 - **Cosmos**
 - **Polkadot**
 - **Avalanche**
-- **Near** 
-
+- **Near**  
 📌 **Check the full list at:** [chains.blockscout.com](https://chains.blockscout.com)  
 
 📢 **Want to add your project?** Contact us on **[Discord](https://discord.com/invite/blockscout)**.
