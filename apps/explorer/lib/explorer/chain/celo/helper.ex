@@ -107,4 +107,18 @@ defmodule Explorer.Chain.Celo.Helper do
     fraction = Decimal.new(1, burn_fraction_fixidity_lib, 0)
     Decimal.div(fraction, base)
   end
+
+  @doc """
+  Checks if a block with given number appeared prior to Celo L2 migration.
+  """
+  @spec premigration_block_number?(Block.block_number()) :: boolean()
+  def premigration_block_number?(block_number) do
+    l2_migration_block_number = Application.get_env(:explorer, :celo)[:l2_migration_block]
+
+    if l2_migration_block_number do
+      block_number <= l2_migration_block_number
+    else
+      true
+    end
+  end
 end
