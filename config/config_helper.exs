@@ -26,7 +26,7 @@ defmodule ConfigHelper do
         zilliqa: Explorer.Repo.Zilliqa,
         zksync: Explorer.Repo.ZkSync,
         neon: Explorer.Repo.Neon,
-        bera_chain: Explorer.Repo.Berachain
+        berachain: Explorer.Repo.Berachain
       }
       |> Map.get(chain_type())
 
@@ -308,6 +308,7 @@ defmodule ConfigHelper do
   @supported_chain_types [
     "default",
     "arbitrum",
+    "berachain",
     "blackfort",
     "celo",
     "ethereum",
