@@ -668,8 +668,17 @@ defmodule Indexer.Helper do
     end
   end
 
-  # Pauses the process, incrementally increasing the sleep time up to a maximum of 20 minutes.
-  defp pause_before_retry(retries_done) do
+  @doc """
+  Pauses the process, incrementally increasing the sleep time up to a maximum of 20 minutes.
+
+  ## Parameters
+  - `retries_done`: How many retries have already been done.
+
+  ## Returns
+  - Nothing.
+  """
+  @spec pause_before_retry(non_neg_integer()) :: any()
+  def pause_before_retry(retries_done) do
     :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
   end
 end

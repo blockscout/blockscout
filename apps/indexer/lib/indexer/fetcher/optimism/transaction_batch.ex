@@ -113,6 +113,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          true <- start_block_l1 > 0,
          chunk_size = parse_integer(env[:blocks_chunk_size]),
          {:chunk_size_valid, true} <- {:chunk_size_valid, !is_nil(chunk_size) && chunk_size > 0},
+         {:block_duration_valid, true} <- {:block_duration_valid, optimism_env[:block_duration] > 0},
          {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction} =
            get_last_l1_item(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
@@ -183,6 +184,10 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
       {:chunk_size_valid, false} ->
         Logger.error("Invalid blocks chunk size value.")
+        {:stop, :normal, state}
+
+      {:block_duration_valid, false} ->
+        Logger.error("Check INDEXER_OPTIMISM_BLOCK_DURATION env variable. Its value must be a positive integer.")
         {:stop, :normal, state}
 
       {:error, error_data} ->

@@ -50,17 +50,20 @@ defmodule Indexer.Fetcher.Optimism do
   @doc """
   Fetches the chain id from the RPC (or cache).
 
+  ## Parameters
+  - `retry_attempt`: How many retries have already been done.
+
   ## Returns
   - The chain id as unsigned integer.
   - `nil` if the request failed.
   """
-  @spec fetch_chain_id() :: non_neg_integer() | nil
-  def fetch_chain_id do
+  @spec fetch_chain_id(non_neg_integer()) :: non_neg_integer() | nil
+  def fetch_chain_id(retry_attempt \\ 0) do
     case ChainId.get_id() do
       nil ->
         Logger.error("Cannot read `eth_chainId`. Retrying...")
-        :timer.sleep(3000)
-        fetch_chain_id()
+        Helper.pause_before_retry(retry_attempt)
+        fetch_chain_id(retry_attempt + 1)
 
       chain_id ->
         chain_id

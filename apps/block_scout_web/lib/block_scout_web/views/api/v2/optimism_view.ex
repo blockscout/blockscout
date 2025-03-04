@@ -261,27 +261,10 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               "payload" => "0x" <> Base.encode16(message.payload, case: :lower)
             }
 
-          msg =
-            case Map.fetch(message, :init_chain) do
-              {:ok, init_chain} ->
-                # this is incoming message
-                Map.put(msg, "init_chain", init_chain)
-
-              _ ->
-                msg
-            end
-
-          msg =
-            case Map.fetch(message, :relay_chain) do
-              {:ok, relay_chain} ->
-                # this is outgoing message
-                Map.put(msg, "relay_chain", relay_chain)
-
-              _ ->
-                msg
-            end
-
+          # add chain info depending on whether this is incoming or outgoing message
           msg
+          |> maybe_add_chain(:init_chain, message)
+          |> maybe_add_chain(:relay_chain, message)
         end),
       next_page_params: next_page_params
     }
@@ -468,6 +451,13 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       out_json
     else
       Map.put(out_json, "op_interop", interop_message)
+    end
+  end
+
+  defp maybe_add_chain(msg, chain_key, message) do
+    case Map.fetch(message, chain_key) do
+      {:ok, chain} -> Map.put(msg, Atom.to_string(chain_key), chain)
+      _ -> msg
     end
   end
 end

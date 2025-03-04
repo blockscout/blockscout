@@ -503,6 +503,8 @@ defmodule Explorer.Chain do
     - The resulting `block_number -> timestamp` map. Can be empty map (%{}).
   """
   @spec timestamp_by_block_number([non_neg_integer()]) :: map()
+  def timestamp_by_block_number([]), do: %{}
+
   def timestamp_by_block_number(block_numbers) when is_list(block_numbers) do
     query =
       from(

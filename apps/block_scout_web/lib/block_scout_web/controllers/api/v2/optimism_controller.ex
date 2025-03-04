@@ -362,14 +362,12 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   def interop_public_key(conn, _params) do
     env = Application.get_all_env(:indexer)[InteropMessageQueue]
 
-    private_key = env[:private_key] |> String.trim_leading("0x") |> Base.decode16!(case: :mixed)
-
-    case ExSecp256k1.create_public_key(private_key) do
-      {:ok, public_key} ->
-        conn
-        |> put_status(200)
-        |> render(:optimism_interop_public_key, %{public_key: "0x" <> Base.encode16(public_key, case: :lower)})
-
+    with {:ok, private_key} <- env[:private_key] |> String.trim_leading("0x") |> Base.decode16(case: :mixed),
+         {:ok, public_key} <- ExSecp256k1.create_public_key(private_key) do
+      conn
+      |> put_status(200)
+      |> render(:optimism_interop_public_key, %{public_key: "0x" <> Base.encode16(public_key, case: :lower)})
+    else
       _ ->
         Logger.error("Interop: cannot derive a public key from the private key. Private key is invalid or undefined.")
 

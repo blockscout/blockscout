@@ -85,8 +85,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with false <- is_nil(env[:chainscout_api_url]) and env[:chainscout_fallback_map] == %{},
-         private_key = env[:private_key] |> String.trim_leading("0x") |> Base.decode16!(case: :mixed),
-         {:ok, _} <- ExSecp256k1.create_public_key(private_key),
+         {:ok, _} <- ExSecp256k1.create_public_key(hex_to_binary(env[:private_key])),
          chain_id = Optimism.fetch_chain_id(),
          {:chain_id_is_nil, false} <- {:chain_id_is_nil, is_nil(chain_id)},
          block_duration = Application.get_env(:indexer, Indexer.Fetcher.Optimism)[:block_duration],
@@ -106,7 +105,6 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
          chain_id: chain_id,
          chainscout_api_url: env[:chainscout_api_url],
          chainscout_map: chainscout_map,
-         private_key: private_key,
          timeout: :timer.seconds(env[:connect_timeout]),
          recv_timeout: :timer.seconds(env[:recv_timeout]),
          export_expiration_blocks: div(env[:export_expiration] * 24 * 3600, block_duration),
@@ -158,7 +156,6 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
           chain_id: current_chain_id,
           chainscout_api_url: chainscout_api_url,
           chainscout_map: chainscout_map,
-          private_key: private_key,
           timeout: timeout,
           recv_timeout: recv_timeout,
           export_expiration_blocks: export_expiration_blocks,
@@ -167,6 +164,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
       ) do
     {:ok, latest_block_number} =
       Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+
+    private_key = hex_to_binary(Application.get_all_env(:indexer)[__MODULE__][:private_key])
 
     updated_chainscout_map =
       current_chain_id
@@ -355,5 +354,19 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
         Logger.error("Cannot post HTTP request to #{url}. Reason: #{inspect(other)}. Body: #{inspect(body)}")
         nil
     end
+  end
+
+  # Converts `0x...` string to binary.
+  #
+  # ## Parameters
+  # - `hex_string`: The string in form of `0x...`.
+  #
+  # ## Returns
+  # - A byte sequence.
+  @spec hex_to_binary(String.t()) :: binary()
+  defp hex_to_binary(hex_string) do
+    hex_string
+    |> String.trim_leading("0x")
+    |> Base.decode16!(case: :mixed)
   end
 end

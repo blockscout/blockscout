@@ -156,8 +156,9 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     - `nonce`: The nonce of the message.
 
     ## Returns
-    - `{relay_transaction_hash, failed}` tuple in case of success.
-    - `{nil, nil}` tuple if the message with the given `init_chain_id` and `nonce` is not found.
+    - `%{relay_transaction_hash, failed}` map in case of success.
+    - `%{relay_transaction_hash: nil, failed: nil}` map
+      if the message with the given `init_chain_id` and `nonce` is not found.
   """
   @spec get_relay_part(non_neg_integer(), non_neg_integer()) :: {Hash.t() | nil, boolean() | nil}
   def get_relay_part(init_chain_id, nonce) do
@@ -181,8 +182,9 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     - `nonce`: The nonce of the message.
 
     ## Returns
-    - `{sender, target, init_transaction_hash, timestamp, payload}` tuple in case of success.
-    - `{nil, nil, nil, nil, nil}` tuple if the message with the given `init_chain_id` and `nonce` is not found.
+    - `%{sender, target, init_transaction_hash, timestamp, payload}` map in case of success.
+    - `%{sender: nil, target: nil, init_transaction_hash: nil, timestamp: nil, payload: nil}` map
+      if the message with the given `init_chain_id` and `nonce` is not found.
   """
   @spec get_init_part(non_neg_integer(), non_neg_integer()) ::
           {Hash.t() | nil, Hash.t() | nil, Hash.t() | nil, DateTime.t() | nil, binary() | nil}

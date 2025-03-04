@@ -1,6 +1,10 @@
 defmodule Explorer.Chain.Cache.ChainId do
   @moduledoc """
-  Caches chain ID.
+    Caches the blockchain's chain ID to reduce repeated JSON-RPC calls.
+
+    The chain ID is fetched from the node using `eth_chainId` JSON-RPC call when the cache is empty.
+
+    This helps improve performance by avoiding repeated RPC calls for this frequently needed value.
   """
 
   require Logger
