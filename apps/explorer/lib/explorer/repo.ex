@@ -153,7 +153,7 @@ defmodule Explorer.Repo do
         Explorer.Repo.Zilliqa,
         Explorer.Repo.ZkSync,
         Explorer.Repo.Neon,
-        Explorer.Repo.BeraChain
+        Explorer.Repo.Berachain
       ] do
     defmodule repo do
       use Ecto.Repo,
