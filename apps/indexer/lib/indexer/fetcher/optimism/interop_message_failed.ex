@@ -32,7 +32,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageFailed do
 
   @fetcher_name :optimism_interop_messages_failed
   @l2tol2_cross_domain_messenger "0x4200000000000000000000000000000000000023"
-  @max_int32 2147483647
+  @max_int32 2_147_483_647
 
   # 4-byte signature of the method relayMessage((address origin, uint256 blockNumber, uint256 logIndex, uint256 timestamp, uint256 chainId), bytes _sentMessage)
   @relay_message_method "0x8d1d298f"
