@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Withdrawal do
   @primary_key false
   typed_schema "withdrawals" do
     field(:index, :integer, primary_key: true, null: false)
-    field(:validator_index, :integer, null: false)
+    field(:validator_index, :decimal, null: false)
     field(:amount, Wei, null: false)
 
     belongs_to(:address, Address,
