@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Withdrawal do
   """
 
   use Explorer.Schema
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.{Address, Block, Hash, Wei}
   alias Explorer.PagingOptions
@@ -12,8 +13,13 @@ defmodule Explorer.Chain.Withdrawal do
 
   @primary_key false
   typed_schema "withdrawals" do
-    field(:index, :integer, primary_key: true, null: false)
-    field(:validator_index, :integer, null: false)
+    field(:index, if(@chain_type == :berachain, do: :decimal, else: :integer),
+      primary_key: true,
+      null: false
+    )
+
+    field(:validator_index, if(@chain_type == :berachain, do: :decimal, else: :integer), null: false)
+
     field(:amount, Wei, null: false)
 
     belongs_to(:address, Address,
