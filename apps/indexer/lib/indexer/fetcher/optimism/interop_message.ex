@@ -36,6 +36,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
   @fetcher_name :optimism_interop_messages
   @l2tol2_cross_domain_messenger "0x4200000000000000000000000000000000000023"
   @blocks_batch_request_max_size 8
+  @max_int32 2147483647
 
   # 32-byte signature of the event SentMessage(uint256 indexed destination, address indexed target, uint256 indexed messageNonce, address sender, bytes message)
   @sent_message_event "0x382409ac69001e11931a28435afef442cbfd20d9891907e8fa373ba7d351f320"
@@ -406,7 +407,12 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
       |> block_timestamp_by_number(json_rpc_named_arguments)
 
     messages =
-      Enum.map(events, fn event ->
+      events
+      |> Enum.reject(fn event ->
+        # ignore events with abnormal chain id
+        quantity_to_integer(Enum.at(event["topics"], 1)) > @max_int32
+      end)
+      |> Enum.map(fn event ->
         block_number = quantity_to_integer(event["blockNumber"])
 
         if Enum.at(event["topics"], 0) == @sent_message_event do
