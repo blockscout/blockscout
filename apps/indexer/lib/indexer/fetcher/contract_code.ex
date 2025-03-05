@@ -18,7 +18,7 @@ defmodule Indexer.Fetcher.ContractCode do
 
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Transaction}
+  alias Explorer.Chain.{Address, Block, Hash, Transaction}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
   alias Indexer.{BufferedTask, Tracer}
