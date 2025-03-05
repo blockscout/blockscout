@@ -2,6 +2,8 @@ defmodule Explorer.Repo.Optimism.Migrations.OPInteropMessages do
   use Ecto.Migration
 
   def change do
+    drop_if_exists(table(:op_interop_messages))
+
     create table(:op_interop_messages, primary_key: false) do
       add(:sender, :bytea, null: true, default: nil)
       add(:target, :bytea, null: true, default: nil)
