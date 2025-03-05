@@ -8,6 +8,10 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
   alias Explorer.{Factory, TestHelper}
 
   describe "/advanced_filters" do
+    test "asd", %{conn: conn} do
+      request = get(conn, "/api/v2/advanced-filters?methods=0x3593564c")
+    end
+
     test "empty list", %{conn: conn} do
       request = get(conn, "/api/v2/advanced-filters")
       assert response = json_response(request, 200)

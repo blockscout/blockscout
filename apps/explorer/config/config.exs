@@ -137,6 +137,7 @@ for migrator <- [
       Explorer.Migrator.RefetchContractCodes,
       Explorer.Migrator.BackfillMultichainSearchDB,
       Explorer.Migrator.SanitizeVerifiedAddresses,
+      Explorer.Migrator.TransactionHasTokenTransfers,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
