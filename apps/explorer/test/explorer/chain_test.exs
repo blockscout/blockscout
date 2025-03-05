@@ -935,8 +935,10 @@ defmodule Explorer.ChainTest do
       Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Block.child_id())
       Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Block.child_id())
 
+      initial_env = Application.get_env(:indexer, :block_ranges)
+
       on_exit(fn ->
-        Application.put_env(:indexer, :first_block, 0)
+        Application.put_env(:indexer, :block_ranges, initial_env)
       end)
     end
 
@@ -966,14 +968,13 @@ defmodule Explorer.ChainTest do
     end
 
     test "returns 1.0 if fully indexed blocks starting from given FIRST_BLOCK" do
-      Application.put_env(:indexer, :block_ranges, "5..latest")
-
       for index <- 5..9 do
         insert(:block, number: index, consensus: true)
         Process.sleep(200)
       end
 
       BlockCache.estimated_count()
+      Application.put_env(:indexer, :block_ranges, "5..latest")
 
       assert Decimal.compare(Chain.indexed_ratio_blocks(), 1) == :eq
     end
