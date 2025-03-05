@@ -2,6 +2,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
   @moduledoc """
   Module for fetching proxy implementation from ResolvedDelegateProxy https://github.com/ethereum-optimism/optimism/blob/9580179013a04b15e6213ae8aa8d43c3f559ed9a/packages/contracts-bedrock/src/legacy/ResolvedDelegateProxy.sol
   """
+  alias Explorer.Chain
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
@@ -72,8 +73,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
   @doc """
   Get implementation address hash string following ResolvedDelegateProxy proxy pattern. It returns the value as array of the strings.
   """
-  @spec get_implementation_address_hash_strings(Hash.Address.t()) :: [binary()] | :error
-  def get_implementation_address_hash_strings(proxy_address_hash) do
+  @spec get_implementation_address_hash_strings(Hash.Address.t(), [Chain.api?()]) :: [binary()] | :error
+  def get_implementation_address_hash_strings(proxy_address_hash, _options \\ []) do
     case get_implementation_address_hash_string(proxy_address_hash) do
       nil -> []
       :error -> :error
