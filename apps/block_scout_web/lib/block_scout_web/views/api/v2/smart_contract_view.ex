@@ -189,7 +189,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_verified_via_sourcify" => smart_contract.verified_via_sourcify && smart_contract_verified,
       "is_verified_via_eth_bytecode_db" => smart_contract.verified_via_eth_bytecode_db,
       "is_verified_via_verifier_alliance" => smart_contract.verified_via_verifier_alliance,
-      "is_vyper_contract" => target_contract && target_contract.is_vyper_contract,
+      "is_vyper_contract" => target_contract && SmartContract.language(target_contract) == :vyper,
       "has_custom_methods_read" => read_custom_abi?,
       "has_custom_methods_write" => write_custom_abi?,
       "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address),
@@ -203,8 +203,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           do: AddressContractView.sourcify_repo_url(address.hash, smart_contract.partially_verified)
         ),
       "can_be_visualized_via_sol2uml" =>
-        visualize_sol2uml_enabled && target_contract && !target_contract.is_vyper_contract &&
-          !is_nil(target_contract.abi),
+        visualize_sol2uml_enabled && target_contract && SmartContract.language(target_contract) == :solidity,
       "name" => target_contract && target_contract.name,
       "compiler_version" => target_contract && target_contract.compiler_version,
       "optimization_enabled" => target_contract && target_contract.optimization,
@@ -225,7 +224,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
             target_contract &&
               SmartContract.format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
         ),
-      "language" => smart_contract_language(smart_contract),
+      "language" => SmartContract.language(smart_contract),
       "license_type" => smart_contract.license_type,
       "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false),
       "is_blueprint" => if(smart_contract.is_blueprint, do: smart_contract.is_blueprint, else: false)
@@ -321,7 +320,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         "compiler_version" => smart_contract.compiler_version,
         "optimization_enabled" => smart_contract.optimization,
         "transaction_count" => smart_contract.address.transactions_count,
-        "language" => smart_contract_language(smart_contract),
+        "language" => SmartContract.language(smart_contract),
         "verified_at" => smart_contract.inserted_at,
         "market_cap" => token && token.circulating_market_cap,
         "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
@@ -336,22 +335,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       %{target_contract: smart_contract},
       false
     )
-  end
-
-  defp smart_contract_language(smart_contract) do
-    cond do
-      smart_contract.is_vyper_contract ->
-        "vyper"
-
-      not is_nil(smart_contract.language) ->
-        smart_contract.language
-
-      is_nil(smart_contract.abi) ->
-        "yul"
-
-      true ->
-        "solidity"
-    end
   end
 
   def render_json(%{"type" => type, "value" => value}) do

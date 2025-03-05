@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_partially_verified" => target_contract.partially_verified,
         "is_fully_verified" => true,
         "is_verified_via_sourcify" => target_contract.verified_via_sourcify,
-        "is_vyper_contract" => target_contract.is_vyper_contract,
+        "is_vyper_contract" => SmartContract.language(target_contract) == :vyper,
         "has_methods_read" => true,
         "has_methods_write" => true,
         "has_methods_read_proxy" => true,
@@ -165,7 +165,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "implementations" => [%{"address" => formatted_implementation_address_hash_string, "name" => nil}],
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
-        "language" => smart_contract_language(target_contract),
+        "language" => target_contract |> SmartContract.language() |> to_string(),
         "license_type" => "none",
         "certified" => false,
         "is_blueprint" => false
@@ -236,7 +236,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_partially_verified" => target_contract.partially_verified,
         "is_fully_verified" => true,
         "is_verified_via_sourcify" => target_contract.verified_via_sourcify,
-        "is_vyper_contract" => target_contract.is_vyper_contract,
+        "is_vyper_contract" => SmartContract.language(target_contract) == :vyper,
         "has_methods_read" => true,
         "has_methods_read_proxy" => false,
         "has_methods_write" => true,
@@ -278,7 +278,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "implementations" => [],
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
-        "language" => smart_contract_language(target_contract),
+        "language" => target_contract |> SmartContract.language() |> to_string(),
         "license_type" => "gnu_agpl_v3",
         "certified" => false,
         "is_blueprint" => false
@@ -357,7 +357,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_partially_verified" => target_contract.partially_verified,
         "is_fully_verified" => false,
         "is_verified_via_sourcify" => false,
-        "is_vyper_contract" => target_contract.is_vyper_contract,
+        "is_vyper_contract" => SmartContract.language(target_contract) == :vyper,
         "has_methods_read" => true,
         "has_methods_write" => true,
         "has_methods_read_proxy" => false,
@@ -390,7 +390,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "implementations" => [],
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
-        "language" => smart_contract_language(target_contract),
+        "language" => target_contract |> SmartContract.language() |> to_string(),
         "license_type" => "none",
         "certified" => false,
         "is_blueprint" => false
@@ -522,7 +522,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_partially_verified" => target_contract.partially_verified,
         "is_fully_verified" => true,
         "is_verified_via_sourcify" => target_contract.verified_via_sourcify,
-        "is_vyper_contract" => target_contract.is_vyper_contract,
+        "is_vyper_contract" => SmartContract.language(target_contract) == :vyper,
         "has_methods_read" => true,
         "has_methods_write" => true,
         "has_methods_read_proxy" => false,
@@ -558,7 +558,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "implementations" => [],
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
-        "language" => smart_contract_language(target_contract),
+        "language" => target_contract |> SmartContract.language() |> to_string(),
         "license_type" => "none",
         "certified" => false,
         "is_blueprint" => true
@@ -3505,10 +3505,27 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert sc["address"]["is_contract"] == true
     end
 
-    test "get filtered smart contracts when flags are set", %{conn: conn} do
-      smart_contract = insert(:smart_contract, abi: nil, language: :yul)
-      insert(:smart_contract)
-      request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
+    test "get filtered smart contracts when flag is set and language is not set", %{conn: conn} do
+      smart_contracts = [
+        {"solidity", insert(:smart_contract, is_vyper_contract: false, language: nil)},
+        {"vyper", insert(:smart_contract, is_vyper_contract: true, language: nil)},
+        {"yul", insert(:smart_contract, abi: nil, is_vyper_contract: false, language: nil)}
+      ]
+
+      for {filter, smart_contract} <- smart_contracts do
+        request = get(conn, "/api/v2/smart-contracts", %{"filter" => filter})
+
+        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+        compare_item(smart_contract, sc)
+        assert sc["address"]["is_verified"] == true
+        assert sc["address"]["is_contract"] == true
+      end
+    end
+
+    test "get filtered smart contracts when flag is set and language is set", %{conn: conn} do
+      smart_contract = insert(:smart_contract, is_vyper_contract: true, language: :vyper)
+      insert(:smart_contract, is_vyper_contract: false, language: :solidity)
+      request = get(conn, "/api/v2/smart-contracts", %{"filter" => "vyper"})
 
       assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
       compare_item(smart_contract, sc)
@@ -3516,10 +3533,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert sc["address"]["is_contract"] == true
     end
 
-    test "get filtered smart contracts when language is set", %{conn: conn} do
-      smart_contract = insert(:smart_contract, is_vyper_contract: true, language: :vyper)
-      insert(:smart_contract, is_vyper_contract: false)
-      request = get(conn, "/api/v2/smart-contracts", %{"filter" => "vyper"})
+    test "get filtered smart contracts when flag is not set and language is set", %{conn: conn} do
+      smart_contract = insert(:smart_contract, is_vyper_contract: nil, abi: nil, language: :yul)
+      insert(:smart_contract, is_vyper_contract: nil, language: :vyper)
+      insert(:smart_contract, is_vyper_contract: nil, language: :solidity)
+      request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
 
       assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
       compare_item(smart_contract, sc)
@@ -3529,7 +3547,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
     if Application.compile_env(:explorer, :chain_type) == :zilliqa do
       test "get filtered scilla smart contracts when language is set", %{conn: conn} do
-        smart_contract = insert(:smart_contract, language: :scilla)
+        smart_contract = insert(:smart_contract, language: :scilla, abi: nil)
         insert(:smart_contract)
         request = get(conn, "/api/v2/smart-contracts", %{"filter" => "scilla"})
 
@@ -3537,6 +3555,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         compare_item(smart_contract, sc)
         assert sc["address"]["is_verified"] == true
         assert sc["address"]["is_contract"] == true
+      end
+
+      test "scilla contracts are not returned when yul filter is applied", %{conn: conn} do
+        insert(:smart_contract, language: :scilla, abi: nil)
+        request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
+
+        assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
       end
     end
 
@@ -3676,7 +3701,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
     assert smart_contract.optimization == json["optimization_enabled"]
 
-    assert json["language"] == smart_contract_language(smart_contract)
+    assert json["language"] == smart_contract |> SmartContract.language() |> to_string()
     assert json["verified_at"]
     assert !is_nil(smart_contract.constructor_arguments) == json["has_constructor_args"]
     assert Address.checksum(smart_contract.address_hash) == json["address"]["hash"]
@@ -3708,22 +3733,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
          ]}
       end
     )
-  end
-
-  defp smart_contract_language(smart_contract) do
-    cond do
-      smart_contract.is_vyper_contract ->
-        "vyper"
-
-      is_nil(smart_contract.abi) ->
-        "yul"
-
-      is_nil(smart_contract.language) ->
-        "solidity"
-
-      true ->
-        to_string(smart_contract.language)
-    end
   end
 
   defp mock_logic_storage_pointer_request(error?, address_hash) do
