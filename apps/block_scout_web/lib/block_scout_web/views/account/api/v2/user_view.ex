@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   alias Ecto.Changeset
   alias Explorer.Account.WatchlistAddress
   alias Explorer.Chain
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.Address
 
   def render("message.json", assigns) do
     AccountView.render("message.json", assigns)
@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   end
 
   def render("watchlist_address.json", %{watchlist_address: watchlist_address, exchange_rate: exchange_rate}) do
-    address = get_address(watchlist_address.address_hash)
+    address = Address.get_address_by_hash(watchlist_address.address_hash)
     prepare_watchlist_address(watchlist_address, address, exchange_rate)
   end
 
@@ -149,7 +149,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
       watchlist_addresses
       |> Enum.map(& &1.address_hash)
 
-    addresses = get_addresses(address_hashes)
+    addresses = Address.get_addresses_by_hashes(address_hashes)
 
     watchlist_addresses
     |> Enum.zip(addresses)
@@ -159,7 +159,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   end
 
   defp prepare_custom_abi(custom_abi) do
-    address = get_address(custom_abi.address_hash)
+    address = Address.get_address_by_hash(custom_abi.address_hash)
 
     %{
       "id" => custom_abi.id,
@@ -175,7 +175,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   end
 
   defp prepare_address_tag(address_tag) do
-    address = get_address(address_tag.address_hash)
+    address = Address.get_address_by_hash(address_tag.address_hash)
 
     %{
       "id" => address_tag.id,
@@ -198,7 +198,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   defp prepare_public_tags_request(public_tags_request) do
     addresses =
       Enum.map(public_tags_request.addresses, fn address_hash ->
-        Helper.address_with_info(nil, get_address(address_hash), address_hash, false)
+        Helper.address_with_info(nil, Address.get_address_by_hash(address_hash), address_hash, false)
       end)
 
     %{
@@ -214,29 +214,5 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
       "is_owner" => public_tags_request.is_owner,
       "submission_date" => public_tags_request.inserted_at
     }
-  end
-
-  @spec get_address(Hash.Address.t()) :: Chain.Address.t() | nil
-  defp get_address(address_hash) do
-    case Chain.hash_to_address(
-           address_hash,
-           [
-             necessity_by_association: %{:smart_contract => :optional, proxy_implementations_association() => :optional}
-           ],
-           false
-         ) do
-      {:ok, address} -> address
-      _ -> nil
-    end
-  end
-
-  @spec get_addresses([Hash.Address.t()]) :: [Chain.Address.t()]
-  defp get_addresses(address_hashes) do
-    necessity_by_association = %{:smart_contract => :optional, proxy_implementations_association() => :optional}
-
-    address_hashes
-    |> Chain.hashes_to_addresses_query()
-    |> Chain.join_associations(necessity_by_association)
-    |> Chain.select_repo(api?: true).all()
   end
 end
