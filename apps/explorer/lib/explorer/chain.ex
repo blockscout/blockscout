@@ -855,7 +855,9 @@ defmodule Explorer.Chain do
   end
 
   defp check_indexing_internal_transactions_threshold do
-    min_blockchain_trace_block_number = Application.get_env(:indexer, :trace_first_block)
+    min_blockchain_trace_block_number =
+      RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :trace_block_ranges))
+
     %{max: max_saved_block_number} = BlockNumber.get_all()
     pending_ops_entity = SwitchPendingOperations.actual_entity()
     pbo_count = pending_ops_entity.blocks_count_in_range(min_blockchain_trace_block_number, max_saved_block_number)
@@ -1832,6 +1834,16 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Finds transactions by hashes
+  """
+  @spec get_transactions_by_hashes([Hash.t()]) :: [Transaction.t()]
+  def get_transactions_by_hashes(transaction_hashes) do
+    transaction_hashes
+    |> Transaction.transactions_by_hashes()
+    |> Repo.all()
+  end
+
+  @doc """
   Finds all Blocks validated by the address with the given hash.
 
     ## Options
@@ -1963,14 +1975,14 @@ defmodule Explorer.Chain do
       case SwitchPendingOperations.pending_operations_type() do
         "blocks" ->
           from(
-            po in PendingBlockOperation,
-            where: po.block_hash in ^block_hashes
+            pbo in PendingBlockOperation,
+            where: pbo.block_hash in ^block_hashes
           )
 
         "transactions" ->
           from(
-            po in PendingTransactionOperation,
-            join: t in assoc(po, :transaction),
+            pto in PendingTransactionOperation,
+            join: t in assoc(pto, :transaction),
             where: t.block_hash in ^block_hashes
           )
       end
@@ -1985,16 +1997,16 @@ defmodule Explorer.Chain do
       case SwitchPendingOperations.pending_operations_type() do
         "blocks" ->
           from(
-            po in PendingBlockOperation,
+            pbo in PendingBlockOperation,
             inner_join: block in Block,
-            on: block.hash == po.block_hash,
+            on: block.hash == pbo.block_hash,
             where: block.consensus == false
           )
 
         "transactions" ->
           from(
-            po in PendingTransactionOperation,
-            join: t in assoc(po, :transaction),
+            pto in PendingTransactionOperation,
+            join: t in assoc(pto, :transaction),
             where: t.block_consensus == false
           )
       end

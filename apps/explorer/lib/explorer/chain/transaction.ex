@@ -1317,10 +1317,22 @@ defmodule Explorer.Chain.Transaction do
   @doc """
   Builds an `Ecto.Query` to fetch transactions for the specified block_numbers
   """
+  @spec transactions_for_block_numbers([non_neg_integer()]) :: Ecto.Query.t()
   def transactions_for_block_numbers(block_numbers) do
     from(
       t in Transaction,
       where: t.block_number in ^block_numbers
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transactions by hashes
+  """
+  @spec transactions_by_hashes([Hash.t()]) :: Ecto.Query.t()
+  def transactions_by_hashes(hashes) do
+    from(
+      t in Transaction,
+      where: t.hash in ^hashes
     )
   end
 
