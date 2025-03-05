@@ -259,7 +259,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
           [transaction | acc]
 
         _ ->
-          Logger.error("InternalTransaction fetcher expected transaction but got #{transaction}")
+          Logger.error("InternalTransaction fetcher expected transaction but got #{inspect(transaction)}")
           acc
       end
     end)

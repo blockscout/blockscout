@@ -125,6 +125,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
         sorted_pending_ops =
           inserted_transactions
           |> RangesHelper.filter_by_height_range(&RangesHelper.traceable_block_number?(&1.block_number))
+          |> Enum.reject(&is_nil(&1.block_number))
           |> Enum.map(&%{transaction_hash: &1.hash})
           |> Enum.sort()
 
