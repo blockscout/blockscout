@@ -697,18 +697,14 @@ defmodule Explorer.Token.MetadataRetriever do
         fetch_metadata_inner(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?)
 
       %URI{path: path} ->
-        case path do
-          "Qm" <> <<_::binary-size(44)>> = resource_id ->
-            fetch_from_ipfs(resource_id, hex_token_id)
+        resource_id = path |> String.split("/") |> List.first()
 
-          # todo: rewrite for strict CID v1 support
-          "bafybe" <> _ = resource_id ->
-            fetch_from_ipfs(resource_id, hex_token_id)
+        if Cid.cid?(resource_id) do
+          fetch_from_ipfs(resource_id, hex_token_id)
+        else
+          json = ExplorerHelper.decode_json(token_uri_string, true)
 
-          _ ->
-            json = ExplorerHelper.decode_json(token_uri_string, true)
-
-            check_type(json, hex_token_id)
+          check_type(json, hex_token_id)
         end
     end
   rescue
