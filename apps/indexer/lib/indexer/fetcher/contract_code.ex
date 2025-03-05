@@ -10,9 +10,15 @@ defmodule Indexer.Fetcher.ContractCode do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
+  import Explorer.Chain.Transaction.Reader,
+    only: [
+      transaction_with_unfetched_created_contract_code?: 1,
+      stream_transactions_with_unfetched_created_contract_code: 4
+    ]
+
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Hash}
+  alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
   alias Indexer.{BufferedTask, Tracer}
@@ -52,11 +58,17 @@ defmodule Indexer.Fetcher.ContractCode do
     metadata: [fetcher: :code]
   ]
 
-  @spec async_fetch([entry()], boolean(), integer()) :: :ok
-  def async_fetch(transactions_fields, realtime?, timeout \\ 5000) when is_list(transactions_fields) do
+  @spec async_fetch([Transaction.t()], boolean(), integer()) :: :ok
+  def async_fetch(transactions, realtime?, timeout \\ 5000) when is_list(transactions) do
+    transaction_fields =
+      transactions
+      |> Enum.filter(&transaction_with_unfetched_created_contract_code?(&1))
+      |> Enum.map(&Map.take(&1, @transaction_fields))
+      |> Enum.uniq()
+
     BufferedTask.buffer(
       __MODULE__,
-      transactions_fields |> Enum.uniq(),
+      transaction_fields,
       realtime?,
       timeout
     )
@@ -85,7 +97,7 @@ defmodule Indexer.Fetcher.ContractCode do
     stream_reducer = RangesHelper.stream_reducer_traceable(reducer)
 
     {:ok, final} =
-      Chain.stream_transactions_with_unfetched_created_contract_codes(
+      stream_transactions_with_unfetched_created_contract_code(
         @transaction_fields,
         initial,
         stream_reducer,

@@ -501,28 +501,7 @@ defmodule Indexer.Block.Fetcher do
   def async_import_realtime_coin_balances(_), do: :ok
 
   def async_import_created_contract_codes(%{transactions: transactions}, realtime?) do
-    transactions
-    |> Enum.flat_map(fn
-      %Transaction{
-        block_number: block_number,
-        hash: hash,
-        created_contract_address_hash: %Hash{} = created_contract_address_hash,
-        created_contract_code_indexed_at: nil,
-        type: type
-      } ->
-        [
-          %{
-            block_number: block_number,
-            hash: hash,
-            created_contract_address_hash: created_contract_address_hash,
-            type: type
-          }
-        ]
-
-      %Transaction{created_contract_address_hash: nil} ->
-        []
-    end)
-    |> ContractCode.async_fetch(realtime?, 10_000)
+    ContractCode.async_fetch(transactions, realtime?, 10_000)
   end
 
   def async_import_created_contract_codes(_, _), do: :ok
