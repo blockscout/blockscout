@@ -21,7 +21,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
 
   require Logger
 
-  import EthereumJSONRPC, only: [id_to_params: 1, quantity_to_integer: 1, integer_to_quantity: 1]
+  import EthereumJSONRPC, only: [id_to_params: 1, json_rpc: 2, quantity_to_integer: 1, integer_to_quantity: 1]
   import Explorer.Helper, only: [decode_data: 2, truncate_address_hash: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
@@ -392,12 +392,13 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
         ) :: non_neg_integer()
   defp handle_events(start_block_number, end_block_number, json_rpc_named_arguments, current_chain_id) do
     {:ok, events} =
-      Optimism.get_logs(
+      Helper.get_logs(
         start_block_number,
         end_block_number,
         @l2tol2_cross_domain_messenger,
-        [@sent_message_event, @relayed_message_event],
+        [[@sent_message_event, @relayed_message_event]],
         json_rpc_named_arguments,
+        0,
         Helper.infinite_retries_number()
       )
 
@@ -472,7 +473,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
     {last_block_number, last_transaction_hash} = InteropMessage.get_last_item(current_chain_id, only_failed)
 
     with {:empty_hash, false} <- {:empty_hash, is_nil(last_transaction_hash)},
-         {:ok, last_transaction} <- Optimism.get_transaction_by_hash(last_transaction_hash, json_rpc_named_arguments),
+         {:ok, last_transaction} <- Helper.get_transaction_by_hash(last_transaction_hash, json_rpc_named_arguments),
          {:empty_transaction, false} <- {:empty_transaction, is_nil(last_transaction)} do
       {:ok, last_block_number}
     else
@@ -548,7 +549,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
 
-    case Optimism.repeated_request(request, error_message, json_rpc_named_arguments, retries) do
+    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
       {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
       {:error, _} -> []
     end

@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [id_to_params: 1, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [id_to_params: 1, json_rpc: 2, quantity_to_integer: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
@@ -89,17 +89,20 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
           Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
 
           {:ok, result} =
-            Optimism.get_logs(
+            Helper.get_logs(
               chunk_start,
               chunk_end,
               optimism_portal,
               [
-                @withdrawal_proven_event,
-                @withdrawal_proven_event_blast,
-                @withdrawal_finalized_event,
-                @withdrawal_finalized_event_blast
+                [
+                  @withdrawal_proven_event,
+                  @withdrawal_proven_event_blast,
+                  @withdrawal_finalized_event,
+                  @withdrawal_finalized_event_blast
+                ]
               ],
               json_rpc_named_arguments,
+              0,
               Helper.infinite_retries_number()
             )
 
@@ -135,7 +138,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
       end)
 
     new_start_block = last_written_block + 1
-    new_end_block = Optimism.fetch_latest_l1_block_number(json_rpc_named_arguments)
+    new_end_block = Helper.fetch_latest_l1_block_number(json_rpc_named_arguments)
 
     delay =
       if new_end_block == last_written_block do
@@ -304,7 +307,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
 
-    case Optimism.repeated_request(request, error_message, json_rpc_named_arguments, retries) do
+    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
       {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
       {:error, _} -> []
     end

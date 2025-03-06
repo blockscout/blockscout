@@ -104,7 +104,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
            {:genesis_block_l2_invalid, is_nil(env[:genesis_block_l2]) or env[:genesis_block_l2] < 0},
          _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
+         json_rpc_named_arguments = Helper.json_rpc_named_arguments(optimism_l1_rpc),
          {:system_config_read, {start_block_l1, batch_inbox, batch_submitter}} <-
            {:system_config_read, read_system_config(system_config, json_rpc_named_arguments)},
          {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.address_correct?(batch_inbox)},
@@ -121,7 +121,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          {:l1_transaction_not_found, false} <-
            {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {:ok, block_check_interval, last_safe_block} <-
-           Optimism.get_block_check_interval(json_rpc_named_arguments) do
+           Helper.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
 
       chain_id_l1 =
@@ -344,7 +344,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       end)
 
     new_start_block = last_written_block + 1
-    new_end_block = Optimism.fetch_latest_l1_block_number(json_rpc_named_arguments)
+    new_end_block = Helper.fetch_latest_l1_block_number(json_rpc_named_arguments)
 
     delay =
       if new_end_block == last_written_block do
@@ -460,7 +460,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          l1_transaction_hashes = elem(result, 1),
          last_l1_transaction_hash = List.last(l1_transaction_hashes),
          {:ok, last_l1_transaction} =
-           Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+           Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:empty_transaction, false, last_l1_transaction_hash} <-
            {:empty_transaction, is_nil(last_l1_transaction), last_l1_transaction_hash} do
       last_l1_block_number = quantity_to_integer(Map.get(last_l1_transaction, "blockNumber", 0))
