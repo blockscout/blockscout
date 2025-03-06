@@ -59,7 +59,6 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
   scope "/", as: :api_v2 do
     pipe_through(:api_v2_no_forgery_protect)
 
-    post("/:address_hash/query-read-method", V2.SmartContractController, :query_read_method)
     post("/:address_hash/audit-reports", V2.SmartContractController, :audit_report_submission)
   end
 
