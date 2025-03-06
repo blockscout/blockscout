@@ -3523,7 +3523,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       insert(:smart_contract, is_vyper_contract: false, language: :solidity)
       request = get(conn, "/api/v2/smart-contracts", %{"filter" => "vyper"})
 
-
       assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
       compare_item(smart_contract, sc)
       assert sc["address"]["is_verified"] == true
