@@ -222,16 +222,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_partially_verified" => target_contract.partially_verified,
         "is_fully_verified" => true,
         "is_verified_via_sourcify" => target_contract.verified_via_sourcify,
-<<<<<<< HEAD
-        "has_methods_read" => true,
-        "has_methods_read_proxy" => false,
-        "has_methods_write" => true,
-        "has_methods_write_proxy" => false,
-        "has_custom_methods_read" => false,
-        "has_custom_methods_write" => false,
-=======
-        "is_vyper_contract" => SmartContract.language(target_contract) == :vyper,
->>>>>>> 1e6093021b (Remove corresponding tests)
         "minimal_proxy_address_hash" => nil,
         "sourcify_repo_url" =>
           if(target_contract.verified_via_sourcify,
@@ -346,16 +336,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_partially_verified" => target_contract.partially_verified,
         "is_fully_verified" => false,
         "is_verified_via_sourcify" => false,
-<<<<<<< HEAD
-        "has_methods_read" => true,
-        "has_methods_write" => true,
-        "has_methods_read_proxy" => false,
-        "has_methods_write_proxy" => false,
-        "has_custom_methods_read" => false,
-        "has_custom_methods_write" => false,
-=======
-        "is_vyper_contract" => SmartContract.language(target_contract) == :vyper,
->>>>>>> 1e6093021b (Remove corresponding tests)
         "minimal_proxy_address_hash" => nil,
         "sourcify_repo_url" => nil,
         "can_be_visualized_via_sol2uml" => false,
@@ -512,16 +492,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_partially_verified" => target_contract.partially_verified,
         "is_fully_verified" => true,
         "is_verified_via_sourcify" => target_contract.verified_via_sourcify,
-<<<<<<< HEAD
-        "has_methods_read" => true,
-        "has_methods_write" => true,
-        "has_methods_read_proxy" => false,
-        "has_methods_write_proxy" => false,
-        "has_custom_methods_read" => false,
-        "has_custom_methods_write" => false,
-=======
-        "is_vyper_contract" => SmartContract.language(target_contract) == :vyper,
->>>>>>> 1e6093021b (Remove corresponding tests)
         "minimal_proxy_address_hash" => nil,
         "sourcify_repo_url" =>
           if(target_contract.verified_via_sourcify,
