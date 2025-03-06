@@ -278,17 +278,17 @@ defmodule Explorer.Chain.SmartContractTest do
     end
   end
 
-  test "get_smart_contract_abi/1 returns empty [] abi if implementation address is null" do
-    assert SmartContract.get_smart_contract_abi(nil) == []
+  test "get_abi/1 returns empty [] abi if implementation address is null" do
+    assert SmartContract.get_abi(nil) == []
   end
 
-  test "get_smart_contract_abi/1 returns [] if implementation is not verified" do
+  test "get_abi/1 returns [] if implementation is not verified" do
     implementation_contract_address = insert(:contract_address)
 
     implementation_contract_address_hash_string =
       Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
 
-    assert SmartContract.get_smart_contract_abi("0x" <> implementation_contract_address_hash_string) == []
+    assert SmartContract.get_abi("0x" <> implementation_contract_address_hash_string) == []
   end
 
   @abi [
@@ -412,7 +412,7 @@ defmodule Explorer.Chain.SmartContractTest do
     }
   ]
 
-  test "get_smart_contract_abi/1 returns implementation abi if implementation is verified" do
+  test "get_abi/1 returns implementation abi if implementation is verified" do
     proxy_contract_address = insert(:contract_address)
     insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
@@ -427,7 +427,7 @@ defmodule Explorer.Chain.SmartContractTest do
     implementation_contract_address_hash_string =
       Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
 
-    implementation_abi = SmartContract.get_smart_contract_abi("0x" <> implementation_contract_address_hash_string)
+    implementation_abi = SmartContract.get_abi("0x" <> implementation_contract_address_hash_string)
 
     assert implementation_abi == @abi
   end

@@ -63,9 +63,9 @@ defmodule BlockScoutWeb.GraphQL.Schema.Transaction do
 end
 
 defmodule BlockScoutWeb.GraphQL.Schema.SmartContracts do
+  @moduledoc false
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  @moduledoc false
   case @chain_type do
     :zksync ->
       @chain_type_fields quote(
@@ -79,37 +79,8 @@ defmodule BlockScoutWeb.GraphQL.Schema.SmartContracts do
       @chain_type_fields quote(do: [field(:optimization_runs, :integer)])
   end
 
-  case @chain_type do
-    :zilliqa ->
-      @language_enum_type (quote do
-                             enum :language do
-                               description("The programming language of this smart contract")
-
-                               value(:solidity, description: "Solidity")
-                               value(:vyper, description: "Vyper")
-                               value(:yul, description: "Yul")
-                               value(:stylus_rust, description: "Stylus Rust")
-                               value(:scilla, description: "Scilla")
-                             end
-                           end)
-
-    _ ->
-      @language_enum_type (quote do
-                             enum :language do
-                               description("The programming language of this smart contract")
-
-                               value(:solidity, description: "Solidity")
-                               value(:vyper, description: "Vyper")
-                               value(:yul, description: "Yul")
-                               value(:stylus_rust, description: "Stylus Rust")
-                             end
-                           end)
-  end
-
   defmacro generate do
     quote do
-      unquote(@language_enum_type)
-
       object :smart_contract do
         field(:name, :string)
         field(:compiler_version, :string)
@@ -136,6 +107,7 @@ end
 
 defmodule BlockScoutWeb.GraphQL.Schema.Types do
   @moduledoc false
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require BlockScoutWeb.GraphQL.Schema.{Transaction, SmartContracts}
 
@@ -152,6 +124,23 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
 
   alias BlockScoutWeb.GraphQL.Schema.SmartContracts, as: SmartContractsSchema
   alias BlockScoutWeb.GraphQL.Schema.Transaction, as: TransactionSchema
+
+  # TODO: leverage `Ecto.Enum.values(SmartContract, :language)` to deduplicate
+  # language definitions
+  @default_languages ~w(solidity vyper yul)a
+
+  case @chain_type do
+    :arbitrum ->
+      @chain_type_languages ~w(stylus_rust)a
+
+    :zilliqa ->
+      @chain_type_languages ~w(scilla)a
+
+    _ ->
+      @chain_type_languages ~w()a
+  end
+
+  enum(:language, values: @default_languages ++ @chain_type_languages)
 
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.GraphQL.Schema.Scalars)

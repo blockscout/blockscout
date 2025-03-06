@@ -8,7 +8,9 @@ defmodule Explorer.SmartContract.SigProviderInterface do
   require Logger
 
   @request_error_msg "Error while sending request to sig-provider"
+  @post_timeout :timer.seconds(60)
 
+  @spec decode_function_call(map()) :: {:ok, list()} | {:error, any}
   def decode_function_call(input) do
     base_url = transaction_input_decode_url()
 
@@ -21,8 +23,9 @@ defmodule Explorer.SmartContract.SigProviderInterface do
     http_get_request(url)
   end
 
+  @spec decode_event([String.t()], String.t()) :: {:ok, list()} | {:error, any}
   def decode_event(topics, data) do
-    base_url = event_decode_url()
+    base_url = decode_event_url()
 
     url =
       base_url
@@ -36,7 +39,45 @@ defmodule Explorer.SmartContract.SigProviderInterface do
     http_get_request(url)
   end
 
-  def http_get_request(url) do
+  @doc """
+  Decodes a batch of events by sending a POST request to /api/v1/abi/events:batch-get endpoint of the Sig-provider microservice.
+
+  ## Parameters
+
+    - `input`: A list of maps, where each map represents an event with the following keys:
+      - `:topics` (String.t()): The topics associated with the event.
+      - `:data` (String.t()): The data associated with the event.
+
+  ## Returns
+
+    - The response from the HTTP POST request.
+
+  ## Example
+
+      iex> decode_events_in_batch([
+      ...>   %{topics: "topic1,topic2", data: "data1"},
+      ...>   %{topics: "topic3,topic4", data: "data2"}
+      ...> ])
+      {:ok, response}
+
+  """
+  @spec decode_events_in_batch([
+          %{
+            :topics => String.t(),
+            :data => String.t()
+          }
+        ]) :: {:ok, [map]} | {:error, any}
+  def decode_events_in_batch(input) do
+    url = decode_events_batch_url()
+
+    body = %{
+      :requests => input
+    }
+
+    http_post_request(url, body)
+  end
+
+  defp http_get_request(url) do
     case HTTPoison.get(url) do
       {:ok, %Response{body: body, status_code: 200}} ->
         process_sig_provider_response(body)
@@ -60,7 +101,30 @@ defmodule Explorer.SmartContract.SigProviderInterface do
     end
   end
 
-  def process_sig_provider_response(body) when is_binary(body) do
+  defp http_post_request(url, body) do
+    headers = [{"Content-Type", "application/json"}]
+
+    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+      {:ok, %Response{body: body, status_code: 200}} ->
+        body |> Jason.decode()
+
+      error ->
+        old_truncate = Application.get_env(:logger, :truncate)
+        Logger.configure(truncate: :infinity)
+
+        Logger.error(fn ->
+          [
+            "Error while sending request to sig-provider url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
+            inspect(error, limit: :infinity, printable_limit: :infinity)
+          ]
+        end)
+
+        Logger.configure(truncate: old_truncate)
+        {:error, @request_error_msg}
+    end
+  end
+
+  defp process_sig_provider_response(body) when is_binary(body) do
     case Jason.decode(body) do
       {:ok, decoded} ->
         process_sig_provider_response(decoded)
@@ -70,13 +134,15 @@ defmodule Explorer.SmartContract.SigProviderInterface do
     end
   end
 
-  def process_sig_provider_response(results) when is_list(results), do: {:ok, results}
+  defp process_sig_provider_response(results) when is_list(results), do: {:ok, results}
 
-  def process_sig_provider_response(other_responses), do: {:error, other_responses}
+  defp process_sig_provider_response(other_responses), do: {:error, other_responses}
 
-  def transaction_input_decode_url, do: "#{base_api_url()}" <> "/function"
+  defp transaction_input_decode_url, do: "#{base_api_url()}" <> "/function"
 
-  def event_decode_url, do: "#{base_api_url()}" <> "/event"
+  defp decode_event_url, do: "#{base_api_url()}" <> "/event"
+
+  defp decode_events_batch_url, do: "#{base_api_url()}" <> "/events:batch-get"
 
   def base_api_url, do: "#{base_url()}" <> "/api/v1/abi"
 

@@ -189,6 +189,10 @@ defmodule Indexer.BufferedTaskTest do
 
       refute BoundQueue.shrunk?(bound_queue)
 
+      stub(ShrinkableTask, :run, fn _, _ ->
+        :ok
+      end)
+
       assert {:noreply, %BufferedTask{flush_timer: flush_timer}} =
                BufferedTask.handle_info(:flush, %BufferedTask{
                  callback_module: ShrinkableTask,
@@ -212,6 +216,10 @@ defmodule Indexer.BufferedTaskTest do
       assert BoundQueue.shrunk?(bound_queue)
 
       start_supervised!({Task.Supervisor, name: BufferedTaskSup})
+
+      stub(ShrinkableTask, :run, fn _, _ ->
+        :ok
+      end)
 
       assert {:noreply, %BufferedTask{flush_timer: flush_timer}} =
                BufferedTask.handle_info(:flush, %BufferedTask{
