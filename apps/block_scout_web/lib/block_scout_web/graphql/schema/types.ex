@@ -94,7 +94,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.SmartContracts do
         field(:verified_via_sourcify, :boolean)
         field(:partially_verified, :boolean)
         field(:file_path, :string)
-        field(:is_vyper_contract, :boolean)
         field(:is_changed_bytecode, :boolean)
         field(:compiler_settings, :json)
         field(:verified_via_eth_bytecode_db, :boolean)

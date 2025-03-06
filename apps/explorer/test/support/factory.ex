@@ -1015,7 +1015,6 @@ defmodule Explorer.Factory do
       abi: contract_code_info.abi,
       contract_code_md5: bytecode_md5,
       verified_via_sourcify: Enum.random([true, false]),
-      # is_vyper_contract: Enum.random([true, false]),
       language: Enum.random([:solidity, :vyper]),
       verified_via_eth_bytecode_db: Enum.random([true, false]),
       verified_via_verifier_alliance: Enum.random([true, false])

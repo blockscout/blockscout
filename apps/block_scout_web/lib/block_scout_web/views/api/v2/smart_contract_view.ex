@@ -189,7 +189,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_verified_via_sourcify" => smart_contract.verified_via_sourcify && smart_contract_verified,
       "is_verified_via_eth_bytecode_db" => smart_contract.verified_via_eth_bytecode_db,
       "is_verified_via_verifier_alliance" => smart_contract.verified_via_verifier_alliance,
-      "is_vyper_contract" => target_contract && SmartContract.language(target_contract) == :vyper,
       "has_custom_methods_read" => read_custom_abi?,
       "has_custom_methods_write" => write_custom_abi?,
       "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address),
