@@ -16,6 +16,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     Import,
     InternalTransaction,
     PendingBlockOperation,
+    PendingOperationsHelper,
     PendingTransactionOperation,
     Transaction
   }
@@ -24,7 +25,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Explorer.Chain.Import.Runner
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
-  alias Explorer.Utility.{MissingRangesManipulator, SwitchPendingOperations}
+  alias Explorer.Utility.MissingRangesManipulator
 
   import Ecto.Query
 
@@ -320,7 +321,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp acquire_pending_internal_transactions(repo, block_hashes) do
-    case SwitchPendingOperations.pending_operations_type() do
+    case PendingOperationsHelper.pending_operations_type() do
       "blocks" ->
         query =
           from(

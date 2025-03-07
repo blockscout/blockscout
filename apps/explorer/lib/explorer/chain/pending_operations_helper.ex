@@ -1,4 +1,4 @@
-defmodule Explorer.Utility.SwitchPendingOperations do
+defmodule Explorer.Chain.PendingOperationsHelper do
   @moduledoc false
 
   import Ecto.Query

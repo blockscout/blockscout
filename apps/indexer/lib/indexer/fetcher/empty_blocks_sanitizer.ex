@@ -15,9 +15,8 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
   alias Explorer.Repo
-  alias Explorer.Chain.{Block, Hash, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.{Block, Hash, PendingBlockOperation, PendingOperationsHelper, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Utility.SwitchPendingOperations
 
   @update_timeout 60_000
 
@@ -195,7 +194,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
       timeout: @update_timeout
     )
 
-    case SwitchPendingOperations.pending_operations_type() do
+    case PendingOperationsHelper.pending_operations_type() do
       "blocks" ->
         PendingBlockOperation
         |> where([po], po.block_hash in ^block_hashes)

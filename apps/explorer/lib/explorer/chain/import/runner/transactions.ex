@@ -10,10 +10,10 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
 
   alias Ecto.{Multi, Repo}
   alias EthereumJSONRPC.Utility.RangesHelper
-  alias Explorer.Chain.{Block, Hash, Import, PendingTransactionOperation, Transaction}
+  alias Explorer.Chain.{Block, Hash, Import, PendingOperationsHelper, PendingTransactionOperation, Transaction}
   alias Explorer.Chain.Import.Runner.TokenTransfers
   alias Explorer.Prometheus.Instrumenter
-  alias Explorer.Utility.{MissingRangesManipulator, SwitchPendingOperations}
+  alias Explorer.Utility.MissingRangesManipulator
 
   @behaviour Import.Runner
 
@@ -120,7 +120,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   end
 
   defp new_pending_transaction_operations(repo, inserted_transactions, %{timeout: timeout, timestamps: timestamps}) do
-    case SwitchPendingOperations.pending_operations_type() do
+    case PendingOperationsHelper.pending_operations_type() do
       "transactions" ->
         sorted_pending_ops =
           inserted_transactions

@@ -58,6 +58,7 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     PendingBlockOperation,
+    PendingOperationsHelper,
     PendingTransactionOperation,
     SmartContract,
     Token,
@@ -89,7 +90,6 @@ defmodule Explorer.Chain do
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.MicroserviceInterfaces.MultichainSearch
-  alias Explorer.Utility.SwitchPendingOperations
   alias Explorer.{PagingOptions, Repo}
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -859,7 +859,7 @@ defmodule Explorer.Chain do
       RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :trace_block_ranges))
 
     %{max: max_saved_block_number} = BlockNumber.get_all()
-    pending_ops_entity = SwitchPendingOperations.actual_entity()
+    pending_ops_entity = PendingOperationsHelper.actual_entity()
     pbo_count = pending_ops_entity.blocks_count_in_range(min_blockchain_trace_block_number, max_saved_block_number)
 
     if pbo_count <
@@ -1572,7 +1572,7 @@ defmodule Explorer.Chain do
           full_blocks_range =
             max_saved_block_number - min_blockchain_trace_block_number - BlockNumberHelper.null_rounds_count() + 1
 
-          pending_ops_entity = SwitchPendingOperations.actual_entity()
+          pending_ops_entity = PendingOperationsHelper.actual_entity()
 
           pbo_count =
             pending_ops_entity.blocks_count_in_range(min_blockchain_trace_block_number, max_saved_block_number)
@@ -1972,7 +1972,7 @@ defmodule Explorer.Chain do
 
   def remove_nonconsensus_blocks_from_pending_ops(block_hashes) do
     query =
-      case SwitchPendingOperations.pending_operations_type() do
+      case PendingOperationsHelper.pending_operations_type() do
         "blocks" ->
           from(
             pbo in PendingBlockOperation,
@@ -1994,7 +1994,7 @@ defmodule Explorer.Chain do
 
   def remove_nonconsensus_blocks_from_pending_ops do
     query =
-      case SwitchPendingOperations.pending_operations_type() do
+      case PendingOperationsHelper.pending_operations_type() do
         "blocks" ->
           from(
             pbo in PendingBlockOperation,

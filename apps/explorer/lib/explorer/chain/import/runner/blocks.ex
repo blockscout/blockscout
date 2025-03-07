@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     DenormalizationHelper,
     Import,
     PendingBlockOperation,
+    PendingOperationsHelper,
     Token,
     Token.Instance,
     TokenTransfer,
@@ -33,7 +34,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
   alias Explorer.Prometheus.Instrumenter
-  alias Explorer.Utility.{MissingRangesManipulator, SwitchPendingOperations}
+  alias Explorer.Utility.MissingRangesManipulator
 
   @behaviour Runner
 
@@ -464,7 +465,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp new_pending_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
-    case SwitchPendingOperations.pending_operations_type() do
+    case PendingOperationsHelper.pending_operations_type() do
       "blocks" ->
         sorted_pending_ops =
           inserted_blocks

@@ -9,9 +9,17 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
   import Ecto.Query
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, InternalTransaction, PendingBlockOperation, PendingTransactionOperation, Transaction}
+
+  alias Explorer.Chain.{
+    Block,
+    InternalTransaction,
+    PendingBlockOperation,
+    PendingOperationsHelper,
+    PendingTransactionOperation,
+    Transaction
+  }
+
   alias Explorer.Migrator.FillingMigration
-  alias Explorer.Utility.SwitchPendingOperations
   alias Indexer.Fetcher.InternalTransaction, as: InternalTransactionFetcher
 
   @migration_name "reindex_internal_transactions_with_incompatible_status"
@@ -71,7 +79,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
   def update_batch(block_numbers_or_transaction_hashes) do
     now = DateTime.utc_now()
 
-    pending_operations_type = SwitchPendingOperations.pending_operations_type()
+    pending_operations_type = PendingOperationsHelper.pending_operations_type()
 
     {_total, inserted} =
       case pending_operations_type do
@@ -119,7 +127,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
   def update_cache, do: :ok
 
   defp select_query(query) do
-    case SwitchPendingOperations.pending_operations_type() do
+    case PendingOperationsHelper.pending_operations_type() do
       "blocks" -> select(query, [t], t.block_number)
       "transactions" -> select(query, [t], t.hash)
     end
