@@ -61,7 +61,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
         :finish
 
       pbo_params ->
-        Repo.insert_all(PendingBlockOperation, pbo_params, on_conflict: :nothing)
+        Repo.insert_all(PendingBlockOperation, add_timestamps(pbo_params), on_conflict: :nothing)
 
         block_numbers_to_delete = Enum.map(pbo_params, & &1.block_number)
 
@@ -94,6 +94,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
           |> where([t], t.block_number in ^pbo_block_numbers)
           |> select([t], %{transaction_hash: t.hash})
           |> Repo.all()
+          |> add_timestamps()
 
         Repo.insert_all(PendingTransactionOperation, pto_params, on_conflict: :nothing)
 
@@ -103,5 +104,11 @@ defmodule Explorer.Chain.PendingOperationsHelper do
 
         :continue
     end
+  end
+
+  defp add_timestamps(params) do
+    now = DateTime.utc_now()
+
+    Enum.map(params, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
   end
 end
