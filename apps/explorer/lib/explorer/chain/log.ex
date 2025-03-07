@@ -283,7 +283,7 @@ defmodule Explorer.Chain.Log do
     if !is_nil(address_hash) && Map.has_key?(acc, address_hash) do
       acc
     else
-      case Chain.find_contract_address(address_hash, address_options, false) do
+      case Chain.find_contract_address(address_hash, address_options) do
         {:ok, %{smart_contract: smart_contract}} ->
           full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, db_options)
           Map.put(acc, address_hash, full_abi)

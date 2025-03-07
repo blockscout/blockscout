@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.AddressWithdrawalController do
     address_options = [necessity_by_association: %{:names => :optional, :smart_contract => :optional}]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, address_options, false),
+         {:ok, address} <- Chain.hash_to_address(address_hash, address_options),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       options = paging_options(params)
 

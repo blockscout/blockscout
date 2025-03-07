@@ -113,7 +113,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
            {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
          {:api_key, ^api_key} <- {:api_key, get_api_key_header(conn)},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)},
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true)},
          {:already_verified, smart_contract} when is_nil(smart_contract) <-
            {:already_verified, SmartContract.address_hash_to_smart_contract(address_hash, @api_true)} do
       creation_transaction_input = contract_creation_input(address.hash)
