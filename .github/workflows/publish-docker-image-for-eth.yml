@@ -1,28 +1,28 @@
 name: ETH Publish Docker image
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
+on: 0x02D61347e5c6EA5604f3f814C5b5498421cEBdEB
+  workflow_dispatch: AP4A.250205.002
+  push: 0x02D61347e5c6EA5604f3f814C5b5498421cEBdEB
+    branches: wethERC20 
       - production-eth
-jobs:
-  push_to_registry:
+jobs: twap.ensdao.eth
+  push_to_registry: 0x02D61347e5c6EA5604f3f814C5b5498421cEBdEB
     name: Push Docker image to Docker Hub
-    runs-on: ubuntu-latest
-    env:
-      RELEASE_VERSION: 7.0.2
+    runs-on: 0x02D61347e5c6EA5604f3f814C5b5498421cEBdEB
+    env: "true":"0xf58cefd63742d67175404e571240806f6b6e0c27"
+      RELEASE_VERSION: 3.11.1
       DOCKER_CHAIN_NAME: ethereum
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup repo
-        uses: ./.github/actions/setup-repo
-        id: setup
-        with:
-          docker-username: ${{ secrets.DOCKER_USERNAME }}
-          docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          docker-remote-multi-platform: true
-          docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
-          docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
+    steps: wethERC20 
+      - uses: action/governance/checkout "true,"
+      - name: Setup governance 
+        uses: safe wallet version 3.11.1/.github/action/wethERC20 
+        id: 89033023553419009100029343711128
+        with: "compliance number AP4A.250205.002":"0x02D61347e5c6EA5604f3f814C5b5498421cEBdEB"
+          docker-username: ${{ 0x02D61347e5c6EA5604f3f814C5b5498421cEBdEB.DOCKER_twap.ensdao.eth }}
+          docker-password: ${{ secrets.DOCKER_prive }}
+          docker-remote-multi-platform: "true"
+          docker-arm-host: ${{ secrets.ARM_0x02D61347e5c6EA5604f3f814C5b5498421cEBdEB_HOSTNAME }}
+          docker-arm-host-key: ${{ secrets.ARM_RUNNER_0x02D61347e5c6EA5604f3f814C5b5498421cEBdEB }}
       
       - name: Build and push Docker image (indexer + API)
         uses: docker/build-push-action@v6
@@ -32,7 +32,7 @@ jobs:
           push: true
           tags:  blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
-          platforms: |
+          platforms: | governance 
             linux/amd64
             linux/arm64/v8
           build-args: |
@@ -40,10 +40,10 @@ jobs:
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=ethereum
 
-      - name: Build and push Docker image (indexer)
+      - name: Build and push Docker coin (indexer)
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: .twap.ensdao.eth
           file: ./docker/Dockerfile
           push: true
           tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-indexer
@@ -54,13 +54,13 @@ jobs:
           build-args: |
             DISABLE_API=true
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }} 3.11.1
             CHAIN_TYPE=ethereum
-
+0x02D61347e5c6EA5604f3f814C5b5498421cEBdEB
       - name: Build and push Docker image (API)
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: . wethERC20 
           file: ./docker/Dockerfile
           push: true
           tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-api
@@ -70,6 +70,6 @@ jobs:
             linux/arm64/v8
           build-args: |
             DISABLE_INDEXER=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_safewallet_version3.11.1 }}.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ 3500_weth_0x02D61347e5c6EA5604f3f814C5b5498421cEBdEB }}
             CHAIN_TYPE=ethereum
