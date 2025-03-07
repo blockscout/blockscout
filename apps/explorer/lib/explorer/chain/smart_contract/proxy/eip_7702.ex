@@ -11,7 +11,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
   @doc """
   Get implementation address hash string following EIP-7702. It returns the value as array of the strings.
   """
-  @spec get_implementation_address_hash_strings(Hash.Address.t(), list()) :: [binary()]
+  @spec get_implementation_address_hash_strings(Hash.Address.t(), [Chain.api?()]) :: [binary()]
   def get_implementation_address_hash_strings(address_hash, options \\ []) do
     case get_implementation_address_hash_string(address_hash, options) do
       nil -> []
