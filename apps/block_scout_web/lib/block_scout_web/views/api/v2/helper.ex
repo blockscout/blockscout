@@ -84,7 +84,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "is_scam" => address_marked_as_scam?(address),
       "proxy_type" => proxy_implementations && proxy_implementations.proxy_type,
       "implementations" => Proxy.proxy_object_info(proxy_implementations),
-      "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),
+      "is_verified" => verified?(address) || verified_as_proxy?(proxy_implementations),
       "ens_domain_name" => address.ens_domain_name,
       "metadata" => address.metadata
     }
@@ -132,16 +132,13 @@ defmodule BlockScoutWeb.API.V2.Helper do
       end
   end
 
-  defp minimal_proxy_pattern?(proxy_implementations) do
-    proxy_implementations.proxy_type == :eip1167
+  # We treat contracts with minimal proxy or similar standards as verified if all their implementations are verified
+  defp verified_as_proxy?(%{proxy_type: proxy_type, names: names})
+       when proxy_type in [:eip1167, :eip7702, :clone_with_immutable_arguments] do
+    !Enum.empty?(names) && Enum.all?(names)
   end
 
-  defp verified_minimal_proxy?(nil), do: false
-
-  defp verified_minimal_proxy?(proxy_implementations) do
-    (minimal_proxy_pattern?(proxy_implementations) &&
-       Enum.any?(proxy_implementations.names, fn name -> !is_nil(name) end)) || false
-  end
+  defp verified_as_proxy?(_), do: false
 
   def address_name(%Address{names: [_ | _] = address_names}) do
     case Enum.find(address_names, &(&1.primary == true)) do
