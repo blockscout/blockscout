@@ -305,7 +305,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
          proxy_type,
          proxy_address_hash
        ) do
-    implementation_address_hash_strings = module.get_implementation_address_hash_strings(proxy_address_hash)
+    implementation_address_hash_strings = module.get_implementation_address_hash_strings(proxy_address_hash, api?: true)
 
     if implementation_address_hash_strings == [] ||
          implementation_address_hash_strings == [burn_address_hash_string()] ||
