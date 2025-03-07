@@ -226,7 +226,8 @@ defmodule Explorer.Application do
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),
-        configure(Explorer.Chain.Fetcher.AddressesBlacklist)
+        configure(Explorer.Chain.Fetcher.AddressesBlacklist),
+        Explorer.Migrator.SwitchPendingOperations
       ]
       |> List.flatten()
 
