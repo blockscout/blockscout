@@ -317,36 +317,14 @@ defmodule Explorer.Chain do
   def address_hash_to_token_transfers_new(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     direction = Keyword.get(options, :direction)
+    token_address_hash = Keyword.get(options, :token_address_hash)
     filters = Keyword.get(options, :token_type)
     necessity_by_association = Keyword.get(options, :necessity_by_association)
 
     address_hash
-    |> TokenTransfer.token_transfers_by_address_hash(direction, filters, paging_options)
+    |> TokenTransfer.token_transfers_by_address_hash(direction, token_address_hash, filters, paging_options)
     |> join_associations(necessity_by_association)
     |> select_repo(options).all()
-  end
-
-  @spec address_hash_to_token_transfers_by_token_address_hash(
-          Hash.Address.t() | String.t(),
-          Hash.Address.t() | String.t(),
-          Keyword.t()
-        ) :: [TokenTransfer.t()]
-  def address_hash_to_token_transfers_by_token_address_hash(address_hash, token_address_hash, options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    case paging_options do
-      %PagingOptions{key: {0, 0}} ->
-        []
-
-      _ ->
-        necessity_by_association = Keyword.get(options, :necessity_by_association)
-
-        address_hash
-        |> TokenTransfer.token_transfers_by_address_hash_and_token_address_hash(token_address_hash)
-        |> join_associations(necessity_by_association)
-        |> TokenTransfer.handle_paging_options(paging_options)
-        |> select_repo(options).all()
-    end
   end
 
   @spec address_hash_to_withdrawals(
