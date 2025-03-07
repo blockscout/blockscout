@@ -14,9 +14,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.AuditReport
-  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
-  alias Explorer.SmartContract.{Reader, Writer}
+  alias Explorer.SmartContract.Reader
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.ThirdPartyIntegrations.SolidityScan
 
@@ -44,111 +43,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       conn
       |> put_status(200)
       |> render(:smart_contract, %{address: %Address{address | proxy_implementations: implementations}})
-    end
-  end
-
-  def methods_read(conn, %{"address_hash" => address_hash_string, "is_custom_abi" => "true"} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
-         {:not_found, true} <- {:not_found, AddressView.check_custom_abi_for_having_read_functions(custom_abi)} do
-      read_only_functions_from_abi =
-        Reader.read_only_functions_from_abi_with_sender(custom_abi.abi, address_hash, params["from"], @api_true)
-
-      read_functions_required_wallet_from_abi = Reader.read_functions_required_wallet_from_abi(custom_abi.abi)
-
-      conn
-      |> put_status(200)
-      |> render(:read_functions, %{functions: read_only_functions_from_abi ++ read_functions_required_wallet_from_abi})
-    end
-  end
-
-  def methods_read(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:ok, address_hash, smart_contract} <- validate_smart_contract(params, address_hash_string) do
-      read_only_functions_from_abi = Reader.read_only_functions(smart_contract, address_hash, params["from"], @api_true)
-
-      read_functions_required_wallet_from_abi = Reader.read_functions_required_wallet(smart_contract)
-
-      conn
-      |> put_status(200)
-      |> render(:read_functions, %{functions: read_only_functions_from_abi ++ read_functions_required_wallet_from_abi})
-    end
-  end
-
-  def methods_write(conn, %{"address_hash" => address_hash_string, "is_custom_abi" => "true"} = params) do
-    with {:contract_interaction_disabled, false} <-
-           {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()},
-         {:format, {:ok, _address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
-         {:not_found, true} <- {:not_found, AddressView.check_custom_abi_for_having_write_functions(custom_abi)} do
-      conn
-      |> put_status(200)
-      |> json(custom_abi.abi |> Writer.filter_write_functions() |> Reader.get_abi_with_method_id())
-    end
-  end
-
-  def methods_write(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:contract_interaction_disabled, false} <-
-           {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()},
-         {:ok, _address_hash, smart_contract} <- validate_smart_contract(params, address_hash_string) do
-      conn
-      |> put_status(200)
-      |> json(smart_contract |> Writer.write_functions() |> Reader.get_abi_with_method_id())
-    end
-  end
-
-  def methods_read_proxy(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, address}} <-
-           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)},
-         {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
-      implementation_address_hash_strings = get_implementations_address_hashes(address)
-
-      functions =
-        implementation_address_hash_strings
-        |> Enum.reduce([], fn implementation_address_hash_string, acc ->
-          functions_from_implementation =
-            Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string, nil, @api_true)
-
-          acc ++ functions_from_implementation
-        end)
-
-      conn
-      |> put_status(200)
-      |> render(:read_functions, %{
-        functions: functions
-      })
-    end
-  end
-
-  def methods_write_proxy(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:contract_interaction_disabled, false} <-
-           {:contract_interaction_disabled, AddressView.contract_interaction_disabled?()},
-         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, address}} <-
-           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)},
-         {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
-      implementation_address_hash_strings = get_implementations_address_hashes(address)
-
-      functions =
-        implementation_address_hash_strings
-        |> Enum.reduce([], fn implementation_address_hash_string, acc ->
-          functions_from_implementation =
-            implementation_address_hash_string
-            |> Writer.write_functions_proxy(@api_true)
-
-          acc ++ functions_from_implementation
-        end)
-
-      conn
-      |> put_status(200)
-      |> json(
-        functions
-        |> Reader.get_abi_with_method_id()
-      )
     end
   end
 
@@ -326,13 +220,5 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
            {:not_found, SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, @api_true)} do
       {:ok, address_hash, smart_contract}
     end
-  end
-
-  defp get_implementations_address_hashes(proxy_address) do
-    implementation =
-      proxy_address.smart_contract
-      |> Implementation.get_implementation(@api_true)
-
-    (implementation && implementation.address_hashes) || []
   end
 end
