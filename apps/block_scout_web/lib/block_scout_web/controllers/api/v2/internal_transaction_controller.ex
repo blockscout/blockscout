@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   use BlockScoutWeb, :controller
   alias Explorer.Chain.InternalTransaction
-  alias Explorer.{Helper, PagingOptions}
+  alias Explorer.{Chain, Helper, PagingOptions}
   alias Explorer.Migrator.MigrationStatus
 
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex
@@ -34,39 +34,65 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
        ) == "completed" do
       paging_options = paging_options(params)
 
-      options =
-        paging_options
-        |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
-                                                                          page_size: page_size
-                                                                        } = paging_options ->
-          maybe_parsed_limit = Helper.parse_integer(params["limit"])
-          %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
-        end)
-        |> Keyword.merge(@api_true)
+      transaction_hash = transaction_hash_from_params(params)
 
-      result =
-        options
-        |> InternalTransaction.fetch()
-        |> split_list_by_page()
+      if transaction_hash == :invalid do
+        empty_response(conn)
+      else
+        options = options(paging_options, %{transaction_hash: transaction_hash, limit: params["limit"]})
 
-      {internal_transactions, next_page} = result
+        result =
+          options
+          |> InternalTransaction.fetch()
+          |> split_list_by_page()
 
-      next_page_params =
-        next_page |> next_page_params(internal_transactions, delete_parameters_from_next_page_params(params))
+        {internal_transactions, next_page} = result
 
-      conn
-      |> put_status(200)
-      |> render(:internal_transactions, %{
-        internal_transactions: internal_transactions,
-        next_page_params: next_page_params
-      })
+        next_page_params =
+          next_page |> next_page_params(internal_transactions, delete_parameters_from_next_page_params(params))
+
+        conn
+        |> put_status(200)
+        |> render(:internal_transactions, %{
+          internal_transactions: internal_transactions,
+          next_page_params: next_page_params
+        })
+      end
     else
-      conn
-      |> put_status(200)
-      |> render(:internal_transactions, %{
-        internal_transactions: [],
-        next_page_params: nil
-      })
+      empty_response(conn)
+    end
+  end
+
+  defp empty_response(conn) do
+    conn
+    |> put_status(200)
+    |> render(:internal_transactions, %{
+      internal_transactions: [],
+      next_page_params: nil
+    })
+  end
+
+  defp options(paging_options, params) do
+    paging_options
+    |> Keyword.put(:transaction_hash, params.transaction_hash)
+    |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
+                                                                      page_size: page_size
+                                                                    } = paging_options ->
+      maybe_parsed_limit = Helper.parse_integer(params["limit"])
+      %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
+    end)
+    |> Keyword.merge(@api_true)
+  end
+
+  defp transaction_hash_from_params(params) do
+    if params["q"] do
+      case params["q"]
+           |> Chain.string_to_transaction_hash() do
+        {:ok, transaction_hash} -> transaction_hash
+        _ -> :invalid
+      end
+    else
+      nil
     end
   end
 end
