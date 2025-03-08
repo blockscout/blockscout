@@ -71,9 +71,9 @@ defmodule NFTMediaHandler.DispatcherInterface do
   @doc """
   Stores the result of the media fetching process. If the remote flag is set to true, the result will be stored in a remote node.
   """
-  @spec store_result(any(), String.t(), atom()) :: any()
-  def store_result(result, url, node) do
-    remote_call([result, url], :store_result, node, Application.get_env(:nft_media_handler, :remote?))
+  @spec store_result(any(), atom()) :: any()
+  def store_result(batch_result, node) do
+    remote_call([batch_result], :store_result, node, Application.get_env(:nft_media_handler, :remote?))
   end
 
   defp remote_call(args, function, node, true) do
