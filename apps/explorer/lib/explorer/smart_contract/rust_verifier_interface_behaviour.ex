@@ -6,7 +6,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
     # credo:disable-for-next-line
     quote([]) do
       alias Explorer.Utility.Microservice
-      alias HTTPoison.Response
+      alias Mint.HTTP, as: MintHTTP
       require Logger
 
       @post_timeout :timer.minutes(5)
@@ -76,12 +76,10 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       end
 
       def http_post_request(url, body, is_verification_request?, options \\ []) do
-        headers = [{"Content-Type", "application/json"}]
+        headers = maybe_put_api_key_header([{"Content-Type", "application/json"}], is_verification_request?)
 
-        case HTTPoison.post(url, Jason.encode!(body), maybe_put_api_key_header(headers, is_verification_request?),
-               recv_timeout: @post_timeout
-             ) do
-          {:ok, %Response{body: body, status_code: _}} ->
+        case do_request(url, "POST", body, headers) do
+          {:ok, %{data: body, status: _}} ->
             process_verifier_response(body, options)
 
           {:error, error} ->
@@ -113,11 +111,11 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       end
 
       def http_get_request(url) do
-        case HTTPoison.get(url) do
-          {:ok, %Response{body: body, status_code: 200}} ->
+        case do_request(url, "GET") do
+          {:ok, %{data: body, status: 200}} ->
             process_verifier_response(body, [])
 
-          {:ok, %Response{body: body, status_code: _}} ->
+          {:ok, %{data: body, status: _}} ->
             {:error, body}
 
           {:error, error} ->
@@ -228,6 +226,60 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       defp append_metadata(body, metadata) when is_map(body) do
         body
         |> Map.put("metadata", metadata)
+      end
+
+      # sobelow_skip ["DOS.StringToAtom"]
+      defp do_request(url, method, body \\ nil, headers \\ []) do
+        %{scheme: scheme, host: host, port: port, path: path} = URI.parse(url)
+
+        with {:ok, conn} <- MintHTTP.connect(String.to_atom(scheme || "http"), host, port),
+             {:ok, conn, _ref} <- MintHTTP.request(conn, method, path || "/", headers, Jason.encode!(body)) do
+          try do
+            handle_response(conn, %{data: [], done: false})
+          after
+            MintHTTP.close(conn)
+          end
+        end
+      end
+
+      defp handle_response(conn, state) do
+        receive do
+          message ->
+            case MintHTTP.stream(conn, message) do
+              {:ok, conn, responses} ->
+                case Enum.reduce(responses, state, &handle_res/2) do
+                  %{done: true} = state -> {:ok, state}
+                  %{done: false} = state -> handle_response(conn, state)
+                end
+
+              {:error, _, reason, _} ->
+                {:error, reason}
+
+              :unknown ->
+                handle_response(conn, state)
+            end
+        after
+          @post_timeout -> {:error, :timeout}
+        end
+      end
+
+      defp handle_res({:status, _, status}, state),
+        do: Map.put(state, :status, status)
+
+      defp handle_res({:headers, _, headers}, state),
+        do: Map.put(state, :headers, headers)
+
+      defp handle_res({:data, _, data}, state),
+        do: Map.update!(state, :data, fn acc -> [data | acc] end)
+
+      defp handle_res({:done, _}, state) do
+        state
+        |> Map.update!(:data, fn acc ->
+          acc
+          |> Enum.reverse()
+          |> Enum.join("")
+        end)
+        |> Map.put(:done, true)
       end
     end
   end
