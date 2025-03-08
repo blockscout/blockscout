@@ -48,7 +48,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
       Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
       Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
 
-      topic = "exchange_rate:new_rate"
+      topic = "exchange_rate_old:new_rate"
       @endpoint.subscribe(topic)
 
       Notifier.handle_event({:chain_event, :exchange_rate})
@@ -84,7 +84,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
 
       Market.fetch_recent_history()
 
-      topic = "exchange_rate:new_rate"
+      topic = "exchange_rate_old:new_rate"
       @endpoint.subscribe(topic)
 
       Notifier.handle_event({:chain_event, :exchange_rate})

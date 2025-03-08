@@ -98,7 +98,7 @@ function updateCounters () {
   const store = createStore(reducer)
   connectElements({ store, elements })
   const addressHash = $('[data-page="token-details"]')[0].dataset.pageAddressHash
-  const tokensChannel = subscribeChannel(`tokens:${addressHash}`)
+  const tokensChannel = subscribeChannel(`tokens_old:${addressHash}`)
   tokensChannel.on('total_supply', (msg) => {
     store.dispatch({
       type: 'RECEIVED_NEW_TOTAL_SUPPLY',
