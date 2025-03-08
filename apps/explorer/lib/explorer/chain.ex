@@ -2016,43 +2016,6 @@ defmodule Explorer.Chain do
     :ok
   end
 
-  @spec stream_transactions_with_unfetched_created_contract_codes(
-          fields :: [
-            :block_hash
-            | :created_contract_code_indexed_at
-            | :from_address_hash
-            | :gas
-            | :gas_price
-            | :hash
-            | :index
-            | :input
-            | :nonce
-            | :r
-            | :s
-            | :to_address_hash
-            | :v
-            | :value
-          ],
-          initial :: accumulator,
-          reducer :: (entry :: term(), accumulator -> accumulator),
-          limited? :: boolean()
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_transactions_with_unfetched_created_contract_codes(fields, initial, reducer, limited? \\ false)
-      when is_function(reducer, 2) do
-    query =
-      from(t in Transaction,
-        where:
-          not is_nil(t.block_hash) and not is_nil(t.created_contract_address_hash) and
-            is_nil(t.created_contract_code_indexed_at) and t.status == ^1,
-        select: ^fields
-      )
-
-    query
-    |> add_fetcher_limit(limited?)
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
   @spec stream_mined_transactions(
           fields :: [
             :block_hash

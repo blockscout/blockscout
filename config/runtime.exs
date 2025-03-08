@@ -673,6 +673,10 @@ config :explorer, Explorer.Migrator.SanitizeVerifiedAddresses,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_CONCURRENCY", 1),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_TIMEOUT", "0s")
 
+config :explorer, Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EMPTY_CONTRACT_CODE_ADDRESSES_BATCH_SIZE", 500),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EMPTY_CONTRACT_CODE_ADDRESSES_CONCURRENCY", 1)
+
 config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
   enabled: ConfigHelper.chain_type() == :arbitrum,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_ARBITRUM_DA_RECORDS_NORMALIZATION_BATCH_SIZE", 500),

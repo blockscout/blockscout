@@ -1,0 +1,54 @@
+defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddressesTest do
+  use Explorer.DataCase, async: false
+
+  alias Explorer.Chain.Address
+  alias Explorer.Migrator.{SanitizeEmptyContractCodeAddresses, MigrationStatus}
+  alias Explorer.Repo
+
+  describe "sanitize addresses with empty contract code" do
+    test "sets contract_code to nil for addresses with '0x' code" do
+      # Create addresses with empty contract code "0x" that should be updated
+      addresses_to_update =
+        Enum.map(1..5, fn _ ->
+          address = insert(:address, contract_code: "0x")
+
+          # Associate each address with a transaction as created_contract_address_hash
+          insert(:transaction, created_contract_address_hash: address.hash)
+
+          address
+        end)
+
+      # Create addresses with non-empty contract code (shouldn't be updated)
+      addresses_with_code =
+        Enum.map(1..3, fn _ ->
+          address = insert(:address, contract_code: "0x1234")
+
+          insert(:transaction, created_contract_address_hash: address.hash)
+
+          address
+        end)
+
+      # Verify initial state
+      assert MigrationStatus.get_status("sanitize_empty_contract_code_addresses") == nil
+
+      # Run the migration
+      SanitizeEmptyContractCodeAddresses.start_link([])
+      Process.sleep(100)
+
+      # Check that addresses with "0x" and associated transactions had their contract_code set to nil
+      for address <- addresses_to_update do
+        updated_address = Repo.get(Address, address.hash)
+        assert updated_address.contract_code == nil
+      end
+
+      # Check that addresses with actual contract code weren't changed
+      for address <- addresses_with_code do
+        unchanged_address = Repo.get(Address, address.hash)
+        assert to_string(unchanged_address.contract_code) == "0x1234"
+      end
+
+      # Check migration status
+      assert MigrationStatus.get_status("sanitize_empty_contract_code_addresses") == "completed"
+    end
+  end
+end
