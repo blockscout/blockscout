@@ -104,7 +104,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
            {:genesis_block_l2_invalid, is_nil(env[:genesis_block_l2]) or env[:genesis_block_l2] < 0},
          _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
+         json_rpc_named_arguments = Helper.json_rpc_named_arguments(optimism_l1_rpc),
          {:system_config_read, {start_block_l1, batch_inbox, batch_submitter}} <-
            {:system_config_read, read_system_config(system_config, json_rpc_named_arguments)},
          {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.address_correct?(batch_inbox)},
@@ -113,6 +113,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          true <- start_block_l1 > 0,
          chunk_size = parse_integer(env[:blocks_chunk_size]),
          {:chunk_size_valid, true} <- {:chunk_size_valid, !is_nil(chunk_size) && chunk_size > 0},
+         {:block_duration_valid, true} <- {:block_duration_valid, optimism_env[:block_duration] > 0},
          {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction} =
            get_last_l1_item(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
@@ -120,16 +121,21 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          {:l1_transaction_not_found, false} <-
            {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {:ok, block_check_interval, last_safe_block} <-
-           Optimism.get_block_check_interval(json_rpc_named_arguments) do
+           Helper.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
 
-      chain_id_l1 = fetch_chain_id(json_rpc_named_arguments)
+      chain_id_l1 =
+        case EthereumJSONRPC.fetch_chain_id(json_rpc_named_arguments) do
+          {:ok, id} ->
+            id
 
-      if is_nil(chain_id_l1) do
-        Logger.warning(
-          "Cannot get Chain ID from the L1 RPC. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables."
-        )
-      end
+          {:error, reason} ->
+            Logger.warning(
+              "Cannot get Chain ID from L1 RPC. Reason: #{inspect(reason)}. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables."
+            )
+
+            nil
+        end
 
       Process.send(self(), :continue, [])
 
@@ -178,6 +184,10 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
       {:chunk_size_valid, false} ->
         Logger.error("Invalid blocks chunk size value.")
+        {:stop, :normal, state}
+
+      {:block_duration_valid, false} ->
+        Logger.error("Check INDEXER_OPTIMISM_BLOCK_DURATION env variable. Its value must be a positive integer.")
         {:stop, :normal, state}
 
       {:error, error_data} ->
@@ -334,13 +344,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       end)
 
     new_start_block = last_written_block + 1
-
-    {:ok, new_end_block} =
-      Helper.get_block_number_by_tag(
-        "latest",
-        json_rpc_named_arguments,
-        Helper.infinite_retries_number()
-      )
+    new_end_block = Helper.fetch_latest_l1_block_number(json_rpc_named_arguments)
 
     delay =
       if new_end_block == last_written_block do
@@ -456,7 +460,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          l1_transaction_hashes = elem(result, 1),
          last_l1_transaction_hash = List.last(l1_transaction_hashes),
          {:ok, last_l1_transaction} =
-           Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+           Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:empty_transaction, false, last_l1_transaction_hash} <-
            {:empty_transaction, is_nil(last_l1_transaction), last_l1_transaction_hash} do
       last_l1_block_number = quantity_to_integer(Map.get(last_l1_transaction, "blockNumber", 0))
@@ -1487,34 +1491,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
     if !is_nil(start_block) and Helper.address_correct?(batch_inbox) and Helper.address_correct?(batch_submitter) do
       {start_block, String.downcase(batch_inbox), String.downcase(batch_submitter)}
-    end
-  end
-
-  # Fetches the chain id from the RPC.
-  #
-  # ## Parameters
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  #
-  # ## Returns
-  # - The chain id as unsigned integer.
-  # - `nil` if the request failed.
-  @spec fetch_chain_id(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer() | nil
-  defp fetch_chain_id(json_rpc_named_arguments) do
-    error_message = &"Cannot read `eth_chainId`. Error: #{inspect(&1)}"
-
-    request = EthereumJSONRPC.request(%{id: 0, method: "eth_chainId", params: []})
-
-    case Helper.repeated_call(
-           &json_rpc/2,
-           [request, json_rpc_named_arguments],
-           error_message,
-           Helper.infinite_retries_number()
-         ) do
-      {:ok, response} ->
-        quantity_to_integer(response)
-
-      _ ->
-        nil
     end
   end
 

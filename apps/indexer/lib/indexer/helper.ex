@@ -17,6 +17,7 @@ defmodule Indexer.Helper do
 
   alias EthereumJSONRPC.Block.{ByNumber, ByTag}
   alias EthereumJSONRPC.{Blocks, Transport}
+  alias Explorer.Chain.Cache.LatestL1BlockNumber
   alias Explorer.Chain.Hash
   alias Explorer.SmartContract.Reader, as: ContractReader
 
@@ -668,8 +669,41 @@ defmodule Indexer.Helper do
     end
   end
 
-  # Pauses the process, incrementally increasing the sleep time up to a maximum of 20 minutes.
-  defp pause_before_retry(retries_done) do
+  @doc """
+  Pauses the process, incrementally increasing the sleep time up to a maximum of 20 minutes.
+
+  ## Parameters
+  - `retries_done`: How many retries have already been done.
+
+  ## Returns
+  - Nothing.
+  """
+  @spec pause_before_retry(non_neg_integer()) :: :ok
+  def pause_before_retry(retries_done) do
     :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
+  end
+
+  @doc """
+    Fetches the `latest` block number from L1. If the block number is cached in `Explorer.Chain.Cache.LatestL1BlockNumber`,
+    the cached value is used. The cached value is updated in `Indexer.Fetcher.RollupL1ReorgMonitor` module.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection on L1.
+
+    ## Returns
+    - The block number.
+  """
+  @spec fetch_latest_l1_block_number(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer()
+  def fetch_latest_l1_block_number(json_rpc_named_arguments) do
+    case LatestL1BlockNumber.get_block_number() do
+      nil ->
+        {:ok, latest} =
+          get_block_number_by_tag("latest", json_rpc_named_arguments, @infinite_retries_number)
+
+        latest
+
+      latest_from_cache ->
+        latest_from_cache
+    end
   end
 end
