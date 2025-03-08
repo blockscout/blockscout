@@ -644,6 +644,86 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @doc """
+  /**
+   * Returns an Ecto query to fetch consensus ERC-1155 token transfers with exploded rows.
+   *
+   * For each ERC-1155 transfer record, this query uses a lateral join to unnest the
+   * token_ids and corresponding token amounts. If the amounts array is null, it falls
+   * back to wrapping the single amount value in an array.
+   *
+   * @returns {Ecto.Query.t} The Ecto query for fetching exploded ERC-1155 token transfers.
+   */
+  """
+  @spec erc_1155_token_transfers_exploded_query() :: Ecto.Query.t()
+  def erc_1155_token_transfers_exploded_query do
+    base_query =
+      only_consensus_transfers_query()
+      |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+      |> where([tt, token: token], token.type == "ERC-1155")
+      |> join(:inner, [tt, token: token],
+           unnest in fragment(
+             "LATERAL (SELECT unnest(?) AS token_id, unnest(COALESCE(?, ARRAY[?])) AS amount)",
+             tt.token_ids, tt.amounts, tt.amount
+           ),
+           as: :unnest,
+           on: true
+         )
+
+    if DenormalizationHelper.tt_denormalization_finished?() do
+      base_query
+      |> join(:inner, [tt], transaction in assoc(tt, :transaction), as: :transaction)
+      |> select([tt, token: token, transaction: transaction, unnest: unnest], %{
+        # token_transfers fields
+        transaction_hash: tt.transaction_hash,
+        log_index: tt.log_index,
+        from_address_hash: tt.from_address_hash,
+        to_address_hash: tt.to_address_hash,
+        token_contract_address_hash: tt.token_contract_address_hash,
+        inserted_at: tt.inserted_at,
+        updated_at: tt.updated_at,
+        block_number: tt.block_number,
+        block_hash: tt.block_hash,
+        amounts: tt.amounts,
+        token_ids: tt.token_ids,
+        token_type: tt.token_type,
+        block_consensus: tt.block_consensus,
+        # exploded values
+        token_ids: fragment("ARRAY[?::numeric]", field(unnest, :token_id)),
+        amount: fragment("?::numeric", field(unnest, :amount)),
+        # include the whole token and transaction structs
+        token: token,
+        transaction: transaction
+      })
+    else
+      base_query
+      |> join(:inner, [tt], transaction in assoc(tt, :transaction), as: :transaction)
+      |> select([tt, token: token, block: block, transaction: transaction, unnest: unnest], %{
+        # token_transfers fields
+        transaction_hash: tt.transaction_hash,
+        log_index: tt.log_index,
+        from_address_hash: tt.from_address_hash,
+        to_address_hash: tt.to_address_hash,
+        token_contract_address_hash: tt.token_contract_address_hash,
+        inserted_at: tt.inserted_at,
+        updated_at: tt.updated_at,
+        block_number: tt.block_number,
+        block_hash: tt.block_hash,
+        amounts: tt.amounts,
+        token_ids: tt.token_ids,
+        token_type: tt.token_type,
+        block_consensus: tt.block_consensus,
+        # exploded values
+        token_ids: fragment("ARRAY[?::numeric]", field(unnest, :token_id)),
+        amount: fragment("?::numeric", field(unnest, :amount)),
+        # include the full token, block, and transaction structs
+        token: token,
+        block: block,
+        transaction: transaction
+      })
+    end
+  end
+
+  @doc """
   Fetches token transfers from logs.
   """
   @spec logs_to_token_transfers([Log.t()], Keyword.t()) :: [TokenTransfer.t()]
