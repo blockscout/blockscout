@@ -315,6 +315,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       expected_result = [
         %{
           "address" => "#{contract_address.hash}",
+          "address_hash" => "#{contract_address.hash}",
           "topics" => get_topics(log),
           "data" => "#{log.data}",
           "blockNumber" => integer_to_hex(transaction.block_number),
@@ -487,6 +488,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       expected_result = [
         %{
           "address" => "#{contract_address.hash}",
+          "address_hash" => "#{contract_address.hash}",
           "topics" => get_topics(log1),
           "data" => "#{log1.data}",
           "blockNumber" => integer_to_hex(transaction.block_number),
