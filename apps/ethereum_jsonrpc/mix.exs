@@ -13,7 +13,7 @@ defmodule EthereumJSONRPC.MixProject do
       dialyzer: [
         plt_add_deps: :app_tree,
         plt_add_apps: [:mix],
-        ignore_warnings: "../../.dialyzer-ignore"
+        ignore_warnings: "../../.dialyzer_ignore.exs"
       ],
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),

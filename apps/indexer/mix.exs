@@ -9,7 +9,7 @@ defmodule Indexer.MixProject do
       config_path: "../../config/config.exs",
       deps: deps(),
       deps_path: "../../deps",
-      description: "Fetches block chain data from on-chain node for later reading with Explorer.",
+      description: "Fetches blockchain data from on-chain node for later reading with Explorer.",
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",

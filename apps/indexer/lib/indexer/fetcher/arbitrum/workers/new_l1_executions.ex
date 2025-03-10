@@ -29,6 +29,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
+  alias Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks, as: ConfirmationsTasks
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
@@ -143,27 +144,33 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
           },
           :data => %{:historical_executions_end_block => non_neg_integer(), optional(any()) => any()},
           optional(any()) => any()
-        }) :: {:ok, non_neg_integer()}
+        }) :: {:ok, non_neg_integer(), %{optional(any()) => any()}}
   def discover_historical_l1_messages_executions(
         %{
           config: %{
             l1_rpc: l1_rpc_config,
-            l1_outbox_address: outbox_address,
-            l1_rollup_init_block: l1_rollup_init_block
+            l1_outbox_address: outbox_address
           },
           data: %{historical_executions_end_block: end_block}
-        } = _state
+        } = state
       ) do
-    if end_block >= l1_rollup_init_block do
-      start_block = max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
+    # This is used to optimize historical discovery processes by avoiding scanning
+    # blocks before the first possible confirmation. Since cross-chain message
+    # executions on the parent chain cannot occur before their corresponding L2
+    # blocks are confirmed, this provides a safe lower bound for message execution
+    # discovery.
+    {lowest_l1_block, new_state} = ConfirmationsTasks.get_lowest_l1_block_for_confirmations(state)
+
+    if end_block >= lowest_l1_block do
+      start_block = max(lowest_l1_block, end_block - l1_rpc_config.logs_block_range + 1)
 
       log_info("Block range for historical l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
 
       discover(outbox_address, start_block, end_block, l1_rpc_config)
 
-      {:ok, start_block}
+      {:ok, start_block, new_state}
     else
-      {:ok, l1_rollup_init_block}
+      {:ok, lowest_l1_block, new_state}
     end
   end
 

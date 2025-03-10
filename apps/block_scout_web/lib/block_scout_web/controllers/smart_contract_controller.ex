@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.SmartContractController do
       implementation_abi =
         if contract_type == "proxy" do
           implementation_address_hash_string
-          |> SmartContract.get_smart_contract_abi()
+          |> SmartContract.get_abi()
           |> Poison.encode!()
         else
           []

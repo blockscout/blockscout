@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.CSVExport.Celo.AddressElectionRewardsCsvExporter do
+defmodule Explorer.Chain.CsvExport.Address.Celo.ElectionRewards do
   @moduledoc """
   Exports Celo election rewards to a csv file.
   """
@@ -8,7 +8,7 @@ defmodule Explorer.Chain.CSVExport.Celo.AddressElectionRewardsCsvExporter do
     ]
 
   alias Explorer.Chain.Celo.Reader
-  alias Explorer.Chain.CSVExport.Helper
+  alias Explorer.Chain.CsvExport.Helper
   alias Explorer.Chain.{Hash, Wei}
 
   @spec export(Hash.Address.t(), String.t() | nil, String.t() | nil, any(), any()) :: Enumerable.t()
