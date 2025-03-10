@@ -10,6 +10,8 @@ defmodule BlockScoutWeb.API.V2.TokenView do
 
   def render("token.json", %{token: nil = token, contract_address_hash: contract_address_hash}) do
     %{
+      "address_hash" => Address.checksum(contract_address_hash),
+      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => Address.checksum(contract_address_hash),
       "symbol" => nil,
       "name" => nil,
@@ -30,6 +32,8 @@ defmodule BlockScoutWeb.API.V2.TokenView do
 
   def render("token.json", %{token: token}) do
     %{
+      "address_hash" => Address.checksum(token.contract_address_hash),
+      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => Address.checksum(token.contract_address_hash),
       "symbol" => token.symbol,
       "name" => token.name,
