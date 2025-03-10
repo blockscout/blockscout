@@ -527,6 +527,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "logs" => [
           %{
             "address" => "#{address.hash}",
+            "address_hash" => "#{address.hash}",
             "data" => "#{log.data}",
             "topics" => [@first_topic_hex_string_1, @second_topic_hex_string_1, nil, nil],
             "index" => "#{log.index}"
