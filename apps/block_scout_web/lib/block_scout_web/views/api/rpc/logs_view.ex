@@ -14,6 +14,8 @@ defmodule BlockScoutWeb.API.RPC.LogsView do
 
   defp prepare_log(log) do
     %{
+      "address_hash" => "#{log.address_hash}",
+      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => "#{log.address_hash}",
       "topics" => get_topics(log),
       "data" => "#{log.data}",

@@ -28,6 +28,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
       |> Enum.map(fn msg ->
         %{
           "id" => msg.message_id,
+          "origination_address_hash" => msg.originator_address,
+          # todo: It should be removed in favour `origination_address_hash` property with the next release after 8.0.0
           "origination_address" => msg.originator_address,
           "origination_transaction_hash" => msg.originating_transaction_hash,
           "origination_timestamp" => msg.origination_timestamp,
@@ -74,6 +76,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   def render("arbitrum_claim_message.json", %{calldata: calldata, address: address}) do
     %{
       "calldata" => calldata,
+      "outbox_address_hash" => address,
+      # todo: It should be removed in favour `contract_address_hash` property with the next release after 8.0.0
       "outbox_address" => address
     }
   end
@@ -114,7 +118,11 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     %{
       "number" => batch.number,
       "transactions_count" => batch.transactions_count,
+      "start_block_number" => batch.start_block,
+      "end_block_number" => batch.end_block,
+      # todo: It should be removed in favour `start_block_number` property with the next release after 8.0.0
       "start_block" => batch.start_block,
+      # todo: It should be removed in favour `end_block_number` property with the next release after 8.0.0
       "end_block" => batch.end_block,
       "before_acc" => batch.before_acc,
       "after_acc" => batch.after_acc
@@ -653,6 +661,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
 
     %{
       "message_id" => APIV2Helper.get_2map_data(arbitrum_transaction, :arbitrum_message_from_l2, :message_id),
+      "associated_l1_transaction_hash" => l1_transaction,
+      # todo: It should be removed in favour `associated_l1_transaction_hash` property with the next release after 8.0.0
       "associated_l1_transaction" => l1_transaction,
       "message_status" => status
     }
