@@ -528,8 +528,8 @@ defmodule Explorer.Chain.Address do
     - `address`: The address if found.
     - `nil`: If the address is not found.
   """
-  @spec get_address_by_hash(Hash.Address.t()) :: Chain.Address.t() | nil
-  def get_address_by_hash(address_hash) do
+  @spec get_by_hash(Hash.Address.t()) :: Chain.Address.t() | nil
+  def get_by_hash(address_hash) do
     case Chain.hash_to_address(
            address_hash,
            [

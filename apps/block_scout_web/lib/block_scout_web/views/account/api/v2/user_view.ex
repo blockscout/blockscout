@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   end
 
   def render("watchlist_address.json", %{watchlist_address: watchlist_address, exchange_rate: exchange_rate}) do
-    address = Address.get_address_by_hash(watchlist_address.address_hash)
+    address = Address.get_by_hash(watchlist_address.address_hash)
     prepare_watchlist_address(watchlist_address, address, exchange_rate)
   end
 
@@ -159,7 +159,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   end
 
   defp prepare_custom_abi(custom_abi) do
-    address = Address.get_address_by_hash(custom_abi.address_hash)
+    address = Address.get_by_hash(custom_abi.address_hash)
 
     %{
       "id" => custom_abi.id,
@@ -175,7 +175,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   end
 
   defp prepare_address_tag(address_tag) do
-    address = Address.get_address_by_hash(address_tag.address_hash)
+    address = Address.get_by_hash(address_tag.address_hash)
 
     %{
       "id" => address_tag.id,
@@ -196,9 +196,11 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   end
 
   defp prepare_public_tags_request(public_tags_request) do
-    addresses =
-      Enum.map(public_tags_request.addresses, fn address_hash ->
-        Helper.address_with_info(nil, Address.get_address_by_hash(address_hash), address_hash, false)
+    addresses = Address.get_addresses_by_hashes(public_tags_request.addresses)
+
+    addresses_with_info =
+      Enum.map(addresses, fn address ->
+        Helper.address_with_info(nil, address, address.hash, false)
       end)
 
     %{
@@ -209,7 +211,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
       "website" => public_tags_request.website,
       "tags" => public_tags_request.tags,
       "addresses" => public_tags_request.addresses,
-      "addresses_with_info" => addresses,
+      "addresses_with_info" => addresses_with_info,
       "additional_comment" => public_tags_request.additional_comment,
       "is_owner" => public_tags_request.is_owner,
       "submission_date" => public_tags_request.inserted_at
