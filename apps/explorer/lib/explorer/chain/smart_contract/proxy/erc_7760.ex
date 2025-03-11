@@ -17,9 +17,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.ERC7760 do
   @transparent_basic_variant_14_left "3d3d336d"
   @transparent_basic_variant_14_right "14605157363d3d37363d7f360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc545af43d6000803e604c573d6000fd5b3d6000f35b3d3560203555604080361115604c5736038060403d373d3d355af43d6000803e604c573d6000fd"
   @transparent_l_variant_20_left "3658146083573d3d3373"
-  @transparent_l_variant_20_right "14605D57363d3d37363D7f360894a13ba1A3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc545af43d6000803e6058573d6000fd5b3d6000f35b3d35602035556040360380156058578060403d373d3d355af43d6000803e6058573d6000fd5b602060293d393d51543d52593df3"
+  @transparent_l_variant_20_right "14605d57363d3d37363d7f360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc545af43d6000803e6058573d6000fd5b3d6000f35b3d35602035556040360380156058578060403d373d3d355af43d6000803e6058573d6000fd5b602060293d393d51543d52593df3"
   @transparent_l_variant_14_left "365814607d573d3d336d"
-  @transparent_l_variant_14_right "14605757363d3D37363d7F360894A13Ba1A3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc545af43d6000803e6052573d6000fd5b3d6000f35b3d35602035556040360380156052578060403d373d3d355af43d6000803e6052573d6000fd5b602060233d393d51543d52593df3"
+  @transparent_l_variant_14_right "14605757363d3d37363d7f360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc545af43d6000803e6052573d6000fd5b3d6000f35b3d35602035556040360380156052578060403d373d3d355af43d6000803e6052573d6000fd5b602060233d393d51543d52593df3"
 
   @doc """
   Get implementation address hash string following ERC-7760. It returns the value as array of the strings.
@@ -54,21 +54,33 @@ defmodule Explorer.Chain.SmartContract.Proxy.ERC7760 do
     end
   end
 
+  # credo:disable-for-next-line /Complexity/
   defp get_proxy_erc_7760(contract_bytecode, proxy_address_hash) do
-    case contract_bytecode do
-      @transparent_basic_variant_20_left <> <<_factory_address::binary-size(40)>> <> @transparent_basic_variant_20_right ->
+    case String.downcase(contract_bytecode) do
+      @transparent_basic_variant_20_left <>
+          <<_factory_address::binary-size(40)>> <> @transparent_basic_variant_20_right <> _ ->
         fetch_implementation(proxy_address_hash)
 
-      @transparent_basic_variant_14_left <> <<_factory_address::binary-size(28)>> <> @transparent_basic_variant_14_right ->
+      @transparent_basic_variant_14_left <>
+          <<_factory_address::binary-size(28)>> <> @transparent_basic_variant_14_right <> _ ->
         fetch_implementation(proxy_address_hash)
 
-      @transparent_l_variant_20_left <> <<_factory_address::binary-size(40)>> <> @transparent_l_variant_20_right ->
+      @transparent_l_variant_20_left <> <<_factory_address::binary-size(40)>> <> @transparent_l_variant_20_right <> _ ->
         fetch_implementation(proxy_address_hash)
 
-      @transparent_l_variant_14_left <> <<_factory_address::binary-size(28)>> <> @transparent_l_variant_14_right ->
+      @transparent_l_variant_14_left <> <<_factory_address::binary-size(28)>> <> @transparent_l_variant_14_right <> _ ->
         fetch_implementation(proxy_address_hash)
 
-      bytecode when bytecode in [@uups_basic_variant, @uups_l_variant, @beacon_basic_variant, @beacon_l_variant] ->
+      @uups_basic_variant <> _ ->
+        fetch_implementation(proxy_address_hash)
+
+      @uups_l_variant <> _ ->
+        fetch_implementation(proxy_address_hash)
+
+      @beacon_basic_variant <> _ ->
+        fetch_implementation(proxy_address_hash)
+
+      @beacon_l_variant <> _ ->
         fetch_implementation(proxy_address_hash)
 
       _ ->
