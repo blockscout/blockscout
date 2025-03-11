@@ -85,14 +85,12 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   end
 
   defp transaction_hash_from_params(params) do
-    if params["q"] do
-      case params["q"]
-           |> Chain.string_to_transaction_hash() do
-        {:ok, transaction_hash} -> transaction_hash
-        _ -> :invalid
-      end
+    with transaction_hash_string when not is_nil(transaction_hash_string) <- params["transaction_hash"],
+         {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string) do
+      transaction_hash
     else
-      nil
+      nil -> nil
+      :error -> :invalid
     end
   end
 end
