@@ -226,15 +226,11 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
 
   defp sanitize_index_name(raw_index_name) do
     # Postgres allows index names with a maximum length of 63 bytes
-    truncated =
-      if byte_size(raw_index_name) < 64 do
-        raw_index_name
-      else
-        <<index_name::binary-size(63), _::binary>> = raw_index_name
-        index_name
-      end
-
-    # Postgres converts identifiers to lowercase
-    String.downcase(truncated)
+    if byte_size(raw_index_name) < 64 do
+      raw_index_name
+    else
+      <<index_name::binary-size(63), _::binary>> = raw_index_name
+      index_name
+    end
   end
 end

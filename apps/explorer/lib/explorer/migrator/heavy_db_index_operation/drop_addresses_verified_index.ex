@@ -6,6 +6,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropAddressesVerifiedIndex do
   use Explorer.Migrator.HeavyDbIndexOperation
 
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :addresses
@@ -23,7 +24,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropAddressesVerifiedIndex do
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations do
-    []
+    [CreateAddressesVerifiedIndex.migration_name()]
   end
 
   @impl HeavyDbIndexOperation

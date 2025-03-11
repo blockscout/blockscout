@@ -8,6 +8,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedTransac
 
   require Logger
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedHashIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
@@ -32,7 +33,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedTransac
     ]
 
   @query_string """
-  CREATE INDEX #{HeavyDbIndexOperationHelper.add_concurrently_flag?()} IF NOT EXISTS #{@index_name}
+  CREATE INDEX #{HeavyDbIndexOperationHelper.add_concurrently_flag?()} IF NOT EXISTS "#{@index_name}"
   ON #{@table_name}(transactions_count DESC NULLS LAST, hash ASC)
   WHERE verified = true;
   """
@@ -63,5 +64,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedTransac
   end
 
   @impl HeavyDbIndexOperation
-  def update_cache, do: :ok
+  def update_cache do
+    BackgroundMigrations.set_heavy_indexes_create_addresses_verified_transactions_count_desc_hash_index_finished(true)
+  end
 end
