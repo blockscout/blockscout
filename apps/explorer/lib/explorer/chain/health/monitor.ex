@@ -93,6 +93,9 @@ defmodule Explorer.Chain.Health.Monitor do
           :polygon_zkevm ->
             get_latest_batch_info_from_module(PolygonZkevmReader)
 
+          # todo
+          # :scroll ->
+
           _ ->
             nil
         end
