@@ -79,7 +79,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       def http_post_request(url, body, is_verification_request?, options \\ []) do
         headers = maybe_put_api_key_header([{"Content-Type", "application/json"}], is_verification_request?)
 
-        case do_request(url, :post, Jason.encode!(body), headers) do
+        case do_request(url, :post, Jason.encode!(body), headers, @post_timeout) do
           {:ok, %{body: body, status: _}} ->
             process_verifier_response(body, options)
 
@@ -229,7 +229,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         |> Map.put("metadata", metadata)
       end
 
-      defp do_request(url, method, body \\ nil, headers \\ []) do
+      defp do_request(url, method, body \\ nil, headers \\ [], timeout \\ 5_000) do
         client = Tesla.client([], Tesla.Adapter.Mint)
 
         Tesla.request(client,
@@ -237,7 +237,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
           url: url,
           headers: headers,
           body: body,
-          opts: [adapter: [protocols: [:http1]]]
+          opts: [timeout: timeout, adapter: [protocols: [:http1]]]
         )
       end
     end
