@@ -9,11 +9,11 @@ defmodule Explorer.Chain.Health.Monitor do
   alias EthereumJSONRPC.Utility.EndpointAvailabilityChecker
   alias Explorer.Chain.Arbitrum.Reader.Common, as: ArbitrumReaderCommon
   alias Explorer.Chain.Health.Helper, as: HealthHelper
+  alias Explorer.Chain.Optimism.Reader, as: OptimismReader
+  alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Repo
-
-  @interval :timer.minutes(5)
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -33,7 +33,7 @@ defmodule Explorer.Chain.Health.Monitor do
   end
 
   defp schedule_work do
-    Process.send_after(self(), :work, Application.get_env(:explorer, __MODULE__)[:check_interval] || @interval)
+    Process.send_after(self(), :work, Application.get_env(:explorer, __MODULE__)[:check_interval])
   end
 
   defp perform_work do
@@ -82,44 +82,16 @@ defmodule Explorer.Chain.Health.Monitor do
       batch_info =
         case Application.get_env(:explorer, :chain_type) do
           :arbitrum ->
-            case ArbitrumReaderCommon.get_latest_batch_info(api?: true) do
-              {:ok,
-               %{
-                 latest_batch_number: latest_batch_number,
-                 latest_batch_timestamp: latest_batch_timestamp,
-                 average_batch_time: average_batch_time
-               }} ->
-                %{
-                  number: latest_batch_number,
-                  timestamp: latest_batch_timestamp,
-                  average_batch_time: average_batch_time
-                }
-
-              _ ->
-                nil
-            end
+            get_latest_batch_info_from_module(ArbitrumReaderCommon)
 
           :zksync ->
-            case ZkSyncReader.get_latest_batch_info(api?: true) do
-              {:ok,
-               %{
-                 latest_batch_number: latest_batch_number,
-                 latest_batch_timestamp: latest_batch_timestamp,
-                 average_batch_time: average_batch_time
-               }} ->
-                %{
-                  number: latest_batch_number,
-                  timestamp: latest_batch_timestamp,
-                  average_batch_time: average_batch_time
-                }
+            get_latest_batch_info_from_module(ZkSyncReader)
 
-              _ ->
-                nil
-            end
+          :optimism ->
+            get_latest_batch_info_from_module(OptimismReader)
 
-          # todo
-          # :optimism ->
-          # :polygon_zkevm ->
+          :polygon_zkevm ->
+            get_latest_batch_info_from_module(PolygonZkevmReader)
 
           _ ->
             nil
@@ -169,5 +141,24 @@ defmodule Explorer.Chain.Health.Monitor do
         ]
       ]
     )
+  end
+
+  defp get_latest_batch_info_from_module(module) do
+    case module.get_latest_batch_info(api?: true) do
+      {:ok,
+       %{
+         latest_batch_number: latest_batch_number,
+         latest_batch_timestamp: latest_batch_timestamp,
+         average_batch_time: average_batch_time
+       }} ->
+        %{
+          number: latest_batch_number,
+          timestamp: latest_batch_timestamp,
+          average_batch_time: average_batch_time
+        }
+
+      _ ->
+        nil
+    end
   end
 end
