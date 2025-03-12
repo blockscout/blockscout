@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   @doc """
     Function to render GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment`
-    and `/api/v2/optimism/batches/:internal_id` endpoints.
+    and `/api/v2/optimism/batches/:number` endpoints.
   """
   def render("optimism_batch.json", %{batch: batch}) do
     batch
@@ -264,8 +264,11 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         ) :: %{
           :internal_id => non_neg_integer(),
           :l1_timestamp => DateTime.t(),
+          :l2_start_block_number => non_neg_integer(),
           :l2_block_start => non_neg_integer(),
+          :l2_end_block_number => non_neg_integer(),
           :l2_block_end => non_neg_integer(),
+          :transactions_count => non_neg_integer(),
           :transaction_count => non_neg_integer(),
           :l1_transaction_hashes => list(),
           :batch_data_container => :in_blob4844 | :in_celestia | :in_calldata | nil
@@ -308,6 +311,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
       batch_info =
         %{
+          "number" => frame_sequence.id,
+          # todo: It should be removed in favour `number` property with the next release after 8.0.0
           "internal_id" => frame_sequence.id,
           "l1_timestamp" => frame_sequence.l1_timestamp,
           "l1_transaction_hashes" => frame_sequence.l1_transaction_hashes,

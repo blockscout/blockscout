@@ -545,8 +545,8 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def fetch_page_number(%{"items_count" => item_count_str}) do
-    {items_count, _} = Integer.parse(item_count_str)
+  def fetch_page_number(%{"items_count" => items_count_str}) do
+    {items_count, _} = Integer.parse(items_count_str)
     div(items_count, @page_size) + 1
   end
 

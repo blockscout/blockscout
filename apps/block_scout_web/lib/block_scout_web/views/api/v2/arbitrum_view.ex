@@ -124,7 +124,11 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
       "start_block" => batch.start_block,
       # todo: It should be removed in favour `end_block_number` property with the next release after 8.0.0
       "end_block" => batch.end_block,
+      "before_acc_hash" => batch.before_acc,
+      # todo: It should be removed in favour `before_acc_hash` property with the next release after 8.0.0
       "before_acc" => batch.before_acc,
+      "after_acc_hash" => batch.after_acc,
+      # todo: It should be removed in favour `after_acc_hash` property with the next release after 8.0.0
       "after_acc" => batch.after_acc
     }
     |> add_l1_transaction_info(batch)
@@ -715,6 +719,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   defp extend_with_block_info(out_json, %Block{} = arbitrum_block) do
     out_json
     |> Map.put("delayed_messages", Hash.to_integer(arbitrum_block.nonce))
+    |> Map.put("l1_block_number", Map.get(arbitrum_block, :l1_block_number))
+    # todo: It should be removed in favour `l1_block_number` property with the next release after 8.0.0
     |> Map.put("l1_block_height", Map.get(arbitrum_block, :l1_block_number))
     |> Map.put("send_count", Map.get(arbitrum_block, :send_count))
     |> Map.put("send_root", Map.get(arbitrum_block, :send_root))

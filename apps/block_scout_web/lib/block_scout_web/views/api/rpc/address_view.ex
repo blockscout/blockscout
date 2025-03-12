@@ -86,8 +86,6 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   defp prepare_account(address) do
     %{
       "balance" => to_string(address.fetched_coin_balance && address.fetched_coin_balance.value),
-      "address_hash" => to_string(address.hash),
-      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => to_string(address.hash),
       "stale" => address.stale? || false
     }
