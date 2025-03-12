@@ -17,6 +17,8 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "name" => nil,
       "decimals" => nil,
       "type" => nil,
+      "holders_count" => nil,
+      # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
       "holders" => nil,
       "exchange_rate" => nil,
       "total_supply" => nil,
@@ -39,6 +41,8 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "name" => token.name,
       "decimals" => token.decimals,
       "type" => token.type,
+      "holders_count" => prepare_holders_count(token.holder_count),
+      # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
       "holders" => prepare_holders_count(token.holder_count),
       "exchange_rate" => exchange_rate(token),
       "volume_24h" => token.volume_24h,

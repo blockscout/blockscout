@@ -88,7 +88,7 @@ When contributing to the API v2, please adhere to the following naming conventio
 
 - The block number should be returned as a number in the property with the name which ends with `block_number`.
 - All hashes (transaction, block address etc.) should be returned as a hex string in the property which ends with `_hash`.
-- Property name for counter should contain plural form of entity, e.g. `transactions_count`, `blocks_count`.
+- Property name for aggregations like counts and sums should contain plural form of entity and `_count`, `_sum` suffix respecively, e.g. `transactions_count`, `blocks_count`, `withdrawals_sum`.
 - All fields that contain the "index" suffix should be returned as numbers.
 
 ## Compile time Environment Variables

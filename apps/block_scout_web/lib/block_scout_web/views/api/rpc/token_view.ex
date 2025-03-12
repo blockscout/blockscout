@@ -37,8 +37,6 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
 
   defp prepare_token_holder(token_holder) do
     %{
-      "address_hash" => to_string(token_holder.address_hash),
-      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => to_string(token_holder.address_hash),
       "value" => token_holder.value
     }

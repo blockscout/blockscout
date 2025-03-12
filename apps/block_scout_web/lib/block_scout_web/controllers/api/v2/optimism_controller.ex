@@ -99,6 +99,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
           fs
           |> Map.put(:l2_block_range, l2_block_range)
+          |> Map.put(:transactions_count, transaction_count)
+          # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
           |> Map.put(:transaction_count, transaction_count)
           |> Map.put(:batch_data_container, batch_data_container)
         end)
