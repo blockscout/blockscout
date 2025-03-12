@@ -208,6 +208,8 @@ defmodule BlockScoutWeb.Chain do
   def paging_options(
         %{
           "market_cap" => market_cap_string,
+          "holders_count" => holder_count_string,
+          # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
           "holder_count" => holder_count_string,
           "name" => name_string,
           "contract_address_hash" => contract_address_hash_string,
@@ -421,7 +423,9 @@ defmodule BlockScoutWeb.Chain do
   end
 
   def paging_options(%{"smart_contract_id" => id_str} = params) do
-    transactions_count = parse_integer(params["transaction_count"])
+    # todo: It should be removed in favour:
+    # transactions_count = parse_integer(params["transactions_count"]) with the next release after 8.0.0
+    transactions_count = parse_integer(params["transaction_count"] || params["transactions_count"])
     coin_balance = parse_integer(params["coin_balance"])
     id = parse_integer(id_str)
 
@@ -645,6 +649,8 @@ defmodule BlockScoutWeb.Chain do
        }) do
     %{
       "market_cap" => circulating_market_cap,
+      "holders_count" => holder_count,
+      # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
       "holder_count" => holder_count,
       "contract_address_hash" => contract_address_hash,
       "name" => token_name,
@@ -735,6 +741,8 @@ defmodule BlockScoutWeb.Chain do
   defp paging_params(%SmartContract{} = smart_contract) do
     %{
       "smart_contract_id" => smart_contract.id,
+      "transactions_count" => smart_contract.address.transactions_count,
+      # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
       "transaction_count" => smart_contract.address.transactions_count,
       "coin_balance" =>
         smart_contract.address.fetched_coin_balance && Wei.to(smart_contract.address.fetched_coin_balance, :wei)
