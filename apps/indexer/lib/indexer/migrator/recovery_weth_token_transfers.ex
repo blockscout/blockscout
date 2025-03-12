@@ -143,13 +143,11 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
         }
       end)
       |> Indexer.Transform.TokenTransfers.parse(true)
-      |> dbg()
 
     Chain.import(%{
       token_transfers: %{params: token_transfers},
       timeout: :infinity
     })
-    |> dbg()
   end
 
   defp schedule_batch_migration(timeout \\ nil) do
