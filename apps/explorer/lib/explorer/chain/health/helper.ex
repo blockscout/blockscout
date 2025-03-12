@@ -139,8 +139,8 @@ defmodule Explorer.Chain.Health.Helper do
     - "health_latest_block_number_from_db"
     - "health_latest_block_timestamp_from_db"
     - "health_latest_block_number_from_node"
-    - "health_latest_batch_number_from_cache",
-    - "health_latest_batch_timestamp_from_cache"
+    - "health_latest_batch_number_from_db",
+    - "health_latest_batch_timestamp_from_db"
 
   The retrieved values are then reduced into a map with the following keys:
     - `:health_latest_block_number_from_db`
@@ -148,8 +148,8 @@ defmodule Explorer.Chain.Health.Helper do
     - `:health_latest_block_number_from_cache`
     - `:health_latest_block_timestamp_from_cache`
     - `:health_latest_block_number_from_node`
-    - `:health_latest_batch_number_from_cache`
-    - `:health_latest_batch_timestamp_from_cache`
+    - `:health_latest_batch_number_from_db`
+    - `:health_latest_batch_timestamp_from_db`
 
   Each key in the map is assigned the corresponding value fetched from the `LastFetchedCounter`.
 
@@ -166,8 +166,8 @@ defmodule Explorer.Chain.Health.Helper do
         "health_latest_block_number_from_db",
         "health_latest_block_timestamp_from_db",
         "health_latest_block_number_from_node",
-        "health_latest_batch_number_from_cache",
-        "health_latest_batch_timestamp_from_cache"
+        "health_latest_batch_number_from_db",
+        "health_latest_batch_timestamp_from_db"
       ])
 
     if values do
@@ -179,8 +179,8 @@ defmodule Explorer.Chain.Health.Helper do
           health_latest_block_number_from_cache: nil,
           health_latest_block_timestamp_from_cache: nil,
           health_latest_block_number_from_node: nil,
-          health_latest_batch_number_from_cache: nil,
-          health_latest_batch_timestamp_from_cache: nil
+          health_latest_batch_number_from_db: nil,
+          health_latest_batch_timestamp_from_db: nil
         },
         fn {key, value}, acc ->
           Map.put(acc, String.to_atom(key), value)
