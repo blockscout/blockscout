@@ -53,6 +53,8 @@ defmodule Explorer.Factory do
 
   alias Explorer.Chain.Optimism.OutputRoot
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
+  alias Explorer.Chain.Zilliqa.Staker, as: ZilliqaStaker
 
   alias Explorer.Migrator.MigrationStatus
 
@@ -1326,6 +1328,34 @@ defmodule Explorer.Factory do
       address_hash: address.hash,
       state: Enum.random(0..2)
     }
+  end
+
+  def zilliqa_staker_factory do
+    control_address = insert(:address)
+    reward_address = insert(:address)
+    signing_address = insert(:address)
+
+    block = insert(:block)
+
+    %ZilliqaStaker{
+      bls_public_key: zilliqa_bls_public_key(),
+      index: sequence(:zilliqa_staker_index, & &1),
+      control_address_hash: control_address.hash,
+      reward_address_hash: reward_address.hash,
+      signing_address_hash: signing_address.hash,
+      added_at_block_number: block.number,
+      stake_updated_at_block_number: block.number,
+      balance: Decimal.new(1_000_000)
+    }
+  end
+
+  def zilliqa_bls_public_key do
+    {:ok, bls_public_key} =
+      :zilliqa_bls_public_key
+      |> sequence(& &1)
+      |> BLSPublicKey.cast()
+
+    to_string(bls_public_key)
   end
 
   def celo_pending_epoch_block_operation_factory do
