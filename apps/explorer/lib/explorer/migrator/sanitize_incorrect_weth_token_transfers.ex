@@ -105,6 +105,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
     |> Repo.all(timeout: :infinity)
   end
 
+  # credo:disable-for-next-line /Complexity/
   defp unprocessed_identifiers("delete_duplicates") do
     weth_transfers =
       from(
