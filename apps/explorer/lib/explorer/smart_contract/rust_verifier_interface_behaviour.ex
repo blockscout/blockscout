@@ -5,8 +5,9 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
   defmacro __using__(_) do
     # credo:disable-for-next-line
     quote([]) do
+      use Tesla
+
       alias Explorer.Utility.Microservice
-      alias HTTPoison.Response
       require Logger
 
       @post_timeout :timer.minutes(5)
@@ -76,12 +77,10 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       end
 
       def http_post_request(url, body, is_verification_request?, options \\ []) do
-        headers = [{"Content-Type", "application/json"}]
+        headers = maybe_put_api_key_header([{"Content-Type", "application/json"}], is_verification_request?)
 
-        case HTTPoison.post(url, Jason.encode!(body), maybe_put_api_key_header(headers, is_verification_request?),
-               recv_timeout: @post_timeout
-             ) do
-          {:ok, %Response{body: body, status_code: _}} ->
+        case do_request(url, :post, Jason.encode!(body), headers) do
+          {:ok, %{body: body, status: _}} ->
             process_verifier_response(body, options)
 
           {:error, error} ->
@@ -113,11 +112,11 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       end
 
       def http_get_request(url) do
-        case HTTPoison.get(url) do
-          {:ok, %Response{body: body, status_code: 200}} ->
+        case do_request(url, :get) do
+          {:ok, %{body: body, status: 200}} ->
             process_verifier_response(body, [])
 
-          {:ok, %Response{body: body, status_code: _}} ->
+          {:ok, %{body: body, status: _}} ->
             {:error, body}
 
           {:error, error} ->
@@ -228,6 +227,18 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       defp append_metadata(body, metadata) when is_map(body) do
         body
         |> Map.put("metadata", metadata)
+      end
+
+      defp do_request(url, method, body \\ nil, headers \\ []) do
+        client = Tesla.client([], Tesla.Adapter.Mint)
+
+        Tesla.request(client,
+          method: method,
+          url: url,
+          headers: headers,
+          body: body,
+          opts: [adapter: [protocols: [:http1]]]
+        )
       end
     end
   end
