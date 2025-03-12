@@ -8,10 +8,10 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
 
   import Ecto.Query
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Log, TokenTransfer}
   alias Explorer.Migrator.MigrationStatus
-  alias Explorer.Repo
+  alias Indexer.Transform.TokenTransfers
 
   @migration_name "recovery_weth_token_transfers"
 
@@ -142,7 +142,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
             data: to_string(log.data)
         }
       end)
-      |> Indexer.Transform.TokenTransfers.parse(true)
+      |> TokenTransfers.parse(true)
 
     Chain.import(%{
       token_transfers: %{params: token_transfers},
