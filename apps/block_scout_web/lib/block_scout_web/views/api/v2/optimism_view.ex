@@ -35,6 +35,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
           %{
             "l2_block_number" => batch.l2_block_number,
+            "transactions_count" => transaction_count,
+            # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
             "transaction_count" => transaction_count,
             "l1_transaction_hashes" => batch.frame_sequence.l1_transaction_hashes,
             "l1_timestamp" => batch.frame_sequence.l1_timestamp
