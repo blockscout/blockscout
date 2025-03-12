@@ -45,7 +45,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_token_transfers_token_contract_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_token_transfers_block_number_index_finished,
     key: :heavy_indexes_drop_internal_transactions_from_address_hash_index_finished,
-    key: :heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished
+    key: :heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished,
+    key: :heavy_indexes_create_logs_transaction_hash_block_hash_index_address_hash_index_finished
 
   @dialyzer :no_match
 
@@ -65,6 +66,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
     CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
     CreateLogsBlockHashIndex,
+    CreateLogsTransactionHashBlockHashIndexAddressHashIndex,
     DropInternalTransactionsFromAddressHashIndex,
     DropLogsAddressHashIndex,
     DropLogsAddressHashTransactionHashIndex,
@@ -216,6 +218,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     start_migration_status_task(
       CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
       &set_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_logs_transaction_hash_block_hash_index_address_hash_index_finished) do
+    start_migration_status_task(
+      CreateLogsTransactionHashBlockHashIndexAddressHashIndex,
+      &set_heavy_indexes_create_logs_transaction_hash_block_hash_index_address_hash_index_finished/1
     )
   end
 
