@@ -210,7 +210,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     Lists `t:Explorer.Chain.Optimism.InteropMessage.t/0`'s' in descending order based on `timestamp` and `init_transaction_hash`.
 
     ## Parameters
-    - `options`: A keyword list of options that may include whether to use a replica database and paging options.
+    - `options`: A keyword list of options that may include whether to use a replica database, paging and filter options.
 
     ## Returns
     - A list of messages.
@@ -231,10 +231,141 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
           )
 
         base_query
+        |> filter_messages(options)
         |> page_messages(paging_options)
         |> limit(^paging_options.page_size)
         |> select_repo(options).all(timeout: :infinity)
     end
+  end
+
+  @spec filter_messages(Ecto.Query.t(), list()) :: Ecto.Query.t()
+  defp filter_messages(query, options) do
+    query
+    |> filter_messages_by_nonce(options[:nonce])
+    |> filter_messages_by_timestamp(options[:age][:from], :from)
+    |> filter_messages_by_timestamp(options[:age][:to], :to)
+    |> filter_messages_by_status(options[:statuses])
+    |> filter_messages_by_transaction_hash(options[:init_transaction_hash], :init)
+    |> filter_messages_by_transaction_hash(options[:relay_transaction_hash], :relay)
+    |> filter_messages_by_addresses(options[:sources], options[:targets])
+    |> filter_messages_by_direction(options[:direction], options[:current_chain_id])
+  end
+
+  @spec filter_messages_by_nonce(Ecto.Query.t(), non_neg_integer() | nil) :: Ecto.Query.t()
+  defp filter_messages_by_nonce(query, nonce) when is_integer(nonce) do
+    where(query, [message], message.nonce == ^nonce)
+  end
+
+  defp filter_messages_by_nonce(query, _), do: query
+
+  @spec filter_messages_by_timestamp(Ecto.Query.t(), DateTime.t() | nil, :from | :to) :: Ecto.Query.t()
+  defp filter_messages_by_timestamp(query, %DateTime{} = from, :from) do
+    where(query, [message], message.timestamp >= ^from)
+  end
+
+  defp filter_messages_by_timestamp(query, %DateTime{} = to, :to) do
+    where(query, [message], message.timestamp <= ^to)
+  end
+
+  defp filter_messages_by_timestamp(query, _, _), do: query
+
+  @spec filter_messages_by_status(Ecto.Query.t(), [String.t()]) :: Ecto.Query.t()
+  # credo:disable-for-next-line /Complexity/
+  defp filter_messages_by_status(query, statuses) do
+    cond do
+      ("SENT" in statuses and "RELAYED" in statuses and "FAILED" in statuses) or statuses == [] ->
+        query
+
+      "SENT" in statuses and "RELAYED" in statuses ->
+        where(query, [message], is_nil(message.relay_transaction_hash) or message.failed == false)
+
+      "SENT" in statuses and "FAILED" in statuses ->
+        where(query, [message], is_nil(message.relay_transaction_hash) or message.failed == true)
+
+      "RELAYED" in statuses and "FAILED" in statuses ->
+        where(query, [message], not is_nil(message.failed))
+
+      "SENT" in statuses ->
+        where(query, [message], is_nil(message.relay_transaction_hash))
+
+      "RELAYED" in statuses ->
+        where(query, [message], message.failed == false)
+
+      "FAILED" in statuses ->
+        where(query, [message], message.failed == true)
+    end
+  end
+
+  @spec filter_messages_by_transaction_hash(Ecto.Query.t(), Hash.t() | nil, :init | :relay) :: Ecto.Query.t()
+  defp filter_messages_by_transaction_hash(query, transaction_hash, :init) when not is_nil(transaction_hash) do
+    where(query, [message], message.init_transaction_hash == ^transaction_hash)
+  end
+
+  defp filter_messages_by_transaction_hash(query, transaction_hash, :relay) when not is_nil(transaction_hash) do
+    where(query, [message], message.relay_transaction_hash == ^transaction_hash)
+  end
+
+  defp filter_messages_by_transaction_hash(query, _, _), do: query
+
+  @spec filter_messages_by_addresses(Ecto.Query.t(), list(), list()) :: Ecto.Query.t()
+  defp filter_messages_by_addresses(query, source_addresses, target_addresses) do
+    case {filter_process_address_inclusion(source_addresses), filter_process_address_inclusion(target_addresses)} do
+      {nil, nil} ->
+        query
+
+      {source, nil} ->
+        filter_messages_by_address(query, source, :source)
+
+      {nil, target} ->
+        filter_messages_by_address(query, target, :target)
+
+      {source, target} ->
+        query
+        |> filter_messages_by_address(source, :source)
+        |> filter_messages_by_address(target, :target)
+    end
+  end
+
+  @spec filter_messages_by_address(Ecto.Query.t(), {:include | :exclude, [Hash.Address.t()]}, :source | :target) ::
+          Ecto.Query.t()
+  defp filter_messages_by_address(query, {:include, addresses}, field) do
+    where(query, [message], field(message, ^field) in ^addresses)
+  end
+
+  defp filter_messages_by_address(query, {:exclude, addresses}, field) do
+    where(query, [message], field(message, ^field) not in ^addresses)
+  end
+
+  @spec filter_process_address_inclusion(list()) :: {:exclude, list()} | {:include, list()} | nil
+  defp filter_process_address_inclusion(addresses) when is_list(addresses) do
+    case {Keyword.get(addresses, :include, []), Keyword.get(addresses, :exclude, [])} do
+      {to_include, to_exclude} when to_include in [nil, []] and to_exclude in [nil, []] ->
+        nil
+
+      {to_include, to_exclude} when to_include in [nil, []] and is_list(to_exclude) ->
+        {:exclude, to_exclude}
+
+      {to_include, to_exclude} when is_list(to_include) ->
+        case to_include -- (to_exclude || []) do
+          [] -> nil
+          to_include -> {:include, to_include}
+        end
+    end
+  end
+
+  defp filter_process_address_inclusion(_), do: nil
+
+  @spec filter_messages_by_direction(Ecto.Query.t(), :in | :out | nil, non_neg_integer() | nil) :: Ecto.Query.t()
+  defp filter_messages_by_direction(query, nil, _), do: query
+
+  defp filter_messages_by_direction(query, _, nil), do: query
+
+  defp filter_messages_by_direction(query, :in, current_chain_id) do
+    where(query, [message], message.relay_chain_id == ^current_chain_id)
+  end
+
+  defp filter_messages_by_direction(query, :out, current_chain_id) do
+    where(query, [message], message.init_chain_id == ^current_chain_id)
   end
 
   @doc """

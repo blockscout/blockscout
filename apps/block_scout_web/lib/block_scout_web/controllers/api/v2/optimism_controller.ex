@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Hash, Transaction}
 
   alias Explorer.Chain.Optimism.{
     Deposit,
@@ -276,20 +276,22 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   """
   @spec interop_messages(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def interop_messages(conn, params) do
-    {messages, next_page} =
-      params
-      |> paging_options()
-      |> Keyword.put(:api?, true)
-      |> InteropMessage.list()
-      |> split_list_by_page()
-
-    next_page_params = next_page_params(next_page, messages, params)
-
     current_chain_id =
       case ChainId.get_id() do
         nil -> Application.get_env(:block_scout_web, :chain_id)
         chain_id -> chain_id
       end
+
+    {messages, next_page} =
+      params
+      |> interop_extract_message_filters()
+      |> Keyword.merge(paging_options(params))
+      |> Keyword.merge(@api_true)
+      |> Keyword.merge(current_chain_id: current_chain_id)
+      |> InteropMessage.list()
+      |> split_list_by_page()
+
+    next_page_params = next_page_params(next_page, messages, Map.take(params, ["items_count"]))
 
     messages_extended =
       messages
@@ -508,6 +510,117 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       relay_transaction_hash: relay_transaction_hash,
       failed: params["failed"]
     }
+  end
+
+  @spec interop_extract_message_filters(map()) :: list()
+  defp interop_extract_message_filters(params) do
+    [
+      nonce: interop_prepare_nonce_filter(params["nonce"]),
+      age: interop_prepare_age_filter(params["age_from"], params["age_to"]),
+      statuses: interop_prepare_statuses_filter(params["statuses"]),
+      init_transaction_hash: interop_prepare_transaction_hash_filter(params["init_transaction_hash_filter"]),
+      relay_transaction_hash: interop_prepare_transaction_hash_filter(params["relay_transaction_hash_filter"]),
+      sources:
+        interop_prepare_include_exclude_address_hashes_filter(
+          params["source_address_hashes_to_include"],
+          params["source_address_hashes_to_exclude"],
+          &interop_prepare_address_hash_filter/1
+        ),
+      targets:
+        interop_prepare_include_exclude_address_hashes_filter(
+          params["target_address_hashes_to_include"],
+          params["target_address_hashes_to_exclude"],
+          &interop_prepare_address_hash_filter/1
+        ),
+      direction: interop_prepare_direction_filter(params["direction"])
+    ]
+  end
+
+  @spec interop_prepare_nonce_filter(String.t()) :: non_neg_integer() | nil
+  defp interop_prepare_nonce_filter(nonce) when is_binary(nonce) do
+    nonce
+    |> String.trim()
+    |> Integer.parse()
+    |> case do
+      {int_nonce, ""} -> int_nonce
+      _ -> nil
+    end
+  end
+
+  defp interop_prepare_nonce_filter(_), do: nil
+
+  @spec interop_prepare_age_filter(String.t(), String.t()) :: list()
+  defp interop_prepare_age_filter(from, to), do: [from: parse_date(from), to: parse_date(to)]
+
+  @spec parse_date(String.t()) :: DateTime.t() | nil
+  defp parse_date(string_date) do
+    case string_date && DateTime.from_iso8601(string_date) do
+      {:ok, date, _utc_offset} -> date
+      _ -> nil
+    end
+  end
+
+  @allowed_interop_message_statuses ~w(SENT RELAYED FAILED)
+
+  @spec interop_prepare_statuses_filter(String.t()) :: list()
+  defp interop_prepare_statuses_filter(statuses) when is_binary(statuses) do
+    statuses
+    |> String.upcase()
+    |> String.split(",")
+    |> Enum.map(&String.trim(&1))
+    |> Enum.filter(&(&1 in @allowed_interop_message_statuses))
+  end
+
+  defp interop_prepare_statuses_filter(_), do: []
+
+  @spec interop_prepare_transaction_hash_filter(String.t()) :: Hash.t() | nil
+  defp interop_prepare_transaction_hash_filter(transaction_hash) when is_binary(transaction_hash) do
+    transaction_hash
+    |> String.trim()
+    |> Chain.string_to_transaction_hash()
+    |> case do
+      {:ok, hash} -> hash
+      _ -> nil
+    end
+  end
+
+  defp interop_prepare_transaction_hash_filter(_), do: nil
+
+  @spec interop_prepare_include_exclude_address_hashes_filter(String.t(), String.t(), function()) :: list()
+  defp interop_prepare_include_exclude_address_hashes_filter(include, exclude, map_filter_function) do
+    [
+      include: interop_prepare_address_hashes_filter(include, map_filter_function),
+      exclude: interop_prepare_address_hashes_filter(exclude, map_filter_function)
+    ]
+  end
+
+  defp interop_prepare_address_hashes_filter(address_hashes, map_filter_function) when is_binary(address_hashes) do
+    address_hashes
+    |> String.split(",")
+    |> Enum.map(&map_filter_function.(&1))
+    |> Enum.reject(&is_nil(&1))
+  end
+
+  defp interop_prepare_address_hashes_filter(_, _), do: nil
+
+  @spec interop_prepare_address_hash_filter(String.t()) :: Hash.Address.t() | nil
+  defp interop_prepare_address_hash_filter(address_hash) do
+    address_hash
+    |> String.trim()
+    |> Chain.string_to_address_hash()
+    |> case do
+      {:ok, hash} -> hash
+      _ -> nil
+    end
+  end
+
+  @spec interop_prepare_direction_filter(String.t() | nil) :: :in | :out | nil
+  defp interop_prepare_direction_filter(direction) do
+    case direction && String.downcase(direction) do
+      "in" -> :in
+      "out" -> :out
+      _ -> nil
+    end
   end
 
   # Renders HTTP error code and message.
