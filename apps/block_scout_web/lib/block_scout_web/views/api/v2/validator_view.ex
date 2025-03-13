@@ -45,6 +45,12 @@ defmodule BlockScoutWeb.API.V2.ValidatorView do
       "commission" => validator.commission,
       "self_bonded_amount" => validator.self_bonded_amount,
       "delegated_amount" => validator.delegated_amount,
+      "slashing_status" => %{
+        "slashed" => validator.slashing_status_is_slashed,
+        "block_number" => validator.slashing_status_by_block,
+        "multiplier" => validator.slashing_status_multiplier
+      },
+      # todo: Next 3 props should be removed in favour `slashing_status` property with the next release after 8.0.0
       "slashing_status_is_slashed" => validator.slashing_status_is_slashed,
       "slashing_status_by_block" => validator.slashing_status_by_block,
       "slashing_status_multiplier" => validator.slashing_status_multiplier
