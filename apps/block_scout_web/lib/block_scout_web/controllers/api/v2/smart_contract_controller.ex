@@ -46,55 +46,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     end
   end
 
-  def query_read_method(
-        conn,
-        %{"address_hash" => address_hash_string, "contract_type" => type, "args" => args} = params
-      ) do
-    custom_abi =
-      if parse_boolean(params["is_custom_abi"]), do: AddressView.fetch_custom_abi(conn, address_hash_string), else: nil
-
-    contract_type = if type == "proxy", do: :proxy, else: :regular
-
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, address}} <-
-           {:not_found,
-            Chain.find_contract_address(address_hash,
-              necessity_by_association: %{
-                :smart_contract => :optional
-              },
-              api?: true
-            )},
-         {:not_found, true} <-
-           {:not_found,
-            !is_nil(custom_abi) || (address.smart_contract && !match?(%NotLoaded{}, address.smart_contract))} do
-      %{output: output, names: names} =
-        if custom_abi do
-          Reader.query_function_with_names_custom_abi(
-            address_hash,
-            %{method_id: params["method_id"], args: prepare_args(args)},
-            params["from"],
-            custom_abi.abi,
-            @api_true
-          )
-        else
-          Reader.query_function_with_names(
-            address_hash,
-            %{method_id: params["method_id"], args: prepare_args(args)},
-            contract_type,
-            params["from"],
-            address.smart_contract.abi,
-            true,
-            @api_true
-          )
-        end
-
-      conn
-      |> put_status(200)
-      |> render(:function_response, %{output: output, names: names, contract_address_hash: address_hash})
-    end
-  end
-
   @doc """
   /api/v2/smart-contracts/:address_hash_string/solidityscan-report logic
   """
