@@ -2382,7 +2382,7 @@ defmodule BlockScoutWeb.Etherscan do
     description: """
     Get a list of contracts, sorted ascending by the time they were first seen by the explorer.
 
-    If you provide the filter `not_verified(4)` the results will not
+    If you provide the filter `unverified(2)` the results will not
     be sorted for performance reasons.
     """,
     required_params: [],
@@ -2403,7 +2403,7 @@ defmodule BlockScoutWeb.Etherscan do
         key: "filter",
         type: "string",
         description:
-          "verified|unverified|empty, or 1|2|3|4|5 respectively. This requests only contracts with that status."
+          "verified|unverified|empty, or 1|2|3 respectively. This requests only contracts with that status."
       },
       %{
         key: "verified_at_start_timestamp",
