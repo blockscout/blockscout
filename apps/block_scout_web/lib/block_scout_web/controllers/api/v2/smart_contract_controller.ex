@@ -7,15 +7,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.PagingHelper,
     only: [current_filter: 1, delete_parameters_from_next_page_params: 1, search_query: 1, smart_contracts_sorting: 1]
 
-  import Explorer.Helper, only: [parse_boolean: 1]
-
-  alias BlockScoutWeb.{AccessHelper, AddressView, CaptchaHelper}
-  alias Ecto.Association.NotLoaded
+  alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.AuditReport
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
-  alias Explorer.SmartContract.Reader
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.ThirdPartyIntegrations.SolidityScan
 
