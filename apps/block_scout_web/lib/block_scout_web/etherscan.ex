@@ -2402,8 +2402,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         key: "filter",
         type: "string",
-        description:
-          "verified|unverified|empty, or 1|2|3 respectively. This requests only contracts with that status."
+        description: "verified|unverified|empty, or 1|2|3 respectively. This requests only contracts with that status."
       },
       %{
         key: "verified_at_start_timestamp",
