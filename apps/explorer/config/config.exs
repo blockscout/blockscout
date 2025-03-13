@@ -140,7 +140,6 @@ for migrator <- [
       Explorer.Migrator.SmartContractLanguage,
 
       # Heavy DB index operations
-      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex,
@@ -154,7 +153,13 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersFromAddressHashTransactionHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHashTransactionHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropAddressesVerifiedIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedTransactionsCountDescHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractsLanguageIndex
     ] do
   config :explorer, migrator, enabled: true
 end
