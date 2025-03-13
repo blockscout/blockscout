@@ -515,24 +515,24 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   @spec interop_extract_message_filters(map()) :: list()
   defp interop_extract_message_filters(params) do
     [
-      nonce: interop_prepare_nonce_filter(params["nonce"]),
-      age: interop_prepare_age_filter(params["age_from"], params["age_to"]),
-      statuses: interop_prepare_statuses_filter(params["statuses"]),
-      init_transaction_hash: interop_prepare_transaction_hash_filter(params["init_transaction_hash_filter"]),
-      relay_transaction_hash: interop_prepare_transaction_hash_filter(params["relay_transaction_hash_filter"]),
-      sources:
+      nonce: interop_prepare_nonce_filter(params["interop_message_nonce"]),
+      age: interop_prepare_age_filter(params["interop_message_age_from"], params["interop_message_age_to"]),
+      statuses: interop_prepare_statuses_filter(params["interop_message_statuses"]),
+      init_transaction_hash: interop_prepare_transaction_hash_filter(params["interop_message_init_transaction_hash"]),
+      relay_transaction_hash: interop_prepare_transaction_hash_filter(params["interop_message_relay_transaction_hash"]),
+      senders:
         interop_prepare_include_exclude_address_hashes_filter(
-          params["source_address_hashes_to_include"],
-          params["source_address_hashes_to_exclude"],
+          params["interop_message_sender_address_hashes_to_include"],
+          params["interop_message_sender_address_hashes_to_exclude"],
           &interop_prepare_address_hash_filter/1
         ),
       targets:
         interop_prepare_include_exclude_address_hashes_filter(
-          params["target_address_hashes_to_include"],
-          params["target_address_hashes_to_exclude"],
+          params["interop_message_target_address_hashes_to_include"],
+          params["interop_message_target_address_hashes_to_exclude"],
           &interop_prepare_address_hash_filter/1
         ),
-      direction: interop_prepare_direction_filter(params["direction"])
+      direction: interop_prepare_direction_filter(params["interop_message_direction"])
     ]
   end
 

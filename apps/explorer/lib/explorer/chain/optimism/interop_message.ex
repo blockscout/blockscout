@@ -247,7 +247,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     |> filter_messages_by_status(options[:statuses])
     |> filter_messages_by_transaction_hash(options[:init_transaction_hash], :init)
     |> filter_messages_by_transaction_hash(options[:relay_transaction_hash], :relay)
-    |> filter_messages_by_addresses(options[:sources], options[:targets])
+    |> filter_messages_by_addresses(options[:senders], options[:targets])
     |> filter_messages_by_direction(options[:direction], options[:current_chain_id])
   end
 
@@ -308,25 +308,25 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   defp filter_messages_by_transaction_hash(query, _, _), do: query
 
   @spec filter_messages_by_addresses(Ecto.Query.t(), list(), list()) :: Ecto.Query.t()
-  defp filter_messages_by_addresses(query, source_addresses, target_addresses) do
-    case {filter_process_address_inclusion(source_addresses), filter_process_address_inclusion(target_addresses)} do
+  defp filter_messages_by_addresses(query, sender_addresses, target_addresses) do
+    case {filter_process_address_inclusion(sender_addresses), filter_process_address_inclusion(target_addresses)} do
       {nil, nil} ->
         query
 
-      {source, nil} ->
-        filter_messages_by_address(query, source, :source)
+      {sender, nil} ->
+        filter_messages_by_address(query, sender, :sender)
 
       {nil, target} ->
         filter_messages_by_address(query, target, :target)
 
-      {source, target} ->
+      {sender, target} ->
         query
-        |> filter_messages_by_address(source, :source)
+        |> filter_messages_by_address(sender, :sender)
         |> filter_messages_by_address(target, :target)
     end
   end
 
-  @spec filter_messages_by_address(Ecto.Query.t(), {:include | :exclude, [Hash.Address.t()]}, :source | :target) ::
+  @spec filter_messages_by_address(Ecto.Query.t(), {:include | :exclude, [Hash.Address.t()]}, :sender | :target) ::
           Ecto.Query.t()
   defp filter_messages_by_address(query, {:include, addresses}, field) do
     where(query, [message], field(message, ^field) in ^addresses)
