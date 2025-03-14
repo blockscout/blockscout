@@ -60,6 +60,15 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   end
 
   @doc """
+  Preloads miner's ENS name to Block.t()
+  """
+  @spec preload_ens_to_block(Block.t()) :: Block.t()
+  def preload_ens_to_block(block) do
+    [block_with_ens] = preload_ens_to_list([block])
+    block_with_ens
+  end
+
+  @doc """
   Preloads ENS names to list of supported entities
   """
   @spec preload_ens_to_list([supported_types]) :: [supported_types]
@@ -108,6 +117,15 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   def preload_metadata_to_transaction(transaction) do
     [transaction_with_metadata] = preload_metadata_to_list([transaction])
     transaction_with_metadata
+  end
+
+  @doc """
+  Preloads miner's metadata to `Block.t()`
+  """
+  @spec preload_metadata_to_block(Block.t()) :: Block.t()
+  def preload_metadata_to_block(block) do
+    [block_with_metadata] = preload_metadata_to_list([block])
+    block_with_metadata
   end
 
   @doc """
