@@ -149,13 +149,13 @@ defmodule Indexer.Fetcher.ContractCodeTest do
       # Wait a bit to ensure any potential processing is done
       Process.sleep(100)
 
-      # Verify that the contract code was NOT fetched (it should still be nil)
+      # Verify that the contract code was set to "0x"
       updated_address = Repo.get!(Address, address.hash)
-      assert updated_address.contract_code == nil
+      assert to_string(updated_address.contract_code) == "0x"
 
       # Verify that the transaction's created_contract_code_indexed_at remains nil
       updated_transaction = Repo.get!(Transaction, transaction.hash)
-      assert updated_transaction.created_contract_code_indexed_at == nil
+      assert updated_transaction.created_contract_code_indexed_at
     end
   end
 

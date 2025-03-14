@@ -1,7 +1,7 @@
 defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddresses do
   @moduledoc """
-  Migration that sets contract code to nil for addresses where contract code
-  equals "0x".
+  Migration that sets contract code to `"0x"` for addresses where contract code
+  equals `null`.
 
   This fixes data representation for addresses of smart contracts that actually
   don't have any code deployed.
@@ -40,7 +40,7 @@ defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddresses do
     from(a in Address,
       join: t in Transaction,
       on: a.hash == t.created_contract_address_hash,
-      where: [contract_code: ^@empty_contract_code]
+      where: is_nil(a.contract_code)
     )
   end
 
@@ -49,7 +49,7 @@ defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddresses do
     query =
       from(a in Address,
         where: a.hash in ^address_hashes,
-        update: [set: [contract_code: nil]]
+        update: [set: [contract_code: ^@empty_contract_code]]
       )
 
     Repo.update_all(query, [], timeout: :infinity)

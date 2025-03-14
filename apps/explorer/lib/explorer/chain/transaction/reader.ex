@@ -20,15 +20,13 @@ defmodule Explorer.Chain.Transaction.Reader do
     - Is included in a block
     - Has created a contract
     - Has not had its contract code indexed
-    - Was successful (status = 1)
   - `false` otherwise
   """
   @spec transaction_with_unfetched_created_contract_code?(transaction :: Transaction.t()) :: boolean()
   def transaction_with_unfetched_created_contract_code?(transaction) do
     not is_nil(transaction.block_hash) and
       not is_nil(transaction.created_contract_address_hash) and
-      is_nil(transaction.created_contract_code_indexed_at) and
-      transaction.status == :ok
+      is_nil(transaction.created_contract_code_indexed_at)
   end
 
   @doc """
@@ -78,7 +76,7 @@ defmodule Explorer.Chain.Transaction.Reader do
       from(t in Transaction,
         where:
           not is_nil(t.block_hash) and not is_nil(t.created_contract_address_hash) and
-            is_nil(t.created_contract_code_indexed_at) and t.status == :ok,
+            is_nil(t.created_contract_code_indexed_at),
         select: ^fields
       )
 

@@ -10,7 +10,7 @@ defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddressesTest do
       # Create addresses with empty contract code "0x" that should be updated
       addresses_to_update =
         Enum.map(1..5, fn _ ->
-          address = insert(:address, contract_code: "0x")
+          address = insert(:address, contract_code: nil)
 
           # Associate each address with a transaction as created_contract_address_hash
           insert(:transaction, created_contract_address_hash: address.hash)
@@ -35,10 +35,10 @@ defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddressesTest do
       SanitizeEmptyContractCodeAddresses.start_link([])
       Process.sleep(100)
 
-      # Check that addresses with "0x" and associated transactions had their contract_code set to nil
+      # Check that addresses with `nil` and associated transactions had their contract_code set to "0x"
       for address <- addresses_to_update do
         updated_address = Repo.get(Address, address.hash)
-        assert updated_address.contract_code == nil
+        assert to_string(updated_address.contract_code) == "0x"
       end
 
       # Check that addresses with actual contract code weren't changed
