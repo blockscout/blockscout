@@ -31,6 +31,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
   alias Indexer.Fetcher.Arbitrum.Workers.Batches.DiscoveryUtils
   alias Indexer.Fetcher.Arbitrum.Workers.Batches.Events, as: EventsUtils
   alias Indexer.Fetcher.Arbitrum.Workers.Batches.RollupEntities, as: RollupEntities
+  alias Indexer.Prometheus.Instrumenter
 
   require Logger
 
@@ -133,8 +134,19 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
         })
 
       if not Enum.empty?(batches) and new_batches_discovery? do
+        extended_batches = extend_batches_with_commitment_transactions(batches, lifecycle_transactions)
+
+        last_batch =
+          extended_batches
+          |> Enum.max_by(& &1.number, fn -> nil end)
+
+        # credo:disable-for-next-line
+        if last_batch do
+          Instrumenter.set_latest_batch(last_batch.number, last_batch.commitment_transaction.timestamp)
+        end
+
         Publisher.broadcast(
-          [{:new_arbitrum_batches, extend_batches_with_commitment_transactions(batches, lifecycle_transactions)}],
+          [{:new_arbitrum_batches, extended_batches}],
           :realtime
         )
       end
