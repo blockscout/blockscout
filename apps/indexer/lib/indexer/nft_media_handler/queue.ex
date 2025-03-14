@@ -15,46 +15,47 @@ defmodule Indexer.NFTMediaHandler.Queue do
   @tasks_in_progress :tasks_in_progress
 
   @doc """
-  Processes new inserted NFT instance.
-  Adds the instance to the queue if the media handler is enabled and input was in format {:ok, Instance.t()}.
+  Processes new inserted NFT instances.
+  Adds instances to the queue if the media handler is enabled.
 
   ## Parameters
 
-    - initial_value: result of inserting an NFT instance. Either {:ok, %Instance{}} or some error.
+    - token_instances: new NFTs to process.
 
   ## Returns
 
-    initial_value as is.
+    token_instances as is.
   """
-  @spec process_new_instance(any()) :: any()
-  def process_new_instance({:ok, %Instance{} = nft} = initial_value) do
-    if Application.get_env(:nft_media_handler, :enabled?) do
-      url = Instance.get_media_url_from_metadata_for_nft_media_handler(nft.metadata)
+  @spec process_new_instances([Instance.t()]) :: [Instance.t()]
+  def process_new_instances(token_instances) do
+    process_new_instances_inner(token_instances, Application.get_env(:nft_media_handler, :enabled?))
 
-      if url do
-        GenServer.cast(__MODULE__, {:add_to_queue, {nft.token_contract_address_hash, nft.token_id, url}})
-      end
-    end
-
-    initial_value
+    token_instances
   end
 
-  def process_new_instance(initial_value), do: initial_value
+  defp process_new_instances_inner(_token_instances, false), do: :ignore
+
+  defp process_new_instances_inner(token_instances, true) do
+    filtered_token_instances =
+      Enum.flat_map(token_instances, fn token_instance ->
+        url = Instance.get_media_url_from_metadata_for_nft_media_handler(token_instance.metadata)
+
+        if url do
+          [{token_instance.token_contract_address_hash, token_instance.token_id, url}]
+        else
+          []
+        end
+      end)
+
+    GenServer.cast(__MODULE__, {:add_to_queue, filtered_token_instances})
+  end
 
   def get_urls_to_fetch(amount) do
     GenServer.call(__MODULE__, {:get_urls_to_fetch, amount})
   end
 
-  def store_result({:error, reason}, url) do
-    GenServer.cast(__MODULE__, {:handle_error, url, reason})
-  end
-
-  def store_result({:down, reason}, url) do
-    GenServer.cast(__MODULE__, {:handle_error, url, reason})
-  end
-
-  def store_result({result, media_type}, url) do
-    GenServer.cast(__MODULE__, {:finished, result, url, media_type})
+  def store_result(batch_result) do
+    GenServer.cast(__MODULE__, {:finished, batch_result})
   end
 
   def start_link(_) do
@@ -72,80 +73,26 @@ defmodule Indexer.NFTMediaHandler.Queue do
   end
 
   def handle_cast(
-        {:add_to_queue, {token_address_hash, token_id, media_url}},
+        {:add_to_queue, []},
         {queue, in_progress, continuation}
       ) do
-    case :dets.lookup(in_progress, media_url) do
-      [{_, instances, start_time}] ->
-        Logger.debug(
-          "Media url already in progress: #{media_url}, will append to instances: {#{to_string(token_address_hash)}, #{token_id}} "
-        )
+    {:noreply, {queue, in_progress, continuation}}
+  end
 
-        dets_insert_wrapper(in_progress, {media_url, [{token_address_hash, token_id} | instances], start_time})
-
-      _ ->
-        case Cachex.get(cache_uniqueness_name(), media_url) do
-          {:ok, result} when is_map(result) ->
-            Logger.debug(
-              "Media url already fetched: #{media_url}, will take result from cache to: {#{to_string(token_address_hash)}, #{token_id}} "
-            )
-
-            Instance.set_cdn_result({token_address_hash, token_id}, result)
-
-          _ ->
-            dets_insert_wrapper(queue, {media_url, {token_address_hash, token_id}})
-        end
-    end
+  def handle_cast(
+        {:add_to_queue, token_instances},
+        {queue, in_progress, continuation} = state
+      )
+      when is_list(token_instances) do
+    token_instances
+    |> Enum.flat_map(&process_new_token_instance(&1, state))
+    |> Instance.batch_upsert_cdn_results()
 
     {:noreply, {queue, in_progress, continuation}}
   end
 
-  def handle_cast({:finished, result, url, media_type}, {_queue, in_progress, _continuation} = state)
-      when is_list(result) do
-    case :dets.lookup(in_progress, url) do
-      [{_, instances, start_time}] ->
-        now = System.monotonic_time()
-        :dets.delete(in_progress, url)
-
-        Instrumenter.increment_successfully_uploaded_media_number()
-        Instrumenter.media_processing_time(System.convert_time_unit(now - start_time, :native, :millisecond) / 1000)
-
-        Enum.each(instances, fn instance_identifier ->
-          Instance.set_media_urls(instance_identifier, result, media_type)
-        end)
-
-        put_result_to_cache(url, %{
-          thumbnails: result,
-          media_type: Instance.media_type_to_string(media_type),
-          cdn_upload_error: nil
-        })
-
-      _ ->
-        Logger.warning("Failed to find instances in in_progress dets for url: #{url}, result: #{inspect(result)}")
-    end
-
-    {:noreply, state}
-  end
-
-  def handle_cast({:handle_error, url, reason}, {_queue, in_progress, _continuation} = state) do
-    case :dets.lookup(in_progress, url) do
-      [{_, instances, _start_time}] ->
-        :dets.delete(in_progress, url)
-
-        Instrumenter.increment_failed_uploading_media_number()
-
-        cdn_upload_error = reason |> inspect() |> MetadataRetriever.truncate_error()
-
-        Enum.each(instances, fn instance_identifier ->
-          Instance.set_cdn_upload_error(instance_identifier, cdn_upload_error)
-        end)
-
-        put_result_to_cache(url, %{thumbnails: nil, media_type: nil, cdn_upload_error: cdn_upload_error})
-
-      _ ->
-        Logger.warning("Failed to find instances in in_progress dets for url: #{url}, error: #{inspect(reason)}")
-    end
-
+  def handle_cast({:finished, batch_result}, {_queue, in_progress, _continuation} = state) do
+    process_batch_result(batch_result, in_progress)
     {:noreply, state}
   end
 
@@ -159,10 +106,12 @@ defmodule Indexer.NFTMediaHandler.Queue do
 
     {urls, instances} =
       if taken_amount < amount do
-        backfill_items =
+        {instances_to_upsert, backfill_items} =
           (amount - taken_amount)
           |> Backfiller.get_instances()
-          |> Enum.filter(fn backfill_item -> filter_fetched_backfill_url(backfill_item, state) end)
+          |> Enum.reduce({[], []}, &filter_fetched_backfill_url(&1, &2, state))
+
+        instances_to_upsert |> Instance.batch_upsert_cdn_results()
 
         {low_priority_instances, low_priority_urls} =
           Enum.map_reduce(backfill_items, [], fn {url, instances}, acc ->
@@ -230,28 +179,39 @@ defmodule Indexer.NFTMediaHandler.Queue do
     Application.get_env(:nft_media_handler, :cache_uniqueness_name)
   end
 
-  defp put_result_to_cache(url, result) do
-    Cachex.put(cache_uniqueness_name(), url, result)
-  end
-
-  defp filter_fetched_backfill_url({url, backfill_instances}, {_queue, in_progress, _continuation}) do
+  defp filter_fetched_backfill_url(
+         {url, backfill_instances} = input,
+         {instances_to_upsert, instances_to_fetch},
+         {_queue, in_progress, _continuation}
+       ) do
     case :dets.lookup(in_progress, url) do
       [{_, instances, start_time}] ->
         Logger.debug("Media url already in progress: #{url}, will append to instances: #{inspect(backfill_instances)}")
 
         dets_insert_wrapper(in_progress, {url, instances ++ backfill_instances, start_time})
-        false
+        {instances_to_upsert, instances_to_fetch}
 
       _ ->
         case Cachex.get(cache_uniqueness_name(), url) do
-          {:ok, result} when is_map(result) ->
+          {:ok, cached_result} when is_map(cached_result) ->
             Logger.debug("Media url already fetched: #{url}, will copy from cache to: #{inspect(backfill_instances)}")
+            now = DateTime.utc_now()
 
-            Enum.each(backfill_instances, &Instance.set_cdn_result(&1, result))
-            false
+            # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+            new_instances_to_upsert =
+              Enum.map(backfill_instances, fn {token_address_hash, token_id} ->
+                Map.merge(cached_result, %{
+                  updated_at: now,
+                  inserted_at: now,
+                  token_contract_address_hash: token_address_hash,
+                  token_id: token_id
+                })
+              end)
+
+            {instances_to_upsert ++ new_instances_to_upsert, instances_to_fetch}
 
           _ ->
-            true
+            {instances_to_upsert, [input | instances_to_fetch]}
         end
     end
   end
@@ -260,6 +220,109 @@ defmodule Indexer.NFTMediaHandler.Queue do
     case :dets.insert(table, value) do
       :ok -> :ok
       {:error, reason} -> Logger.error("Failed to insert into dets #{table}: #{inspect(reason)}")
+    end
+  end
+
+  defp process_batch_result(result, in_progress_cache) do
+    updated_at = DateTime.utc_now()
+
+    {instances_to_upsert, results_to_cache} =
+      Enum.reduce(result, {[], []}, fn {result, url}, {instances_acc, results_acc} ->
+        case :dets.lookup(in_progress_cache, url) do
+          [{_, instances, start_time}] ->
+            :dets.delete(in_progress_cache, url)
+            {result_base, result_for_cache} = process_result(result, url, start_time, updated_at)
+
+            # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+            instances_to_upsert =
+              Enum.map(instances, fn {token_contract_address_hash, token_id} ->
+                Map.merge(result_base, %{token_contract_address_hash: token_contract_address_hash, token_id: token_id})
+              end)
+
+            {instances_acc ++ instances_to_upsert, [result_for_cache | results_acc]}
+
+          _ ->
+            Logger.error("Failed to find instances in in_progress dets for url: #{url}, result: #{inspect(result)}")
+        end
+      end)
+
+    Cachex.put_many(cache_uniqueness_name(), results_to_cache)
+
+    Instance.batch_upsert_cdn_results(instances_to_upsert)
+  end
+
+  defp process_result({:error, reason}, url, _start_time, updated_at) do
+    cdn_upload_error = reason |> inspect() |> MetadataRetriever.truncate_error()
+
+    result_base = %{
+      thumbnails: nil,
+      media_type: nil,
+      updated_at: updated_at,
+      inserted_at: updated_at,
+      cdn_upload_error: cdn_upload_error
+    }
+
+    Instrumenter.increment_failed_uploading_media_number()
+
+    {result_base, {url, %{thumbnails: nil, media_type: nil, cdn_upload_error: cdn_upload_error}}}
+  end
+
+  defp process_result({result, media_type}, url, start_time, updated_at) when is_list(result) do
+    result_base = %{
+      thumbnails: result,
+      media_type: Instance.media_type_to_string(media_type),
+      updated_at: updated_at,
+      inserted_at: updated_at,
+      cdn_upload_error: nil
+    }
+
+    Instrumenter.increment_successfully_uploaded_media_number()
+
+    Instrumenter.media_processing_time(
+      System.convert_time_unit(System.monotonic_time() - start_time, :native, :millisecond) / 1000
+    )
+
+    {result_base,
+     {url,
+      %{
+        thumbnails: result,
+        media_type: Instance.media_type_to_string(media_type),
+        cdn_upload_error: nil
+      }}}
+  end
+
+  defp process_new_token_instance({token_address_hash, token_id, media_url}, {queue, in_progress, _continuation}) do
+    case :dets.lookup(in_progress, media_url) do
+      [{_, instances, start_time}] ->
+        Logger.debug(
+          "Media url already in progress: #{media_url}, will append to instances: {#{to_string(token_address_hash)}, #{token_id}} "
+        )
+
+        dets_insert_wrapper(in_progress, {media_url, [{token_address_hash, token_id} | instances], start_time})
+        []
+
+      _ ->
+        case Cachex.get(cache_uniqueness_name(), media_url) do
+          {:ok, cached_result} when is_map(cached_result) ->
+            Logger.debug(
+              "Media url already fetched: #{media_url}, will take result from cache to: {#{to_string(token_address_hash)}, #{token_id}} "
+            )
+
+            now = DateTime.utc_now()
+
+            [
+              Map.merge(cached_result, %{
+                updated_at: now,
+                inserted_at: now,
+                token_contract_address_hash: token_address_hash,
+                token_id: token_id
+              })
+            ]
+
+          _ ->
+            dets_insert_wrapper(queue, {media_url, {token_address_hash, token_id}})
+            []
+        end
     end
   end
 end

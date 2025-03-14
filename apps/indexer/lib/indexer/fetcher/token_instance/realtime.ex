@@ -84,7 +84,7 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
   defp retry_some_instances(token_instances, true, token_instances_retry_map) do
     token_instances_to_refetch =
       Enum.flat_map(token_instances, fn
-        {:ok, %Instance{metadata: nil, error: error} = instance}
+        %Instance{metadata: nil, error: error} = instance
         when error in @errors_whitelisted_for_retry ->
           if token_instances_retry_map[{instance.token_contract_address_hash.bytes, instance.token_id}] do
             []
