@@ -6,7 +6,7 @@ defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddressesTest do
   alias Explorer.Repo
 
   describe "sanitize addresses with empty contract code" do
-    test "sets contract_code to nil for addresses with '0x' code" do
+    test "sets contract_code to '0x' for addresses that originally had nil code" do
       # Create addresses with empty contract code "0x" that should be updated
       addresses_to_update =
         Enum.map(1..5, fn _ ->
