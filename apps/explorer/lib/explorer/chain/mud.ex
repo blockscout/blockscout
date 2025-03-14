@@ -28,6 +28,8 @@ defmodule Explorer.Chain.Mud do
     SmartContract
   }
 
+  alias Explorer.Helper, as: ExplorerHelper
+
   require Logger
 
   @store_tables_table_id Base.decode16!("746273746f72650000000000000000005461626c657300000000000000000000",
@@ -310,7 +312,7 @@ defmodule Explorer.Chain.Mud do
       ((system_contract && system_contract.abi) || [])
       |> ABI.parse_specification()
       |> Enum.filter(&(&1.type == :function))
-      |> Enum.into(%{}, fn selector -> {"0x" <> Base.encode16(selector.method_id, case: :lower), selector} end)
+      |> Enum.into(%{}, fn selector -> {ExplorerHelper.add_0x_prefix(selector.method_id), selector} end)
 
     function_selector_signature_records
     |> Enum.reject(&(&1 == {nil, nil}))
@@ -543,7 +545,7 @@ defmodule Explorer.Chain.Mud do
         int |> Integer.to_string()
 
       _ when type < 96 or type == 196 ->
-        "0x" <> Base.encode16(raw, case: :lower)
+        ExplorerHelper.add_0x_prefix(raw)
 
       96 ->
         raw == <<1>>

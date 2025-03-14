@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Mixfile do
       description: "Web interface for BlockScout.",
       dialyzer: [
         plt_add_deps: :app_tree,
-        ignore_warnings: "../../.dialyzer-ignore"
+        ignore_warnings: "../../.dialyzer_ignore.exs"
       ],
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env(), Application.get_env(:block_scout_web, :disable_api?)),
@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "7.0.0",
+      version: "7.0.2",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,

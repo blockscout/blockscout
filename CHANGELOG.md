@@ -1,5 +1,22 @@
 # Changelog
 
+## 7.0.2
+
+### ⚡ Performance
+
+- Logs list decoding: Accumulate ABI for unique address hashes ([#11967](https://github.com/blockscout/blockscout/pull/11967))
+- Logs list decoding: Use Sig provider microservice batched request ([#11956](https://github.com/blockscout/blockscout/issues/11956), [#11963](https://github.com/blockscout/blockscout/issues/11963))
+- Transactions list: Don't fetch revert reason for txs list ([#11935](https://github.com/blockscout/blockscout/issues/11935))
+
+## 7.0.1
+
+### 🐛 Bug Fixes
+
+- Show scam ENS in search ([#11933](https://github.com/blockscout/blockscout/issues/11933))
+- Show scam EOA in search ([#11932](https://github.com/blockscout/blockscout/issues/11932))
+- Replace unique filecoin addresses indexes with not unique ([#11905](https://github.com/blockscout/blockscout/issues/11905))
+- Render token transfers from celo epoch logs ([#11915](https://github.com/blockscout/blockscout/issues/11915))
+
 ## 7.0.0
 
 ### 🚀 Features

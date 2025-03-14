@@ -32,6 +32,18 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
   end
 
   @doc """
+  Filters elements with `filter_func` if `TRACE_BLOCK_RANGES` is set
+  """
+  @spec filter_by_height_range([any()], (any() -> boolean())) :: [any()]
+  def filter_by_height_range(elements, filter_func) do
+    if trace_ranges_present?() do
+      Enum.filter(elements, &filter_func.(&1))
+    else
+      elements
+    end
+  end
+
+  @doc """
   Checks if trace ranges are defined via env variables
   """
   @spec trace_ranges_present? :: boolean()
@@ -69,6 +81,36 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
       end
     end)
     |> sanitize_ranges()
+  end
+
+  @doc """
+  Extracts the minimum block number from a given block ranges string.
+
+  ## Parameters
+
+    - block_ranges_string: A string representing block ranges.
+
+  ## Returns
+
+    - The minimum block number as an integer.
+
+  ## Examples
+
+      iex> get_min_block_number_from_range_string("100..200,300..400")
+      100
+
+  """
+  @spec get_min_block_number_from_range_string(binary()) :: integer()
+  def get_min_block_number_from_range_string(block_ranges_string) do
+    min_block_number =
+      case block_ranges_string
+           |> parse_block_ranges()
+           |> Enum.at(0) do
+        block_number.._//_ -> block_number
+        block_number -> block_number
+      end
+
+    min_block_number
   end
 
   @doc """

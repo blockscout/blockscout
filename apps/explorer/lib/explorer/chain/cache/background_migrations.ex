@@ -31,6 +31,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :backfill_multichain_search_db_finished,
     key: :arbitrum_da_records_normalization_finished,
     key: :sanitize_verified_addresses_finished,
+    key: :smart_contract_language_finished,
     key: :heavy_indexes_create_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
     key: :heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished,
@@ -54,6 +55,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     ArbitrumDaRecordsNormalization,
     BackfillMultichainSearchDB,
     SanitizeDuplicatedLogIndexLogs,
+    SmartContractLanguage,
     TokenTransferTokenType,
     TransactionsDenormalization
   }
@@ -221,6 +223,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     start_migration_status_task(
       ArbitrumDaRecordsNormalization,
       &set_arbitrum_da_records_normalization_finished/1
+    )
+  end
+
+  defp handle_fallback(:smart_contract_language_finished) do
+    start_migration_status_task(
+      SmartContractLanguage,
+      &set_smart_contract_language_finished/1
     )
   end
 

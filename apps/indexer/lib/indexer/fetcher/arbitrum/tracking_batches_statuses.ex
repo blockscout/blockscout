@@ -55,6 +55,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [increase_duration: 2]
 
   alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
@@ -100,7 +101,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     missing_batches_range = config_tracker[:missing_batches_range]
     node_interface_address = config_tracker[:node_interface_contract]
 
-    indexer_first_block = Application.get_all_env(:indexer)[:first_block]
+    indexer_first_block =
+      RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
     Process.send(self(), :init_worker, [])
 

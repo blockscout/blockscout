@@ -557,7 +557,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         }
       ]
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       assert response =
                conn
@@ -822,7 +822,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         }
       ]
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       assert response =
                conn
@@ -931,7 +931,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         }
       ]
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       assert response =
                conn
@@ -1002,7 +1002,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         "addressHash" => "0xf26594F585De4EB0Ae9De865d9053FEe02ac6eF1"
       }
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       conn
       |> get("/api", params)
@@ -1317,7 +1317,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       expect(
         EthereumJSONRPC.Mox,
