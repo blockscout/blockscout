@@ -138,6 +138,7 @@ for migrator <- [
       Explorer.Migrator.BackfillMultichainSearchDB,
       Explorer.Migrator.SanitizeVerifiedAddresses,
       Explorer.Migrator.SmartContractLanguage,
+      Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
