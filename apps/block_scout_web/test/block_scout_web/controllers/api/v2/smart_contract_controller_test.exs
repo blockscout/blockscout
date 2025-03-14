@@ -333,7 +333,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "verified_twin_address_hash" => Address.checksum(target_contract.address_hash),
         "is_verified" => false,
         "is_changed_bytecode" => false,
-        "is_partially_verified" => target_contract.partially_verified,
+        "is_partially_verified" => false,
         "is_fully_verified" => false,
         "is_verified_via_sourcify" => false,
         "minimal_proxy_address_hash" => nil,
