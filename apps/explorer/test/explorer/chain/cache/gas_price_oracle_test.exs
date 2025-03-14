@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
 
   alias Explorer.Chain.Cache.GasPriceOracle
   alias Explorer.Chain.Wei
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
 
   describe "get_average_gas_price/4" do
     test "returns nil percentile values if no blocks in the DB" do

@@ -8,26 +8,28 @@ config :explorer, Explorer.ExchangeRates.TokenExchangeRates, enabled: false
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: false
 
-config :explorer, Explorer.Counters.AverageBlockTime, enabled: false
-
-config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime, enabled: false
 
 # This historian is a GenServer whose init uses a Repo in a Task process.
 # This causes a ConnectionOwnership error
 config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
 config :explorer, Explorer.Market.History.Historian, enabled: false
 
-config :explorer, Explorer.Counters.AddressesCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Counters.LastOutputRootSizeCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Counters.Transactions24hStats, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Counters.FreshPendingTransactionsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.ContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.NewContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.VerifiedContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.NewVerifiedContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.WithdrawalsSum, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.AddressesCount, enabled: false, enable_consolidation: false
 
-config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
+config :explorer, Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount,
+  enabled: false,
+  enable_consolidation: false
+
+config :explorer, Explorer.Chain.Cache.Counters.Transactions24hCount, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.NewPendingTransactionsCount, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.ContractsCount, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.NewContractsCount, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.VerifiedContractsCount, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.NewVerifiedContractsCount, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.WithdrawalsSum, enabled: false, enable_consolidation: false
+
+config :explorer, Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount,
   enabled: true,
   global_ttl: :timer.minutes(10),
   locking_cap: 21_000_000

@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
   use BlockScoutWeb, :controller
 
   alias Explorer.{Chain, Etherscan, Market}
-  alias Explorer.Chain.Cache.{AddressSum, AddressSumMinusBurnt}
+  alias Explorer.Chain.Cache.Counters.{AddressesCoinBalanceSum, AddressesCoinBalanceSumMinusBurnt, LastFetchedCounter}
   alias Explorer.Chain.Wei
 
   @cmc_token_supply_precision 9
@@ -53,19 +53,19 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
   end
 
   def ethsupply(conn, _params) do
-    cached_wei_total_supply = AddressSum.get_sum()
+    cached_wei_total_supply = AddressesCoinBalanceSum.get_sum()
 
     render(conn, "ethsupply.json", total_supply: cached_wei_total_supply)
   end
 
   def coinsupply(conn, _params) do
-    cached_coin_total_supply_wei = AddressSumMinusBurnt.get_sum_minus_burnt()
+    cached_coin_total_supply_wei = AddressesCoinBalanceSumMinusBurnt.get_sum_minus_burnt()
 
     coin_total_supply_wei =
       if Decimal.compare(cached_coin_total_supply_wei, 0) == :gt do
         cached_coin_total_supply_wei
       else
-        Chain.get_last_fetched_counter("sum_coin_total_supply_minus_burnt")
+        LastFetchedCounter.get("sum_coin_total_supply_minus_burnt")
       end
 
     cached_coin_total_supply =

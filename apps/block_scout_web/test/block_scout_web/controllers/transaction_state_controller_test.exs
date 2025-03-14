@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   alias Explorer.Chain.Wei
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
-  alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
+  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   setup :set_mox_global
@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
 
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
     start_supervised!(AverageBlockTime)
-    start_supervised!(AddressesCounter)
+    start_supervised!(AddressesCount)
     start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
