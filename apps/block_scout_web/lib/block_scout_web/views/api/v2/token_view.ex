@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "type" => nil,
       "holders" => nil,
       "exchange_rate" => nil,
+      "volume_24h" => nil,
       "total_supply" => nil,
       "icon_url" => nil,
       "circulating_market_cap" => nil
