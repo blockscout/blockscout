@@ -336,10 +336,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   def token_transfers(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params),
          {:ok, token_address_hash} <- validate_optional_address_hash(params["token"], params),
-         {:not_found, :ok} <-
-           {:not_found, (token_address_hash && Chain.check_token_exists(token_address_hash)) || :ok} do
-      case Chain.hash_to_address(address_hash, @address_options, false) do
-        {:ok, _address} ->
+         token_address_exists <- (token_address_hash && Chain.check_token_exists(token_address_hash)) || :ok do
+      case {Chain.hash_to_address(address_hash, @address_options, false), token_address_exists} do
+        {{:ok, _address}, :ok} ->
           paging_options = paging_options(params)
 
           options =

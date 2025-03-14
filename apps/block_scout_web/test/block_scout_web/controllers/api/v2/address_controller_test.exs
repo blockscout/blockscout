@@ -1018,14 +1018,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
     end
 
-    test "get 404 on non existing address of token", %{conn: conn} do
+    test "get 200 on non existing address of token", %{conn: conn} do
       address = insert(:address)
 
       token = build(:address)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{"token" => to_string(token.hash)})
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid token address hash", %{conn: conn} do
