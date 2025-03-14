@@ -72,7 +72,7 @@ if ($transactionDetailsPage.length) {
   connectElements({ store, elements })
 
   const transactionHash = $transactionDetailsPage[0].dataset.pageTransactionHash
-  const transactionChannel = socket.channel(`transactions:${transactionHash}`, {})
+  const transactionChannel = socket.channel(`transactions_old:${transactionHash}`, {})
   transactionChannel.join()
   transactionChannel.on('collated', () => window.location.reload())
   transactionChannel.on('raw_trace', (msg) => store.dispatch({
@@ -92,7 +92,7 @@ if ($transactionDetailsPage.length) {
     txTabsObj && txTabsObj.scrollIntoView()
   }
 
-  const blocksChannel = socket.channel('blocks:new_block', {})
+  const blocksChannel = socket.channel('blocks_old:new_block', {})
   blocksChannel.join()
   blocksChannel.on('new_block', (msg) => store.dispatch({
     type: 'RECEIVED_NEW_BLOCK',

@@ -5,12 +5,12 @@ defmodule BlockScoutWeb.UserSocketV2 do
   use Phoenix.Socket
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  channel("addresses:*", BlockScoutWeb.AddressChannel)
-  channel("blocks:*", BlockScoutWeb.BlockChannel)
+  channel("addresses:*", BlockScoutWeb.AddressChannelV2)
+  channel("blocks:*", BlockScoutWeb.BlockChannelV2)
   channel("exchange_rate:*", BlockScoutWeb.ExchangeRateChannel)
-  channel("rewards:*", BlockScoutWeb.RewardChannel)
-  channel("transactions:*", BlockScoutWeb.TransactionChannel)
-  channel("tokens:*", BlockScoutWeb.TokenChannel)
+  channel("rewards:*", BlockScoutWeb.RewardChannelV2)
+  channel("transactions:*", BlockScoutWeb.TransactionChannelV2)
+  channel("tokens:*", BlockScoutWeb.TokenChannelV2)
   channel("token_instances:*", BlockScoutWeb.TokenInstanceChannel)
   channel("zkevm_batches:*", BlockScoutWeb.PolygonZkevmConfirmedBatchChannel)
 

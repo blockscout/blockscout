@@ -5,10 +5,11 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
   alias BlockScoutWeb.UserSocket
   alias BlockScoutWeb.Notifier
+  alias Explorer.Chain.Wei
   alias Explorer.Counters.AddressesCounter
 
   test "subscribed user is notified of new_address count event" do
-    topic = "addresses:new_address"
+    topic = "addresses_old:new_address"
     @endpoint.subscribe(topic)
 
     address = insert(:address)
@@ -24,7 +25,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
   describe "user pushing to channel" do
     setup do
       address = insert(:address, fetched_coin_balance: 100_000, fetched_coin_balance_block_number: 1)
-      topic = "addresses:#{address.hash}"
+      topic = "addresses_old:#{address.hash}"
 
       {:ok, _, socket} =
         UserSocket
@@ -47,13 +48,14 @@ defmodule BlockScoutWeb.AddressChannelTest do
   describe "user subscribed to address" do
     setup do
       address = insert(:address)
-      topic = "addresses:#{address.hash}"
+      topic = "addresses_old:#{address.hash}"
       @endpoint.subscribe(topic)
       {:ok, %{address: address, topic: topic}}
     end
 
     test "notified of balance_update for matching address", %{address: address, topic: topic} do
-      address_with_balance = %{address | fetched_coin_balance: 1}
+      {:ok, balance} = Wei.cast(1)
+      address_with_balance = %{address | fetched_coin_balance: balance}
 
       start_supervised!(AddressesCounter)
       AddressesCounter.consolidate()
