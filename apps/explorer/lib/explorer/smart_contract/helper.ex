@@ -241,14 +241,17 @@ defmodule Explorer.SmartContract.Helper do
   def prepare_license_type(_), do: nil
 
   @doc """
-  Pre-fetches implementation for unverified smart contract or verified proxy smart-contract
+  Pre-fetches implementation for unverified smart-contract or verified proxy smart-contract
   """
   @spec pre_fetch_implementations(Address.t()) :: Implementation.t() | nil
   def pre_fetch_implementations(address) do
     implementation =
       with {:verified_smart_contract, %SmartContract{}} <- {:verified_smart_contract, address.smart_contract},
            {:proxy?, true} <- {:proxy?, address_is_proxy?(address, @api_true)} do
-        Implementation.get_implementation(address.smart_contract, @api_true)
+        # we should fetch implementations only for original smart-contract and exclude fetching implementations of bytecode twin
+        if address.hash == address.smart_contract.address_hash do
+          Implementation.get_implementation(address.smart_contract, @api_true)
+        end
       else
         {:verified_smart_contract, _} ->
           if Address.smart_contract?(address) do

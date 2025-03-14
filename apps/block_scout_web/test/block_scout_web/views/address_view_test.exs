@@ -216,21 +216,6 @@ defmodule BlockScoutWeb.AddressViewTest do
     end
   end
 
-  describe "smart_contract_verified?/1" do
-    test "returns true when smart contract is verified" do
-      smart_contract = insert(:smart_contract, contract_code_md5: "123")
-      address = insert(:address, smart_contract: smart_contract)
-
-      assert AddressView.smart_contract_verified?(address)
-    end
-
-    test "returns false when smart contract is not verified" do
-      address = insert(:address, smart_contract: nil)
-
-      refute AddressView.smart_contract_verified?(address)
-    end
-  end
-
   describe "smart_contract_with_read_only_functions?/1" do
     test "returns true when abi has read only functions" do
       smart_contract =

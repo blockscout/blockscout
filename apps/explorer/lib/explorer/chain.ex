@@ -1118,52 +1118,32 @@ defmodule Explorer.Chain do
   end
 
   defp update_address_result(address_result, options, decoding_from_list?) do
+    if address_result do
+      LookUpSmartContractSourcesOnDemand.trigger_fetch(
+        to_string(address_result.hash),
+        address_result.contract_code,
+        (address_result && address_result.smart_contract) || nil
+      )
+    end
+
     case address_result do
       %{smart_contract: smart_contract} ->
         if smart_contract do
           CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
 
-          LookUpSmartContractSourcesOnDemand.trigger_fetch(
-            to_string(address_result.hash),
-            address_result.contract_code,
-            smart_contract
-          )
-
           SmartContract.check_and_update_constructor_args(address_result)
         else
-          LookUpSmartContractSourcesOnDemand.trigger_fetch(
-            to_string(address_result.hash),
-            address_result.contract_code,
-            nil
-          )
-
           # credo:disable-for-next-line
           if decoding_from_list? do
             address_result
           else
-            add_bytecode_twin_to_result(address_result, options)
+            SmartContract.compose_address_for_unverified_smart_contract(address_result, options)
           end
         end
 
       _ ->
-        if address_result do
-          LookUpSmartContractSourcesOnDemand.trigger_fetch(
-            to_string(address_result.hash),
-            address_result.contract_code,
-            nil
-          )
-        end
-
         address_result
     end
-  end
-
-  defp add_bytecode_twin_to_result(address_result, options) do
-    address_verified_bytecode_twin_contract =
-      SmartContract.get_address_verified_bytecode_twin_contract(address_result.hash, options).verified_contract
-
-    address_result
-    |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, address_result.hash)
   end
 
   @doc """
