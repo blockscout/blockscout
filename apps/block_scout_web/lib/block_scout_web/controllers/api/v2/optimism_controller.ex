@@ -512,6 +512,13 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     }
   end
 
+  # Gets filter parameters for message list and prepares them for `Explorer.Chain.Optimism.InteropMessage.list/1` function.
+  #
+  # ## Parameters
+  # - `params`: A map with filter parameters defined in HTTP request.
+  #
+  # ## Returns
+  # - A list with prepared filter parameters.
   @spec interop_extract_message_filters(map()) :: list()
   defp interop_extract_message_filters(params) do
     [
@@ -523,19 +530,26 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       senders:
         interop_prepare_include_exclude_address_hashes_filter(
           params["interop_message_sender_address_hashes_to_include"],
-          params["interop_message_sender_address_hashes_to_exclude"],
-          &interop_prepare_address_hash_filter/1
+          params["interop_message_sender_address_hashes_to_exclude"]
         ),
       targets:
         interop_prepare_include_exclude_address_hashes_filter(
           params["interop_message_target_address_hashes_to_include"],
-          params["interop_message_target_address_hashes_to_exclude"],
-          &interop_prepare_address_hash_filter/1
+          params["interop_message_target_address_hashes_to_exclude"]
         ),
       direction: interop_prepare_direction_filter(params["interop_message_direction"])
     ]
   end
 
+  # Handles the `interop_message_nonce` parameter from HTTP request for the interop message list.
+  # Converts the string with nonce to the integer.
+  #
+  # ## Parameters
+  # - `nonce`: The nonce string.
+  #
+  # ## Returns
+  # - The nonce integer in case the nonce string is correct.
+  # - `nil` in case of invalid string.
   @spec interop_prepare_nonce_filter(String.t()) :: non_neg_integer() | nil
   defp interop_prepare_nonce_filter(nonce) when is_binary(nonce) do
     nonce
@@ -549,9 +563,27 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   defp interop_prepare_nonce_filter(_), do: nil
 
+  # Handles `interop_message_age_from` and `interop_message_age_to` parameters from HTTP request for the interop message list.
+  # Converts the ISO 8601 strings to the corresponding `DateTime` typed values.
+  #
+  # ## Parameters
+  # - `from`: The string with start datetime of the range.
+  # - `to`: The string with end datetime of the range.
+  #
+  # ## Returns
+  # - A list `[from: DateTime.t() | nil, to: DateTime.t() | nil]` with the converted values.
+  #   The `from` or `to` component can be `nil` if the corresponding input has invalid datetime format.
   @spec interop_prepare_age_filter(String.t(), String.t()) :: list()
   defp interop_prepare_age_filter(from, to), do: [from: parse_date(from), to: parse_date(to)]
 
+  # Converts ISO 8601 string to the corresponding `DateTime` typed value.
+  #
+  # ## Parameters
+  # - `string_date`: The string with datetime in ISO 8601.
+  #
+  # ## Returns
+  # - The converted datetime value.
+  # - `nil` in case of invalid input.
   @spec parse_date(String.t()) :: DateTime.t() | nil
   defp parse_date(string_date) do
     case string_date && DateTime.from_iso8601(string_date) do
@@ -562,6 +594,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   @allowed_interop_message_statuses ~w(SENT RELAYED FAILED)
 
+  # Handles the `interop_message_statuses` parameter from HTTP request for the interop message list.
+  # Converts the string with statuses to the statuses list.
+  #
+  # ## Parameters
+  # - `statuses`: The string with comma-separated statuses, e.g.: `Sent,Relayed,Failed`.
+  #
+  # ## Returns
+  # - The corresponding list with uppercased items, e.g.: ["SENT","RELAYED","FAILED"]
+  # - An empty list if the input string is invalid.
   @spec interop_prepare_statuses_filter(String.t()) :: list()
   defp interop_prepare_statuses_filter(statuses) when is_binary(statuses) do
     statuses
@@ -573,6 +614,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   defp interop_prepare_statuses_filter(_), do: []
 
+  # Handles the `interop_message_init_transaction_hash` and `interop_message_relay_transaction_hash` parameters
+  # from HTTP request for the interop message list. Converts the string with transaction hash to `Explorer.Chain.Hash.t()`.
+  #
+  # ## Parameters
+  # - `transaction_hash`: The transaction hash string containing 64 symbols after `0x` prefix.
+  #
+  # ## Returns
+  # - The transaction hash in case the input string is correct.
+  # - `nil` in case of invalid string.
   @spec interop_prepare_transaction_hash_filter(String.t()) :: Hash.t() | nil
   defp interop_prepare_transaction_hash_filter(transaction_hash) when is_binary(transaction_hash) do
     transaction_hash
@@ -586,23 +636,57 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   defp interop_prepare_transaction_hash_filter(_), do: nil
 
-  @spec interop_prepare_include_exclude_address_hashes_filter(String.t(), String.t(), function()) :: list()
-  defp interop_prepare_include_exclude_address_hashes_filter(include, exclude, map_filter_function) do
+  # Handles `interop_message_sender_address_hashes_to_include`, `interop_message_sender_address_hashes_to_exclude`,
+  # `interop_message_target_address_hashes_to_include`, and `interop_message_target_address_hashes_to_exclude` parameters
+  # from HTTP request for the interop message list. Converts the strings containing comma-separated addresses
+  # to the input lists of `Hash.Address.t()` for `Explorer.Chain.Optimism.InteropMessage.list/1` function.
+  # Each address must have 40 hexadecimal digits after the `0x` base prefix.
+  #
+  # ## Parameters
+  # - `include`: accepts `interop_message_sender_address_hashes_to_include` or `interop_message_target_address_hashes_to_include` parameter value.
+  # - `exclude`: accepts `interop_message_sender_address_hashes_to_exclude` or `interop_message_target_address_hashes_to_exclude` parameter value.
+  #
+  # ## Returns
+  # - A list `[include: [Hash.Address.t()], exclude: [Hash.Address.t()]]` with the converted addresses.
+  @spec interop_prepare_include_exclude_address_hashes_filter(String.t(), String.t()) :: [
+          include: [Hash.Address.t()],
+          exclude: [Hash.Address.t()]
+        ]
+  defp interop_prepare_include_exclude_address_hashes_filter(include, exclude) do
     [
-      include: interop_prepare_address_hashes_filter(include, map_filter_function),
-      exclude: interop_prepare_address_hashes_filter(exclude, map_filter_function)
+      include: interop_prepare_address_hashes_filter(include),
+      exclude: interop_prepare_address_hashes_filter(exclude)
     ]
   end
 
-  defp interop_prepare_address_hashes_filter(address_hashes, map_filter_function) when is_binary(address_hashes) do
+  # Converts the string containing comma-separated addresses to the list of `Hash.Address.t()`.
+  # Each address must have 40 hexadecimal digits after the `0x` base prefix.
+  #
+  # ## Parameters
+  # - `address_hashes`: The string with comma-separated addresses.
+  #
+  # ## Returns
+  # - The corresponding list `[Hash.Address.t()]`. The list is empty if the input string is empty or all addresses
+  #   are incorrect. Incorrect addresses are not included into the list.
+  @spec interop_prepare_address_hashes_filter(String.t()) :: [Hash.Address.t()]
+  defp interop_prepare_address_hashes_filter(address_hashes) when is_binary(address_hashes) do
     address_hashes
     |> String.split(",")
-    |> Enum.map(&map_filter_function.(&1))
+    |> Enum.map(&interop_prepare_address_hash_filter(&1))
     |> Enum.reject(&is_nil(&1))
   end
 
-  defp interop_prepare_address_hashes_filter(_, _), do: nil
+  defp interop_prepare_address_hashes_filter(_), do: nil
 
+  # Converts an address hash string with `0x` prefix to `Hash.Address.t()`.
+  # The address must have 40 hexadecimal digits after the `0x` base prefix.
+  #
+  # ## Parameters
+  # - `address_hash`: The input string with address.
+  #
+  # ## Returns
+  # - `Hash.Address.t()` in case of correct address.
+  # - `nil` if the address is invalid.
   @spec interop_prepare_address_hash_filter(String.t()) :: Hash.Address.t() | nil
   defp interop_prepare_address_hash_filter(address_hash) do
     address_hash
@@ -614,6 +698,16 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     end
   end
 
+  # Handles the `interop_message_direction` parameter from HTTP request for the interop message list.
+  # Converts the string with the direction to the corresponding atom.
+  #
+  # ## Parameters
+  # - `direction`: The direction string. Can be one of: "in", "out".
+  #
+  # ## Returns
+  # - `:in` for the incoming direction.
+  # - `:out` for the outgoing direction.
+  # - `nil` for all directions.
   @spec interop_prepare_direction_filter(String.t() | nil) :: :in | :out | nil
   defp interop_prepare_direction_filter(direction) do
     case direction && String.downcase(direction) do
