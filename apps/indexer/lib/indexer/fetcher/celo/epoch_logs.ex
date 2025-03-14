@@ -3,15 +3,13 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
   Fetches logs that are not linked to transaction, but to the block.
   """
 
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
-
   import Explorer.Chain.Celo.Helper,
     only: [
       epoch_block_number?: 1,
       premigration_block_number?: 1
     ]
 
-  alias EthereumJSONRPC.Logs
+  alias EthereumJSONRPC.{Logs, Transport}
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Indexer.Helper, as: IndexerHelper
 
@@ -45,32 +43,42 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
         ) :: Logs.t()
   def fetch(blocks, json_rpc_named_arguments)
 
-  if @chain_type == :celo do
-    def fetch(blocks, json_rpc_named_arguments) do
-      requests =
-        blocks
-        |> Enum.filter(&premigration_block_number?(&1.number))
-        |> Enum.reduce({[], 0}, &blocks_reducer/2)
-        |> elem(0)
-        |> Enum.reverse()
-        |> Enum.concat()
-
-      with {:ok, responses} <- do_requests(requests, json_rpc_named_arguments),
-           {:ok, logs} <- Logs.from_responses(responses) do
-        logs
-        |> Enum.filter(&(&1.transaction_hash == &1.block_hash))
-        |> Enum.map(&Map.put(&1, :transaction_hash, nil))
-      end
-    end
-  else
-    def fetch(_blocks, _json_rpc_named_arguments) do
+  def fetch(blocks, json_rpc_named_arguments) do
+    if Application.get_env(:explorer, :chain_type) == :celo do
+      do_fetch(blocks, json_rpc_named_arguments)
+    else
       []
+    end
+  end
+
+  @spec do_fetch(
+          [Indexer.Transform.Blocks.block()],
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: Logs.t()
+  defp do_fetch(blocks, json_rpc_named_arguments) do
+    requests =
+      blocks
+      |> Enum.filter(&premigration_block_number?(&1.number))
+      |> Enum.reduce({[], 0}, &blocks_reducer/2)
+      |> elem(0)
+      |> Enum.reverse()
+      |> Enum.concat()
+
+    with {:ok, responses} <- do_requests(requests, json_rpc_named_arguments),
+         {:ok, logs} <- Logs.from_responses(responses) do
+      logs
+      |> Enum.filter(&(&1.transaction_hash == &1.block_hash))
+      |> Enum.map(&Map.put(&1, :transaction_hash, nil))
     end
   end
 
   # Workaround in order to fix block fetcher tests.
   #
   # If the requests is empty, we still send the requests to the JSON RPC
+  @spec do_requests(
+          [Transport.request()],
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:ok, [map()]}
   defp do_requests(requests, json_rpc_named_arguments) do
     if Enum.empty?(requests) do
       {:ok, []}
@@ -84,6 +92,10 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
     end
   end
 
+  @spec blocks_reducer(
+          Indexer.Transform.Blocks.block(),
+          {[Transport.request()], integer()}
+        ) :: {[Transport.request()], integer()}
   defp blocks_reducer(%{number: number}, {acc, start_request_id}) do
     targets =
       @default_block_targets ++

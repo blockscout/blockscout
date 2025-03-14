@@ -1,12 +1,12 @@
-defmodule EthereumJSONRPC.Ganache do
+defmodule EthereumJSONRPC.Anvil do
   @moduledoc """
-  Ethereum JSONRPC methods that are only supported by [Ganache](https://github.com/trufflesuite/ganache-core#implemented-methods).
+  Ethereum JSONRPC methods that are only supported by [Anvil](https://book.getfoundry.sh/anvil/).
   """
 
   @behaviour EthereumJSONRPC.Variant
 
   @doc """
-  Block reward contract beneficiary fetching is not supported currently for Ganache.
+  Block reward contract beneficiary fetching is not supported currently for Anvil.
 
   To signal to the caller that fetching is not supported, `:ignore` is returned.
   """
@@ -14,7 +14,7 @@ defmodule EthereumJSONRPC.Ganache do
   def fetch_beneficiaries(_block_range, _json_rpc_named_arguments), do: :ignore
 
   @doc """
-  Internal transaction fetching is not currently supported for Ganache.
+  Internal transaction fetching is not currently supported for Anvil.
 
   To signal to the caller that fetching is not supported, `:ignore` is returned.
   """
@@ -22,7 +22,7 @@ defmodule EthereumJSONRPC.Ganache do
   def fetch_internal_transactions(_transactions_params, _json_rpc_named_arguments), do: :ignore
 
   @doc """
-  Internal transaction fetching is not currently supported for Ganache.
+  Internal transaction fetching is not currently supported for Anvil.
 
   To signal to the caller that fetching is not supported, `:ignore` is returned.
   """
@@ -30,7 +30,7 @@ defmodule EthereumJSONRPC.Ganache do
   def fetch_block_internal_transactions(_block_range, _json_rpc_named_arguments), do: :ignore
 
   @doc """
-  Pending transaction fetching is not supported currently for Ganache.
+  Pending transaction fetching is not supported currently for Anvil.
 
   To signal to the caller that fetching is not supported, `:ignore` is returned.
   """
@@ -38,7 +38,7 @@ defmodule EthereumJSONRPC.Ganache do
   def fetch_pending_transactions(_json_rpc_named_arguments), do: :ignore
 
   @doc """
-  Traces are not supported currently for Ganache.
+  Traces are not supported currently for Anvil.
 
   To signal to the caller that fetching is not supported, `:ignore` is returned.
   """
@@ -46,7 +46,7 @@ defmodule EthereumJSONRPC.Ganache do
   def fetch_first_trace(_transactions_params, _json_rpc_named_arguments), do: :ignore
 
   @doc """
-  Traces are not supported currently for Ganache.
+  Traces are not supported currently for Anvil.
 
   To signal to the caller that fetching is not supported, `:ignore` is returned.
   """

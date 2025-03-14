@@ -12,8 +12,8 @@ config :explorer,
     transport: EthereumJSONRPC.HTTP,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
-      urls: ConfigHelper.parse_urls_list(:http),
-      eth_call_urls: ConfigHelper.parse_urls_list(:eth_call),
+      urls: ConfigHelper.parse_urls_list(:http, "http://localhost:7545"),
+      eth_call_urls: ConfigHelper.parse_urls_list(:eth_call, "http://localhost:7545"),
       fallback_urls: ConfigHelper.parse_urls_list(:fallback_http),
       fallback_eth_call_urls: ConfigHelper.parse_urls_list(:fallback_eth_call),
       method_to_url: [
@@ -21,7 +21,7 @@ config :explorer,
       ],
       http_options: [recv_timeout: timeout, timeout: timeout, hackney: hackney_opts]
     ],
-    variant: EthereumJSONRPC.Ganache
+    variant: EthereumJSONRPC.Anvil
   ],
   subscribe_named_arguments: [
     transport: EthereumJSONRPC.WebSocket,
@@ -30,5 +30,5 @@ config :explorer,
       url: System.get_env("ETHEREUM_JSONRPC_WS_URL"),
       fallback_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_WS_URL")
     ],
-    variant: EthereumJSONRPC.Ganache
+    variant: EthereumJSONRPC.Anvil
   ]
