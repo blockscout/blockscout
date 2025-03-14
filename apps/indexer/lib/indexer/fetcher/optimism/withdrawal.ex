@@ -234,12 +234,13 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
         end)
       else
         {:ok, result} =
-          Optimism.get_logs(
+          Helper.get_logs(
             block_start,
             block_end,
             message_passer,
-            @message_passed_event,
+            [@message_passed_event],
             json_rpc_named_arguments,
+            0,
             3
           )
 
