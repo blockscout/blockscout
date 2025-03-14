@@ -238,6 +238,15 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     end
   end
 
+  # Extends a query for listing interop messages with their filtering.
+  # Filter conditions are applied with `and` relation.
+  #
+  # ## Parameters
+  # - `query`: The base query to extend.
+  # - `options`: The filter options.
+  #
+  # ## Returns
+  # - The extended query.
   @spec filter_messages(Ecto.Query.t(), list()) :: Ecto.Query.t()
   defp filter_messages(query, options) do
     query
@@ -251,6 +260,15 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     |> filter_messages_by_direction(options[:direction], options[:current_chain_id])
   end
 
+  # Extends a query for listing interop messages with filtering by `nonce`.
+  #
+  # ## Parameters
+  # - `query`: The base query to extend.
+  # - `nonce`: The nonce to filter the list by.
+  #
+  # ## Returns
+  # - The extended query if the nonce is integer.
+  # - The base query if the nonce is invalid.
   @spec filter_messages_by_nonce(Ecto.Query.t(), non_neg_integer() | nil) :: Ecto.Query.t()
   defp filter_messages_by_nonce(query, nonce) when is_integer(nonce) do
     where(query, [message], message.nonce == ^nonce)
@@ -258,17 +276,48 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
   defp filter_messages_by_nonce(query, _), do: query
 
+  # Extends a query for listing interop messages with filtering by timestamp.
+  # All found messages will have a timestamp greater than or equal to the given one.
+  #
+  # ## Parameters
+  # - `query`: The base query to extend.
+  # - `from`: The initial timestamp.
+  # - `:from`: The atom to set the initial timestamp in the query.
+  #
+  # ## Returns
+  # - The extended query if the parameters are correct.
+  # - The base query if the parameters are wrong.
   @spec filter_messages_by_timestamp(Ecto.Query.t(), DateTime.t() | nil, :from | :to) :: Ecto.Query.t()
   defp filter_messages_by_timestamp(query, %DateTime{} = from, :from) do
     where(query, [message], message.timestamp >= ^from)
   end
 
+  # Extends a query for listing interop messages with filtering by timestamp.
+  # All found messages will have a timestamp less than or equal to the given one.
+  #
+  # ## Parameters
+  # - `query`: The base query to extend.
+  # - `to`: The final timestamp.
+  # - `:to`: The atom to set the final timestamp in the query.
+  #
+  # ## Returns
+  # - The extended query if the parameters are correct.
+  # - The base query if the parameters are wrong.
   defp filter_messages_by_timestamp(query, %DateTime{} = to, :to) do
     where(query, [message], message.timestamp <= ^to)
   end
 
   defp filter_messages_by_timestamp(query, _, _), do: query
 
+  # Extends a query for listing interop messages with filtering by message status.
+  #
+  # ## Parameters
+  # - `query`: The base query to extend.
+  # - `statuses`: The list of statuses to filter by. Can contain: "SENT", "RELAYED", and/or "FAILED".
+  #
+  # ## Returns
+  # - The extended query if statuses are defined and not all possible statuses selected.
+  # - The base query if statuses are not defined or all possible statuses selected.
   @spec filter_messages_by_status(Ecto.Query.t(), [String.t()]) :: Ecto.Query.t()
   # credo:disable-for-next-line /Complexity/
   defp filter_messages_by_status(query, statuses) do
@@ -296,18 +345,53 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     end
   end
 
+  # Extends a query for listing interop messages with filtering by `init_transaction_hash`.
+  #
+  # ## Parameters
+  # - `query`: The base query to extend.
+  # - `transaction_hash`: The init transaction hash.
+  # - `:init`: The atom to set the init transaction hash in the query.
+  #
+  # ## Returns
+  # - The extended query if the parameters are correct.
+  # - The base query if the parameters are wrong.
   @spec filter_messages_by_transaction_hash(Ecto.Query.t(), Hash.t() | nil, :init | :relay) :: Ecto.Query.t()
   defp filter_messages_by_transaction_hash(query, transaction_hash, :init) when not is_nil(transaction_hash) do
     where(query, [message], message.init_transaction_hash == ^transaction_hash)
   end
 
+  # Extends a query for listing interop messages with filtering by `relay_transaction_hash`.
+  #
+  # ## Parameters
+  # - `query`: The base query to extend.
+  # - `transaction_hash`: The relay transaction hash.
+  # - `:relay`: The atom to set the relay transaction hash in the query.
+  #
+  # ## Returns
+  # - The extended query if the parameters are correct.
+  # - The base query if the parameters are wrong.
   defp filter_messages_by_transaction_hash(query, transaction_hash, :relay) when not is_nil(transaction_hash) do
     where(query, [message], message.relay_transaction_hash == ^transaction_hash)
   end
 
   defp filter_messages_by_transaction_hash(query, _, _), do: query
 
-  @spec filter_messages_by_addresses(Ecto.Query.t(), list(), list()) :: Ecto.Query.t()
+  # Extends a query for listing interop messages with filtering by `sender` and `target` addresses.
+  # The addresses can be mandatory (see `include` keyword) or undesired (see `exclude` keyword).
+  #
+  # ## Parameters
+  # - `query`: The base query to extend.
+  # - `sender_addresses`: The list defining mandatory and/or undesired sender addresses.
+  # - `target_addresses`: The list defining mandatory and/or undesired target addresses.
+  #
+  # ## Returns
+  # - The extended or base query depending on the input parameters.
+  @spec filter_messages_by_addresses(
+          Ecto.Query.t(),
+          [include: [Hash.Address.t()], exclude: [Hash.Address.t()]],
+          include: [Hash.Address.t()],
+          exclude: [Hash.Address.t()]
+        ) :: Ecto.Query.t()
   defp filter_messages_by_addresses(query, sender_addresses, target_addresses) do
     case {filter_process_address_inclusion(sender_addresses), filter_process_address_inclusion(target_addresses)} do
       {nil, nil} ->
@@ -326,17 +410,46 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     end
   end
 
+  # Extends a query for listing interop messages with filtering by sender or target mandatory addresses.
+  #
+  # ## Parameters
+  # - `query`: The base query to extend.
+  # - `{:include, addresses}`: The list defining mandatory sender or target addresses.
+  # - `field`: Defines the table field to filter by. Can be one of: :sender, :target.
+  #
+  # ## Returns
+  # - The extended query.
   @spec filter_messages_by_address(Ecto.Query.t(), {:include | :exclude, [Hash.Address.t()]}, :sender | :target) ::
           Ecto.Query.t()
   defp filter_messages_by_address(query, {:include, addresses}, field) do
     where(query, [message], field(message, ^field) in ^addresses)
   end
 
+  # Extends a query for listing interop messages with filtering by sender or target undesired addresses.
+  #
+  # ## Parameters
+  # - `query`: The base query to extend.
+  # - `{:exclude, addresses}`: The list defining undesired sender or target addresses.
+  # - `field`: Defines the table field to filter by. Can be one of: :sender, :target.
+  #
+  # ## Returns
+  # - The extended query.
   defp filter_messages_by_address(query, {:exclude, addresses}, field) do
     where(query, [message], field(message, ^field) not in ^addresses)
   end
 
-  @spec filter_process_address_inclusion(list()) :: {:exclude, list()} | {:include, list()} | nil
+  # Handles addresses inclusion type (include or exclude) and forms a final inclusion or exclusion list of addresses.
+  # Used by the `filter_messages_by_addresses` function.
+  #
+  # ## Parameters
+  # - `addresses`: The list defining mandatory and/or undesired addresses.
+  #
+  # ## Returns
+  # - `{:include, to_include}` tuple with the list of mandatory addresses.
+  # - `{:exclude, to_exclude}` tuple with the list of undesired addresses.
+  # - `nil` if the input lists are empty or mutually exclusive.
+  @spec filter_process_address_inclusion(include: [Hash.Address.t()], exclude: [Hash.Address.t()]) ::
+          {:exclude, list()} | {:include, list()} | nil
   defp filter_process_address_inclusion(addresses) when is_list(addresses) do
     case {Keyword.get(addresses, :include, []), Keyword.get(addresses, :exclude, [])} do
       {to_include, to_exclude} when to_include in [nil, []] and to_exclude in [nil, []] ->
@@ -355,6 +468,16 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
   defp filter_process_address_inclusion(_), do: nil
 
+  # Extends a query for listing interop messages with filtering by message direction (ingoing or outgoing).
+  #
+  # ## Parameters
+  # - `query`: The base query to extend.
+  # - `:in` or `out`: The direction: `:in` for ingoing, `:out` for outgoing.
+  # - `current_chain_id`: The current chain ID to correctly determine direction of a message.
+  #
+  # ## Returns
+  # - The extended query if the direction and current chain ID are defined.
+  # - The base query otherwise.
   @spec filter_messages_by_direction(Ecto.Query.t(), :in | :out | nil, non_neg_integer() | nil) :: Ecto.Query.t()
   defp filter_messages_by_direction(query, nil, _), do: query
 
