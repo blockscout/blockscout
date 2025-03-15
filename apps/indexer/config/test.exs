@@ -4,6 +4,8 @@ config :indexer, Indexer.Tracer, disabled?: false
 
 config :indexer, Indexer.Block.Catchup.MissingRangesCollector, future_check_interval: 1
 
+config :indexer, Indexer.Migrator.RecoveryWETHTokenTransfers, enabled: false
+
 config :logger, :indexer,
   level: :warn,
   path: Path.absname("logs/test/indexer.log")
