@@ -11,6 +11,17 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsTransactionHashBlock
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+
+  alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateLogsAddressHashBlockNumberDescIndexDescIndex,
+    CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
+    CreateLogsBlockHashIndex,
+    DropLogsAddressHashIndex,
+    DropLogsAddressHashTransactionHashIndex,
+    DropLogsBlockNumberAscIndexAscIndex,
+    DropLogsIndexIndex
+  }
+
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :logs
@@ -27,7 +38,16 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsTransactionHashBlock
   def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations, do: []
+  def dependent_from_migrations,
+    do: [
+      DropLogsBlockNumberAscIndexAscIndex.migration_name(),
+      CreateLogsBlockHashIndex.migration_name(),
+      CreateLogsAddressHashBlockNumberDescIndexDescIndex.migration_name(),
+      DropLogsAddressHashIndex.migration_name(),
+      DropLogsAddressHashTransactionHashIndex.migration_name(),
+      DropLogsIndexIndex.migration_name(),
+      CreateLogsAddressHashFirstTopicBlockNumberIndexIndex.migration_name()
+    ]
 
   @query_string """
   CREATE INDEX #{HeavyDbIndexOperationHelper.add_concurrently_flag?()} IF NOT EXISTS #{@index_name}
@@ -64,6 +84,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsTransactionHashBlock
 
   @impl HeavyDbIndexOperation
   def update_cache do
-    BackgroundMigrations.set_heavy_indexes_create_logs_block_hash_index_finished(true)
+    BackgroundMigrations.set_heavy_indexes_create_logs_transaction_hash_block_hash_index_address_hash_index_finished(
+      true
+    )
   end
 end
