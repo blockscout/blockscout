@@ -96,14 +96,14 @@ defmodule Explorer.Chain.Address.Schema do
         has_one(:proxy_implementations, Implementation, foreign_key: :proxy_address_hash, references: :hash)
 
         has_one(
-          :contracts_creation_internal_transaction,
+          :contract_creation_internal_transaction,
           InternalTransaction,
           foreign_key: :created_contract_address_hash,
           references: :hash
         )
 
         has_one(
-          :contracts_creation_transaction,
+          :contract_creation_transaction,
           Transaction,
           foreign_key: :created_contract_address_hash,
           references: :hash
@@ -172,8 +172,8 @@ defmodule Explorer.Chain.Address do
              :smart_contract,
              :decompiled_smart_contracts,
              :token,
-             :contracts_creation_internal_transaction,
-             :contracts_creation_transaction,
+             :contract_creation_internal_transaction,
+             :contract_creation_transaction,
              :names
            ]}
 
@@ -183,8 +183,8 @@ defmodule Explorer.Chain.Address do
              :smart_contract,
              :decompiled_smart_contracts,
              :token,
-             :contracts_creation_internal_transaction,
-             :contracts_creation_transaction,
+             :contract_creation_internal_transaction,
+             :contract_creation_transaction,
              :names
            ]}
 
@@ -678,13 +678,145 @@ defmodule Explorer.Chain.Address do
   - `%Transaction{}` if the creation transaction is a regular transaction.
   """
   @spec creation_transaction(any()) :: nil | InternalTransaction.t() | Transaction.t()
-  def creation_transaction(%__MODULE__{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction
+  def creation_transaction(%__MODULE__{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contract_creation_internal_transaction
   end
 
-  def creation_transaction(%__MODULE__{contracts_creation_transaction: %Transaction{}} = address) do
-    address.contracts_creation_transaction
+  def creation_transaction(%__MODULE__{contract_creation_transaction: %Transaction{}} = address) do
+    address.contract_creation_transaction
   end
 
   def creation_transaction(_address), do: nil
+
+  @doc """
+  Creates a query for preloading contract creation transactions.
+
+  This query sorts transactions by:
+
+  1. status (descending with nulls last)
+  2. block number (descending with nulls last)
+  3. index (descending with nulls last),
+
+  and limits to one result.
+
+  ## Returns
+
+  A `Ecto.Query` that can be used to preload the contract creation transaction.
+  """
+  @spec contract_creation_transaction_preload_query() :: Ecto.Query.t()
+  def contract_creation_transaction_preload_query do
+    from(
+      t in Transaction,
+      order_by: [
+        desc_nulls_last: t.status,
+        desc_nulls_last: t.block_number,
+        desc_nulls_last: t.index
+      ],
+      limit: 1
+    )
+  end
+
+  @doc """
+  Creates a query for preloading contract creation internal transactions.
+
+  This query sorts internal transactions by:
+
+  1. error (ascending with nulls first)
+  2. block number (descending)
+  3. block index (descending)
+
+  and limits to one result.
+
+  ## Returns
+
+  A `Ecto.Query` that can be used to preload the contract creation internal transaction.
+  """
+  @spec contract_creation_internal_transaction_preload_query() :: Ecto.Query.t()
+  def contract_creation_internal_transaction_preload_query do
+    from(
+      it in InternalTransaction,
+      order_by: [
+        asc_nulls_first: it.error,
+        desc: it.block_number,
+        desc: it.block_index
+      ],
+      limit: 1
+    )
+  end
+
+  @doc """
+  Returns contract creation transaction association specification.
+
+  For Filecoin chain, includes a reference to the from_address in the association.
+
+  ## Returns
+  A keyword list with the contract creation transaction association.
+  """
+  @spec contract_creation_transaction_association() :: keyword()
+  case @chain_type do
+    :filecoin ->
+      def contract_creation_transaction_association do
+        [
+          contract_creation_transaction: {
+            Address.contract_creation_transaction_preload_query(),
+            :from_address
+          }
+        ]
+      end
+
+    _ ->
+      def contract_creation_transaction_association do
+        [
+          contract_creation_transaction: Address.contract_creation_transaction_preload_query()
+        ]
+      end
+  end
+
+  @doc """
+  Returns contract creation internal transaction association specification.
+
+  For Filecoin chain, includes a reference to the from_address in the association.
+
+  ## Returns
+  A keyword list with the contract creation internal transaction association.
+  """
+  @spec contract_creation_internal_transaction_association() :: keyword()
+  case @chain_type do
+    :filecoin ->
+      def contract_creation_internal_transaction_association do
+        [
+          contract_creation_internal_transaction: {
+            Address.contract_creation_internal_transaction_preload_query(),
+            :from_address
+          }
+        ]
+      end
+
+    _ ->
+      def contract_creation_internal_transaction_association do
+        [
+          contract_creation_internal_transaction: Address.contract_creation_internal_transaction_preload_query()
+        ]
+      end
+  end
+
+  @doc """
+  Returns both contract creation transaction and internal transaction
+  associations.
+
+  This is a convenience function that combines both types of contract creation
+  associations.
+
+  ## Returns
+
+  A list containing both contract creation transaction and internal transaction
+  associations.
+  """
+  @spec contract_creation_transaction_associations() :: [keyword()]
+  def contract_creation_transaction_associations do
+    [
+      contract_creation_transaction_association(),
+      contract_creation_internal_transaction_association()
+    ]
+  end
 end

@@ -279,20 +279,20 @@ defmodule BlockScoutWeb.AddressView do
     "#{String.slice(string_hash, 0..21)}..."
   end
 
-  def transaction_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction.transaction_hash
+  def transaction_hash(%Address{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contract_creation_internal_transaction.transaction_hash
   end
 
-  def transaction_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
-    address.contracts_creation_transaction.hash
+  def transaction_hash(%Address{contract_creation_transaction: %Transaction{}} = address) do
+    address.contract_creation_transaction.hash
   end
 
-  def from_address_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction.from_address_hash
+  def from_address_hash(%Address{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contract_creation_internal_transaction.from_address_hash
   end
 
-  def from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
-    address.contracts_creation_transaction.from_address_hash
+  def from_address_hash(%Address{contract_creation_transaction: %Transaction{}} = address) do
+    address.contract_creation_transaction.from_address_hash
   end
 
   def from_address_hash(_address), do: nil

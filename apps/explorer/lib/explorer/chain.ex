@@ -931,11 +931,11 @@ defmodule Explorer.Chain do
         hash,
         options \\ [
           necessity_by_association: %{
-            :contracts_creation_internal_transaction => :optional,
             :names => :optional,
             :smart_contract => :optional,
             :token => :optional,
-            :contracts_creation_transaction => :optional
+            Address.contract_creation_transaction_association() => :optional,
+            Address.contract_creation_internal_transaction_association() => :optional
           }
         ],
         query_decompiled_code_flag \\ false
@@ -1034,11 +1034,15 @@ defmodule Explorer.Chain do
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
         options \\ [
           necessity_by_association: %{
-            :contracts_creation_internal_transaction => :optional,
             :names => :optional,
             :smart_contract => :optional,
             :token => :optional,
-            :contracts_creation_transaction => :optional
+            [
+              contract_creation_transaction: Address.contract_creation_transaction_preload_query()
+            ] => :optional,
+            [
+              contract_creation_internal_transaction: Address.contract_creation_internal_transaction_preload_query()
+            ] => :optional
           }
         ],
         query_decompiled_code_flag \\ true
@@ -1233,11 +1237,11 @@ defmodule Explorer.Chain do
       from(
         address in Address,
         preload: [
-          :contracts_creation_internal_transaction,
+          :contract_creation_internal_transaction,
           :names,
           :smart_contract,
           :token,
-          :contracts_creation_transaction,
+          :contract_creation_transaction,
           :decompiled_smart_contracts
         ],
         where: address.hash == ^hash
@@ -3246,7 +3250,7 @@ defmodule Explorer.Chain do
       from(
         address in Address,
         where: address.hash == ^address_hash,
-        preload: [:contracts_creation_internal_transaction, :contracts_creation_transaction]
+        preload: ^Address.contract_creation_transaction_associations()
       )
 
     contract_address = Repo.one(query)
@@ -3256,8 +3260,8 @@ defmodule Explorer.Chain do
 
   # credo:disable-for-next-line /Complexity/
   defp contract_creation_input_data_from_address(address) do
-    internal_transaction = address && address.contracts_creation_internal_transaction
-    transaction = address && address.contracts_creation_transaction
+    internal_transaction = address && address.contract_creation_internal_transaction
+    transaction = address && address.contract_creation_transaction
 
     cond do
       is_nil(address) ->

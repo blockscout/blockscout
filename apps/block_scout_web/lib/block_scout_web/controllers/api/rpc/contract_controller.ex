@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
           {:ok, _address_hash, address} ->
             Address.maybe_preload_smart_contract_associations(
               address,
-              [:contracts_creation_internal_transaction, :contracts_creation_transaction],
+              Address.contract_creation_transaction_associations(),
               @api_true
             )
 

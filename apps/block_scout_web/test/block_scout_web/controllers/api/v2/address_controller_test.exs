@@ -134,6 +134,49 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       check_response(correct_response, json_response(request, 200))
     end
 
+    test "returns successful creation transaction for a contract when both failed and successful transactions exist",
+         %{conn: conn} do
+      contract_address = insert(:address, contract_code: "0x")
+
+      block = insert(:block)
+
+      failed_transaction =
+        insert(:transaction,
+          block_hash: block.hash,
+          block_number: block.number,
+          to_address: nil,
+          created_contract_address_hash: contract_address.hash,
+          cumulative_gas_used: 21000,
+          gas_used: 21000,
+          index: 0,
+          status: :error
+        )
+
+      block = insert(:block)
+
+      succeeded_transaction =
+        insert(:transaction,
+          block_hash: block.hash,
+          block_number: block.number,
+          created_contract_address_hash: contract_address.hash,
+          cumulative_gas_used: 21000,
+          gas_used: 21000,
+          index: 0,
+          status: :ok
+        )
+
+      assert failed_transaction.block_number < succeeded_transaction.block_number
+
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:ok, []}
+      end)
+
+      request = get(conn, "/api/v2/addresses/#{Address.checksum(contract_address.hash)}")
+      response = json_response(request, 200)
+      assert response["is_contract"]
+      assert response["creation_transaction_hash"] == to_string(succeeded_transaction.hash)
+    end
+
     defp check_response(pattern_response, response) do
       assert pattern_response["hash"] == response["hash"]
       assert pattern_response["is_contract"] == response["is_contract"]
