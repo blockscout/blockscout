@@ -11,6 +11,7 @@ defmodule Explorer.Chain.Health.Monitor do
   alias Explorer.Chain.Health.Helper, as: HealthHelper
   alias Explorer.Chain.Optimism.Reader, as: OptimismReader
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
+  alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Repo
@@ -93,8 +94,8 @@ defmodule Explorer.Chain.Health.Monitor do
           :polygon_zkevm ->
             get_latest_batch_info_from_module(PolygonZkevmReader)
 
-          # todo
-          # :scroll ->
+          :scroll ->
+            get_latest_batch_info_from_module(ScrollReader)
 
           _ ->
             nil
