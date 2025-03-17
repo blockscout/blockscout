@@ -45,7 +45,8 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
 
   @impl true
   def handle_info(:migrate_batch, state) do
-    case last_unprocessed_identifiers(state) do
+    dbg(state)
+    case last_unprocessed_identifiers(state)|>dbg() do
       [] ->
         if state["block_number"] == 0 do
           MigrationStatus.set_status(migration_name(), "completed")
@@ -133,7 +134,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
         [log],
         log.first_topic in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
       )
-      |> Repo.all(timeout: :infinity)
+      |> Repo.all(timeout: :infinity)|>dbg()
       |> Enum.map(fn log ->
         %Log{
           log
