@@ -31,6 +31,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   alias Explorer.Utility.{MassiveBlock, MissingRangesManipulator}
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.TaskSupervisor
+  alias Indexer.Fetcher.OnDemand.ContractCreator
   alias Indexer.Prometheus
 
   @behaviour Block.Fetcher
@@ -121,8 +122,64 @@ defmodule Indexer.Block.Catchup.Fetcher do
         Map.put(async_import_remaining_block_data_options, :block_rewards, %{errors: block_reward_errors})
       )
 
+      async_update_cache_of_contract_creator_on_demand(imported)
+
       ok
     end
+  end
+
+  defp async_update_cache_of_contract_creator_on_demand(imported) do
+    Task.async(fn ->
+      imported_block_numbers =
+        imported
+        |> Map.get(:blocks, [])
+        |> Enum.map(&Map.get(&1, :number))
+
+      unless Enum.empty?(imported_block_numbers) do
+        # credo:disable-for-next-line
+        case :ets.lookup(ContractCreator.table_name(), "pending_blocks") do
+          [{"pending_blocks", pending_block_numbers}] ->
+            update_pending_contract_creator_block_numbers(pending_block_numbers, imported_block_numbers, imported)
+
+          [] ->
+            :ok
+        end
+      end
+    end)
+  end
+
+  defp update_pending_contract_creator_block_numbers([], _imported_block_numbers, _imported), do: []
+
+  defp update_pending_contract_creator_block_numbers(pending_block_numbers, imported_block_numbers, imported) do
+    updated_pending_block_numbers =
+      Enum.reduce(imported_block_numbers, pending_block_numbers, fn block_number, pending_block_numbers ->
+        item_to_delete =
+          Enum.find(pending_block_numbers, fn %{
+                                                block_number: pending_block_number,
+                                                address_hash_string: _address_hash_string
+                                              } ->
+            block_number == pending_block_number
+          end)
+
+        if item_to_delete do
+          contract_creation_block = find_contract_creation_block_in_imported(imported, item_to_delete.block_number)
+
+          internal_transactions_import_params = [%{blocks: [contract_creation_block]}]
+          async_import_internal_transactions(internal_transactions_import_params, true)
+          :ets.delete(ContractCreator.table_name(), item_to_delete.address_hash_string)
+          List.delete(pending_block_numbers, item_to_delete)
+        else
+          pending_block_numbers
+        end
+      end)
+
+    :ets.insert(ContractCreator.table_name(), {"pending_blocks", updated_pending_block_numbers})
+  end
+
+  defp find_contract_creation_block_in_imported(imported, contract_creation_block_number) do
+    Enum.find(imported[:blocks], fn %Explorer.Chain.Block{number: block_number} ->
+      block_number == contract_creation_block_number
+    end)
   end
 
   defp async_import_remaining_block_data(

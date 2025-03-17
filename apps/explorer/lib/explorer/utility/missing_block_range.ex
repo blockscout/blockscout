@@ -16,17 +16,48 @@ defmodule Explorer.Utility.MissingBlockRange do
   typed_schema "missing_block_ranges" do
     field(:from_number, :integer)
     field(:to_number, :integer)
+    field(:priority, :integer)
   end
 
   @doc false
   def changeset(range \\ %__MODULE__{}, params) do
-    cast(range, params, [:from_number, :to_number])
+    cast(range, params, [:from_number, :to_number, :priority])
   end
 
+  @doc """
+  Fetches the minimum and maximum block range from the database.
+
+  This function executes a query to retrieve a single result containing
+  the minimum and maximum block values. It uses the `min_max_block_query/0`
+  function to construct the query and `Repo.one/1` to execute it.
+
+  ## Returns
+
+  - A map `%{min: min_block, max: max_block}` representing the minimum and maximum
+    block values, or `nil` if no blocks are found in the database.
+  """
+  @spec fetch_min_max() :: map() | nil
   def fetch_min_max do
     Repo.one(min_max_block_query())
   end
 
+  @doc """
+  Retrieves the latest batch of missing block ranges from the database.
+
+  This function queries the database for the latest missing block ranges and processes them
+  to return a list of ranges, each represented as a `Range` struct. The size of the batch
+  can be customized by providing the `size` argument, or it defaults to `@default_returning_batch_size`.
+
+  ## Parameters
+
+    - `size` (integer, optional): The maximum number of blocks to include in the batch. Defaults to `@default_returning_batch_size`.
+
+  ## Returns
+
+    - A list of `Range` structs, where each range represents a contiguous block range of missing blocks.
+
+  """
+  @spec get_latest_batch(integer()) :: [__MODULE__.t()]
   def get_latest_batch(size \\ @default_returning_batch_size) do
     size
     |> get_latest_ranges_query()
@@ -49,13 +80,37 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> Enum.reverse()
   end
 
-  def add_ranges_by_block_numbers(numbers) do
+  @doc """
+  Adds ranges derived from a list of block numbers and saves them with a given priority.
+
+  ## Parameters
+
+    - `numbers`: A list of block numbers to be converted into ranges.
+    - `priority`: The priority level to associate with the saved ranges.
+
+  ## Returns
+
+    - The result of the `save_batch/2` function, which processes and persists the ranges.
+
+  This function first converts the list of block numbers into ranges using `numbers_to_ranges/1`
+  and then saves the resulting ranges in a batch with the specified priority.
+  """
+  @spec add_ranges_by_block_numbers([Block.block_number()], integer() | nil) :: [__MODULE__.t()]
+  def add_ranges_by_block_numbers(numbers, priority) do
     numbers
     |> numbers_to_ranges()
-    |> save_batch()
+    |> save_batch(priority)
   end
 
-  def save_range(from..to//_) do
+  defp save_range(from..to//_, priority) when not is_nil(priority) do
+    min_number = min(from, to)
+    max_number = max(from, to)
+
+    delete_ranges_between(max_number, min_number)
+    insert_range(%{from_number: max_number, to_number: min_number, priority: priority})
+  end
+
+  defp save_range(from..to//_, nil) do
     min_number = min(from, to)
     max_number = max(from, to)
 
@@ -84,7 +139,7 @@ defmodule Explorer.Utility.MissingBlockRange do
     end
   end
 
-  def delete_range(from..to//_) do
+  defp delete_range(from..to//_) do
     min_number = min(from, to)
     max_number = max(from, to)
 
@@ -131,10 +186,27 @@ defmodule Explorer.Utility.MissingBlockRange do
     Enum.map(batch, &delete_range/1)
   end
 
-  def save_batch(batch) do
+  @doc """
+  Saves a batch of missing block ranges with an optional priority.
+
+  ## Parameters
+
+    - `batch` (list or single element): A batch or a single missing block range to be saved.
+      If a single element is provided, it will be wrapped in a list.
+    - `priority` (any, optional): An optional priority value to associate with the batch.
+      Defaults to `nil`.
+
+  ## Returns
+
+    - A list of results from saving each range in the batch.
+  """
+  @spec save_batch([Block.block_number()], integer() | nil) :: [__MODULE__.t()]
+  def save_batch(batch, priority \\ nil) do
     batch
     |> List.wrap()
-    |> Enum.map(&save_range/1)
+    |> Enum.map(fn batches ->
+      save_range(batches, priority)
+    end)
   end
 
   @doc """
@@ -148,7 +220,7 @@ defmodule Explorer.Utility.MissingBlockRange do
     - Returns `nil` if no intersecting ranges are found, or an `Explorer.Utility.MissingBlockRange` instance of the first intersecting range otherwise.
   """
   @spec intersects_with_range(Block.block_number(), Block.block_number()) ::
-          nil | Explorer.Utility.MissingBlockRange.t()
+          nil | __MODULE__.t()
   def intersects_with_range(lower_number, higher_number)
       when is_integer(lower_number) and lower_number >= 0 and
              is_integer(higher_number) and lower_number <= higher_number do
@@ -199,7 +271,7 @@ defmodule Explorer.Utility.MissingBlockRange do
     - A single range record of `Explorer.Utility.MissingBlockRange` that includes
       the given block number, or `nil` if no such range is found.
   """
-  @spec get_range_by_block_number(Block.block_number()) :: nil | Explorer.Utility.MissingBlockRange.t()
+  @spec get_range_by_block_number(Block.block_number()) :: nil | __MODULE__.t()
   def get_range_by_block_number(number) do
     number
     |> include_bound_query()
@@ -252,12 +324,12 @@ defmodule Explorer.Utility.MissingBlockRange do
     intersecting_ranges
   end
 
-  def min_max_block_query do
+  defp min_max_block_query do
     from(r in __MODULE__, select: %{min: min(r.to_number), max: max(r.from_number)})
   end
 
-  def get_latest_ranges_query(size) do
-    from(r in __MODULE__, order_by: [desc: r.from_number], limit: ^size)
+  defp get_latest_ranges_query(size) do
+    from(r in __MODULE__, order_by: [desc: r.priority, desc: r.from_number], limit: ^size)
   end
 
   def from_number_below_query(query \\ __MODULE__, lower_bound) do
