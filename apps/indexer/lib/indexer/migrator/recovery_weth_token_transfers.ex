@@ -78,7 +78,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
 
   def migration_name, do: @migration_name
 
-  def last_unprocessed_identifiers(state) do
+  defp last_unprocessed_identifiers(state) do
     limit = batch_size() * concurrency()
 
     state["block_number"]
@@ -120,7 +120,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
   @spec run_task([any()]) :: any()
   defp run_task(batch), do: Task.async(fn -> update_batch(batch) end)
 
-  def update_batch(batch) do
+  defp update_batch(batch) do
     %{token_transfers: token_transfers} =
       Log
       |> where([log], log.transaction_hash in ^batch)
