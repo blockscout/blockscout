@@ -33,6 +33,7 @@ config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
   locking_cap: 21_000_000
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
+config :explorer, Explorer.SmartContract.CertifiedSmartContractCataloger, enabled: false
 
 config :explorer, Explorer.Tracer, disabled?: false
 

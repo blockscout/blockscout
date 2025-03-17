@@ -26,7 +26,7 @@ config :indexer,
       ],
       http_options: [recv_timeout: timeout, timeout: timeout, hackney: hackney_opts]
     ],
-    variant: EthereumJSONRPC.Ganache
+    variant: EthereumJSONRPC.Anvil
   ],
   subscribe_named_arguments: [
     transport:

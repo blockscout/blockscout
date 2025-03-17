@@ -2,6 +2,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   @moduledoc """
   Module for fetching proxy implementation from https://eips.ethereum.org/EIPS/eip-1967 (Proxy Storage Slots)
   """
+  alias Explorer.Chain
   alias Explorer.Chain.Hash
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
@@ -31,8 +32,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   @doc """
   Get implementation address hash string following EIP-1967. It returns the value as array of the strings.
   """
-  @spec get_implementation_address_hash_strings(Hash.Address.t()) :: [binary()] | :error
-  def get_implementation_address_hash_strings(proxy_address_hash) do
+  @spec get_implementation_address_hash_strings(Hash.Address.t(), [Chain.api?()]) :: [binary()] | :error
+  def get_implementation_address_hash_strings(proxy_address_hash, _options \\ []) do
     case get_implementation_address_hash_string(proxy_address_hash) do
       nil -> []
       :error -> :error
