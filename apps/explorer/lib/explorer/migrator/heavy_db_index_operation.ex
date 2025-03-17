@@ -225,9 +225,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
             all_statuses =
               MigrationStatus.fetch_migration_statuses(dependent_from_migrations())
 
-            all_statuses_completed? =
-              all_statuses
-              |> Enum.all?(&(&1 == "completed"))
+            all_statuses_completed? = not Enum.empty?(all_statuses) && all_statuses |> Enum.all?(&(&1 == "completed"))
 
             all_statuses_completed? && Enum.count(all_statuses) == Enum.count(dependent_from_migrations())
           end
