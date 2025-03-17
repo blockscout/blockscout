@@ -237,8 +237,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
     payload = "0x" <> Base.encode16(message.payload, case: :lower)
 
     data = %{
-      sender: Hash.to_string(message.sender),
-      target: Hash.to_string(message.target),
+      sender_address_hash: Hash.to_string(message.sender_address_hash),
+      target_address_hash: Hash.to_string(message.target_address_hash),
       nonce: message.nonce,
       init_chain_id: message.init_chain_id,
       init_transaction_hash: Hash.to_string(message.init_transaction_hash),
@@ -249,8 +249,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
     }
 
     data_to_sign =
-      data.sender <>
-        data.target <>
+      data.sender_address_hash <>
+        data.target_address_hash <>
         Integer.to_string(message.nonce) <>
         Integer.to_string(message.init_chain_id) <>
         data.init_transaction_hash <>
@@ -329,8 +329,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
         end
 
       %{
-        sender: Map.get(response, "sender"),
-        target: Map.get(response, "target"),
+        sender_address_hash: Map.get(response, "sender_address_hash"),
+        target_address_hash: Map.get(response, "target_address_hash"),
         nonce: message.nonce,
         init_chain_id: message.init_chain_id,
         init_transaction_hash: Map.get(response, "init_transaction_hash"),

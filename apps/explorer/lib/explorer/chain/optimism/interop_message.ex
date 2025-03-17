@@ -12,13 +12,13 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   alias Indexer.Fetcher.Optimism.InteropMessageQueue
 
   @required_attrs ~w(nonce init_chain_id relay_chain_id)a
-  @optional_attrs ~w(sender target init_transaction_hash block_number timestamp relay_transaction_hash payload failed)a
+  @optional_attrs ~w(sender_address_hash target_address_hash init_transaction_hash block_number timestamp relay_transaction_hash payload failed)a
   @interop_instance_api_url_to_public_key_cache :interop_instance_api_url_to_public_key_cache
   @interop_chain_id_to_instance_info_cache :interop_chain_id_to_instance_info_cache
 
   @typedoc """
-    * `sender` - An address of the sender on the source chain. Can be a smart contract. Can be `nil` (when SentMessage event is not indexed yet).
-    * `target` - A target address on the target chain. Can be a smart contract. Can be `nil` (when SentMessage event is not indexed yet).
+    * `sender_address_hash` - An address of the sender on the source chain. Can be a smart contract. Can be `nil` (when SentMessage event is not indexed yet).
+    * `target_address_hash` - A target address on the target chain. Can be a smart contract. Can be `nil` (when SentMessage event is not indexed yet).
     * `nonce` - Nonce associated with the message sent. Unique within the source chain.
     * `init_chain_id` - Chain ID of the source chain.
     * `init_transaction_hash` - Transaction hash (on the source chain) associated with the message sent. Can be `nil` (when SentMessage event is not indexed yet).
@@ -31,8 +31,8 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   """
   @primary_key false
   typed_schema "op_interop_messages" do
-    field(:sender, Hash.Address)
-    field(:target, Hash.Address)
+    field(:sender_address_hash, Hash.Address)
+    field(:target_address_hash, Hash.Address)
     field(:nonce, :integer, primary_key: true)
     field(:init_chain_id, :integer, primary_key: true)
     field(:init_transaction_hash, Hash.Full)
@@ -182,8 +182,8 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     - `nonce`: The nonce of the message.
 
     ## Returns
-    - `%{sender, target, init_transaction_hash, timestamp, payload}` map in case of success.
-    - `%{sender: nil, target: nil, init_transaction_hash: nil, timestamp: nil, payload: nil}` map
+    - `%{sender_address_hash, target_address_hash, init_transaction_hash, timestamp, payload}` map in case of success.
+    - `%{sender_address_hash: nil, target_address_hash: nil, init_transaction_hash: nil, timestamp: nil, payload: nil}` map
       if the message with the given `init_chain_id` and `nonce` is not found.
   """
   @spec get_init_part(non_neg_integer(), non_neg_integer()) ::
@@ -192,8 +192,8 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     query =
       from(m in __MODULE__,
         select: %{
-          sender: m.sender,
-          target: m.target,
+          sender_address_hash: m.sender_address_hash,
+          target_address_hash: m.target_address_hash,
           init_transaction_hash: m.init_transaction_hash,
           timestamp: m.timestamp,
           payload: m.payload
@@ -203,7 +203,13 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
     query
     |> Repo.one()
-    |> Kernel.||(%{sender: nil, target: nil, init_transaction_hash: nil, timestamp: nil, payload: nil})
+    |> Kernel.||(%{
+      sender_address_hash: nil,
+      target_address_hash: nil,
+      init_transaction_hash: nil,
+      timestamp: nil,
+      payload: nil
+    })
   end
 
   @doc """
@@ -398,15 +404,15 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
         query
 
       {sender, nil} ->
-        filter_messages_by_address(query, sender, :sender)
+        filter_messages_by_address(query, sender, :sender_address_hash)
 
       {nil, target} ->
-        filter_messages_by_address(query, target, :target)
+        filter_messages_by_address(query, target, :target_address_hash)
 
       {sender, target} ->
         query
-        |> filter_messages_by_address(sender, :sender)
-        |> filter_messages_by_address(target, :target)
+        |> filter_messages_by_address(sender, :sender_address_hash)
+        |> filter_messages_by_address(target, :target_address_hash)
     end
   end
 
@@ -415,11 +421,15 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   # ## Parameters
   # - `query`: The base query to extend.
   # - `{:include, addresses}`: The list defining mandatory sender or target addresses.
-  # - `field`: Defines the table field to filter by. Can be one of: :sender, :target.
+  # - `field`: Defines the table field to filter by. Can be one of: :sender_address_hash, :target_address_hash.
   #
   # ## Returns
   # - The extended query.
-  @spec filter_messages_by_address(Ecto.Query.t(), {:include | :exclude, [Hash.Address.t()]}, :sender | :target) ::
+  @spec filter_messages_by_address(
+          Ecto.Query.t(),
+          {:include | :exclude, [Hash.Address.t()]},
+          :sender_address_hash | :target_address_hash
+        ) ::
           Ecto.Query.t()
   defp filter_messages_by_address(query, {:include, addresses}, field) do
     where(query, [message], field(message, ^field) in ^addresses)
@@ -430,7 +440,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   # ## Parameters
   # - `query`: The base query to extend.
   # - `{:exclude, addresses}`: The list defining undesired sender or target addresses.
-  # - `field`: Defines the table field to filter by. Can be one of: :sender, :target.
+  # - `field`: Defines the table field to filter by. Can be one of: :sender_address_hash, :target_address_hash.
   #
   # ## Returns
   # - The extended query.
@@ -592,8 +602,12 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
         %{
           "nonce" => message.nonce,
           "status" => message.status,
-          "sender" => message.sender,
-          "target" => message.target,
+          "sender_address_hash" => message.sender_address_hash,
+          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `sender_address_hash` property
+          "sender" => message.sender_address_hash,
+          "target_address_hash" => message.target_address_hash,
+          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `target_address_hash` property
+          "target" => message.target_address_hash,
           "payload" => payload
         },
         chain_info
