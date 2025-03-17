@@ -30,6 +30,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Fetcher.Scroll.Helper, as: ScrollHelper
   alias Indexer.Helper
+  alias Indexer.Prometheus.Instrumenter
 
   # 32-byte signature of the event CommitBatch(uint256 indexed batchIndex, bytes32 indexed batchHash)
   @commit_batch_event "0x2c32d4ae151744d0bf0b9464a3e897a1d17ed2f1af71f7c9a75f12ce0d28238f"
@@ -196,6 +197,15 @@ defmodule Indexer.Fetcher.Scroll.Batch do
             |> prepare_items(json_rpc_named_arguments)
 
           import_items(batches, bundles, start_by_final_batch_number)
+
+          last_batch =
+            batches
+            |> Enum.max_by(& &1.number, fn -> nil end)
+
+          # credo:disable-for-next-line
+          if last_batch do
+            Instrumenter.set_latest_batch(last_batch.number, last_batch.commit_timestamp)
+          end
 
           Helper.log_blocks_chunk_handling(
             chunk_start,
