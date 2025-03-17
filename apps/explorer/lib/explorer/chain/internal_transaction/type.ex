@@ -164,6 +164,14 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   @spec type() :: :string
   def type, do: :string
 
+  @doc """
+  Returns the list of internal transaction type values.
+
+  ## Example
+
+    iex> Explorer.Chain.InternalTransaction.Type.values()
+    [:call, :create, :suicide]
+  """
   @spec values :: [String.t()]
   def values, do: @type_values
 end
