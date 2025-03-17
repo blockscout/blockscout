@@ -133,6 +133,13 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("recovery_weth_token_transfers") == nil
       envs = Application.get_env(:indexer, Indexer.Migrator.RecoveryWETHTokenTransfers)
+      envs_tt = Application.get_env(:explorer, Explorer.Chain.TokenTransfer)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Chain.TokenTransfer,
+        Keyword.merge(envs, weth_token_transfers_filtering_enabled: false)
+      )
 
       Application.put_env(
         :indexer,
@@ -150,7 +157,8 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfersTest do
       check_withdrawal_token_transfer(tt_2, log_2)
       check_deposit_token_transfer(tt_5, log_5)
 
-      Application.put_env(:indexer, Indexer.Migrator.RecoveryWETHTokenTransfersTest, envs)
+      Application.put_env(:indexer, Indexer.Migrator.RecoveryWETHTokenTransfers, envs)
+      Application.put_env(:explorer, Explorer.Chain.TokenTransfer, envs_tt)
     end
   end
 
