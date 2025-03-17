@@ -417,11 +417,11 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
         block_number = quantity_to_integer(event["blockNumber"])
 
         if Enum.at(event["topics"], 0) == @sent_message_event do
-          [sender, payload] = decode_data(event["data"], [:address, :bytes])
+          [sender_address_hash, payload] = decode_data(event["data"], [:address, :bytes])
 
           %{
-            sender: sender,
-            target: truncate_address_hash(Enum.at(event["topics"], 2)),
+            sender_address_hash: sender_address_hash,
+            target_address_hash: truncate_address_hash(Enum.at(event["topics"], 2)),
             nonce: quantity_to_integer(Enum.at(event["topics"], 3)),
             init_chain_id: current_chain_id,
             init_transaction_hash: event["transactionHash"],

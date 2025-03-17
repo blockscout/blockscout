@@ -86,8 +86,8 @@ defmodule Explorer.Chain.Import.Runner.Optimism.InteropMessages do
         set: [
           # don't update `nonce` as it is a part of the composite primary key and used for the conflict target
           # don't update `init_chain_id` as it is a part of the composite primary key and used for the conflict target
-          sender: fragment("COALESCE(EXCLUDED.sender, ?)", message.sender),
-          target: fragment("COALESCE(EXCLUDED.target, ?)", message.target),
+          sender_address_hash: fragment("COALESCE(EXCLUDED.sender_address_hash, ?)", message.sender_address_hash),
+          target_address_hash: fragment("COALESCE(EXCLUDED.target_address_hash, ?)", message.target_address_hash),
           init_transaction_hash: fragment("COALESCE(EXCLUDED.init_transaction_hash, ?)", message.init_transaction_hash),
           block_number: fragment("COALESCE(EXCLUDED.block_number, ?)", message.block_number),
           timestamp: fragment("COALESCE(EXCLUDED.timestamp, ?)", message.timestamp),
@@ -102,9 +102,9 @@ defmodule Explorer.Chain.Import.Runner.Optimism.InteropMessages do
       ],
       where:
         fragment(
-          "(EXCLUDED.sender, EXCLUDED.target, EXCLUDED.init_transaction_hash, EXCLUDED.block_number, EXCLUDED.timestamp, EXCLUDED.relay_chain_id, EXCLUDED.relay_transaction_hash, EXCLUDED.payload, EXCLUDED.failed) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          message.sender,
-          message.target,
+          "(EXCLUDED.sender_address_hash, EXCLUDED.target_address_hash, EXCLUDED.init_transaction_hash, EXCLUDED.block_number, EXCLUDED.timestamp, EXCLUDED.relay_chain_id, EXCLUDED.relay_transaction_hash, EXCLUDED.payload, EXCLUDED.failed) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          message.sender_address_hash,
+          message.target_address_hash,
           message.init_transaction_hash,
           message.block_number,
           message.timestamp,

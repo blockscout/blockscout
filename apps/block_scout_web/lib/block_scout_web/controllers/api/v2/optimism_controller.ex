@@ -389,8 +389,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   def interop_import(
         conn,
         %{
-          "sender" => sender,
-          "target" => target,
+          "sender_address_hash" => sender_address_hash,
+          "target_address_hash" => target_address_hash,
           "nonce" => nonce,
           "init_chain_id" => init_chain_id,
           "init_transaction_hash" => init_transaction_hash,
@@ -403,8 +403,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       when is_integer(init_chain_id) do
     # accept `init` part of the interop message from the source instance
     data_to_verify =
-      sender <>
-        target <>
+      sender_address_hash <>
+        target_address_hash <>
         Integer.to_string(nonce) <>
         Integer.to_string(init_chain_id) <>
         init_transaction_hash <> Integer.to_string(timestamp_unix) <> Integer.to_string(relay_chain_id) <> payload
@@ -491,8 +491,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   @spec interop_prepare_import(map()) :: map()
   defp interop_prepare_import(%{"init_transaction_hash" => init_transaction_hash} = params) do
     %{
-      sender: params["sender"],
-      target: params["target"],
+      sender_address_hash: params["sender_address_hash"],
+      target_address_hash: params["target_address_hash"],
       nonce: params["nonce"],
       init_chain_id: params["init_chain_id"],
       init_transaction_hash: init_transaction_hash,

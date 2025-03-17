@@ -256,8 +256,12 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               "status" => message.status,
               "init_transaction_hash" => message.init_transaction_hash,
               "relay_transaction_hash" => message.relay_transaction_hash,
-              "sender" => message.sender,
-              "target" => message.target,
+              "sender_address_hash" => message.sender_address_hash,
+              # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `sender_address_hash` property
+              "sender" => message.sender_address_hash,
+              "target_address_hash" => message.target_address_hash,
+              # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `target_address_hash` property
+              "target" => message.target_address_hash,
               "payload" => "0x" <> Base.encode16(message.payload, case: :lower)
             }
 
@@ -291,15 +295,15 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     Function to render `init` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
   """
   def render("optimism_interop_response.json", %{
-        sender: sender,
-        target: target,
+        sender_address_hash: sender_address_hash,
+        target_address_hash: target_address_hash,
         init_transaction_hash: init_transaction_hash,
         timestamp: timestamp,
         payload: payload
       }) do
     %{
-      "sender" => sender,
-      "target" => target,
+      "sender_address_hash" => sender_address_hash,
+      "target_address_hash" => target_address_hash,
       "init_transaction_hash" => init_transaction_hash,
       "timestamp" => if(not is_nil(timestamp), do: DateTime.to_unix(timestamp)),
       "payload" => if(not is_nil(payload), do: "0x" <> Base.encode16(payload, case: :lower))
