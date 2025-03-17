@@ -13,7 +13,7 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
 
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, TokenTransfer, Transaction}
-  alias Explorer.Chain.CSVExport.Helper
+  alias Explorer.Chain.CsvExport.Helper
   alias Explorer.Helper, as: ExplorerHelper
 
   @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
