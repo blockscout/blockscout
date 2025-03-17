@@ -141,7 +141,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfersTest do
       )
 
       RecoveryWETHTokenTransfers.start_link([])
-      Process.sleep(500)
+      Process.sleep(1000)
 
       assert MigrationStatus.get_status("recovery_weth_token_transfers") == "completed"
 
