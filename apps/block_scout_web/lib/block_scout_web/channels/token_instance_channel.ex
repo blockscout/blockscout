@@ -4,10 +4,6 @@ defmodule BlockScoutWeb.TokenInstanceChannel do
   """
   use BlockScoutWeb, :channel
 
-  def join("fetched_token_instance_metadata", _params, socket) do
-    {:ok, %{}, socket}
-  end
-
   def join("token_instances:" <> _token_contract_address_hash, _params, socket) do
     {:ok, %{}, socket}
   end

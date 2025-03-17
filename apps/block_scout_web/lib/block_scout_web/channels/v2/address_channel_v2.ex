@@ -4,8 +4,6 @@ defmodule BlockScoutWeb.AddressChannelV2 do
   """
   use BlockScoutWeb, :channel
 
-  alias BlockScoutWeb.AddressChannel
-
   def join("addresses:" <> address_hash_string, _params, socket) do
     case valid_address_hash_and_not_restricted_access?(address_hash_string) do
       :ok ->
@@ -15,6 +13,4 @@ defmodule BlockScoutWeb.AddressChannelV2 do
         {:error, %{reason: reason}}
     end
   end
-
-  def handle_in("get_balance", data, socket), do: AddressChannel.handle_in("get_balance", data, socket)
 end

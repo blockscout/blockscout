@@ -582,7 +582,13 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_block(block) do
-    preloaded_block = Repo.preload(block, [[miner: :names], :transactions, :rewards])
+    preloaded_block =
+      Repo.preload(block, [
+        [miner: [:names, :smart_contract, proxy_implementations_association()]],
+        :transactions,
+        :rewards
+      ])
+
     average_block_time = AverageBlockTime.average_block_time()
 
     Endpoint.broadcast("blocks_old:new_block", "new_block", %{
@@ -599,7 +605,7 @@ defmodule BlockScoutWeb.Notifier do
       average_block_time: to_string(Duration.to_milliseconds(average_block_time)),
       block:
         BlockView.render("block.json", %{
-          block: Repo.preload(preloaded_block, miner: [:names, :smart_contract, proxy_implementations_association()]),
+          block: preloaded_block,
           socket: nil
         })
     }

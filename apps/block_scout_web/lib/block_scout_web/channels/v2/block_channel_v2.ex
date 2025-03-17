@@ -8,7 +8,10 @@ defmodule BlockScoutWeb.BlockChannelV2 do
     {:ok, %{}, socket}
   end
 
-  def join("blocks:" <> _miner_address, _params, socket) do
-    {:ok, %{}, socket}
+  def join("blocks:" <> miner_address, _params, socket) do
+    case valid_address_hash_and_not_restricted_access?(miner_address) do
+      :ok -> {:ok, %{}, socket}
+      reason -> {:error, %{reason: reason}}
+    end
   end
 end
