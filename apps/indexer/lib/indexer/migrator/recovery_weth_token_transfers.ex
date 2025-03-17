@@ -142,8 +142,8 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
             second_topic: to_string(log.second_topic),
             data: to_string(log.data)
         }
-      end)
-      |> TokenTransfers.parse(true)
+      end)|>dbg()
+      |> TokenTransfers.parse(true)|>dbg()
 
     Chain.import(%{
       token_transfers: %{params: token_transfers},
