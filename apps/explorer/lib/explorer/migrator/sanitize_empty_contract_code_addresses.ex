@@ -40,7 +40,7 @@ defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddresses do
     from(a in Address,
       join: t in Transaction,
       on: a.hash == t.created_contract_address_hash,
-      where: is_nil(a.contract_code)
+      where: is_nil(a.contract_code) and t.status == :error
     )
   end
 

@@ -13,7 +13,10 @@ defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddressesTest do
           address = insert(:address, contract_code: nil)
 
           # Associate each address with a transaction as created_contract_address_hash
-          insert(:transaction, created_contract_address_hash: address.hash)
+          insert(:transaction,
+            created_contract_address_hash: address.hash,
+            status: :error
+          )
 
           address
         end)
@@ -22,8 +25,24 @@ defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddressesTest do
       addresses_with_code =
         Enum.map(1..3, fn _ ->
           address = insert(:address, contract_code: "0x1234")
-
           insert(:transaction, created_contract_address_hash: address.hash)
+          address
+        end)
+
+      addresses_with_not_yet_fetched_bytecode =
+        Enum.map(1..3, fn _ ->
+          address = insert(:address, contract_code: nil)
+          block = insert(:block)
+
+          insert(:transaction,
+            block_hash: block.hash,
+            block_number: block.number,
+            created_contract_address_hash: address.hash,
+            cumulative_gas_used: 21000,
+            gas_used: 21000,
+            index: 0,
+            status: :ok
+          )
 
           address
         end)
@@ -45,6 +64,12 @@ defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddressesTest do
       for address <- addresses_with_code do
         unchanged_address = Repo.get(Address, address.hash)
         assert to_string(unchanged_address.contract_code) == "0x1234"
+      end
+
+      # Check that addresses with not yet fetched bytecode weren't changed
+      for address <- addresses_with_not_yet_fetched_bytecode do
+        unchanged_address = Repo.get(Address, address.hash)
+        assert unchanged_address.contract_code == nil
       end
 
       # Check migration status
