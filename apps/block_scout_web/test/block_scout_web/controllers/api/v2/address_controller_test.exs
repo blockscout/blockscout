@@ -138,32 +138,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
          %{conn: conn} do
       contract_address = insert(:address, contract_code: "0x")
 
-      block = insert(:block)
-
       failed_transaction =
         insert(:transaction,
-          block_hash: block.hash,
-          block_number: block.number,
-          to_address: nil,
-          created_contract_address_hash: contract_address.hash,
-          cumulative_gas_used: 21000,
-          gas_used: 21000,
-          index: 0,
-          status: :error
+          created_contract_address_hash: contract_address.hash
         )
-
-      block = insert(:block)
+        |> with_block(status: :error)
 
       succeeded_transaction =
         insert(:transaction,
-          block_hash: block.hash,
-          block_number: block.number,
-          created_contract_address_hash: contract_address.hash,
-          cumulative_gas_used: 21000,
-          gas_used: 21000,
-          index: 0,
-          status: :ok
+          created_contract_address_hash: contract_address.hash
         )
+        |> with_block(status: :ok)
 
       assert failed_transaction.block_number < succeeded_transaction.block_number
 
