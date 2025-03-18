@@ -363,6 +363,51 @@ defmodule Explorer.Etherscan do
     |> maybe_preload_block()
   end
 
+  @doc """
+    Gets a list of ERC-1155 token transfers for a given address_hash. If contract_address_hash is not nil, transfers will be filtered by contract.
+  """
+  @spec list_erc1155_transfers(Hash.Address.t(), Hash.Address.t() | nil, map()) :: [TokenTransfer.t()]
+  def list_erc1155_transfers(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
+        contract_address_hash,
+        options \\ @default_options
+      ) do
+    options
+    |> base_erc1155_transfers_query(contract_address_hash)
+    |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
+    |> Repo.replica().all()
+  end
+
+  @doc """
+    Gets a list of ERC-1155 token transfers for a given token contract_address_hash.
+  """
+  @spec list_erc1155_transfers_by_token(Hash.Address.t(), map()) :: [TokenTransfer.t()]
+  def list_erc1155_transfers_by_token(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = contract_address_hash,
+        options \\ @default_options
+      ) do
+    options
+    |> base_erc1155_transfers_query(contract_address_hash)
+    |> Repo.replica().all()
+  end
+
+  defp base_erc1155_transfers_query(options, contract_address_hash) do
+    options = Map.merge(@default_options, options)
+
+    TokenTransfer.erc_1155_token_transfers_exploded_query()
+    |> where_contract_address_match(contract_address_hash)
+    |> order_by([tt, unnest: unnest], [
+      {^options.order_by_direction, tt.block_number},
+      {^options.order_by_direction, tt.log_index},
+      # to guarantee paginated order
+      {^options.order_by_direction, fragment("?::numeric", field(unnest, :token_id))},
+    ])
+    |> where_start_block_match_tt(options)
+    |> where_end_block_match_tt(options)
+    |> limit(^options.page_size)
+    |> offset(^offset(options))
+  end
+
   defp maybe_preload_block(query) do
     if DenormalizationHelper.tt_denormalization_finished?() do
       query
