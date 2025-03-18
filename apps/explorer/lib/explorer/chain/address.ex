@@ -512,33 +512,32 @@ defmodule Explorer.Chain.Address do
   def smart_contract?(_), do: false
 
   @doc """
-    Determines if an address is a smart contract with empty bytecode.
+    Determines if an address is a smart contract with non-empty bytecode.
 
-    In blockchain networks, addresses can exist in several states. This function
-    specifically identifies addresses that are marked as contracts but have
-    empty bytecode (0x). This state can occur in several scenarios:
+    This function verifies that an address:
 
-    - A contract that has self-destructed (via SELFDESTRUCT opcode)
-    - A contract whose creation transaction failed
-    - A contract that was purposely deployed with empty code
+    1. Is a smart contract (has contract_code)
+    2. Has actual bytecode content (not just "0x")
+
+    This distinction is important because addresses can exist in several states:
+    - Regular EOA - not contracts
+    - Contracts with functioning bytecode - operational smart contracts
+    - Contracts with empty bytecode - may have been self-destructed or
+      deployment failed
 
     ## Parameters
       - `address`: The address to check. Can be an `Address` struct or any other
         value.
 
     ## Returns
-      - `true` if the address is a smart contract with empty bytecode
-      - `false` if the address either isn't a contract or has non-empty bytecode
-      - `nil` if the address struct hasn't been loaded
+      - `true` if the address is a smart contract with actual bytecode
+      - `false` otherwise
   """
-  @spec smart_contract_with_empty_code?(any()) :: boolean() | nil
-  def smart_contract_with_empty_code?(%__MODULE__{contract_code: nil}), do: false
+  @spec smart_contract_with_nonempty_code?(any()) :: boolean()
+  def smart_contract_with_nonempty_code?(%__MODULE__{contract_code: %Data{} = contract_code}),
+    do: not Data.empty?(contract_code)
 
-  def smart_contract_with_empty_code?(%__MODULE__{contract_code: %Data{} = contract_code}),
-    do: Data.empty?(contract_code)
-
-  def smart_contract_with_empty_code?(%NotLoaded{}), do: nil
-  def smart_contract_with_empty_code?(_), do: false
+  def smart_contract_with_nonempty_code?(_), do: false
 
   @doc """
     Checks if the given address is an Externally Owned Account (EOA) with code,

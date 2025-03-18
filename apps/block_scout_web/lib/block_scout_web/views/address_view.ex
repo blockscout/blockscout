@@ -189,7 +189,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def primary_name(%Address{names: _} = address) do
-    with false <- Address.smart_contract_with_empty_code?(address),
+    with true <- Address.smart_contract_with_nonempty_code?(address),
          bytecode_twin <- SmartContract.get_verified_bytecode_twin_contract(address),
          false <- is_nil(bytecode_twin) do
       bytecode_twin.name

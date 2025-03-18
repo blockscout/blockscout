@@ -767,7 +767,7 @@ defmodule Explorer.Chain.SmartContract do
 
   def get_address_verified_bytecode_twin_contract(%Hash{} = address_hash, options) do
     with target_address <- Chain.select_repo(options).get(Address, address_hash),
-         false <- Address.smart_contract_with_empty_code?(target_address) do
+         true <- Address.smart_contract_with_nonempty_code?(target_address) do
       target_address
       |> get_verified_bytecode_twin_contract(options)
       |> check_and_update_constructor_args()
