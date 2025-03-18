@@ -512,6 +512,35 @@ defmodule Explorer.Chain.Address do
   def smart_contract?(_), do: false
 
   @doc """
+    Determines if an address is a smart contract with empty bytecode.
+
+    In blockchain networks, addresses can exist in several states. This function
+    specifically identifies addresses that are marked as contracts but have
+    empty bytecode (0x). This state can occur in several scenarios:
+
+    - A contract that has self-destructed (via SELFDESTRUCT opcode)
+    - A contract whose creation transaction failed
+    - A contract that was purposely deployed with empty code
+
+    ## Parameters
+      - `address`: The address to check. Can be an `Address` struct or any other
+        value.
+
+    ## Returns
+      - `true` if the address is a smart contract with empty bytecode
+      - `false` if the address either isn't a contract or has non-empty bytecode
+      - `nil` if the address struct hasn't been loaded
+  """
+  @spec smart_contract_with_empty_code?(any()) :: boolean() | nil
+  def smart_contract_with_empty_code?(%__MODULE__{contract_code: nil}), do: false
+
+  def smart_contract_with_empty_code?(%__MODULE__{contract_code: %Data{} = contract_code}),
+    do: Data.empty?(contract_code)
+
+  def smart_contract_with_empty_code?(%NotLoaded{}), do: nil
+  def smart_contract_with_empty_code?(_), do: false
+
+  @doc """
     Checks if the given address is an Externally Owned Account (EOA) with code,
     as defined in EIP-7702.
 

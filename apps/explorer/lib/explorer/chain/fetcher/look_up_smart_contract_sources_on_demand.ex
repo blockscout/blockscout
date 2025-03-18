@@ -203,7 +203,9 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   defp check_eligibility_for_sources_fetching(address_hash_string, address_contract_code, nil_smart_contract?, state) do
     need_to_check_and_partially_verified? = stale_and_partially_verified?(address_hash_string, nil_smart_contract?)
 
-    eligibility_for_sources_fetching = eligible_for_sources_fetching?(need_to_check_and_partially_verified?)
+    eligibility_for_sources_fetching =
+      Data.empty?(address_contract_code) == false &&
+        eligible_for_sources_fetching?(need_to_check_and_partially_verified?)
 
     if eligibility_for_sources_fetching do
       GenServer.cast(

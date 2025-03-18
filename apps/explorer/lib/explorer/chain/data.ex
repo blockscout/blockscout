@@ -359,6 +359,32 @@ defmodule Explorer.Chain.Data do
   @spec type() :: :binary
   def type, do: :binary
 
+  @doc """
+    Determines if a data is just an empty binary (0x).
+
+    ## Parameters
+      - `Data.t()`
+
+    ## Returns
+      - `true` if the data is empty (0x)
+      - `false` if data contains bytecode or is not a valid Data struct
+      - `nil` if the data is not a Data struct
+
+    ## Example
+        iex> empty?(%Data{bytes: <<>>})
+        true
+
+        iex> empty?(%Data{bytes: <<1, 2, 3>>})
+        false
+
+        iex> empty?(<<>>)
+        nil
+  """
+  @spec empty?(any()) :: boolean() | nil
+  def empty?(%Data{bytes: <<>>}), do: true
+  def empty?(%Data{bytes: _}), do: false
+  def empty?(_), do: nil
+
   defimpl String.Chars do
     @doc """
     Converts the `#{@for}:t/0` to string representation shown to users.
