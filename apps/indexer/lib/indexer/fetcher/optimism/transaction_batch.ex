@@ -26,7 +26,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   import EthereumJSONRPC, only: [fetch_blocks_by_range: 2, json_rpc: 2, quantity_to_integer: 1]
 
-  import Explorer.Helper, only: [add_0x_prefix: 1, parse_integer: 1]
+  import Explorer.Helper, only: [add_0x_prefix: 1, hash_to_binary: 1, parse_integer: 1]
 
   alias Ecto.Multi
   alias EthereumJSONRPC.Block.ByHash
@@ -565,8 +565,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         # read the data from Blockscout API
         decoded =
           blob_data
-          |> String.trim_leading("0x")
-          |> Base.decode16!(case: :lower)
+          |> hash_to_binary()
           |> OptimismTransactionBatch.decode_eip4844_blob()
 
         if is_nil(decoded) do
@@ -654,15 +653,13 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       |> Enum.find(fn b ->
         b
         |> Map.get("kzg_commitment", "0x")
-        |> String.trim_leading("0x")
-        |> Base.decode16!(case: :lower)
+        |> hash_to_binary()
         |> BeaconBlob.hash()
         |> Hash.to_string()
         |> Kernel.==(blob_hash)
       end)
       |> Map.get("blob")
-      |> String.trim_leading("0x")
-      |> Base.decode16!(case: :lower)
+      |> hash_to_binary()
       |> OptimismTransactionBatch.decode_eip4844_blob()
 
     if is_nil(decoded_blob_data) do

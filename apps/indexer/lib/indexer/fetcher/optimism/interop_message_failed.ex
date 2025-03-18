@@ -181,7 +181,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageFailed do
           :L2
         )
 
-        reorg_block_number = InteropMessageFetcher.handle_reorgs_queue(__MODULE__)
+        reorg_block_number = Optimism.handle_reorgs_queue(__MODULE__, &InteropMessageFetcher.handle_reorg/1)
 
         cond do
           is_nil(reorg_block_number) or reorg_block_number > end_block_number ->

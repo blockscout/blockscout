@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.Optimism do
 
   alias EthereumJSONRPC.Contract
   alias Explorer.Chain.Cache.ChainId
+  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
@@ -331,5 +332,35 @@ defmodule Indexer.Fetcher.Optimism do
 
         get_last_item(layer, last_block_number_query_fun, remove_query_fun, json_rpc_named_arguments)
     end
+  end
+
+  @doc """
+    Reads reorg block numbers queue for the specified module and pops the block numbers from that
+    finding the earliest one.
+
+    ## Parameters
+    - `module`: The module for which the queue should be read.
+    - `handle_reorg_func`: Reference to a local `handle_reorg` function.
+
+    ## Returns
+    - The earliest reorg block number.
+    - `nil` if the queue is empty.
+  """
+  @spec handle_reorgs_queue(module(), function()) :: non_neg_integer() | nil
+  def handle_reorgs_queue(module, handle_reorg_func) do
+    reorg_block_number =
+      Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), nil, fn _i, acc ->
+        number = RollupReorgMonitorQueue.reorg_block_pop(module)
+
+        if is_nil(number) do
+          {:halt, acc}
+        else
+          {:cont, min(number, acc)}
+        end
+      end)
+
+    handle_reorg_func.(reorg_block_number)
+
+    reorg_block_number
   end
 end

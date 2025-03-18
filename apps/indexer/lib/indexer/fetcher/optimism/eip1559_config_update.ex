@@ -27,6 +27,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   require Logger
 
   import EthereumJSONRPC, only: [fetch_blocks_by_numbers: 3, json_rpc: 2, quantity_to_integer: 1]
+  import Explorer.Helper, only: [hash_to_binary: 1]
 
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
@@ -35,6 +36,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
   alias Explorer.Chain.RollupReorgMonitorQueue
+  alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
   @fetcher_name :optimism_eip1559_config_updates
@@ -180,7 +182,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
           :L2
         )
 
-        reorg_block_number = handle_reorgs_queue()
+        reorg_block_number = Optimism.handle_reorgs_queue(__MODULE__, &handle_reorg/1)
 
         cond do
           is_nil(reorg_block_number) or reorg_block_number > end_block_number ->
@@ -338,29 +340,6 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
   defp handle_reorg(_reorg_block_number), do: :ok
 
-  # Reads reorg block numbers queue, pops the block numbers from that finding the earliest one.
-  #
-  # ## Returns
-  # - The earliest reorg block number.
-  # - `nil` if the queue is empty.
-  @spec handle_reorgs_queue() :: non_neg_integer() | nil
-  defp handle_reorgs_queue do
-    reorg_block_number =
-      Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), nil, fn _i, acc ->
-        number = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
-
-        if is_nil(number) do
-          {:halt, acc}
-        else
-          {:cont, min(number, acc)}
-        end
-      end)
-
-    handle_reorg(reorg_block_number)
-
-    reorg_block_number
-  end
-
   # Retrieves updated config parameters from the specified blocks and saves them to the database.
   # The parameters are read from the `extraData` field which format is as follows:
   # 1-byte version ++ 4-byte denominator ++ 4-byte elasticity
@@ -394,10 +373,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           block = Enum.find(blocks_params, %{extra_data: "0x"}, fn b -> b.number == block_number end)
 
-          extra_data =
-            block.extra_data
-            |> String.trim_leading("0x")
-            |> Base.decode16!(case: :mixed)
+          extra_data = hash_to_binary(block.extra_data)
 
           return =
             with {:valid_format, true} <- {:valid_format, byte_size(extra_data) >= 9},
