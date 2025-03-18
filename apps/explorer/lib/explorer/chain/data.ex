@@ -371,13 +371,13 @@ defmodule Explorer.Chain.Data do
       - `nil` if the data is not a Data struct
 
     ## Example
-        iex> empty?(%Data{bytes: <<>>})
+        iex> Explorer.Chain.Data.empty?(%Explorer.Chain.Data{bytes: <<>>})
         true
 
-        iex> empty?(%Data{bytes: <<1, 2, 3>>})
+        iex> Explorer.Chain.Data.empty?(%Explorer.Chain.Data{bytes: <<1, 2, 3>>})
         false
 
-        iex> empty?(<<>>)
+        iex> Explorer.Chain.Data.empty?(<<>>)
         nil
   """
   @spec empty?(any()) :: boolean() | nil
