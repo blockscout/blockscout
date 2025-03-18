@@ -15,6 +15,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       delete_parameters_from_next_page_params: 1
     ]
 
+  import Explorer.Helper, only: [add_0x_prefix: 1, hash_to_binary: 1]
+
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
   alias Explorer.Chain.Cache.ChainId
@@ -368,7 +370,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
          {:ok, public_key} <- ExSecp256k1.create_public_key(private_key) do
       conn
       |> put_status(200)
-      |> render(:optimism_interop_public_key, %{public_key: "0x" <> Base.encode16(public_key, case: :lower)})
+      |> render(:optimism_interop_public_key, %{public_key: add_0x_prefix(public_key)})
     else
       _ ->
         Logger.error("Interop: cannot derive a public key from the private key. Private key is invalid or undefined.")
@@ -498,7 +500,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       init_transaction_hash: init_transaction_hash,
       timestamp: DateTime.from_unix!(params["timestamp"]),
       relay_chain_id: params["relay_chain_id"],
-      payload: params["payload"] |> String.trim_leading("0x") |> Base.decode16!(case: :mixed)
+      payload: hash_to_binary(params["payload"])
     }
   end
 
@@ -691,11 +693,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   defp interop_prepare_address_hash_filter(address_hash) do
     address_hash
     |> String.trim()
-    |> Chain.string_to_address_hash()
-    |> case do
-      {:ok, hash} -> hash
-      _ -> nil
-    end
+    |> Chain.string_to_address_hash_or_nil()
   end
 
   # Handles the `interop_message_direction` parameter from HTTP request for the interop message list.

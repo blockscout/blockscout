@@ -262,7 +262,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               "target_address_hash" => message.target_address_hash,
               # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `target_address_hash` property
               "target" => message.target_address_hash,
-              "payload" => "0x" <> Base.encode16(message.payload, case: :lower)
+              "payload" => ExplorerHelper.add_0x_prefix(message.payload)
             }
 
           # add chain info depending on whether this is incoming or outgoing message
@@ -306,7 +306,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       "target_address_hash" => target_address_hash,
       "init_transaction_hash" => init_transaction_hash,
       "timestamp" => if(not is_nil(timestamp), do: DateTime.to_unix(timestamp)),
-      "payload" => if(not is_nil(payload), do: "0x" <> Base.encode16(payload, case: :lower))
+      "payload" => ExplorerHelper.add_0x_prefix(payload)
     }
   end
 

@@ -27,6 +27,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
 
   require Logger
 
+  import Explorer.Helper, only: [add_0x_prefix: 1, hash_to_binary: 1]
+
   alias Explorer.Chain
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Optimism.InteropMessage
@@ -85,7 +87,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with false <- is_nil(env[:chainscout_api_url]) and env[:chainscout_fallback_map] == %{},
-         {:ok, _} <- ExSecp256k1.create_public_key(hex_to_binary(env[:private_key])),
+         {:ok, _} <- ExSecp256k1.create_public_key(hash_to_binary(env[:private_key])),
          chain_id = Optimism.fetch_chain_id(),
          {:chain_id_is_nil, false} <- {:chain_id_is_nil, is_nil(chain_id)},
          block_duration = Application.get_env(:indexer, Indexer.Fetcher.Optimism)[:block_duration],
@@ -165,7 +167,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
     {:ok, latest_block_number} =
       Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
-    private_key = hex_to_binary(Application.get_all_env(:indexer)[__MODULE__][:private_key])
+    private_key = hash_to_binary(Application.get_all_env(:indexer)[__MODULE__][:private_key])
 
     updated_chainscout_map =
       current_chain_id
@@ -234,7 +236,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   @spec prepare_post_data(map(), binary()) :: {non_neg_integer(), map()}
   defp prepare_post_data(message, private_key) when is_nil(message.relay_transaction_hash) do
     timestamp = DateTime.to_unix(message.timestamp)
-    payload = "0x" <> Base.encode16(message.payload, case: :lower)
+    payload = add_0x_prefix(message.payload)
 
     data = %{
       sender_address_hash: Hash.to_string(message.sender_address_hash),
@@ -261,9 +263,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
       |> ExKeccak.hash_256()
       |> ExSecp256k1.sign_compact(private_key)
 
-    data_signed = %{data | signature: "0x" <> Base.encode16(signature, case: :lower)}
-
-    {message.relay_chain_id, data_signed}
+    {message.relay_chain_id, %{data | signature: add_0x_prefix(signature)}}
   end
 
   defp prepare_post_data(message, private_key) do
@@ -286,9 +286,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
       |> ExKeccak.hash_256()
       |> ExSecp256k1.sign_compact(private_key)
 
-    data_signed = %{data | signature: "0x" <> Base.encode16(signature, case: :lower)}
-
-    {message.init_chain_id, data_signed}
+    {message.init_chain_id, %{data | signature: add_0x_prefix(signature)}}
   end
 
   # Prepares a map to import to the `op_interop_messages` table based on the current handling message and
@@ -325,7 +323,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
       payload =
         case Map.get(response, "payload") do
           nil -> nil
-          pl -> pl |> String.trim_leading("0x") |> Base.decode16!(case: :mixed)
+          pl -> hash_to_binary(pl)
         end
 
       %{
@@ -375,19 +373,5 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
         Logger.error("Cannot post HTTP request to #{url}. Reason: #{inspect(other)}. Body: #{inspect(body)}")
         nil
     end
-  end
-
-  # Converts `0x...` string to binary.
-  #
-  # ## Parameters
-  # - `hex_string`: The string in form of `0x...`.
-  #
-  # ## Returns
-  # - A byte sequence.
-  @spec hex_to_binary(String.t()) :: binary()
-  defp hex_to_binary(hex_string) do
-    hex_string
-    |> String.trim_leading("0x")
-    |> Base.decode16!(case: :mixed)
   end
 end

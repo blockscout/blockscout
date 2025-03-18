@@ -27,6 +27,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
+  alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.InteropMessage
   alias Explorer.Chain.RollupReorgMonitorQueue
@@ -185,7 +186,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
           :L2
         )
 
-        reorg_block_number = handle_reorgs_queue(__MODULE__)
+        reorg_block_number = Optimism.handle_reorgs_queue(__MODULE__, &handle_reorg/1)
 
         cond do
           is_nil(reorg_block_number) or reorg_block_number > end_block_number ->
@@ -324,15 +325,17 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
     RollupReorgMonitorQueue.reorg_block_push(reorg_block_number, __MODULE__)
   end
 
-  # Removes all rows from the `op_interop_messages` table which have `block_number` greater or equal to the reorg block number.
-  #
-  # ## Parameters
-  # - `reorg_block_number`: The reorg block number.
-  #
-  # ## Returns
-  # - nothing.
+  @doc """
+    Removes all rows from the `op_interop_messages` table which have `block_number` greater or equal to the reorg block number.
+
+    ## Parameters
+    - `reorg_block_number`: The reorg block number.
+
+    ## Returns
+    - nothing.
+  """
   @spec handle_reorg(non_neg_integer() | nil) :: any()
-  defp handle_reorg(reorg_block_number) when not is_nil(reorg_block_number) do
+  def handle_reorg(reorg_block_number) when not is_nil(reorg_block_number) do
     deleted_count = InteropMessage.remove_invalid_messages(reorg_block_number - 1)
 
     if deleted_count > 0 do
@@ -342,36 +345,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
     end
   end
 
-  defp handle_reorg(_reorg_block_number), do: :ok
-
-  @doc """
-    Reads reorg block numbers queue for the specified module and pops the block numbers from that
-    finding the earliest one.
-
-    ## Parameters
-    - `module`: The module for which the queue should be read.
-
-    ## Returns
-    - The earliest reorg block number.
-    - `nil` if the queue is empty.
-  """
-  @spec handle_reorgs_queue(module()) :: non_neg_integer() | nil
-  def handle_reorgs_queue(module) do
-    reorg_block_number =
-      Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), nil, fn _i, acc ->
-        number = RollupReorgMonitorQueue.reorg_block_pop(module)
-
-        if is_nil(number) do
-          {:halt, acc}
-        else
-          {:cont, min(number, acc)}
-        end
-      end)
-
-    handle_reorg(reorg_block_number)
-
-    reorg_block_number
-  end
+  def handle_reorg(_reorg_block_number), do: :ok
 
   # Searches events in the given block range and prepares the list of items to import to `op_interop_messages` table.
   #
@@ -514,7 +488,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
       end)
       |> MapSet.to_list()
 
-    block_timestamp_from_db = Chain.timestamp_by_block_number(block_numbers)
+    block_timestamp_from_db = BlockReaderGeneral.timestamps_by_block_numbers(block_numbers)
 
     block_numbers
     |> Enum.reject(&Map.has_key?(block_timestamp_from_db, &1))

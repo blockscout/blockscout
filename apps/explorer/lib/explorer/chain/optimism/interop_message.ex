@@ -6,6 +6,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   require Logger
 
   import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
+  import Explorer.Helper, only: [add_0x_prefix: 1]
 
   alias Explorer.Chain.Hash
   alias Explorer.{PagingOptions, Repo}
@@ -580,11 +581,6 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
       |> extend_with_status()
 
     if not is_nil(message) do
-      payload =
-        if not is_nil(message.payload) do
-          "0x" <> Base.encode16(message.payload, case: :lower)
-        end
-
       chain_info =
         if message.init_transaction_hash == transaction_hash do
           %{
@@ -608,7 +604,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
           "target_address_hash" => message.target_address_hash,
           # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `target_address_hash` property
           "target" => message.target_address_hash,
-          "payload" => payload
+          "payload" => add_0x_prefix(message.payload)
         },
         chain_info
       )

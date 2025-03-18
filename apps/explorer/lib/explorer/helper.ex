@@ -446,4 +446,21 @@ defmodule Explorer.Helper do
     |> DateTime.to_unix()
     |> integer_to_hex()
   end
+
+  @doc """
+    Converts `0x` string to the byte sequence (binary). Throws `ArgumentError` exception if
+    the padding is incorrect or a non-alphabet character is present in the string.
+
+    ## Parameters
+    - `hash`: The 0x string of bytes.
+
+    ## Returns
+    - The binary byte sequence.
+  """
+  @spec hash_to_binary(String.t()) :: binary()
+  def hash_to_binary(hash) do
+    hash
+    |> String.trim_leading("0x")
+    |> Base.decode16!(case: :mixed)
+  end
 end
