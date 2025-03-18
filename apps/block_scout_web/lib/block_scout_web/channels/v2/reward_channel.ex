@@ -1,6 +1,6 @@
-defmodule BlockScoutWeb.RewardChannelV2 do
+defmodule BlockScoutWeb.V2.RewardChannel do
   @moduledoc """
-  Establishes pub/sub channel for live updates of block reward events.
+  Establishes pub/sub channel for live updates of block reward events for API V2.
   """
   use BlockScoutWeb, :channel
 

@@ -1,6 +1,6 @@
-defmodule BlockScoutWeb.PolygonZkevmConfirmedBatchChannel do
+defmodule BlockScoutWeb.V2.PolygonZkevmConfirmedBatchChannel do
   @moduledoc """
-  Establishes pub/sub channel for live updates of zkEVM confirmed batch events.
+  Establishes pub/sub channel for live updates of zkEVM confirmed batch events for API V2.
   """
   use BlockScoutWeb, :channel
 

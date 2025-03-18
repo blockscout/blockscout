@@ -1,6 +1,6 @@
-defmodule BlockScoutWeb.BlockChannelV2 do
+defmodule BlockScoutWeb.V2.BlockChannel do
   @moduledoc """
-  Establishes pub/sub channel for live updates of block events.
+  Establishes pub/sub channel for live updates of block events for API V2.
   """
   use BlockScoutWeb, :channel
 

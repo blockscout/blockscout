@@ -92,6 +92,7 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
     count = Counters.address_estimated_count()
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("addresses_old:new_address", "count", %{count: count})
     Endpoint.broadcast("addresses:new_address", "count", %{count: to_string(count)})
 
@@ -116,6 +117,7 @@ defmodule BlockScoutWeb.Notifier do
     log_broadcast_verification_results_for_address(address_hash)
     v2_params = verification_result_params_v2(contract_verification_result)
 
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast(
       "addresses_old:#{address_hash}",
       "verification_result",
@@ -156,6 +158,7 @@ defmodule BlockScoutWeb.Notifier do
           {:error, result}
       end
 
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast(
       "addresses_old:#{address_hash}",
       "verification_result",
@@ -215,6 +218,7 @@ defmodule BlockScoutWeb.Notifier do
           Map.from_struct(exchange_rate)
       end
 
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("exchange_rate_old:new_rate", "new_rate", %{
       exchange_rate: exchange_rate_with_available_supply,
       market_history_data: market_history_data
@@ -231,6 +235,7 @@ defmodule BlockScoutWeb.Notifier do
         {:chain_event, :internal_transactions, :on_demand,
          [%InternalTransaction{index: 0, transaction_hash: transaction_hash}]}
       ) do
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("transactions_old:#{transaction_hash}", "raw_trace", %{raw_trace_origin: transaction_hash})
 
     internal_transactions = InternalTransaction.all_transaction_to_internal_transactions(transaction_hash)
@@ -331,6 +336,7 @@ defmodule BlockScoutWeb.Notifier do
          [%Explorer.Chain.Token{contract_address_hash: contract_address_hash, total_supply: total_supply} = token]}
       )
       when not is_nil(total_supply) do
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("tokens_old:#{to_string(contract_address_hash)}", "token_total_supply", %{token: token})
 
     Endpoint.broadcast("tokens:#{to_string(contract_address_hash)}", "total_supply", %{
@@ -339,6 +345,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :fetched_bytecode, :on_demand, [address_hash, fetched_bytecode]}) do
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("addresses_old:#{to_string(address_hash)}", "fetched_bytecode", %{
       fetched_bytecode: fetched_bytecode
     })
@@ -360,7 +367,9 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :changed_bytecode, :on_demand, [address_hash]}) do
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("addresses_old:#{to_string(address_hash)}", "changed_bytecode", %{})
+    Endpoint.broadcast("addresses:#{to_string(address_hash)}", "changed_bytecode", %{})
   end
 
   def handle_event({:chain_event, :smart_contract_was_verified = event, :on_demand, [address_hash]}) do
@@ -534,6 +543,7 @@ defmodule BlockScoutWeb.Notifier do
   defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
     coin_balance = Chain.get_coin_balance(address_hash, block_number)
 
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("addresses_old:#{address_hash}", "coin_balance", %{
       block_number: block_number,
       coin_balance: coin_balance
@@ -555,7 +565,12 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_address_token_balance(%{address_hash: address_hash, block_number: block_number}) do
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("addresses_old:#{address_hash}", "token_balance", %{
+      block_number: block_number
+    })
+
+    Endpoint.broadcast("addresses:#{address_hash}", "token_balance", %{
       block_number: block_number
     })
   end
@@ -569,6 +584,7 @@ defmodule BlockScoutWeb.Notifier do
       exchange_rate: exchange_rate.usd_value
     }
 
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast(
       "addresses_old:#{address_hash}",
       "balance_update",
@@ -591,6 +607,7 @@ defmodule BlockScoutWeb.Notifier do
 
     average_block_time = AverageBlockTime.average_block_time()
 
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("blocks_old:new_block", "new_block", %{
       block: preloaded_block,
       average_block_time: average_block_time
@@ -622,6 +639,7 @@ defmodule BlockScoutWeb.Notifier do
       Enum.reject(preloaded_rewards, fn reward -> reward.address_type == :emission_funds end)
 
     Enum.each(preloaded_rewards_except_emission, fn reward ->
+      # TODO: delete duplicated event when old UI becomes deprecated
       Endpoint.broadcast("rewards_old:#{to_string(reward.address_hash)}", "new_reward", %{
         emission_funds: emission_reward,
         validator: reward
@@ -780,6 +798,7 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_automatic_verification_events(event, address_hash) do
     log_broadcast_smart_contract_event(address_hash, event)
+    # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("addresses_old:#{to_string(address_hash)}", to_string(event), %{})
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", to_string(event), %{})
   end

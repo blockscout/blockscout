@@ -1,6 +1,6 @@
-defmodule BlockScoutWeb.TokenChannelV2 do
+defmodule BlockScoutWeb.V2.TokenChannel do
   @moduledoc """
-  Establishes pub/sub channel for live updates of token transfer events.
+  Establishes pub/sub channel for live updates of token transfer events for API V2.
   """
   use BlockScoutWeb, :channel
 

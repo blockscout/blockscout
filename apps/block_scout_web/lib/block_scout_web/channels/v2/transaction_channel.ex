@@ -1,6 +1,6 @@
-defmodule BlockScoutWeb.TransactionChannelV2 do
+defmodule BlockScoutWeb.V2.TransactionChannel do
   @moduledoc """
-  Establishes pub/sub channel for live updates of transaction events.
+  Establishes pub/sub channel for live updates of transaction events for API V2.
   """
   use BlockScoutWeb, :channel
 
