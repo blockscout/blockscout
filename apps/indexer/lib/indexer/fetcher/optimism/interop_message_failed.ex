@@ -240,7 +240,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageFailed do
   # - `{:noreply, state}` tuple where `state` is the new state of the fetcher containing the updated block range and other parameters.
   @impl GenServer
   def handle_info({:chain_event, :blocks, :realtime, blocks}, state) do
-    InteropMessageFetcher.handle_realtime_blocks(blocks, state)
+    Optimism.handle_realtime_blocks(blocks, state)
   end
 
   @impl GenServer
