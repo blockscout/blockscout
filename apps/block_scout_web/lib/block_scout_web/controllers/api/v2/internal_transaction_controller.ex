@@ -29,9 +29,9 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   def internal_transactions(conn, params) do
     with true <-
            BackgroundMigrations.get_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(),
-         paging_options = paging_options(params),
          transaction_hash = transaction_hash_from_params(params),
          false <- transaction_hash == :invalid do
+      paging_options = paging_options(params)
       options = options(paging_options, %{transaction_hash: transaction_hash, limit: params["limit"]})
 
       result =
