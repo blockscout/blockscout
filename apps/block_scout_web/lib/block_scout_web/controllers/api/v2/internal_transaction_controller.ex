@@ -1,10 +1,8 @@
 defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   use BlockScoutWeb, :controller
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.InternalTransaction
   alias Explorer.{Chain, Helper, PagingOptions}
-  alias Explorer.Migrator.MigrationStatus
-
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex
 
   import BlockScoutWeb.Chain,
     only: [
@@ -29,37 +27,32 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   """
   @spec internal_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def internal_transactions(conn, params) do
-    if MigrationStatus.get_status(
-         CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex.migration_name()
-       ) == "completed" do
-      paging_options = paging_options(params)
+    with true <-
+           BackgroundMigrations.get_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(),
+         paging_options = paging_options(params),
+         transaction_hash = transaction_hash_from_params(params),
+         false <- transaction_hash == :invalid do
+      options = options(paging_options, %{transaction_hash: transaction_hash, limit: params["limit"]})
 
-      transaction_hash = transaction_hash_from_params(params)
+      result =
+        options
+        |> InternalTransaction.fetch()
+        |> split_list_by_page()
 
-      if transaction_hash == :invalid do
-        empty_response(conn)
-      else
-        options = options(paging_options, %{transaction_hash: transaction_hash, limit: params["limit"]})
+      {internal_transactions, next_page} = result
 
-        result =
-          options
-          |> InternalTransaction.fetch()
-          |> split_list_by_page()
+      next_page_params =
+        next_page |> next_page_params(internal_transactions, delete_parameters_from_next_page_params(params))
 
-        {internal_transactions, next_page} = result
-
-        next_page_params =
-          next_page |> next_page_params(internal_transactions, delete_parameters_from_next_page_params(params))
-
-        conn
-        |> put_status(200)
-        |> render(:internal_transactions, %{
-          internal_transactions: internal_transactions,
-          next_page_params: next_page_params
-        })
-      end
+      conn
+      |> put_status(200)
+      |> render(:internal_transactions, %{
+        internal_transactions: internal_transactions,
+        next_page_params: next_page_params
+      })
     else
-      empty_response(conn)
+      _ ->
+        empty_response(conn)
     end
   end
 
