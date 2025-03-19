@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.API.HealthController do
       %{
         metadata: %{
           # todo: this key is left for backward compatibility
-          # and should be removed after 7.1.0 release in favour of the new health check logic based on multiple modules
+          # and should be removed after 8.0.0 release in favour of the new health check logic based on multiple modules
           latest_block: indexing_status.blocks.old,
           blocks: indexing_status.blocks.new
         }
@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.API.HealthController do
         |> Map.put(:healthy, indexing_status.blocks.new.healthy)
       end
 
-    # todo: this should be removed after 7.1.0. It is left for backward compatibility - it is artefact of the old response format.
+    # todo: this should be removed after 8.0.0. It is left for backward compatibility - it is artefact of the old response format.
     blocks_property = Map.get(Map.get(health_status, :metadata), :blocks)
 
     health_status_with_error =
@@ -198,7 +198,7 @@ defmodule BlockScoutWeb.API.HealthController do
     status
   end
 
-  # todo: it should be removed after 7.1.0 release in favour of the new health check logic based on multiple modules
+  # todo: it should be removed after 8.0.0 release in favour of the new health check logic based on multiple modules
   defp old_blocks_indexing_status(health_status) do
     latest_block_timestamp_from_db =
       if is_nil(health_status[:health_latest_block_timestamp_from_db]) do
