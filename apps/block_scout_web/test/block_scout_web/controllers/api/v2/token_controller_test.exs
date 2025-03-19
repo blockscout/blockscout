@@ -1417,7 +1417,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, token_balances)
+      check_holders_paginated_response(response, response_2nd_page, token_balances)
     end
   end
 

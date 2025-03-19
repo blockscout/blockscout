@@ -278,10 +278,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
       conn
       |> put_status(200)
-      |> render(:token_balances, %{
+      |> render(:token_holders, %{
         token_balances: token_holders |> maybe_preload_ens() |> maybe_preload_metadata(),
-        next_page_params: next_page_params,
-        token: token
+        next_page_params: next_page_params
       })
     end
   end
