@@ -363,4 +363,70 @@ defmodule Indexer.Fetcher.Optimism do
 
     reorg_block_number
   end
+
+  @doc """
+    Catches realtime L2 blocks from `:blocks, :realtime` subscription and forms a new realtime block range to be handled by a loop handler
+    in `Indexer.Fetcher.Optimism.InteropMessage`, `Indexer.Fetcher.Optimism.InteropMessageFailed`, or `Indexer.Fetcher.Optimism.EIP1559ConfigUpdate` module.
+
+    ## Parameters
+    - `blocks`: The list of new realtime L2 blocks arrived.
+    - `state`: The current module state containing the current block range, handling mode (:realtime, :continue, or :catchup), and the last known L2 block number.
+
+    ## Returns
+    - `{:noreply, state}` tuple where the `state` contains updated parameters (block range, last realtime block number, etc.)
+  """
+  @spec handle_realtime_blocks(list(), map()) :: {:noreply, map()}
+  def handle_realtime_blocks([], state) do
+    Logger.info("Got an empty list of new realtime block numbers")
+    {:noreply, state}
+  end
+
+  def handle_realtime_blocks(
+        blocks,
+        %{realtime_range: realtime_range, mode: mode, last_realtime_block_number: last_realtime_block_number} = state
+      ) do
+    {new_min, new_max} =
+      blocks
+      |> Enum.map(fn block -> block.number end)
+      |> Enum.min_max()
+
+    if new_min != new_max do
+      Logger.info("Got a range of new realtime block numbers: #{inspect(new_min..new_max)}")
+    else
+      Logger.info("Got a new realtime block number #{new_max}")
+    end
+
+    {start_block_number, end_block_number} =
+      case realtime_range do
+        nil -> {new_min, new_max}
+        prev_min..prev_max//_ -> {min(prev_min, new_min), max(prev_max, new_max)}
+      end
+
+    start_block_number_updated =
+      if last_realtime_block_number < start_block_number do
+        last_realtime_block_number + 1
+      else
+        start_block_number
+      end
+
+    new_realtime_range = Range.new(start_block_number_updated, end_block_number)
+
+    if mode == :realtime do
+      Logger.info("The current realtime range is #{inspect(new_realtime_range)}. Starting to handle that...")
+
+      Process.send(self(), :continue, [])
+
+      {:noreply,
+       %{
+         state
+         | start_block_number: start_block_number_updated,
+           end_block_number: end_block_number,
+           mode: :continue,
+           realtime_range: nil,
+           last_realtime_block_number: new_max
+       }}
+    else
+      {:noreply, %{state | realtime_range: new_realtime_range, last_realtime_block_number: new_max}}
+    end
+  end
 end
