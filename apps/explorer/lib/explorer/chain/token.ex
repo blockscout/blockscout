@@ -454,8 +454,8 @@ defmodule Explorer.Chain.Token do
   - `true` if a token with the given contract address hash exists.
   - `false` otherwise.
   """
-  @spec token_from_address_hash_exists?(Hash.Address.t() | String.t(), [Chain.api?()]) :: boolean()
-  def token_from_address_hash_exists?(hash, options) do
+  @spec by_contract_address_hash_exists?(Hash.Address.t() | String.t(), [Chain.api?()]) :: boolean()
+  def by_contract_address_hash_exists?(hash, options) do
     query =
       from(
         t in __MODULE__,

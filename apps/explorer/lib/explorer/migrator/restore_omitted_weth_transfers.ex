@@ -65,7 +65,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
     to_insert =
       Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:whitelisted_weth_contracts]
       |> Enum.map(fn contract_address_hash_string ->
-        if !Token.token_from_address_hash_exists?(contract_address_hash_string, []) do
+        if !Token.by_contract_address_hash_exists?(contract_address_hash_string, []) do
           %{
             contract_address_hash: contract_address_hash_string,
             type: "ERC-20"
