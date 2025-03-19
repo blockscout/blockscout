@@ -32,6 +32,8 @@ defmodule Explorer.Chain.Token.Instance do
   * `thumbnails` - info for deriving thumbnails urls. Stored as array: [file_path, sizes, original_uploaded?]
   * `media_type` - mime type of media
   * `cdn_upload_error` - error while processing(resizing)/uploading media to CDN
+  * `metadata_url` - URL metadata fetched from
+  * `skip_metadata_url` - bool flag indicating if metadata_url intentionally skipped
   """
   @primary_key false
   typed_schema "token_instances" do
@@ -48,6 +50,8 @@ defmodule Explorer.Chain.Token.Instance do
     field(:thumbnails, Thumbnails)
     field(:media_type, :string)
     field(:cdn_upload_error, :string)
+    field(:metadata_url, :string)
+    field(:skip_metadata_url, :boolean)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 
@@ -79,7 +83,9 @@ defmodule Explorer.Chain.Token.Instance do
       :is_banned,
       :thumbnails,
       :media_type,
-      :cdn_upload_error
+      :cdn_upload_error,
+      :metadata_url,
+      :skip_metadata_url
     ])
     |> validate_required([:token_id, :token_contract_address_hash])
     |> foreign_key_constraint(:token_contract_address_hash)
@@ -1304,7 +1310,9 @@ defmodule Explorer.Chain.Token.Instance do
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at),
           retries_count: token_instance.retries_count + 1,
           refetch_after: fragment("EXCLUDED.refetch_after"),
-          is_banned: fragment("EXCLUDED.is_banned")
+          is_banned: fragment("EXCLUDED.is_banned"),
+          metadata_url: fragment("EXCLUDED.metadata_url"),
+          skip_metadata_url: fragment("EXCLUDED.skip_metadata_url")
         ]
       ],
       where: is_nil(token_instance.metadata)

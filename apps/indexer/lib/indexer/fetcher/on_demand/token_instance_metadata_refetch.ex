@@ -47,8 +47,6 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   end
 
   defp fetch_and_broadcast_metadata(token_instance, _state) do
-    from_base_uri? = Application.get_env(:indexer, TokenInstanceHelper)[:base_uri_retry?]
-
     token_id = TokenInstanceHelper.prepare_token_id(token_instance.token_id)
     contract_address_hash_string = to_string(token_instance.token_contract_address_hash)
 
@@ -71,7 +69,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
 
     with {:empty_result, false} <- {:empty_result, is_nil(result)},
          {:fetched_metadata, {:ok, %{metadata: metadata}}} <-
-           {:fetched_metadata, MetadataRetriever.fetch_json(result, token_id, nil, from_base_uri?)} do
+           {:fetched_metadata, result |> MetadataRetriever.fetch_json( token_id, nil, false)|>MetadataRetriever.parse_fetch_json_response()} do
       TokenInstance.set_metadata(token_instance, metadata)
 
       Publisher.broadcast(
