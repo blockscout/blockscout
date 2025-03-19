@@ -262,6 +262,19 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
       token_id: token_id,
       token_contract_address_hash: token_contract_address_hash,
       metadata: metadata,
+      skip_metadata_url: true,
+      error: nil,
+      refetch_after: nil
+    }
+  end
+
+  defp result_to_insert_params({:ok_store_uri, %{metadata: metadata}, uri}, token_contract_address_hash, token_id) do
+    %{
+      token_id: token_id,
+      token_contract_address_hash: token_contract_address_hash,
+      metadata: metadata,
+      metadata_url: uri,
+      skip_metadata_url: false,
       error: nil,
       refetch_after: nil
     }

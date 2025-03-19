@@ -899,7 +899,10 @@ config :indexer, Indexer.Fetcher.BlockReward,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_BLOCK_REWARD_CONCURRENCY", 4)
 
 config :indexer, Indexer.Fetcher.TokenInstance.Helper,
-  base_uri_retry?: ConfigHelper.parse_bool_env_var("INDEXER_TOKEN_INSTANCE_USE_BASE_URI_RETRY")
+  base_uri_retry?: ConfigHelper.parse_bool_env_var("INDEXER_TOKEN_INSTANCE_USE_BASE_URI_RETRY"),
+  cidr_blacklist: ConfigHelper.parse_list_env_var("INDEXER_TOKEN_INSTANCE_CIDR_BLACKLIST", ""),
+  host_filtering_enabled?: ConfigHelper.parse_bool_env_var("INDEXER_TOKEN_INSTANCE_HOST_FILTERING_ENABLED", "true"),
+  allowed_uri_protocols: ConfigHelper.parse_list_env_var("INDEXER_TOKEN_INSTANCE_ALLOWED_URI_PROTOCOLS", "http,https")
 
 config :indexer, Indexer.Fetcher.TokenInstance.Retry,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_RETRY_CONCURRENCY", 10),
