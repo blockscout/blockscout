@@ -14,22 +14,27 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   alias Explorer.Chain.Hash
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Token.BalanceReader
+  alias Indexer.BufferedTask
   alias Timex.Duration
 
   require Logger
 
-  ## Interface
+  @behaviour BufferedTask
+
+  @max_batch_size 500
+  @max_concurrency 4
+  @defaults [
+    flush_interval: :timer.seconds(3),
+    max_concurrency: @max_concurrency,
+    max_batch_size: @max_batch_size,
+    task_supervisor: Indexer.Fetcher.OnDemand.TokenBalance.TaskSupervisor,
+    metadata: [fetcher: :token_balance_on_demand]
+  ]
 
   @spec trigger_fetch(Hash.Address.t()) :: :ok
   def trigger_fetch(address_hash) do
-    latest_block_number = latest_block_number()
-
-    case stale_balance_window(latest_block_number) do
-      {:error, _} ->
-        :current
-
-      stale_balance_window ->
-        do_trigger_fetch(address_hash, latest_block_number, stale_balance_window)
+    unless __MODULE__.Supervisor.disabled?() do
+      BufferedTask.buffer(__MODULE__, [{:fetch, address_hash}], false)
     end
   end
 
@@ -39,30 +44,71 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
           String.t(),
           Decimal.t() | nil,
           non_neg_integer()
-        ) :: {:ok, pid}
+        ) :: :ok
   def trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number) do
-    Task.start(fn ->
-      do_trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number)
-    end)
+    unless __MODULE__.Supervisor.disabled?() do
+      BufferedTask.buffer(
+        __MODULE__,
+        [{:historic_fetch, {address_hash, contract_address_hash, token_type, token_id, block_number}}],
+        false
+      )
+    end
   end
 
-  ## Implementation
+  @doc false
+  def child_spec([init_options, gen_server_options]) do
+    merged_init_opts =
+      @defaults
+      |> Keyword.merge(init_options)
+      |> Keyword.put(:state, %{})
 
-  defp do_trigger_fetch(address_hash, latest_block_number, stale_balance_window)
-       when not is_nil(address_hash) do
-    stale_current_token_balances =
-      address_hash
-      |> Chain.fetch_last_token_balances_include_unfetched()
-      |> delete_invalid_balances()
-      |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
+    Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
+  end
 
-    if Enum.empty?(stale_current_token_balances) do
-      :current
-    else
-      fetch_and_update(latest_block_number, address_hash, stale_current_token_balances)
-    end
+  @impl BufferedTask
+  def init(initial, _, _) do
+    initial
+  end
+
+  @impl BufferedTask
+  def run(entries, _) do
+    {fetch_params, historic_fetch_params} =
+      Enum.reduce(entries, {[], []}, fn
+        {:fetch, address_hash}, {fetch_acc, historic_acc} ->
+          {[address_hash | fetch_acc], historic_acc}
+
+        {:historic_fetch, params}, {fetch_acc, historic_acc} ->
+          {fetch_acc, [params | historic_acc]}
+      end)
+
+    do_trigger_fetch(fetch_params)
+    do_trigger_historic_fetch(historic_fetch_params)
 
     :ok
+  end
+
+  defp do_trigger_fetch([]), do: :ok
+
+  defp do_trigger_fetch(address_hashes) do
+    latest_block_number = latest_block_number()
+
+    case stale_balance_window(latest_block_number) do
+      {:error, _} ->
+        :current
+
+      stale_balance_window ->
+        stale_current_token_balances =
+          address_hashes
+          |> Chain.fetch_last_token_balances_include_unfetched()
+          |> delete_invalid_balances()
+          |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
+
+        if Enum.empty?(stale_current_token_balances) do
+          :current
+        else
+          fetch_and_update(latest_block_number, stale_current_token_balances)
+        end
+    end
   end
 
   defp delete_invalid_balances(current_token_balances) do
@@ -71,7 +117,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
     valid_balances
   end
 
-  defp fetch_and_update(block_number, address_hash, stale_current_token_balances) do
+  defp fetch_and_update(block_number, stale_current_token_balances) do
     %{
       erc_1155: erc_1155_ctbs,
       other: other_ctbs,
@@ -86,7 +132,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
         prepared_ctb = %{
           token_contract_address_hash:
             ExplorerHelper.add_0x_prefix(stale_current_token_balance.token.contract_address_hash),
-          address_hash: ExplorerHelper.add_0x_prefix(address_hash),
+          address_hash: ExplorerHelper.add_0x_prefix(stale_current_token_balance.address_hash),
           block_number: block_number,
           token_id: token_id && Decimal.to_integer(token_id),
           token_type: stale_current_token_balance.token_type
@@ -153,19 +199,23 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
           broadcast: false
         })
 
-      filtered_imported_ctbs = filter_imported_ctbs(imported_ctbs, balances_map)
-
-      Publisher.broadcast(
-        %{
-          address_current_token_balances: %{
-            address_hash: to_string(address_hash),
-            address_current_token_balances:
-              filtered_imported_ctbs
-              |> Enum.map(fn ctb -> %CurrentTokenBalance{ctb | token: tokens[ctb.token_contract_address_hash.bytes]} end)
-          }
-        },
-        :on_demand
-      )
+      imported_ctbs
+      |> filter_imported_ctbs(balances_map)
+      |> Enum.group_by(& &1.address_hash)
+      |> Enum.each(fn {address_hash, ctbs} ->
+        Publisher.broadcast(
+          %{
+            address_current_token_balances: %{
+              address_hash: to_string(address_hash),
+              address_current_token_balances:
+                Enum.map(ctbs, fn ctb ->
+                  %CurrentTokenBalance{ctb | token: tokens[ctb.token_contract_address_hash.bytes]}
+                end)
+            }
+          },
+          :on_demand
+        )
+      end)
     end
   end
 
@@ -213,51 +263,59 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
     nil
   end
 
-  defp do_trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number) do
-    request = %{
-      token_contract_address_hash: to_string(contract_address_hash),
-      address_hash: to_string(address_hash),
-      block_number: block_number,
-      token_id: token_id && Decimal.to_integer(token_id)
-    }
+  defp do_trigger_historic_fetch([]), do: :ok
 
-    balance_response =
-      case token_type do
-        "ERC-404" ->
-          if token_id do
-            BalanceReader.get_balances_of_erc_1155([request])
-          else
-            BalanceReader.get_balances_of([request])
-          end
+  defp do_trigger_historic_fetch(params) do
+    {regular_requests, erc_1155_requests} =
+      Enum.reduce(params, {[], []}, fn {address_hash, contract_address_hash, token_type, token_id, block_number},
+                                       {regular_acc, erc_1155_acc} ->
+        request = %{
+          token_contract_address_hash: to_string(contract_address_hash),
+          address_hash: to_string(address_hash),
+          block_number: block_number,
+          token_type: token_type,
+          token_id: token_id && Decimal.to_integer(token_id)
+        }
 
-        "ERC-1155" ->
-          BalanceReader.get_balances_of_erc_1155([request])
+        case {token_type, token_id} do
+          {"ERC-404", nil} -> {[request | regular_acc], erc_1155_acc}
+          {"ERC-404", _token_id} -> {regular_acc, [request | erc_1155_acc]}
+          {"ERC-1155", _token_id} -> {regular_acc, [request | erc_1155_acc]}
+          {_type, _token_id} -> {[request | regular_acc], erc_1155_acc}
+        end
+      end)
 
-        _ ->
-          BalanceReader.get_balances_of([request])
-      end
+    regular_balances_response =
+      regular_requests
+      |> BalanceReader.get_balances_of()
+      |> Enum.zip(regular_requests)
 
-    balance = balance_response[:ok]
+    erc_1155_balances_response =
+      erc_1155_requests
+      |> BalanceReader.get_balances_of_erc_1155()
+      |> Enum.zip(erc_1155_requests)
 
-    if balance do
-      %{
-        address_token_balances: %{
-          params: [
-            %{
-              address_hash: address_hash,
-              token_contract_address_hash: contract_address_hash,
-              token_type: token_type,
-              token_id: token_id,
-              block_number: block_number,
-              value: Decimal.new(balance),
-              value_fetched_at: DateTime.utc_now()
-            }
-          ]
-        },
-        broadcast: :on_demand
-      }
-      |> Chain.import()
-    end
+    import_params =
+      Enum.reduce(regular_balances_response ++ erc_1155_balances_response, [], fn
+        {{:ok, balance}, request}, acc ->
+          params = %{
+            address_hash: request.address_hash,
+            token_contract_address_hash: request.contract_address_hash,
+            token_type: request.token_type,
+            token_id: request.token_id,
+            block_number: request.block_number,
+            value: Decimal.new(balance),
+            value_fetched_at: DateTime.utc_now()
+          }
+
+          [params | acc]
+
+        {{:error, error}, request}, acc ->
+          Logger.error("Error while fetching token balances: #{inspect(error)}, request: #{inspect(request)}")
+          acc
+      end)
+
+    Chain.import(%{address_token_balances: %{params: import_params}, broadcast: :on_demand})
   end
 
   defp latest_block_number do

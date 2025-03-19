@@ -24,11 +24,18 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
     start_supervised!(AverageBlockTime)
     start_supervised!(AddressesCount)
-    start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
+
+    configuration = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.CoinBalance.Supervisor)
+    Application.put_env(:indexer, Indexer.Fetcher.OnDemand.CoinBalance.Supervisor, disabled?: false)
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
+    Indexer.Fetcher.OnDemand.CoinBalance.Supervisor.Case.start_supervised!(
+      json_rpc_named_arguments: mocked_json_rpc_named_arguments
+    )
+
     on_exit(fn ->
+      Application.put_env(:indexer, Indexer.Fetcher.OnDemand.CoinBalance.Supervisor, configuration)
       Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
     end)
   end
