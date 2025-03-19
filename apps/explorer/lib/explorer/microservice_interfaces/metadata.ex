@@ -8,6 +8,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   alias Explorer.Utility.Microservice
   alias HTTPoison.Response
 
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.Chain.Address.MetadataPreloader, only: [maybe_preload_meta: 3]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -212,6 +213,8 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
          }
        )
        |> Enum.map(fn address -> {address, address.transactions_count} end)
+       |> maybe_preload_ens()
+       |> maybe_preload_metadata()
      )}
   end
 
