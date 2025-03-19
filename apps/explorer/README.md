@@ -1,6 +1,6 @@
-# BlockScout
+# Explorer
 
-Blockscout is a robust open-source tool for exploring, confirming, and inspecting transactions on any EVM blockchain.
+The Explorer component of Blockscout stores, processes, and serves blockchain data ingested by the Indexer. It provides a high-level data access layer through modules like Explorer.Chain and Explorer.Repo that interface with a PostgreSQL database, with schema migrations managed in `apps/explorer/priv/repo/migrations`. It features a structured multi-stage ETL pipeline used by the Indexer to import and transform blockchain data. The system includes chain-specific modules and configurations tailored for various EVM networks. It supports smart contract verification by managing compilation, versioning, and detecting proxy patterns. On-demand data fetching is available and is invoked by the BlockScoutWeb API server to support features such as contract verification. Release tasks are incorporated for database setup and migrations. Additional modules handle account management, market data processing, and event subscriptions to keep clients updated on blockchain data changes. Specialized modules manage both schema and long-running data migrations, including backfilling and index optimizations.
 
 ## Machine Requirements
 
