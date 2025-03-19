@@ -424,4 +424,53 @@ defmodule Explorer.Chain.Scroll.Reader do
   defp page_deposits_or_withdrawals(query, %PagingOptions{key: {index}}) do
     from(b in query, where: b.index < ^index)
   end
+
+  @doc """
+    Gets information about the latest committed batch and calculates average time between committed batches, in seconds.
+
+    ## Parameters
+      - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - If at least two batches exist:
+      `{:ok, %{latest_batch_number: integer, latest_batch_timestamp: DateTime.t(), average_batch_time: integer}}`
+      where:
+        * latest_batch_number - number of the latest batch in the database.
+        * latest_batch_timestamp - when the latest batch was committed to L1.
+        * average_batch_time - average number of seconds between batches for the last 100 batches.
+
+    - If less than two batches exist: `{:error, :not_found}`.
+  """
+  @spec get_latest_batch_info(keyword()) :: {:ok, map()} | {:error, :not_found}
+  def get_latest_batch_info(options \\ []) do
+    query =
+      from(b in Batch,
+        order_by: [desc: b.number],
+        limit: 100,
+        select: %{
+          number: b.number,
+          timestamp: b.commit_timestamp
+        }
+      )
+
+    items = select_repo(options).all(query)
+    items_count = length(items)
+
+    if items_count > 1 do
+      latest_item = List.first(items)
+      older_item = List.last(items)
+      average_time = div(DateTime.diff(latest_item.timestamp, older_item.timestamp, :second), items_count)
+
+      {
+        :ok,
+        %{
+          latest_batch_number: latest_item.id,
+          latest_batch_timestamp: latest_item.timestamp,
+          average_batch_time: average_time
+        }
+      }
+    else
+      {:error, :not_found}
+    end
+  end
 end
