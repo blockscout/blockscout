@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   def counters(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, true} <- {:not_found, Chain.token_from_address_hash_exists?(address_hash, @api_true)} do
+         {:not_found, true} <- {:not_found, Token.by_contract_address_hash_exists?(address_hash, @api_true)} do
       {transfer_count, token_holder_count} = Chain.fetch_token_counters(address_hash, 30_000)
 
       json(conn, %{transfers_count: to_string(transfer_count), token_holders_count: to_string(token_holder_count)})
@@ -84,7 +84,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   def transfers(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, true} <- {:not_found, Chain.token_from_address_hash_exists?(address_hash, @api_true)} do
+         {:not_found, true} <- {:not_found, Token.by_contract_address_hash_exists?(address_hash, @api_true)} do
       paging_options = paging_options(params)
 
       results =
@@ -113,7 +113,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   def holders(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
+         {:not_found, true} <- {:not_found, Token.by_contract_address_hash_exists?(address_hash, @api_true)} do
       results_plus_one =
         Chain.fetch_token_holders_from_token_hash(address_hash, Keyword.merge(paging_options(params), @api_true))
 
@@ -123,10 +123,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
       conn
       |> put_status(200)
-      |> render(:token_balances, %{
+      |> render(:token_holders, %{
         token_balances: token_balances |> maybe_preload_ens() |> maybe_preload_metadata(),
-        next_page_params: next_page_params,
-        token: token
+        next_page_params: next_page_params
       })
     end
   end
@@ -279,10 +278,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
       conn
       |> put_status(200)
-      |> render(:token_balances, %{
+      |> render(:token_holders, %{
         token_balances: token_holders |> maybe_preload_ens() |> maybe_preload_metadata(),
-        next_page_params: next_page_params,
-        token: token
+        next_page_params: next_page_params
       })
     end
   end
