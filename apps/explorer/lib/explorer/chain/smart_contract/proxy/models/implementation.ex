@@ -52,6 +52,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         :clone_with_immutable_arguments,
         :eip7702,
         :resolved_delegate_proxy,
+        :erc7760,
         :unknown
       ],
       null: true
