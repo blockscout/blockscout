@@ -56,7 +56,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     process.
   """
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_warning: 1]
 
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
@@ -499,6 +499,35 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
 
       cached_block ->
         {cached_block, state}
+    end
+  end
+
+  @doc """
+  Plans and executes a confirmation discovery task based on index readiness.
+
+  This function checks if the unconfirmed blocks index is ready before executing
+  the provided task function. If the index is not ready, it logs a warning and
+  returns the state unchanged. If the index is ready, it executes the provided
+  task function with the given state.
+
+  ## Parameters
+  - `task_func`: The function to execute if the index is ready. This function
+                should accept a state parameter and return a tuple with a status
+                and new state.
+  - `state`: The current state to pass to the task function.
+
+  ## Returns
+  - `{:ok, state}` if the index is not ready
+  - The result of `task_func.(state)` if the index is ready
+  """
+  @spec plan((any() -> {:ok | :confirmation_missed, %{atom() => any()}}), %{atom() => any()}) ::
+          {:ok | :confirmation_missed, %{atom() => any()}}
+  def plan(task_func, state) do
+    if ArbitrumHelper.unconfirmed_blocks_index_ready?() do
+      task_func.(state)
+    else
+      log_warning("Skipping confirmations discovery since the unconfirmed blocks index is not ready yet")
+      {:ok, state}
     end
   end
 end

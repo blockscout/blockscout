@@ -271,7 +271,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   #   block for the next iteration of new confirmation discovery.
   @impl GenServer
   def handle_info(:check_new_confirmations, state) do
-    {handle_duration, {_, new_state}} = :timer.tc(&ConfirmationsDiscoveryTasks.check_new/1, [state])
+    {handle_duration, {_, new_state}} =
+      :timer.tc(&ConfirmationsDiscoveryTasks.plan/2, [&ConfirmationsDiscoveryTasks.check_new/1, state])
 
     Process.send(self(), :check_new_executions, [])
 
@@ -410,7 +411,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   #   end blocks for the next iteration of historical confirmations discovery.
   @impl GenServer
   def handle_info(:check_historical_confirmations, state) do
-    {handle_duration, {_, new_state}} = :timer.tc(&ConfirmationsDiscoveryTasks.check_unprocessed/1, [state])
+    {handle_duration, {_, new_state}} =
+      :timer.tc(&ConfirmationsDiscoveryTasks.plan/2, [&ConfirmationsDiscoveryTasks.check_unprocessed/1, state])
 
     Process.send(self(), :check_historical_executions, [])
 
