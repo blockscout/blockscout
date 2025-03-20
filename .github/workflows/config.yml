@@ -115,8 +115,6 @@ jobs:
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - name: Conditionally build Mix deps cache
         if: steps.deps-cache.outputs.cache-hit != 'true'
