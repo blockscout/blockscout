@@ -240,6 +240,7 @@ exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
 
 config :explorer,
   mode: app_mode,
+  ecto_repos: ConfigHelper.repos(),
   coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
   coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
   allowed_solidity_evm_versions:

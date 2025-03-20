@@ -154,10 +154,14 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     number. Additionally checks if the certificate's keyset is already known or needs to
     be fetched from L1.
 
+    When encountering duplicate data keys within the same processing chunk, the function
+    compares timeout values and keeps only the record with the highest timeout, which
+    ensures longer data availability without database constraint violations.
+
     ## Parameters
     - A tuple containing:
-      - A list of existing DA records (`DaMultiPurposeRecord`)
-      - A list of existing batch-to-blob associations (`BatchToDaBlob`)
+      - A map of already prepared DA records, where `data_key` maps to `DaMultiPurposeRecord.to_import()`
+      - A list of already prepared batch-to-blob associations
     - `da_info`: The AnyTrust DA info struct containing the certificate data
     - `l1_connection_config`: Configuration for L1 connection, including:
       - `:sequencer_inbox_address`: Address of the Sequencer Inbox contract
@@ -166,14 +170,14 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
 
     ## Returns
     - A tuple containing:
-      - A tuple of updated record lists:
-        - DA records list with the new certificate (`data_type: 0`) and possibly
-          a new keyset (`data_type: 1`)
+      - A tuple of updated record collections:
+        - A map of DA records where `data_key` maps to the record, including the new
+          certificate (`data_type: 0`) and possibly a new keyset (`data_type: 1`)
         - Batch-to-blob associations list with the new mapping
       - Updated keyset cache
   """
   @spec prepare_for_import(
-          {[Arbitrum.DaMultiPurposeRecord.to_import()], [Arbitrum.BatchToDaBlob.to_import()]},
+          {%{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}, [Arbitrum.BatchToDaBlob.to_import()]},
           __MODULE__.t(),
           %{
             :sequencer_inbox_address => String.t(),
@@ -181,7 +185,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
           },
           MapSet.t()
         ) ::
-          {{[Arbitrum.DaMultiPurposeRecord.to_import()], [Arbitrum.BatchToDaBlob.to_import()]}, MapSet.t()}
+          {{%{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}, [Arbitrum.BatchToDaBlob.to_import()]}, MapSet.t()}
   def prepare_for_import({da_records_acc, batch_to_blob_acc}, %__MODULE__{} = da_info, l1_connection_config, cache) do
     data = %{
       keyset_hash: ArbitrumHelper.bytes_to_hex_str(da_info.keyset_hash),
@@ -206,29 +210,51 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
       data_blob_id: da_info.data_hash
     }
 
+    # Check if a record with the same data_key already exists
+    updated_da_records =
+      case Map.get(da_records_acc, da_info.data_hash) do
+        nil ->
+          # No duplicate, add the new record
+          Map.put(da_records_acc, da_info.data_hash, da_record)
+
+        duplicate_record ->
+          log_info("Found duplicate DA record #{ArbitrumHelper.bytes_to_hex_str(da_info.data_hash)}")
+          # Found duplicate, compare timeout values
+          timeout_in_duplicate = duplicate_record.data.timeout
+          timeout_in_candidate = da_record.data.timeout
+
+          if DateTime.compare(timeout_in_candidate, timeout_in_duplicate) == :gt do
+            # New record has higher timeout, replace the existing one
+            Map.put(da_records_acc, da_info.data_hash, da_record)
+          else
+            # Existing record has higher or equal timeout, keep it
+            da_records_acc
+          end
+      end
+
     {check_result, keyset_map, updated_cache} = check_if_new_keyset(da_info.keyset_hash, l1_connection_config, cache)
 
-    da_records =
+    # Add keyset record if it's new
+    final_da_records =
       case check_result do
         :new_keyset ->
           # If the keyset is new, add a new keyset record to the DA records list.
           # As per the nature of `DaMultiPurposeRecord` it can contain not only DA
           # certificates but also keysets.
-          [
-            %{
-              data_type: 1,
-              data_key: da_info.keyset_hash,
-              data: keyset_map,
-              batch_number: nil
-            }
-            | [da_record]
-          ]
+          keyset_record = %{
+            data_type: 1,
+            data_key: da_info.keyset_hash,
+            data: keyset_map,
+            batch_number: nil
+          }
+
+          Map.put(updated_da_records, da_info.keyset_hash, keyset_record)
 
         _ ->
-          [da_record]
+          updated_da_records
       end
 
-    {{da_records ++ da_records_acc, [batch_to_blob_record | batch_to_blob_acc]}, updated_cache}
+    {{final_da_records, [batch_to_blob_record | batch_to_blob_acc]}, updated_cache}
   end
 
   # Verifies the existence of an AnyTrust committee keyset in the database and fetches it from L1 if not found.
@@ -437,6 +463,87 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
         proof: ArbitrumHelper.bytes_to_hex_str(proof_bytes),
         key: ArbitrumHelper.bytes_to_hex_str(key_bytes)
       }
+    end
+  end
+
+  @doc """
+    Resolves conflicts between existing database records and candidate DA records.
+
+    This function compares the timeout values of existing database records with candidate
+    records that have the same data_key. It keeps only candidate records with higher timeout
+    values than their corresponding database records, or those without matching database records.
+
+    ## Parameters
+    - `db_records`: A list of `Arbitrum.DaMultiPurposeRecord` retrieved from the database
+    - `candidate_records`: A map where `data_key` maps to `Arbitrum.DaMultiPurposeRecord.to_import()`
+
+    ## Returns
+    - A list of `Arbitrum.DaMultiPurposeRecord.to_import()` after resolving conflicts
+  """
+  @spec resolve_conflict(
+          [Arbitrum.DaMultiPurposeRecord.t()],
+          %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}
+        ) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
+
+  def resolve_conflict([], candidate_records) do
+    Map.values(candidate_records)
+  end
+
+  def resolve_conflict(db_records, candidate_records) do
+    # Create a set of keys to exclude (those where DB record has equal or higher timeout)
+    keys_to_exclude =
+      Enum.reduce(db_records, MapSet.new(), fn db_record, acc ->
+        data_key = db_record.data_key
+
+        case Map.get(candidate_records, data_key) do
+          nil ->
+            # No matching candidate record, nothing to exclude
+            acc
+
+          candidate_record ->
+            # Convert string timeout from DB to DateTime and compare with candidate timeout
+            db_timeout = string_to_datetime(db_record.data["timeout"])
+            candidate_timeout = candidate_record.data.timeout
+
+            # credo:disable-for-lines:1 Credo.Check.Refactor.Nesting
+            if DateTime.compare(candidate_timeout, db_timeout) == :gt do
+              log_info(
+                "Candidate DA record #{ArbitrumHelper.bytes_to_hex_str(data_key)} has higher timeout than DB record"
+              )
+
+              # Candidate has higher timeout, don't exclude
+              acc
+            else
+              # DB record has higher or equal timeout, exclude this key
+              log_info(
+                "DA record #{ArbitrumHelper.bytes_to_hex_str(data_key)} already exists in DB with higher or equal timeout"
+              )
+
+              MapSet.put(acc, data_key)
+            end
+        end
+      end)
+
+    # Return only candidate records not in the exclude set
+    candidate_records
+    |> Enum.reject(fn {data_key, _record} -> MapSet.member?(keys_to_exclude, data_key) end)
+    |> Enum.map(fn {_data_key, record} -> record end)
+  end
+
+  # Converts a string representation of a DateTime to a DateTime struct.
+  # The string is expected to be in ISO 8601 format.
+  #
+  # ## Parameters
+  # - `datetime_str`: A string representing a DateTime in ISO 8601 format
+  #
+  # ## Returns
+  # - A DateTime struct if the conversion is successful
+  # - Raises an error if the string cannot be parsed
+  @spec string_to_datetime(String.t()) :: DateTime.t()
+  defp string_to_datetime(datetime_str) when is_binary(datetime_str) do
+    case DateTime.from_iso8601(datetime_str) do
+      {:ok, datetime, _offset} -> datetime
+      {:error, reason} -> raise "Failed to parse datetime string: #{datetime_str}, reason: #{reason}"
     end
   end
 end
