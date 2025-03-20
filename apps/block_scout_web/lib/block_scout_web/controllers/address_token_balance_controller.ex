@@ -9,9 +9,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
-      Task.start_link(fn ->
-        TokenBalanceOnDemand.trigger_fetch(address_hash)
-      end)
+      TokenBalanceOnDemand.trigger_fetch(address_hash)
 
       case AccessHelper.restricted_access?(address_hash_string, params) do
         {:ok, false} ->
