@@ -15,8 +15,8 @@ defmodule BlockScoutWeb.Routers.ChainTypeScope do
 
   ## Examples
 
-      chain_scope :polygon_zkevm, "/zkevm-batch/:batch_number" do
-        get("/", V2.TransactionController, :polygon_zkevm_batch)
+      chain_scope :polygon_zkevm do
+        get("/zkevm-batch/:batch_number", V2.TransactionController, :polygon_zkevm_batch)
       end
   """
   defmacro chain_scope(chain_type, opts \\ [], do: block) do
