@@ -15,6 +15,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
 
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
+    DaMultiPurposeRecord,
     L1Batch,
     LifecycleTransaction
   }
@@ -517,5 +518,24 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
           confirmation_transaction -> {:ok, confirmation_transaction.block_number}
         end
     end
+  end
+
+  @doc """
+    Retrieves data availability records from the database for the given list of data keys.
+
+    ## Parameters
+    - `data_keys`: A list of binary data keys to search for in the database.
+
+    ## Returns
+    - A list of matching `DaMultiPurposeRecord` records, or an empty list if no matches are found.
+  """
+  @spec da_records_by_keys([binary()]) :: [DaMultiPurposeRecord.t()]
+  def da_records_by_keys(data_keys) when is_list(data_keys) do
+    query =
+      from(record in DaMultiPurposeRecord,
+        where: record.data_key in ^data_keys
+      )
+
+    Repo.all(query)
   end
 end
