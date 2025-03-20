@@ -7,6 +7,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1]
 
   alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: Db
 
   alias Explorer.Chain.Arbitrum
 
@@ -43,7 +44,8 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
     Prepares data availability (DA) information for import.
 
     This function processes a list of DA information, either from Celestia or Anytrust,
-    preparing it for database import.
+    preparing it for database import. It handles deduplication of records within the same
+    processing chunk and against existing database records.
 
     ## Parameters
     - `da_info`: A list of DA information structs.
@@ -52,12 +54,8 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
 
     ## Returns
     - A tuple containing:
-      - A list of DA records (`DaMultiPurposeRecord`) ready for import, each containing:
-        - `:data_key`: A binary key identifying the data.
-        - `:data_type`: An integer indicating the type of data, which can be `0`
-          for data blob descriptors and `1` for Anytrust keyset descriptors.
-        - `:data`: A map containing the DA information.
-        - `:batch_number`: The batch number associated with the data, or `nil`.
+      - A list of DA records (`DaMultiPurposeRecord`) ready for import, deduplicated both within
+        the current batch and against existing database records.
       - A list of batch-to-blob associations (`BatchToDaBlob`) ready for import.
   """
   @spec prepare_for_import([Celestia.t() | Anytrust.t() | map()], %{
@@ -67,24 +65,119 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
   def prepare_for_import([], _), do: {[], []}
 
   def prepare_for_import(da_info, l1_connection_config) do
-    da_info
-    |> Enum.reduce({{[], []}, MapSet.new()}, fn info, {{da_records_acc, batch_to_blob_acc}, cache} ->
-      case info do
-        %Celestia{} ->
-          {da_records, batch_to_blobs} = Celestia.prepare_for_import({da_records_acc, batch_to_blob_acc}, info)
-          {{da_records, batch_to_blobs}, cache}
+    # Initialize accumulator with maps for each DA type
+    initial_acc = {
+      %{
+        celestia: %{},
+        anytrust: %{}
+      },
+      [],
+      MapSet.new()
+    }
 
-        %Anytrust{} ->
-          {{da_records, batch_to_blobs}, updated_cache} =
-            Anytrust.prepare_for_import({da_records_acc, batch_to_blob_acc}, info, l1_connection_config, cache)
+    # Process all DA info entries
+    {da_records_by_type, batch_to_blobs, _cache} =
+      da_info
+      |> Enum.reduce(initial_acc, fn info, {da_records_by_type, batch_to_blob_acc, cache} ->
+        case info do
+          %Celestia{} ->
+            {updated_records, updated_batches} =
+              Celestia.prepare_for_import({da_records_by_type.celestia, batch_to_blob_acc}, info)
 
-          {{da_records, batch_to_blobs}, updated_cache}
+            {
+              %{da_records_by_type | celestia: updated_records},
+              updated_batches,
+              cache
+            }
 
-        _ ->
-          {{da_records_acc, batch_to_blob_acc}, cache}
-      end
+          %Anytrust{} ->
+            {{updated_records, updated_batches}, updated_cache} =
+              Anytrust.prepare_for_import(
+                {da_records_by_type.anytrust, batch_to_blob_acc},
+                info,
+                l1_connection_config,
+                cache
+              )
+
+            {
+              %{da_records_by_type | anytrust: updated_records},
+              updated_batches,
+              updated_cache
+            }
+
+          _ ->
+            {da_records_by_type, batch_to_blob_acc, cache}
+        end
+      end)
+
+    # Eliminate conflicts with database records
+    da_records = eliminate_conflicts(da_records_by_type)
+
+    {da_records, batch_to_blobs}
+  end
+
+  # Eliminates conflicts between candidate DA records and existing database records.
+  #
+  # This function checks for conflicts between candidate records and existing database
+  # records, and resolves them according to type-specific rules.
+  #
+  # ## Parameters
+  # - `da_records_by_type`: A map containing candidate records organized by DA type
+  #   (`:celestia` and `:anytrust`), where each type has a map of records keyed by `data_key`.
+  #
+  # ## Returns
+  # - A list of `DaMultiPurposeRecord` records after conflict resolution, ready for import.
+  @spec eliminate_conflicts(%{
+          celestia: %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()},
+          anytrust: %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}
+        }) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
+  defp eliminate_conflicts(da_records_by_type) do
+    # Define the types and their corresponding resolution modules
+    type_configs = [
+      {:celestia, da_records_by_type.celestia, &Celestia.resolve_conflict/2},
+      {:anytrust, da_records_by_type.anytrust, &Anytrust.resolve_conflict/2}
+    ]
+
+    # Process each type using the same pattern
+    type_configs
+    |> Enum.flat_map(fn {_type, records_map, resolve_fn} ->
+      process_records(records_map, resolve_fn)
     end)
-    |> then(fn {{da_records, batch_to_blobs}, _cache} -> {da_records, batch_to_blobs} end)
+  end
+
+  # Processes candidate DA records using a type-specific resolution function.
+  #
+  # This function takes a map of candidate DA records and a resolution function specific
+  # to the DA type (Celestia or AnyTrust). It fetches any existing records from the
+  # database with matching data keys and uses the resolution function to determine
+  # which records should be imported.
+  #
+  # ## Parameters
+  # - `records_map`: A map where data keys map to candidate DA records to be imported
+  # - `resolve_fn`: A function that resolves conflicts between database records and
+  #   candidate records according to type-specific rules
+  #
+  # ## Returns
+  # - A list of DA records that should be imported after conflict resolution
+  @spec process_records(
+          %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()},
+          ([Explorer.Chain.Arbitrum.DaMultiPurposeRecord.t()],
+           %{binary() => Explorer.Chain.Arbitrum.DaMultiPurposeRecord.to_import()} ->
+             [Arbitrum.DaMultiPurposeRecord.to_import()])
+        ) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
+  defp process_records(records_map, resolve_fn)
+
+  defp process_records(records_map, _resolve_fn) when map_size(records_map) == 0, do: []
+
+  defp process_records(records_map, resolve_fn) do
+    # Get all keys from the records map
+    keys = Map.keys(records_map)
+
+    # Fetch existing records from DB with these keys
+    db_records = Db.da_records_by_keys(keys)
+
+    # Call the resolution function with db_records and candidate records
+    resolve_fn.(db_records, records_map)
   end
 
   @doc """
