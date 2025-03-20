@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
+  use BlockScoutWeb.Routers.ChainTypeScope
 
   use Utils.CompileTimeEnvHelper,
     chain_type: [:explorer, :chain_type],
@@ -168,7 +169,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:transaction_hash_param/state-changes", V2.TransactionController, :state_changes)
       get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
 
-      if @chain_type == :neon do
+      chain_scope :neon do
         get("/:transaction_hash_param/external-transactions", V2.TransactionController, :external_transactions)
       end
 
