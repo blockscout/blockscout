@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.AddressContractView do
   alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
   alias Explorer.Chain.SmartContract
   alias Explorer.Chain.SmartContract.Proxy.EIP1167
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Phoenix.HTML.Safe
 
@@ -64,7 +65,7 @@ defmodule BlockScoutWeb.AddressContractView do
         val_to_string_if_array(val, type, conn)
 
       type =~ "address" ->
-        address_hash = "0x" <> Base.encode16(val, case: :lower)
+        address_hash = ExplorerHelper.add_0x_prefix(val)
 
         address = Chain.string_to_address_hash_or_nil(address_hash)
 

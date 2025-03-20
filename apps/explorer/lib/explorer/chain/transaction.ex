@@ -17,6 +17,7 @@ defmodule Explorer.Chain.Transaction.Schema do
     Hash,
     InternalTransaction,
     Log,
+    PendingTransactionOperation,
     SignedAuthorization,
     TokenTransfer,
     TransactionAction,
@@ -286,6 +287,8 @@ defmodule Explorer.Chain.Transaction.Schema do
           references: :hash
         )
 
+        has_one(:pending_operation, PendingTransactionOperation, foreign_key: :transaction_hash, references: :hash)
+
         unquote_splicing(@chain_type_fields)
       end
     end
@@ -323,7 +326,11 @@ defmodule Explorer.Chain.Transaction do
     Wei
   }
 
+  alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
+
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+
+  alias Explorer.Helper, as: ExplorerHelper
 
   alias Explorer.SmartContract.SigProviderInterface
 
@@ -1033,7 +1040,7 @@ defmodule Explorer.Chain.Transaction do
           parse_method_name(decoded_func)
 
         {:error, :contract_not_verified, []} ->
-          "0x" <> Base.encode16(method_id, case: :lower)
+          ExplorerHelper.add_0x_prefix(method_id)
 
         _ ->
           "Transfer"
@@ -1304,6 +1311,28 @@ defmodule Explorer.Chain.Transaction do
     from(
       t in Transaction,
       where: t.block_number == ^block_number
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transactions for the specified block_numbers
+  """
+  @spec transactions_for_block_numbers([non_neg_integer()]) :: Ecto.Query.t()
+  def transactions_for_block_numbers(block_numbers) do
+    from(
+      t in Transaction,
+      where: t.block_number in ^block_numbers
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transactions by hashes
+  """
+  @spec transactions_by_hashes([Hash.t()]) :: Ecto.Query.t()
+  def transactions_by_hashes(hashes) do
+    from(
+      t in Transaction,
+      where: t.hash in ^hashes
     )
   end
 
@@ -1644,7 +1673,7 @@ defmodule Explorer.Chain.Transaction do
   def fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, with_pending? \\ false) do
     __MODULE__
     |> order_for_transactions(with_pending?)
-    |> Chain.where_block_number_in_period(from_block, to_block)
+    |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
   end
 
@@ -1669,7 +1698,7 @@ defmodule Explorer.Chain.Transaction do
     query = from(transaction in __MODULE__)
 
     query
-    |> Chain.where_block_number_in_period(from_block, to_block)
+    |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
     |> SortingHelper.apply_sorting(sorting, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
   end
@@ -2112,7 +2141,7 @@ defmodule Explorer.Chain.Transaction do
         skip_sc_check?
       ) do
     if skip_sc_check? || Address.smart_contract?(to_address) do
-      "0x" <> Base.encode16(method_id, case: :lower)
+      ExplorerHelper.add_0x_prefix(method_id)
     else
       nil
     end

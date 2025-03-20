@@ -4,7 +4,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
     information associated with Arbitrum rollup batches.
   """
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1, log_info: 1]
   import Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper, only: [calculate_celestia_data_key: 2]
 
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
@@ -84,24 +84,27 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
 
     ## Parameters
     - A tuple containing:
-      - A list of DA records.
-      - A list of Batch-to-DA-record associations.
+      - A map of already prepared DA records
+      - A list of already prepared batch-to-blob associations
     - `da_info`: The Celestia blob descriptor struct containing details about the data blob.
 
     ## Returns
     - A tuple containing:
-      - An updated list of `DaMultiPurposeRecord` structures ready for import in the DB.
+      - An updated map of `DaMultiPurposeRecord` structures ready for import in the DB,
+        where `data_key` maps to the record
       - An updated list of `BatchToDaBlob` structures ready for import in the DB.
   """
   @spec prepare_for_import(
-          {[Arbitrum.DaMultiPurposeRecord.to_import()], [Arbitrum.BatchToDaBlob.to_import()]},
+          {%{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}, [Arbitrum.BatchToDaBlob.to_import()]},
           __MODULE__.t()
         ) ::
-          {[Arbitrum.DaMultiPurposeRecord.to_import()], [Arbitrum.BatchToDaBlob.to_import()]}
+          {%{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}, [Arbitrum.BatchToDaBlob.to_import()]}
   def prepare_for_import({da_records_acc, batch_to_blob_acc}, %__MODULE__{} = da_info) do
+    transaction_commitment_as_hex = ArbitrumHelper.bytes_to_hex_str(da_info.transaction_commitment)
+
     data = %{
       height: da_info.height,
-      transaction_commitment: ArbitrumHelper.bytes_to_hex_str(da_info.transaction_commitment),
+      transaction_commitment: transaction_commitment_as_hex,
       raw: ArbitrumHelper.bytes_to_hex_str(da_info.raw)
     }
 
@@ -122,6 +125,62 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
       data_blob_id: data_key
     }
 
-    {[da_record | da_records_acc], [batch_to_blob_record | batch_to_blob_acc]}
+    # Only add the DA record if it doesn't already exist in the map
+    updated_da_records =
+      if Map.has_key?(da_records_acc, data_key) do
+        log_info("Found duplicate DA record #{da_info.height}/#{transaction_commitment_as_hex}")
+        # Record with this data_key already exists, keep existing record
+        da_records_acc
+      else
+        # No duplicate, add the new record
+        Map.put(da_records_acc, data_key, da_record)
+      end
+
+    {updated_da_records, [batch_to_blob_record | batch_to_blob_acc]}
+  end
+
+  @doc """
+    Resolves conflicts between existing database records and candidate DA records.
+
+    This function handles deduplication by comparing Celestia data keys between database
+    records and candidate records. For Celestia records, if a record with a matching data_key
+    already exists in the database, the candidate record is excluded from import.
+
+    ## Parameters
+    - `db_records`: A list of `Arbitrum.DaMultiPurposeRecord` retrieved from the database
+    - `candidate_records`: A map where `data_key` maps to `Arbitrum.DaMultiPurposeRecord.to_import()`
+
+    ## Returns
+    - A list of `Arbitrum.DaMultiPurposeRecord.to_import()` after resolving conflicts
+  """
+  @spec resolve_conflict(
+          [Arbitrum.DaMultiPurposeRecord.t()],
+          %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}
+        ) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
+  # When no database records to check against, simply return all candidate records
+  def resolve_conflict([], candidate_records) do
+    Map.values(candidate_records)
+  end
+
+  def resolve_conflict(db_records, candidate_records) do
+    # Create a set of keys to exclude (those already present in DB)
+    keys_to_exclude =
+      Enum.reduce(db_records, MapSet.new(), fn db_record, acc ->
+        # Any key present in both DB and candidates should be excluded
+        if Map.has_key?(candidate_records, db_record.data_key) do
+          log_info(
+            "DA record #{db_record.data["height"]}/#{db_record.data["transaction_commitment"]} already exists in DB"
+          )
+
+          MapSet.put(acc, db_record.data_key)
+        else
+          acc
+        end
+      end)
+
+    # Return only candidate records not in the exclude set
+    candidate_records
+    |> Enum.reject(fn {data_key, _record} -> MapSet.member?(keys_to_exclude, data_key) end)
+    |> Enum.map(fn {_data_key, record} -> record end)
   end
 end

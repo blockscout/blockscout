@@ -13,6 +13,8 @@ defmodule Explorer.Chain.BlockNumberHelper do
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
+  alias EthereumJSONRPC.Utility.RangesHelper
+
   @doc """
     Returns the previous block number in the blockchain sequence.
 
@@ -83,7 +85,7 @@ defmodule Explorer.Chain.BlockNumberHelper do
     Moves block number by one in the specified direction.
 
     When moving backward from the configured minimum possible blockchain block number
-    (set in :indexer, :first_block), returns that minimum block number to maintain
+    (set in :indexer, :block_ranges), returns that minimum block number to maintain
     the lower boundary. Callers implementing block traversal loops must explicitly check
     for the minimum block number to prevent infinite loops, as moving backward from the
     minimum block will continuously return the same number.
@@ -111,7 +113,7 @@ defmodule Explorer.Chain.BlockNumberHelper do
   """
   @spec move_by_one(non_neg_integer(), :previous | :next) :: non_neg_integer()
   def move_by_one(number, direction) do
-    min_block = Application.get_env(:indexer, :first_block)
+    min_block = RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
     case {number, direction} do
       {n, :previous} when n <= min_block -> min_block

@@ -15,6 +15,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
 
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
+    DaMultiPurposeRecord,
     L1Batch,
     LifecycleTransaction
   }
@@ -479,5 +480,62 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
       )
 
     Repo.one(query, timeout: :infinity)
+  end
+
+  @doc """
+    Retrieves the L1 block number where the confirmation transaction for a specific rollup block was included.
+
+    ## Parameters
+    - `rollup_block_number`: The number of the rollup block for which to find the confirmation L1 block.
+
+    ## Returns
+    - `{:ok, block_number}` if the rollup block is confirmed and the confirmation transaction is indexed
+    - `{:not_confirmed, nil}` if the rollup block is not confirmed yet or not found
+    - `{:error, :inconsistent}` if there is a database inconsistency (confirmation transaction association is broken)
+  """
+  @spec l1_block_of_confirmation_for_rollup_block(FullBlock.block_number()) ::
+          {:ok, FullBlock.block_number()}
+          | {:not_confirmed, nil}
+          | {:error, :inconsistent}
+  def l1_block_of_confirmation_for_rollup_block(rollup_block_number)
+      when is_integer(rollup_block_number) and rollup_block_number >= 0 do
+    base_query =
+      from(
+        rb in BatchBlock,
+        where: rb.block_number == ^rollup_block_number and not is_nil(rb.confirmation_id)
+      )
+
+    case base_query
+         |> Chain.join_associations(%{:confirmation_transaction => :required})
+         |> Repo.one(timeout: :infinity) do
+      nil ->
+        {:not_confirmed, nil}
+
+      block ->
+        case block.confirmation_transaction do
+          nil -> {:error, :inconsistent}
+          %Ecto.Association.NotLoaded{} -> {:error, :inconsistent}
+          confirmation_transaction -> {:ok, confirmation_transaction.block_number}
+        end
+    end
+  end
+
+  @doc """
+    Retrieves data availability records from the database for the given list of data keys.
+
+    ## Parameters
+    - `data_keys`: A list of binary data keys to search for in the database.
+
+    ## Returns
+    - A list of matching `DaMultiPurposeRecord` records, or an empty list if no matches are found.
+  """
+  @spec da_records_by_keys([binary()]) :: [DaMultiPurposeRecord.t()]
+  def da_records_by_keys(data_keys) when is_list(data_keys) do
+    query =
+      from(record in DaMultiPurposeRecord,
+        where: record.data_key in ^data_keys
+      )
+
+    Repo.all(query)
   end
 end

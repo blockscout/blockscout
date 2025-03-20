@@ -240,6 +240,7 @@ exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
 
 config :explorer,
   mode: app_mode,
+  ecto_repos: ConfigHelper.repos(),
   coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
   coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
   allowed_solidity_evm_versions:
@@ -286,6 +287,7 @@ precompiled_config_default_path =
 
 config :explorer, Explorer.ChainSpec.GenesisData,
   chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
+  genesis_processing_delay: ConfigHelper.parse_time_env_var("CHAIN_SPEC_PROCESSING_DELAY", "15s"),
   emission_format: System.get_env("EMISSION_FORMAT", "DEFAULT"),
   rewards_contract_address: System.get_env("REWARDS_CONTRACT", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5"),
   precompiled_config_path: System.get_env("PRECOMPILED_CONTRACTS_CONFIG_PATH", precompiled_config_default_path)
@@ -495,6 +497,8 @@ config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
+config :explorer, :celo, l2_migration_block: ConfigHelper.parse_integer_or_nil_env_var("CELO_L2_MIGRATION_BLOCK")
+
 config :explorer, Explorer.Chain.Cache.CeloCoreContracts,
   contracts: ConfigHelper.parse_json_env_var("CELO_CORE_CONTRACTS")
 
@@ -670,6 +674,10 @@ config :explorer, Explorer.Migrator.SanitizeVerifiedAddresses,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_CONCURRENCY", 1),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_TIMEOUT", "0s")
 
+config :explorer, Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EMPTY_CONTRACT_CODE_ADDRESSES_BATCH_SIZE", 500),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EMPTY_CONTRACT_CODE_ADDRESSES_CONCURRENCY", 1)
+
 config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
   enabled: ConfigHelper.chain_type() == :arbitrum,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_ARBITRUM_DA_RECORDS_NORMALIZATION_BATCH_SIZE", 500),
@@ -684,6 +692,11 @@ config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_CONCURRENCY", 10)
+
+config :explorer, Explorer.Migrator.SmartContractLanguage,
+  enabled: !ConfigHelper.parse_bool_env_var("MIGRATION_SMART_CONTRACT_LANGUAGE_DISABLED"),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SMART_CONTRACT_LANGUAGE_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SMART_CONTRACT_LANGUAGE_CONCURRENCY", 1)
 
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
@@ -722,6 +735,9 @@ config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
 ###############
 
 first_block = ConfigHelper.parse_integer_env_var("FIRST_BLOCK", 0)
+last_block = ConfigHelper.parse_integer_or_nil_env_var("LAST_BLOCK")
+
+block_ranges = ConfigHelper.safe_get_env("BLOCK_RANGES", "#{first_block}..#{last_block || "latest"}")
 
 trace_first_block = ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0)
 trace_last_block = ConfigHelper.parse_integer_or_nil_env_var("TRACE_LAST_BLOCK")
@@ -735,9 +751,9 @@ trace_block_ranges =
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
   metadata_updater_milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_METADATA_UPDATE_INTERVAL", "48h"),
-  block_ranges: System.get_env("BLOCK_RANGES"),
+  block_ranges: block_ranges,
   first_block: first_block,
-  last_block: ConfigHelper.parse_integer_or_nil_env_var("LAST_BLOCK"),
+  last_block: last_block,
   trace_block_ranges: trace_block_ranges,
   trace_first_block: trace_first_block,
   trace_last_block: trace_last_block,

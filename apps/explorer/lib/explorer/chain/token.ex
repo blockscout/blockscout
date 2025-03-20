@@ -1,10 +1,10 @@
 defmodule Explorer.Chain.Token.Schema do
   @moduledoc false
-  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias Explorer.Chain.{Address, Hash}
 
-  if @bridged_token_enabled do
+  if @bridged_tokens_enabled do
     @bridged_field [
       quote do
         field(:bridged, :boolean)
@@ -439,5 +439,29 @@ defmodule Explorer.Chain.Token do
   def token_by_contract_address_hash_query(contract_address_hash) do
     __MODULE__
     |> where([token], token.contract_address_hash == ^contract_address_hash)
+  end
+
+  @doc """
+  Checks if a token with the given contract address hash exists.
+
+  ## Parameters
+
+    - hash: The contract address hash to check for.
+    - options: Options to select the repository.
+
+  ## Returns
+
+  - `true` if a token with the given contract address hash exists.
+  - `false` otherwise.
+  """
+  @spec by_contract_address_hash_exists?(Hash.Address.t() | String.t(), [Chain.api?()]) :: boolean()
+  def by_contract_address_hash_exists?(hash, options) do
+    query =
+      from(
+        t in __MODULE__,
+        where: t.contract_address_hash == ^hash
+      )
+
+    Chain.select_repo(options).exists?(query)
   end
 end

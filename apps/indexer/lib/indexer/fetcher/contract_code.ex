@@ -10,9 +10,15 @@ defmodule Indexer.Fetcher.ContractCode do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
+  import Explorer.Chain.Transaction.Reader,
+    only: [
+      transaction_with_unfetched_created_contract_code?: 1,
+      stream_transactions_with_unfetched_created_contract_code: 4
+    ]
+
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Hash}
+  alias Explorer.Chain.{Address, Block, Hash, Transaction}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
   alias Indexer.{BufferedTask, Tracer}
@@ -20,7 +26,7 @@ defmodule Indexer.Fetcher.ContractCode do
   alias Indexer.Fetcher.Zilliqa.ScillaSmartContracts, as: ZilliqaScillaSmartContractsFetcher
   alias Indexer.Transform.Addresses
 
-  @transaction_fields ~w(block_number created_contract_address_hash hash type)a
+  @transaction_fields ~w(block_number created_contract_address_hash hash type status)a
   @failed_to_import "failed to import created_contract_code for transactions: "
 
   @typedoc """
@@ -37,7 +43,8 @@ defmodule Indexer.Fetcher.ContractCode do
           required(:block_number) => Block.block_number(),
           required(:created_contract_address_hash) => Hash.Full.t(),
           required(:hash) => Hash.Full.t(),
-          required(:type) => integer()
+          required(:type) => integer(),
+          required(:status) => atom()
         }
 
   @behaviour BufferedTask
@@ -52,11 +59,17 @@ defmodule Indexer.Fetcher.ContractCode do
     metadata: [fetcher: :code]
   ]
 
-  @spec async_fetch([entry()], boolean(), integer()) :: :ok
-  def async_fetch(transactions_fields, realtime?, timeout \\ 5000) when is_list(transactions_fields) do
+  @spec async_fetch([Transaction.t()], boolean(), integer()) :: :ok
+  def async_fetch(transactions, realtime?, timeout \\ 5000) when is_list(transactions) do
+    transaction_fields =
+      transactions
+      |> Enum.filter(&transaction_with_unfetched_created_contract_code?(&1))
+      |> Enum.map(&Map.take(&1, @transaction_fields))
+      |> Enum.uniq()
+
     BufferedTask.buffer(
       __MODULE__,
-      transactions_fields |> Enum.uniq(),
+      transaction_fields,
       realtime?,
       timeout
     )
@@ -85,7 +98,7 @@ defmodule Indexer.Fetcher.ContractCode do
     stream_reducer = RangesHelper.stream_reducer_traceable(reducer)
 
     {:ok, final} =
-      Chain.stream_transactions_with_unfetched_created_contract_codes(
+      stream_transactions_with_unfetched_created_contract_code(
         @transaction_fields,
         initial,
         stream_reducer,
@@ -126,6 +139,48 @@ defmodule Indexer.Fetcher.ContractCode do
   def run(entries, json_rpc_named_arguments) do
     Logger.debug("fetching created_contract_code for transactions")
 
+    {succeeded, failed} =
+      Enum.reduce(entries, {[], []}, fn entry, {succeeded, failed} ->
+        if entry.status == :ok do
+          {[entry | succeeded], failed}
+        else
+          {succeeded, [entry | failed]}
+        end
+      end)
+
+    failed_addresses_params =
+      Enum.map(
+        failed,
+        &%{
+          hash: &1.created_contract_address_hash,
+          contract_code: "0x"
+        }
+      )
+
+    with {:ok, succeeded_addresses_params} <- fetch_contract_codes(succeeded, json_rpc_named_arguments),
+         {:ok, balance_addresses_params} <-
+           fetch_balances(succeeded, json_rpc_named_arguments),
+         all_addresses_params =
+           Addresses.merge_addresses(succeeded_addresses_params ++ balance_addresses_params) ++ failed_addresses_params,
+         {:ok, addresses} <- import_addresses(all_addresses_params) do
+      zilliqa_verify_scilla_contracts(succeeded, addresses)
+      :ok
+    else
+      {:error, reason} ->
+        Logger.error(fn -> ["failed to fetch contract codes: ", inspect(reason)] end,
+          error_count: Enum.count(entries)
+        )
+
+        {:retry, entries}
+    end
+  end
+
+  @spec fetch_contract_codes([entry()], keyword()) ::
+          {:ok, [Address.t()]} | {:error, any()}
+  defp fetch_contract_codes([], _json_rpc_named_arguments),
+    do: {:ok, []}
+
+  defp fetch_contract_codes(entries, json_rpc_named_arguments) do
     entries
     |> RangesHelper.filter_traceable_block_numbers()
     |> Enum.map(
@@ -136,30 +191,22 @@ defmodule Indexer.Fetcher.ContractCode do
     )
     |> EthereumJSONRPC.fetch_codes(json_rpc_named_arguments)
     |> case do
-      {:ok, create_address_codes} ->
-        addresses_params = Addresses.extract_addresses(%{codes: create_address_codes.params_list})
+      {:ok, %{params_list: params, errors: []}} ->
+        code_addresses_params = Addresses.extract_addresses(%{codes: params})
+        {:ok, code_addresses_params}
 
-        import_with_balances(addresses_params, entries, json_rpc_named_arguments)
-
-      {:error, reason} ->
-        Logger.error(fn -> ["failed to fetch contract codes: ", inspect(reason)] end,
-          error_count: Enum.count(entries)
-        )
-
-        {:retry, entries}
+      error ->
+        error
     end
   end
 
-  # Imports addresses and their balances for a set of transactions specified
-  # through `entries`, updating balances of existing addresses. Triggers
-  # insertion of Scilla smart contracts for Zilliqa.
-  @spec import_with_balances([Address.t()], [entry()], [
-          {:throttle_timeout, non_neg_integer()}
-          | {:transport, atom()}
-          | {:transport_options, any()}
-          | {:variant, atom()}
-        ]) :: :ok | {:retry, [entry()]}
-  defp import_with_balances(addresses_params, entries, json_rpc_named_arguments) do
+  # Fetches balances only for entries
+  @spec fetch_balances([entry()], keyword()) ::
+          {:ok, [Address.t()]} | {:error, any()}
+  defp fetch_balances([], _json_rpc_named_arguments),
+    do: {:ok, []}
+
+  defp fetch_balances(entries, json_rpc_named_arguments) do
     entries
     |> Enum.map(
       &%{
@@ -171,48 +218,51 @@ defmodule Indexer.Fetcher.ContractCode do
     |> case do
       {:ok, fetched_balances} ->
         balance_addresses_params = CoinBalanceHelper.balances_params_to_address_params(fetched_balances.params_list)
-
-        merged_addresses_params = Addresses.merge_addresses(addresses_params ++ balance_addresses_params)
-
-        case Chain.import(%{
-               addresses: %{params: merged_addresses_params},
-               timeout: :infinity
-             }) do
-          {:ok, %{addresses: addresses}} ->
-            Accounts.drop(addresses)
-            zilliqa_verify_scilla_contracts(entries, addresses)
-            :ok
-
-          {:error, step, reason, _changes_so_far} ->
-            Logger.error(
-              fn ->
-                [
-                  @failed_to_import,
-                  inspect(reason)
-                ]
-              end,
-              step: step
-            )
-
-            {:retry, entries}
-
-          {:error, reason} ->
-            Logger.error(fn ->
-              [
-                @failed_to_import,
-                inspect(reason)
-              ]
-            end)
-
-            {:retry, entries}
-        end
+        {:ok, balance_addresses_params}
 
       {:error, reason} ->
-        Logger.error(fn -> ["failed to fetch contract codes: ", inspect(reason)] end,
+        Logger.error(fn -> ["failed to fetch contract balances: ", inspect(reason)] end,
           error_count: Enum.count(entries)
         )
 
-        {:retry, entries}
+        {:error, reason}
+    end
+  end
+
+  # Imports addresses into the database
+  @spec import_addresses([Address.t()]) ::
+          {:ok, [Address.t()]} | {:error, any()}
+  defp import_addresses(addresses_params) do
+    case Chain.import(%{
+           addresses: %{params: addresses_params},
+           timeout: :infinity
+         }) do
+      {:ok, %{addresses: addresses}} ->
+        Accounts.drop(addresses)
+        {:ok, addresses}
+
+      {:error, step, reason, _changes_so_far} ->
+        Logger.error(
+          fn ->
+            [
+              @failed_to_import,
+              inspect(reason)
+            ]
+          end,
+          step: step
+        )
+
+        {:error, reason}
+
+      {:error, reason} ->
+        Logger.error(fn ->
+          [
+            @failed_to_import,
+            inspect(reason)
+          ]
+        end)
+
+        {:error, reason}
     end
   end
 

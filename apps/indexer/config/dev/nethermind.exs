@@ -18,9 +18,9 @@ config :indexer,
     else: EthereumJSONRPC.IPC,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
-      urls: ConfigHelper.parse_urls_list(:http, "http://localhost:8545"),
-      trace_urls: ConfigHelper.parse_urls_list(:trace, "http://localhost:8545"),
-      eth_call_urls: ConfigHelper.parse_urls_list(:eth_call, "http://localhost:8545"),
+      urls: ConfigHelper.parse_urls_list(:http),
+      trace_urls: ConfigHelper.parse_urls_list(:trace),
+      eth_call_urls: ConfigHelper.parse_urls_list(:eth_call),
       fallback_urls: ConfigHelper.parse_urls_list(:fallback_http),
       fallback_trace_urls: ConfigHelper.parse_urls_list(:fallback_trace),
       fallback_eth_call_urls: ConfigHelper.parse_urls_list(:fallback_eth_call),
@@ -35,23 +35,6 @@ config :indexer,
     ],
     variant: EthereumJSONRPC.Nethermind
   ],
-  # Example configuration to override json_rpc_named_arguments for just the realtime block fetcher
-  # realtime_overrides: [
-  #   json_rpc_named_arguments: [
-  #     transport: EthereumJSONRPC.HTTP,
-  #     transport_options: [
-  #       http: EthereumJSONRPC.HTTP.HTTPoison,
-  #       url: System.get_env("ETHEREUM_JSONRPC_REALTIME_HTTP_URL") || "http://localhost:8545",
-  #       method_to_url: [
-  #         eth_getBalance: System.get_env("ETHEREUM_JSONRPC_REALTIME_TRACE_URL") || "http://localhost:8545",
-  #         trace_block: System.get_env("ETHEREUM_JSONRPC_REALTIME_TRACE_URL") || "http://localhost:8545",
-  #         trace_replayTransaction: System.get_env("ETHEREUM_JSONRPC_REALTIME_TRACE_URL") || "http://localhost:8545"
-  #       ],
-  #       http_options: [recv_timeout: :timer.minutes(1), timeout: :timer.minutes(1), hackney: hackney_opts]
-  #     ],
-  #     variant: EthereumJSONRPC.Nethermind
-  #   ]
-  # ],
   subscribe_named_arguments: [
     transport:
       System.get_env("ETHEREUM_JSONRPC_WS_URL") && System.get_env("ETHEREUM_JSONRPC_WS_URL") !== "" &&

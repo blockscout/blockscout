@@ -12,7 +12,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
   alias Explorer.Chain.{Log, TokenTransfer}
   alias Explorer.Chain.Token.Instance
   alias Explorer.Migrator.FillingMigration
-  alias Explorer.Repo
+  alias Explorer.{QueryHelper, Repo}
 
   require Logger
 
@@ -91,13 +91,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
       Log
       |> where(
         [log],
-        fragment(
-          "(?, ?, ?) = ANY(?::log_id[])",
-          log.transaction_hash,
-          log.block_hash,
-          log.index,
-          ^prepared_ids
-        )
+        ^QueryHelper.tuple_in([:transaction_hash, :block_hash, :index], prepared_ids)
       )
       |> Repo.delete_all(timeout: :infinity)
 
@@ -105,13 +99,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
         TokenTransfer
         |> where(
           [token_transfer],
-          fragment(
-            "(?, ?, ?) = ANY(?::log_id[])",
-            token_transfer.transaction_hash,
-            token_transfer.block_hash,
-            token_transfer.log_index,
-            ^prepared_ids
-          )
+          ^QueryHelper.tuple_in([:transaction_hash, :block_hash, :log_index], prepared_ids)
         )
         |> select([token_transfer], token_transfer)
         |> Repo.delete_all(timeout: :infinity)
@@ -158,12 +146,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
       Instance
       |> where(
         [nft],
-        fragment(
-          "(?, ?) = ANY(?::nft_id[])",
-          nft.owner_updated_at_block,
-          nft.owner_updated_at_log_index,
-          ^nft_instances_params
-        )
+        ^QueryHelper.tuple_in([:owner_updated_at_block, :owner_updated_at_log_index], nft_instances_params)
       )
       |> Repo.all(timeout: :infinity)
       |> Enum.map(fn nft ->

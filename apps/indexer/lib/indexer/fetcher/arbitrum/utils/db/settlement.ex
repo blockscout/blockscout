@@ -482,9 +482,66 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
     not Enum.empty?(Reader.get_anytrust_keyset(keyset_hash))
   end
 
+  @doc """
+    Retrieves data availability records from the database for the given list of data keys.
+
+    ## Parameters
+    - `data_keys`: A list of binary data keys to search for in the database.
+
+    ## Returns
+    - A list of matching `DaMultiPurposeRecord` records in import format, or an empty list if no matches are found.
+  """
+  @spec da_records_by_keys([binary()]) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
+  def da_records_by_keys(data_keys) when is_list(data_keys) do
+    data_keys
+    |> Reader.da_records_by_keys()
+    |> Enum.map(&da_record_to_import_format/1)
+  end
+
+  # Transforms a DaMultiPurposeRecord database record to import format
+  @spec da_record_to_import_format(Arbitrum.DaMultiPurposeRecord.t()) :: Arbitrum.DaMultiPurposeRecord.to_import()
+  defp da_record_to_import_format(record) do
+    # Extract required fields
+    required_keys = [:data_type, :data_key, :batch_number]
+
+    # Create base map with required fields
+    import_format = DbTools.db_record_to_map(required_keys, record)
+
+    # Handle the data field separately to ensure it remains as a map
+    data =
+      case record.data do
+        nil -> nil
+        %{} = data_map -> data_map
+        # Convert any other format to map if needed
+        other -> other
+      end
+
+    # Add the data field to the result
+    Map.put(import_format, :data, data)
+  end
+
   @spec rollup_block_to_map(Arbitrum.BatchBlock.t()) :: Arbitrum.BatchBlock.to_import()
   defp rollup_block_to_map(block) do
     [:batch_number, :block_number, :confirmation_id]
     |> DbTools.db_record_to_map(block)
+  end
+
+  @doc """
+    Retrieves the L1 block number where the confirmation transaction for a specific rollup block was included.
+
+    ## Parameters
+    - `rollup_block_number`: The number of the rollup block for which to find the confirmation L1 block.
+
+    ## Returns
+    - The L1 block number if the rollup block is confirmed and the confirmation transaction is indexed;
+      `nil` otherwise.
+  """
+  @spec l1_block_of_confirmation_for_rollup_block(FullBlock.block_number()) :: FullBlock.block_number() | nil
+  def l1_block_of_confirmation_for_rollup_block(rollup_block_number)
+      when is_integer(rollup_block_number) and rollup_block_number >= 0 do
+    case Reader.l1_block_of_confirmation_for_rollup_block(rollup_block_number) do
+      {:ok, block_number} -> block_number
+      _ -> nil
+    end
   end
 end

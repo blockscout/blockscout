@@ -73,8 +73,7 @@ defmodule Explorer.Chain.Search do
            |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
            |> union_all(
              ^(address_hash
-               |> search_address_by_address_hash_query()
-               |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options))
+               |> search_address_by_address_hash_query())
            )
            |> select_repo(options).all(), nil}
 
@@ -315,8 +314,7 @@ defmodule Explorer.Chain.Search do
             |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
             |> union_all(
               ^(address_hash
-                |> search_address_by_address_hash_query()
-                |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options))
+                |> search_address_by_address_hash_query())
             )
             |> select_repo(options).all()
           ]
@@ -894,7 +892,6 @@ defmodule Explorer.Chain.Search do
         [
           address_hash
           |> search_address_by_address_hash_query()
-          |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
           |> select_repo(options).all()
           |> merge_address_search_result_with_ens_info(ens_result)
         ]

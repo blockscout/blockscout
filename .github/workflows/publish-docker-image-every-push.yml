@@ -11,7 +11,7 @@ on:
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
-  RELEASE_VERSION: 7.0.0
+  RELEASE_VERSION: 7.0.2
 
 jobs:
   push_to_registry:
@@ -136,7 +136,3 @@ jobs:
           ref: main
           wait_interval: 30
           client_payload: '{ "instance": "dev", "globalEnv": "e2e"}'
-  test:
-    needs: deploy_e2e
-    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
-    secrets: inherit

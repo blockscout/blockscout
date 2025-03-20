@@ -14,7 +14,6 @@ defmodule EthereumJSONRPC.Zilliqa do
           zilliqa_nested_quorum_certificates_params: [NestedQuorumCertificates.params()]
         }
 
-  @type bit_vector :: String.t()
   @type validator_index :: non_neg_integer()
   @type signers :: [validator_index()]
 end

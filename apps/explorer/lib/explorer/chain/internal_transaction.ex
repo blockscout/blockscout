@@ -841,6 +841,7 @@ defmodule Explorer.Chain.InternalTransaction do
         __MODULE__
         |> where_nonpending_block()
         |> Chain.page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
+        |> where_internal_transactions_by_transaction_hash(Keyword.get(options, :transaction_hash))
         |> order_by([internal_transaction],
           desc: internal_transaction.block_number,
           desc: internal_transaction.transaction_index,
@@ -861,5 +862,12 @@ defmodule Explorer.Chain.InternalTransaction do
 
   def internal_transaction_to_block_paging_options(%__MODULE__{block_index: block_index}) do
     %{"block_index" => block_index}
+  end
+
+  defp where_internal_transactions_by_transaction_hash(query, nil), do: query
+
+  defp where_internal_transactions_by_transaction_hash(query, transaction_hash) do
+    query
+    |> where([internal_transaction], internal_transaction.transaction_hash == ^transaction_hash)
   end
 end
