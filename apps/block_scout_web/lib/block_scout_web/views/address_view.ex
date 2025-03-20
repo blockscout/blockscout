@@ -189,7 +189,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def primary_name(%Address{names: _} = address) do
-    with false <- is_nil(address.contract_code),
+    with true <- Address.smart_contract_with_nonempty_code?(address),
          bytecode_twin <- SmartContract.get_verified_bytecode_twin_contract(address),
          false <- is_nil(bytecode_twin) do
       bytecode_twin.name
@@ -233,12 +233,6 @@ defmodule BlockScoutWeb.AddressView do
     |> QRCode.to_png()
     |> Base.encode64()
   end
-
-  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
-
-  def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
-
-  def smart_contract_verified?(%Address{smart_contract: nil}), do: false
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
     Enum.any?(address.smart_contract.abi || [], &read_function?(&1))
@@ -285,20 +279,20 @@ defmodule BlockScoutWeb.AddressView do
     "#{String.slice(string_hash, 0..21)}..."
   end
 
-  def transaction_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction.transaction_hash
+  def transaction_hash(%Address{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contract_creation_internal_transaction.transaction_hash
   end
 
-  def transaction_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
-    address.contracts_creation_transaction.hash
+  def transaction_hash(%Address{contract_creation_transaction: %Transaction{}} = address) do
+    address.contract_creation_transaction.hash
   end
 
-  def from_address_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction.from_address_hash
+  def from_address_hash(%Address{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contract_creation_internal_transaction.from_address_hash
   end
 
-  def from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
-    address.contracts_creation_transaction.from_address_hash
+  def from_address_hash(%Address{contract_creation_transaction: %Transaction{}} = address) do
+    address.contract_creation_transaction.from_address_hash
   end
 
   def from_address_hash(_address), do: nil
@@ -438,7 +432,7 @@ defmodule BlockScoutWeb.AddressView do
 
   def address_page_title(address) do
     cond do
-      smart_contract_verified?(address) -> "#{address.smart_contract.name} (#{to_string(address)})"
+      APIV2Helper.smart_contract_verified?(address) -> "#{address.smart_contract.name} (#{to_string(address)})"
       Address.smart_contract?(address) -> "Contract #{to_string(address)}"
       true -> "#{to_string(address)}"
     end

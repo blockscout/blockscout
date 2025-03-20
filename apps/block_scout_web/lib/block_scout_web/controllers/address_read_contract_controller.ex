@@ -21,11 +21,11 @@ defmodule BlockScoutWeb.AddressReadContractController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     address_options = [
       necessity_by_association: %{
-        :contracts_creation_internal_transaction => :optional,
         :names => :optional,
         :smart_contract => :optional,
         :token => :optional,
-        :contracts_creation_transaction => :optional
+        Address.contract_creation_transaction_association() => :optional,
+        Address.contract_creation_internal_transaction_association() => :optional
       }
     ]
 

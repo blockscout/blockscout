@@ -931,11 +931,11 @@ defmodule Explorer.Chain do
         hash,
         options \\ [
           necessity_by_association: %{
-            :contracts_creation_internal_transaction => :optional,
             :names => :optional,
             :smart_contract => :optional,
             :token => :optional,
-            :contracts_creation_transaction => :optional
+            Address.contract_creation_transaction_association() => :optional,
+            Address.contract_creation_internal_transaction_association() => :optional
           }
         ],
         query_decompiled_code_flag \\ false
@@ -1034,11 +1034,15 @@ defmodule Explorer.Chain do
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
         options \\ [
           necessity_by_association: %{
-            :contracts_creation_internal_transaction => :optional,
             :names => :optional,
             :smart_contract => :optional,
             :token => :optional,
-            :contracts_creation_transaction => :optional
+            [
+              contract_creation_transaction: Address.contract_creation_transaction_preload_query()
+            ] => :optional,
+            [
+              contract_creation_internal_transaction: Address.contract_creation_internal_transaction_preload_query()
+            ] => :optional
           }
         ],
         query_decompiled_code_flag \\ true
@@ -1199,52 +1203,32 @@ defmodule Explorer.Chain do
   end
 
   defp update_address_result(address_result, options, decoding_from_list?) do
+    if address_result do
+      LookUpSmartContractSourcesOnDemand.trigger_fetch(
+        to_string(address_result.hash),
+        address_result.contract_code,
+        (address_result && address_result.smart_contract) || nil
+      )
+    end
+
     case address_result do
       %{smart_contract: smart_contract} ->
         if smart_contract do
           CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
 
-          LookUpSmartContractSourcesOnDemand.trigger_fetch(
-            to_string(address_result.hash),
-            address_result.contract_code,
-            smart_contract
-          )
-
           SmartContract.check_and_update_constructor_args(address_result)
         else
-          LookUpSmartContractSourcesOnDemand.trigger_fetch(
-            to_string(address_result.hash),
-            address_result.contract_code,
-            nil
-          )
-
           # credo:disable-for-next-line
           if decoding_from_list? do
             address_result
           else
-            add_bytecode_twin_to_result(address_result, options)
+            SmartContract.compose_address_for_unverified_smart_contract(address_result, options)
           end
         end
 
       _ ->
-        if address_result do
-          LookUpSmartContractSourcesOnDemand.trigger_fetch(
-            to_string(address_result.hash),
-            address_result.contract_code,
-            nil
-          )
-        end
-
         address_result
     end
-  end
-
-  defp add_bytecode_twin_to_result(address_result, options) do
-    address_verified_bytecode_twin_contract =
-      SmartContract.get_address_verified_bytecode_twin_contract(address_result.hash, options).verified_contract
-
-    address_result
-    |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, address_result.hash)
   end
 
   @spec find_decompiled_contract_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
@@ -1253,11 +1237,11 @@ defmodule Explorer.Chain do
       from(
         address in Address,
         preload: [
-          :contracts_creation_internal_transaction,
+          :contract_creation_internal_transaction,
           :names,
           :smart_contract,
           :token,
-          :contracts_creation_transaction,
+          :contract_creation_transaction,
           :decompiled_smart_contracts
         ],
         where: address.hash == ^hash
@@ -3229,7 +3213,7 @@ defmodule Explorer.Chain do
       from(
         address in Address,
         where: address.hash == ^address_hash,
-        preload: [:contracts_creation_internal_transaction, :contracts_creation_transaction]
+        preload: ^Address.contract_creation_transaction_associations()
       )
 
     contract_address = Repo.one(query)
@@ -3239,8 +3223,8 @@ defmodule Explorer.Chain do
 
   # credo:disable-for-next-line /Complexity/
   defp contract_creation_input_data_from_address(address) do
-    internal_transaction = address && address.contracts_creation_internal_transaction
-    transaction = address && address.contracts_creation_transaction
+    internal_transaction = address && address.contract_creation_internal_transaction
+    transaction = address && address.contract_creation_transaction
 
     cond do
       is_nil(address) ->

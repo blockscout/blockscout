@@ -87,21 +87,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     api?: true
   ]
 
-  case @chain_type do
-    :filecoin ->
-      @contract_address_preloads [
-        :smart_contract,
-        [contracts_creation_internal_transaction: :from_address],
-        [contracts_creation_transaction: :from_address]
-      ]
-
-    _ ->
-      @contract_address_preloads [
-        :smart_contract,
-        :contracts_creation_internal_transaction,
-        :contracts_creation_transaction
-      ]
-  end
+  @contract_address_preloads [
+    :smart_contract | Address.contract_creation_transaction_associations()
+  ]
 
   @nft_necessity_by_association [
     necessity_by_association: %{
