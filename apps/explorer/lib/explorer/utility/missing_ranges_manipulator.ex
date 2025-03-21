@@ -20,12 +20,12 @@ defmodule Explorer.Utility.MissingRangesManipulator do
     GenServer.call(__MODULE__, {:clear_batch, batch}, timeout(batch))
   end
 
-  def save_batch(batch) do
-    GenServer.call(__MODULE__, {:save_batch, batch}, timeout(batch))
+  def save_batch(batch, priority \\ nil) do
+    GenServer.call(__MODULE__, {:save_batch, batch, priority}, timeout(batch))
   end
 
-  def add_ranges_by_block_numbers(numbers) do
-    GenServer.cast(__MODULE__, {:add_ranges_by_block_numbers, numbers})
+  def add_ranges_by_block_numbers(numbers, priority \\ nil) do
+    GenServer.cast(__MODULE__, {:add_ranges_by_block_numbers, numbers, priority})
   end
 
   @impl true
@@ -42,13 +42,13 @@ defmodule Explorer.Utility.MissingRangesManipulator do
     {:reply, MissingBlockRange.clear_batch(batch), state}
   end
 
-  def handle_call({:save_batch, batch}, _from, state) do
-    {:reply, MissingBlockRange.save_batch(batch), state}
+  def handle_call({:save_batch, batch, priority}, _from, state) do
+    {:reply, MissingBlockRange.save_batch(batch, priority), state}
   end
 
   @impl true
-  def handle_cast({:add_ranges_by_block_numbers, numbers}, state) do
-    MissingBlockRange.add_ranges_by_block_numbers(numbers)
+  def handle_cast({:add_ranges_by_block_numbers, numbers, priority}, state) do
+    MissingBlockRange.add_ranges_by_block_numbers(numbers, priority)
 
     {:noreply, state}
   end
