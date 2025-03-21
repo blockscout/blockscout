@@ -17,6 +17,8 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
   alias Plug.Conn
 
+  import BlockScoutWeb.Chain, only: [fetch_scam_token_toggle: 2]
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @api_true [api?: true]
@@ -77,7 +79,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       filter_value = Map.get(params, "filter_value")
 
       address_hash
-      |> csv_export_module.export(from_period, to_period, filter_type, filter_value)
+      |> csv_export_module.export(from_period, to_period, fetch_scam_token_toggle([], conn), filter_type, filter_value)
       |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
         case Conn.chunk(conn, chunk) do
           {:ok, conn} ->
