@@ -116,8 +116,14 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
       "data_availability" => %{
         "batch_data_container" => batch.container
       },
+      "start_block_number" => batch.l2_block_range.from,
+      "end_block_number" => batch.l2_block_range.to,
+      # todo: It should be removed in favour `start_block_number` property with the next release after 8.0.0
       "start_block" => batch.l2_block_range.from,
+      # todo: It should be removed in favour `end_block_number` property with the next release after 8.0.0
       "end_block" => batch.l2_block_range.to,
+      "transactions_count" => transaction_count,
+      # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
       "transaction_count" => transaction_count
     }
   end
