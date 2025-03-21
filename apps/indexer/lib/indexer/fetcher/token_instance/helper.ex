@@ -292,7 +292,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   defp upsert_with_rescue(insert_params, retrying? \\ false) do
     insert_params
     |> Instance.batch_upsert_token_instances()
-    |> Enum.map(&Queue.process_new_instance({:ok, &1}))
+    |> Queue.process_new_instances()
   rescue
     error in Postgrex.Error ->
       if retrying? do
