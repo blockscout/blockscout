@@ -200,10 +200,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   defp get_address(address_hash) do
     case Chain.hash_to_address(
            address_hash,
-           [
-             necessity_by_association: %{:smart_contract => :optional, proxy_implementations_association() => :optional}
-           ],
-           false
+           necessity_by_association: %{:smart_contract => :optional, proxy_implementations_association() => :optional}
          ) do
       {:ok, address} -> address
       _ -> nil

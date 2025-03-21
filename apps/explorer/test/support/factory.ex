@@ -36,7 +36,6 @@ defmodule Explorer.Factory do
     Block,
     ContractMethod,
     Data,
-    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     Log,
@@ -1034,16 +1033,6 @@ defmodule Explorer.Factory do
 
   def unique_smart_contract_factory do
     Map.replace(smart_contract_factory(), :name, sequence("SimpleStorage"))
-  end
-
-  def decompiled_smart_contract_factory do
-    contract_code_info = contract_code_info()
-
-    %DecompiledSmartContract{
-      address_hash: insert(:address, contract_code: contract_code_info.bytecode, decompiled: true).hash,
-      decompiler_version: "test_decompiler",
-      decompiled_source_code: contract_code_info.source_code
-    }
   end
 
   def proxy_implementation_factory do

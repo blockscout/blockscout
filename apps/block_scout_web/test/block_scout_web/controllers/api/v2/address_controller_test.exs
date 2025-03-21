@@ -73,7 +73,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "proxy_type" => nil,
         "implementations" => [],
         "block_number_balance_updated_at" => nil,
-        "has_decompiled_code" => false,
         "has_validated_blocks" => false,
         "has_logs" => false,
         "has_tokens" => false,
@@ -112,7 +111,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "proxy_type" => nil,
         "implementations" => [],
         "block_number_balance_updated_at" => nil,
-        "has_decompiled_code" => false,
         "has_validated_blocks" => false,
         "has_logs" => false,
         "has_tokens" => false,
@@ -150,7 +148,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert pattern_response["implementation_name"] == response["implementation_name"]
       assert pattern_response["implementations"] == response["implementations"]
       assert pattern_response["block_number_balance_updated_at"] == response["block_number_balance_updated_at"]
-      assert pattern_response["has_decompiled_code"] == response["has_decompiled_code"]
       assert pattern_response["has_validated_blocks"] == response["has_validated_blocks"]
       assert pattern_response["has_logs"] == response["has_logs"]
       assert pattern_response["has_tokens"] == response["has_tokens"]

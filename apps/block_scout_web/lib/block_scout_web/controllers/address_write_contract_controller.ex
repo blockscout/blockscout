@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.AddressWriteContractController do
 
     with false <- AddressView.contract_interaction_disabled?(),
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true),
+         {:ok, address} <- Chain.find_contract_address(address_hash, address_options),
          false <- is_nil(address.smart_contract),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(
@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.AddressWriteContractController do
       _ ->
         if custom_abi? do
           with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-               {:ok, address} <- Chain.find_contract_address(address_hash, address_options, false),
+               {:ok, address} <- Chain.find_contract_address(address_hash, address_options),
                {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
             render(
               conn,
