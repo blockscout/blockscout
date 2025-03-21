@@ -318,7 +318,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/shibarium" do
-      if @chain_type == :shibarium do
+      chain_scope :shibarium do
         get("/deposits", V2.ShibariumController, :deposits)
         get("/deposits/count", V2.ShibariumController, :deposits_count)
         get("/withdrawals", V2.ShibariumController, :withdrawals)

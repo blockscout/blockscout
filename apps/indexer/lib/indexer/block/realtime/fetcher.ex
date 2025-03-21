@@ -5,7 +5,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   use GenServer
   use Spandex.Decorators
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Indexer.Tracer
   require Logger
@@ -357,56 +356,52 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   @spec remove_assets_by_number(non_neg_integer()) :: any()
-
-  case @chain_type do
-    :optimism ->
-      # Removes all rows from `op_transaction_batches`, `op_withdrawals`,
-      # and `op_eip1559_config_updates` tables previously written starting
-      # from the reorg block number
-      defp remove_assets_by_number(reorg_block) do
-        # credo:disable-for-lines:3 Credo.Check.Design.AliasUsage
-        Indexer.Fetcher.Optimism.EIP1559ConfigUpdate.handle_realtime_l2_reorg(reorg_block)
-        Indexer.Fetcher.Optimism.TransactionBatch.handle_l2_reorg(reorg_block)
-        Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block)
-      end
-
-    :polygon_edge ->
-      # Removes all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables
-      # previously written starting from the reorg block number
-      defp remove_assets_by_number(reorg_block) do
-        # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
-        Indexer.Fetcher.PolygonEdge.Withdrawal.remove(reorg_block)
-        Indexer.Fetcher.PolygonEdge.DepositExecute.remove(reorg_block)
-      end
-
-    :polygon_zkevm ->
-      # Removes all rows from `polygon_zkevm_bridge` table
-      # previously written starting from the reorg block number
-      defp remove_assets_by_number(reorg_block) do
-        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-        Indexer.Fetcher.PolygonZkevm.BridgeL2.reorg_handle(reorg_block)
-      end
-
-    :shibarium ->
-      # Removes all rows from `shibarium_bridge` table
-      # previously written starting from the reorg block number
-      defp remove_assets_by_number(reorg_block) do
-        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-        Indexer.Fetcher.Shibarium.L2.reorg_handle(reorg_block)
-      end
-
-    :scroll ->
-      # Removes all rows from `scroll_bridge` and `scroll_l1_fee_params` tables
-      # previously written starting from the reorg block number
-      defp remove_assets_by_number(reorg_block) do
-        # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
-        Indexer.Fetcher.Scroll.BridgeL2.reorg_handle(reorg_block)
-        Indexer.Fetcher.Scroll.L1FeeParam.handle_l2_reorg(reorg_block)
-      end
-
-    _ ->
-      defp remove_assets_by_number(_), do: :ok
+  defp remove_assets_by_number(reorg_block) do
+    chain_type = Application.get_env(:explorer, :chain_type)
+    do_remove_assets_by_number(chain_type, reorg_block)
   end
+
+  # Removes all rows from `op_transaction_batches`, `op_withdrawals`,
+  # and `op_eip1559_config_updates` tables previously written starting
+  # from the reorg block number
+  defp do_remove_assets_by_number(:optimism, reorg_block) do
+    # credo:disable-for-lines:3 Credo.Check.Design.AliasUsage
+    Indexer.Fetcher.Optimism.EIP1559ConfigUpdate.handle_realtime_l2_reorg(reorg_block)
+    Indexer.Fetcher.Optimism.TransactionBatch.handle_l2_reorg(reorg_block)
+    Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block)
+  end
+
+  # Removes all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables
+  # previously written starting from the reorg block number
+  defp do_remove_assets_by_number(:polygon_edge, reorg_block) do
+    # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
+    Indexer.Fetcher.PolygonEdge.Withdrawal.remove(reorg_block)
+    Indexer.Fetcher.PolygonEdge.DepositExecute.remove(reorg_block)
+  end
+
+  # Removes all rows from `polygon_zkevm_bridge` table
+  # previously written starting from the reorg block number
+  defp do_remove_assets_by_number(:polygon_zkevm, reorg_block) do
+    # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+    Indexer.Fetcher.PolygonZkevm.BridgeL2.reorg_handle(reorg_block)
+  end
+
+  # Removes all rows from `shibarium_bridge` table
+  # previously written starting from the reorg block number
+  defp do_remove_assets_by_number(:shibarium, reorg_block) do
+    # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+    Indexer.Fetcher.Shibarium.L2.reorg_handle(reorg_block)
+  end
+
+  # Removes all rows from `scroll_bridge` and `scroll_l1_fee_params` tables
+  # previously written starting from the reorg block number
+  defp do_remove_assets_by_number(:scroll, reorg_block) do
+    # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
+    Indexer.Fetcher.Scroll.BridgeL2.reorg_handle(reorg_block)
+    Indexer.Fetcher.Scroll.L1FeeParam.handle_l2_reorg(reorg_block)
+  end
+
+  defp do_remove_assets_by_number(_, _), do: :ok
 
   @decorate span(tracer: Tracer)
   defp do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry) do
