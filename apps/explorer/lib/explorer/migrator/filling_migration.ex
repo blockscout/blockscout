@@ -153,7 +153,7 @@ defmodule Explorer.Migrator.FillingMigration do
   """
   @callback before_start :: any()
 
-  defmacro __using__(_opts) do
+  defmacro __using__(opts) do
     quote do
       @behaviour Explorer.Migrator.FillingMigration
 
@@ -255,7 +255,9 @@ defmodule Explorer.Migrator.FillingMigration do
             |> Enum.map(&run_task/1)
             |> Task.await_many(:infinity)
 
-            MigrationStatus.update_meta(migration_name(), new_state)
+            unless unquote(opts[:skip_meta_update?]) do
+              MigrationStatus.update_meta(migration_name(), new_state)
+            end
 
             schedule_batch_migration()
 

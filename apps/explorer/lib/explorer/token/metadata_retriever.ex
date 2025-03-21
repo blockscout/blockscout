@@ -5,7 +5,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
   require Logger
 
-  alias Explorer.{Repo, MetadataURIValidator}
+  alias Explorer.{MetadataURIValidator, Repo}
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Reader
@@ -837,11 +837,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
         case check_content_type(content_type, uri, hex_token_id, body, ipfs_params) do
           {:ok, metadata} ->
-            if arweave?(ipfs_params) || ipfs?(ipfs_params) do
-              {:ok, metadata}
-            else
-              {:ok_store_uri, metadata, uri}
-            end
+            process_result(metadata, uri, ipfs_params)
 
           {:error, reason} ->
             {:error, reason}
@@ -871,6 +867,14 @@ defmodule Explorer.Token.MetadataRetriever do
       )
 
       {:error, "request error"}
+  end
+
+  defp process_result(metadata, uri, ipfs_params) do
+    if arweave?(ipfs_params) || ipfs?(ipfs_params) do
+      {:ok, metadata}
+    else
+      {:ok_store_uri, metadata, uri}
+    end
   end
 
   defp ipfs?(ipfs_params) do

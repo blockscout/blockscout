@@ -60,6 +60,7 @@ for migrator <- [
       Explorer.Migrator.BackfillMultichainSearchDB,
       Explorer.Migrator.SanitizeVerifiedAddresses,
       Explorer.Migrator.SmartContractLanguage,
+      Explorer.Migrator.BackfillMetadataURL,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
