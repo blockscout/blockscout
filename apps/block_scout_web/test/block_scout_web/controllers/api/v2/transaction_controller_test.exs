@@ -1613,7 +1613,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   defp check_total(_, _, _), do: true
 
-  if Application.compile_env(:explorer, :chain_type) == :neon do
+  if @chain_type == :neon do
     describe "neon linked transactions service" do
       test "fetches data from the node and caches in the db", %{conn: conn} do
         transaction = insert(:transaction)

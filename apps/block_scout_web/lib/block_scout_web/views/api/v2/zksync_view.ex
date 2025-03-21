@@ -83,10 +83,10 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
   """
   @spec extend_transaction_json_response(map(), %{
           :__struct__ => Explorer.Chain.Transaction,
-          :zksync_batch => any(),
-          :zksync_commit_transaction => any(),
-          :zksync_execute_transaction => any(),
-          :zksync_prove_transaction => any(),
+          optional(:zksync_batch) => any(),
+          optional(:zksync_commit_transaction) => any(),
+          optional(:zksync_execute_transaction) => any(),
+          optional(:zksync_prove_transaction) => any(),
           optional(any()) => any()
         }) :: map()
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
@@ -106,10 +106,10 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
   """
   @spec extend_block_json_response(map(), %{
           :__struct__ => Explorer.Chain.Block,
-          :zksync_batch => any(),
-          :zksync_commit_transaction => any(),
-          :zksync_execute_transaction => any(),
-          :zksync_prove_transaction => any(),
+          optional(:zksync_batch) => any(),
+          optional(:zksync_commit_transaction) => any(),
+          optional(:zksync_execute_transaction) => any(),
+          optional(:zksync_prove_transaction) => any(),
           optional(any()) => any()
         }) :: map()
   def extend_block_json_response(out_json, %Block{} = block) do
