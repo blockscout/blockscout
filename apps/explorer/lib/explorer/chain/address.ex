@@ -492,6 +492,57 @@ defmodule Explorer.Chain.Address do
   end
 
   @doc """
+  Fetches addresses based on the provided list of address hashes.
+
+  ## Parameters
+
+    - `address_hashes`: A list of address hashes to fetch the corresponding addresses.
+
+  ## Returns
+
+    - A list of addresses corresponding to the provided address hashes.
+
+  This function utilizes the `Chain.hashes_to_addresses_query/1` to convert the hashes to addresses,
+  joins necessary associations with `Chain.join_associations/2`, and finally selects the repository
+  with `Chain.select_repo/1` to fetch all the addresses.
+  """
+  @spec get_addresses_by_hashes([Hash.Address.t()]) :: [Chain.Address.t()]
+  def get_addresses_by_hashes(address_hashes) do
+    necessity_by_association = %{:smart_contract => :optional, proxy_implementations_association() => :optional}
+
+    address_hashes
+    |> Chain.hashes_to_addresses_query()
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(api?: true).all()
+  end
+
+  @doc """
+  Fetches an address by its hash.
+
+  ## Parameters
+
+    - `address_hash`: The hash of the address to be fetched.
+
+  ## Returns
+
+    - `address`: The address if found.
+    - `nil`: If the address is not found.
+  """
+  @spec get_by_hash(Hash.Address.t()) :: Chain.Address.t() | nil
+  def get_by_hash(address_hash) do
+    case Chain.hash_to_address(
+           address_hash,
+           [
+             necessity_by_association: %{:smart_contract => :optional, proxy_implementations_association() => :optional}
+           ],
+           false
+         ) do
+      {:ok, address} -> address
+      _ -> nil
+    end
+  end
+
+  @doc """
     Determines if the given address is a smart contract.
 
     This function checks the contract code of an address to determine if it's a
