@@ -297,7 +297,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/polygon-edge" do
-      if @chain_type == :polygon_edge do
+      chain_scope :polygon_edge do
         get("/deposits", V2.PolygonEdgeController, :deposits)
         get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
         get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
