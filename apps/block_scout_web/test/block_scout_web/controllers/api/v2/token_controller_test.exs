@@ -1557,7 +1557,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       topic = "token_instances:#{token_contract_address_hash_string}"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic)
 
@@ -1667,7 +1667,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       topic = "token_instances:#{token_contract_address_hash_string}"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic)
 

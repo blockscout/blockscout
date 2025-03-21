@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.RewardChannel do
 
   intercept(["new_reward"])
 
-  def join("rewards:" <> address_hash_string, _params, socket) do
+  def join("rewards_old:" <> address_hash_string, _params, socket) do
     case valid_address_hash_and_not_restricted_access?(address_hash_string) do
       :ok ->
         {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
@@ -20,16 +20,6 @@ defmodule BlockScoutWeb.RewardChannel do
       reason ->
         {:error, %{reason: reason}}
     end
-  end
-
-  def handle_out(
-        "new_reward",
-        %{emission_funds: _emission_funds, validator: _validator},
-        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
-      ) do
-    push(socket, "new_reward", %{reward: 1})
-
-    {:noreply, socket}
   end
 
   def handle_out("new_reward", %{emission_funds: emission_funds, validator: validator}, socket) do

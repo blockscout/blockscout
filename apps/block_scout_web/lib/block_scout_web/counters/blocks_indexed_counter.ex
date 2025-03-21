@@ -36,6 +36,8 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
   def calculate_blocks_indexed_and_broadcast do
     ratio = Chain.indexed_ratio_blocks()
 
+    # TODO: delete duplicated event when old UI becomes deprecated
+    Notifier.broadcast_indexed_ratio("blocks_old:indexing", ratio)
     Notifier.broadcast_indexed_ratio("blocks:indexing", ratio)
   end
 

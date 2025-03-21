@@ -138,7 +138,7 @@ if ($('[data-page="address-transactions"]').length) {
     beyondPageOne: !!blockNumber
   })
 
-  const addressChannel = subscribeChannel(`addresses:${addressHash}`)
+  const addressChannel = subscribeChannel(`addresses_old:${addressHash}`)
   addressChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
   addressChannel.on('transaction', batchChannel((msgs) =>
     store.dispatch({
@@ -153,7 +153,7 @@ if ($('[data-page="address-transactions"]').length) {
     })
   ))
 
-  const rewardsChannel = subscribeChannel(`rewards:${addressHash}`)
+  const rewardsChannel = subscribeChannel(`rewards_old:${addressHash}`)
   rewardsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
   rewardsChannel.on('new_reward', (msg) => {
     store.dispatch({
