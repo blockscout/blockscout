@@ -21,6 +21,8 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
 
   @fetcher_name :optimism_output_roots
   @stop_constant_key "optimism_output_roots_stopped"
+  @counter_type "optimism_output_roots_fetcher_last_l1_block_hash"
+  @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   # 32-byte signature of the event OutputProposed(bytes32 indexed outputRoot, uint256 indexed l2OutputIndex, uint256 indexed l2BlockNumber, uint256 l1Timestamp)
   @output_proposed_event "0xa7aaf2512769da4e444e3de247be2564225c2e7a8f74cfe528e46e17d24868e2"
@@ -125,8 +127,15 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
 
           log_deleted_rows_count(reorg_block, deleted_count)
 
+          Optimism.set_last_block_hash(@empty_hash, @counter_type)
+
           {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
         else
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if chunk_end >= chunk_start do
+            Optimism.set_last_block_hash_by_number(chunk_end, @counter_type, json_rpc_named_arguments)
+          end
+
           {:cont, chunk_end}
         end
       end)
@@ -211,7 +220,8 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
       :L1,
       &OutputRoot.last_root_l1_block_number_query/0,
       &OutputRoot.remove_roots_query/1,
-      json_rpc_named_arguments
+      json_rpc_named_arguments,
+      @counter_type
     )
   end
 

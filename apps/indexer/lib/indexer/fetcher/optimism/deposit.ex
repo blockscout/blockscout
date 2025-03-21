@@ -27,6 +27,8 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
 
   @fetcher_name :optimism_deposits
   @address_prefix "0x000000000000000000000000"
+  @counter_type "optimism_deposits_fetcher_last_l1_block_hash"
+  @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -122,8 +124,15 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
 
           log_deleted_rows_count(reorg_block, deleted_count)
 
+          Optimism.set_last_block_hash(@empty_hash, @counter_type)
+
           {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
         else
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if chunk_end >= chunk_start do
+            Optimism.set_last_block_hash_by_number(chunk_end, @counter_type, json_rpc_named_arguments)
+          end
+
           {:cont, chunk_end}
         end
       end)
@@ -271,7 +280,8 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
       :L1,
       &Deposit.last_deposit_l1_block_number_query/0,
       &Deposit.remove_deposits_query/1,
-      json_rpc_named_arguments
+      json_rpc_named_arguments,
+      @counter_type
     )
   end
 

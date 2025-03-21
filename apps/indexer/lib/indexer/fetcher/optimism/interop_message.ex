@@ -21,11 +21,9 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
 
   require Logger
 
-  import EthereumJSONRPC, only: [id_to_params: 1, json_rpc: 2, quantity_to_integer: 1, integer_to_quantity: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Explorer.Helper, only: [decode_data: 2, truncate_address_hash: 1]
 
-  alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   alias Explorer.Chain.Events.Subscriber
@@ -440,37 +438,12 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
     |> Enum.chunk_every(@blocks_batch_request_max_size)
     |> Enum.reduce(block_timestamp_from_db, fn numbers, acc ->
       numbers
-      |> get_blocks_by_numbers_from_rpc(json_rpc_named_arguments, Helper.infinite_retries_number())
+      |> Optimism.get_blocks_by_numbers(json_rpc_named_arguments, Helper.infinite_retries_number())
       |> Enum.reduce(acc, fn block, bn_to_ts_acc ->
         block_number = quantity_to_integer(Map.get(block, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
         Map.put(bn_to_ts_acc, block_number, timestamp)
       end)
     end)
-  end
-
-  # Fetches blocks from RPC by their numbers.
-  #
-  # ## Parameters
-  # - `block_numbers`: The list of block numbers (each number can be integer or in form of `0x` quantity).
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  # - `retries`: Number of retry attempts if the request fails.
-  #
-  # ## Returns
-  # - The list of blocks. The list will be empty if all retries to RPC were failed.
-  @spec get_blocks_by_numbers_from_rpc(list(), EthereumJSONRPC.json_rpc_named_arguments(), non_neg_integer()) :: list()
-  defp get_blocks_by_numbers_from_rpc(block_numbers, json_rpc_named_arguments, retries) do
-    request =
-      block_numbers
-      |> Stream.map(fn block_number -> %{number: integer_to_quantity(block_number)} end)
-      |> id_to_params()
-      |> Blocks.requests(&ByNumber.request(&1, false, false))
-
-    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
-
-    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
-      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
-      {:error, _} -> []
-    end
   end
 end

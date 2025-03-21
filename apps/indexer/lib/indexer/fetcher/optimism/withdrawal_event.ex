@@ -21,6 +21,8 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   alias Indexer.Helper
 
   @fetcher_name :optimism_withdrawal_events
+  @counter_type "optimism_withdrawal_events_fetcher_last_l1_block_hash"
+  @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   # 32-byte signature of the event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to)
   @withdrawal_proven_event "0x67a6208cfcc0801d50f6cbe764733f4fddf66ac0b04442061a8a8c0cb6b63f62"
@@ -131,8 +133,15 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
           log_deleted_rows_count(reorg_block, deleted_count)
 
+          Optimism.set_last_block_hash(@empty_hash, @counter_type)
+
           {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
         else
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if chunk_end >= chunk_start do
+            Optimism.set_last_block_hash_by_number(chunk_end, @counter_type, json_rpc_named_arguments)
+          end
+
           {:cont, chunk_end}
         end
       end)
@@ -271,7 +280,8 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
       :L1,
       &WithdrawalEvent.last_event_l1_block_number_query/0,
       &WithdrawalEvent.remove_events_query/1,
-      json_rpc_named_arguments
+      json_rpc_named_arguments,
+      @counter_type
     )
   end
 
