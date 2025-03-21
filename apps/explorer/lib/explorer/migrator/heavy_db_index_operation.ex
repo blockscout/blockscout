@@ -15,7 +15,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   Returns the name of the table. The name is used to track the operation's status in
   `Explorer.Migrator.MigrationStatus`.
   """
-  @callback table_name :: :logs | :internal_transactions | :token_transfers | :addresses
+  @callback table_name ::
+              :logs
+              | :internal_transactions
+              | :token_transfers
+              | :addresses
+              | :smart_contracts
 
   @doc """
   Specifies the type of operation to be performed on the database index.
@@ -220,9 +225,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
             all_statuses =
               MigrationStatus.fetch_migration_statuses(dependent_from_migrations())
 
-            all_statuses_completed? =
-              all_statuses
-              |> Enum.all?(&(&1 == "completed"))
+            all_statuses_completed? = not Enum.empty?(all_statuses) && all_statuses |> Enum.all?(&(&1 == "completed"))
 
             all_statuses_completed? && Enum.count(all_statuses) == Enum.count(dependent_from_migrations())
           end
