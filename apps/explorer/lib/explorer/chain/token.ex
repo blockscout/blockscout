@@ -404,7 +404,7 @@ defmodule Explorer.Chain.Token do
 
   @doc """
     Updates token_holder_count for a given contract_address_hash.
-    It used by Explorer.Counters.TokenHoldersCounter module.
+    It used by Explorer.Chain.Cache.Counters.TokenHoldersCount module.
   """
   @spec update_token_holder_count(Hash.Address.t(), integer()) :: {non_neg_integer(), nil}
   def update_token_holder_count(contract_address_hash, holder_count) when not is_nil(holder_count) do
