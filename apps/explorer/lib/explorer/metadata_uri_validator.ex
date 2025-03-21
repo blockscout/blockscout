@@ -83,8 +83,10 @@ defmodule Explorer.MetadataURIValidator do
   end
 
   defp prepare_cidr_blacklist do
-    case :persistent_term.get(:parsed_cidr_list, nil) do
-      nil ->
+    from_cache = :persistent_term.get(:parsed_cidr_list, nil)
+
+    from_cache ||
+      (
         cidr_list =
           (Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper)[:cidr_blacklist] ++ @reserved_ranges)
           |> Enum.flat_map(fn cidr ->
@@ -100,10 +102,7 @@ defmodule Explorer.MetadataURIValidator do
 
         :persistent_term.put(:parsed_cidr_list, cidr_list)
         cidr_list
-
-      cidr_list ->
-        cidr_list
-    end
+      )
   end
 
   defp allowed_uri_protocols do

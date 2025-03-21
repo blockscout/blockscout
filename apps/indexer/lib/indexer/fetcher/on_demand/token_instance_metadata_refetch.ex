@@ -8,6 +8,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   use GenServer
   use Indexer.Fetcher, restart: :permanent
 
+  alias EthereumJsonrpc.NFT
   alias Explorer.Chain.Cache.Counters.Helper, as: CountersHelper
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Token.Instance, as: TokenInstance
@@ -59,7 +60,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
       )
 
     result =
-      case Reader.query_contracts([request], TokenInstanceHelper.erc_721_1155_abi(), [], false) do
+      case Reader.query_contracts([request], NFT.erc_721_1155_abi(), [], false) do
         [ok: [uri]] ->
           {:ok, [uri]}
 
@@ -69,7 +70,10 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
 
     with {:empty_result, false} <- {:empty_result, is_nil(result)},
          {:fetched_metadata, {:ok, %{metadata: metadata}}} <-
-           {:fetched_metadata, result |> MetadataRetriever.fetch_json( token_id, nil, false)|>MetadataRetriever.parse_fetch_json_response()} do
+           {:fetched_metadata,
+            result
+            |> MetadataRetriever.fetch_json(token_id, nil, false)
+            |> MetadataRetriever.parse_fetch_json_response()} do
       TokenInstance.set_metadata(token_instance, metadata)
 
       Publisher.broadcast(
