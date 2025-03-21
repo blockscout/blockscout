@@ -390,27 +390,25 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/validators" do
-      case @chain_type do
-        :stability ->
-          scope "/stability" do
-            get("/", V2.ValidatorController, :stability_validators_list)
-            get("/counters", V2.ValidatorController, :stability_validators_counters)
-          end
+      if @chain_type == :zilliqa do
+        scope "/zilliqa" do
+          get("/", V2.ValidatorController, :zilliqa_validators_list)
+          get("/:bls_public_key", V2.ValidatorController, :zilliqa_validator)
+        end
+      end
 
-        :blackfort ->
-          scope "/blackfort" do
-            get("/", V2.ValidatorController, :blackfort_validators_list)
-            get("/counters", V2.ValidatorController, :blackfort_validators_counters)
-          end
+      chain_scope :stability do
+        scope "/stability" do
+          get("/", V2.ValidatorController, :stability_validators_list)
+          get("/counters", V2.ValidatorController, :stability_validators_counters)
+        end
+      end
 
-        :zilliqa ->
-          scope "/zilliqa" do
-            get("/", V2.ValidatorController, :zilliqa_validators_list)
-            get("/:bls_public_key", V2.ValidatorController, :zilliqa_validator)
-          end
-
-        _ ->
-          nil
+      chain_scope :blackfort do
+        scope "/blackfort" do
+          get("/", V2.ValidatorController, :blackfort_validators_list)
+          get("/counters", V2.ValidatorController, :blackfort_validators_counters)
+        end
       end
     end
 

@@ -206,25 +206,25 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Process.cancel_timer(timer)
   end
 
-  case @chain_type do
-    :stability ->
-      defp fetch_validators_async do
-        alias Indexer.Fetcher.Stability.Validator, as: StabilityValidator
+  defp fetch_validators_async do
+    chain_type = Application.get_env(:explorer, :chain_type)
+    do_fetch_validators_async(chain_type)
+  end
 
-        StabilityValidator.trigger_update_validators_list()
-      end
+  defp do_fetch_validators_async(:stability) do
+    alias Indexer.Fetcher.Stability.Validator, as: StabilityValidator
 
-    :blackfort ->
-      defp fetch_validators_async do
-        alias Indexer.Fetcher.Blackfort.Validator, as: BlackfortValidator
+    StabilityValidator.trigger_update_validators_list()
+  end
 
-        BlackfortValidator.trigger_update_validators_list()
-      end
+  defp do_fetch_validators_async(:blackfort) do
+    alias Indexer.Fetcher.Blackfort.Validator, as: BlackfortValidator
 
-    _ ->
-      defp fetch_validators_async do
-        :ignore
-      end
+    BlackfortValidator.trigger_update_validators_list()
+  end
+
+  defp do_fetch_validators_async(_chain_type) do
+    :ignore
   end
 
   defp subscribe_to_new_heads(%__MODULE__{subscription: nil} = state, subscribe_named_arguments)
