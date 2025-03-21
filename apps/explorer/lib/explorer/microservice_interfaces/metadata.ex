@@ -4,7 +4,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address.MetadataPreloader, Transaction}
+  alias Explorer.Chain.{Address.MetadataPreloader, Block, Transaction}
   alias Explorer.Utility.Microservice
   alias HTTPoison.Response
 
@@ -181,6 +181,14 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   @spec maybe_preload_metadata_to_transaction(Transaction.t()) :: Transaction.t()
   def maybe_preload_metadata_to_transaction(transaction) do
     maybe_preload_meta(transaction, __MODULE__, &MetadataPreloader.preload_metadata_to_transaction/1)
+  end
+
+  @doc """
+  Preloads metadata to `Block.t()` if Metadata microservice is enabled
+  """
+  @spec maybe_preload_metadata_to_block(Block.t()) :: Block.t()
+  def maybe_preload_metadata_to_block(block) do
+    maybe_preload_meta(block, __MODULE__, &MetadataPreloader.preload_metadata_to_block/1)
   end
 
   defp decode_meta({:ok, %{"addresses" => addresses} = result}) do
