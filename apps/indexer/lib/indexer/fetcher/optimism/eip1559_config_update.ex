@@ -26,10 +26,9 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
   require Logger
 
-  import EthereumJSONRPC, only: [fetch_blocks_by_numbers: 3, json_rpc: 2, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [fetch_blocks_by_numbers: 3]
   import Explorer.Helper, only: [hash_to_binary: 1]
 
-  alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
@@ -41,6 +40,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
   @fetcher_name :optimism_eip1559_config_updates
   @latest_block_check_interval_seconds 60
+  @counter_type "optimism_eip1559_config_updates_fetcher_last_l2_block_hash"
   @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   def child_spec(start_link_arguments) do
@@ -284,7 +284,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       )
     end
 
-    EIP1559ConfigUpdate.set_last_l2_block_hash(@empty_hash)
+    Optimism.set_last_block_hash(@empty_hash, @counter_type)
   end
 
   defp handle_reorg(_reorg_block_number), do: :ok
@@ -353,7 +353,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           if block.number == last_block_number do
-            EIP1559ConfigUpdate.set_last_l2_block_hash(block.hash)
+            Optimism.set_last_block_hash(block.hash, @counter_type)
           end
 
           return
@@ -438,24 +438,6 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     end
   end
 
-  # Fetches block data by its hash using RPC request.
-  #
-  # ## Parameters
-  # - `hash`: The block hash.
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  #
-  # ## Returns
-  # - `{:ok, block}` tuple in case of success.
-  # - `{:error, message}` tuple in case of failure.
-  @spec get_block_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: {:ok, any()} | {:error, any()}
-  defp get_block_by_hash(hash, json_rpc_named_arguments) do
-    req = ByHash.request(%{id: 0, hash: hash}, false)
-
-    error_message = &"eth_getBlockByHash failed. Error: #{inspect(&1)}"
-
-    Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, Helper.infinite_retries_number())
-  end
-
   # Gets the last known L2 block number from the `op_eip1559_config_updates` database table.
   # When the block number is found, the function checks that for actuality (to avoid reorg cases).
   # If the block is not consensus, the corresponding row is removed from the table and
@@ -471,34 +453,14 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   @spec get_last_l2_block_number(EthereumJSONRPC.json_rpc_named_arguments()) ::
           {:ok, non_neg_integer()} | {:error, any()}
   defp get_last_l2_block_number(json_rpc_named_arguments) do
-    last_l2_block_hash = EIP1559ConfigUpdate.last_l2_block_hash()
-
     last_l2_block_number =
-      if last_l2_block_hash != @empty_hash do
-        case get_block_by_hash(last_l2_block_hash, json_rpc_named_arguments) do
-          {:ok, nil} ->
-            # it seems there was a reorg, so we need to reset the block hash in the counter
-            # and then use the below approach taking the block hash from `op_eip1559_config_updates` table
-            EIP1559ConfigUpdate.set_last_l2_block_hash(@empty_hash)
-            nil
-
-          {:ok, last_l2_block} ->
-            # the block hash is actual, so use the block number
-            last_l2_block
-            |> Map.get("number")
-            |> quantity_to_integer()
-
-          {:error, _} ->
-            # something went wrong, so use the below approach
-            nil
-        end
-      end
+      Optimism.get_last_block_number_from_last_fetched_counter(json_rpc_named_arguments, @counter_type)
 
     if is_nil(last_l2_block_number) do
       {last_l2_block_number, last_l2_block_hash} = EIP1559ConfigUpdate.get_last_item()
 
       with {:empty_hash, false} <- {:empty_hash, is_nil(last_l2_block_hash)},
-           {:ok, last_l2_block} <- get_block_by_hash(last_l2_block_hash, json_rpc_named_arguments),
+           {:ok, last_l2_block} <- Optimism.get_block_by_hash(last_l2_block_hash, json_rpc_named_arguments),
            {:empty_block, false} <- {:empty_block, is_nil(last_l2_block)} do
         {:ok, last_l2_block_number}
       else

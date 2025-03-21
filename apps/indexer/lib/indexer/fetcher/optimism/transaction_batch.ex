@@ -58,6 +58,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   @fetcher_name :optimism_transaction_batches
 
   @compressor_brotli 1
+  @counter_type "optimism_batches_fetcher_last_l1_block_hash"
+  @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -269,7 +271,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         chunk_start = start_block + chunk_size * current_chunk
         chunk_end = min(chunk_start + chunk_size - 1, end_block)
 
-        new_incomplete_channels =
+        {new_incomplete_channels, last_block_hash} =
           if chunk_end >= chunk_start do
             Helper.log_blocks_chunk_handling(
               chunk_start,
@@ -280,7 +282,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
               :L1
             )
 
-            {:ok, new_incomplete_channels, batches, sequences, blobs} =
+            {:ok, new_incomplete_channels, batches, sequences, blobs, last_block_hash} =
               get_transaction_batches(
                 Range.new(chunk_start, chunk_end),
                 batch_inbox,
@@ -327,9 +329,9 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
               :L1
             )
 
-            new_incomplete_channels
+            {new_incomplete_channels, last_block_hash}
           else
-            incomplete_channels_acc
+            {incomplete_channels_acc, nil}
           end
 
         reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
@@ -337,8 +339,12 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         if !is_nil(reorg_block) && reorg_block > 0 do
           new_incomplete_channels = handle_l1_reorg(reorg_block, new_incomplete_channels)
 
+          Optimism.set_last_block_hash(@empty_hash, @counter_type)
+
           {:halt, {if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end), new_incomplete_channels}}
         else
+          Optimism.set_last_block_hash(last_block_hash, @counter_type)
+
           {:cont, {chunk_end, new_incomplete_channels}}
         end
       end)
@@ -424,6 +430,11 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end)
   end
 
+  defp get_block_hash_by_number(block_number, blocks_params) do
+    block = Enum.find(blocks_params, %{hash: nil}, fn b -> b.number == block_number end)
+    block.hash
+  end
+
   defp get_block_timestamp_by_number(block_number, blocks_params) do
     block = Enum.find(blocks_params, %{timestamp: nil}, fn b -> b.number == block_number end)
     block.timestamp
@@ -444,47 +455,54 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   #   `last_transaction` is the transaction info got from the RPC (nil if not found).
   @spec get_last_l1_item(EthereumJSONRPC.json_rpc_named_arguments()) :: {non_neg_integer(), binary() | nil, map() | nil}
   defp get_last_l1_item(json_rpc_named_arguments) do
-    result =
-      Repo.one(
-        from(
-          tb in OptimismTransactionBatch,
-          inner_join: fs in FrameSequence,
-          on: fs.id == tb.frame_sequence_id,
-          select: {fs.id, fs.l1_transaction_hashes},
-          order_by: [desc: tb.l2_block_number],
-          limit: 1
-        )
-      )
+    last_l1_block_number =
+      Optimism.get_last_block_number_from_last_fetched_counter(json_rpc_named_arguments, @counter_type)
 
-    with {:empty_hashes, false} <- {:empty_hashes, is_nil(result)},
-         l1_transaction_hashes = elem(result, 1),
-         last_l1_transaction_hash = List.last(l1_transaction_hashes),
-         {:ok, last_l1_transaction} =
-           Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:empty_transaction, false, last_l1_transaction_hash} <-
-           {:empty_transaction, is_nil(last_l1_transaction), last_l1_transaction_hash} do
-      last_l1_block_number = quantity_to_integer(Map.get(last_l1_transaction, "blockNumber", 0))
-      {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction}
+    if is_nil(last_l1_block_number) do
+      result =
+        Repo.one(
+          from(
+            tb in OptimismTransactionBatch,
+            inner_join: fs in FrameSequence,
+            on: fs.id == tb.frame_sequence_id,
+            select: {fs.id, fs.l1_transaction_hashes},
+            order_by: [desc: tb.l2_block_number],
+            limit: 1
+          )
+        )
+
+      with {:empty_hashes, false} <- {:empty_hashes, is_nil(result)},
+           l1_transaction_hashes = elem(result, 1),
+           last_l1_transaction_hash = List.last(l1_transaction_hashes),
+           {:ok, last_l1_transaction} =
+             Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+           {:empty_transaction, false, last_l1_transaction_hash} <-
+             {:empty_transaction, is_nil(last_l1_transaction), last_l1_transaction_hash} do
+        last_l1_block_number = quantity_to_integer(Map.get(last_l1_transaction, "blockNumber", 0))
+        {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction}
+      else
+        {:empty_hashes, true} ->
+          {0, nil, nil}
+
+        {:empty_transaction, true, last_l1_transaction_hash} ->
+          Logger.error(
+            "Cannot find last L1 transaction from RPC by its hash (#{last_l1_transaction_hash}). Probably, there was a reorg on L1 chain. Trying to check preceding frame sequence..."
+          )
+
+          id = elem(result, 0)
+
+          Multi.new()
+          |> Multi.delete_all(
+            :delete_transaction_batches,
+            from(tb in OptimismTransactionBatch, where: tb.frame_sequence_id == ^id)
+          )
+          |> Multi.delete_all(:delete_frame_sequence, from(fs in FrameSequence, where: fs.id == ^id))
+          |> Repo.transaction()
+
+          get_last_l1_item(json_rpc_named_arguments)
+      end
     else
-      {:empty_hashes, true} ->
-        {0, nil, nil}
-
-      {:empty_transaction, true, last_l1_transaction_hash} ->
-        Logger.error(
-          "Cannot find last L1 transaction from RPC by its hash (#{last_l1_transaction_hash}). Probably, there was a reorg on L1 chain. Trying to check preceding frame sequence..."
-        )
-
-        id = elem(result, 0)
-
-        Multi.new()
-        |> Multi.delete_all(
-          :delete_transaction_batches,
-          from(tb in OptimismTransactionBatch, where: tb.frame_sequence_id == ^id)
-        )
-        |> Multi.delete_all(:delete_frame_sequence, from(fs in FrameSequence, where: fs.id == ^id))
-        |> Repo.transaction()
-
-        get_last_l1_item(json_rpc_named_arguments)
+      {last_l1_block_number, nil, nil}
     end
   end
 
@@ -500,6 +518,11 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
        ) do
     case fetch_blocks_by_range(block_range, json_rpc_named_arguments) do
       {:ok, %Blocks{transactions_params: transactions_params, blocks_params: blocks_params, errors: []}} ->
+        last_block_hash =
+          block_range
+          |> Enum.max()
+          |> get_block_hash_by_number(blocks_params)
+
         transactions_params
         |> transactions_filter(batch_submitter, batch_inbox)
         |> get_transaction_batches_inner(
@@ -509,6 +532,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           json_rpc_named_arguments_l2,
           blobs_api_url
         )
+        |> Tuple.append(last_block_hash)
 
       {_, message_or_errors} ->
         message =
