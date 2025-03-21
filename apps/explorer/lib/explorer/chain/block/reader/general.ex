@@ -12,6 +12,8 @@ defmodule Explorer.Chain.Block.Reader.General do
 
   import Explorer.Chain, only: [select_repo: 1]
 
+  alias Explorer.Repo
+
   alias Explorer.Chain.{
     Block,
     BlockNumberHelper
@@ -91,6 +93,33 @@ defmodule Explorer.Chain.Block.Reader.General do
         block_number = get_block_number_based_on_closest(closest, timestamp, given_timestamp, number)
         {:ok, block_number}
     end
+  end
+
+  @doc """
+    Fetches timestamps by the given block numbers from the `blocks` database table and returns
+    a `block_number -> timestamp` map. The number of keys in resulting map can be less than the
+    number of the given block numbers.
+
+    ## Parameters
+    - `block_numbers`: The list of block numbers.
+
+    ## Returns
+    - The resulting `block_number -> timestamp` map. Can be empty map (%{}).
+  """
+  @spec timestamps_by_block_numbers([non_neg_integer()]) :: map()
+  def timestamps_by_block_numbers([]), do: %{}
+
+  def timestamps_by_block_numbers(block_numbers) when is_list(block_numbers) do
+    query =
+      from(
+        block in Block,
+        where: block.number in ^block_numbers and block.consensus == true,
+        select: {block.number, block.timestamp}
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.into(%{})
   end
 
   # Builds a query to find consensus blocks either before or after a given timestamp
