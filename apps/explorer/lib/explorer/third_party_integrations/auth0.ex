@@ -6,6 +6,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
 
   alias Explorer.Account.Identity
   alias Explorer.{Account, Helper, Repo}
+  alias Explorer.Chain.Address
   alias OAuth2.{AccessToken, Client}
   alias Ueberauth.Auth
   alias Ueberauth.Strategy.Auth0
@@ -314,9 +315,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   def link_address(user_id, message, signature) do
     with {:signature, {:ok, %{nonce: nonce, address: address}}} <-
            {:signature, message |> String.trim() |> Siwe.parse_if_valid(signature)},
-         {:nonce, {:ok, ^nonce}} <-
-           {:nonce, Redix.command(:redix, ["GET", cookie_key(address <> "siwe_nonce")])},
-         Redix.command(:redix, ["DEL", cookie_key(address <> "siwe_nonce")]),
+         {:nonce, {:ok, ^nonce}} <- {:nonce, get_nonce_for_address(address)},
          {:user, {:ok, []}} <- {:user, find_users_by_web3_address(address)},
          {:ok, user} <- update_user_with_web3_address(user_id, address) do
       {:ok, create_auth(user)}
@@ -360,17 +359,15 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   def get_auth_with_web3(message, signature) do
     with {:signature, {:ok, %{nonce: nonce, address: address}}} <-
            {:signature, message |> String.trim() |> Siwe.parse_if_valid(signature)},
-         {:nonce, {:ok, ^nonce}} <-
-           {:nonce, Redix.command(:redix, ["GET", cookie_key(address <> "siwe_nonce")])},
+         {:nonce, {:ok, ^nonce}} <- {:nonce, get_nonce_for_address(address)},
          {:user, {:ok, user}} <- {:user, find_or_create_web3_user(address, signature)} do
-      Redix.command(:redix, ["DEL", cookie_key(address <> "siwe_nonce")])
       {:ok, create_auth(user)}
     else
+      {:nonce, {:ok, nil}} ->
+        {:error, @request_siwe_message}
+
       {:nonce, {:ok, _}} ->
         {:error, @wrong_nonce}
-
-      {:nonce, _} ->
-        {:error, @request_siwe_message}
 
       {_step, error} ->
         error
@@ -664,6 +661,17 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     case Redix.command(:redix, ["SET", cookie_key(address <> "siwe_nonce"), nonce, "EX", 300]) do
       {:ok, _} -> {:ok, nonce}
       err -> err
+    end
+  end
+
+  defp get_nonce_for_address(address_hash) do
+    cookie_key = cookie_key(Address.checksum(address_hash) <> "siwe_nonce")
+
+    with {:get, {:ok, nonce}} <- {:get, Redix.command(:redix, ["GET", cookie_key])},
+         {:del, {:ok, _}} <- {:del, Redix.command(:redix, ["DEL", cookie_key])} do
+      {:ok, nonce}
+    else
+      _ -> {:error, "Redis configuration problem, please contact support."}
     end
   end
 
