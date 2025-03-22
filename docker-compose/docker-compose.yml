@@ -105,3 +105,11 @@ services:
     extends:
       file: ./services/nginx.yml
       service: proxy
+
+  smart-contract-verifier:
+    depends_on:
+      - db
+      - backend
+    extends:
+      file: ./services/smart-contract-verifier.yml
+      service: smart-contract-verifier
