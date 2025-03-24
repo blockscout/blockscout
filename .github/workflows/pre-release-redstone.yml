@@ -35,7 +35,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-redstone:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+          tags: ghcr.io/blockscout/blockscout-redstone:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -52,7 +52,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-redstone:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
+          tags: ghcr.io/blockscout/blockscout-redstone:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -70,7 +70,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-redstone:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-api
+          tags: ghcr.io/blockscout/blockscout-redstone:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-api
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
