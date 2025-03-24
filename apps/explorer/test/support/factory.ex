@@ -169,7 +169,7 @@ defmodule Explorer.Factory do
   end
 
   def watchlist_address_db_factory(%{wl_id: id}) do
-    hash = build(:address).hash
+    hash = insert(:address).hash
 
     %WatchlistAddress{
       name: sequence("test"),
