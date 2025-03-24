@@ -127,7 +127,9 @@ defmodule Explorer.Market.Fetcher.History do
 
   @impl GenServer
   def handle_info({_ref, {type, :ignore}}, state) do
-    Logger.info("Selected source (#{inspect(get_in(state, [type, :source]))}) for #{type} is not implemented")
+    Logger.info(
+      "Selected source (#{inspect(get_in(state.types_states, [type, :source]))}) for #{type} is not implemented"
+    )
 
     new_types_states =
       state.types_states
@@ -155,7 +157,7 @@ defmodule Explorer.Market.Fetcher.History do
     end
   end
 
-  def maybe_insert_and_schedule_refetch(state) do
+  defp maybe_insert_and_schedule_refetch(state) do
     if Enum.all?(state.types_states, fn {_type, type_state} ->
          is_nil(type_state.source) or type_state.finished? or
            type_state.failed_attempts > type_state.max_failed_attempts
@@ -166,8 +168,6 @@ defmodule Explorer.Market.Fetcher.History do
 
       Process.send_after(self(), {:fetch_all, 1}, config(:history_fetch_interval))
     end
-
-    {:noreply, state}
   end
 
   defp config(key) do

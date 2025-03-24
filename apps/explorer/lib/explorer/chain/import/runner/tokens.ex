@@ -283,6 +283,20 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     )
   end
 
+  @doc """
+  Returns a list of market data fields that should be updated.
+
+  This function provides the standard set of fields that require updates when
+  processing market data operations.
+
+  ## Returns
+  - List of atoms representing the market data fields to update: `:name`,
+    `:symbol`, `:type`, `:fiat_value`, `:circulating_market_cap`, and
+    `:volume_24h`
+  """
+  @spec market_data_fields_to_update() :: [
+          :name | :symbol | :type | :fiat_value | :circulating_market_cap | :volume_24h
+        ]
   def market_data_fields_to_update do
     [:name, :symbol, :type, :fiat_value, :circulating_market_cap, :volume_24h]
   end

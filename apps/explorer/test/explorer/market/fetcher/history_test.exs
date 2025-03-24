@@ -56,7 +56,7 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
     bypass = Bypass.open()
 
     Application.put_env(:explorer, Source, native_coin_history_source: CryptoCompare)
-    Application.put_env(:explorer, CryptoCompare, base_url: "http://localhost:#{bypass.port}")
+    Application.put_env(:explorer, CryptoCompare, base_url: "http://localhost:#{bypass.port}", coin_symbol: "TEST")
 
     on_exit(fn ->
       Application.put_env(:explorer, Source, source_configuration)
@@ -189,7 +189,7 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
     source_configuration = Application.get_env(:explorer, Source)
 
     Application.put_env(:explorer, Source, native_coin_history_source: CryptoCompare)
-    Application.put_env(:explorer, CryptoCompare, base_url: "http://localhost:#{bypass.port}")
+    Application.put_env(:explorer, CryptoCompare, base_url: "http://localhost:#{bypass.port}", coin_symbol: "TEST")
 
     on_exit(fn ->
       Application.put_env(:explorer, CryptoCompare, crypto_compare_configuration)

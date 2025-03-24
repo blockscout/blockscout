@@ -223,7 +223,7 @@ defmodule BlockScoutWeb.Notifier do
     })
 
     Endpoint.broadcast("exchange_rate:new_rate", "new_rate", %{
-      exchange_rate: exchange_rate_with_available_supply.usd_value,
+      exchange_rate: exchange_rate_with_available_supply.fiat_value,
       available_supply: exchange_rate_with_available_supply.available_supply,
       chart_data: market_history_data
     })
@@ -556,7 +556,7 @@ defmodule BlockScoutWeb.Notifier do
 
       Endpoint.broadcast("addresses:#{address_hash}", "current_coin_balance", %{
         coin_balance: coin_balance.value || %Wei{value: Decimal.new(0)},
-        exchange_rate: Market.get_coin_exchange_rate().usd_value,
+        exchange_rate: Market.get_coin_exchange_rate().fiat_value,
         block_number: block_number
       })
     end
@@ -579,7 +579,7 @@ defmodule BlockScoutWeb.Notifier do
     v2_params = %{
       balance: address.fetched_coin_balance.value,
       block_number: address.fetched_coin_balance_block_number,
-      exchange_rate: exchange_rate.usd_value
+      exchange_rate: exchange_rate.fiat_value
     }
 
     # TODO: delete duplicated event when old UI becomes deprecated

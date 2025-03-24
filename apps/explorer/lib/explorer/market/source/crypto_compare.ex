@@ -78,9 +78,9 @@ defmodule Explorer.Market.Source.CryptoCompare do
 
       {:ok, result}
     else
-      nil -> {:error, "#{if secondary_coin?, do: "Secondary coin", else: "Coin"} ID not specified"}
+      nil -> {:error, "#{Source.secondary_coin_string(secondary_coin?)} ID not specified"}
       {:ok, nil} -> {:ok, []}
-      {:ok, unexpected_response} -> {:error, "Unexpected response from CryptoCompare: #{inspect(unexpected_response)}"}
+      {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("CryptoCompare", unexpected_response)}
       {:error, _reason} = error -> error
     end
   end

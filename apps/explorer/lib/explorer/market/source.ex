@@ -250,7 +250,7 @@ defmodule Explorer.Market.Source do
   """
   @spec native_coin_source() :: module
   def native_coin_source do
-    config(:native_coin_source) || Enum.find(@sources, fn source -> source.tokens_fetching_enabled?() == true end)
+    config(:native_coin_source) || Enum.find(@sources, fn source -> source.native_coin_fetching_enabled?() == true end)
   end
 
   @doc """
@@ -265,7 +265,8 @@ defmodule Explorer.Market.Source do
   """
   @spec secondary_coin_source() :: module
   def secondary_coin_source do
-    config(:secondary_coin_source) || Enum.find(@sources, fn source -> source.tokens_fetching_enabled?() == true end)
+    config(:secondary_coin_source) ||
+      Enum.find(@sources, fn source -> source.secondary_coin_fetching_enabled?() == true end)
   end
 
   @doc """
@@ -350,6 +351,16 @@ defmodule Explorer.Market.Source do
   def tvl_history_source do
     config(:tvl_history_source) ||
       Enum.find([DefiLlama | @sources], fn source -> source.tvl_history_fetching_enabled?() == true end)
+  end
+
+  @spec secondary_coin_string(boolean()) :: String.t()
+  def secondary_coin_string(secondary_coin?) do
+    if secondary_coin?, do: "Secondary coin", else: "Coin"
+  end
+
+  @spec unexpected_response_error(any(), any()) :: String.t()
+  def unexpected_response_error(source, unexpected_response) do
+    "Unexpected response from #{inspect(source)}: #{inspect(unexpected_response)}"
   end
 
   defp config(key) do

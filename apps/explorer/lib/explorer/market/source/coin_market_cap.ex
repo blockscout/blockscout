@@ -74,7 +74,7 @@ defmodule Explorer.Market.Source.CoinMarketCap do
     else
       nil -> {:error, "Coin ID not specified"}
       {:ok, nil} -> {:ok, []}
-      {:ok, unexpected_response} -> {:error, "Unexpected response from CoinMarketCap: #{inspect(unexpected_response)}"}
+      {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("CoinMarketCap", unexpected_response)}
       {:error, _reason} = error -> error
     end
   end
@@ -103,6 +103,7 @@ defmodule Explorer.Market.Source.CoinMarketCap do
              headers()
            ) do
       token_properties = market_data |> Map.values() |> List.first() || %{}
+      currency_id = token_properties["quote"][config(:currency_id)]
 
       {:ok,
        %Token{
@@ -111,14 +112,13 @@ defmodule Explorer.Market.Source.CoinMarketCap do
            Source.to_decimal(token_properties["total_supply"]) ||
              Source.to_decimal(token_properties["circulating_supply"]),
          btc_value: Source.to_decimal(token_properties["quote"]["1"]["price"]),
-         #  id: id,
-         last_updated: Source.maybe_get_date(token_properties["quote"][config(:currency_id)]["last_updated"]),
-         market_cap: Source.to_decimal(token_properties["quote"][config(:currency_id)]["market_cap"]),
-         tvl: Source.to_decimal(token_properties["quote"][config(:currency_id)]["tvl"]),
+         last_updated: Source.maybe_get_date(currency_id["last_updated"]),
+         market_cap: Source.to_decimal(currency_id["market_cap"]),
+         tvl: Source.to_decimal(currency_id["tvl"]),
          name: token_properties["name"],
          symbol: String.upcase(token_properties["symbol"]),
-         fiat_value: Source.to_decimal(token_properties["quote"][config(:currency_id)]["price"]),
-         volume_24h: Source.to_decimal(token_properties["quote"][config(:currency_id)]["volume_24h"]),
+         fiat_value: Source.to_decimal(currency_id["price"]),
+         volume_24h: Source.to_decimal(currency_id["volume_24h"]),
          image_url: nil
        }}
     else
@@ -126,7 +126,7 @@ defmodule Explorer.Market.Source.CoinMarketCap do
         {:error, coin_id_not_specified_error}
 
       {:ok, unexpected_response} ->
-        {:error, "Unexpected response from CoinMarketCap: #{inspect(unexpected_response)}"}
+        {:error, Source.unexpected_response_error("CoinMarketCap", unexpected_response)}
 
       {:error, _reason} = error ->
         error
@@ -138,7 +138,7 @@ defmodule Explorer.Market.Source.CoinMarketCap do
 
     with coin_id when not is_nil(coin_id) <-
            if(secondary_coin?, do: config(:secondary_coin_id), else: config(:coin_id)),
-         {:ok, %{"data" => %{"quotes" => [_ | closing_quotes] = quotes}}} <-
+         {:ok, %{"data" => %{"quotes" => quotes}}} <-
            Source.http_request(
              base_url()
              |> URI.append_path("/cryptocurrency/quotes/historical")
@@ -150,6 +150,12 @@ defmodule Explorer.Market.Source.CoinMarketCap do
              |> URI.to_string(),
              headers()
            ) do
+      closing_quotes =
+        case quotes do
+          [_ | closing_quotes] -> closing_quotes
+          _ -> []
+        end
+
       result =
         for {%{"timestamp" => date, "quote" => %{^currency_id => %{"price" => opening_price}}}, closing_quote} <-
               Stream.zip(quotes, Stream.concat(closing_quotes, [nil])) do
@@ -176,9 +182,9 @@ defmodule Explorer.Market.Source.CoinMarketCap do
 
       {:ok, result}
     else
-      nil -> {:error, "#{if secondary_coin?, do: "Secondary coin", else: "Coin"} ID not specified"}
+      nil -> {:error, "#{Source.secondary_coin_string(secondary_coin?)} ID not specified"}
       {:ok, nil} -> {:ok, []}
-      {:ok, unexpected_response} -> {:error, "Unexpected response from CoinMarketCap: #{inspect(unexpected_response)}"}
+      {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("CoinMarketCap", unexpected_response)}
       {:error, _reason} = error -> error
     end
   end

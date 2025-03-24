@@ -25,6 +25,7 @@ defmodule Explorer.Market.Source.CryptoCompareTest do
 
     Application.put_env(:explorer, CryptoCompare,
       base_url: "http://localhost:#{bypass.port}",
+      coin_symbol: "TEST",
       secondary_coin_symbol: "SECONDARY_TEST",
       currency: "AED"
     )

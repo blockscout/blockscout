@@ -42,7 +42,7 @@ defmodule Explorer.Market.Source.CryptoRank do
       {:ok, skip + batch_size, initial_tokens_len < batch_size, tokens_to_import}
     else
       nil -> {:error, "Platform ID not specified"}
-      {:ok, unexpected_response} -> {:error, "Unexpected response from CryptoRank: #{inspect(unexpected_response)}"}
+      {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("CryptoRank", unexpected_response)}
       {:error, _reason} = error -> error
     end
   end
@@ -110,24 +110,25 @@ defmodule Explorer.Market.Source.CryptoRank do
     with coin_id when not is_nil(coin_id) <- coin_id,
          {:ok, %{"data" => coin}} <-
            Source.http_request(base_url() |> URI.append_path("/currencies/#{coin_id}") |> URI.to_string(), headers()) do
+      coin_data = coin["values"][config(:currency)]
+
       {:ok,
        %Token{
          available_supply: Source.to_decimal(coin["circulatingSupply"]),
          total_supply: Source.to_decimal(coin["totalSupply"]) || Source.to_decimal(coin["circulatingSupply"]),
          btc_value: Source.to_decimal(coin["values"]["BTC"]["price"]),
-         #  id: id,
          last_updated: Source.maybe_get_date(coin["lastUpdated"]),
-         market_cap: Source.to_decimal(coin["values"][config(:currency)]["marketCap"]),
+         market_cap: Source.to_decimal(coin_data["marketCap"]),
          tvl: nil,
          name: coin["name"],
          symbol: String.upcase(coin["symbol"]),
-         fiat_value: Source.to_decimal(coin["values"][config(:currency)]["price"]),
-         volume_24h: Source.to_decimal(coin["values"][config(:currency)]["volume24h"]),
+         fiat_value: Source.to_decimal(coin_data["price"]),
+         volume_24h: Source.to_decimal(coin_data["volume24h"]),
          image_url: Source.handle_image_url(coin["images"]["60x60"] || coin["images"]["16x16"])
        }}
     else
       nil -> {:error, coin_id_not_specified_error}
-      {:ok, unexpected_response} -> {:error, "Unexpected response from CryptoRank: #{inspect(unexpected_response)}"}
+      {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("CryptoRank", unexpected_response)}
       {:error, _reason} = error -> error
     end
   end
@@ -137,7 +138,7 @@ defmodule Explorer.Market.Source.CryptoRank do
            if(secondary_coin?, do: config(:secondary_coin_id), else: config(:coin_id)),
          from = Date.utc_today() |> Date.add(-previous_days) |> Date.to_iso8601(),
          to = Date.utc_today() |> Date.to_iso8601(),
-         {:ok, %{"data" => %{"dates" => dates, "prices" => [_ | closing_prices] = opening_prices}}} <-
+         {:ok, %{"data" => %{"dates" => dates, "prices" => opening_prices}}} <-
            Source.http_request(
              base_url()
              |> URI.append_path("/currencies/#{coin_id}/sparkline")
@@ -147,6 +148,12 @@ defmodule Explorer.Market.Source.CryptoRank do
              |> URI.to_string(),
              headers()
            ) do
+      closing_prices =
+        case opening_prices do
+          [_ | closing_prices] -> closing_prices
+          _ -> []
+        end
+
       result =
         [dates, opening_prices, Stream.concat(closing_prices, [nil])]
         |> Enum.zip_with(fn [date, opening_price, closing_price] ->
@@ -162,9 +169,9 @@ defmodule Explorer.Market.Source.CryptoRank do
 
       {:ok, result}
     else
-      nil -> {:error, "#{if secondary_coin?, do: "Secondary coin", else: "Coin"} ID not specified"}
+      nil -> {:error, "#{Source.secondary_coin_string(secondary_coin?)} ID not specified"}
       {:ok, nil} -> {:ok, []}
-      {:ok, unexpected_response} -> {:error, "Unexpected response from CryptoRank: #{inspect(unexpected_response)}"}
+      {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("CryptoRank", unexpected_response)}
       {:error, _reason} = error -> error
     end
   end

@@ -2,7 +2,7 @@ defmodule Explorer.Market.Fetcher.Coin do
   @moduledoc """
   Local cache for native coin exchange rates.
 
-  Exchange rate data is updated every 10 minutes or CACHE_EXCHANGE_RATES_PERIOD seconds.
+  Exchange rate data is updated every 10 minutes or MARKET_COIN_CACHE_PERIOD seconds.
   """
 
   use GenServer, restart: :transient
@@ -88,7 +88,7 @@ defmodule Explorer.Market.Fetcher.Coin do
   @impl GenServer
   def handle_info({_ref, {{:error, reason}, secondary_coin?}}, state) do
     Logger.warning(fn ->
-      "Failed to get #{if secondary_coin?, do: "secondary ", else: ""}exchange rates with reason '#{reason}'."
+      "Failed to get #{Source.secondary_coin_string(secondary_coin?)} exchange rates with reason '#{reason}'."
     end)
 
     schedule_next_consolidation(secondary_coin?)
@@ -100,7 +100,7 @@ defmodule Explorer.Market.Fetcher.Coin do
   @impl GenServer
   def handle_info({_ref, {:ignore, secondary_coin?}}, state) do
     Logger.warning(
-      "Configured #{if secondary_coin?, do: "secondary", else: "native"} coin source does not implement coin fetching"
+      "Configured #{Source.secondary_coin_string(secondary_coin?)} source does not implement coin fetching"
     )
 
     state =
@@ -133,20 +133,40 @@ defmodule Explorer.Market.Fetcher.Coin do
     end
   end
 
+  @doc """
+  Retrieves the primary coin exchange rate from the ETS table.
+
+  This function fetches the primary exchange rate data for the token from the ETS
+  table if the store is configured to use ETS and the functionality is enabled.
+
+  ## Returns
+  - A `Token.t()` struct containing the coin exchange rate data if found
+  - `nil` if no data is found or if the store is not configured properly
+  """
   @spec get_coin_exchange_rate() :: Token.t() | nil
   def get_coin_exchange_rate do
-    if config(:store) == :ets && config(:enabled) do
-      case :ets.lookup(table_name(), false) do
-        [{_, coin} | _] -> coin
-        _ -> nil
-      end
-    end
+    do_get_coin_exchange_rate(false)
   end
 
+  @doc """
+  Retrieves the secondary coin exchange rate from the ETS table.
+
+  This function fetches the secondary exchange rate data for the token from the
+  ETS table if the store is configured to use ETS and the functionality is
+  enabled.
+
+  ## Returns
+  - A `Token.t()` struct containing the secondary coin exchange rate data if found
+  - `nil` if no data is found or if the store is not configured properly
+  """
   @spec get_secondary_coin_exchange_rate() :: Token.t() | nil
   def get_secondary_coin_exchange_rate do
+    do_get_coin_exchange_rate(true)
+  end
+
+  defp do_get_coin_exchange_rate(secondary_coin?) do
     if config(:store) == :ets && config(:enabled) do
-      case :ets.lookup(table_name(), true) do
+      case :ets.lookup(table_name(), secondary_coin?) do
         [{_, coin} | _] -> coin
         _ -> nil
       end

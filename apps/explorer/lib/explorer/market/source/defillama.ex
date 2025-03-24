@@ -52,7 +52,7 @@ defmodule Explorer.Market.Source.DefiLlama do
     with coin_id when not is_nil(coin_id) <- config(:coin_id),
          {:ok, data} when is_list(data) <-
            Source.http_request(
-             base_url() |> URI.append_path("/historicalChainTvl/#{coin_id}") |> URI.to_string(),
+             base_url() |> URI.append_path("/historicalChainTvl/#{URI.encode(coin_id)}") |> URI.to_string(),
              headers()
            ) do
       result =
@@ -67,7 +67,7 @@ defmodule Explorer.Market.Source.DefiLlama do
     else
       nil -> {:error, "Coin ID not specified"}
       {:ok, nil} -> {:ok, []}
-      {:ok, unexpected_response} -> {:error, "Unexpected response from defillama: #{inspect(unexpected_response)}"}
+      {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("DefiLlama", unexpected_response)}
       {:error, _reason} = error -> error
     end
   end

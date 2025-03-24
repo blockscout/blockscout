@@ -90,7 +90,11 @@ defmodule Explorer.Market.Source.CoinGecko do
              |> URI.to_string(),
              headers()
            ) do
-      [_ | market_caps] = market_caps_dates
+      market_caps =
+        case market_caps_dates do
+          [_ | market_caps] -> market_caps
+          _ -> []
+        end
 
       result =
         for {[_, market_cap], [date, _]} <- Stream.zip(market_caps, market_caps_dates) do
@@ -104,7 +108,7 @@ defmodule Explorer.Market.Source.CoinGecko do
     else
       nil -> {:error, "Coin ID not specified"}
       {:ok, nil} -> {:ok, []}
-      {:ok, unexpected_response} -> {:error, "Unexpected response from coingecko: #{inspect(unexpected_response)}"}
+      {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("CoinGecko", unexpected_response)}
       {:error, _reason} = error -> error
     end
   end
@@ -147,7 +151,7 @@ defmodule Explorer.Market.Source.CoinGecko do
        }}
     else
       nil -> {:error, coin_id_not_specified_error}
-      {:ok, unexpected_response} -> {:error, "Unexpected response from coingecko: #{inspect(unexpected_response)}"}
+      {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("CoinGecko", unexpected_response)}
       {:error, _reason} = error -> error
     end
   end
@@ -234,7 +238,11 @@ defmodule Explorer.Market.Source.CoinGecko do
              |> URI.to_string(),
              headers()
            ) do
-      [_ | closings] = prices
+      closings =
+        case prices do
+          [_ | closings] -> closings
+          _ -> []
+        end
 
       result =
         for {[date, opening_price], [_, closing_price]} <- Stream.zip(prices, closings) do
@@ -248,7 +256,7 @@ defmodule Explorer.Market.Source.CoinGecko do
 
       {:ok, result}
     else
-      nil -> {:error, "#{if secondary_coin?, do: "Secondary coin", else: "Coin"} ID not specified"}
+      nil -> {:error, "#{Source.secondary_coin_string(secondary_coin?)} ID not specified"}
       {:ok, nil} -> {:ok, []}
       {:error, _reason} = error -> error
     end

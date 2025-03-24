@@ -69,7 +69,7 @@ defmodule Explorer.Market.Source.Mobula do
       {:ok, offset + batch_size, initial_tokens_len < batch_size, tokens_to_import}
     else
       nil -> {:error, "Platform ID not specified"}
-      {:ok, unexpected_response} -> {:error, "Unexpected response from mobula: #{inspect(unexpected_response)}"}
+      {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("Mobula", unexpected_response)}
       {:error, _reason} = error -> error
     end
   end
@@ -126,8 +126,8 @@ defmodule Explorer.Market.Source.Mobula do
       nil ->
         {:error, coin_id_not_specified_error}
 
-      {:ok, data} ->
-        {:error, "Unexpected response from Mobula: #{inspect(data)}"}
+      {:ok, unexpected_response} ->
+        {:error, Source.unexpected_response_error("Mobula", unexpected_response)}
 
       {:error, _reason} = error ->
         error
@@ -159,7 +159,7 @@ defmodule Explorer.Market.Source.Mobula do
 
       {:ok, result}
     else
-      nil -> {:error, "#{if secondary_coin?, do: "Secondary coin", else: "Coin"} ID not specified"}
+      nil -> {:error, "#{Source.secondary_coin_string(secondary_coin?)} ID not specified"}
       {:ok, nil} -> {:ok, []}
       {:error, _reason} = error -> error
     end
