@@ -176,7 +176,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   end
 
   defp insert_additional_sources(output, address) do
-    bytecode_twin_smart_contract = SmartContract.get_address_verified_bytecode_twin_contract(address.hash)
+    bytecode_twin_smart_contract = SmartContract.get_address_verified_bytecode_twin_contract(address)
 
     additional_sources_from_bytecode_twin =
       bytecode_twin_smart_contract && bytecode_twin_smart_contract.smart_contract_additional_sources
