@@ -16,6 +16,12 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
     env = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper)
     env_1 = Application.get_env(:explorer, Explorer.Migrator.BackfillMetadataURL)
 
+    Application.put_env(
+      :indexer,
+      Indexer.Fetcher.TokenInstance.Helper,
+      Keyword.put(env, :host_filtering_enabled?, true)
+    )
+
     on_exit(fn ->
       Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, env)
       Application.put_env(:explorer, Explorer.Migrator.BackfillMetadataURL, env_1)
