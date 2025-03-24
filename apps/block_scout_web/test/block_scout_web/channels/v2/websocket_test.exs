@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.WebsocketV2Test do
+defmodule BlockScoutWeb.V2.WebsocketTest do
   use BlockScoutWeb.ChannelCase, async: false
 
   alias BlockScoutWeb.Notifier
