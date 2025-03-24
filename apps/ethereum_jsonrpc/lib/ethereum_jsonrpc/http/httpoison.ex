@@ -25,12 +25,9 @@ defmodule EthereumJSONRPC.HTTP.HTTPoison do
 
     case HTTPoison.post(url, json, headers, options) do
       {:ok, %HTTPoison.Response{body: body, status_code: status_code, headers: headers}} ->
-        with {:ok, decoded_body} <- Jason.decode(body) do
-          has_error? = response_body_has_error?(decoded_body)
-
-          if has_error? do
-            Instrumenter.json_rpc_errors(method)
-          end
+        with {:ok, decoded_body} <- Jason.decode(body),
+             true <- response_body_has_error?(decoded_body) do
+          Instrumenter.json_rpc_errors(method)
         end
 
         {:ok, %{body: try_unzip(gzip_enabled?, body, headers), status_code: status_code}}
