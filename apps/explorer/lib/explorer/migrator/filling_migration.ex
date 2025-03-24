@@ -255,8 +255,12 @@ defmodule Explorer.Migrator.FillingMigration do
             |> Enum.map(&run_task/1)
             |> Task.await_many(:infinity)
 
-            unless unquote(opts[:skip_meta_update?]) do
-              MigrationStatus.update_meta(migration_name(), new_state)
+            unquote do
+              unless opts[:skip_meta_update?] do
+                quote do
+                  MigrationStatus.update_meta(migration_name(), new_state)
+                end
+              end
             end
 
             schedule_batch_migration()

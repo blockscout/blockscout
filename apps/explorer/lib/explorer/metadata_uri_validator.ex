@@ -77,7 +77,6 @@ defmodule Explorer.MetadataURIValidator do
   defp allowed_ip?(ip) do
     not Enum.any?(prepare_cidr_blacklist(), fn range ->
       range
-      |> InetCidr.parse_cidr!()
       |> InetCidr.contains?(ip)
     end)
   end

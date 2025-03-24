@@ -54,17 +54,17 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
 
   @impl FillingMigration
   def update_batch(token_instances) do
-    updated_at = DateTime.utc_now()
+    now = DateTime.utc_now()
 
     prepared_params =
       token_instances
       |> NFT.batch_metadata_url_request(Application.get_env(:explorer, :json_rpc_named_arguments))
       |> Enum.zip(token_instances)
       |> Enum.map(&process_result/1)
-      |> Enum.map(&Map.put(&1, :updated_at, updated_at))
+      |> Enum.map(&Map.merge(&1, %{updated_at: now, inserted_at: now}))
 
     {_, result} =
-      Repo.insert_all(__MODULE__, prepared_params,
+      Repo.insert_all(Instance, prepared_params,
         on_conflict: token_instance_on_conflict(),
         conflict_target: [:token_id, :token_contract_address_hash],
         returning: true
@@ -93,7 +93,7 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
   end
 
   # credo:disable-for-next-line /Complexity/
-  defp process_result({{{:ok, url}, _}, {token_contract_address_hash, token_id, _token_type}}) do
+  defp process_result({{{:ok, [url]}, _}, {token_contract_address_hash, token_id, _token_type}}) do
     url = String.trim(url, "'")
 
     metadata_url_params =

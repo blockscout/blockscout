@@ -218,7 +218,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
       updated_token_instance =
         case fill_metadata_url_task && (Task.yield(fill_metadata_url_task) || Task.ignore(fill_metadata_url_task)) do
-          [%{error: error}] when not is_nil(error) ->
+          {:ok, [%{error: error}]} when not is_nil(error) ->
             %Instance{token_instance | metadata: nil}
 
           _ ->
