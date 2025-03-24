@@ -37,7 +37,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: ghcr.io/blockscout/blockscout-staging:latest, blockscout/blockscout-staging:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
+          tags: ghcr.io/blockscout/blockscout-staging:latest, ghcr.io/blockscout/blockscout-staging:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
