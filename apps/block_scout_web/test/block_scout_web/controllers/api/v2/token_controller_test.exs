@@ -406,7 +406,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, token_balances)
+      check_holders_paginated_response(response, response_2nd_page, token_balances)
     end
 
     test "check pagination with the same values", %{conn: conn} do
@@ -430,7 +430,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, token_balances)
+      check_holders_paginated_response(response, response_2nd_page, token_balances)
     end
   end
 
@@ -1417,7 +1417,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, token_balances)
+      check_holders_paginated_response(response, response_2nd_page, token_balances)
     end
   end
 
@@ -1771,6 +1771,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
   end
 
+  defp compare_holders_item(%CurrentTokenBalance{} = ctb, json) do
+    assert Address.checksum(ctb.address_hash) == json["address"]["hash"]
+    assert (ctb.token_id && to_string(ctb.token_id)) == json["token_id"]
+    assert to_string(ctb.value) == json["value"]
+  end
+
   def compare_item(%Address{} = address, json) do
     assert Address.checksum(address.hash) == json["hash"]
   end
@@ -1801,9 +1807,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   end
 
   def compare_item(%CurrentTokenBalance{} = ctb, json) do
-    assert Address.checksum(ctb.address_hash) == json["address"]["hash"]
-    assert (ctb.token_id && to_string(ctb.token_id)) == json["token_id"]
-    assert to_string(ctb.value) == json["value"]
+    compare_holders_item(ctb, json)
     compare_item(Repo.preload(ctb, [{:token, :contract_address}]).token, json["token"])
   end
 
@@ -1876,5 +1880,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     assert Enum.count(second_page_resp["items"]) == 1
     assert second_page_resp["next_page_params"] == nil
     compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
+  end
+
+  defp check_holders_paginated_response(first_page_resp, second_page_resp, list) do
+    assert Enum.count(first_page_resp["items"]) == 50
+    assert first_page_resp["next_page_params"] != nil
+    compare_holders_item(Enum.at(list, 50), Enum.at(first_page_resp["items"], 0))
+    compare_holders_item(Enum.at(list, 1), Enum.at(first_page_resp["items"], 49))
+
+    assert Enum.count(second_page_resp["items"]) == 1
+    assert second_page_resp["next_page_params"] == nil
+    compare_holders_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
   end
 end

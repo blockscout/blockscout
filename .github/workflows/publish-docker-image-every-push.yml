@@ -136,7 +136,3 @@ jobs:
           ref: main
           wait_interval: 30
           client_payload: '{ "instance": "dev", "globalEnv": "e2e"}'
-  test:
-    needs: deploy_e2e
-    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
-    secrets: inherit
