@@ -64,7 +64,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       |> Enum.map(fn batch ->
         from..to//_ = batch.l2_block_range
 
-        render_base_info_for_batch(batch.id, from, to, batch.transaction_count, batch)
+        render_base_info_for_batch(batch.id, from, to, batch.transactions_count, batch)
       end)
 
     %{
