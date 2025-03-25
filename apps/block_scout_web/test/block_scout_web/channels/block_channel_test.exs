@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.BlockChannelTest do
   use BlockScoutWeb.ChannelCase
 
   alias BlockScoutWeb.Notifier
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
 
   test "subscribed user is notified of new_block event" do
     topic = "blocks_old:new_block"
