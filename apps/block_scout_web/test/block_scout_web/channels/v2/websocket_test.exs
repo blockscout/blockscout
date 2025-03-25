@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.WebsocketV2Test do
+defmodule BlockScoutWeb.V2.WebsocketTest do
   use BlockScoutWeb.ChannelCase, async: false
 
   alias BlockScoutWeb.Notifier
@@ -224,14 +224,14 @@ defmodule BlockScoutWeb.WebsocketV2Test do
       topic = "transactions:new_transaction"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic)
 
       topic_pending = "transactions:new_pending_transaction"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic_pending)
 
@@ -260,7 +260,7 @@ defmodule BlockScoutWeb.WebsocketV2Test do
       topic_token = "tokens:0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic_token)
 
@@ -284,7 +284,7 @@ defmodule BlockScoutWeb.WebsocketV2Test do
       topic = "addresses:0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic)
 
@@ -325,14 +325,14 @@ defmodule BlockScoutWeb.WebsocketV2Test do
       topic = "addresses:0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic)
 
       topic_1 = "addresses:0x515c09c5bba1ed566b02a5b0599ec5d5d0aee73d"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic_1)
 

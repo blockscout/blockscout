@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.RewardChannelTest do
+defmodule BlockScoutWeb.V2.RewardChannelTest do
   use BlockScoutWeb.ChannelCase, async: false
 
   alias BlockScoutWeb.Notifier
@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.RewardChannelTest do
       block = insert(:block)
       reward = insert(:reward, address_hash: address.hash, block_hash: block.hash)
 
-      topic = "rewards_old:#{address.hash}"
+      topic = "rewards:#{address.hash}"
       @endpoint.subscribe(topic)
 
       Notifier.handle_event({:chain_event, :block_rewards, :realtime, [reward]})
@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.RewardChannelTest do
       block = insert(:block)
       reward = insert(:reward, address_hash: address.hash, block_hash: block.hash)
 
-      topic = "rewards_old:#{address.hash}"
+      topic = "rewards:#{address.hash}"
       @endpoint.subscribe(topic)
 
       Notifier.handle_event({:chain_event, :block_rewards, :realtime, [reward]})
@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.RewardChannelTest do
       block = insert(:block)
       reward = insert(:reward, address_hash: address.hash, block_hash: block.hash)
 
-      topic = "rewards_old:0x0"
+      topic = "rewards:0x0"
       @endpoint.subscribe(topic)
 
       Notifier.handle_event({:chain_event, :block_rewards, :realtime, [reward]})

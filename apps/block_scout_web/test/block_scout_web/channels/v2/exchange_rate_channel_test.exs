@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.ExchangeRateChannelTest do
+defmodule BlockScoutWeb.V2.ExchangeRateChannelTest do
   use BlockScoutWeb.ChannelCase
 
   import Mox
@@ -48,15 +48,15 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
       Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
       Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
 
-      topic = "exchange_rate_old:new_rate"
+      topic = "exchange_rate:new_rate"
       @endpoint.subscribe(topic)
 
       Notifier.handle_event({:chain_event, :exchange_rate})
 
       receive do
         %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_rate", payload: payload} ->
-          assert payload.exchange_rate == Map.from_struct(token)
-          assert payload.market_history_data == []
+          assert payload.exchange_rate == token.usd_value
+          assert payload.chart_data == []
       after
         :timer.seconds(5) ->
           assert false, "Expected message received nothing."
@@ -84,15 +84,15 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
 
       Market.fetch_recent_history()
 
-      topic = "exchange_rate_old:new_rate"
+      topic = "exchange_rate:new_rate"
       @endpoint.subscribe(topic)
 
       Notifier.handle_event({:chain_event, :exchange_rate})
 
       receive do
         %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_rate", payload: payload} ->
-          assert payload.exchange_rate == Map.from_struct(token)
-          assert payload.market_history_data == records
+          assert payload.exchange_rate == token.usd_value
+          assert payload.chart_data == records
       after
         :timer.seconds(5) ->
           assert false, "Expected message received nothing."

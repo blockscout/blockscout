@@ -1,11 +1,11 @@
-defmodule BlockScoutWeb.BlockChannelTest do
+defmodule BlockScoutWeb.V2.BlockChannelTest do
   use BlockScoutWeb.ChannelCase
 
   alias BlockScoutWeb.Notifier
   alias Explorer.Counters.AverageBlockTime
 
   test "subscribed user is notified of new_block event" do
-    topic = "blocks_old:new_block"
+    topic = "blocks:new_block"
     @endpoint.subscribe(topic)
 
     block = insert(:block, number: 1)

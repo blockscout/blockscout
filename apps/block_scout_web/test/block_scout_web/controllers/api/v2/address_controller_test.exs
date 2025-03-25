@@ -424,7 +424,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       topic = "addresses:#{address_hash}"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic)
 
@@ -2666,7 +2666,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       topic = "addresses:#{address.hash}"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic)
 
