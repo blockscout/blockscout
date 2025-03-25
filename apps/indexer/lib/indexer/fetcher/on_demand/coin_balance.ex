@@ -97,26 +97,16 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
 
   @impl BufferedTask
   def run(entries, json_rpc_named_arguments) do
-    {fetch_and_update_params, fetch_and_import_params, daily_params} =
-      Enum.reduce(entries, {[], [], []}, fn
-        {:fetch_and_update, block_number, address}, {acc, other_1, other_2} ->
-          {[{block_number, address} | acc], other_1, other_2}
+    entries_by_type = Enum.group_by(entries, &elem(&1, 0), &Tuple.delete_at(&1, 0))
 
-        {:fetch_and_import, block_number, address}, {other_1, acc, other_2} ->
-          {other_1, [{block_number, address} | acc], other_2}
-
-        {:fetch_and_import_daily_balances, block_number, address}, {other_1, other_2, acc} ->
-          {other_1, other_2, [{block_number, address} | acc]}
-      end)
-
-    fetch_and_update(fetch_and_update_params, json_rpc_named_arguments)
-    fetch_and_import(fetch_and_import_params, json_rpc_named_arguments)
-    fetch_and_import_daily_balances(daily_params, json_rpc_named_arguments)
+    fetch_and_update(entries_by_type[:fetch_and_update], json_rpc_named_arguments)
+    fetch_and_import(entries_by_type[:fetch_and_import], json_rpc_named_arguments)
+    fetch_and_import_daily_balances(entries_by_type[:fetch_and_import_daily_balances], json_rpc_named_arguments)
 
     :ok
   end
 
-  defp fetch_and_update([], _json_rpc_named_arguments), do: :ok
+  defp fetch_and_update(nil, _json_rpc_named_arguments), do: :ok
 
   defp fetch_and_update(params, json_rpc_named_arguments) do
     with {:ok, %{params_list: params_list}} when params_list != [] <- fetch_balances(params, json_rpc_named_arguments),
@@ -132,7 +122,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
     end
   end
 
-  defp fetch_and_import([], _json_rpc_named_arguments), do: :ok
+  defp fetch_and_import(nil, _json_rpc_named_arguments), do: :ok
 
   defp fetch_and_import(params, json_rpc_named_arguments) do
     case fetch_balances(params, json_rpc_named_arguments) do
@@ -141,7 +131,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
     end
   end
 
-  defp fetch_and_import_daily_balances([], _json_rpc_named_arguments), do: :ok
+  defp fetch_and_import_daily_balances(nil, _json_rpc_named_arguments), do: :ok
 
   defp fetch_and_import_daily_balances(params, json_rpc_named_arguments) do
     case fetch_balances(params, json_rpc_named_arguments) do
