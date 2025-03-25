@@ -2425,6 +2425,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
       Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
       old_env = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance)
+      configuration = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor)
+      Application.put_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor, disabled?: false)
+      Indexer.Fetcher.OnDemand.TokenBalance.Supervisor.Case.start_supervised!()
 
       Application.put_env(
         :indexer,
@@ -2433,6 +2436,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       )
 
       on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor, configuration)
         Application.put_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance, old_env)
       end)
     end
