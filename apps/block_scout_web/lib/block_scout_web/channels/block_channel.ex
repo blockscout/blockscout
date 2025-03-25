@@ -4,6 +4,9 @@ defmodule BlockScoutWeb.BlockChannel do
   """
   use BlockScoutWeb, :channel
 
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens_to_block: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata_to_block: 1]
+
   alias BlockScoutWeb.API.V2.BlockView, as: BlockViewAPI
   alias BlockScoutWeb.{BlockView, ChainView}
   alias Explorer.Repo
@@ -27,7 +30,17 @@ defmodule BlockScoutWeb.BlockChannel do
       ) do
     rendered_block =
       BlockViewAPI.render("block.json", %{
-        block: block |> Repo.preload(miner: [:names, :smart_contract, proxy_implementations_association()]),
+        block:
+          block
+          |> Repo.preload(
+            miner: [
+              :names,
+              :smart_contract,
+              proxy_implementations_association()
+            ]
+          )
+          |> maybe_preload_ens_to_block()
+          |> maybe_preload_metadata_to_block(),
         socket: nil
       })
 
