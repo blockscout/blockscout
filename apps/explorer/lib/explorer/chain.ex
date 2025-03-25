@@ -30,7 +30,7 @@ defmodule Explorer.Chain do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.Changeset
 
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
   alias EthereumJSONRPC.Utility.RangesHelper
@@ -51,7 +51,6 @@ defmodule Explorer.Chain do
     BlockNumberHelper,
     CurrencyHelper,
     Data,
-    DecompiledSmartContract,
     DenormalizationHelper,
     Hash,
     Import,
@@ -732,43 +731,6 @@ defmodule Explorer.Chain do
 
   def confirmations(nil, _), do: {:error, :pending}
 
-  @doc """
-  Creates a decompiled smart contract.
-  """
-
-  @spec create_decompiled_smart_contract(map()) :: {:ok, Address.t()} | {:error, Ecto.Changeset.t()}
-  def create_decompiled_smart_contract(attrs) do
-    changeset = DecompiledSmartContract.changeset(%DecompiledSmartContract{}, attrs)
-
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    Multi.new()
-    |> Multi.run(:set_address_decompiled, fn repo, _ ->
-      set_address_decompiled(repo, Changeset.get_field(changeset, :address_hash))
-    end)
-    |> Multi.insert(:decompiled_smart_contract, changeset,
-      on_conflict: :replace_all,
-      conflict_target: [:decompiler_version, :address_hash]
-    )
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{decompiled_smart_contract: decompiled_smart_contract}} -> {:ok, decompiled_smart_contract}
-      {:error, _, error_value, _} -> {:error, error_value}
-    end
-  end
-
-  defp set_address_decompiled(repo, address_hash) do
-    query =
-      from(
-        address in Address,
-        where: address.hash == ^address_hash
-      )
-
-    case repo.update_all(query, set: [decompiled: true]) do
-      {1, _} -> {:ok, []}
-      _ -> {:error, "There was an error annotating that the address has been decompiled."}
-    end
-  end
-
   @spec verified_contracts_top(non_neg_integer()) :: [Hash.Address.t()]
   def verified_contracts_top(limit) do
     query =
@@ -922,10 +884,8 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
 
-  Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
-
   """
-  @spec hash_to_address(Hash.Address.t() | binary(), [necessity_by_association_option | api?], boolean()) ::
+  @spec hash_to_address(Hash.Address.t() | binary(), [necessity_by_association_option | api?]) ::
           {:ok, Address.t()} | {:error, :not_found}
   def hash_to_address(
         hash,
@@ -937,8 +897,7 @@ defmodule Explorer.Chain do
             :token => :optional,
             :contracts_creation_transaction => :optional
           }
-        ],
-        query_decompiled_code_flag \\ false
+        ]
       ) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -950,26 +909,11 @@ defmodule Explorer.Chain do
 
     query
     |> join_associations(necessity_by_association)
-    |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
     |> select_repo(options).one()
     |> SmartContract.compose_address_for_unverified_smart_contract(hash, options)
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
-    end
-  end
-
-  def decompiled_code(address_hash, version) do
-    query =
-      from(contract in DecompiledSmartContract,
-        where: contract.address_hash == ^address_hash and contract.decompiler_version == ^version
-      )
-
-    query
-    |> Repo.one()
-    |> case do
-      nil -> {:error, :not_found}
-      contract -> {:ok, contract.decompiled_source_code}
     end
   end
 
@@ -1025,10 +969,8 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
 
-  Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
-
   """
-  @spec find_or_insert_address_from_hash(Hash.Address.t(), [necessity_by_association_option], boolean()) ::
+  @spec find_or_insert_address_from_hash(Hash.Address.t(), [necessity_by_association_option]) ::
           {:ok, Address.t()}
   def find_or_insert_address_from_hash(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
@@ -1040,16 +982,15 @@ defmodule Explorer.Chain do
             :token => :optional,
             :contracts_creation_transaction => :optional
           }
-        ],
-        query_decompiled_code_flag \\ true
+        ]
       ) do
-    case hash_to_address(hash, options, query_decompiled_code_flag) do
+    case hash_to_address(hash, options) do
       {:ok, address} ->
         {:ok, address}
 
       {:error, :not_found} ->
         Address.create(%{hash: to_string(hash)})
-        hash_to_address(hash, options, query_decompiled_code_flag)
+        hash_to_address(hash, options)
     end
   end
 
@@ -1104,15 +1045,12 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
 
-  Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
-
   """
-  @spec find_contract_address(Hash.Address.t(), [necessity_by_association_option], boolean()) ::
+  @spec find_contract_address(Hash.Address.t(), [necessity_by_association_option]) ::
           {:ok, Address.t()} | {:error, :not_found}
   def find_contract_address(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
-        options \\ [],
-        query_decompiled_code_flag \\ false
+        options \\ []
       ) do
     necessity_by_association =
       options
@@ -1131,7 +1069,6 @@ defmodule Explorer.Chain do
     address_result =
       query
       |> join_associations(necessity_by_association)
-      |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
       |> select_repo(options).one()
 
     updated_address_result = update_address_result(address_result, options, false)
@@ -1245,31 +1182,6 @@ defmodule Explorer.Chain do
 
     address_result
     |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, address_result.hash)
-  end
-
-  @spec find_decompiled_contract_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
-  def find_decompiled_contract_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
-    query =
-      from(
-        address in Address,
-        preload: [
-          :contracts_creation_internal_transaction,
-          :names,
-          :smart_contract,
-          :token,
-          :contracts_creation_transaction,
-          :decompiled_smart_contracts
-        ],
-        where: address.hash == ^hash
-      )
-
-    address = Repo.one(query)
-
-    if address do
-      {:ok, address}
-    else
-      {:error, :not_found}
-    end
   end
 
   @doc """
@@ -4262,27 +4174,6 @@ defmodule Explorer.Chain do
     value
   end
 
-  defp with_decompiled_code_flag(query, _hash, false), do: query
-
-  defp with_decompiled_code_flag(query, hash, true) do
-    has_decompiled_code_query =
-      from(decompiled_contract in DecompiledSmartContract,
-        where: decompiled_contract.address_hash == ^hash,
-        limit: 1,
-        select: %{
-          address_hash: decompiled_contract.address_hash,
-          has_decompiled_code?: not is_nil(decompiled_contract.address_hash)
-        }
-      )
-
-    from(
-      address in query,
-      left_join: decompiled_code in subquery(has_decompiled_code_query),
-      on: address.hash == decompiled_code.address_hash,
-      select_merge: %{has_decompiled_code?: decompiled_code.has_decompiled_code?}
-    )
-  end
-
   defp decode_params(params, types) do
     params
     |> Base.decode16!(case: :mixed)
@@ -4350,35 +4241,6 @@ defmodule Explorer.Chain do
       from(
         address in Address,
         where: address.hash == ^address_hash and not is_nil(address.contract_code)
-      )
-
-    Repo.exists?(query)
-  end
-
-  @doc """
-  Checks if it exists a `t:Explorer.Chain.DecompiledSmartContract.t/0` for the
-  `t:Explorer.Chain.Address.t/0` with the provided `hash` and with the provided version.
-
-  Returns `:ok` if found and `:not_found` otherwise.
-  """
-  @spec check_decompiled_contract_exists(Hash.Address.t(), String.t()) :: :ok | :not_found
-  def check_decompiled_contract_exists(address_hash, version) do
-    address_hash
-    |> decompiled_contract_exists?(version)
-    |> boolean_to_check_result()
-  end
-
-  @doc """
-  Checks if it exists a `t:Explorer.Chain.DecompiledSmartContract.t/0` for the
-  `t:Explorer.Chain.Address.t/0` with the provided `hash` and with the provided version.
-
-  Returns `true` if found and `false` otherwise.
-  """
-  @spec decompiled_contract_exists?(Hash.Address.t(), String.t()) :: boolean()
-  def decompiled_contract_exists?(address_hash, version) do
-    query =
-      from(contract in DecompiledSmartContract,
-        where: contract.address_hash == ^address_hash and contract.decompiler_version == ^version
       )
 
     Repo.exists?(query)
