@@ -84,7 +84,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     doesn't start.
 
     The monitor is launched for certain modules of the rollup defined in
-    `modules_can_use_reorg_monitor/0` function. if a module starts (it can be
+    `modules_can_use_reorg_monitor/0` function if a module starts (it can be
     switched off by configuration parameters). Whether each module starts or not
     is defined by the `requires_l1_reorg_monitor?` function of that module.
 
