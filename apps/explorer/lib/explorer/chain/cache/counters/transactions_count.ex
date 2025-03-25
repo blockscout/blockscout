@@ -29,13 +29,7 @@ defmodule Explorer.Chain.Cache.Counters.TransactionsCount do
   def get do
     cached_value_from_ets = __MODULE__.get_count()
 
-    CacheCountersHelper.evaluate_count(@cache_key, cached_value_from_ets, estimated_transactions_count())
-  end
-
-  defp estimated_transactions_count do
-    count = CacheCountersHelper.estimated_count_from("transactions")
-
-    if is_nil(count), do: 0, else: count
+    CacheCountersHelper.evaluate_count(@cache_key, cached_value_from_ets, :estimated_transactions_count)
   end
 
   defp handle_fallback(:count) do

@@ -28,13 +28,7 @@ defmodule Explorer.Chain.Cache.Counters.PendingBlockOperationCount do
   def get do
     cached_value_from_ets = __MODULE__.get_count()
 
-    CacheCountersHelper.evaluate_count(@cache_key, cached_value_from_ets, estimated_pending_block_operations_count())
-  end
-
-  defp estimated_pending_block_operations_count do
-    count = CacheCountersHelper.estimated_count_from("pending_block_operations")
-
-    if is_nil(count), do: 0, else: max(count, 0)
+    CacheCountersHelper.evaluate_count(@cache_key, cached_value_from_ets, :estimated_pending_block_operations_count)
   end
 
   defp handle_fallback(:count) do

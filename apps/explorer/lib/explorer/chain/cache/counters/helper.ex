@@ -97,23 +97,26 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
   end
 
   @doc """
-    Evaluates the count of a given cache key.
+  Evaluates the count for a given cache key. If the cache key has no associated value (`nil`),
+  it attempts to use an optional `estimated_count_fun` function to compute the count. Otherwise,
+  it retrieves the cached value from the database.
 
-    This function evaluates the count of a given cache key by checking if the
-    cached value from ETS is `nil`. If the cached value is `nil`, it fetches the
-    value from the database and returns the estimated count. Otherwise, it returns
-    the cached value from ETS.
+  ## Parameters
 
-    ## Parameters
-    - `cache_key`: The key of the cache to evaluate.
-    - `cached_value_from_ets`: The cached value from ETS.
-    - `estimated_count`: The estimated count of the cache key.
+    - `cache_key` (any): The key used to fetch the cached value.
+    - `nil` (nil): Placeholder for a missing value.
+    - `estimated_count_fun` (atom, optional): The name of the function to call for estimating the count
+      if no cached value is found. Defaults to `nil`.
 
-    ## Returns
-    - The evaluated count of the cache key.
+  ## Returns
+
+    - `integer`: The cached value from the database if it exists, or the result of the
+      `estimated_count_fun` function if the cached value is `0`.
   """
-  @spec evaluate_count(binary(), non_neg_integer() | nil, non_neg_integer()) :: non_neg_integer()
-  def evaluate_count(cache_key, nil, estimated_count) do
+  @spec evaluate_count(binary(), non_neg_integer() | nil, atom() | nil) :: non_neg_integer()
+  def evaluate_count(cache_key, cached_value_from_ets, estimated_count_fun \\ nil)
+
+  def evaluate_count(cache_key, nil, estimated_count_fun) do
     cached_value_from_db =
       cache_key
       |> LastFetchedCounter.get()
@@ -123,13 +126,13 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
       end
 
     if cached_value_from_db === 0 do
-      estimated_count
+      if estimated_count_fun, do: apply(__MODULE__, estimated_count_fun, []), else: 0
     else
       cached_value_from_db
     end
   end
 
-  def evaluate_count(_cache_key, cached_value_from_ets, _estimated_count) when not is_nil(cached_value_from_ets) do
+  def evaluate_count(_cache_key, cached_value_from_ets, _estimated_count_fun) when not is_nil(cached_value_from_ets) do
     cached_value_from_ets
   end
 
@@ -185,5 +188,79 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
       blocks_amount >= @block_number_threshold_2 and blocks_amount < @block_number_threshold_3 -> :timer.minutes(2)
       true -> global_ttl_from_var
     end
+  end
+
+  @doc """
+  Estimates the count of addresses from the cache.
+
+  This function retrieves the estimated count of addresses from the cache
+  using the `CacheCountersHelper.estimated_count_from/1` function. If the
+  retrieved count is `nil`, it returns `0` as a fallback.
+
+  ## Returns
+
+    - `integer`: The estimated count of addresses, or `0` if no estimate is available.
+  """
+  @spec estimated_addresses_count() :: non_neg_integer()
+  def estimated_addresses_count do
+    count = estimated_count_from("addresses")
+
+    if is_nil(count), do: 0, else: count
+  end
+
+  @doc """
+  Returns the estimated count of transactions from the cache.
+
+  This function retrieves the estimated transaction count using the
+  `CacheCountersHelper.estimated_count_from/1` function with the key `"transactions"`.
+  If the retrieved count is `nil`, it returns `0` as a fallback.
+
+  ## Returns
+
+    - `integer`: The estimated count of transactions, or `0` if no count is available.
+  """
+  @spec estimated_transactions_count() :: non_neg_integer()
+  def estimated_transactions_count do
+    count = estimated_count_from("transactions")
+
+    if is_nil(count), do: 0, else: count
+  end
+
+  @doc """
+  Estimates the total count of blocks in the system.
+
+  This function retrieves an estimated count of blocks from the cache using
+  `CacheCountersHelper.estimated_count_from/1`. If the retrieved count is `nil`,
+  it returns `0`. Otherwise, it applies a 90% adjustment to the count by
+  multiplying it by `0.90` and truncating the result to an integer.
+
+  ## Returns
+
+    - `0` if the estimated count is `nil`.
+    - An integer representing 90% of the estimated count otherwise.
+
+  """
+  @spec estimated_blocks_count() :: non_neg_integer()
+  def estimated_blocks_count do
+    count = estimated_count_from("blocks")
+
+    if is_nil(count), do: 0, else: trunc(count * 0.90)
+  end
+
+  @doc """
+  Returns the estimated count of pending block operations.
+
+  This function retrieves the estimated count from the "pending_block_operations" cache.
+  If the count is `nil`, it returns `0`. Otherwise, it ensures the count is non-negative
+  by returning the maximum of the count and `0`.
+
+  ## Returns
+    - `integer`: The estimated count of pending block operations, or `0` if the count is `nil`.
+  """
+  @spec estimated_pending_block_operations_count() :: non_neg_integer()
+  def estimated_pending_block_operations_count do
+    count = estimated_count_from("pending_block_operations")
+
+    if is_nil(count), do: 0, else: max(count, 0)
   end
 end

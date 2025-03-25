@@ -34,13 +34,7 @@ defmodule Explorer.Chain.Cache.Counters.BlocksCount do
   def get do
     cached_value_from_ets = __MODULE__.get_count()
 
-    CacheCountersHelper.evaluate_count(@cache_key, cached_value_from_ets, estimated_blocks_count())
-  end
-
-  defp estimated_blocks_count do
-    count = CacheCountersHelper.estimated_count_from("blocks")
-
-    if is_nil(count), do: 0, else: trunc(count * 0.90)
+    CacheCountersHelper.evaluate_count(@cache_key, cached_value_from_ets, :estimated_blocks_count)
   end
 
   defp handle_fallback(:count) do

@@ -93,7 +93,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
   defp do_fetch([{_, result}]), do: result
 
   defp do_fetch([]) do
-    CacheCountersHelper.evaluate_count(@cache_key, nil, estimated_addresses_count())
+    CacheCountersHelper.evaluate_count(@cache_key, nil, :estimated_addresses_count)
   end
 
   @doc """
@@ -125,10 +125,4 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
   `config :explorer, Explorer.Chain.Cache.Counters.AddressesCount, enable_consolidation: false`
   """
   def enable_consolidation?, do: @enable_consolidation
-
-  defp estimated_addresses_count do
-    count = CacheCountersHelper.estimated_count_from("addresses")
-
-    if is_nil(count), do: 0, else: count
-  end
 end

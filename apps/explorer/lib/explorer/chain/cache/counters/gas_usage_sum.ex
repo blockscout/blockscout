@@ -30,7 +30,7 @@ defmodule Explorer.Chain.Cache.Counters.GasUsageSum do
   def total do
     cached_value_from_ets = __MODULE__.get_sum()
 
-    CacheCountersHelper.evaluate_count(@cache_key, cached_value_from_ets, 0)
+    CacheCountersHelper.evaluate_count(@cache_key, cached_value_from_ets)
   end
 
   defp handle_fallback(:sum) do
