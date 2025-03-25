@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Utility.MissingRangesManipulator
 
-  @table_name :contract_creator_finding
+  @table_name :contract_creator_lookup
 
   def start_link([init_opts, server_opts]) do
     :ets.new(@table_name, [
@@ -29,7 +29,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     GenServer.start_link(__MODULE__, init_opts, server_opts)
   end
 
-  @spec trigger_fetch(Address.t()) :: :ok
+  @spec trigger_fetch(Address.t()) :: :ok | :ignore
   def trigger_fetch(address) do
     creation_transaction = Address.creation_transaction(address)
     creator_hash = creation_transaction && creation_transaction.from_address_hash
@@ -38,7 +38,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
          true <- is_nil(creator_hash) do
       case :ets.lookup(@table_name, address_cache_name(address.hash)) do
         [{_, :in_progress}] ->
-          :ok
+          :ignore
 
         [] ->
           GenServer.cast(__MODULE__, {:fetch, address})
@@ -46,7 +46,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
         [{_, contract_creation_block_number}] ->
           case :ets.lookup(@table_name, "pending_blocks") do
             [] ->
-              :ok
+              :ignore
 
             [{"pending_blocks", blocks}] ->
               contract_creation_block =
@@ -55,9 +55,12 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
                 end)
 
               # credo:disable-for-next-line
-              if is_nil(contract_creation_block), do: GenServer.cast(__MODULE__, {:fetch, address}), else: :ok
+              if is_nil(contract_creation_block), do: GenServer.cast(__MODULE__, {:fetch, address}), else: :ignore
           end
       end
+    else
+      _ ->
+        :ignore
     end
   end
 
@@ -69,7 +72,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
     initial_block_ranges = %{
       left: 0,
-      right: max_block_number
+      right: max_block_number,
+      previous_nonce: nil
     }
 
     contract_creation_block_number = find_contract_creation_block_number(initial_block_ranges, address_hash)
@@ -118,13 +122,13 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
             left_new = new_left_position(medium, medium_position)
             block_ranges = Map.put(block_ranges, :left, left_new)
 
-            should_continue_binary_search?(block_ranges, address_hash)
+            should_continue_binary_search?(block_ranges, address_hash, nonce)
 
           nonce when nonce > 0 ->
             right_new = new_right_position(medium, medium_position)
             block_ranges = Map.put(block_ranges, :right, right_new)
 
-            should_continue_binary_search?(block_ranges, address_hash)
+            should_continue_binary_search?(block_ranges, address_hash, nonce)
         end
 
       _ ->
@@ -140,11 +144,17 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     if medium == 0, do: medium_position - 1, else: medium_position
   end
 
-  defp should_continue_binary_search?(block_ranges, address_hash) do
-    if block_ranges.left == block_ranges.right do
-      block_ranges.left
-    else
-      find_contract_creation_block_number(block_ranges, address_hash)
+  defp should_continue_binary_search?(block_ranges, address_hash, nonce) do
+    cond do
+      block_ranges.left == block_ranges.right ->
+        block_ranges.left
+
+      block_ranges.right - block_ranges.left == 1 && nonce !== block_ranges.previous_nonce ->
+        block_ranges.right
+
+      true ->
+        block_ranges = Map.put(block_ranges, :previous_nonce, nonce)
+        find_contract_creation_block_number(block_ranges, address_hash)
     end
   end
 
