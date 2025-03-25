@@ -169,8 +169,8 @@ defmodule Explorer.Chain.InternalTransaction.Type do
 
   ## Example
 
-    iex> Explorer.Chain.InternalTransaction.Type.values()
-    [:call, :create, :suicide]
+    > Explorer.Chain.InternalTransaction.Type.values()
+    ["call", "create", "create2", "reward", "selfdestruct", "stop"]
   """
   @spec values :: [String.t()]
   def values, do: @type_values
