@@ -15,7 +15,6 @@ defmodule Explorer.ChainTest do
     Address,
     Block,
     Data,
-    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     Log,
@@ -813,23 +812,6 @@ defmodule Explorer.ChainTest do
       assert {:ok, address_from_db} = Chain.hash_to_address(address.hash)
       assert address_from_db.hash == address.hash
       assert address_from_db.inserted_at == address.inserted_at
-    end
-
-    test "has_decompiled_code? is true if there are decompiled contracts" do
-      address = insert(:address)
-      insert(:decompiled_smart_contract, address_hash: address.hash)
-
-      {:ok, found_address} = Chain.hash_to_address(address.hash, [], true)
-
-      assert found_address.has_decompiled_code?
-    end
-
-    test "has_decompiled_code? is false if there are no decompiled contracts" do
-      address = insert(:address)
-
-      {:ok, found_address} = Chain.hash_to_address(address.hash)
-
-      refute found_address.has_decompiled_code?
     end
   end
 
@@ -2545,21 +2527,9 @@ defmodule Explorer.ChainTest do
         }
       ]
 
-      response = Chain.find_contract_address(address.hash, options, true)
+      response = Chain.find_contract_address(address.hash, options)
 
       assert response == {:ok, address}
-    end
-  end
-
-  describe "find_decompiled_contract_address/1" do
-    test "returns contract with decompiled contracts" do
-      address = insert(:address)
-      insert(:decompiled_smart_contract, address_hash: address.hash)
-      insert(:decompiled_smart_contract, address_hash: address.hash, decompiler_version: "2")
-
-      {:ok, address} = Chain.find_decompiled_contract_address(address.hash)
-
-      assert Enum.count(address.decompiled_smart_contracts) == 2
     end
   end
 
@@ -2812,77 +2782,6 @@ defmodule Explorer.ChainTest do
       )
 
       assert Chain.smart_contract_bytecode(created_contract_address.hash) == smart_contract_bytecode
-    end
-  end
-
-  describe "create_decompiled_smart_contract/1" do
-    test "with valid params creates decompiled smart contract" do
-      address_hash = to_string(insert(:address).hash)
-      decompiler_version = "test_decompiler"
-      decompiled_source_code = "hello world"
-
-      params = %{
-        address_hash: address_hash,
-        decompiler_version: decompiler_version,
-        decompiled_source_code: decompiled_source_code
-      }
-
-      {:ok, decompiled_smart_contract} = Chain.create_decompiled_smart_contract(params)
-
-      assert decompiled_smart_contract.decompiler_version == decompiler_version
-      assert decompiled_smart_contract.decompiled_source_code == decompiled_source_code
-      assert address_hash == to_string(decompiled_smart_contract.address_hash)
-    end
-
-    test "with invalid params can't create decompiled smart contract" do
-      params = %{code: "cat"}
-
-      {:error, _changeset} = Chain.create_decompiled_smart_contract(params)
-    end
-
-    test "updates smart contract code" do
-      inserted_decompiled_smart_contract = insert(:decompiled_smart_contract)
-      code = "code2"
-
-      {:ok, _decompiled_smart_contract} =
-        Chain.create_decompiled_smart_contract(%{
-          decompiler_version: inserted_decompiled_smart_contract.decompiler_version,
-          decompiled_source_code: code,
-          address_hash: inserted_decompiled_smart_contract.address_hash
-        })
-
-      decompiled_smart_contract =
-        Repo.one(
-          from(ds in DecompiledSmartContract,
-            where:
-              ds.address_hash == ^inserted_decompiled_smart_contract.address_hash and
-                ds.decompiler_version == ^inserted_decompiled_smart_contract.decompiler_version
-          )
-        )
-
-      assert decompiled_smart_contract.decompiled_source_code == code
-    end
-
-    test "creates two smart contracts for different decompiler versions" do
-      inserted_decompiled_smart_contract = insert(:decompiled_smart_contract)
-      code = "code2"
-      version = "2"
-
-      {:ok, _decompiled_smart_contract} =
-        Chain.create_decompiled_smart_contract(%{
-          decompiler_version: version,
-          decompiled_source_code: code,
-          address_hash: inserted_decompiled_smart_contract.address_hash
-        })
-
-      decompiled_smart_contracts =
-        Repo.all(
-          from(ds in DecompiledSmartContract,
-            where: ds.address_hash == ^inserted_decompiled_smart_contract.address_hash
-          )
-        )
-
-      assert Enum.count(decompiled_smart_contracts) == 2
     end
   end
 

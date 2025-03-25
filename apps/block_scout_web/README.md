@@ -1,6 +1,6 @@
 # BlockScout Web
 
-Blockscout is a robust open-source tool for exploring, confirming, and inspecting transactions on any EVM blockchain.
+BlockScoutWeb is the API and presentation layer of BlockScout built on the Phoenix framework. It exposes RESTful and GraphQL APIs for accessing blockchain data. It directs HTTP requests through Phoenix routers to controllers that manage resources like addresses, transactions, blocks, and tokens. It formats responses as JSON via view modules. It provides real-time updates on new blocks, transactions, and exchange rates using Phoenix Channels. It supports smart contract verification through multiple methods including integration with Sourcify. Custom plugs add functionalities such as rate limiting, API version checks, and logging. Configuration is retrieved from the application environment. It manages errors through fallback controllers.
 
 ## Machine Requirements
 

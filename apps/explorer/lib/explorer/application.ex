@@ -167,6 +167,7 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.SanitizeMissingTokenBalances, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeReplacedTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeVerifiedAddresses, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.SanitizeEmptyContractCodeAddresses, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
@@ -243,6 +244,10 @@ defmodule Explorer.Application do
         ),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractsLanguageIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),

@@ -507,7 +507,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
       _ = PublishHelper.check_and_verify(address_param)
-      address = Contracts.address_hash_to_address_with_source_code(address_hash, false)
+      address = Contracts.address_hash_to_address_with_source_code(address_hash)
 
       render(conn, :getsourcecode, %{
         contract: address || %Address{hash: address_hash, smart_contract: nil}
@@ -528,15 +528,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       :verified ->
         Contracts.list_verified_contracts(page_size, offset, opts)
 
-      :decompiled ->
-        not_decompiled_with_version = Map.get(opts, :not_decompiled_with_version)
-        Contracts.list_decompiled_contracts(page_size, offset, not_decompiled_with_version)
-
       :unverified ->
         Contracts.list_unordered_unverified_contracts(page_size, offset)
-
-      :not_decompiled ->
-        Contracts.list_unordered_not_decompiled_contracts(page_size, offset)
 
       :empty ->
         Contracts.list_empty_contracts(page_size, offset)
@@ -549,7 +542,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp add_filters(options, params) do
     options
     |> add_filter(params)
-    |> add_param(params, :not_decompiled_with_version)
     |> AddressController.put_timestamp(params, "verified_at_start_timestamp")
     |> AddressController.put_timestamp(params, "verified_at_end_timestamp")
   end
@@ -564,27 +556,12 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
-  defp add_param({:ok, options}, params, key) do
-    case Map.fetch(params, Atom.to_string(key)) do
-      {:ok, value} -> {:ok, Map.put(options, key, value)}
-      :error -> {:ok, options}
-    end
-  end
-
-  defp add_param(options, _params, _key) do
-    options
-  end
-
   defp contracts_filter(nil), do: {:ok, nil}
   defp contracts_filter(1), do: {:ok, :verified}
-  defp contracts_filter(2), do: {:ok, :decompiled}
-  defp contracts_filter(3), do: {:ok, :unverified}
-  defp contracts_filter(4), do: {:ok, :not_decompiled}
-  defp contracts_filter(5), do: {:ok, :empty}
+  defp contracts_filter(2), do: {:ok, :unverified}
+  defp contracts_filter(3), do: {:ok, :empty}
   defp contracts_filter("verified"), do: {:ok, :verified}
-  defp contracts_filter("decompiled"), do: {:ok, :decompiled}
   defp contracts_filter("unverified"), do: {:ok, :unverified}
-  defp contracts_filter("not_decompiled"), do: {:ok, :not_decompiled}
   defp contracts_filter("empty"), do: {:ok, :empty}
 
   defp contracts_filter(filter) when is_bitstring(filter) do
@@ -597,7 +574,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp contracts_filter(filter), do: {:error, contracts_filter_error_message(filter)}
 
   defp contracts_filter_error_message(filter) do
-    "#{filter} is not a valid value for `filter`. Please use one of: verified, decompiled, unverified, not_decompiled, 1, 2, 3, 4."
+    "#{filter} is not a valid value for `filter`. Please use one of: verified, unverified, 1, 2."
   end
 
   defp fetch_address(params) do
@@ -617,7 +594,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
           :not_found
 
         {contract, _} ->
-          {:ok, SmartContract.preload_decompiled_smart_contract(contract)}
+          {:ok, contract}
       end
 
     {:contract, result}
@@ -781,7 +758,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def validate_address(address_hash_string, params, options \\ @api_true) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, options, false)} do
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, options)} do
       {:ok, address_hash, address}
     end
   end

@@ -8,7 +8,6 @@ defmodule Explorer.Chain.SmartContract.Schema do
 
   alias Explorer.Chain.{
     Address,
-    DecompiledSmartContract,
     Hash,
     SmartContractAdditionalSource
   }
@@ -63,12 +62,6 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:certified, :boolean)
         field(:is_blueprint, :boolean)
         field(:language, Ecto.Enum, values: @languages_enum, default: :solidity)
-
-        has_many(
-          :decompiled_smart_contracts,
-          DecompiledSmartContract,
-          foreign_key: :address_hash
-        )
 
         belongs_to(
           :address,
@@ -488,10 +481,6 @@ defmodule Explorer.Chain.SmartContract do
      `Explorer.Chain.SmartContract.language/1` instead.
   """
   Explorer.Chain.SmartContract.Schema.generate()
-
-  def preload_decompiled_smart_contract(contract) do
-    Repo.preload(contract, :decompiled_smart_contracts)
-  end
 
   def changeset(%__MODULE__{} = smart_contract, attrs) do
     attrs_to_cast =

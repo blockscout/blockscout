@@ -245,8 +245,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
       #       necessity_by_association: %{
       #         :smart_contract => :optional
       #       }
-      #     ],
-      #     true
+      #     ]
       #   )
 
       # bytecode_twin = addr.smart_contract

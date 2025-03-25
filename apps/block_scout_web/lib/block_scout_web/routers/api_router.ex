@@ -501,7 +501,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     if @writing_enabled do
-      post("/decompiled_smart_contract", V1.DecompiledSmartContractController, :create)
       post("/verified_smart_contracts", V1.VerifiedSmartContractController, :create)
     end
 

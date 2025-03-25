@@ -29,8 +29,7 @@ defmodule Explorer.Etherscan.Contracts do
         address ->
           address_with_smart_contract =
             Repo.replica().preload(address, [
-              [smart_contract: :smart_contract_additional_sources],
-              :decompiled_smart_contracts
+              [smart_contract: :smart_contract_additional_sources]
             ])
 
           if address_with_smart_contract.smart_contract do
@@ -148,24 +147,6 @@ defmodule Explorer.Etherscan.Contracts do
     end)
   end
 
-  def list_decompiled_contracts(limit, offset, not_decompiled_with_version \\ nil) do
-    query =
-      from(
-        address in Address,
-        where: address.contract_code != ^%Explorer.Chain.Data{bytes: <<>>},
-        where: not is_nil(address.contract_code),
-        where: address.decompiled == true,
-        limit: ^limit,
-        offset: ^offset,
-        order_by: [asc: address.inserted_at],
-        preload: [:smart_contract]
-      )
-
-    query
-    |> reject_decompiled_with_version(not_decompiled_with_version)
-    |> Repo.replica().all()
-  end
-
   def list_unordered_unverified_contracts(limit, offset) do
     query =
       from(
@@ -184,30 +165,11 @@ defmodule Explorer.Etherscan.Contracts do
     end)
   end
 
-  def list_unordered_not_decompiled_contracts(limit, offset) do
-    query =
-      from(
-        address in Address,
-        where: fragment("? IS NOT TRUE", address.verified),
-        where: fragment("? IS NOT TRUE", address.decompiled),
-        where: address.contract_code != ^%Explorer.Chain.Data{bytes: <<>>},
-        where: not is_nil(address.contract_code),
-        limit: ^limit,
-        offset: ^offset
-      )
-
-    query
-    |> Repo.replica().all()
-    |> Enum.map(fn address ->
-      %{address | smart_contract: nil}
-    end)
-  end
-
   def list_empty_contracts(limit, offset) do
     query =
       from(address in Address,
         where: address.contract_code == ^%Explorer.Chain.Data{bytes: <<>>},
-        preload: [:smart_contract, :decompiled_smart_contracts],
+        preload: [:smart_contract],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
@@ -231,15 +193,4 @@ defmodule Explorer.Etherscan.Contracts do
   end
 
   defp format_source_code_output(smart_contract), do: smart_contract.contract_source_code
-
-  defp reject_decompiled_with_version(query, nil), do: query
-
-  defp reject_decompiled_with_version(query, reject_version) do
-    from(
-      address in query,
-      left_join: decompiled_smart_contract in assoc(address, :decompiled_smart_contracts),
-      on: decompiled_smart_contract.decompiler_version == ^reject_version,
-      where: is_nil(decompiled_smart_contract.address_hash)
-    )
-  end
 end

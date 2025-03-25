@@ -13,7 +13,6 @@ disable_api? = ConfigHelper.parse_bool_env_var("DISABLE_API")
 config :block_scout_web,
   version: System.get_env("BLOCKSCOUT_VERSION"),
   release_link: System.get_env("RELEASE_LINK"),
-  decompiled_smart_contract_token: System.get_env("DECOMPILED_SMART_CONTRACT_TOKEN"),
   show_percentage: ConfigHelper.parse_bool_env_var("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true"),
   checksum_address_hashes: ConfigHelper.parse_bool_env_var("CHECKSUM_ADDRESS_HASHES", "true"),
   other_networks: System.get_env("SUPPORTED_CHAINS"),
@@ -240,6 +239,7 @@ exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
 
 config :explorer,
   mode: app_mode,
+  ecto_repos: ConfigHelper.repos(),
   coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
   coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
   allowed_solidity_evm_versions:
@@ -673,10 +673,17 @@ config :explorer, Explorer.Migrator.SanitizeVerifiedAddresses,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_CONCURRENCY", 1),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_TIMEOUT", "0s")
 
+config :explorer, Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EMPTY_CONTRACT_CODE_ADDRESSES_BATCH_SIZE", 500),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EMPTY_CONTRACT_CODE_ADDRESSES_CONCURRENCY", 1)
+
 config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
   enabled: ConfigHelper.chain_type() == :arbitrum,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_ARBITRUM_DA_RECORDS_NORMALIZATION_BATCH_SIZE", 500),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_ARBITRUM_DA_RECORDS_NORMALIZATION_CONCURRENCY", 1)
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
+  enabled: ConfigHelper.chain_type() == :arbitrum
 
 config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   enabled: ConfigHelper.chain_type() == :filecoin,

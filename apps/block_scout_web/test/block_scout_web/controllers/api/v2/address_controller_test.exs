@@ -73,7 +73,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "proxy_type" => nil,
         "implementations" => [],
         "block_number_balance_updated_at" => nil,
-        "has_decompiled_code" => false,
         "has_validated_blocks" => false,
         "has_logs" => false,
         "has_tokens" => false,
@@ -112,7 +111,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "proxy_type" => nil,
         "implementations" => [],
         "block_number_balance_updated_at" => nil,
-        "has_decompiled_code" => false,
         "has_validated_blocks" => false,
         "has_logs" => false,
         "has_tokens" => false,
@@ -150,7 +148,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert pattern_response["implementation_name"] == response["implementation_name"]
       assert pattern_response["implementations"] == response["implementations"]
       assert pattern_response["block_number_balance_updated_at"] == response["block_number_balance_updated_at"]
-      assert pattern_response["has_decompiled_code"] == response["has_decompiled_code"]
       assert pattern_response["has_validated_blocks"] == response["has_validated_blocks"]
       assert pattern_response["has_logs"] == response["has_logs"]
       assert pattern_response["has_tokens"] == response["has_tokens"]
@@ -424,7 +421,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       topic = "addresses:#{address_hash}"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic)
 
@@ -1021,14 +1018,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
     end
 
-    test "get 404 on non existing address of token", %{conn: conn} do
+    test "get 200 on non existing address of token", %{conn: conn} do
       address = insert(:address)
 
       token = build(:address)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{"token" => to_string(token.hash)})
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid token address hash", %{conn: conn} do
@@ -2666,7 +2663,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       topic = "addresses:#{address.hash}"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        BlockScoutWeb.V2.UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic)
 

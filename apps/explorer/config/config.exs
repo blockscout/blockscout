@@ -138,7 +138,12 @@ for migrator <- [
       Explorer.Migrator.BackfillMultichainSearchDB,
       Explorer.Migrator.SanitizeVerifiedAddresses,
       Explorer.Migrator.SmartContractLanguage,
+      Explorer.Migrator.SanitizeEmptyContractCodeAddresses
+    ] do
+  config :explorer, migrator, enabled: true
+end
 
+for index_operation <- [
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
@@ -161,7 +166,7 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractsLanguageIndex
     ] do
-  config :explorer, migrator, enabled: true
+  config :explorer, index_operation, enabled: true
 end
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
