@@ -1,6 +1,5 @@
 defmodule Explorer.Chain.Cache.Counters.TransactionsTest do
   use Explorer.DataCase
-  Cache
   alias Explorer.Chain.Cache.Counters.TransactionsCount
 
   setup do

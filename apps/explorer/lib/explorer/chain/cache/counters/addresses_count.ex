@@ -24,10 +24,6 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
 
   @cache_key "addresses_count"
 
-  defp table_name, do: @table_name
-
-  defp cache_key, do: @cache_key
-
   @doc """
   Starts a process to periodically update the counter of the token holders.
   """
@@ -51,7 +47,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
       read_concurrency: true
     ]
 
-    :ets.new(table_name(), opts)
+    :ets.new(@table_name, opts)
   end
 
   defp schedule_next_consolidation do
@@ -62,7 +58,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
   Inserts new items into the `:ets` table.
   """
   def insert_counter({key, info}) do
-    :ets.insert(table_name(), {key, info})
+    :ets.insert(@table_name, {key, info})
   end
 
   @impl true
@@ -91,7 +87,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
   Fetches the info for a specific item from the `:ets` table.
   """
   def fetch do
-    do_fetch(:ets.lookup(table_name(), cache_key()))
+    do_fetch(:ets.lookup(@table_name, @cache_key))
   end
 
   defp do_fetch([{_, result}]), do: result
@@ -107,13 +103,13 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
     counter = Repo.aggregate(Address, :count, timeout: :infinity)
 
     params = %{
-      counter_type: cache_key(),
+      counter_type: @cache_key,
       value: counter
     }
 
     LastFetchedCounter.upsert(params)
 
-    insert_counter({cache_key(), counter})
+    insert_counter({@cache_key, counter})
   end
 
   @doc """
