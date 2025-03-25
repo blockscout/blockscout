@@ -333,71 +333,12 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           | {:not_found, {:error, :not_found}}
           | {:restricted_access, true}
           | Plug.Conn.t()
-  def token_transfers(
-        conn,
-        %{"address_hash_param" => address_hash_string, "token" => token_address_hash_string} = params
-      ) do
-    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params),
-         {:ok, token_address_hash} <- validate_address_hash(token_address_hash_string, params),
-         {:not_found, {:ok, _address}} <- {:not_found, Chain.hash_to_address(token_address_hash, @api_true)} do
-      case Chain.hash_to_address(address_hash, @address_options) do
-        {:ok, _address} ->
-          paging_options = paging_options(params)
-
-          options =
-            [
-              necessity_by_association: %{
-                [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-                [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
-                  :optional,
-                :block => :optional,
-                :token => :optional,
-                :transaction => :optional
-              }
-            ]
-            |> Keyword.merge(paging_options)
-            |> Keyword.merge(@api_true)
-
-          results =
-            address_hash
-            |> Chain.address_hash_to_token_transfers_by_token_address_hash(
-              token_address_hash,
-              options
-            )
-            |> Chain.flat_1155_batch_token_transfers()
-            |> Chain.paginate_1155_batch_token_transfers(paging_options)
-
-          {token_transfers, next_page} = split_list_by_page(results)
-
-          next_page_params =
-            next_page
-            |> token_transfers_next_page_params(token_transfers, delete_parameters_from_next_page_params(params))
-
-          conn
-          |> put_status(200)
-          |> put_view(TransactionView)
-          |> render(:token_transfers, %{
-            token_transfers:
-              token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
-            next_page_params: next_page_params
-          })
-
-        _ ->
-          conn
-          |> put_status(200)
-          |> put_view(TransactionView)
-          |> render(:token_transfers, %{
-            token_transfers: [],
-            next_page_params: nil
-          })
-      end
-    end
-  end
-
   def token_transfers(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
-      case Chain.hash_to_address(address_hash, @address_options) do
-        {:ok, _address} ->
+    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params),
+         {:ok, token_address_hash} <- validate_optional_address_hash(params["token"], params),
+         token_address_exists <- (token_address_hash && Chain.check_token_exists(token_address_hash)) || :ok do
+      case {Chain.hash_to_address(address_hash, @address_options), token_address_exists} do
+        {{:ok, _address}, :ok} ->
           paging_options = paging_options(params)
 
           options =
@@ -405,6 +346,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(paging_options)
             |> Keyword.merge(current_filter(params))
             |> Keyword.merge(token_transfers_types_options(params))
+            |> Keyword.merge(token_address_hash: token_address_hash)
 
           results =
             address_hash
@@ -1064,7 +1006,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
-  # Checks if this valid address hash string, and this address is not prohibited address.
+  # Checks if this address hash string is valid, and this address is not prohibited.
   # Returns the `{:ok, address_hash}` if address hash passed all the checks.
   # Returns {:ok, _} response even if the address is not present in the database.
   @spec validate_address_hash(String.t(), any()) ::
@@ -1075,6 +1017,24 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       {:ok, address_hash}
+    end
+  end
+
+  # Checks if this address hash string is valid, and this address is not prohibited.
+  # Returns the `{:ok, nil}` if first argument is `nil`.
+  # Returns the `{:ok, address_hash}` if address hash passed all the checks.
+  # Returns {:ok, _} response even if the address is not present in the database.
+  @spec validate_optional_address_hash(nil | String.t(), any()) ::
+          {:format, :error}
+          | {:restricted_access, true}
+          | {:ok, nil | Hash.t()}
+  defp validate_optional_address_hash(address_hash_string, params) do
+    case address_hash_string do
+      nil ->
+        {:ok, nil}
+
+      _ ->
+        validate_address_hash(address_hash_string, params)
     end
   end
 end
