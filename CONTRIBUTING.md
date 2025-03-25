@@ -54,7 +54,7 @@ Incompatible changes can arise as a side-effect of either Enhancements or Bug Fi
 
 ## Pull Request
 
-There is a [PULL_REQUEST_TEMPLATE.md](PULL_REQUEST_TEMPLATE.md) for this repository, but since it can't fill in the title for you, please follow the following steps when opening a Pull Request before filling in the template:
+There is a [PULL_REQUEST_TEMPLATE.md](PULL_REQUEST_TEMPLATE.md) for this repository, but since it can't fill in the title for you, please follow these steps when opening a Pull Request before filling in the template:
 
 * [ ] Title
   * [ ] Prefix labels if you don't have permissions to set labels in the GitHub interface.
