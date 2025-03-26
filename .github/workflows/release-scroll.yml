@@ -60,19 +60,3 @@ jobs:
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=scroll
 
-      - name: Build and push Docker image for Scroll (API)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          tags: blockscout/blockscout-scroll:${{ env.RELEASE_VERSION }}-api
-          labels: ${{ steps.setup.outputs.docker-labels }}
-          platforms: |
-            linux/amd64
-            linux/arm64/v8
-          build-args: |
-            DISABLE_INDEXER=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=scroll
