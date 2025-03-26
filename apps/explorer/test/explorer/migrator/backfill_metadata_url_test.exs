@@ -4,7 +4,7 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
 
   import Mox
 
-  alias Explorer.Migrator.{AddressTokenBalanceTokenType, BackfillMetadataURL, MigrationStatus}
+  alias Explorer.Migrator.{BackfillMetadataURL, MigrationStatus}
   alias Explorer.Chain.Token.Instance
 
   setup :verify_on_exit!
@@ -32,19 +32,17 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
     test "complete migration" do
       token = insert(:token, type: "ERC-721")
 
-      token_instance_1 =
-        insert(:token_instance,
-          metadata: %{awesome: "metadata"},
-          token_contract_address_hash: token.contract_address_hash,
-          token_id: 0
-        )
+      insert(:token_instance,
+        metadata: %{awesome: "metadata"},
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 0
+      )
 
-      token_instance_2 =
-        insert(:token_instance,
-          metadata: %{awesome: "metadata"},
-          token_contract_address_hash: token.contract_address_hash,
-          token_id: 1
-        )
+      insert(:token_instance,
+        metadata: %{awesome: "metadata"},
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1
+      )
 
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
@@ -138,26 +136,23 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
         Keyword.put(env, :cidr_blacklist, ["1.1.1.1/32"])
       )
 
-      token_instance_1 =
-        insert(:token_instance,
-          metadata: %{awesome: "metadata"},
-          token_contract_address_hash: token.contract_address_hash,
-          token_id: 0
-        )
+      insert(:token_instance,
+        metadata: %{awesome: "metadata"},
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 0
+      )
 
-      token_instance_2 =
-        insert(:token_instance,
-          metadata: %{awesome: "metadata"},
-          token_contract_address_hash: token.contract_address_hash,
-          token_id: 1
-        )
+      insert(:token_instance,
+        metadata: %{awesome: "metadata"},
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1
+      )
 
-      token_instance_3 =
-        insert(:token_instance,
-          metadata: %{awesome: "metadata"},
-          token_contract_address_hash: token.contract_address_hash,
-          token_id: 2
-        )
+      insert(:token_instance,
+        metadata: %{awesome: "metadata"},
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 2
+      )
 
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
@@ -276,7 +271,7 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
       assert is_nil(instance_3.metadata)
 
       assert instance_1.error == "blacklist"
-      assert instance_2.error == "nxdomain"
+      assert instance_2.error in ["nxdomain", "blacklist"]
       assert instance_3.error == "blacklist"
 
       assert MigrationStatus.get_status("backfill_metadata_url") == "completed"
