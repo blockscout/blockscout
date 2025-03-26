@@ -67,15 +67,15 @@ defmodule EthereumJsonrpc.NFT do
       token_instances
       |> prepare_requests()
       |> EthereumJSONRPC.execute_contract_functions(@erc_721_1155_abi, json_rpc_named_arguments, false)
-      |> cast_vm_execution_errors()
+      |> process_results()
       |> Enum.with_index()
       |> Enum.split_with(fn
-        {{:error, @vm_execution_error}, _ind} -> true
+        {{{:error, @vm_execution_error}, _from_base_uri}, _ind} -> true
         _ -> false
       end)
 
     retry_result =
-      if Application.get_env(:indexer, __MODULE__)[:base_uri_retry?] do
+      if Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper)[:base_uri_retry?] do
         {instances, indexes} =
           mb_retry
           |> Enum.map(fn {_, ind} ->
@@ -86,7 +86,7 @@ defmodule EthereumJsonrpc.NFT do
         instances
         |> prepare_requests(true)
         |> EthereumJSONRPC.execute_contract_functions(@erc_721_1155_abi, json_rpc_named_arguments, false)
-        |> cast_vm_execution_errors(true)
+        |> process_results(true)
         |> Enum.zip(indexes)
       else
         mb_retry
@@ -95,7 +95,7 @@ defmodule EthereumJsonrpc.NFT do
     (other ++ retry_result) |> Enum.sort_by(fn {_, ind} -> ind end) |> Enum.map(&elem(&1, 0))
   end
 
-  defp cast_vm_execution_errors(results, from_base_uri? \\ false) do
+  defp process_results(results, from_base_uri? \\ false) do
     results
     |> Enum.map(fn
       {:error, error} ->

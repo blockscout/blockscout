@@ -677,7 +677,6 @@ defmodule Explorer.Chain.Token.Instance do
       "VM execution error",
       "request error: 404",
       "no uri",
-      "ignored host",
       "(-32000)",
       "invalid ",
       "{:max_redirect_overflow, ",
@@ -685,7 +684,8 @@ defmodule Explorer.Chain.Token.Instance do
       "nxdomain",
       ":nxdomain",
       "econnrefused",
-      ":econnrefused"
+      ":econnrefused",
+      "blacklist"
     ],
     # 32767 is the maximum value for retries_count (smallint)
     @max_retries_count_value => ["request error: 429"]

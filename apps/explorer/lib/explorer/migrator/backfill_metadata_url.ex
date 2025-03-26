@@ -123,7 +123,19 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
           process_common_url(url)
 
         %URI{} ->
-          %{skip_metadata_url: true}
+          if url !== "" do
+            %{skip_metadata_url: true}
+          else
+            %{
+              metadata_url: nil,
+              skip_metadata_url: false,
+              metadata: nil,
+              error: "no uri",
+              thumbnails: nil,
+              media_type: nil,
+              cdn_upload_error: nil
+            }
+          end
       end
 
     Map.merge(metadata_url_params, %{token_contract_address_hash: token_contract_address_hash, token_id: token_id})

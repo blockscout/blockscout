@@ -276,5 +276,75 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
 
       assert MigrationStatus.get_status("backfill_metadata_url") == "completed"
     end
+
+    test "drop metadata on invalid token uri response" do
+      token = insert(:token, type: "ERC-1155")
+      env = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper)
+      Application.put_env(:explorer, Explorer.Migrator.BackfillMetadataURL, batch_size: 1, concurrency: 1)
+
+      Application.put_env(
+        :indexer,
+        Indexer.Fetcher.TokenInstance.Helper,
+        Keyword.put(env, :cidr_blacklist, ["1.1.1.1/32"])
+      )
+
+      insert(:token_instance,
+        metadata: %{awesome: "metadata"},
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 0
+      )
+
+      token_contract_address_hash_string = to_string(token.contract_address_hash)
+
+      encoded_url_1 =
+        "0x" <>
+          (ABI.TypeEncoder.encode([""], %ABI.FunctionSelector{
+             function: nil,
+             types: [
+               :string
+             ]
+           })
+           |> Base.encode16(case: :lower))
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               method: "eth_call",
+               params: [
+                 %{
+                   data: "0x0e89341c0000000000000000000000000000000000000000000000000000000000000000",
+                   to: ^token_contract_address_hash_string
+                 },
+                 "latest"
+               ]
+             }
+           ],
+           _options ->
+          {:ok, [%{id: id, jsonrpc: "2.0", result: encoded_url_1}]}
+        end
+      )
+
+      assert MigrationStatus.get_status("backfill_metadata_url") == nil
+
+      BackfillMetadataURL.start_link([])
+      Process.sleep(500)
+
+      [instance_1] =
+        Instance
+        |> order_by([i], asc: i.token_id)
+        |> Repo.all()
+
+      assert instance_1.skip_metadata_url == false
+
+      assert is_nil(instance_1.metadata)
+
+      assert instance_1.error == "no uri"
+
+      assert MigrationStatus.get_status("backfill_metadata_url") == "completed"
+    end
   end
 end

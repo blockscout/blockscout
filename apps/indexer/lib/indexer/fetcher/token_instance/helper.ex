@@ -48,7 +48,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
 
     other
     |> batch_fetch_instances_inner(token_types_map, cryptokitties)
-    |> Enum.map(fn {{_task, res}, {_result, _normalized_token_id, contract_address_hash, token_id}} ->
+    |> Enum.map(fn {{_task, res}, {_result, _normalized_token_id, contract_address_hash, token_id, _from_base_uri?}} ->
       case res do
         {:ok, result} ->
           result_to_insert_params(result, contract_address_hash, token_id)
@@ -75,8 +75,8 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
          token_id = prepare_token_id(token_id)
 
          [
-           {result, normalize_token_id(token_types_map[String.downcase(to_string(contract_address_hash))], token_id),
-            contract_address_hash, token_id, from_base_uri?}
+           {result, normalize_token_id(token_types_map[contract_address_hash.bytes], token_id), contract_address_hash,
+            token_id, from_base_uri?}
            | acc
          ]
        end)
