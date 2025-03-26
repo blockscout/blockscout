@@ -22,7 +22,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
 
   If you need to add a new table, extend this type specification with the new table name.
   """
-  @callback table_name :: :logs | :internal_transactions | :token_transfers | :addresses | :arbitrum_batch_l2_blocks
+  @callback table_name ::
+              :transactions | :logs | :internal_transactions | :token_transfers | :addresses | :arbitrum_batch_l2_blocks
 
   @doc """
   Specifies the type of operation to be performed on the database index.
