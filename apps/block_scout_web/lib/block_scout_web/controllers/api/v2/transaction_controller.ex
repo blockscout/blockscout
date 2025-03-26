@@ -42,13 +42,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
+  alias Explorer.Chain.Cache.Counters.{NewPendingTransactionsCount, Transactions24hCount}
   alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
-  alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
   alias Indexer.Fetcher.OnDemand.NeonSolanaTransactions, as: NeonSolanaTransactions
 
@@ -683,10 +683,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   def stats(conn, _params) do
-    transactions_count = Transactions24hStats.fetch_count(@api_true)
-    pending_transactions_count = FreshPendingTransactionsCounter.fetch(@api_true)
-    transaction_fees_sum = Transactions24hStats.fetch_fee_sum(@api_true)
-    transaction_fees_avg = Transactions24hStats.fetch_fee_average(@api_true)
+    transactions_count = Transactions24hCount.fetch_count(@api_true)
+    pending_transactions_count = NewPendingTransactionsCount.fetch(@api_true)
+    transaction_fees_sum = Transactions24hCount.fetch_fee_sum(@api_true)
+    transaction_fees_avg = Transactions24hCount.fetch_fee_average(@api_true)
 
     conn
     |> put_status(200)

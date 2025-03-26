@@ -28,7 +28,6 @@ defmodule BlockScoutWeb.Notifier do
   }
 
   alias Explorer.{Chain, Market, Repo}
-  alias Explorer.Chain.Address.Counters
 
   alias Explorer.Chain.{
     Address,
@@ -40,9 +39,9 @@ defmodule BlockScoutWeb.Notifier do
     Wei
   }
 
+  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime, Helper}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
-  alias Explorer.Counters.{AverageBlockTime, Helper}
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Phoenix.View
   alias Timex.Duration
@@ -91,10 +90,9 @@ defmodule BlockScoutWeb.Notifier do
                               @chain_type_transaction_associations
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
-    count = Counters.address_estimated_count()
     # TODO: delete duplicated event when old UI becomes deprecated
-    Endpoint.broadcast("addresses_old:new_address", "count", %{count: count})
-    Endpoint.broadcast("addresses:new_address", "count", %{count: to_string(count)})
+    Endpoint.broadcast("addresses_old:new_address", "count", %{count: AddressesCount.fetch()})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: AddressesCount.fetch()})
 
     addresses
     |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)
@@ -177,7 +175,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do
-    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:number, :last_broadcasted_block)
+    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:last_broadcasted_block, :number)
 
     blocks
     |> Enum.sort_by(& &1.number, :asc)
@@ -530,7 +528,7 @@ defmodule BlockScoutWeb.Notifier do
 
   defp schedule_broadcasting(block) do
     :timer.sleep(@check_broadcast_sequence_period)
-    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:number, :last_broadcasted_block)
+    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:last_broadcasted_block, :number)
 
     if last_broadcasted_block_number == BlockNumberHelper.previous_block_number(block.number) do
       broadcast_block(block)

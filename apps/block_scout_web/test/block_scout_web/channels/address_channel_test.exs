@@ -1,12 +1,12 @@
 defmodule BlockScoutWeb.AddressChannelTest do
   use BlockScoutWeb.ChannelCase,
-    # ETS tables are shared in `Explorer.Counters.AddressesCounter`
+    # ETS tables are shared in `Explorer.Chain.Cache.Counters.AddressesCount`
     async: false
 
   alias BlockScoutWeb.UserSocket
   alias BlockScoutWeb.Notifier
   alias Explorer.Chain.Wei
-  alias Explorer.Counters.AddressesCounter
+  alias Explorer.Chain.Cache.Counters.AddressesCount
 
   test "subscribed user is notified of new_address count event" do
     topic = "addresses_old:new_address"
@@ -14,8 +14,8 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
     address = insert(:address)
 
-    start_supervised!(AddressesCounter)
-    AddressesCounter.consolidate()
+    start_supervised!(AddressesCount)
+    AddressesCount.consolidate()
 
     Notifier.handle_event({:chain_event, :addresses, :realtime, [address]})
 
@@ -57,8 +57,8 @@ defmodule BlockScoutWeb.AddressChannelTest do
       {:ok, balance} = Wei.cast(1)
       address_with_balance = %{address | fetched_coin_balance: balance}
 
-      start_supervised!(AddressesCounter)
-      AddressesCounter.consolidate()
+      start_supervised!(AddressesCount)
+      AddressesCount.consolidate()
 
       Notifier.handle_event({:chain_event, :addresses, :realtime, [address_with_balance]})
 
@@ -69,8 +69,8 @@ defmodule BlockScoutWeb.AddressChannelTest do
     end
 
     test "not notified of balance_update if fetched_coin_balance is nil", %{address: address} do
-      start_supervised!(AddressesCounter)
-      AddressesCounter.consolidate()
+      start_supervised!(AddressesCount)
+      AddressesCount.consolidate()
 
       Notifier.handle_event({:chain_event, :addresses, :realtime, [address]})
 

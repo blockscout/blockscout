@@ -2996,8 +2996,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "internal_transactions_count" => 2
              } = json_response(request, 200)
 
-      old_env = Application.get_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters)
-      Application.put_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters, ttl: 200)
+      old_env = Application.get_env(:explorer, Explorer.Chain.Cache.Counters.AddressTabsElementsCount)
+      Application.put_env(:explorer, Explorer.Chain.Cache.Counters.AddressTabsElementsCount, ttl: 200)
       :timer.sleep(200)
 
       for x <- 3..4 do
@@ -3027,7 +3027,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "internal_transactions_count" => 4
              } = json_response(request, 200)
 
-      Application.put_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters, old_env)
+      Application.put_env(:explorer, Explorer.Chain.Cache.Counters.AddressTabsElementsCount, old_env)
     end
   end
 
