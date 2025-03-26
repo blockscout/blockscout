@@ -239,7 +239,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {:ok, _address} ->
           token_balances =
             address_hash
-            |> Chain.fetch_last_token_balances(@api_true)
+            |> Chain.fetch_last_token_balances(@api_true |> fetch_scam_token_toggle(conn))
 
           Task.start_link(fn ->
             TokenBalanceOnDemand.trigger_fetch(address_hash)
