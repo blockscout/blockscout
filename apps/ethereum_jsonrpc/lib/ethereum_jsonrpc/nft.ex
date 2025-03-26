@@ -62,6 +62,24 @@ defmodule EthereumJsonrpc.NFT do
     }
   ]
 
+  @doc """
+    Executes batch requests to fetch metadata URLs for token instances.
+    It first attempts to fetch using the primary method (tokenURI/uri). For failed requests,
+    it may retry using baseURI based on application configuration.
+
+    ## Parameters
+
+    - `token_instances`: List of tuples containing {contract_address_hash, token_id, token_type}
+    - `json_rpc_named_arguments`: Arguments for JSON RPC calls
+
+    ## Returns
+
+    - List of results with metadata URLs or errors
+  """
+  @spec batch_metadata_url_request(
+          list({Explorer.Chain.Hash.Address.t(), non_neg_integer() | Decimal.t(), String.t()}),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: list({:ok, [String.t()]} | {{:error, [String.t()]}, boolean()})
   def batch_metadata_url_request(token_instances, json_rpc_named_arguments) do
     {mb_retry, other} =
       token_instances
@@ -128,6 +146,17 @@ defmodule EthereumJsonrpc.NFT do
     end)
   end
 
+  @doc """
+    Prepares a request map for fetching metadata URL.
+    ## Parameters
+    - `token_type`: Type of token (ERC-404, ERC-721, ERC-1155)
+    - `contract_address_hash_string`: String representation of the contract address
+    - `token_id`: Token ID as integer
+    - `from_base_uri?`: Boolean indicating if request is for base URI
+    ## Returns
+    - Map with request parameters
+  """
+  @spec prepare_request(String.t(), String.t(), non_neg_integer(), boolean()) :: map()
   def prepare_request(token_type, contract_address_hash_string, token_id, from_base_uri?)
       when token_type in ["ERC-404", "ERC-721"] do
     request = %{
@@ -165,6 +194,7 @@ defmodule EthereumJsonrpc.NFT do
   @doc """
   Returns the ABI of uri, tokenURI, baseURI getters for ERC-721 and ERC-1155 tokens.
   """
+  @spec erc_721_1155_abi() :: list(map())
   def erc_721_1155_abi do
     @erc_721_1155_abi
   end
@@ -172,6 +202,7 @@ defmodule EthereumJsonrpc.NFT do
   @doc """
   Returns tokenURI method signature.
   """
+  @spec token_uri() :: String.t()
   def token_uri do
     @token_uri
   end

@@ -15,7 +15,6 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   alias Explorer.SmartContract.Reader
   alias Explorer.Token.MetadataRetriever
   alias Explorer.Utility.TokenInstanceMetadataRefetchAttempt
-  alias Indexer.Fetcher.TokenInstance.Helper, as: TokenInstanceHelper
   alias Indexer.NFTMediaHandler.Queue
 
   @max_delay :timer.hours(168)
@@ -48,11 +47,11 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   end
 
   defp fetch_and_broadcast_metadata(token_instance, _state) do
-    token_id = TokenInstanceHelper.prepare_token_id(token_instance.token_id)
+    token_id = NFT.prepare_token_id(token_instance.token_id)
     contract_address_hash_string = to_string(token_instance.token_contract_address_hash)
 
     request =
-      TokenInstanceHelper.prepare_request(
+      NFT.prepare_request(
         token_instance.token.type,
         contract_address_hash_string,
         token_id,

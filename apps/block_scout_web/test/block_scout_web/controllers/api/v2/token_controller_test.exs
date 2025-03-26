@@ -1119,12 +1119,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "metadata dropped on token uri on demand filler", %{conn: conn} do
       token = insert(:token, type: "ERC-721")
 
-      instance =
-        insert(:token_instance,
-          token_id: 0,
-          token_contract_address_hash: token.contract_address_hash,
-          metadata: %{"awesome" => "metadata"}
-        )
+      insert(:token_instance,
+        token_id: 0,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{"awesome" => "metadata"}
+      )
 
       encoded_url_1 =
         "0x" <>

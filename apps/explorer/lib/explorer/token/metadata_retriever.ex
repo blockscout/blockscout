@@ -275,10 +275,6 @@ defmodule Explorer.Token.MetadataRetriever do
     end
   end
 
-  def parse_fetch_json_response({:ok, metadata}) do
-    {:ok, metadata}
-  end
-
   def parse_fetch_json_response({:ok_store_uri, metadata, _uri}) do
     {:ok, metadata}
   end
@@ -591,7 +587,7 @@ defmodule Explorer.Token.MetadataRetriever do
     Fetch/parse metadata using smart-contract's response
   """
   @spec(
-    fetch_json(any, binary() | nil, binary() | nil, boolean) ::
+    fetch_json(any, integer() | nil, binary() | nil, boolean) ::
       {:error, binary} | {:error_code, any} | {:ok, %{metadata: any}},
     {:ok_store_uri, %{metadata: any}, binary()}
   )

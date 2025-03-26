@@ -13,10 +13,6 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
 
   @cryptokitties_address_hash "0x06012c8cf97bead5deae237070f9587f8e7a266d"
 
-  @token_uri "c87b56dd"
-  @base_uri "6c0360eb"
-  @uri "0e89341c"
-
   @spec batch_fetch_instances([%{}]) :: list()
   def batch_fetch_instances(token_instances) do
     token_instances =
@@ -72,7 +68,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
        end)
        |> NFT.batch_metadata_url_request(Application.get_env(:explorer, :json_rpc_named_arguments))
        |> Enum.zip_reduce(token_instances, [], fn {result, from_base_uri?}, {contract_address_hash, token_id}, acc ->
-         token_id = prepare_token_id(token_id)
+         token_id = NFT.prepare_token_id(token_id)
 
          [
            {result, normalize_token_id(token_types_map[contract_address_hash.bytes], token_id), contract_address_hash,
@@ -89,40 +85,6 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     end)
     |> Task.yield_many(:infinity)
     |> Enum.zip(contract_results)
-  end
-
-  @doc """
-  Prepares token id for request.
-  """
-  @spec prepare_token_id(any) :: any
-  def prepare_token_id(%Decimal{} = token_id), do: Decimal.to_integer(token_id)
-  def prepare_token_id(token_id), do: token_id
-
-  def prepare_request(erc_721_404, contract_address_hash_string, token_id, from_base_uri?)
-      when erc_721_404 in ["ERC-404", "ERC-721"] do
-    request = %{
-      contract_address: contract_address_hash_string,
-      block_number: nil
-    }
-
-    if from_base_uri? do
-      request |> Map.put(:method_id, @base_uri) |> Map.put(:args, [])
-    else
-      request |> Map.put(:method_id, @token_uri) |> Map.put(:args, [token_id])
-    end
-  end
-
-  def prepare_request(_token_type, contract_address_hash_string, token_id, from_base_uri?) do
-    request = %{
-      contract_address: contract_address_hash_string,
-      block_number: nil
-    }
-
-    if from_base_uri? do
-      request |> Map.put(:method_id, @base_uri) |> Map.put(:args, [])
-    else
-      request |> Map.put(:method_id, @uri) |> Map.put(:args, [token_id])
-    end
   end
 
   @spec normalize_token_id(binary(), integer()) :: nil | binary()
@@ -202,12 +164,5 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
         end)
         |> upsert_with_rescue(true)
       end
-  end
-
-  @doc """
-  Returns tokenURI method signature.
-  """
-  def token_uri do
-    @token_uri
   end
 end
