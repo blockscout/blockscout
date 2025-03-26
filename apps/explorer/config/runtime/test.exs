@@ -15,19 +15,21 @@ config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime, enabled: false
 config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
 config :explorer, Explorer.Market.History.Historian, enabled: false
 
-config :explorer, Explorer.Chain.Cache.Counters.AddressesCount, enabled: false, enable_consolidation: false
-
-config :explorer, Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount,
-  enabled: false,
-  enable_consolidation: false
-
-config :explorer, Explorer.Chain.Cache.Counters.Transactions24hCount, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.Counters.NewPendingTransactionsCount, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.Counters.ContractsCount, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.Counters.NewContractsCount, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.Counters.VerifiedContractsCount, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.Counters.NewVerifiedContractsCount, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.Counters.WithdrawalsSum, enabled: false, enable_consolidation: false
+for counter <- [
+      Explorer.Chain.Cache.Counters.AddressesCount,
+      Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount,
+      Explorer.Chain.Cache.Counters.Transactions24hCount,
+      Explorer.Chain.Cache.Counters.NewPendingTransactionsCount,
+      Explorer.Chain.Cache.Counters.ContractsCount,
+      Explorer.Chain.Cache.Counters.NewContractsCount,
+      Explorer.Chain.Cache.Counters.VerifiedContractsCount,
+      Explorer.Chain.Cache.Counters.NewVerifiedContractsCount,
+      Explorer.Chain.Cache.Counters.WithdrawalsSum
+    ] do
+  config :explorer, counter,
+    enabled: false,
+    enable_consolidation: false
+end
 
 config :explorer, Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount,
   enabled: true,
