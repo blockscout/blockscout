@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
+defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
   @moduledoc """
     Searches for incomplete messages in the `op_interop_messages` database table and sends message's data to the
     remote instance through API post request to fill missed part and notify the remote side about the known part.
@@ -263,7 +263,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
       |> ExKeccak.hash_256()
       |> ExSecp256k1.sign_compact(private_key)
 
-    {message.relay_chain_id, %{data | signature: add_0x_prefix(signature)}}
+    set_post_data_signature(message.relay_chain_id, data, signature)
   end
 
   defp prepare_post_data(message, private_key) do
@@ -286,7 +286,23 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
       |> ExKeccak.hash_256()
       |> ExSecp256k1.sign_compact(private_key)
 
-    {message.init_chain_id, %{data | signature: add_0x_prefix(signature)}}
+    set_post_data_signature(message.init_chain_id, data, signature)
+  end
+
+  # Adds signature to the data sent as POST request to the remote API endpoint.
+  #
+  # ## Parameters
+  # - `chain_id`: An integer defining the chain ID.
+  # - `data`: The given data to set the `signature` field for.
+  # - `signature`: The signature to set.
+  #
+  # ## Returns
+  # - `{chain_id, post_data_signed}` tuple where
+  #   `chain_id` is the chain id from the input parameter.
+  #   `post_data_signed` is the `data` map with the `signature` field.
+  @spec set_post_data_signature(non_neg_integer(), map(), binary()) :: {non_neg_integer(), map()}
+  defp set_post_data_signature(chain_id, data, signature) do
+    {chain_id, %{data | signature: add_0x_prefix(signature)}}
   end
 
   # Prepares a map to import to the `op_interop_messages` table based on the current handling message and

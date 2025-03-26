@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.Optimism.InteropMessageFailed do
+defmodule Indexer.Fetcher.Optimism.Interop.MessageFailed do
   @moduledoc """
     Fills op_interop_messages DB table with failed messages.
 
@@ -25,9 +25,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageFailed do
   alias Explorer.Chain
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.InteropMessage
-  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Indexer.Fetcher.Optimism
-  alias Indexer.Fetcher.Optimism.InteropMessage, as: InteropMessageFetcher
+  alias Indexer.Fetcher.Optimism.Interop.Message, as: InteropMessageFetcher
   alias Indexer.Helper
 
   @fetcher_name :optimism_interop_messages_failed
@@ -91,7 +90,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageFailed do
     # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
     :timer.sleep(2000)
 
-    env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism.InteropMessage]
+    env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism.Interop.Message]
     block_number = env[:start_block]
 
     with false <- is_nil(block_number),
@@ -249,22 +248,6 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageFailed do
     {:noreply, state}
   end
 
-  @doc """
-    Catches L2 reorg block from the realtime block fetcher and keeps it in a queue
-    to handle that by the main loop.
-
-    ## Parameters
-    - `reorg_block_number`: The number of reorg block.
-
-    ## Returns
-    - nothing.
-  """
-  @spec handle_realtime_l2_reorg(non_neg_integer()) :: any()
-  def handle_realtime_l2_reorg(reorg_block_number) do
-    Logger.warning("L2 reorg was detected at block #{reorg_block_number}.", fetcher: @fetcher_name)
-    RollupReorgMonitorQueue.reorg_block_push(reorg_block_number, __MODULE__)
-  end
-
   # Searches and handles failed relay transactions.
   #
   # ## Parameters
@@ -420,4 +403,6 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageFailed do
         transactions_filter(transactions_params, json_rpc_named_arguments)
     end
   end
+
+  def fetcher_name, do: @fetcher_name
 end

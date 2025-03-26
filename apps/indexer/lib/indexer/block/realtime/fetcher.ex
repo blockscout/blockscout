@@ -37,6 +37,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Fetcher.Optimism
   alias Indexer.Prometheus
   alias Timex.Duration
 
@@ -377,9 +378,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
   # previously written starting from the reorg block number
   defp do_remove_assets_by_number(:optimism, reorg_block_number) do
     # credo:disable-for-lines:5 Credo.Check.Design.AliasUsage
-    Indexer.Fetcher.Optimism.EIP1559ConfigUpdate.handle_realtime_l2_reorg(reorg_block_number)
-    Indexer.Fetcher.Optimism.InteropMessage.handle_realtime_l2_reorg(reorg_block_number)
-    Indexer.Fetcher.Optimism.InteropMessageFailed.handle_realtime_l2_reorg(reorg_block_number)
+    Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate)
+    Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.Interop.Message)
+    Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.Interop.MessageFailed)
     Indexer.Fetcher.Optimism.TransactionBatch.handle_l2_reorg(reorg_block_number)
     Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block_number)
   end

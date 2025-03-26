@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.Optimism.InteropMessage do
+defmodule Indexer.Fetcher.Optimism.Interop.Message do
   @moduledoc """
     Fills op_interop_messages DB table by catching `SentMessage` and `RelayedMessage` events.
 
@@ -28,7 +28,6 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.InteropMessage
-  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
@@ -253,22 +252,6 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
   end
 
   @doc """
-    Catches L2 reorg block from the realtime block fetcher and keeps it in a queue
-    to handle that by the main loop.
-
-    ## Parameters
-    - `reorg_block_number`: The number of reorg block.
-
-    ## Returns
-    - nothing.
-  """
-  @spec handle_realtime_l2_reorg(non_neg_integer()) :: any()
-  def handle_realtime_l2_reorg(reorg_block_number) do
-    Logger.warning("L2 reorg was detected at block #{reorg_block_number}.", fetcher: @fetcher_name)
-    RollupReorgMonitorQueue.reorg_block_push(reorg_block_number, __MODULE__)
-  end
-
-  @doc """
     Removes all rows from the `op_interop_messages` table which have `block_number` greater or equal to the reorg block number.
 
     ## Parameters
@@ -446,4 +429,6 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
       end)
     end)
   end
+
+  def fetcher_name, do: @fetcher_name
 end

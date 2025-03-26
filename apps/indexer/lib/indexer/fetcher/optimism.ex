@@ -524,8 +524,25 @@ defmodule Indexer.Fetcher.Optimism do
   end
 
   @doc """
+    Catches L2 reorg block from the realtime block fetcher and keeps it in a queue to handle that by the main loop.
+
+    ## Parameters
+    - `reorg_block_number`: The number of reorg block.
+    - `module`: The module for which the reorg block number should be added to queue.
+                The module must have a public `fetcher_name()` function.
+
+    ## Returns
+    - nothing.
+  """
+  @spec handle_realtime_l2_reorg(non_neg_integer(), module()) :: any()
+  def handle_realtime_l2_reorg(reorg_block_number, module) do
+    Logger.warning("L2 reorg was detected at block #{reorg_block_number}.", fetcher: module.fetcher_name())
+    RollupReorgMonitorQueue.reorg_block_push(reorg_block_number, module)
+  end
+
+  @doc """
     Catches realtime L2 blocks from `:blocks, :realtime` subscription and forms a new realtime block range to be handled by a loop handler
-    in `Indexer.Fetcher.Optimism.InteropMessage`, `Indexer.Fetcher.Optimism.InteropMessageFailed`, or `Indexer.Fetcher.Optimism.EIP1559ConfigUpdate` module.
+    in `Indexer.Fetcher.Optimism.Interop.Message`, `Indexer.Fetcher.Optimism.Interop.MessageFailed`, or `Indexer.Fetcher.Optimism.EIP1559ConfigUpdate` module.
 
     ## Parameters
     - `blocks`: The list of new realtime L2 blocks arrived.

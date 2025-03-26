@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     Withdrawal
   }
 
-  alias Indexer.Fetcher.Optimism.InteropMessageQueue
+  alias Indexer.Fetcher.Optimism.Interop.MessageQueue, as: InteropMessageQueue
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 

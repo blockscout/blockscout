@@ -34,7 +34,6 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
-  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
@@ -248,22 +247,6 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
-  end
-
-  @doc """
-    Catches L2 reorg block from the realtime block fetcher and keeps it in a queue
-    to handle that by the main loop.
-
-    ## Parameters
-    - `reorg_block_number`: The number of reorg block.
-
-    ## Returns
-    - nothing.
-  """
-  @spec handle_realtime_l2_reorg(non_neg_integer()) :: any()
-  def handle_realtime_l2_reorg(reorg_block_number) do
-    Logger.warning("L2 reorg was detected at block #{reorg_block_number}.", fetcher: @fetcher_name)
-    RollupReorgMonitorQueue.reorg_block_push(reorg_block_number, __MODULE__)
   end
 
   # Removes all rows from the `op_eip1559_config_updates` table which have `l2_block_number` greater or equal to the reorg block number.
@@ -612,4 +595,6 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       Logger.info("Holocene activation detected")
     end
   end
+
+  def fetcher_name, do: @fetcher_name
 end

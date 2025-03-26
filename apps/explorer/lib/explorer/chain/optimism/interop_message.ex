@@ -10,7 +10,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
   alias Explorer.Chain.Hash
   alias Explorer.{PagingOptions, Repo}
-  alias Indexer.Fetcher.Optimism.InteropMessageQueue
+  alias Indexer.Fetcher.Optimism.Interop.MessageQueue, as: InteropMessageQueue
 
   @required_attrs ~w(nonce init_chain_id relay_chain_id)a
   @optional_attrs ~w(sender_address_hash target_address_hash init_transaction_hash block_number timestamp relay_transaction_hash payload failed)a
@@ -572,7 +572,8 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     query =
       from(
         m in __MODULE__,
-        where: m.init_transaction_hash == ^transaction_hash or m.relay_transaction_hash == ^transaction_hash
+        where: m.init_transaction_hash == ^transaction_hash or m.relay_transaction_hash == ^transaction_hash,
+        limit: 1
       )
 
     message =

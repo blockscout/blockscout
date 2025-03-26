@@ -971,12 +971,12 @@ config :indexer, Indexer.Fetcher.Optimism.WithdrawalEvent.Supervisor, enabled: C
 config :indexer, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate.Supervisor,
   disabled?: ConfigHelper.chain_type() != :optimism
 
-config :indexer, Indexer.Fetcher.Optimism.InteropMessage.Supervisor, disabled?: ConfigHelper.chain_type() != :optimism
+config :indexer, Indexer.Fetcher.Optimism.Interop.Message.Supervisor, disabled?: ConfigHelper.chain_type() != :optimism
 
-config :indexer, Indexer.Fetcher.Optimism.InteropMessageFailed.Supervisor,
+config :indexer, Indexer.Fetcher.Optimism.Interop.MessageFailed.Supervisor,
   disabled?: ConfigHelper.chain_type() != :optimism
 
-config :indexer, Indexer.Fetcher.Optimism.InteropMessageQueue.Supervisor,
+config :indexer, Indexer.Fetcher.Optimism.Interop.MessageQueue.Supervisor,
   disabled?: ConfigHelper.chain_type() != :optimism
 
 config :indexer, Indexer.Fetcher.Optimism,
@@ -1011,11 +1011,11 @@ config :indexer, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate,
   chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L2_HOLOCENE_BLOCKS_CHUNK_SIZE", 25),
   holocene_timestamp_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP")
 
-config :indexer, Indexer.Fetcher.Optimism.InteropMessage,
+config :indexer, Indexer.Fetcher.Optimism.Interop.Message,
   start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_INTEROP_START_BLOCK"),
   blocks_chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L2_INTEROP_BLOCKS_CHUNK_SIZE", 4)
 
-config :indexer, Indexer.Fetcher.Optimism.InteropMessageQueue,
+config :indexer, Indexer.Fetcher.Optimism.Interop.MessageQueue,
   chainscout_api_url: ConfigHelper.parse_url_env_var("INDEXER_OPTIMISM_CHAINSCOUT_API_URL", nil, true),
   chainscout_fallback_map: ConfigHelper.parse_json_env_var("INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP"),
   private_key: System.get_env("INDEXER_OPTIMISM_INTEROP_PRIVATE_KEY", ""),
