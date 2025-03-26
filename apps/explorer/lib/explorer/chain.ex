@@ -3671,6 +3671,7 @@ defmodule Explorer.Chain do
   def fetch_last_token_balances(address_hash, options \\ []) do
     address_hash
     |> CurrentTokenBalance.last_token_balances()
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> select_repo(options).all()
   end
 
