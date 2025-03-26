@@ -56,13 +56,7 @@ defmodule EthereumJSONRPC.HTTP.HTTPoison do
   end
 
   defp response_body_has_error?(decoded_body) when is_list(decoded_body) do
-    Enum.reduce_while(decoded_body, false, fn decoded_body_elem, has_error? ->
-      if Map.has_key?(decoded_body_elem, "error") do
-        {:halt, true}
-      else
-        {:cont, has_error?}
-      end
-    end)
+    Enum.any?(decoded_body, &response_body_has_error?/1)
   end
 
   defp response_body_has_error?(_decoded_body), do: false
