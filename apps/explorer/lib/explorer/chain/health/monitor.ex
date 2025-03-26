@@ -8,12 +8,12 @@ defmodule Explorer.Chain.Health.Monitor do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   alias EthereumJSONRPC.Utility.EndpointAvailabilityChecker
   alias Explorer.Chain.Arbitrum.Reader.Common, as: ArbitrumReaderCommon
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Health.Helper, as: HealthHelper
   alias Explorer.Chain.Optimism.Reader, as: OptimismReader
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
-  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Repo
 
   def start_link(_) do
