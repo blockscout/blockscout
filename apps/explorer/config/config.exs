@@ -29,12 +29,9 @@ config :explorer, Explorer.Chain.Cache.Counters.AddressesCoinBalanceSumMinusBurn
   enabled: true,
   ttl_check_interval: :timer.seconds(1)
 
-update_interval_in_milliseconds = ConfigHelper.parse_time_env_var("CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL", "30m")
-
 config :explorer, Explorer.Chain.Cache.Counters.AddressesCount,
   enabled: true,
-  enable_consolidation: true,
-  update_interval_in_milliseconds: update_interval_in_milliseconds
+  enable_consolidation: true
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsGasUsageSum,
   enabled: true,
@@ -162,9 +159,6 @@ end
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: true
-
-config :explorer, Explorer.Chain.Cache.Counters.GasUsageSum,
-  enabled: ConfigHelper.parse_bool_env_var("CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED")
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
