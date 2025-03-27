@@ -133,7 +133,7 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
       Application.put_env(
         :indexer,
         Indexer.Fetcher.TokenInstance.Helper,
-        Keyword.put(env, :cidr_blacklist, ["1.1.1.1/32"])
+        Keyword.put(env, :cidr_blacklist, ["255.255.255.255/32", "1.1.1.1/32"])
       )
 
       insert(:token_instance,
