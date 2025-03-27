@@ -16,11 +16,10 @@ defmodule Indexer.Fetcher.Optimism do
       quantity_to_integer: 1
     ]
 
-  import Explorer.Chain, only: [get_last_fetched_counter: 1, upsert_last_fetched_counter: 1]
-
   alias EthereumJSONRPC.Block.{ByHash, ByNumber}
   alias EthereumJSONRPC.{Blocks, Contract}
   alias Explorer.Chain.Cache.ChainId
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
@@ -299,7 +298,7 @@ defmodule Indexer.Fetcher.Optimism do
       |> String.trim_leading("0x")
       |> Integer.parse(16)
 
-    upsert_last_fetched_counter(%{
+    LastFetchedCounter.upsert(%{
       counter_type: counter_type,
       value: block_hash_integer
     })
@@ -351,7 +350,7 @@ defmodule Indexer.Fetcher.Optimism do
     last_block_hash =
       "0x" <>
         (counter_type
-         |> get_last_fetched_counter()
+         |> LastFetchedCounter.get()
          |> Decimal.to_integer()
          |> Integer.to_string(16)
          |> String.pad_leading(64, "0"))
