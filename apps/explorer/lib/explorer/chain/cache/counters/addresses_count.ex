@@ -12,8 +12,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
   # tests were failing before disabling the consolidation and the scheduler in
   # the test env.
   use Utils.CompileTimeEnvHelper,
-    enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]],
-    update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
+    enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]]
 
   alias Explorer.Chain.Address
   alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
@@ -51,7 +50,11 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
   end
 
   defp schedule_next_consolidation do
-    Process.send_after(self(), :consolidate, @update_interval_in_milliseconds)
+    Process.send_after(
+      self(),
+      :consolidate,
+      Application.get_env(:explorer, __MODULE__)[:update_interval_in_milliseconds]
+    )
   end
 
   @doc """

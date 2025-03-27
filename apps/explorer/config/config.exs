@@ -29,12 +29,9 @@ config :explorer, Explorer.Chain.Cache.Counters.AddressesCoinBalanceSumMinusBurn
   enabled: true,
   ttl_check_interval: :timer.seconds(1)
 
-update_interval_in_milliseconds = ConfigHelper.parse_time_env_var("CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL", "30m")
-
 config :explorer, Explorer.Chain.Cache.Counters.AddressesCount,
   enabled: true,
-  enable_consolidation: true,
-  update_interval_in_milliseconds: update_interval_in_milliseconds
+  enable_consolidation: true
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsGasUsageSum,
   enabled: true,
