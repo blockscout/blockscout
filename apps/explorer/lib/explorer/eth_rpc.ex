@@ -4,6 +4,10 @@ defmodule Explorer.EthRPC do
   """
   import Explorer.EthRpcHelper
 
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias Ecto.Type, as: EctoType
   alias Explorer.{BloomFilter, Chain, Helper, Repo}
 
@@ -20,6 +24,16 @@ defmodule Explorer.EthRPC do
 
   alias Explorer.Chain.Cache.{BlockNumber, GasPriceOracle}
   alias Explorer.Etherscan.{Blocks, Logs}
+
+  case @chain_type do
+    :ethereum ->
+      @chain_type_transaction_necessity_by_association %{
+        :beacon_blob_transaction => :optional
+      }
+
+    _ ->
+      @chain_type_transaction_necessity_by_association %{}
+  end
 
   @nil_gas_price_message "Gas price is not estimated yet"
 
@@ -846,31 +860,42 @@ defmodule Explorer.EthRPC do
   """
   @spec eth_get_transaction_by_hash(String.t()) :: {:ok, map() | nil} | {:error, String.t()}
   def eth_get_transaction_by_hash(transaction_hash_string) do
-    validate_and_render_transaction(transaction_hash_string, &render_transaction/1, api?: true)
+    necessity_by_association =
+      %{signed_authorizations: :optional}
+      |> Map.merge(@chain_type_transaction_necessity_by_association)
+
+    validate_and_render_transaction(transaction_hash_string, &render_transaction/1,
+      api?: true,
+      necessity_by_association: necessity_by_association
+    )
   end
 
   defp render_transaction(transaction) do
-    {:ok,
-     %{
-       "blockHash" => transaction.block_hash,
-       "blockNumber" => encode_quantity(transaction.block_number),
-       "from" => transaction.from_address_hash,
-       "gas" => encode_quantity(transaction.gas),
-       "gasPrice" => transaction.gas_price |> Wei.to(:wei) |> encode_quantity(),
-       "maxPriorityFeePerGas" => transaction.max_priority_fee_per_gas |> Wei.to(:wei) |> encode_quantity(),
-       "maxFeePerGas" => transaction.max_fee_per_gas |> Wei.to(:wei) |> encode_quantity(),
-       "hash" => transaction.hash,
-       "input" => transaction.input,
-       "nonce" => encode_quantity(transaction.nonce),
-       "to" => transaction.to_address_hash,
-       "transactionIndex" => encode_quantity(transaction.index),
-       "value" => transaction.value |> Wei.to(:wei) |> encode_quantity(),
-       "type" => encode_quantity(transaction.type),
-       "chainId" => chain_id(),
-       "v" => encode_quantity(transaction.v),
-       "r" => encode_quantity(transaction.r),
-       "s" => encode_quantity(transaction.s)
-     }}
+    result =
+      %{
+        "blockHash" => transaction.block_hash,
+        "blockNumber" => encode_quantity(transaction.block_number),
+        "from" => transaction.from_address_hash,
+        "gas" => encode_quantity(transaction.gas),
+        "gasPrice" => transaction.gas_price |> Wei.to(:wei) |> encode_quantity(),
+        "maxPriorityFeePerGas" => transaction.max_priority_fee_per_gas |> Wei.to(:wei) |> encode_quantity(),
+        "maxFeePerGas" => transaction.max_fee_per_gas |> Wei.to(:wei) |> encode_quantity(),
+        "hash" => transaction.hash,
+        "input" => transaction.input,
+        "nonce" => encode_quantity(transaction.nonce),
+        "to" => transaction.to_address_hash,
+        "transactionIndex" => encode_quantity(transaction.index),
+        "value" => transaction.value |> Wei.to(:wei) |> encode_quantity(),
+        "type" => encode_quantity(transaction.type),
+        "chainId" => chain_id(),
+        "v" => encode_quantity(transaction.v),
+        "r" => encode_quantity(transaction.r),
+        "s" => encode_quantity(transaction.s)
+      }
+      |> maybe_add_signed_authorizations(transaction)
+      |> maybe_add_chain_type_extra_transaction_info_properties(transaction)
+
+    {:ok, result}
   end
 
   @doc """
@@ -878,7 +903,9 @@ defmodule Explorer.EthRPC do
   """
   @spec eth_get_transaction_receipt(String.t()) :: {:ok, map() | nil} | {:error, String.t()}
   def eth_get_transaction_receipt(transaction_hash_string) do
-    necessity_by_association = %{block: :optional, logs: :optional}
+    necessity_by_association =
+      %{block: :optional, logs: :optional}
+      |> Map.merge(@chain_type_transaction_necessity_by_association)
 
     validate_and_render_transaction(transaction_hash_string, &render_transaction_receipt/1,
       api?: true,
@@ -889,26 +916,78 @@ defmodule Explorer.EthRPC do
   defp render_transaction_receipt(transaction) do
     {:ok, status} = Status.dump(transaction.status)
 
-    {:ok,
-     %{
-       "blockHash" => transaction.block_hash,
-       "blockNumber" => encode_quantity(transaction.block_number),
-       "contractAddress" => transaction.created_contract_address_hash,
-       "cumulativeGasUsed" => encode_quantity(transaction.cumulative_gas_used),
-       "effectiveGasPrice" =>
-         (transaction.gas_price || transaction |> Transaction.effective_gas_price())
-         |> Wei.to(:wei)
-         |> encode_quantity(),
-       "from" => transaction.from_address_hash,
-       "gasUsed" => encode_quantity(transaction.gas_used),
-       "logs" => Enum.map(transaction.logs, &render_log(&1, transaction)),
-       "logsBloom" => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
-       "status" => encode_quantity(status),
-       "to" => transaction.to_address_hash,
-       "transactionHash" => transaction.hash,
-       "transactionIndex" => encode_quantity(transaction.index),
-       "type" => encode_quantity(transaction.type)
-     }}
+    props =
+      %{
+        "blockHash" => transaction.block_hash,
+        "blockNumber" => encode_quantity(transaction.block_number),
+        "contractAddress" => transaction.created_contract_address_hash,
+        "cumulativeGasUsed" => encode_quantity(transaction.cumulative_gas_used),
+        "effectiveGasPrice" =>
+          (transaction.gas_price || transaction |> Transaction.effective_gas_price())
+          |> Wei.to(:wei)
+          |> encode_quantity(),
+        "from" => transaction.from_address_hash,
+        "gasUsed" => encode_quantity(transaction.gas_used),
+        "logs" => Enum.map(transaction.logs, &render_log(&1, transaction)),
+        "logsBloom" => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
+        "status" => encode_quantity(status),
+        "to" => transaction.to_address_hash,
+        "transactionHash" => transaction.hash,
+        "transactionIndex" => encode_quantity(transaction.index),
+        "type" => encode_quantity(transaction.type)
+      }
+      |> maybe_add_chain_type_extra_receipt_properties(transaction)
+
+    {:ok, props}
+  end
+
+  defp maybe_add_signed_authorizations(props, transaction) do
+    if transaction.signed_authorizations do
+      signed_authorizations =
+        transaction.signed_authorizations
+        |> Enum.map(fn signed_authorization ->
+          %{
+            "chainId" => String.downcase(integer_to_quantity(signed_authorization.chain_id)),
+            "nonce" => Helper.integer_to_hex(signed_authorization.nonce),
+            "address" => to_string(signed_authorization.address),
+            "r" => Helper.decimal_to_hex(signed_authorization.r),
+            "s" => Helper.decimal_to_hex(signed_authorization.s),
+            "yParity" => Helper.integer_to_hex(signed_authorization.v)
+          }
+        end)
+
+      props
+      |> Map.put("authorizationList", signed_authorizations)
+    else
+      props
+    end
+  end
+
+  defp maybe_add_chain_type_extra_transaction_info_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
+    if Application.get_env(:explorer, :chain_type) == :ethereum do
+      if beacon_blob_transaction do
+        props
+        |> Map.put("maxFeePerBlobGas", Helper.decimal_to_hex(beacon_blob_transaction.max_fee_per_blob_gas))
+      else
+        props
+      end
+    else
+      props
+    end
+  end
+
+  defp maybe_add_chain_type_extra_receipt_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
+    if Application.get_env(:explorer, :chain_type) == :ethereum do
+      if beacon_blob_transaction do
+        props
+        |> Map.put("blobGasPrice", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_price))
+        |> Map.put("blobGasUsed", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_used))
+      else
+        props
+      end
+    else
+      props
+    end
   end
 
   defp validate_and_render_transaction(transaction_hash_string, render_func, params) do
