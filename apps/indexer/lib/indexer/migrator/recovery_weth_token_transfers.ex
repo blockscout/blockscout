@@ -1,6 +1,6 @@
 defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
   @moduledoc """
-  Recovers WETH token transfers that were accidentally deleted from the database by Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers.
+  Recovers WETH token transfers that were accidentally deleted from the database by previous version of Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers.
   This migration restores missing transfers by logs.
   """
 
@@ -88,11 +88,10 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
   end
 
   defp unprocessed_data_query(max_block_number, transaction_hash) do
-    Log
-    |> where(
-      [log],
-      log.first_topic in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
-    )
+    base_query = from(log in Log, as: :log)
+
+    base_query
+    |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
     |> apply_block_number_condition(max_block_number)
     |> apply_transaction_hash_condition(transaction_hash)
     |> group_by([log], [log.transaction_hash, log.address_hash, log.first_topic, log.second_topic])
@@ -121,18 +120,17 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
   defp run_task(batch), do: Task.async(fn -> update_batch(batch) end)
 
   defp update_batch(batch) do
+    base_query = from(log in Log, as: :log)
+
     %{token_transfers: token_transfers} =
-      Log
+      base_query
       |> where([log], log.transaction_hash in ^batch)
       |> join(:left, [log], tt in TokenTransfer,
         on:
           log.transaction_hash == tt.transaction_hash and log.index == tt.log_index and log.block_hash == tt.block_hash
       )
       |> where([log, tt], is_nil(tt))
-      |> where(
-        [log],
-        log.first_topic in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
-      )
+      |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
       |> Repo.all(timeout: :infinity)
       |> Enum.map(fn log ->
         %Log{

@@ -1366,10 +1366,7 @@ defmodule Explorer.Factory do
          transaction: transaction,
          block: block
        }) do
-    # transaction = build(:transaction, to_address: token_contract_address, from_address: from_address)
     data = "0x" <> (Integer.to_string(amount, 16) |> String.downcase() |> String.pad_leading(64, "0"))
-
-    # block = build(:block)
 
     %Log{
       address: token_contract_address,
@@ -1385,41 +1382,4 @@ defmodule Explorer.Factory do
       transaction: transaction
     }
   end
-
-  # def log_factory do
-  #   block = build(:block)
-
-  #   %Log{
-  #     address: build(:address),
-  #     block: block,
-  #     block_number: block.number,
-  #     data: data(:log_data),
-  #     first_topic: nil,
-  #     fourth_topic: nil,
-  #     index: sequence("log_index", & &1),
-  #     second_topic: nil,
-  #     third_topic: nil,
-  #     transaction: build(:transaction)
-  #   }
-  # end
-
-  # def token_transfer_log_factory do
-  #   token_contract_address = build(:address)
-  #   to_address = build(:address)
-  #   from_address = build(:address)
-
-  #   transaction = build(:transaction, to_address: token_contract_address, from_address: from_address)
-
-  #   log_params = %{
-  #     first_topic: TokenTransfer.constant(),
-  #     second_topic: zero_padded_address_hash_string(from_address.hash),
-  #     third_topic: zero_padded_address_hash_string(to_address.hash),
-  #     address_hash: token_contract_address.hash,
-  #     address: nil,
-  #     data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-  #     transaction: transaction
-  #   }
-
-  #   build(:log, log_params)
-  # end
 end

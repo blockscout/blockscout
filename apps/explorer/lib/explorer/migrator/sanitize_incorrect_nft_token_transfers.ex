@@ -100,12 +100,11 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
   end
 
   defp unprocessed_identifiers("delete_erc_721") do
+    base_query = from(log in Log, as: :log)
+
     logs_query =
-      Log
-      |> where(
-        [log],
-        log.first_topic in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
-      )
+      base_query
+      |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
       |> join(:left, [log], token in Token, on: log.address_hash == token.contract_address_hash)
       |> where([log, token], token.type == ^"ERC-721")
       |> select([log], %{block_hash: log.block_hash, transaction_hash: log.transaction_hash, index: log.index})

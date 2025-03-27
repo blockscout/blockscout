@@ -105,24 +105,14 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
     |> Repo.all(timeout: :infinity)
   end
 
-  # credo:disable-for-next-line /Complexity/
   defp unprocessed_identifiers("delete_duplicates") do
     weth_transfers =
-      from(
-        tt in TokenTransfer,
-        left_join: l in Log,
-        on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index,
-        where: l.first_topic in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
-      )
+      token_transfers_with_logs_query()
+      |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
 
     not_weth_transfers =
-      from(
-        tt in TokenTransfer,
-        left_join: l in Log,
-        on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index,
-        where:
-          l.first_topic not in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
-      )
+      token_transfers_with_logs_query()
+      |> where(^Log.first_topic_is_not_deposit_or_withdrawal_signature())
 
     from(
       weth_tt in subquery(weth_transfers),
@@ -137,14 +127,18 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
   end
 
   defp unprocessed_identifiers("delete_not_whitelisted_weth_transfers") do
+    token_transfers_with_logs_query()
+    |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
+    |> where([tt], tt.token_contract_address_hash not in ^whitelisted_weth_contracts())
+    |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
+  end
+
+  defp token_transfers_with_logs_query do
     from(
       tt in TokenTransfer,
       left_join: l in Log,
-      on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index,
-      where:
-        l.first_topic in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()] and
-          tt.token_contract_address_hash not in ^whitelisted_weth_contracts(),
-      select: {tt.transaction_hash, tt.block_hash, tt.log_index}
+      as: :log,
+      on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index
     )
   end
 

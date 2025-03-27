@@ -641,18 +641,30 @@ defmodule Explorer.Chain.Log do
   def stream_unfetched_weth_token_transfers(each_fun) do
     env = Application.get_env(:explorer, Explorer.Chain.TokenTransfer)
 
-    __MODULE__
+    base_query = from(log in __MODULE__, as: :log)
+
+    base_query
     |> where([log], log.address_hash in ^env[:whitelisted_weth_contracts])
-    |> where(
-      [log],
-      log.first_topic == ^TokenTransfer.weth_deposit_signature() or
-        log.first_topic == ^TokenTransfer.weth_withdrawal_signature()
-    )
+    |> where(^first_topic_is_deposit_or_withdrawal_signature())
     |> join(:left, [log], tt in TokenTransfer,
       on: log.block_hash == tt.block_hash and log.transaction_hash == tt.transaction_hash and log.index == tt.log_index
     )
     |> where([log, tt], is_nil(tt.transaction_hash))
     |> select([log], log)
     |> Repo.stream_each(each_fun)
+  end
+
+  def first_topic_is_deposit_or_withdrawal_signature do
+    dynamic(
+      [log: log],
+      log.first_topic in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
+    )
+  end
+
+  def first_topic_is_not_deposit_or_withdrawal_signature do
+    dynamic(
+      [log: log],
+      log.first_topic not in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
+    )
   end
 end
