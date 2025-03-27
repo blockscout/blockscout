@@ -1710,7 +1710,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         :block_scout_web,
         :recaptcha,
         Keyword.merge(old_recaptcha_env,
-          scoped_bypass_tokens: [
+          scoped_bypass_api_keys: [
             token_instance_refetch_metadata: scoped_bypass_token
           ]
         )
@@ -1747,7 +1747,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{
-          "scoped_recaptcha_bypass_token" => scoped_bypass_token
+          "scoped_recaptcha_bypass_api_key" => scoped_bypass_token
         })
 
       assert %{"message" => "OK"} = json_response(request, 200)
@@ -1789,7 +1789,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         :block_scout_web,
         :recaptcha,
         Keyword.merge(old_recaptcha_env,
-          scoped_bypass_tokens: [
+          scoped_bypass_api_keys: [
             token_instance_refetch_metadata: scoped_bypass_token
           ]
         )
@@ -1815,7 +1815,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       # First request with wrong scoped token - should fail
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{
-          "scoped_recaptcha_bypass_token" => "wrong_scoped_token"
+          "scoped_recaptcha_bypass_api_key" => "wrong_scoped_token"
         })
 
       assert %{"message" => "Invalid reCAPTCHA response"} = json_response(request, 403)
@@ -1881,12 +1881,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       # Make sure we don't have scoped tokens configured
       old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
 
-      # Ensure there are no scoped_bypass_tokens in the configuration
       Application.put_env(
         :block_scout_web,
         :recaptcha,
         Keyword.merge(old_recaptcha_env,
-          scoped_bypass_tokens: [
+          scoped_bypass_api_keys: [
             token_instance_refetch_metadata: nil
           ]
         )
@@ -1908,21 +1907,21 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       # First request with a scoped token that isn't configured - should fail
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{
-          "scoped_recaptcha_bypass_token" => "some_token_that_does_not_exist"
+          "scoped_recaptcha_bypass_api_key" => "some_token_that_does_not_exist"
         })
 
       assert %{"message" => "Invalid reCAPTCHA response"} = json_response(request, 403)
 
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{
-          "scoped_recaptcha_bypass_token" => ""
+          "scoped_recaptcha_bypass_api_key" => ""
         })
 
       assert %{"message" => "Invalid reCAPTCHA response"} = json_response(request, 403)
 
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{
-          "scoped_recaptcha_bypass_token" => nil
+          "scoped_recaptcha_bypass_api_key" => nil
         })
 
       assert %{"message" => "Invalid reCAPTCHA response"} = json_response(request, 403)

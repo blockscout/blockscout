@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
   def recaptcha_passed?(%{"recaptcha_bypass_token" => given_bypass_token}) do
     bypass_token = Application.get_env(:block_scout_web, :recaptcha)[:bypass_token]
 
-    if valid_bypass_token?(bypass_token, given_bypass_token) do
+    if valid_bypass_api_key?(bypass_token, given_bypass_token) do
       Logger.warning("reCAPTCHA bypass token used")
       true
     else
@@ -49,22 +49,22 @@ defmodule BlockScoutWeb.CaptchaHelper do
   def recaptcha_passed?(_), do: Application.get_env(:block_scout_web, :recaptcha)[:is_disabled]
 
   @doc """
-    Same as recaptcha_passed/1, but with scoped tokens authentication method.
+    Same as recaptcha_passed/1, but with scoped api keys authentication method.
 
     This function provides two authentication paths:
-    1. Scoped bypass token verification - For automated clients accessing
+    1. Scoped bypass api key verification - For automated clients accessing
        specific endpoints
     2. Standard CAPTCHA verification - Falls back to normal CAPTCHA checks if
-       scoped token is not provided.
+       scoped api key is not provided.
 
-    Scoped bypass tokens are specifically designed for trusted third-party
+    Scoped bypass api keys are specifically designed for trusted third-party
     clients that need programmatic access to certain endpoints (like token
     metadata refetching) without solving CAPTCHAs.
 
     ## Parameters
     - `params`: A map that may contain:
-      * `"scoped_recaptcha_bypass_token"` - A scoped bypass token for trusted
-        clients
+      * `"scoped_recaptcha_bypass_api_key"` - A scoped bypass api key for
+        trusted clients
       * CAPTCHA verification parameters (for fallback)
     - `scope`: atom
 
@@ -75,15 +75,15 @@ defmodule BlockScoutWeb.CaptchaHelper do
     - `false` otherwise
   """
   @spec recaptcha_passed?(%{String.t() => String.t()}, token_scope()) :: boolean()
-  def recaptcha_passed?(%{"scoped_recaptcha_bypass_token" => given_bypass_token}, scope) do
-    bypass_token =
+  def recaptcha_passed?(%{"scoped_recaptcha_bypass_api_key" => given_api_key}, scope) do
+    api_key =
       Application.get_env(
         :block_scout_web,
         :recaptcha
-      )[:scoped_bypass_tokens][scope]
+      )[:scoped_bypass_api_keys][scope]
 
-    if valid_bypass_token?(bypass_token, given_bypass_token) do
-      Logger.warning("reCAPTCHA scoped bypass token used", scope: scope)
+    if valid_bypass_api_key?(api_key, given_api_key) do
+      Logger.warning("reCAPTCHA scoped bypass api key used, scope: #{inspect(scope)}")
       true
     else
       false
@@ -92,9 +92,9 @@ defmodule BlockScoutWeb.CaptchaHelper do
 
   def recaptcha_passed?(params, _scope), do: recaptcha_passed?(params)
 
-  @spec valid_bypass_token?(String.t(), String.t()) :: boolean()
-  defp valid_bypass_token?(bypass_token, given_bypass_token) do
-    is_binary(bypass_token) and bypass_token != "" and given_bypass_token == bypass_token
+  @spec valid_bypass_api_key?(String.t(), String.t()) :: boolean()
+  defp valid_bypass_api_key?(api_key, given_api_key) do
+    is_binary(api_key) and api_key != "" and given_api_key == api_key
   end
 
   defp do_recaptcha_passed?(recaptcha_secret_key, recaptcha_response) do
