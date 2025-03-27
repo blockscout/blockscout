@@ -65,6 +65,7 @@ for migrator <- [
       Explorer.Migrator.SanitizeVerifiedAddresses,
       Explorer.Migrator.SmartContractLanguage,
       Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
+      Explorer.Migrator.BackfillMetadataURL,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
@@ -88,6 +89,8 @@ end
 
 config :explorer,
   realtime_events_sender: Explorer.Chain.Events.SimpleSender
+
+config :indexer, Indexer.Fetcher.TokenInstance.Helper, host_filtering_enabled?: false
 
 variant = Variant.get()
 
