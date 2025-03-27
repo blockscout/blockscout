@@ -2,7 +2,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [fetch_scam_token_toggle: 2, next_page_params: 4, split_list_by_page: 1]
+    only: [
+      fetch_scam_token_toggle: 2,
+      next_page_params: 3,
+      split_list_by_page: 1
+    ]
 
   import BlockScoutWeb.PagingHelper,
     only: [

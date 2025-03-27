@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
 
   if @chain_type == :stability do
     alias Explorer.Chain.Address
-    alias Explorer.Chain.Cache.StabilityValidatorsCounters
+    alias Explorer.Chain.Cache.Counters.Stability.ValidatorsCount
     alias Explorer.Chain.Stability.Validator, as: ValidatorStability
     alias Explorer.Helper
 
@@ -181,7 +181,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
         _validator_probation2 = insert(:validator_stability, state: :probation)
         _validator_probation3 = insert(:validator_stability, state: :probation)
 
-        StabilityValidatorsCounters.consolidate()
+        Stability.ValidatorsCount.consolidate()
         :timer.sleep(500)
 
         percentage = (3 / 9 * 100) |> Float.floor(2)

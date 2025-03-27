@@ -37,8 +37,6 @@ defmodule Explorer.Chain do
 
   alias Explorer.Account.WatchlistAddress
 
-  alias Explorer.Counters.{LastFetchedCounter, TokenHoldersCounter, TokenTransfersCounter}
-
   alias Explorer.Chain
 
   alias Explorer.Chain.{
@@ -72,20 +70,27 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Cache.{
     BlockNumber,
     Blocks,
-    ContractsCounter,
-    NewContractsCounter,
-    NewVerifiedContractsCounter,
     Transactions,
-    Uncles,
-    VerifiedContractsCounter,
+    Uncles
+  }
+
+  alias Explorer.Chain.Cache.Counters.{
+    BlocksCount,
+    ContractsCount,
+    LastFetchedCounter,
+    NewContractsCount,
+    NewVerifiedContractsCount,
+    TokenHoldersCount,
+    TokenTransfersCount,
+    VerifiedContractsCount,
     WithdrawalsSum
   }
 
-  alias Explorer.Chain.Cache.Block, as: BlockCache
-  alias Explorer.Chain.Cache.Helper, as: CacheHelper
+  alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Helper, as: ExplorerHelper
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.MicroserviceInterfaces.MultichainSearch
@@ -97,13 +102,6 @@ defmodule Explorer.Chain do
   @default_paging_options %PagingOptions{page_size: @default_page_size}
 
   @token_transfers_per_transaction_preview 10
-  @token_transfer_necessity_by_association %{
-    [from_address: :smart_contract] => :optional,
-    [to_address: :smart_contract] => :optional,
-    [from_address: :names] => :optional,
-    [to_address: :names] => :optional,
-    token: :optional
-  }
 
   @method_name_to_id_map %{
     "approve" => "095ea7b3",
@@ -322,7 +320,7 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association)
 
     address_hash
-    |> TokenTransfer.token_transfers_by_address_hash(direction, token_address_hash, filters, paging_options)
+    |> TokenTransfer.token_transfers_by_address_hash(direction, token_address_hash, filters, paging_options, options)
     |> join_associations(necessity_by_association)
     |> select_repo(options).all()
   end
@@ -538,13 +536,6 @@ defmodule Explorer.Chain do
     |> Transaction.put_has_token_transfers_to_transaction(old_ui?)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> select_repo(options).all()
-    |> (&if(old_ui?,
-          do: &1,
-          else:
-            Enum.map(&1, fn transaction ->
-              preload_token_transfers(transaction, @token_transfer_necessity_by_association, options)
-            end)
-        )).()
   end
 
   @spec execution_node_to_transactions(Hash.Address.t(), [paging_options | necessity_by_association_option | api?()]) ::
@@ -560,9 +551,6 @@ defmodule Explorer.Chain do
     |> Transaction.put_has_token_transfers_to_transaction(false)
     |> (& &1).()
     |> select_repo(options).all()
-    |> (&Enum.map(&1, fn transaction ->
-          preload_token_transfers(transaction, @token_transfer_necessity_by_association, options)
-        end)).()
   end
 
   @spec block_to_withdrawals(
@@ -1281,38 +1269,33 @@ defmodule Explorer.Chain do
     end
   end
 
-  # preload_to_detect_tt?: we don't need to preload more than one token transfer in case the transaction inside the list (we don't show any token transfers on transaction tile in new UI)
   def preload_token_transfers(
         %Transaction{hash: transaction_hash, block_hash: block_hash} = transaction,
         necessity_by_association,
-        options,
-        preload_to_detect_tt? \\ true
+        options
       ) do
-    if preload_to_detect_tt? do
-      transaction
-    else
-      limit = if(preload_to_detect_tt?, do: 1, else: @token_transfers_per_transaction_preview + 1)
+    limit = @token_transfers_per_transaction_preview + 1
 
-      token_transfers =
-        TokenTransfer
-        |> (&if(is_nil(block_hash),
-              do: where(&1, [token_transfer], token_transfer.transaction_hash == ^transaction_hash),
-              else:
-                where(
-                  &1,
-                  [token_transfer],
-                  token_transfer.transaction_hash == ^transaction_hash and token_transfer.block_hash == ^block_hash
-                )
-            )).()
-        |> limit(^limit)
-        |> order_by([token_transfer], asc: token_transfer.log_index)
-        |> (&if(preload_to_detect_tt?, do: &1, else: join_associations(&1, necessity_by_association))).()
-        |> select_repo(options).all()
-        |> flat_1155_batch_token_transfers()
-        |> Enum.take(limit)
+    token_transfers =
+      TokenTransfer
+      |> (&if(is_nil(block_hash),
+            do: where(&1, [token_transfer], token_transfer.transaction_hash == ^transaction_hash),
+            else:
+              where(
+                &1,
+                [token_transfer],
+                token_transfer.transaction_hash == ^transaction_hash and token_transfer.block_hash == ^block_hash
+              )
+          )).()
+      |> limit(^limit)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
+      |> order_by([token_transfer], asc: token_transfer.log_index)
+      |> join_associations(necessity_by_association)
+      |> select_repo(options).all()
+      |> flat_1155_batch_token_transfers()
+      |> Enum.take(limit)
 
-      %Transaction{transaction | token_transfers: token_transfers}
-    end
+    %Transaction{transaction | token_transfers: token_transfers}
   end
 
   def get_token_transfers_per_transaction_preview_count, do: @token_transfers_per_transaction_preview
@@ -1431,7 +1414,7 @@ defmodule Explorer.Chain do
         _ ->
           divisor = max_saved_block_number - min_blockchain_block_number - BlockNumberHelper.null_rounds_count() + 1
 
-          ratio = get_ratio(BlockCache.estimated_count(), divisor)
+          ratio = get_ratio(BlocksCount.get(), divisor)
 
           ratio
           |> (&if(
@@ -1687,7 +1670,7 @@ defmodule Explorer.Chain do
   def get_table_rows_total_count(module, options) do
     table_name = module.__schema__(:source)
 
-    count = CacheHelper.estimated_count_from(table_name, options)
+    count = CacheCountersHelper.estimated_count_from(table_name, options)
 
     if is_nil(count) do
       select_repo(options).aggregate(module, :count, timeout: :infinity)
@@ -2106,41 +2089,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec increment_last_fetched_counter(binary(), non_neg_integer()) :: {non_neg_integer(), nil}
-  def increment_last_fetched_counter(type, value) do
-    query =
-      from(counter in LastFetchedCounter,
-        where: counter.counter_type == ^type
-      )
-
-    Repo.update_all(query, [inc: [value: value]], timeout: :infinity)
-  end
-
-  @spec upsert_last_fetched_counter(map()) :: {:ok, LastFetchedCounter.t()} | {:error, Ecto.Changeset.t()}
-  def upsert_last_fetched_counter(params) do
-    changeset = LastFetchedCounter.changeset(%LastFetchedCounter{}, params)
-
-    Repo.insert(changeset,
-      on_conflict: :replace_all,
-      conflict_target: [:counter_type]
-    )
-  end
-
-  def get_last_fetched_counter(type, options \\ []) do
-    query =
-      from(
-        last_fetched_counter in LastFetchedCounter,
-        where: last_fetched_counter.counter_type == ^type,
-        select: last_fetched_counter.value
-      )
-
-    if options[:nullable] do
-      select_repo(options).one(query)
-    else
-      select_repo(options).one(query) || Decimal.new(0)
-    end
-  end
-
   defp block_status({number, timestamp}) do
     now = DateTime.utc_now()
     last_block_period = DateTime.diff(now, timestamp, :millisecond)
@@ -2520,13 +2468,6 @@ defmodule Explorer.Chain do
         |> Transaction.put_has_token_transfers_to_transaction(old_ui?)
         |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
         |> select_repo(options).all()
-        |> (&if(old_ui?,
-              do: &1,
-              else:
-                Enum.map(&1, fn transaction ->
-                  preload_token_transfers(transaction, @token_transfer_necessity_by_association, options)
-                end)
-            )).()
     end
   end
 
@@ -2779,6 +2720,7 @@ defmodule Explorer.Chain do
         |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
         |> preload([token: token], [{:token, token}])
         |> TokenTransfer.filter_by_type(token_type)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> TokenTransfer.page_token_transfer(paging_options)
         |> limit(^paging_options.page_size)
         |> order_by([token_transfer], asc: token_transfer.log_index)
@@ -3729,6 +3671,7 @@ defmodule Explorer.Chain do
   def fetch_last_token_balances(address_hash, options \\ []) do
     address_hash
     |> CurrentTokenBalance.last_token_balances()
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> select_repo(options).all()
   end
 
@@ -3745,6 +3688,7 @@ defmodule Explorer.Chain do
       _ ->
         address_hash
         |> CurrentTokenBalance.last_token_balances(options, filter)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> page_current_token_balances(paging_options)
         |> select_repo(options).all()
     end
@@ -4722,30 +4666,30 @@ defmodule Explorer.Chain do
   end
 
   def count_verified_contracts_from_cache(options \\ []) do
-    VerifiedContractsCounter.fetch(options)
+    VerifiedContractsCount.fetch(options)
   end
 
   def count_new_verified_contracts_from_cache(options \\ []) do
-    NewVerifiedContractsCounter.fetch(options)
+    NewVerifiedContractsCount.fetch(options)
   end
 
   def count_contracts_from_cache(options \\ []) do
-    ContractsCounter.fetch(options)
+    ContractsCount.fetch(options)
   end
 
   def count_new_contracts_from_cache(options \\ []) do
-    NewContractsCounter.fetch(options)
+    NewContractsCount.fetch(options)
   end
 
   def fetch_token_counters(address_hash, timeout) do
     total_token_transfers_task =
       Task.async(fn ->
-        TokenTransfersCounter.fetch(address_hash)
+        TokenTransfersCount.fetch(address_hash)
       end)
 
     total_token_holders_task =
       Task.async(fn ->
-        TokenHoldersCounter.fetch(address_hash)
+        TokenHoldersCount.fetch(address_hash)
       end)
 
     [total_token_transfers_task, total_token_holders_task]
@@ -4919,7 +4863,7 @@ defmodule Explorer.Chain do
   end
 
   def upsert_count_withdrawals(index) do
-    upsert_last_fetched_counter(%{
+    LastFetchedCounter.upsert(%{
       counter_type: "withdrawals_count",
       value: index
     })
@@ -4930,7 +4874,7 @@ defmodule Explorer.Chain do
   end
 
   def count_withdrawals_from_cache(options \\ []) do
-    "withdrawals_count" |> get_last_fetched_counter(options) |> Decimal.add(1)
+    "withdrawals_count" |> LastFetchedCounter.get(options) |> Decimal.add(1)
   end
 
   def add_fetcher_limit(query, false), do: query
