@@ -173,7 +173,7 @@ defmodule Explorer.Utility.MissingBlockRange do
     ## Returns
     - `:ok` regardless of individual range save results
   """
-  @spec save_batch(Range.t()| [Range.t()]) :: list()
+  @spec save_batch(Range.t() | [Range.t()]) :: list()
   def save_batch(batch) do
     batch
     |> List.wrap()
