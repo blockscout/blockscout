@@ -63,6 +63,24 @@ defmodule Explorer.Helper do
     "0x#{truncated_hash}"
   end
 
+  @doc """
+    Safely parses a string or integer into an integer value.
+
+    Handles both string and integer inputs:
+    - For string input: Converts only if the entire string represents a valid integer
+    - For integer input: Returns the integer as is
+    - For any other input: Returns nil
+
+    ## Parameters
+    - `int_or_string`: A binary string containing an integer or an integer value
+
+    ## Returns
+    - The parsed integer if successful
+    - `nil` if the input is invalid or contains non-integer characters
+  """
+  @spec parse_integer(binary() | integer()) :: integer() | nil
+  def parse_integer(int_or_string)
+
   def parse_integer(integer_string) when is_binary(integer_string) do
     case Integer.parse(integer_string) do
       {integer, ""} -> integer

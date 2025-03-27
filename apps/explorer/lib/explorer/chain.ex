@@ -1614,6 +1614,15 @@ defmodule Explorer.Chain do
     |> Decimal.min(Decimal.new(1))
   end
 
+  @doc """
+    Fetches the lowest block number available in the database.
+
+    Queries the database for the minimum block number among blocks marked as consensus
+    blocks. Returns 0 if no consensus blocks exist or if the query fails.
+
+    ## Returns
+    - `non_neg_integer`: The lowest block number from consensus blocks, or 0 if none found
+  """
   @spec fetch_min_block_number() :: non_neg_integer
   def fetch_min_block_number do
     query =
@@ -1630,6 +1639,15 @@ defmodule Explorer.Chain do
       0
   end
 
+  @doc """
+    Fetches the highest block number available in the database.
+
+    Queries the database for the maximum block number among blocks marked as consensus
+    blocks. Returns 0 if no consensus blocks exist or if the query fails.
+
+    ## Returns
+    - `non_neg_integer`: The highest block number from consensus blocks, or 0 if none found
+  """
   @spec fetch_max_block_number() :: non_neg_integer
   def fetch_max_block_number do
     query =
@@ -2236,6 +2254,21 @@ defmodule Explorer.Chain do
     )
   end
 
+  @doc """
+    Retrieves the last fetched counter value for a specific counter type.
+
+    ## Parameters
+    - `type`: The counter type identifier as a binary string
+    - `options`: Keyword list of options:
+      - `nullable`: When `true`, returns `nil` if no counter exists. Defaults to `false`,
+        returning `Decimal.new(0)` instead
+
+    ## Returns
+    - `Decimal.t()` - The counter value if found, or `Decimal.new(0)` if not found and
+      `nullable: false`
+    - `nil` - Only returned when no counter exists and `nullable: true`
+  """
+  @spec get_last_fetched_counter(binary(), Keyword.t()) :: Decimal.t() | nil
   def get_last_fetched_counter(type, options \\ []) do
     query =
       from(
