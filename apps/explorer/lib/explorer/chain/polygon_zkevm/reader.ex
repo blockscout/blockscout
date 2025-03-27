@@ -397,7 +397,7 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
       {
         :ok,
         %{
-          latest_batch_number: latest_item.id,
+          latest_batch_number: latest_item.number,
           latest_batch_timestamp: latest_item.timestamp,
           average_batch_time: average_time
         }

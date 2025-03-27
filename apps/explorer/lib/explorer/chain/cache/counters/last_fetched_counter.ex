@@ -106,7 +106,19 @@ defmodule Explorer.Chain.Cache.Counters.LastFetchedCounter do
     end
   end
 
-  @spec get_multiple([binary()], Keyword.t()) :: integer() | [Decimal.t()] | nil
+  @doc """
+    Fetches multiple last fetched counter values for the given `types`.
+
+    ## Parameters
+
+      - `types` (list of binary): The types of counters to fetch.
+      - `options` (Keyword, optional): A keyword list of options passed to `Chain.select_repo()`.
+
+    ## Returns
+
+      - A list of tuples where each tuple contains the counter type and its value: `{counter_type, value}`.
+  """
+  @spec get_multiple([binary()], Keyword.t()) :: [{binary(), Decimal.t() | nil}]
   def get_multiple(types, options \\ []) do
     query =
       from(

@@ -156,8 +156,7 @@ defmodule Explorer.Chain.Health.Helper do
   ## Returns
   - A map containing the latest block indexing health data.
   """
-  @spec get_indexing_health_data() :: map() | nil
-  # sobelow_skip ["DOS.StringToAtom"]
+  @spec get_indexing_health_data() :: map()
   def get_indexing_health_data do
     values =
       LastFetchedCounter.get_multiple([
@@ -170,25 +169,21 @@ defmodule Explorer.Chain.Health.Helper do
         "health_latest_batch_timestamp_from_db"
       ])
 
-    if values do
-      values
-      |> Enum.reduce(
-        %{
-          health_latest_block_number_from_db: nil,
-          health_latest_block_timestamp_from_db: nil,
-          health_latest_block_number_from_cache: nil,
-          health_latest_block_timestamp_from_cache: nil,
-          health_latest_block_number_from_node: nil,
-          health_latest_batch_number_from_db: nil,
-          health_latest_batch_timestamp_from_db: nil
-        },
-        fn {key, value}, acc ->
-          Map.put(acc, String.to_atom(key), value)
-        end
-      )
-    else
-      nil
-    end
+    values
+    |> Enum.reduce(
+      %{
+        health_latest_block_number_from_db: nil,
+        health_latest_block_timestamp_from_db: nil,
+        health_latest_block_number_from_cache: nil,
+        health_latest_block_timestamp_from_cache: nil,
+        health_latest_block_number_from_node: nil,
+        health_latest_batch_number_from_db: nil,
+        health_latest_batch_timestamp_from_db: nil
+      },
+      fn {key, value}, acc ->
+        Map.put(acc, String.to_existing_atom(key), value)
+      end
+    )
   end
 
   @spec blocks_indexing_healthy?(map() | nil) :: boolean() | {boolean(), non_neg_integer(), binary()}
