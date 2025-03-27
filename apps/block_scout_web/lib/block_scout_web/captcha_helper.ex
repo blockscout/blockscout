@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.CaptchaHelper do
 
   alias Explorer.Helper
 
+  @type token_scope() :: :token_instance_refetch_metadata
+
   @doc """
     Verifies if the CAPTCHA challenge has been passed based on the provided parameters.
 
@@ -45,6 +47,49 @@ defmodule BlockScoutWeb.CaptchaHelper do
   end
 
   def recaptcha_passed?(_), do: Application.get_env(:block_scout_web, :recaptcha)[:is_disabled]
+
+  @doc """
+    Same as recaptcha_passed/1, but with scoped tokens authentication method.
+
+    This function provides two authentication paths:
+    1. Scoped bypass token verification - For automated clients accessing
+       specific endpoints
+    2. Standard CAPTCHA verification - Falls back to normal CAPTCHA checks if
+       token verification fails
+
+    Scoped bypass tokens are specifically designed for trusted third-party
+    clients that need programmatic access to certain endpoints (like token
+    metadata refetching) without solving CAPTCHAs.
+
+    ## Parameters
+    - `params`: A map that may contain:
+      * `"scoped_recaptcha_bypass_token"` - A scoped bypass token for trusted
+        clients
+      * CAPTCHA verification parameters (for fallback)
+    - `scope`: atom
+
+    ## Returns
+    - `true` if either:
+      * A valid API key is provided for an allowed endpoint
+      * The CAPTCHA verification succeeds
+    - `false` otherwise
+  """
+  @spec recaptcha_passed?(%{String.t() => String.t()}, token_scope()) :: boolean()
+  def recaptcha_passed?(params, scope) do
+    bypass_token =
+      Application.get_env(
+        :block_scout_web,
+        :recaptcha
+      )[:scoped_bypass_tokens][scope]
+
+    with true <- is_binary(bypass_token) and bypass_token != "",
+         %{"scoped_recaptcha_bypass_token" => ^bypass_token} <- params do
+      Logger.warning("reCAPTCHA scoped bypass token used")
+      true
+    else
+      _ -> recaptcha_passed?(params)
+    end
+  end
 
   defp do_recaptcha_passed?(recaptcha_secret_key, recaptcha_response) do
     body = "secret=#{recaptcha_secret_key}&response=#{recaptcha_response}"
