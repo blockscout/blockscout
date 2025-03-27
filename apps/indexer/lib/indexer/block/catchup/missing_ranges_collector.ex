@@ -37,9 +37,13 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   # - If no ranges are configured, plans for full chain scanning
   # - If ranges are configured, parses them and initializes based on the type:
   #   * For invalid or empty ranges, plans for full chain scanning
+  #   * For a single range ending with "latest" (e.g., "0..latest" or "X..latest"),
+  #     plans for full chain scanning with bidirectional scanning similar to when
+  #     no ranges are configured
   #   * For finite ranges, plans for scanning with the specified block ranges
-  #   * For ranges ending with "latest", plans for scanning with the ranges and every
-  #     block after the lowest one in the range with the open range
+  #   * For multiple ranges where at least one ends with "latest", plans for scanning
+  #     with the ranges and every block after the lowest one in the range with the
+  #     open range
   #
   # ## Returns
   # A map containing:
@@ -59,7 +63,11 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       string_ranges ->
         case parse_block_ranges(string_ranges) do
           :no_ranges -> default_init()
+          # "100-200" or "100..200,300..400"
           {:finite_ranges, ranges} -> ranges_init(ranges)
+          # "<X>..latest"
+          {:infinite_ranges, [], _} -> default_init()
+          # "100..200,300..latest"
           {:infinite_ranges, ranges, max_fetched_block_number} -> ranges_init(ranges, max_fetched_block_number)
         end
     end
