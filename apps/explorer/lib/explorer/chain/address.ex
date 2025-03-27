@@ -140,7 +140,6 @@ defmodule Explorer.Chain.Address do
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
   alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, Transaction}
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Helper, as: ExplorerHelper
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -613,7 +612,6 @@ defmodule Explorer.Chain.Address do
 
         base_query
         |> Chain.join_associations(necessity_by_association)
-        |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
         |> page_addresses(paging_options)
         |> limit(^paging_options.page_size)
         |> Chain.select_repo(options).all()

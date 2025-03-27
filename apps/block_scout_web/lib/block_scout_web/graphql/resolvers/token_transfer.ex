@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.GraphQL.Resolvers.TokenTransfer do
     connection_args = Map.take(args, [:after, :before, :first, :last])
 
     address_hash
-    |> TokenTransfer.token_transfers_by_address_hash(nil, nil, [], nil)
+    |> TokenTransfer.token_transfers_by_address_hash(nil, nil, [], nil, [])
     |> Connection.from_query(&Repo.replica().all/1, connection_args, options(args))
   end
 

@@ -6,23 +6,19 @@ defmodule BlockScoutWeb.ChainController do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.{ChainView, Controller}
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, Block, Transaction}
-  alias Explorer.Chain.Cache.Block, as: BlockCache
-  alias Explorer.Chain.Cache.GasUsage
-  alias Explorer.Chain.Cache.Transaction, as: TransactionCache
+  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime, BlocksCount, GasUsageSum, TransactionsCount}
   alias Explorer.Chain.Search
   alias Explorer.Chain.Supply.RSK
-  alias Explorer.Counters.AverageBlockTime
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Market
   alias Phoenix.View
 
   def show(conn, _params) do
-    transaction_estimated_count = TransactionCache.estimated_count()
-    total_gas_usage = GasUsage.total()
-    block_count = BlockCache.estimated_count()
-    address_count = Counters.address_estimated_count()
+    transaction_count = TransactionsCount.get()
+    total_gas_usage = GasUsageSum.total()
+    block_count = BlocksCount.get()
+    address_count = AddressesCount.fetch()
 
     market_cap_calculation =
       case Application.get_env(:explorer, :supply) do
@@ -54,7 +50,7 @@ defmodule BlockScoutWeb.ChainController do
       chart_config_json: Jason.encode!(chart_config),
       chart_data_paths: chart_data_paths,
       market_cap_calculation: market_cap_calculation,
-      transaction_estimated_count: transaction_estimated_count,
+      transaction_estimated_count: transaction_count,
       total_gas_usage: total_gas_usage,
       transactions_path: recent_transactions_path(conn, :index),
       transaction_stats: transaction_stats,

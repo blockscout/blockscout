@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
+  use BlockScoutWeb.Routers.ChainTypeScope
 
   use Utils.CompileTimeEnvHelper,
     chain_type: [:explorer, :chain_type],
@@ -55,6 +56,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
+    plug(:fetch_cookies)
   end
 
   pipeline :api_v2 do
@@ -168,7 +170,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:transaction_hash_param/state-changes", V2.TransactionController, :state_changes)
       get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
 
-      if @chain_type == :neon do
+      chain_scope :neon do
         get("/:transaction_hash_param/external-transactions", V2.TransactionController, :external_transactions)
       end
 
@@ -296,7 +298,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/polygon-edge" do
-      if @chain_type == :polygon_edge do
+      chain_scope :polygon_edge do
         get("/deposits", V2.PolygonEdgeController, :deposits)
         get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
         get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
@@ -317,7 +319,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/shibarium" do
-      if @chain_type == :shibarium do
+      chain_scope :shibarium do
         get("/deposits", V2.ShibariumController, :deposits)
         get("/deposits/count", V2.ShibariumController, :deposits_count)
         get("/withdrawals", V2.ShibariumController, :withdrawals)
@@ -389,27 +391,25 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/validators" do
-      case @chain_type do
-        :stability ->
-          scope "/stability" do
-            get("/", V2.ValidatorController, :stability_validators_list)
-            get("/counters", V2.ValidatorController, :stability_validators_counters)
-          end
+      if @chain_type == :zilliqa do
+        scope "/zilliqa" do
+          get("/", V2.ValidatorController, :zilliqa_validators_list)
+          get("/:bls_public_key", V2.ValidatorController, :zilliqa_validator)
+        end
+      end
 
-        :blackfort ->
-          scope "/blackfort" do
-            get("/", V2.ValidatorController, :blackfort_validators_list)
-            get("/counters", V2.ValidatorController, :blackfort_validators_counters)
-          end
+      chain_scope :stability do
+        scope "/stability" do
+          get("/", V2.ValidatorController, :stability_validators_list)
+          get("/counters", V2.ValidatorController, :stability_validators_counters)
+        end
+      end
 
-        :zilliqa ->
-          scope "/zilliqa" do
-            get("/", V2.ValidatorController, :zilliqa_validators_list)
-            get("/:bls_public_key", V2.ValidatorController, :zilliqa_validator)
-          end
-
-        _ ->
-          nil
+      chain_scope :blackfort do
+        scope "/blackfort" do
+          get("/", V2.ValidatorController, :blackfort_validators_list)
+          get("/counters", V2.ValidatorController, :blackfort_validators_counters)
+        end
       end
     end
 
