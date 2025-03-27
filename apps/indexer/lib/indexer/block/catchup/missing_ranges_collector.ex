@@ -1,6 +1,61 @@
 defmodule Indexer.Block.Catchup.MissingRangesCollector do
   @moduledoc """
-  Collects missing block ranges.
+  Collects and manages missing block ranges in the blockchain.
+
+  This module implements a GenServer that identifies and tracks blocks that haven't
+  been indexed yet. It supports different scanning strategies based on configuration:
+
+  ## Scanning Strategies
+
+  Both scanning strategies operate as continuous processes that work through iterations,
+  but they differ in how they initialize and progress through the blockchain:
+
+  - **Bidirectional scanning** - Used when either no block ranges are configured or
+    when using a single range ending with "latest" (e.g., "0..latest"). This strategy:
+    * Initially populates the database with a single batch of missing blocks (limited
+      by `batch_size`, default 100,000) starting from the current blockchain height
+      and working backward
+    * Maintains two boundaries in the server state: `min_fetched_block_number` for
+      backward scanning toward genesis, and `max_fetched_block_number` for forward
+      scanning toward the current chain head
+    * During each scanning iteration:
+      - Calculates a range of blocks to examine (either backward from `min_fetched_block_number`
+        or forward from `max_fetched_block_number`)
+      - Queries the blockchain to identify which specific blocks are missing within that range
+      - Consolidates adjacent missing blocks into compact ranges for efficient storage
+      - Inserts these identified missing block ranges into the database
+      - Updates the appropriate boundary in the state for the next iteration
+    * Alternates between backward and forward scanning directions with different timing
+      intervals (10ms for initial backward scanning, 1 minute for subsequent scans)
+    * Completes initial phase when reaching the configured first block, then continues
+      with primarily forward scanning for new blocks
+
+  - **Range-specific scanning** - Used when specific finite ranges or multiple ranges
+    are configured. This strategy:
+    * Clears all existing missing block ranges from the database
+    * For each configured range (e.g., "100..200,1000..9000"), identifies all missing
+      blocks within those ranges by querying the blockchain
+    * Saves all identified missing ranges to the database in a single batch operation
+    * When a range ends with "latest" (except for a single "X..latest" range), only
+      schedules forward scanning from the highest point of the explicit ranges
+    * Only scans within the specific ranges, ignoring blocks outside these boundaries
+
+  ## Configuration
+
+  The behavior is controlled through application configuration:
+
+  - `:block_ranges` - A comma-separated string of block ranges (e.g., "0..1000,2000..latest").
+    When set to a single range ending with "latest" (e.g., "0..latest"), it behaves
+    like no ranges are configured, using the more efficient bidirectional approach.
+
+  - `:first_block` - The lowest block number to consider for scanning.
+
+  - `:last_block` - If set, defines the upper boundary for scanning. If not set,
+    scanning continues indefinitely as the blockchain grows.
+
+  - `:batch_size` - The maximum number of blocks to process in each scanning iteration.
+    This limits how many blocks are examined for missing entries in a single pass
+    (default 100,000) and applies to both backward and forward scanning operations.
   """
 
   use GenServer
