@@ -358,7 +358,7 @@ defmodule Explorer.Utility.MissingBlockRange do
   end
 
   defp get_latest_ranges_query(size) do
-    from(r in __MODULE__, order_by: [desc: r.priority, desc: r.from_number], limit: ^size)
+    from(r in __MODULE__, order_by: [desc_nulls_last: r.priority, desc: r.from_number], limit: ^size)
   end
 
   @doc """
