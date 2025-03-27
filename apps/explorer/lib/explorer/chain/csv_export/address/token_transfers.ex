@@ -14,29 +14,32 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.CsvExport.Helper
+  alias Explorer.Helper, as: ExplorerHelper
 
-  @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
-  def export(address_hash, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
+  @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
+          Enumerable.t()
+  def export(address_hash, from_period, to_period, options, filter_type \\ nil, filter_value \\ nil) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 
     paging_options = %PagingOptions{Helper.paging_options() | asc_order: true}
 
     address_hash
-    |> fetch_all_token_transfers(from_block, to_block, filter_type, filter_value, paging_options)
+    |> fetch_all_token_transfers(from_block, to_block, filter_type, filter_value, paging_options, options)
     |> to_csv_format(address_hash)
     |> Helper.dump_to_stream()
   end
 
-  def fetch_all_token_transfers(
-        address_hash,
-        from_block,
-        to_block,
-        filter_type,
-        filter_value,
-        paging_options
-      ) do
+  defp fetch_all_token_transfers(
+         address_hash,
+         from_block,
+         to_block,
+         filter_type,
+         filter_value,
+         paging_options,
+         options
+       ) do
     options =
-      []
+      options
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
@@ -122,6 +125,7 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
         query =
           from_block
           |> query_address_hash_to_token_transfers_including_contract(to_block, address_hash, filter_type, filter_value)
+          |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
           |> order_by([token_transfer], asc: token_transfer.block_number, asc: token_transfer.log_index)
 
         query
