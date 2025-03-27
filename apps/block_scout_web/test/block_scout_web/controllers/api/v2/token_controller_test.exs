@@ -1851,7 +1851,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       # Second request with correct reCAPTCHA token - should work
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{
-          "scoped_recaptcha_bypass_token" => "wrong_scoped_token",
           "recaptcha_response" => "correct_recaptcha_token"
         })
 
