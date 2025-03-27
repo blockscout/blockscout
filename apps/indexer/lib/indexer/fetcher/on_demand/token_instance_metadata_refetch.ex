@@ -79,7 +79,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
         :on_demand
       )
 
-      Queue.process_new_instance({:ok, %TokenInstance{token_instance | metadata: metadata}})
+      Queue.process_new_instances([%TokenInstance{token_instance | metadata: metadata}])
     else
       {:empty_result, true} ->
         :ok

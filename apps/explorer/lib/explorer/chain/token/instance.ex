@@ -757,60 +757,18 @@ defmodule Explorer.Chain.Token.Instance do
 
   def get_media_url_from_metadata_for_nft_media_handler(nil), do: nil
 
-  @doc """
-  Sets the media URLs for a given token.
+  @spec batch_upsert_cdn_results([map()]) :: [t()]
+  def batch_upsert_cdn_results([]), do: []
 
-  ## Parameters
+  def batch_upsert_cdn_results(instances) do
+    {_, result} =
+      Repo.insert_all(__MODULE__, instances,
+        on_conflict: {:replace, [:thumbnails, :media_type, :updated_at, :cdn_upload_error]},
+        conflict_target: [:token_id, :token_contract_address_hash],
+        returning: true
+      )
 
-    - `token_contract_address_hash`: The hash of the token contract address.
-    - `token_id`: The ID of the token.
-    - `urls`: list of Explorer.Chain.Token.Instance.Thumbnails format
-    - `media_type`: The type of media associated with the URLs.
-
-  ## Examples
-
-      iex> set_media_urls({"0x1234", 1}, ["/folder_1/0004dfda159ea2def5098bf8f19f5f27207f4e1f_{}.png", [60, 250, 500], true], {"image", "png"})
-      :ok
-
-  """
-  @spec set_media_urls({Hash.Address.t(), non_neg_integer() | Decimal.t()}, list(), {binary(), binary()}) ::
-          any()
-  def set_media_urls({token_contract_address_hash, token_id}, urls, media_type) do
-    now = DateTime.utc_now()
-
-    token_id
-    |> token_instance_query(token_contract_address_hash)
-    |> Repo.update_all(
-      [set: [thumbnails: urls, media_type: media_type_to_string(media_type), updated_at: now]],
-      timeout: @timeout
-    )
-  end
-
-  @doc """
-  Sets the CDN upload error for a given token.
-
-  ## Parameters
-
-    - `token_contract_address_hash`: The hash of the token contract address.
-    - `token_id`: The ID of the token.
-    - `error`: The error message to be set.
-
-  ## Examples
-
-      iex> set_cdn_upload_error({"0x1234", 1}, "Upload failed")
-      :ok
-
-  """
-  @spec set_cdn_upload_error({Hash.Address.t(), non_neg_integer() | Decimal.t()}, binary()) :: any()
-  def set_cdn_upload_error({token_contract_address_hash, token_id}, error) do
-    now = DateTime.utc_now()
-
-    token_id
-    |> token_instance_query(token_contract_address_hash)
-    |> Repo.update_all(
-      [set: [cdn_upload_error: error, updated_at: now]],
-      timeout: @timeout
-    )
+    result
   end
 
   @doc """
@@ -825,47 +783,6 @@ defmodule Explorer.Chain.Token.Instance do
     __MODULE__
     |> where([ti], not is_nil(ti.metadata) and is_nil(ti.thumbnails) and is_nil(ti.cdn_upload_error))
     |> Repo.stream_each(each_fun)
-  end
-
-  @doc """
-  Sets the CDN result for a given token.
-
-  ## Parameters
-
-    - `token_contract_address_hash`: The hash of the token contract address.
-    - `token_id`: The ID of the token.
-    - `params`: A map containing the parameters for the CDN result.
-
-  ## Returns
-
-    - The result of setting the CDN for the given token instance.
-
-  """
-  @spec set_cdn_result({Hash.Address.t(), non_neg_integer() | Decimal.t()}, %{
-          :cdn_upload_error => any(),
-          :media_type => any(),
-          :thumbnails => any()
-        }) :: any()
-  def set_cdn_result({token_contract_address_hash, token_id}, %{
-        thumbnails: thumbnails,
-        media_type: media_type,
-        cdn_upload_error: cdn_upload_error
-      }) do
-    now = DateTime.utc_now()
-
-    token_id
-    |> token_instance_query(token_contract_address_hash)
-    |> Repo.update_all(
-      [
-        set: [
-          cdn_upload_error: cdn_upload_error,
-          thumbnails: thumbnails,
-          media_type: media_type,
-          updated_at: now
-        ]
-      ],
-      timeout: @timeout
-    )
   end
 
   @doc """
@@ -1285,7 +1202,7 @@ defmodule Explorer.Chain.Token.Instance do
   """
   @spec batch_upsert_token_instances([map()]) :: [__MODULE__.t()]
   def batch_upsert_token_instances(params_list) do
-    params_to_insert = __MODULE__.adjust_insert_params(params_list)
+    params_to_insert = adjust_insert_params(params_list)
 
     {_, result} =
       Repo.insert_all(__MODULE__, params_to_insert,
