@@ -2,8 +2,6 @@ defmodule Explorer.Chain.Cache.Counters.GasUsageSum do
   @moduledoc """
   Cache for total gas usage.
   """
-  use Utils.CompileTimeEnvHelper, enabled: [:explorer, [__MODULE__, :enabled]]
-
   require Logger
 
   import Ecto.Query,
@@ -43,7 +41,7 @@ defmodule Explorer.Chain.Cache.Counters.GasUsageSum do
   end
 
   defp handle_fallback(:async_task) do
-    if @enabled do
+    if Application.get_env(:explorer, __MODULE__)[:enabled] do
       # If this gets called it means an async task was requested, but none exists
       # so a new one needs to be launched
       {:ok, task} =
