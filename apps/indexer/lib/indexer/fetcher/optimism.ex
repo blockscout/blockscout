@@ -605,4 +605,35 @@ defmodule Indexer.Fetcher.Optimism do
       {:noreply, %{state | realtime_range: new_realtime_range, last_realtime_block_number: new_max}}
     end
   end
+
+  @doc """
+    Outputs log messages about finishing catchup loop and starting realtime mode.
+
+    ## Parameters
+    - `start_block_number`: The first block number of the block range for which the loop is finished.
+    - `start_block_number`: The last block number of the block range for which the loop is finished.
+
+    ## Returns
+    - :ok
+  """
+  @spec log_catchup_loop_finished(non_neg_integer(), non_neg_integer()) :: :ok
+  def log_catchup_loop_finished(start_block_number, end_block_number) do
+    Logger.info("The fetcher catchup loop for the range #{inspect(start_block_number..end_block_number)} finished.")
+    Logger.info("Switching to realtime mode...")
+  end
+
+  @doc """
+    Outputs log message with error and sleeps before the next retry.
+
+    ## Parameters
+    - `error_message`: The error message to output.
+
+    ## Returns
+    - :ok
+  """
+  @spec log_error_message_with_retry_sleep(String.t()) :: :ok
+  def log_error_message_with_retry_sleep(error_message) do
+    Logger.error("#{error_message} Retrying...")
+    :timer.sleep(3000)
+  end
 end

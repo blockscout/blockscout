@@ -28,6 +28,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
   require Logger
 
   import Explorer.Helper, only: [add_0x_prefix: 1, hash_to_binary: 1]
+  import Indexer.Fetcher.Optimism.Interop.Helper, only: [log_cant_get_chain_id_from_rpc: 0]
 
   alias Explorer.Chain
   alias Explorer.Chain.Hash
@@ -122,7 +123,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
         {:stop, :normal, %{}}
 
       {:chain_id_is_nil, true} ->
-        Logger.error("Cannot get chain ID from RPC.")
+        log_cant_get_chain_id_from_rpc()
         {:stop, :normal, %{}}
 
       {:block_duration_is_invalid, true} ->

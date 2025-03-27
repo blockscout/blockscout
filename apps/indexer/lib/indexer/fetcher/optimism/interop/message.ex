@@ -24,6 +24,9 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Explorer.Helper, only: [decode_data: 2, truncate_address_hash: 1]
 
+  import Indexer.Fetcher.Optimism.Interop.Helper,
+    only: [log_cant_get_chain_id_from_rpc: 0, log_cant_get_last_transaction_from_rpc: 1, log_last_block_numbers: 2]
+
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   alias Explorer.Chain.Events.Subscriber
@@ -105,8 +108,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
            Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number()),
          InteropMessage.remove_invalid_messages(latest_block_number),
          {:ok, last_block_number} <- get_last_block_number(json_rpc_named_arguments, chain_id) do
-      Logger.info("last_block_number = #{last_block_number}")
-      Logger.info("latest_block_number = #{latest_block_number}")
+      log_last_block_numbers(last_block_number, latest_block_number)
 
       Process.send(self(), :continue, [])
 
@@ -127,11 +129,11 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
         {:stop, :normal, %{}}
 
       {:chain_id_is_nil, true} ->
-        Logger.error("Cannot get chain ID from RPC.")
+        log_cant_get_chain_id_from_rpc()
         {:stop, :normal, %{}}
 
       {:error, error_data} ->
-        Logger.error("Cannot get last transaction from RPC by its hash due to RPC error: #{inspect(error_data)}")
+        log_cant_get_last_transaction_from_rpc(error_data)
         {:stop, :normal, %{}}
     end
   end
@@ -211,8 +213,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
     if is_nil(new_start_block_number) or is_nil(new_end_block_number) do
       # if there wasn't a reorg or the reorg didn't affect the current range, switch to realtime mode
       if mode == :catchup do
-        Logger.info("The fetcher catchup loop for the range #{inspect(start_block_number..end_block_number)} finished.")
-        Logger.info("Switching to realtime mode...")
+        Optimism.log_catchup_loop_finished(start_block_number, end_block_number)
       end
 
       {:noreply, %{state | mode: :realtime, last_realtime_block_number: new_last_realtime_block_number}}

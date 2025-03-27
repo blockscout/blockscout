@@ -549,8 +549,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           Logger.error(error_message)
           {:error, message}
         else
-          Logger.error("#{error_message} Retrying...")
-          :timer.sleep(3000)
+          Optimism.log_error_message_with_retry_sleep(error_message)
 
           get_transaction_batches(
             block_range,

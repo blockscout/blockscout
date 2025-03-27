@@ -209,8 +209,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     if is_nil(new_start_block_number) or is_nil(new_end_block_number) do
       # if there wasn't a reorg or the reorg didn't affect the current range, switch to realtime mode
       if mode == :catchup do
-        Logger.info("The fetcher catchup loop for the range #{inspect(start_block_number..end_block_number)} finished.")
-        Logger.info("Switching to realtime mode...")
+        Optimism.log_catchup_loop_finished(start_block_number, end_block_number)
       end
 
       {:noreply, %{state | mode: :realtime, last_realtime_block_number: new_last_realtime_block_number}}
