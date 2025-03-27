@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   alias Explorer.Utility.MissingRangesManipulator
 
   @table_name :contract_creator_lookup
+  @pending_blocks_cache_key "pending_blocks"
 
   def start_link(_) do
     :ets.new(@table_name, [
@@ -44,11 +45,11 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
           GenServer.cast(__MODULE__, {:fetch, address})
 
         [{_, contract_creation_block_number}] ->
-          case :ets.lookup(@table_name, "pending_blocks") do
+          case :ets.lookup(@table_name, @pending_blocks_cache_key) do
             [] ->
               :ignore
 
-            [{"pending_blocks", blocks}] ->
+            [{@pending_blocks_cache_key, blocks}] ->
               contract_creation_block =
                 Enum.find(blocks, fn %{block_number: block_number, address_hash_string: _address_hash_string} ->
                   block_number == contract_creation_block_number
@@ -77,7 +78,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     contract_creation_block_number = find_contract_creation_block_number(initial_block_ranges, address_hash)
 
     pending_blocks =
-      case :ets.lookup(@table_name, "pending_blocks") do
+      case :ets.lookup(@table_name, @pending_blocks_cache_key) do
         [] ->
           []
 
@@ -97,7 +98,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
           ]
       end
 
-    :ets.insert(@table_name, {"pending_blocks", updated_pending_blocks})
+    :ets.insert(@table_name, {@pending_blocks_cache_key, updated_pending_blocks})
 
     MissingRangesManipulator.add_ranges_by_block_numbers([contract_creation_block_number], 1)
   end
@@ -184,5 +185,37 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   @spec table_name() :: atom()
   def table_name do
     @table_name
+  end
+
+  @doc """
+  Retrieves the cached list of blocks where contract creator lookup is pending from the ETS table.
+
+  The function looks up the ETS table using the key `"pending_blocks"` and returns
+  a list of tuples where each tuple contains a string (representing the block identifier)
+  and a list of maps (representing the block data).
+
+  ## Returns
+
+  - `[{String.t(), [map()]}]`: A list of tuples containing block identifiers and their associated data.
+
+  """
+  @spec pending_blocks_cache() :: [{String.t(), [map()]}]
+  def pending_blocks_cache, do: :ets.lookup(@table_name, @pending_blocks_cache_key)
+
+  @doc """
+  Returns the cache key used for storing pending blocks.
+
+  This function retrieves the value of the module attribute `@pending_blocks_cache_key`,
+  which is used as the identifier for caching pending blocks.
+
+  ## Examples
+
+      iex> Indexer.Fetcher.OnDemand.ContractCreator.pending_blocks_cache_key()
+      "some_cache_key"
+
+  """
+  @spec pending_blocks_cache_key() :: String.t()
+  def pending_blocks_cache_key do
+    @pending_blocks_cache_key
   end
 end

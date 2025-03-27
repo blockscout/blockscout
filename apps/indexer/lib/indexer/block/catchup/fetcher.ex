@@ -136,9 +136,10 @@ defmodule Indexer.Block.Catchup.Fetcher do
         |> Enum.map(&Map.get(&1, :number))
 
       unless Enum.empty?(imported_block_numbers) do
+        cache_key = ContractCreator.pending_blocks_cache_key()
         # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-        case :ets.lookup(ContractCreator.table_name(), "pending_blocks") do
-          [{"pending_blocks", pending_block_numbers}] ->
+        case ContractCreator.pending_blocks_cache() do
+          [{^cache_key, pending_block_numbers}] ->
             update_pending_contract_creator_block_numbers(pending_block_numbers, imported_block_numbers, imported)
 
           [] ->
@@ -173,7 +174,10 @@ defmodule Indexer.Block.Catchup.Fetcher do
         end
       end)
 
-    :ets.insert(ContractCreator.table_name(), {"pending_blocks", updated_pending_block_numbers})
+    :ets.insert(
+      ContractCreator.table_name(),
+      {ContractCreator.pending_blocks_cache_key(), updated_pending_block_numbers}
+    )
   end
 
   defp find_contract_creation_block_in_imported(imported, contract_creation_block_number) do
