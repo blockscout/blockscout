@@ -7,6 +7,6 @@ defmodule Explorer.Repo.Migrations.MissingBlockRangesAddPriority do
     end
 
     drop(index(:missing_block_ranges, ["from_number DESC"]))
-    create(index(:missing_block_ranges, ["priority DESC", "from_number DESC"]))
+    create(index(:missing_block_ranges, ["priority DESC NULLS LAST", "from_number DESC"]))
   end
 end
