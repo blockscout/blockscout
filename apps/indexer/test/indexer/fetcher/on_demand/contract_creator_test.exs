@@ -11,13 +11,11 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
   setup :verify_on_exit!
   setup :set_mox_global
 
-  setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
-    mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
-
+  setup do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-    start_supervised!({ContractCreatorOnDemand, [mocked_json_rpc_named_arguments, [name: ContractCreatorOnDemand]]})
+    start_supervised!({ContractCreatorOnDemand, name: ContractCreatorOnDemand})
 
-    %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
+    :ok
   end
 
   describe "start_link/1" do

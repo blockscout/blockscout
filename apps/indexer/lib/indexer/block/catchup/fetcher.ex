@@ -136,7 +136,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
         |> Enum.map(&Map.get(&1, :number))
 
       unless Enum.empty?(imported_block_numbers) do
-        # credo:disable-for-next-line
+        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
         case :ets.lookup(ContractCreator.table_name(), "pending_blocks") do
           [{"pending_blocks", pending_block_numbers}] ->
             update_pending_contract_creator_block_numbers(pending_block_numbers, imported_block_numbers, imported)

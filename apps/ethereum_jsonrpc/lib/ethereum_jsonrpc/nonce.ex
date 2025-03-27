@@ -6,6 +6,8 @@ defmodule EthereumJSONRPC.Nonce do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   alias EthereumJSONRPC.FetchedCode
 
+  @type params :: %{address: EthereumJSONRPC.address(), block_number: non_neg_integer(), nonce: non_neg_integer()}
+
   @doc """
     Converts a JSON-RPC response of `eth_getTransactionCount` to code params or an annotated error.
 
@@ -28,7 +30,7 @@ defmodule EthereumJSONRPC.Nonce do
         iex> response = %{id: 1, result: "0x2"}
         iex> id_to_params = %{1 => %{block_quantity: "0x1", address: "0xabc"}}
         iex> Nonce.from_response(response, id_to_params)
-        {:ok, %{address: "0xabc", block_number: 1, nonce: "0x2"}}
+        {:ok, %{address: "0xabc", block_number: 1, nonce: 2}}
         iex> # Error response:
         iex> response = %{id: 1, error: %{code: 100, message: "Error"}}
         iex> id_to_params = %{1 => %{block_quantity: "0x1", address: "0xabc"}}
@@ -37,15 +39,15 @@ defmodule EthereumJSONRPC.Nonce do
   """
   @spec from_response(%{id: EthereumJSONRPC.request_id(), result: String.t()}, %{
           non_neg_integer() => %{block_quantity: String.t(), address: String.t()}
-        }) :: {:ok, FetchedCode.params()}
-  def from_response(%{id: id, result: result}, id_to_params) when is_map(id_to_params) do
+        }) :: {:ok, params()}
+  def from_response(%{id: id, result: nonce_hex}, id_to_params) when is_map(id_to_params) do
     %{block_quantity: block_quantity, address: address} = Map.fetch!(id_to_params, id)
 
     {:ok,
      %{
        address: address,
        block_number: quantity_to_integer(block_quantity),
-       nonce: result
+       nonce: quantity_to_integer(nonce_hex)
      }}
   end
 

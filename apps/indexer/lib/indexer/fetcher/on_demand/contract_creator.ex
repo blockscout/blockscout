@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   use GenServer
   use Indexer.Fetcher, restart: :permanent
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2]
+  import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2]
 
   alias EthereumJSONRPC.Nonce
   alias Explorer.Chain.Address
@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   @table_name :contract_creator_lookup
 
-  def start_link([init_opts, server_opts]) do
+  def start_link(_) do
     :ets.new(@table_name, [
       :set,
       :named_table,
@@ -26,7 +26,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
       write_concurrency: true
     ])
 
-    GenServer.start_link(__MODULE__, init_opts, server_opts)
+    GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
   @spec trigger_fetch(Address.t()) :: :ok | :ignore
@@ -64,10 +64,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     end
   end
 
-  @spec fetch_contract_creator_address_hash(Explorer.Chain.Hash.Address.t(), %{
-          json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments()
-        }) :: :ok
-  defp fetch_contract_creator_address_hash(address_hash, %{json_rpc_named_arguments: _}) do
+  @spec fetch_contract_creator_address_hash(Explorer.Chain.Hash.Address.t()) :: :ok
+  defp fetch_contract_creator_address_hash(address_hash) do
     max_block_number = BlockNumber.get_max()
 
     initial_block_ranges = %{
@@ -110,29 +108,31 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     medium = trunc((block_ranges.right - block_ranges.left) / 2)
     medium_position = block_ranges.left + medium
 
-    case %{id: 0, block_quantity: integer_to_quantity(medium_position), address: to_string(address_hash)}
-         |> Nonce.request()
-         |> json_rpc(json_rpc_named_arguments) do
-      {:ok, nonce_hex} ->
-        "0x" <> hexadecimal_digits = nonce_hex
-        nonce = String.to_integer(hexadecimal_digits, 16)
+    params = %{block_quantity: integer_to_quantity(medium_position), address: to_string(address_hash)}
 
-        case nonce do
-          0 ->
-            left_new = new_left_position(medium, medium_position)
-            block_ranges = Map.put(block_ranges, :left, left_new)
+    id_to_params = id_to_params([params])
 
-            should_continue_binary_search?(block_ranges, address_hash, nonce)
+    with {:ok, response} <-
+           params
+           |> Map.merge(%{id: 0})
+           |> Nonce.request()
+           |> json_rpc(json_rpc_named_arguments) do
+      case Nonce.from_response(%{id: 0, result: response}, id_to_params) do
+        {:ok, %{nonce: 0}} ->
+          left_new = new_left_position(medium, medium_position)
+          block_ranges = Map.put(block_ranges, :left, left_new)
 
-          nonce when nonce > 0 ->
-            right_new = new_right_position(medium, medium_position)
-            block_ranges = Map.put(block_ranges, :right, right_new)
+          maybe_continue_binary_search(block_ranges, address_hash, 0)
 
-            should_continue_binary_search?(block_ranges, address_hash, nonce)
-        end
+        {:ok, %{nonce: nonce}} when nonce > 0 ->
+          right_new = new_right_position(medium, medium_position)
+          block_ranges = Map.put(block_ranges, :right, right_new)
 
-      _ ->
-        find_contract_creation_block_number(block_ranges, address_hash)
+          maybe_continue_binary_search(block_ranges, address_hash, nonce)
+
+        _ ->
+          find_contract_creation_block_number(block_ranges, address_hash)
+      end
     end
   end
 
@@ -144,7 +144,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     if medium == 0, do: medium_position - 1, else: medium_position
   end
 
-  defp should_continue_binary_search?(block_ranges, address_hash, nonce) do
+  defp maybe_continue_binary_search(block_ranges, address_hash, nonce) do
     cond do
       block_ranges.left == block_ranges.right ->
         block_ranges.left
@@ -159,13 +159,13 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   end
 
   @impl true
-  def init(json_rpc_named_arguments) do
-    {:ok, %{json_rpc_named_arguments: json_rpc_named_arguments}}
+  def init([]) do
+    {:ok, %{}}
   end
 
   @impl true
   def handle_cast({:fetch, address}, state) do
-    fetch_contract_creator_address_hash(address.hash, state)
+    fetch_contract_creator_address_hash(address.hash)
 
     {:noreply, state}
   end
@@ -174,7 +174,6 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     to_string(address_hash)
   end
 
-  @spec table_name() :: atom()
   @doc """
   Returns the name of the table associated with the contract creator.
 
@@ -182,6 +181,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   which is expected to hold the name of the table used for storing or
   retrieving data related to the contract creator.
   """
+  @spec table_name() :: atom()
   def table_name do
     @table_name
   end
