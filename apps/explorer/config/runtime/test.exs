@@ -91,7 +91,7 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsFromAddressHashWithPendingIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsToAddressHashWithPendingIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsTransactionHashBlockHashIndexAddressHashIndex
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositWithdrawalIndex
     ] do
   config :explorer, migrator, enabled: false
 end

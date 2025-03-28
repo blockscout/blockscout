@@ -161,7 +161,7 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsFromAddressHashWithPendingIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsToAddressHashWithPendingIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsTransactionHashBlockHashIndexAddressHashIndex
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositWithdrawalIndex
     ] do
   config :explorer, index_operation, enabled: true
 end
