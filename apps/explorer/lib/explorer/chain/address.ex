@@ -772,7 +772,6 @@ defmodule Explorer.Chain.Address do
   def creation_transaction(_address), do: nil
 
   @doc """
-  <<<<<<< HEAD
   Creates a query for preloading contract creation transactions.
 
   This query sorts transactions by:
