@@ -654,6 +654,18 @@ defmodule Explorer.Chain.Log do
     |> Repo.stream_each(each_fun)
   end
 
+  @doc """
+  Generates a dynamic query condition to check if the `first_topic` of a log entry
+  matches either the WETH deposit or withdrawal signature.
+
+  This function is typically used to filter logs where the first topic corresponds
+  to specific token transfer events, such as WETH deposits or withdrawals.
+
+  ## Returns
+
+  - An `Ecto.Query.dynamic()` expression that can be used in Ecto queries.
+  """
+  @spec first_topic_is_deposit_or_withdrawal_signature() :: Ecto.Query.dynamic_expr()
   def first_topic_is_deposit_or_withdrawal_signature do
     dynamic(
       [log: log],
@@ -661,6 +673,18 @@ defmodule Explorer.Chain.Log do
     )
   end
 
+  @doc """
+  Generates a dynamic query condition to filter logs where the `first_topic`
+  is neither the WETH deposit signature nor the WETH withdrawal signature.
+
+  This function is useful for excluding specific types of token transfer events
+  from query results.
+
+  ## Returns
+
+  - An `Ecto.Query.dynamic/1` expression that can be used in Ecto queries.
+  """
+  @spec first_topic_is_not_deposit_or_withdrawal_signature() :: Ecto.Query.dynamic_expr()
   def first_topic_is_not_deposit_or_withdrawal_signature do
     dynamic(
       [log: log],
