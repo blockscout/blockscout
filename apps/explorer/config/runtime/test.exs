@@ -86,7 +86,10 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedTransactionsCountDescHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractsLanguageIndex
+      Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractsLanguageIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsFromAddressHashWithPendingIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsToAddressHashWithPendingIndex
     ] do
   config :explorer, migrator, enabled: false
 end

@@ -23,7 +23,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   If you need to add a new table, extend this type specification with the new table name.
   """
   @callback table_name ::
-              :logs
+              :transactions
+              | :logs
               | :internal_transactions
               | :token_transfers
               | :addresses

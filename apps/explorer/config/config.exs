@@ -156,7 +156,10 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedTransactionsCountDescHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractsLanguageIndex
+      Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractsLanguageIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsFromAddressHashWithPendingIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsToAddressHashWithPendingIndex
     ] do
   config :explorer, index_operation, enabled: true
 end
