@@ -756,11 +756,12 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       env = Application.get_all_env(:indexer)[InteropMessageQueue]
       url = instance_api_url <> "/api/v2/optimism/interop/public-key"
 
-      with {:ok, %HTTPoison.Response{body: response_body, status_code: 200}} <-
-             HTTPoison.get(url, [],
-               timeout: :timer.seconds(env[:connect_timeout]),
-               recv_timeout: :timer.seconds(env[:recv_timeout])
-             ),
+      timeout = :timer.seconds(env[:connect_timeout])
+      recv_timeout = :timer.seconds(env[:recv_timeout])
+      client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
+
+      with {:ok, %{body: response_body, status: 200}} <-
+             Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: timeout]]]),
            {:ok, %{"public_key" => "0x" <> key}} <- Jason.decode(response_body),
            {:ok, key_binary} <- Base.decode16(key, case: :mixed),
            true <- byte_size(key_binary) > 0 do

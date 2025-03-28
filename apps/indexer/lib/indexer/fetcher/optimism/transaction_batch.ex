@@ -37,7 +37,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
-  alias HTTPoison.Response
   alias Indexer.Fetcher.Beacon.Blob
   alias Indexer.Fetcher.Beacon.Client, as: BeaconClient
   alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
@@ -1052,11 +1051,15 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   end
 
   defp http_get_request(url, attempts_done \\ 0) do
-    case Application.get_env(:explorer, :http_adapter).get(url) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    recv_timeout = 5_000
+    connect_timeout = 8_000
+    client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
+
+    case Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: connect_timeout]]]) do
+      {:ok, %{body: body, status: 200}} ->
         Jason.decode(body)
 
-      {:ok, %Response{body: body, status_code: _}} ->
+      {:ok, %{body: body, status: _}} ->
         {:error, body}
 
       {:error, error} ->

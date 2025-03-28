@@ -369,11 +369,12 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
   # - `nil` in case of failure (failed HTTP request or invalid JSON response).
   @spec post_json_request(String.t(), map(), non_neg_integer(), non_neg_integer()) :: map() | nil
   defp post_json_request(url, body, timeout, recv_timeout) do
-    case HTTPoison.post(url, Jason.encode!(body), [{"Content-Type", "application/json"}],
-           timeout: timeout,
-           recv_timeout: recv_timeout
-         ) do
-      {:ok, %HTTPoison.Response{body: response_body, status_code: 200}} ->
+    client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
+    headers = [{"Content-Type", "application/json"}]
+    opts = [adapter: [timeout: recv_timeout, transport_opts: [timeout: timeout]]]
+
+    case Tesla.post(client, url, Jason.encode!(body), headers: headers, opts: opts) do
+      {:ok, %{body: response_body, status: 200}} ->
         case Jason.decode(response_body) do
           {:ok, response} ->
             response
