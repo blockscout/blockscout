@@ -233,12 +233,6 @@ defmodule BlockScoutWeb.AddressView do
     |> Base.encode64()
   end
 
-  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
-
-  def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
-
-  def smart_contract_verified?(%Address{smart_contract: nil}), do: false
-
   def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
     Enum.any?(address.smart_contract.abi || [], &read_function?(&1))
   end
@@ -431,7 +425,7 @@ defmodule BlockScoutWeb.AddressView do
 
   def address_page_title(address) do
     cond do
-      smart_contract_verified?(address) -> "#{address.smart_contract.name} (#{to_string(address)})"
+      APIV2Helper.smart_contract_verified?(address) -> "#{address.smart_contract.name} (#{to_string(address)})"
       Address.smart_contract?(address) -> "Contract #{to_string(address)}"
       true -> "#{to_string(address)}"
     end

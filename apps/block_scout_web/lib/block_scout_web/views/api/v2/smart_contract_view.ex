@@ -5,9 +5,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   import Explorer.SmartContract.Reader, only: [zip_tuple_values_with_types: 2]
 
   alias ABI.FunctionSelector
-  alias BlockScoutWeb.API.V2.{Helper, TransactionView}
-  alias BlockScoutWeb.SmartContractView
-  alias BlockScoutWeb.{AddressContractView, AddressView}
+  alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
+  alias BlockScoutWeb.API.V2.TransactionView
+  alias BlockScoutWeb.{AddressContractView, SmartContractView}
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
@@ -146,14 +146,16 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_output(output), do: output
 
   # credo:disable-for-next-line
-  def prepare_smart_contract(
-        %Address{smart_contract: %SmartContract{} = smart_contract, proxy_implementations: implementations} = address,
-        _conn
-      ) do
-    bytecode_twin = SmartContract.get_address_verified_bytecode_twin_contract(address.hash, @api_true)
-    bytecode_twin_contract = bytecode_twin.verified_contract
-    smart_contract_verified = AddressView.smart_contract_verified?(address)
-    fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
+  defp prepare_smart_contract(
+         %Address{smart_contract: %SmartContract{} = smart_contract, proxy_implementations: implementations} = address,
+         _conn
+       ) do
+    smart_contract_verified = APIV2Helper.smart_contract_verified?(address)
+
+    bytecode_twin_contract =
+      if smart_contract_verified,
+        do: nil,
+        else: address.smart_contract
 
     additional_sources =
       get_additional_sources(
@@ -162,26 +164,36 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         bytecode_twin_contract
       )
 
+    fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
     visualize_sol2uml_enabled = Sol2uml.enabled?()
+
+    proxy_type = implementations && implementations.proxy_type
+
+    minimal_proxy? = proxy_type in ["eip1167", "clone_with_immutable_arguments", "erc7760"]
 
     target_contract =
       if smart_contract_verified, do: smart_contract, else: bytecode_twin_contract
 
-    verified_twin_address_hash = bytecode_twin_contract && Address.checksum(bytecode_twin_contract.address_hash)
+    # don't return verified_bytecode_twin_address_hash if smart contract is verified or minimal proxy
+    verified_bytecode_twin_address_hash =
+      (!smart_contract_verified && !minimal_proxy? &&
+         bytecode_twin_contract && Address.checksum(bytecode_twin_contract.verified_bytecode_twin_address_hash)) || nil
+
+    smart_contract_verified_via_sourcify = smart_contract_verified && smart_contract.verified_via_sourcify
 
     %{
-      "verified_twin_address_hash" => verified_twin_address_hash,
+      "verified_twin_address_hash" => verified_bytecode_twin_address_hash,
       "is_verified" => smart_contract_verified,
       "is_changed_bytecode" => smart_contract_verified && smart_contract.is_changed_bytecode,
-      "is_partially_verified" => smart_contract.partially_verified && smart_contract_verified,
+      "is_partially_verified" => smart_contract_verified && smart_contract.partially_verified,
       "is_fully_verified" => fully_verified,
-      "is_verified_via_sourcify" => smart_contract.verified_via_sourcify && smart_contract_verified,
+      "is_verified_via_sourcify" => smart_contract_verified_via_sourcify,
       "is_verified_via_eth_bytecode_db" => smart_contract.verified_via_eth_bytecode_db,
       "is_verified_via_verifier_alliance" => smart_contract.verified_via_verifier_alliance,
-      "proxy_type" => implementations && implementations.proxy_type,
+      "proxy_type" => proxy_type,
       "implementations" => Proxy.proxy_object_info(implementations),
       "sourcify_repo_url" =>
-        if(smart_contract.verified_via_sourcify && smart_contract_verified,
+        if(smart_contract_verified_via_sourcify,
           do: AddressContractView.sourcify_repo_url(address.hash, smart_contract.partially_verified)
         ),
       "can_be_visualized_via_sol2uml" =>
@@ -195,16 +207,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "abi" => target_contract && target_contract.abi,
       "source_code" => target_contract && target_contract.contract_source_code,
       "file_path" => target_contract && target_contract.file_path,
-      "additional_sources" =>
-        (is_list(additional_sources) && Enum.map(additional_sources, &prepare_additional_source/1)) || [],
+      "additional_sources" => Enum.map(additional_sources, &prepare_additional_source/1),
       "compiler_settings" => target_contract && target_contract.compiler_settings,
       "external_libraries" => (target_contract && prepare_external_libraries(target_contract.external_libraries)) || [],
-      "constructor_args" => if(smart_contract_verified, do: target_contract && target_contract.constructor_arguments),
+      "constructor_args" => if(smart_contract_verified, do: smart_contract.constructor_arguments),
       "decoded_constructor_args" =>
         if(smart_contract_verified,
-          do:
-            target_contract &&
-              SmartContract.format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
+          do: SmartContract.format_constructor_arguments(smart_contract.abi, smart_contract.constructor_arguments)
         ),
       "language" => SmartContract.language(smart_contract),
       "license_type" => smart_contract.license_type,
@@ -214,7 +223,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     |> Map.merge(bytecode_info(address))
     |> chain_type_fields(
       %{
-        address_hash: verified_twin_address_hash,
+        address_hash: verified_bytecode_twin_address_hash,
         field_prefix: "verified_twin",
         target_contract: target_contract
       },
@@ -222,7 +231,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     )
   end
 
-  def prepare_smart_contract(%Address{proxy_implementations: implementations} = address, _conn) do
+  defp prepare_smart_contract(%Address{proxy_implementations: implementations} = address, _conn) do
     %{
       "proxy_type" => implementations && implementations.proxy_type,
       "implementations" => Proxy.proxy_object_info(implementations)
@@ -234,20 +243,20 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   Returns additional sources of the smart-contract or from its bytecode twin
   """
   @spec get_additional_sources(SmartContract.t(), boolean, SmartContract.t() | nil) ::
-          [SmartContractAdditionalSource.t()] | nil
-  def get_additional_sources(smart_contract, smart_contract_verified, bytecode_twin_contract) do
-    cond do
-      smart_contract_verified && is_list(smart_contract.smart_contract_additional_sources) &&
-          !Enum.empty?(smart_contract.smart_contract_additional_sources) ->
-        smart_contract.smart_contract_additional_sources
-
-      !is_nil(bytecode_twin_contract) ->
-        bytecode_twin_contract.smart_contract_additional_sources
-
-      true ->
-        []
-    end
+          [SmartContractAdditionalSource.t()]
+  def get_additional_sources(%{smart_contract_additional_sources: original_smart_contract_additional_sources}, true, _)
+      when is_list(original_smart_contract_additional_sources) do
+    original_smart_contract_additional_sources
   end
+
+  def get_additional_sources(_, false, %{
+        smart_contract_additional_sources: bytecode_twin_smart_contract_additional_sources
+      })
+      when is_list(bytecode_twin_smart_contract_additional_sources) do
+    bytecode_twin_smart_contract_additional_sources
+  end
+
+  def get_additional_sources(_smart_contract, _smart_contract_verified, _bytecode_twin_contract), do: []
 
   defp bytecode_info(address) do
     case AddressContractView.contract_creation_code(address) do
@@ -288,7 +297,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     smart_contract_info =
       %{
         "address" =>
-          Helper.address_with_info(
+          APIV2Helper.address_with_info(
             nil,
             %Address{smart_contract.address | smart_contract: smart_contract},
             smart_contract.address.hash,

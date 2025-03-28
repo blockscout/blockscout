@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
   alias BlockScoutWeb.AddressView
   alias BlockScoutWeb.API.RPC.RPCView
+  alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias Explorer.Chain.{Address, SmartContract}
 
   defguardp is_empty_string(input) when input == "" or input == nil
@@ -175,11 +176,13 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   end
 
   defp insert_additional_sources(output, address) do
+    bytecode_twin_smart_contract = SmartContract.get_address_verified_bytecode_twin_contract(address)
+
     additional_sources_from_bytecode_twin =
-      SmartContract.get_address_verified_bytecode_twin_contract(address.hash).additional_sources
+      bytecode_twin_smart_contract && bytecode_twin_smart_contract.smart_contract_additional_sources
 
     additional_sources =
-      if AddressView.smart_contract_verified?(address),
+      if APIV2Helper.smart_contract_verified?(address),
         do: address.smart_contract.smart_contract_additional_sources,
         else: additional_sources_from_bytecode_twin
 

@@ -71,7 +71,7 @@ defmodule Explorer.Etherscan.Contracts do
   end
 
   defp maybe_fetch_bytecode_twin(twin_needed?, address_hash),
-    do: if(twin_needed?, do: SmartContract.get_address_verified_bytecode_twin_contract(address_hash).verified_contract)
+    do: if(twin_needed?, do: SmartContract.get_address_verified_bytecode_twin_contract(address_hash))
 
   defp compose_address_with_smart_contract(address_with_smart_contract, address_verified_bytecode_twin_contract) do
     if address_verified_bytecode_twin_contract do
