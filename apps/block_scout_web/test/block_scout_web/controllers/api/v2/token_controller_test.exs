@@ -1716,6 +1716,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         )
       )
 
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
+        Application.put_env(:explorer, :http_adapter, HTTPoison)
+      end)
+
       token = insert(:token, type: "ERC-721")
       token_id = 1
 
@@ -1730,8 +1737,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
-
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
 
       Explorer.Mox.HTTPoison
       |> expect(:get, fn ^url, _headers, _options ->
@@ -1771,10 +1776,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert(token_instance_from_db)
       assert token_instance_from_db.metadata == metadata
-
-      # Reset test environment
-      Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
-      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
     test "falls back to normal reCAPTCHA when incorrect scoped bypass token is supplied", %{
@@ -1795,6 +1796,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         )
       )
 
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
+        Application.put_env(:explorer, :http_adapter, HTTPoison)
+      end)
+
       token = insert(:token, type: "ERC-721")
       token_id = 1
 
@@ -1809,8 +1817,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
-
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
 
       # First request with wrong scoped token - should fail
       request =
@@ -1868,10 +1874,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert(token_instance_from_db)
       assert token_instance_from_db.metadata == metadata
-
-      # Reset test environment
-      Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
-      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
     test "rejects scoped bypass token when scoped tokens are not configured", %{
@@ -1890,6 +1892,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           ]
         )
       )
+
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
+        Application.put_env(:explorer, :http_adapter, HTTPoison)
+      end)
 
       token = insert(:token, type: "ERC-721")
       token_id = 1
@@ -1944,8 +1953,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
       Explorer.Mox.HTTPoison
       |> expect(:get, fn ^url, _headers, _options ->
         {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
@@ -1966,10 +1973,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert(token_instance_from_db)
       assert token_instance_from_db.metadata == metadata
-
-      # Reset test environment
-      Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
-      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
   end
 
