@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [fetch_scam_token_toggle: 2, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+    only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   import BlockScoutWeb.PagingHelper,
     only: [current_filter: 1, delete_parameters_from_next_page_params: 1, search_query: 1, smart_contracts_sorting: 1]
@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          _ <- PublishHelper.sourcify_check(address_hash_string),
          {:not_found, {:ok, address}} <-
-           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options, false)} do
+           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)} do
       implementations = SmartContractHelper.pre_fetch_implementations(address)
 
       conn
@@ -83,7 +83,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       |> Keyword.merge(search_query(params))
       |> Keyword.merge(smart_contracts_sorting(params))
       |> Keyword.merge(@api_true)
-      |> fetch_scam_token_toggle(conn)
 
     smart_contracts_plus_one = SmartContract.verified_contracts(full_options)
     {smart_contracts, next_page} = split_list_by_page(smart_contracts_plus_one)

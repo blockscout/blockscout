@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   alias BlockScoutWeb.BlockView
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
   alias Explorer.Chain.Block
-  alias Explorer.Counters.BlockPriorityFeeCounter
+  alias Explorer.Chain.Cache.Counters.BlockPriorityFeeCount
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
   def prepare_block(block, _conn, single_block? \\ false) do
     burnt_fees = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
-    priority_fee = block.base_fee_per_gas && BlockPriorityFeeCounter.fetch(block.hash)
+    priority_fee = block.base_fee_per_gas && BlockPriorityFeeCount.fetch(block.hash)
 
     transaction_fees = Block.transaction_fees(block.transactions)
 

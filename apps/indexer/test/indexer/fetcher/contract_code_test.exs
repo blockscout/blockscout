@@ -80,16 +80,26 @@ defmodule Indexer.Fetcher.ContractCodeTest do
         end)
       end
 
+      block = insert(:block, number: block_number)
       insert(:address, hash: address)
-      insert(:transaction, hash: hash, created_contract_address_hash: address)
+
+      transaction =
+        insert(:transaction,
+          block_hash: block.hash,
+          block_number: block.number,
+          hash: hash,
+          created_contract_address_hash: address,
+          cumulative_gas_used: 21000,
+          gas_used: 21000,
+          index: 0,
+          status: :ok
+        )
 
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       assert :ok =
                ContractCode.async_fetch(
-                 [
-                   %{created_contract_address_hash: address, block_number: block_number, hash: hash}
-                 ],
+                 [transaction],
                  false
                )
 
@@ -104,6 +114,47 @@ defmodule Indexer.Fetcher.ContractCodeTest do
 
       updated_transaction = Repo.one!(from(transaction in Transaction, where: transaction.hash == ^hash))
 
+      assert updated_transaction.created_contract_code_indexed_at
+    end
+
+    test "doesn't fetch code for failed transactions", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      block = insert(:block)
+      address = insert(:address)
+
+      transaction =
+        insert(:transaction,
+          block_hash: block.hash,
+          block_number: block.number,
+          created_contract_address_hash: address.hash,
+          cumulative_gas_used: 21000,
+          gas_used: 21000,
+          index: 0,
+          status: :error
+        )
+
+      # Initial verification - contract_code should be nil
+      assert Repo.get!(Address, address.hash).contract_code == nil
+
+      # Start contract code fetcher
+      ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      # Try to fetch the contract code - should not trigger an actual RPC call
+      # because the transaction failed
+      assert :ok =
+               ContractCode.async_fetch(
+                 [transaction],
+                 false
+               )
+
+      # Wait a bit to ensure any potential processing is done
+      Process.sleep(100)
+
+      # Verify that the contract code was set to "0x"
+      updated_address = Repo.get!(Address, address.hash)
+      assert to_string(updated_address.contract_code) == "0x"
+
+      # Verify that the transaction's created_contract_code_indexed_at remains nil
+      updated_transaction = Repo.get!(Transaction, transaction.hash)
       assert updated_transaction.created_contract_code_indexed_at
     end
   end

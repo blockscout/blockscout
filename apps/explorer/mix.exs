@@ -57,7 +57,7 @@ defmodule Explorer.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:bamboo, "~> 2.3.0"},
+      {:bamboo, "~> 2.4.0"},
       {:mime, "~> 2.0"},
       {:bcrypt_elixir, "~> 3.0"},
       # benchmark optimizations
@@ -110,7 +110,7 @@ defmodule Explorer.Mixfile do
       {:spandex_ecto, "~> 0.7.0"},
       # Attach `:prometheus_ecto` to `:ecto`
       {:telemetry, "~> 1.3.0"},
-      # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
+      # `Timex.Duration` for `Explorer.Chain.Cache.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
       {:tesla, "~> 1.14.1"},

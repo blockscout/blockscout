@@ -247,12 +247,14 @@ defmodule Explorer.SmartContract.Helper do
   def pre_fetch_implementations(address) do
     implementation =
       with {:verified_smart_contract, %SmartContract{}} <- {:verified_smart_contract, address.smart_contract},
-           {:proxy?, true} <- {:proxy?, address_is_proxy?(address, @api_true)} do
-        # we should fetch implementations only for original smart-contract and exclude fetching implementations of bytecode twin
-        if address.hash == address.smart_contract.address_hash do
-          Implementation.get_implementation(address.smart_contract, @api_true)
-        end
+           {:proxy?, true} <- {:proxy?, address_is_proxy?(address, @api_true)},
+           # we should fetch implementations only for original smart-contract and exclude fetching implementations of bytecode twin
+           {:bytecode_twin?, false} <- {:bytecode_twin?, address.hash != address.smart_contract.address_hash} do
+        Implementation.get_implementation(address.smart_contract, @api_true)
       else
+        {:bytecode_twin?, true} ->
+          nil
+
         {:verified_smart_contract, _} ->
           if Address.smart_contract?(address) do
             smart_contract = %SmartContract{

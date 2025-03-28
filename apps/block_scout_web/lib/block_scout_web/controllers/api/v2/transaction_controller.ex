@@ -11,7 +11,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       put_key_value_to_paging_options: 3,
       token_transfers_next_page_params: 3,
       paging_options: 1,
-      split_list_by_page: 1
+      split_list_by_page: 1,
+      fetch_scam_token_toggle: 2
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -42,13 +43,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
+  alias Explorer.Chain.Cache.Counters.{NewPendingTransactionsCount, Transactions24hCount}
   alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
-  alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
   alias Indexer.Fetcher.OnDemand.NeonSolanaTransactions, as: NeonSolanaTransactions
 
@@ -174,8 +175,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            Chain.preload_token_transfers(
              transaction,
              @token_transfers_in_transaction_necessity_by_association,
-             @api_true,
-             false
+             @api_true |> fetch_scam_token_toggle(conn)
            ) do
       conn
       |> put_status(200)
@@ -477,6 +477,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         |> Keyword.merge(paging_options)
         |> Keyword.merge(token_transfers_types_options(params))
         |> Keyword.merge(@api_true)
+        |> fetch_scam_token_toggle(conn)
 
       results =
         transaction_hash
@@ -683,10 +684,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   def stats(conn, _params) do
-    transactions_count = Transactions24hStats.fetch_count(@api_true)
-    pending_transactions_count = FreshPendingTransactionsCounter.fetch(@api_true)
-    transaction_fees_sum = Transactions24hStats.fetch_fee_sum(@api_true)
-    transaction_fees_avg = Transactions24hStats.fetch_fee_average(@api_true)
+    transactions_count = Transactions24hCount.fetch_count(@api_true)
+    pending_transactions_count = NewPendingTransactionsCount.fetch(@api_true)
+    transaction_fees_sum = Transactions24hCount.fetch_fee_sum(@api_true)
+    transaction_fees_avg = Transactions24hCount.fetch_fee_average(@api_true)
 
     conn
     |> put_status(200)

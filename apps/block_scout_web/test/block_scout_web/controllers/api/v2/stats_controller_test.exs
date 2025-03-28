@@ -1,11 +1,11 @@
 defmodule BlockScoutWeb.API.V2.StatsControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
+  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
 
   describe "/stats" do
     setup do
-      start_supervised!(AddressesCounter)
+      start_supervised!(AddressesCount)
       start_supervised!(AverageBlockTime)
 
       Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)

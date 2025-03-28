@@ -146,16 +146,16 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_output(output), do: output
 
   # credo:disable-for-next-line
-  def prepare_smart_contract(
-        %Address{smart_contract: %SmartContract{} = smart_contract, proxy_implementations: implementations} = address,
-        _conn
-      ) do
+  defp prepare_smart_contract(
+         %Address{smart_contract: %SmartContract{} = smart_contract, proxy_implementations: implementations} = address,
+         _conn
+       ) do
     smart_contract_verified = APIV2Helper.smart_contract_verified?(address)
 
     bytecode_twin_contract =
       if smart_contract_verified,
         do: nil,
-        else: SmartContract.get_address_verified_bytecode_twin_contract(address.hash, @api_true)
+        else: address.smart_contract
 
     additional_sources =
       get_additional_sources(
@@ -177,7 +177,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     # don't return verified_bytecode_twin_address_hash if smart contract is verified or minimal proxy
     verified_bytecode_twin_address_hash =
       (!smart_contract_verified && !minimal_proxy? &&
-         bytecode_twin_contract && Address.checksum(bytecode_twin_contract.address_hash)) || nil
+         bytecode_twin_contract && Address.checksum(bytecode_twin_contract.verified_bytecode_twin_address_hash)) || nil
 
     smart_contract_verified_via_sourcify = smart_contract_verified && smart_contract.verified_via_sourcify
 
@@ -231,7 +231,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     )
   end
 
-  def prepare_smart_contract(%Address{proxy_implementations: implementations} = address, _conn) do
+  defp prepare_smart_contract(%Address{proxy_implementations: implementations} = address, _conn) do
     %{
       "proxy_type" => implementations && implementations.proxy_type,
       "implementations" => Proxy.proxy_object_info(implementations)

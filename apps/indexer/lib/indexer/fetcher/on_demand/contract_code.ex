@@ -11,8 +11,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   import EthereumJSONRPC, only: [fetch_codes: 2]
 
   alias Explorer.Chain.Address
+  alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Counters.Helper
   alias Explorer.Utility.AddressContractCodeFetchAttempt
 
   @max_delay :timer.hours(168)

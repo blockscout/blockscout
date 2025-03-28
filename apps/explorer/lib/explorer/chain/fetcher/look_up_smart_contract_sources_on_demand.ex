@@ -1,6 +1,7 @@
 defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   @moduledoc """
-    On demand fetcher sources for unverified smart contract from [Ethereum Bytecode DB](https://github.com/blockscout/blockscout-rs/tree/main/eth-bytecode-db/eth-bytecode-db)
+    On demand fetcher sources for unverified smart contract from
+    [Ethereum Bytecode DB](https://github.com/blockscout/blockscout-rs/tree/main/eth-bytecode-db/eth-bytecode-db)
   """
 
   use GenServer
