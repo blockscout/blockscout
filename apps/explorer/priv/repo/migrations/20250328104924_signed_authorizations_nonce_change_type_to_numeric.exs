@@ -1,4 +1,4 @@
-defmodule :"Elixir.Explorer.Repo.Migrations.SignedAuthorizationsNonceChangeTypeToBigint" do
+defmodule :"Elixir.Explorer.Repo.Migrations.SignedAuthorizationsNonceChangeTypeToNumeric" do
   use Ecto.Migration
 
   def up do
