@@ -52,15 +52,15 @@ defmodule Explorer.ExchangeRates.Source do
   end
 
   @spec fetch_token_hashes_with_market_data :: {:ok, [String.t()]} | {:error, any}
-  def fetch_token_hashes_with_market_data do
-    source_url = CoinGecko.source_url(:coins_list)
-    headers = CoinGecko.headers()
+  def fetch_token_hashes_with_market_data(source \\ exchange_rates_source()) do
+    source_url = source.source_url(:coins_list)
+    headers = source.headers()
 
     case http_request(source_url, headers) do
       {:ok, result} ->
         {:ok,
          result
-         |> CoinGecko.format_data()}
+         |> source.format_data()}
 
       resp ->
         resp
