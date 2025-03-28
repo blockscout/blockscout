@@ -2,10 +2,25 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+    only: [
+      fetch_scam_token_toggle: 2,
+      next_page_params: 4,
+      split_list_by_page: 1
+    ]
 
   import BlockScoutWeb.PagingHelper,
-    only: [current_filter: 1, delete_parameters_from_next_page_params: 1, search_query: 1, smart_contracts_sorting: 1]
+    only: [
+      current_filter: 1,
+      delete_parameters_from_next_page_params: 1,
+      search_query: 1
+    ]
+
+  import Explorer.PagingOptions,
+    only: [
+      default_paging_options: 0
+    ]
+
+  import Explorer.Helper, only: [parse_integer: 1]
 
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
   alias Explorer.Chain
@@ -20,6 +35,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       :contracts_creation_internal_transaction => :optional,
       [smart_contract: :smart_contract_additional_sources] => :optional,
       :contracts_creation_transaction => :optional
+    },
+    api?: true
+  ]
+
+  @verified_smart_contract_addresses_options [
+    necessity_by_association: %{
+      [:token, :names, :proxy_implementations] => :optional
     },
     api?: true
   ]
@@ -72,29 +94,111 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   def smart_contracts_list(conn, params) do
     full_options =
-      [
-        necessity_by_association: %{
-          [address: [:token, :names, :proxy_implementations]] => :optional,
-          address: :required
-        }
-      ]
-      |> Keyword.merge(paging_options(params))
+      @verified_smart_contract_addresses_options
       |> Keyword.merge(current_filter(params))
       |> Keyword.merge(search_query(params))
-      |> Keyword.merge(smart_contracts_sorting(params))
-      |> Keyword.merge(@api_true)
+      |> Keyword.merge(smart_contract_addresses_paging_options(params))
+      |> Keyword.merge(smart_contract_addresses_sorting(params))
+      |> fetch_scam_token_toggle(conn)
 
-    smart_contracts_plus_one = SmartContract.verified_contracts(full_options)
-    {smart_contracts, next_page} = split_list_by_page(smart_contracts_plus_one)
+    addresses_plus_one = SmartContract.verified_contract_addresses(full_options)
+    {addresses, next_page} = split_list_by_page(addresses_plus_one)
 
     next_page_params =
       next_page
-      |> next_page_params(smart_contracts, delete_parameters_from_next_page_params(params))
+      |> next_page_params(
+        addresses,
+        delete_parameters_from_next_page_params(params),
+        &smart_contract_addresses_paging_params/1
+      )
 
     conn
     |> put_status(200)
-    |> render(:smart_contracts, %{smart_contracts: smart_contracts, next_page_params: next_page_params})
+    |> render(:smart_contracts, %{
+      addresses: addresses,
+      next_page_params: next_page_params
+    })
   end
+
+  @doc """
+  Builds paging options for smart contract addresses based on request
+  parameters.
+
+  ## Returns
+  If 'hash', 'transaction_count', and 'coin_balance' parameters are provided,
+  uses them as pagination keys. Otherwise, returns default paging options.
+
+  ## Examples
+      iex> smart_contract_addresses_paging_options(%{"hash" => "0x123...", "transaction_count" => "100", "coin_balance" => "1000"})
+      [paging_options: %{key: %{hash: ..., transactions_count: 100, fetched_coin_balance: 1000}}]
+  """
+  @spec smart_contract_addresses_paging_options(%{required(String.t()) => String.t()}) ::
+          [paging_options: map()]
+  def smart_contract_addresses_paging_options(params) do
+    options =
+      with %{"hash" => hash_string} <- params,
+           {:ok, address_hash} <- Chain.string_to_address_hash(hash_string) do
+        transactions_count = parse_integer(params["transaction_count"])
+        coin_balance = parse_integer(params["coin_balance"])
+
+        %{
+          key: %{
+            hash: address_hash,
+            transactions_count: transactions_count,
+            fetched_coin_balance: coin_balance
+          }
+        }
+      else
+        _ -> %{}
+      end
+
+    [paging_options: default_paging_options() |> Map.merge(options)]
+  end
+
+  @doc """
+  Extracts pagination parameters from an Address struct for use in the next page
+  URL.
+
+  ## Returns
+  A map with string keys that can be used as query parameters.
+
+  ## Examples
+      iex> address = %Explorer.Chain.Address{hash: "0x123...", transactions_count: 100, fetched_coin_balance: 1000}
+      iex> smart_contract_addresses_paging_params(address)
+      %{"hash" => "0x123...", "transaction_count" => 100, "coin_balance" => 1000}
+  """
+  @spec smart_contract_addresses_paging_params(Explorer.Chain.Address.t()) :: %{
+          required(String.t()) => any()
+        }
+  def smart_contract_addresses_paging_params(%Explorer.Chain.Address{
+        hash: address_hash,
+        transactions_count: transactions_count,
+        fetched_coin_balance: coin_balance
+      }) do
+    %{
+      "hash" => address_hash,
+      "transaction_count" => transactions_count,
+      "coin_balance" => coin_balance
+    }
+  end
+
+  @spec smart_contract_addresses_sorting(%{required(String.t()) => String.t()}) :: [
+          {:sorting, list()}
+        ]
+  defp smart_contract_addresses_sorting(%{"sort" => sort_field, "order" => order}) do
+    sorting =
+      case {sort_field, order} do
+        {"balance", "asc"} -> [{:asc_nulls_first, :fetched_coin_balance}]
+        {"balance", "desc"} -> [{:desc_nulls_last, :fetched_coin_balance}]
+        {"transactions_count", "asc"} -> [{:asc_nulls_first, :transactions_count}]
+        {"transactions_count", "desc"} -> [{:desc_nulls_last, :transactions_count}]
+        _ -> []
+      end
+
+    [sorting: sorting]
+  end
+
+  defp smart_contract_addresses_sorting(_), do: []
 
   @doc """
     POST /api/v2/smart-contracts/{address_hash}/audit-reports

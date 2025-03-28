@@ -44,6 +44,12 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_token_transfers_block_number_index_finished,
     key: :heavy_indexes_drop_internal_transactions_from_address_hash_index_finished,
     key: :heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished,
+    key: :heavy_indexes_create_addresses_verified_index_finished,
+    key: :heavy_indexes_create_addresses_verified_hash_index_finished,
+    key: :heavy_indexes_create_addresses_verified_transactions_count_desc_hash_index_finished,
+    key: :heavy_indexes_create_addresses_verified_fetched_coin_balance_desc_hash_index_finished,
+    key: :heavy_indexes_create_smart_contracts_language_index_finished,
+    key: :heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished,
     key: :heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished,
     key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_finished,
     key: :heavy_indexes_drop_transactions_from_address_hash_with_pending_index_finished,
@@ -63,11 +69,15 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   }
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
+    CreateAddressesVerifiedHashIndex,
+    CreateAddressesVerifiedTransactionsCountDescHashIndex,
     CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
     CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
     CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
     CreateLogsBlockHashIndex,
+    CreateSmartContractsLanguageIndex,
     DropInternalTransactionsFromAddressHashIndex,
     DropLogsAddressHashIndex,
     DropLogsAddressHashTransactionHashIndex,
@@ -222,6 +232,34 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     start_migration_status_task(
       CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
       &set_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_addresses_verified_hash_index_finished) do
+    start_migration_status_task(
+      CreateAddressesVerifiedHashIndex,
+      &set_heavy_indexes_create_addresses_verified_hash_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_addresses_verified_transactions_count_desc_hash_index_finished) do
+    start_migration_status_task(
+      CreateAddressesVerifiedTransactionsCountDescHashIndex,
+      &set_heavy_indexes_create_addresses_verified_transactions_count_desc_hash_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_addresses_verified_fetched_coin_balance_desc_hash_index_finished) do
+    start_migration_status_task(
+      CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
+      &set_heavy_indexes_create_addresses_verified_fetched_coin_balance_desc_hash_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_smart_contracts_language_index_finished) do
+    start_migration_status_task(
+      CreateSmartContractsLanguageIndex,
+      &set_heavy_indexes_create_smart_contracts_language_index_finished/1
     )
   end
 

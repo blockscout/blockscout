@@ -18,8 +18,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   @api_true [api?: true]
 
-  def render("smart_contracts.json", %{smart_contracts: smart_contracts, next_page_params: next_page_params}) do
-    %{"items" => Enum.map(smart_contracts, &prepare_smart_contract_for_list/1), "next_page_params" => next_page_params}
+  def render("smart_contracts.json", %{addresses: addresses, next_page_params: next_page_params}) do
+    %{
+      "items" => Enum.map(addresses, &prepare_smart_contract_address_for_list/1),
+      "next_page_params" => next_page_params
+    }
   end
 
   def render("smart_contract.json", %{address: address, conn: conn}) do
@@ -291,27 +294,23 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     }
   end
 
-  defp prepare_smart_contract_for_list(%SmartContract{} = smart_contract) do
-    token = smart_contract.address.token
-
+  defp prepare_smart_contract_address_for_list(
+         %Address{
+           smart_contract: %SmartContract{} = smart_contract,
+           token: token
+         } = address
+       ) do
     smart_contract_info =
       %{
-        "address" =>
-          APIV2Helper.address_with_info(
-            nil,
-            %Address{smart_contract.address | smart_contract: smart_contract},
-            smart_contract.address.hash,
-            false
-          ),
+        "address" => APIV2Helper.address_with_info(nil, address, address.hash, false),
         "compiler_version" => smart_contract.compiler_version,
         "optimization_enabled" => smart_contract.optimization,
-        "transaction_count" => smart_contract.address.transactions_count,
+        "transaction_count" => address.transactions_count,
         "language" => SmartContract.language(smart_contract),
         "verified_at" => smart_contract.inserted_at,
         "market_cap" => token && token.circulating_market_cap,
         "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
-        "coin_balance" =>
-          if(smart_contract.address.fetched_coin_balance, do: smart_contract.address.fetched_coin_balance.value),
+        "coin_balance" => if(address.fetched_coin_balance, do: address.fetched_coin_balance.value),
         "license_type" => smart_contract.license_type,
         "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false)
       }

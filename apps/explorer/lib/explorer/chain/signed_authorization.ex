@@ -51,7 +51,7 @@ defmodule Explorer.Chain.SignedAuthorization do
     field(:index, :integer, primary_key: true, null: false)
     field(:chain_id, :integer, null: false)
     field(:address, Hash.Address, null: false)
-    field(:nonce, :integer, null: false)
+    field(:nonce, :decimal, null: false)
     field(:r, :decimal, null: false)
     field(:s, :decimal, null: false)
     field(:v, :integer, null: false)

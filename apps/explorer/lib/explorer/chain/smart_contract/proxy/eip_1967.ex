@@ -11,7 +11,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   # 5c60da1b = keccak256(implementation())
   @implementation_signature "5c60da1b"
 
+  # obtained as bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)
   @storage_slot_logic_contract_address "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+  # obtained as bytes32(uint256(keccak256('eip1967.proxy.beacon')) - 1)
   @storage_slot_beacon_contract_address "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50"
 
   # to be precise, it is not the part of the EIP-1967 standard, but still uses the same pattern

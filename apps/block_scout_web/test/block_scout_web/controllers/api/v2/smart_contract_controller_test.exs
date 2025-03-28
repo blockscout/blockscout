@@ -6,13 +6,32 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
   alias BlockScoutWeb.AddressContractView
   alias Explorer.Chain.{Address, SmartContract}
-  alias Explorer.Account.Identity
   alias Explorer.TestHelper
   alias Plug.Conn
 
   setup :set_mox_from_context
 
   setup :verify_on_exit!
+
+  setup_all do
+    # Create the mock safely with try-catch to avoid errors if already mocked
+    try do
+      :meck.new(Explorer.Chain.SmartContract, [:passthrough])
+    catch
+      :error, {:already_started, _pid} -> :ok
+    end
+
+    on_exit(fn ->
+      try do
+        :meck.unload(Explorer.Chain.SmartContract)
+      catch
+        # Ignore any errors when unloading
+        _, _ -> :ok
+      end
+    end)
+
+    :ok
+  end
 
   describe "/smart-contracts/{address_hash}" do
     test "get 404 on non existing SC", %{conn: conn} do
@@ -1561,198 +1580,217 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
   end
 
-  describe "/smart-contracts" do
-    test "get [] on empty db", %{conn: conn} do
-      request = get(conn, "/api/v2/smart-contracts")
+  for {state_name, migrations_finished?} <- [
+        {"completed migrations", true},
+        {"migrations in progress", false}
+      ] do
+    describe "/smart-contracts" <> " (with #{state_name})" do
+      setup do
+        :meck.expect(
+          Explorer.Chain.SmartContract,
+          :background_migrations_finished?,
+          fn ->
+            unquote(migrations_finished?)
+          end
+        )
 
-      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
-    end
-
-    test "get correct smart contract", %{conn: conn} do
-      smart_contract = insert(:smart_contract)
-      request = get(conn, "/api/v2/smart-contracts")
-
-      assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
-      compare_item(smart_contract, sc)
-      assert sc["address"]["is_verified"] == true
-      assert sc["address"]["is_contract"] == true
-    end
-
-    test "get filtered smart contracts when flag is set and language is not set", %{conn: conn} do
-      smart_contracts = [
-        {"solidity", insert(:smart_contract, is_vyper_contract: false, language: nil)},
-        {"vyper", insert(:smart_contract, is_vyper_contract: true, language: nil)},
-        {"yul", insert(:smart_contract, abi: nil, is_vyper_contract: false, language: nil)}
-      ]
-
-      for {filter, smart_contract} <- smart_contracts do
-        request = get(conn, "/api/v2/smart-contracts", %{"filter" => filter})
-
-        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
-        compare_item(smart_contract, sc)
-        assert sc["address"]["is_verified"] == true
-        assert sc["address"]["is_contract"] == true
-      end
-    end
-
-    test "get filtered smart contracts when flag is set and language is set", %{conn: conn} do
-      smart_contract = insert(:smart_contract, is_vyper_contract: true, language: :vyper)
-      insert(:smart_contract, is_vyper_contract: false, language: :solidity)
-      request = get(conn, "/api/v2/smart-contracts", %{"filter" => "vyper"})
-
-      assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
-      compare_item(smart_contract, sc)
-      assert sc["address"]["is_verified"] == true
-      assert sc["address"]["is_contract"] == true
-    end
-
-    test "get filtered smart contracts when flag is not set and language is set", %{conn: conn} do
-      smart_contract = insert(:smart_contract, is_vyper_contract: nil, abi: nil, language: :yul)
-      insert(:smart_contract, is_vyper_contract: nil, language: :vyper)
-      insert(:smart_contract, is_vyper_contract: nil, language: :solidity)
-      request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
-
-      assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
-      compare_item(smart_contract, sc)
-      assert sc["address"]["is_verified"] == true
-      assert sc["address"]["is_contract"] == true
-    end
-
-    if Application.compile_env(:explorer, :chain_type) == :zilliqa do
-      test "get filtered scilla smart contracts when language is set", %{conn: conn} do
-        smart_contract = insert(:smart_contract, language: :scilla, abi: nil)
-        insert(:smart_contract)
-        request = get(conn, "/api/v2/smart-contracts", %{"filter" => "scilla"})
-
-        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
-        compare_item(smart_contract, sc)
-        assert sc["address"]["is_verified"] == true
-        assert sc["address"]["is_contract"] == true
+        :ok
       end
 
-      test "scilla contracts are not returned when yul filter is applied", %{conn: conn} do
-        insert(:smart_contract, language: :scilla, abi: nil)
-        request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
+      test "get [] on empty db", %{conn: conn} do
+        request = get(conn, "/api/v2/smart-contracts")
 
         assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
       end
-    end
 
-    test "check pagination", %{conn: conn} do
-      smart_contracts =
-        for _ <- 0..50 do
+      test "get correct smart contract", %{conn: conn} do
+        smart_contract = insert(:smart_contract)
+        request = get(conn, "/api/v2/smart-contracts")
+
+        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+        compare_item(smart_contract, sc)
+        assert sc["address"]["is_verified"] == true
+        assert sc["address"]["is_contract"] == true
+      end
+
+      test "get filtered smart contracts when flag is set and language is not set", %{conn: conn} do
+        smart_contracts = [
+          {"solidity", insert(:smart_contract, is_vyper_contract: false, language: nil)},
+          {"vyper", insert(:smart_contract, is_vyper_contract: true, language: nil)},
+          {"yul", insert(:smart_contract, abi: nil, is_vyper_contract: false, language: nil)}
+        ]
+
+        for {filter, smart_contract} <- smart_contracts do
+          request = get(conn, "/api/v2/smart-contracts", %{"filter" => filter})
+
+          assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+          compare_item(smart_contract, sc)
+          assert sc["address"]["is_verified"] == true
+          assert sc["address"]["is_contract"] == true
+        end
+      end
+
+      test "get filtered smart contracts when flag is set and language is set", %{conn: conn} do
+        smart_contract = insert(:smart_contract, is_vyper_contract: true, language: :vyper)
+        insert(:smart_contract, is_vyper_contract: false, language: :solidity)
+        request = get(conn, "/api/v2/smart-contracts", %{"filter" => "vyper"})
+
+        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+        compare_item(smart_contract, sc)
+        assert sc["address"]["is_verified"] == true
+        assert sc["address"]["is_contract"] == true
+      end
+
+      test "get filtered smart contracts when flag is not set and language is set", %{conn: conn} do
+        smart_contract = insert(:smart_contract, is_vyper_contract: nil, abi: nil, language: :yul)
+        insert(:smart_contract, is_vyper_contract: nil, language: :vyper)
+        insert(:smart_contract, is_vyper_contract: nil, language: :solidity)
+        request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
+
+        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+        compare_item(smart_contract, sc)
+        assert sc["address"]["is_verified"] == true
+        assert sc["address"]["is_contract"] == true
+      end
+
+      if Application.compile_env(:explorer, :chain_type) == :zilliqa do
+        test "get filtered scilla smart contracts when language is set", %{conn: conn} do
+          smart_contract = insert(:smart_contract, language: :scilla, abi: nil)
           insert(:smart_contract)
+          request = get(conn, "/api/v2/smart-contracts", %{"filter" => "scilla"})
+
+          assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+          compare_item(smart_contract, sc)
+          assert sc["address"]["is_verified"] == true
+          assert sc["address"]["is_contract"] == true
         end
 
-      request = get(conn, "/api/v2/smart-contracts")
-      assert response = json_response(request, 200)
+        test "scilla contracts are not returned when yul filter is applied", %{conn: conn} do
+          insert(:smart_contract, language: :scilla, abi: nil)
+          request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
 
-      request_2nd_page = get(conn, "/api/v2/smart-contracts", response["next_page_params"])
-
-      assert response_2nd_page = json_response(request_2nd_page, 200)
-
-      check_paginated_response(response, response_2nd_page, smart_contracts)
-    end
-
-    test "ignores wrong ordering params", %{conn: conn} do
-      smart_contracts =
-        for _ <- 0..50 do
-          insert(:smart_contract)
+          assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
         end
+      end
 
-      ordering_params = %{"sort" => "foo", "order" => "bar"}
+      test "check pagination", %{conn: conn} do
+        smart_contracts =
+          for _ <- 0..50 do
+            insert(:smart_contract)
+          end
+          |> Enum.sort_by(& &1.address_hash.bytes, :desc)
 
-      request = get(conn, "/api/v2/smart-contracts", ordering_params)
-      assert response = json_response(request, 200)
+        request = get(conn, "/api/v2/smart-contracts")
+        assert response = json_response(request, 200)
 
-      request_2nd_page =
-        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+        request_2nd_page = get(conn, "/api/v2/smart-contracts", response["next_page_params"])
 
-      assert response_2nd_page = json_response(request_2nd_page, 200)
+        assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, smart_contracts)
-    end
+        check_paginated_response(response, response_2nd_page, smart_contracts)
+      end
 
-    test "can order by balance ascending", %{conn: conn} do
-      smart_contracts =
-        for i <- 0..50 do
-          address = insert(:address, fetched_coin_balance: i)
-          insert(:smart_contract, address_hash: address.hash, address: address)
-        end
-        |> Enum.reverse()
+      test "ignores wrong ordering params", %{conn: conn} do
+        smart_contracts =
+          for _ <- 0..50 do
+            insert(:smart_contract)
+          end
+          |> Enum.sort_by(& &1.address_hash.bytes, :desc)
 
-      ordering_params = %{"sort" => "balance", "order" => "asc"}
+        ordering_params = %{"sort" => "foo", "order" => "bar"}
 
-      request = get(conn, "/api/v2/smart-contracts", ordering_params)
-      assert response = json_response(request, 200)
+        request = get(conn, "/api/v2/smart-contracts", ordering_params)
+        assert response = json_response(request, 200)
 
-      request_2nd_page =
-        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+        request_2nd_page =
+          get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
 
-      assert response_2nd_page = json_response(request_2nd_page, 200)
+        assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, smart_contracts)
-    end
+        check_paginated_response(response, response_2nd_page, smart_contracts)
+      end
 
-    test "can order by balance descending", %{conn: conn} do
-      smart_contracts =
-        for i <- 0..50 do
-          address = insert(:address, fetched_coin_balance: i)
-          insert(:smart_contract, address_hash: address.hash, address: address)
-        end
+      test "can order by balance ascending", %{conn: conn} do
+        smart_contracts =
+          for i <- 0..50 do
+            address = insert(:address, fetched_coin_balance: i, verified: true)
+            insert(:smart_contract, address_hash: address.hash, address: address)
+          end
+          |> Enum.reverse()
 
-      ordering_params = %{"sort" => "balance", "order" => "desc"}
+        ordering_params = %{"sort" => "balance", "order" => "asc"}
 
-      request = get(conn, "/api/v2/smart-contracts", ordering_params)
-      assert response = json_response(request, 200)
+        request = get(conn, "/api/v2/smart-contracts", ordering_params)
+        assert response = json_response(request, 200)
 
-      request_2nd_page =
-        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+        request_2nd_page =
+          get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
 
-      assert response_2nd_page = json_response(request_2nd_page, 200)
+        assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, smart_contracts)
-    end
+        check_paginated_response(response, response_2nd_page, smart_contracts)
+      end
 
-    test "can order by transaction count ascending", %{conn: conn} do
-      smart_contracts =
-        for i <- 0..50 do
-          address = insert(:address, transactions_count: i)
-          insert(:smart_contract, address_hash: address.hash, address: address)
-        end
-        |> Enum.reverse()
+      test "can order by balance descending", %{conn: conn} do
+        smart_contracts =
+          for i <- 0..50 do
+            address = insert(:address, fetched_coin_balance: i, verified: true)
+            insert(:smart_contract, address_hash: address.hash, address: address)
+          end
 
-      ordering_params = %{"sort" => "transactions_count", "order" => "asc"}
+        ordering_params = %{"sort" => "balance", "order" => "desc"}
 
-      request = get(conn, "/api/v2/smart-contracts", ordering_params)
-      assert response = json_response(request, 200)
+        request = get(conn, "/api/v2/smart-contracts", ordering_params)
+        assert response = json_response(request, 200)
 
-      request_2nd_page =
-        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+        request_2nd_page =
+          get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
 
-      assert response_2nd_page = json_response(request_2nd_page, 200)
+        assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, smart_contracts)
-    end
+        check_paginated_response(response, response_2nd_page, smart_contracts)
+      end
 
-    test "can order by transaction count descending", %{conn: conn} do
-      smart_contracts =
-        for i <- 0..50 do
-          address = insert(:address, transactions_count: i)
-          insert(:smart_contract, address_hash: address.hash, address: address)
-        end
+      test "can order by transaction count ascending", %{conn: conn} do
+        smart_contracts =
+          for i <- 0..50 do
+            address = insert(:address, transactions_count: i, verified: true)
+            insert(:smart_contract, address_hash: address.hash, address: address)
+          end
+          |> Enum.reverse()
 
-      ordering_params = %{"sort" => "transactions_count", "order" => "desc"}
+        ordering_params = %{"sort" => "transactions_count", "order" => "asc"}
 
-      request = get(conn, "/api/v2/smart-contracts", ordering_params)
-      assert response = json_response(request, 200)
+        request = get(conn, "/api/v2/smart-contracts", ordering_params)
+        assert response = json_response(request, 200)
 
-      request_2nd_page =
-        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+        request_2nd_page =
+          get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
 
-      assert response_2nd_page = json_response(request_2nd_page, 200)
+        assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, smart_contracts)
+        check_paginated_response(response, response_2nd_page, smart_contracts)
+      end
+
+      test "can order by transaction count descending", %{conn: conn} do
+        smart_contracts =
+          for i <- 0..50 do
+            address = insert(:address, transactions_count: i, verified: true)
+            insert(:smart_contract, address_hash: address.hash, address: address)
+          end
+
+        ordering_params = %{"sort" => "transactions_count", "order" => "desc"}
+
+        request = get(conn, "/api/v2/smart-contracts", ordering_params)
+        assert response = json_response(request, 200)
+
+        request_2nd_page =
+          get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+
+        assert response_2nd_page = json_response(request_2nd_page, 200)
+
+        check_paginated_response(response, response_2nd_page, smart_contracts)
+      end
     end
   end
 
@@ -1789,30 +1827,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     assert Enum.count(second_page_resp["items"]) == 1
     assert second_page_resp["next_page_params"] == nil
     compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
-  end
-
-  defp blockchain_eth_call_mock do
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn [%{id: id, method: "eth_call", params: _params}], _opts ->
-        {:ok,
-         [
-           %{
-             id: id,
-             jsonrpc: "2.0",
-             result: "0x000000000000000000000000fffffffffffffffffffffffffffffffffffffffe"
-           }
-         ]}
-      end
-    )
-  end
-
-  defp mock_logic_storage_pointer_request(error?, address_hash) do
-    response = "0x000000000000000000000000#{address_hash |> to_string() |> String.replace("0x", "")}"
-
-    EthereumJSONRPC.Mox
-    |> TestHelper.mock_logic_storage_pointer_request(error?, response)
   end
 
   defp prepare_implementation(items) when is_list(items) do
