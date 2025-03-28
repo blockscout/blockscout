@@ -266,7 +266,7 @@ defmodule Explorer.Application do
         ),
         configure_mode_dependent_process(Explorer.Migrator.BackfillMetadataURL, :indexer),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositWithdrawalIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndex,
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),

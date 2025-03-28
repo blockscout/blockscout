@@ -77,7 +77,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
     CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
     CreateLogsBlockHashIndex,
-    CreateLogsDepositWithdrawalIndex,
+    CreateLogsDepositsWithdrawalsIndex,
     CreateSmartContractsLanguageIndex,
     DropInternalTransactionsFromAddressHashIndex,
     DropLogsAddressHashIndex,
@@ -287,7 +287,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
 
   defp handle_fallback(:heavy_indexes_create_logs_deposits_withdrawals_index_finished) do
     start_migration_status_task(
-      CreateLogsDepositWithdrawalIndex,
+      CreateLogsDepositsWithdrawalsIndex,
       &set_heavy_indexes_create_logs_deposits_withdrawals_index_finished/1
     )
   end
