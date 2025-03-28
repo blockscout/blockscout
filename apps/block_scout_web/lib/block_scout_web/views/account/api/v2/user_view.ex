@@ -111,7 +111,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
       "address_hash" => watchlist.address_hash,
       "name" => watchlist.name,
       "address_balance" => if(address && address.fetched_coin_balance, do: address.fetched_coin_balance.value),
-      "exchange_rate" => exchange_rate.usd_value,
+      "exchange_rate" => exchange_rate.fiat_value,
       "notification_settings" => %{
         "native" => %{
           "incoming" => watchlist.watch_coin_input,

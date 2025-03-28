@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
 
   import BlockScoutWeb.Routers.WebRouter.Helpers, only: [transaction_token_transfer_path: 3]
 
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Market.Token
   alias Explorer.TestHelper
 
   setup :verify_on_exit!
