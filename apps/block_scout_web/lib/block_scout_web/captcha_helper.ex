@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
       )[:scoped_bypass_tokens][scope]
 
     if valid_bypass_token?(bypass_token, given_bypass_token) do
-      Logger.warning("reCAPTCHA scoped bypass token used", scope: scope)
+      Logger.warning("reCAPTCHA scoped bypass token used for scope: #{scope}")
       true
     else
       false
