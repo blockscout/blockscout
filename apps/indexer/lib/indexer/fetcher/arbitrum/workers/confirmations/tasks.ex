@@ -66,6 +66,38 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
 
   require Logger
 
+  @type new_confirmations_data_map :: %{
+          :start_block => non_neg_integer()
+        }
+
+  @type historical_confirmations_data_map :: %{
+          :start_block => nil | non_neg_integer(),
+          :end_block => nil | non_neg_integer(),
+          optional(:lowest_l1_block_for_confirmations) => non_neg_integer()
+        }
+
+  @typep confirmations_related_state :: %{
+           :config => %{
+             :l1_outbox_address => binary(),
+             :l1_rollup_init_block => non_neg_integer(),
+             :l1_rpc => %{
+               :finalized_confirmations => boolean(),
+               :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+               :logs_block_range => non_neg_integer(),
+               optional(any()) => any()
+             },
+             :l1_start_block => non_neg_integer(),
+             :rollup_first_block => non_neg_integer(),
+             optional(any()) => any()
+           },
+           :task_data => %{
+             :new_confirmations => new_confirmations_data_map(),
+             :historical_confirmations => historical_confirmations_data_map(),
+             optional(any()) => any()
+           },
+           optional(any()) => any()
+         }
+
   @doc """
     Discovers and processes new confirmations of rollup blocks within a calculated block range.
 
@@ -103,35 +135,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     - `{:confirmation_missed, new_state}`: If a confirmation is missed and further
       action is needed.
   """
-  @spec check_new(%{
-          :config => %{
-            :l1_outbox_address => binary(),
-            :l1_rpc => %{
-              :finalized_confirmations => boolean(),
-              :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
-              :logs_block_range => non_neg_integer(),
-              optional(any()) => any()
-            },
-            :rollup_first_block => non_neg_integer(),
-            optional(any()) => any()
-          },
-          :data => %{
-            :new_confirmations_start_block => non_neg_integer(),
-            :historical_confirmations_end_block => non_neg_integer(),
-            optional(any()) => any()
-          },
-          optional(any()) => any()
-        }) ::
-          {:ok | :confirmation_missed,
-           %{
-             :data => %{
-               :new_confirmations_start_block => non_neg_integer(),
-               :historical_confirmations_end_block => nil | non_neg_integer(),
-               :historical_confirmations_start_block => nil | non_neg_integer(),
-               optional(any()) => any()
-             },
-             optional(any()) => any()
-           }}
+  @spec check_new(confirmations_related_state()) :: {:ok | :confirmation_missed, confirmations_related_state()}
   def check_new(
         %{
           config: %{
@@ -139,9 +143,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
             l1_outbox_address: outbox_address,
             rollup_first_block: rollup_first_block
           },
-          data: %{
-            new_confirmations_start_block: start_block,
-            historical_confirmations_end_block: historical_confirmations_end_block
+          task_data: %{
+            new_confirmations: %{
+              start_block: start_block
+            },
+            historical_confirmations: %{
+              end_block: historical_confirmations_end_block
+            }
           }
         } = state
       ) do
@@ -224,42 +232,23 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
 
   # Updates the state for the next iteration of new confirmations discovery.
   @spec state_for_next_iteration_new(
-          %{
-            :data => map(),
-            optional(any()) => any()
-          },
+          confirmations_related_state(),
           non_neg_integer(),
           nil | {non_neg_integer(), non_neg_integer()}
-        ) ::
-          %{
-            :data => %{
-              :new_confirmations_start_block => non_neg_integer(),
-              :historical_confirmations_end_block => non_neg_integer(),
-              :historical_confirmations_start_block => non_neg_integer(),
-              optional(any()) => any()
-            },
-            optional(any()) => any()
-          }
+        ) :: confirmations_related_state()
   defp state_for_next_iteration_new(prev_state, start_block, historical_blocks \\ nil) do
-    data_for_new_confirmations =
-      %{new_confirmations_start_block: start_block}
-
-    data_to_update =
+    historical_confirmations_next_iteration =
       case historical_blocks do
         nil ->
-          data_for_new_confirmations
+          %{}
 
         {start_block, end_block} ->
-          Map.merge(data_for_new_confirmations, %{
-            historical_confirmations_start_block: start_block,
-            historical_confirmations_end_block: end_block
-          })
+          %{start_block: start_block, end_block: end_block}
       end
 
-    %{
-      prev_state
-      | data: Map.merge(prev_state.data, data_to_update)
-    }
+    prev_state
+    |> ArbitrumHelper.update_fetcher_task_data(:new_confirmations, %{start_block: start_block})
+    |> ArbitrumHelper.update_fetcher_task_data(:historical_confirmations, historical_confirmations_next_iteration)
   end
 
   @doc """
@@ -291,36 +280,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
   - `{:confirmation_missed, new_state}`: If a confirmation is missed and further
   action is needed.
   """
-  @spec check_unprocessed(%{
-          :config => %{
-            :l1_outbox_address => binary(),
-            :l1_rollup_init_block => non_neg_integer(),
-            :l1_rpc => %{
-              :finalized_confirmations => boolean(),
-              :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
-              :logs_block_range => non_neg_integer(),
-              optional(any()) => any()
-            },
-            :l1_start_block => non_neg_integer(),
-            :rollup_first_block => non_neg_integer(),
-            optional(any()) => any()
-          },
-          :data => %{
-            :historical_confirmations_end_block => nil | non_neg_integer(),
-            :historical_confirmations_start_block => nil | non_neg_integer(),
-            optional(any()) => any()
-          },
-          optional(any()) => any()
-        }) ::
-          {:ok | :confirmation_missed,
-           %{
-             :data => %{
-               :historical_confirmations_end_block => nil | non_neg_integer(),
-               :historical_confirmations_start_block => nil | non_neg_integer(),
-               optional(any()) => any()
-             },
-             optional(any()) => any()
-           }}
+  @spec check_unprocessed(confirmations_related_state()) :: {:ok | :confirmation_missed, confirmations_related_state()}
   def check_unprocessed(
         %{
           config: %{
@@ -329,9 +289,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
             l1_start_block: l1_start_block,
             rollup_first_block: rollup_first_block
           },
-          data: %{
-            historical_confirmations_end_block: expected_confirmation_end_block,
-            historical_confirmations_start_block: expected_confirmation_start_block
+          task_data: %{
+            historical_confirmations: %{
+              end_block: expected_confirmation_end_block,
+              start_block: expected_confirmation_start_block
+            }
           }
         } = state
       ) do
@@ -409,35 +371,47 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
 
   # Updates the state for the next iteration of historical confirmations discovery.
   @spec state_for_next_iteration_historical(
-          %{
-            :data => %{
-              :historical_confirmations_end_block => non_neg_integer() | nil,
-              :historical_confirmations_start_block => non_neg_integer() | nil,
-              optional(any()) => any()
-            },
-            optional(any()) => any()
-          },
+          confirmations_related_state(),
           non_neg_integer() | nil,
           non_neg_integer() | nil
-        ) ::
-          %{
-            :data => %{
-              :historical_confirmations_end_block => non_neg_integer() | nil,
-              :historical_confirmations_start_block => non_neg_integer() | nil,
-              optional(any()) => any()
-            },
-            optional(any()) => any()
-          }
+        ) :: confirmations_related_state()
   defp state_for_next_iteration_historical(prev_state, end_block, lowest_block_in_gap) when end_block >= 0 do
-    %{
-      prev_state
-      | data: %{
-          prev_state.data
-          | historical_confirmations_end_block: end_block,
-            historical_confirmations_start_block: lowest_block_in_gap
-        }
-    }
+    ArbitrumHelper.update_fetcher_task_data(prev_state, :historical_confirmations, %{
+      end_block: end_block,
+      start_block: lowest_block_in_gap
+    })
   end
+
+  @doc """
+    Determines whether the historical confirmations discovery process has completed.
+
+    This function checks if the end block of historical confirmations discovery has
+    reached below the lowest L1 block that needs to be checked for confirmations.
+    When this happens, it means we have searched back far enough in history and can
+    stop the historical discovery process.
+
+    ## Parameters
+    - A map containing:
+      - `task_data`: Contains historical confirmations data with an end block
+      - Other configuration needed to determine the lowest L1 block
+
+    ## Returns
+    - `true` if the end block is less than the lowest L1 block that needs checking
+    - `false` if end block is nil or still above the lowest L1 block
+  """
+  @spec historical_confirmations_discovery_completed?(confirmations_related_state()) :: boolean()
+  def historical_confirmations_discovery_completed?(
+        %{
+          task_data: %{historical_confirmations: %{end_block: end_block}}
+        } = state
+      )
+      when not is_nil(end_block) do
+    {lowest_l1_block, _} = get_lowest_l1_block_for_confirmations(state)
+
+    end_block < lowest_l1_block
+  end
+
+  def historical_confirmations_discovery_completed?(_), do: false
 
   @doc """
     Determines the lowest L1 block number from which to start discovering confirmations.
@@ -458,28 +432,20 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
       - The L1 block number of the first batch commitment
       - The `l1_rollup_init_block` as fallback
   """
-  @spec get_lowest_l1_block_for_confirmations(%{
-          :config => %{
-            :l1_rollup_init_block => non_neg_integer(),
-            :rollup_first_block => non_neg_integer(),
-            optional(any()) => any()
-          },
-          :data => %{
-            optional(:lowest_l1_block_for_confirmations) => non_neg_integer(),
-            optional(any()) => any()
-          },
-          optional(any()) => any()
-        }) :: {non_neg_integer(), %{optional(any()) => any()}}
+  @spec get_lowest_l1_block_for_confirmations(confirmations_related_state()) ::
+          {non_neg_integer(), confirmations_related_state()}
   def get_lowest_l1_block_for_confirmations(
         %{
           config: %{
             l1_rollup_init_block: l1_rollup_init_block,
             rollup_first_block: rollup_first_block
           },
-          data: data
+          task_data: %{
+            historical_confirmations: historical_confirmations_data
+          }
         } = state
       ) do
-    case Map.get(data, :lowest_l1_block_for_confirmations) do
+    case Map.get(historical_confirmations_data, :lowest_l1_block_for_confirmations) do
       nil ->
         # If first block is 0, start from block 1 since block 0 is not included in any batch
         # and therefore has no confirmation. Otherwise use the first block value
@@ -491,10 +457,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
 
           block_number ->
             {block_number,
-             %{
-               state
-               | data: Map.put(data, :lowest_l1_block_for_confirmations, block_number)
-             }}
+             ArbitrumHelper.update_fetcher_task_data(state, :historical_confirmations, %{
+               lowest_l1_block_for_confirmations: block_number
+             })}
         end
 
       cached_block ->

@@ -8,25 +8,25 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     of L2-to-L1 messages. It ensures the accurate tracking and updating of the
     rollup process stages.
 
-    The fetcher's operation cycle begins with the `:init_worker` message, which
-    establishes the initial state with the necessary configuration.
+    The fetcher uses a BufferedTask-based approach for task scheduling, where each
+    type of task is scheduled independently with appropriate intervals. This provides
+    better error isolation and task management.
 
-    The process then progresses through a sequence of steps, each triggered by
-    specific messages:
-    - `:check_new_batches`: Discovers new batches of rollup transactions and
+    Task types include:
+    - `:new_batches`: Discovers new batches of rollup transactions and
       updates their statuses.
-    - `:check_new_confirmations`: Identifies new confirmations of rollup blocks to
+    - `:new_confirmations`: Identifies new confirmations of rollup blocks to
       update their statuses.
-    - `:check_new_executions`: Finds new executions of L2-to-L1 messages to update
+    - `:new_executions`: Finds new executions of L2-to-L1 messages to update
       their statuses.
-    - `:check_historical_batches`: Processes historical batches of rollup
+    - `:historical_batches`: Processes historical batches of rollup
       transactions.
-    - `:check_missing_batches`: Inspects for missing batches of rollup transactions.
-    - `:check_historical_confirmations`: Handles historical confirmations of
+    - `:missing_batches`: Inspects for missing batches of rollup transactions.
+    - `:historical_confirmations`: Handles historical confirmations of
       rollup blocks.
-    - `:check_historical_executions`: Manages historical executions of L2-to-L1
+    - `:historical_executions`: Manages historical executions of L2-to-L1
       messages.
-    - `:check_lifecycle_transactions_finalization`: Finalizes the status of lifecycle
+    - `:settlement_transactions_finalization`: Finalizes the status of lifecycle
       transactions, confirming the blocks and messages involved.
 
     Discovery of rollup transaction batches is executed by requesting logs on L1
@@ -45,14 +45,15 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     the corresponding rollup blocks are updated to reflect their status changes.
   """
 
-  use GenServer
-  use Indexer.Fetcher
+  use Indexer.Fetcher, restart: :permanent
+  use Spandex.Decorators
 
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_error: 1, log_warning: 1]
+
+  alias Indexer.BufferedTask
   alias Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks, as: BatchesDiscoveryTasks
   alias Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks, as: ConfirmationsDiscoveryTasks
   alias Indexer.Fetcher.Arbitrum.Workers.{L1Finalization, NewL1Executions}
-
-  import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [increase_duration: 2]
 
   alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
   alias EthereumJSONRPC.Utility.RangesHelper
@@ -63,25 +64,32 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
   require Logger
 
-  def child_spec(start_link_arguments) do
-    spec = %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, start_link_arguments},
-      restart: :transient,
-      type: :worker
-    }
+  @behaviour BufferedTask
 
-    Supervisor.child_spec(spec, [])
-  end
+  # 250ms interval for quick task switching
+  @idle_interval 250
+  # Only one task at a time
+  @max_concurrency 1
+  # Process one task per batch
+  @max_batch_size 1
 
-  def start_link(args, gen_server_options \\ []) do
-    GenServer.start_link(__MODULE__, args, Keyword.put_new(gen_server_options, :name, __MODULE__))
-  end
+  @stoppable_tasks [:historical_batches, :missing_batches, :historical_confirmations, :historical_executions]
 
-  @impl GenServer
-  def init(args) do
-    Logger.metadata(fetcher: :arbitrum_batches_tracker)
+  @typep fetcher_task ::
+           :new_batches
+           | :new_confirmations
+           | :new_executions
+           | :historical_batches
+           | :missing_batches
+           | :historical_confirmations
+           | :historical_executions
+           | :settlement_transactions_finalization
+  @typep queued_task :: :init_worker | {non_neg_integer(), fetcher_task()}
 
+  def child_spec([init_options, gen_server_options]) do
+    {json_rpc_named_arguments, init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
+
+    # Extract configuration from application environment
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
     l1_rpc = config_common[:l1_rpc]
     l1_rpc_block_range = config_common[:l1_rpc_block_range]
@@ -93,6 +101,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
     config_tracker = Application.get_all_env(:indexer)[__MODULE__]
     recheck_interval = config_tracker[:recheck_interval]
+    catchup_recheck_interval = config_tracker[:catchup_recheck_interval]
     messages_to_blocks_shift = config_tracker[:messages_to_blocks_shift]
     track_l1_transaction_finalization = config_tracker[:track_l1_transaction_finalization]
     finalized_confirmations = config_tracker[:finalized_confirmations]
@@ -101,74 +110,159 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     missing_batches_range = config_tracker[:missing_batches_range]
     node_interface_address = config_tracker[:node_interface_contract]
 
+    # Configure intervals for each task type
+    intervals = %{
+      new_batches: recheck_interval,
+      new_confirmations: recheck_interval,
+      new_executions: recheck_interval,
+      historical_batches: catchup_recheck_interval,
+      missing_batches: catchup_recheck_interval,
+      historical_confirmations: catchup_recheck_interval,
+      historical_executions: catchup_recheck_interval,
+      settlement_transactions_finalization: recheck_interval
+    }
+
     indexer_first_block =
       RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
-    Process.send(self(), :init_worker, [])
+    # Set up initial configuration structure
+    initial_config = %{
+      l1_rpc: %{
+        json_rpc_named_arguments: IndexerHelper.json_rpc_named_arguments(l1_rpc),
+        logs_block_range: l1_rpc_block_range,
+        chunk_size: l1_rpc_chunk_size,
+        track_finalization: track_l1_transaction_finalization,
+        finalized_confirmations: finalized_confirmations
+      },
+      rollup_rpc: %{
+        json_rpc_named_arguments: json_rpc_named_arguments,
+        chunk_size: rollup_chunk_size
+      },
+      recheck_interval: recheck_interval,
+      l1_rollup_address: l1_rollup_address,
+      l1_start_block: l1_start_block,
+      l1_rollup_init_block: l1_rollup_init_block,
+      new_batches_limit: new_batches_limit,
+      missing_batches_range: missing_batches_range,
+      messages_to_blocks_shift: messages_to_blocks_shift,
+      confirmation_batches_depth: confirmation_batches_depth,
+      node_interface_address: node_interface_address,
+      rollup_first_block: indexer_first_block
+    }
 
-    {:ok,
-     %{
-       config: %{
-         l1_rpc: %{
-           json_rpc_named_arguments: IndexerHelper.json_rpc_named_arguments(l1_rpc),
-           logs_block_range: l1_rpc_block_range,
-           chunk_size: l1_rpc_chunk_size,
-           track_finalization: track_l1_transaction_finalization,
-           finalized_confirmations: finalized_confirmations
-         },
-         rollup_rpc: %{
-           json_rpc_named_arguments: args[:json_rpc_named_arguments],
-           chunk_size: rollup_chunk_size
-         },
-         recheck_interval: recheck_interval,
-         l1_rollup_address: l1_rollup_address,
-         l1_start_block: l1_start_block,
-         l1_rollup_init_block: l1_rollup_init_block,
-         new_batches_limit: new_batches_limit,
-         missing_batches_range: missing_batches_range,
-         messages_to_blocks_shift: messages_to_blocks_shift,
-         confirmation_batches_depth: confirmation_batches_depth,
-         node_interface_address: node_interface_address,
-         rollup_first_block: indexer_first_block
-       },
-       data: %{}
-     }}
+    # Initial state structure
+    initial_state = %{
+      config: initial_config,
+      intervals: intervals,
+      task_data: %{},
+      completed_tasks: %{}
+    }
+
+    buffered_task_init_options =
+      defaults()
+      |> Keyword.merge(init_options)
+      |> Keyword.put(:state, initial_state)
+
+    Supervisor.child_spec({BufferedTask, [{__MODULE__, buffered_task_init_options}, gen_server_options]},
+      id: __MODULE__,
+      restart: :transient
+    )
   end
 
-  @impl GenServer
-  def handle_info({ref, _result}, state) do
-    Process.demonitor(ref, [:flush])
-    {:noreply, state}
+  defp defaults do
+    [
+      flush_interval: @idle_interval,
+      max_concurrency: @max_concurrency,
+      max_batch_size: @max_batch_size,
+      poll: false,
+      task_supervisor: __MODULE__.TaskSupervisor,
+      metadata: [fetcher: :arbitrum_batches_tracker]
+    ]
   end
 
-  # Initializes the worker for discovering batches of rollup transactions, confirmations of rollup blocks, and executions of L2-to-L1 messages.
-  #
-  # This function sets up the initial state for the fetcher, identifying the
-  # starting blocks for new and historical discoveries of batches, confirmations,
-  # and executions. It also retrieves addresses for the Arbitrum Outbox and
-  # SequencerInbox contracts.
-  #
-  # After initializing these parameters, it immediately sends `:check_new_batches`
-  # to commence the fetcher loop.
-  #
-  # ## Parameters
-  # - `:init_worker`: The message triggering the initialization.
-  # - `state`: The current state of the process, containing initial configuration
-  #            data.
-  #
-  # ## Returns
-  # - `{:noreply, new_state}` where `new_state` is updated with Arbitrum contract
-  #   addresses and starting blocks for new and historical discoveries.
-  @impl GenServer
-  def handle_info(
-        :init_worker,
-        %{
-          config: %{
-            l1_rpc: %{json_rpc_named_arguments: json_l1_rpc_named_arguments},
-            l1_rollup_address: l1_rollup_address
-          }
-        } = state
-      ) do
+  @impl BufferedTask
+  def init(initial, reducer, _state) do
+    # Schedule the initialization task immediately
+    reducer.(:init_worker, initial)
+  end
+
+  @impl BufferedTask
+  @spec run([queued_task()], map()) :: {:ok, map()} | {:retry, [queued_task()], map()} | :retry
+  def run(tasks, state)
+
+  def run([:init_worker], state) do
+    # Complete configuration with RPC/DB dependent values
+    configured_state = initialize_workers(state)
+
+    # Define all possible tasks with their initial timestamps in desired order
+    default_tasks_to_run = [
+      {0, :new_batches},
+      {0, :new_confirmations},
+      {0, :new_executions},
+      {0, :historical_batches},
+      {0, :historical_confirmations},
+      {0, :historical_executions},
+      {0, :missing_batches},
+      {0, :settlement_transactions_finalization}
+    ]
+
+    # Define default completion state for all tasks
+    default_completion_state = %{
+      historical_batches: false,
+      missing_batches: false,
+      historical_confirmations: false,
+      historical_executions: false
+    }
+
+    # Process tasks and completion state based on configuration checks
+    {tasks_to_run, completion_state} =
+      {default_tasks_to_run, default_completion_state}
+      |> maybe_disable_missing_batches_discovery(configured_state)
+      |> maybe_disable_settlement_transactions_finalization(configured_state)
+
+    BufferedTask.buffer(__MODULE__, tasks_to_run, false)
+
+    updated_state = Map.put(configured_state, :completed_tasks, completion_state)
+    {:ok, updated_state}
+  end
+
+  def run([{timeout, task_tag}], state) do
+    now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
+
+    if timeout > now do
+      # Task is scheduled for future execution, retry with same timeout
+      {:retry, [{timeout, task_tag}], state}
+    else
+      # Execute the appropriate task
+      case Map.get(task_runners(), task_tag) do
+        nil ->
+          log_warning("Unknown task type: #{inspect(task_tag)}")
+          {:ok, state}
+
+        runner ->
+          runner.(state)
+      end
+    end
+  end
+
+  defp task_runners do
+    %{
+      new_batches: &handle_new_batches/1,
+      new_confirmations: &handle_new_confirmations/1,
+      new_executions: &handle_new_executions/1,
+      historical_batches: &handle_historical_batches/1,
+      missing_batches: &handle_missing_batches/1,
+      historical_confirmations: &handle_historical_confirmations/1,
+      historical_executions: &handle_historical_executions/1,
+      settlement_transactions_finalization: &handle_settlement_transactions_finalization/1
+    }
+  end
+
+  # Initializes the worker state with contract addresses and block information
+  defp initialize_workers(state) do
+    json_l1_rpc_named_arguments = state.config.l1_rpc.json_rpc_named_arguments
+    l1_rollup_address = state.config.l1_rollup_address
+
     %{outbox: outbox_address, sequencer_inbox: sequencer_inbox_address} =
       ArbitrumRpc.get_contracts_for_rollup(
         l1_rollup_address,
@@ -188,306 +282,212 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
     {lowest_batch, missing_batches_end_batch} = DbSettlement.get_min_max_batch_numbers()
 
-    Process.send(self(), :check_new_batches, [])
-
-    new_state =
-      state
-      |> Map.put(
-        :config,
-        Map.merge(state.config, %{
-          l1_start_block: l1_start_block,
-          l1_outbox_address: outbox_address,
-          l1_sequencer_inbox_address: sequencer_inbox_address,
-          lowest_batch: lowest_batch
-        })
-      )
-      |> Map.put(
-        :data,
-        Map.merge(state.data, %{
-          new_batches_start_block: new_batches_start_block,
-          historical_batches_end_block: historical_batches_end_block,
-          new_confirmations_start_block: new_confirmations_start_block,
-          historical_confirmations_end_block: nil,
-          historical_confirmations_start_block: nil,
-          new_executions_start_block: new_executions_start_block,
-          historical_executions_end_block: historical_executions_end_block,
-          missing_batches_end_batch: missing_batches_end_batch
-        })
-      )
-
-    {:noreply, new_state}
-  end
-
-  # Initiates the process of discovering and handling new batches of rollup transactions.
-  #
-  # This function fetches logs within the calculated L1 block range to identify new
-  # batches of rollup transactions. The discovered batches and their corresponding
-  # rollup blocks and transactions are processed and linked. The L2-to-L1 messages
-  # included in these rollup blocks are also updated to reflect their commitment.
-  #
-  # After processing, it immediately transitions to checking new confirmations of
-  # rollup blocks by sending the `:check_new_confirmations` message.
-  #
-  # ## Parameters
-  # - `:check_new_batches`: The message that triggers the function.
-  # - `state`: The current state of the fetcher, containing configuration and data
-  #            needed for the discovery of new batches.
-  #
-  # ## Returns
-  # - `{:noreply, new_state}` where `new_state` is updated with the new start block for
-  #   the next iteration of new batch discovery.
-  @impl GenServer
-  def handle_info(:check_new_batches, state) do
-    {handle_duration, {:ok, end_block}} = :timer.tc(&BatchesDiscoveryTasks.check_new/1, [state])
-
-    Process.send(self(), :check_new_confirmations, [])
-
-    new_data =
-      Map.merge(state.data, %{
-        duration: increase_duration(state.data, handle_duration),
-        new_batches_start_block: end_block + 1
+    updated_config =
+      Map.merge(state.config, %{
+        l1_start_block: l1_start_block,
+        l1_outbox_address: outbox_address,
+        l1_sequencer_inbox_address: sequencer_inbox_address,
+        lowest_batch: lowest_batch
       })
 
-    {:noreply, %{state | data: new_data}}
+    task_data = %{
+      new_batches: %{
+        start_block: new_batches_start_block
+      },
+      historical_batches: %{
+        end_block: historical_batches_end_block
+        # lowest_l1_block_for_commitments: nil <- will be added during handle_historical_batches
+      },
+      new_confirmations: %{
+        start_block: new_confirmations_start_block
+      },
+      historical_confirmations: %{
+        end_block: nil,
+        start_block: nil
+        # lowest_l1_block_for_confirmations: nil <- will be added during handle_historical_confirmations
+      },
+      new_executions: %{
+        start_block: new_executions_start_block
+      },
+      historical_executions: %{
+        end_block: historical_executions_end_block
+      },
+      missing_batches: %{
+        end_batch: missing_batches_end_batch
+      }
+    }
+
+    %{state | config: updated_config, task_data: task_data}
   end
 
-  # Initiates the discovery and processing of new confirmations for rollup blocks.
-  #
-  # This function fetches logs within the calculated L1 block range to identify
-  # new confirmations for rollup blocks. The discovered confirmations are
-  # processed to update the status of rollup blocks and L2-to-L1 messages
-  # accordingly.
-  #
-  # After processing, it immediately transitions to discovering new executions
-  # of L2-to-L1 messages by sending the `:check_new_executions` message.
-  #
-  # ## Parameters
-  # - `:check_new_confirmations`: The message that triggers the function.
-  # - `state`: The current state of the fetcher, containing configuration and
-  #            data needed for the discovery of new rollup block confirmations.
-  #
-  # ## Returns
-  # - `{:noreply, new_state}` where `new_state` is updated with the new start
-  #   block for the next iteration of new confirmation discovery.
-  @impl GenServer
-  def handle_info(:check_new_confirmations, state) do
-    {handle_duration, {_, new_state}} = :timer.tc(&ConfirmationsDiscoveryTasks.check_new/1, [state])
-
-    Process.send(self(), :check_new_executions, [])
-
-    new_data = Map.put(new_state.data, :duration, increase_duration(state.data, handle_duration))
-
-    {:noreply, %{state | data: new_data}}
+  # Conditionally disables missing batches discovery based on configuration
+  defp maybe_disable_missing_batches_discovery({tasks, completion}, state) do
+    if BatchesDiscoveryTasks.run_missing_batches_discovery?(state) do
+      {tasks, completion}
+    else
+      log_info("Missing batches inspection is disabled")
+      {List.delete(tasks, {0, :missing_batches}), %{completion | missing_batches: true}}
+    end
   end
 
-  # Initiates the process of discovering and handling new executions for L2-to-L1 messages.
-  #
-  # This function identifies new executions of L2-to-L1 messages by fetching logs
-  # for the calculated L1 block range. It updates the status of these messages and
-  # links them with the corresponding lifecycle transactions.
-  #
-  # After processing, it immediately transitions to checking historical batches of
-  # rollup transaction by sending the `:check_historical_batches` message.
-  #
-  # ## Parameters
-  # - `:check_new_executions`: The message that triggers the function.
-  # - `state`: The current state of the fetcher, containing configuration and data
-  #            needed for the discovery of new message executions.
-  #
-  # ## Returns
-  # - `{:noreply, new_state}` where `new_state` is updated with the new start
-  #   block for the next iteration of new message executions discovery.
-  @impl GenServer
-  def handle_info(:check_new_executions, state) do
-    {handle_duration, {:ok, end_block}} = :timer.tc(&NewL1Executions.discover_new_l1_messages_executions/1, [state])
-
-    Process.send(self(), :check_historical_batches, [])
-
-    new_data =
-      Map.merge(state.data, %{
-        duration: increase_duration(state.data, handle_duration),
-        new_executions_start_block: end_block + 1
-      })
-
-    {:noreply, %{state | data: new_data}}
+  # Conditionally disables settlement transactions finalization based on configuration
+  defp maybe_disable_settlement_transactions_finalization({tasks, completion}, state) do
+    if L1Finalization.run_settlement_transactions_finalization?(state) do
+      {tasks, completion}
+    else
+      log_info("Settlement transactions finalization is disabled")
+      {List.delete(tasks, {0, :settlement_transactions_finalization}), completion}
+    end
   end
 
-  # Initiates the process of discovering and handling historical batches of rollup transactions.
-  #
-  # This function fetches logs within the calculated L1 block range to identify the
-  # historical batches of rollup transactions. After discovery the linkage between
-  # batches and the corresponding rollup blocks and transactions are build. The
-  # status of the L2-to-L1 messages included in the  corresponding rollup blocks is
-  # also updated.
-  #
-  # After processing, it immediately transitions to inspecting for missing batches
-  # of rollup blocks by sending the `:check_missing_batches`
-  # message.
-  #
-  # ## Parameters
-  # - `:check_historical_batches`: The message that triggers the function.
-  # - `state`: The current state of the fetcher, containing configuration and data
-  #            needed for the discovery of historical batches.
-  #
-  # ## Returns
-  # - `{:noreply, new_state}` where `new_state` is updated with the new end block
-  #   for the next iteration of historical batch discovery.
-  @impl GenServer
-  def handle_info(:check_historical_batches, state) do
-    {handle_duration, {:ok, start_block, new_state}} = :timer.tc(&BatchesDiscoveryTasks.check_historical/1, [state])
+  # Handles the discovery of new batches of rollup transactions
+  defp handle_new_batches(state) do
+    now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-    Process.send(self(), :check_missing_batches, [])
+    {:ok, updated_state} = BatchesDiscoveryTasks.check_new(state)
 
-    new_data =
-      Map.merge(new_state.data, %{
-        duration: increase_duration(state.data, handle_duration),
-        historical_batches_end_block: start_block - 1
-      })
+    next_run_time = now + updated_state.intervals[:new_batches]
+    BufferedTask.buffer(__MODULE__, [{next_run_time, :new_batches}], false)
 
-    {:noreply, %{new_state | data: new_data}}
+    {:ok, updated_state}
   end
 
-  # Initiates the process of inspecting for missing batches of rollup transactions.
-  #
-  # This function inspects the database for missing batches within the calculated
-  # batch range. If a missing batch is identified, the L1 block range to look up
-  # for the transaction that committed the batch is built based on the neighboring
-  # batches. Then logs within the block range are fetched to get the batch data.
-  # After discovery, the linkage between batches and the corresponding rollup
-  # blocks and transactions is built. The status of the L2-to-L1 messages included
-  # in the corresponding rollup blocks is also updated.
-  #
-  # After processing, it immediately transitions to checking historical
-  # confirmations of rollup blocks by sending the `:check_historical_confirmations`
-  # message.
-  #
-  # ## Parameters
-  # - `:check_missing_batches`: The message that triggers the function.
-  # - `state`: The current state of the fetcher, containing configuration and data
-  #            needed for inspection of the missed batches.
-  #
-  # ## Returns
-  # - `{:noreply, new_state}`: Where `new_state` is updated with the new end batch
-  #   for the next iteration of missing batches inspection.
-  @impl GenServer
-  def handle_info(:check_missing_batches, state) do
-    # At the moment of the very first fetcher running, no batches were found yet
-    new_data =
-      if is_nil(state.config.lowest_batch) do
-        state.data
-      else
-        {handle_duration, {:ok, start_batch, new_state}} =
-          :timer.tc(&BatchesDiscoveryTasks.inspect_for_missing/1, [state])
+  # Handles the discovery of new confirmations for rollup blocks
+  defp handle_new_confirmations(state) do
+    now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-        Map.merge(new_state.data, %{
-          duration: increase_duration(state.data, handle_duration),
-          missing_batches_end_batch: start_batch - 1
-        })
-      end
+    {status, updated_state} = ConfirmationsDiscoveryTasks.check_new(state)
 
-    Process.send(self(), :check_historical_confirmations, [])
+    # Schedule next run for this task
+    next_run_time = now + updated_state.intervals[:new_confirmations]
+    BufferedTask.buffer(__MODULE__, [{next_run_time, :new_confirmations}], false)
 
-    {:noreply, %{state | data: new_data}}
+    # If confirmation was missed and historical confirmations task is completed,
+    # reset its completion flag and schedule it
+    if status == :confirmation_missed and updated_state.completed_tasks.historical_confirmations do
+      # Reset completion flag and update interval to match new confirmations
+      updated_completed_tasks = Map.put(updated_state.completed_tasks, :historical_confirmations, false)
+
+      updated_intervals =
+        Map.put(updated_state.intervals, :historical_confirmations, updated_state.intervals.new_confirmations)
+
+      final_state = %{updated_state | completed_tasks: updated_completed_tasks, intervals: updated_intervals}
+
+      next_run_time = now + final_state.intervals[:historical_confirmations]
+      BufferedTask.buffer(__MODULE__, [{next_run_time, :historical_confirmations}], false)
+
+      {:ok, final_state}
+    else
+      {:ok, updated_state}
+    end
   end
 
-  # Initiates the process of discovering and handling historical confirmations of rollup blocks.
-  #
-  # This function fetches logs within the calculated range to identify the
-  # historical confirmations of rollup blocks. The discovered confirmations are
-  # processed to update the status of rollup blocks and L2-to-L1 messages
-  # accordingly.
-  #
-  # After processing, it immediately transitions to checking historical executions
-  # of L2-to-L1 messages by sending the `:check_historical_executions` message.
-  #
-  # ## Parameters
-  # - `:check_historical_confirmations`: The message that triggers the function.
-  # - `state`: The current state of the fetcher, containing configuration and data
-  #            needed for the discovery of historical confirmations.
-  #
-  # ## Returns
-  # - `{:noreply, new_state}` where `new_state` is updated with the new start and
-  #   end blocks for the next iteration of historical confirmations discovery.
-  @impl GenServer
-  def handle_info(:check_historical_confirmations, state) do
-    {handle_duration, {_, new_state}} = :timer.tc(&ConfirmationsDiscoveryTasks.check_unprocessed/1, [state])
+  # Handles the discovery of new L2-to-L1 message executions
+  defp handle_new_executions(state) do
+    now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-    Process.send(self(), :check_historical_executions, [])
+    {:ok, updated_state} = NewL1Executions.discover_new_l1_messages_executions(state)
 
-    new_data = Map.put(new_state.data, :duration, increase_duration(state.data, handle_duration))
+    next_run_time = now + updated_state.intervals[:new_executions]
+    BufferedTask.buffer(__MODULE__, [{next_run_time, :new_executions}], false)
 
-    {:noreply, %{state | data: new_data}}
+    {:ok, updated_state}
   end
 
-  # Initiates the discovery and handling of historical L2-to-L1 message executions.
-  #
-  # This function discovers historical executions of L2-to-L1 messages by retrieving
-  # logs within a specified L1 block range. It updates their status accordingly and
-  # builds the link between the messages and the lifecycle transactions where they
-  # are executed.
-  #
-  # After processing, it immediately transitions to finalizing lifecycle transactions
-  # by sending the `:check_lifecycle_transactions_finalization` message.
-  #
-  # ## Parameters
-  # - `:check_historical_executions`: The message that triggers the function.
-  # - `state`: The current state of the fetcher, containing configuration and data
-  #            needed for the discovery of historical executions.
-  #
-  # ## Returns
-  # - `{:noreply, new_state}` where `new_state` is updated with the new end block for
-  #   the next iteration of historical executions.
-  @impl GenServer
-  def handle_info(:check_historical_executions, state) do
-    {handle_duration, {:ok, start_block, new_state}} =
-      :timer.tc(&NewL1Executions.discover_historical_l1_messages_executions/1, [state])
-
-    Process.send(self(), :check_lifecycle_transactions_finalization, [])
-
-    new_data =
-      Map.merge(new_state.data, %{
-        duration: increase_duration(state.data, handle_duration),
-        historical_executions_end_block: start_block - 1
-      })
-
-    {:noreply, %{new_state | data: new_data}}
+  # Handles the discovery of historical batches of rollup transactions
+  defp handle_historical_batches(state) do
+    run_worker_with_conditional_rescheduling(
+      state,
+      :historical_batches,
+      &BatchesDiscoveryTasks.check_historical/1,
+      &BatchesDiscoveryTasks.historical_batches_discovery_completed?/1
+    )
   end
 
-  # Handles the periodic finalization check of lifecycle transactions.
-  #
-  # This function updates the finalization status of lifecycle transactions based on
-  # the current state of the L1 blockchain. It discovers all transactions that are not
-  # yet finalized up to the `safe` L1 block and changes their status to `:finalized`.
-  #
-  # After processing, as the final handler in the loop, it schedules the
-  # `:check_new_batches` message to initiate the next iteration. The scheduling of this
-  # message is delayed to account for the time spent on the previous handlers' execution.
-  #
-  # ## Parameters
-  # - `:check_lifecycle_transactions_finalization`: The message that triggers the function.
-  # - `state`: The current state of the fetcher, containing the configuration needed for
-  #            the lifecycle transactions status update.
-  #
-  # ## Returns
-  # - `{:noreply, new_state}` where `new_state` is the updated state with the reset duration.
-  @impl GenServer
-  def handle_info(:check_lifecycle_transactions_finalization, state) do
-    {handle_duration, _} =
-      if state.config.l1_rpc.track_finalization do
-        :timer.tc(&L1Finalization.monitor_lifecycle_transactions/1, [state])
-      else
-        {0, nil}
-      end
+  # Handles the inspection for missing batches
+  defp handle_missing_batches(state) do
+    run_worker_with_conditional_rescheduling(
+      state,
+      :missing_batches,
+      &BatchesDiscoveryTasks.inspect_for_missing/1,
+      &BatchesDiscoveryTasks.missing_batches_inspection_completed?/1
+    )
+  end
 
-    next_timeout = max(state.config.recheck_interval - div(increase_duration(state.data, handle_duration), 1000), 0)
+  # Handles the discovery of historical confirmations of rollup blocks
+  defp handle_historical_confirmations(state) do
+    run_worker_with_conditional_rescheduling(
+      state,
+      :historical_confirmations,
+      &ConfirmationsDiscoveryTasks.check_unprocessed/1,
+      &ConfirmationsDiscoveryTasks.historical_confirmations_discovery_completed?/1,
+      true
+    )
+  end
 
-    Process.send_after(self(), :check_new_batches, next_timeout)
+  # Handles the discovery of historical L2-to-L1 message executions
+  defp handle_historical_executions(state) do
+    run_worker_with_conditional_rescheduling(
+      state,
+      :historical_executions,
+      &NewL1Executions.discover_historical_l1_messages_executions/1,
+      &NewL1Executions.historical_executions_discovery_completed?/1
+    )
+  end
 
-    new_data =
-      Map.merge(state.data, %{
-        duration: 0
-      })
+  # Handles the finalization check of lifecycle transactions
+  defp handle_settlement_transactions_finalization(state) do
+    now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-    {:noreply, %{state | data: new_data}}
+    L1Finalization.monitor_lifecycle_transactions(state)
+
+    next_run_time = now + state.intervals[:settlement_transactions_finalization]
+    BufferedTask.buffer(__MODULE__, [{next_run_time, :settlement_transactions_finalization}], false)
+
+    {:ok, state}
+  end
+
+  defp run_worker_with_conditional_rescheduling(
+         state,
+         task_tag,
+         worker_function,
+         completion_check_function,
+         any_status? \\ false
+       ) do
+    now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
+    {status, state_after_worker_run} = worker_function.(state)
+
+    case {any_status?, status} do
+      {true, _} ->
+        nil
+
+      {false, :ok} ->
+        nil
+
+      _ ->
+        log_error("Worker #{worker_function} returned unexpected status #{status}")
+        :retry
+    end
+
+    updated_state = update_completed_tasks(state_after_worker_run, task_tag, completion_check_function)
+
+    if rescheduled?(task_tag, updated_state) do
+      next_run_time = now + updated_state.intervals[task_tag]
+      BufferedTask.buffer(__MODULE__, [{next_run_time, task_tag}], false)
+    end
+
+    {:ok, updated_state}
+  end
+
+  # Returns true if the task should be rescheduled (not marked as completed)
+  defp rescheduled?(task_tag, state) when task_tag in @stoppable_tasks do
+    not Map.get(state.completed_tasks, task_tag)
+  end
+
+  defp rescheduled?(_task_tag, _state), do: true
+
+  defp update_completed_tasks(state, task_tag, completion_check_function) do
+    updated_completed_tasks = Map.put(state.completed_tasks, task_tag, completion_check_function.(state))
+    %{state | completed_tasks: updated_completed_tasks}
   end
 end
