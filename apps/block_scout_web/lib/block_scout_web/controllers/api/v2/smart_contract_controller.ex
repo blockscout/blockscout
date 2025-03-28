@@ -177,7 +177,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       }) do
     %{
       "hash" => address_hash,
+      # todo: It should be removed in favour: transactions_count
       "transaction_count" => transactions_count,
+      "transactions_count" => transactions_count,
       "coin_balance" => coin_balance
     }
   end
