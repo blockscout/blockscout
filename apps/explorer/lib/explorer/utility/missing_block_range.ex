@@ -23,6 +23,16 @@ defmodule Explorer.Utility.MissingBlockRange do
     cast(range, params, [:from_number, :to_number])
   end
 
+  @doc """
+    Fetches the minimum and maximum block numbers from all missing block ranges.
+
+    Returns a map with:
+    - `:min` - The minimum `to_number` across all ranges, or nil if no ranges exist
+    - `:max` - The maximum `from_number` across all ranges, or nil if no ranges exist
+
+    This gives the overall bounds of all missing block ranges in the database.
+  """
+  @spec fetch_min_max() :: %{min: non_neg_integer() | nil, max: non_neg_integer() | nil}
   def fetch_min_max do
     Repo.one(min_max_block_query())
   end
@@ -55,6 +65,25 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> save_batch()
   end
 
+  @doc """
+    Saves or merges a block range into the missing blocks tracking system.
+
+    Handles various cases of range overlap:
+    - If the range exactly matches an existing range, does nothing
+    - If the range overlaps with one existing range, updates that range's bounds
+    - If the range bridges two existing ranges, merges them into one
+    - If no overlap exists, creates a new range record
+
+    ## Parameters
+    - A `Range` struct representing the block range to save, where the direction
+      (ascending/descending) doesn't matter
+
+    ## Returns
+    - `:ok` if the range already exists
+    - `{:ok, struct}` if a new range was created or updated
+    - `{:error, changeset}` if the operation failed
+  """
+  @spec save_range(Range.t()) :: :ok | {:ok, t()} | {:error, Ecto.Changeset.t()}
   def save_range(from..to//_) do
     min_number = min(from, to)
     max_number = max(from, to)
@@ -131,6 +160,20 @@ defmodule Explorer.Utility.MissingBlockRange do
     Enum.map(batch, &delete_range/1)
   end
 
+  @doc """
+    Saves multiple block ranges to the missing blocks tracking system.
+
+    Takes a list of ranges and processes each one through `save_range/1`, handling
+    all the necessary merging and overlap cases. The input is wrapped in a list
+    to handle both single ranges and lists of ranges.
+
+    ## Parameters
+    - `batch`: A single `Range` or list of `Range` structs to save
+
+    ## Returns
+    - `:ok` regardless of individual range save results
+  """
+  @spec save_batch(Range.t() | [Range.t()]) :: list()
   def save_batch(batch) do
     batch
     |> List.wrap()
@@ -170,12 +213,16 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> Repo.one()
   end
 
+  # Inserts a new missing block range record with the provided parameters
+  @spec insert_range(map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   defp insert_range(params) do
     params
     |> changeset()
     |> Repo.insert()
   end
 
+  # Updates a missing block range record with the provided parameters
+  @spec update_range(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   defp update_range(range, params) do
     range
     |> changeset(params)
@@ -206,6 +253,8 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> Repo.one()
   end
 
+  # Deletes all missing block ranges that overlap with the interval [from, to]
+  @spec delete_ranges_between(Block.block_number(), Block.block_number()) :: :ok
   defp delete_ranges_between(from, to) do
     from
     |> from_number_below_query()
@@ -252,6 +301,16 @@ defmodule Explorer.Utility.MissingBlockRange do
     intersecting_ranges
   end
 
+  @doc """
+    Returns a query to fetch the minimum and maximum block numbers from all missing block ranges.
+
+    The query returns a map with:
+    - `:min` - The minimum `to_number` across all ranges
+    - `:max` - The maximum `from_number` across all ranges
+
+    This gives the overall bounds of all missing block ranges in the database.
+  """
+  @spec min_max_block_query() :: Ecto.Query.t()
   def min_max_block_query do
     from(r in __MODULE__, select: %{min: min(r.to_number), max: max(r.from_number)})
   end
@@ -260,10 +319,38 @@ defmodule Explorer.Utility.MissingBlockRange do
     from(r in __MODULE__, order_by: [desc: r.from_number], limit: ^size)
   end
 
+  @doc """
+    Filters missing block ranges to those starting below a specified block number.
+
+    Builds a query that finds ranges where the `from_number` field is less than
+    the provided lower bound. Can be chained with other query conditions.
+
+    ## Parameters
+    - `query`: Optional base query to extend. Defaults to the `MissingBlockRange` schema
+    - `lower_bound`: Block number that the range's `from_number` must be below
+
+    ## Returns
+    An `Ecto.Query` that can be further refined or executed
+  """
+  @spec from_number_below_query(Ecto.Query.t() | __MODULE__, Block.block_number()) :: Ecto.Query.t()
   def from_number_below_query(query \\ __MODULE__, lower_bound) do
     from(r in query, where: r.from_number < ^lower_bound)
   end
 
+  @doc """
+    Filters missing block ranges to those extending above a specified block number.
+
+    Builds a query that finds ranges where the `to_number` field is greater than
+    the provided upper bound. Can be chained with other query conditions.
+
+    ## Parameters
+    - `query`: Optional base query to extend. Defaults to the `MissingBlockRange` schema
+    - `upper_bound`: Block number that the range's `to_number` must exceed
+
+    ## Returns
+    An `Ecto.Query` that can be further refined or executed
+  """
+  @spec to_number_above_query(Ecto.Query.t() | __MODULE__, Block.block_number()) :: Ecto.Query.t()
   def to_number_above_query(query \\ __MODULE__, upper_bound) do
     from(r in query, where: r.to_number > ^upper_bound)
   end
