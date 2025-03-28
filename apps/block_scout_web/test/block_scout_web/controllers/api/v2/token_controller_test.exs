@@ -1701,17 +1701,17 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
-    test "fetch token instance metadata using scoped bypass token", %{conn: conn} do
-      # Configure scoped bypass token for this test
+    test "fetch token instance metadata using scoped bypass api key", %{conn: conn} do
+      # Configure scoped bypass api key for this test
       old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
-      scoped_bypass_token = "test_scoped_token_123"
+      scoped_bypass_api_key = "test_scoped_token_123"
 
       Application.put_env(
         :block_scout_web,
         :recaptcha,
         Keyword.merge(old_recaptcha_env,
           scoped_bypass_api_keys: [
-            token_instance_refetch_metadata: scoped_bypass_token
+            token_instance_refetch_metadata: scoped_bypass_api_key
           ]
         )
       )
@@ -1752,7 +1752,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{
-          "scoped_recaptcha_bypass_api_key" => scoped_bypass_token
+          "scoped_recaptcha_bypass_api_key" => scoped_bypass_api_key
         })
 
       assert %{"message" => "OK"} = json_response(request, 200)
@@ -1778,20 +1778,20 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert token_instance_from_db.metadata == metadata
     end
 
-    test "falls back to normal reCAPTCHA when incorrect scoped bypass token is supplied", %{
+    test "falls back to normal reCAPTCHA when incorrect scoped bypass api key is supplied", %{
       conn: conn,
       v2_secret_key: v2_secret_key
     } do
-      # Configure scoped bypass token for this test
+      # Configure scoped bypass api key for this test
       old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
-      scoped_bypass_token = "test_scoped_token_123"
+      scoped_bypass_api_key = "test_scoped_token_123"
 
       Application.put_env(
         :block_scout_web,
         :recaptcha,
         Keyword.merge(old_recaptcha_env,
           scoped_bypass_api_keys: [
-            token_instance_refetch_metadata: scoped_bypass_token
+            token_instance_refetch_metadata: scoped_bypass_api_key
           ]
         )
       )
@@ -1876,7 +1876,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert token_instance_from_db.metadata == metadata
     end
 
-    test "rejects scoped bypass token when scoped tokens are not configured", %{
+    test "rejects scoped bypass api key when scoped tokens are not configured", %{
       conn: conn,
       v2_secret_key: v2_secret_key
     } do
