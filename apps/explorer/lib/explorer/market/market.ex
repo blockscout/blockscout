@@ -21,29 +21,10 @@ defmodule Explorer.Market do
   """
   @spec get_native_coin_exchange_rate_from_db(boolean()) :: Token.t()
   def get_native_coin_exchange_rate_from_db(secondary_coin? \\ false) do
-    today =
-      case fetch_recent_history(secondary_coin?) do
-        [today | _the_rest] -> today
-        _ -> nil
-      end
-
-    if today do
-      %Token{
-        fiat_value: Map.get(today, :closing_price),
-        market_cap: Map.get(today, :market_cap),
-        tvl: Map.get(today, :tvl),
-        available_supply: nil,
-        total_supply: nil,
-        btc_value: nil,
-        last_updated: nil,
-        name: nil,
-        symbol: nil,
-        volume_24h: nil,
-        image_url: nil
-      }
-    else
-      Token.null()
-    end
+    secondary_coin?
+    |> fetch_recent_history()
+    |> List.first()
+    |> MarketHistory.to_token()
   end
 
   @doc """
@@ -84,24 +65,9 @@ defmodule Explorer.Market do
   def get_coin_exchange_rate_at_date(nil, _options), do: Token.null()
 
   def get_coin_exchange_rate_at_date(datetime, options) do
-    case MarketHistory.price_at_date(DateTime.to_date(datetime), false, options) do
-      %MarketHistory{} = market_history ->
-        %Token{
-          fiat_value: market_history.closing_price,
-          market_cap: market_history.market_cap,
-          tvl: market_history.tvl,
-          available_supply: nil,
-          total_supply: nil,
-          btc_value: nil,
-          last_updated: nil,
-          name: nil,
-          symbol: nil,
-          volume_24h: nil,
-          image_url: nil
-        }
-
-      _ ->
-        Token.null()
-    end
+    datetime
+    |> DateTime.to_date()
+    |> MarketHistory.price_at_date(false, options)
+    |> MarketHistory.to_token()
   end
 end

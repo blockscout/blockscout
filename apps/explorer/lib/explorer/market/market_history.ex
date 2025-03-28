@@ -6,6 +6,7 @@ defmodule Explorer.Market.MarketHistory do
   use Explorer.Schema
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Market.Token
 
   @typedoc """
   The recorded values of the configured coin to USD for a single day.
@@ -57,6 +58,25 @@ defmodule Explorer.Market.MarketHistory do
       conflict_target: [:date, :secondary_coin]
     )
   end
+
+  @spec to_token(t() | nil) :: Token.t()
+  def to_token(%__MODULE__{} = market_history) do
+    %Token{
+      fiat_value: market_history.closing_price,
+      market_cap: market_history.market_cap,
+      tvl: market_history.tvl,
+      available_supply: nil,
+      total_supply: nil,
+      btc_value: nil,
+      last_updated: nil,
+      name: nil,
+      symbol: nil,
+      volume_24h: nil,
+      image_url: nil
+    }
+  end
+
+  def to_token(_), do: Token.null()
 
   defp market_history_on_conflict do
     from(

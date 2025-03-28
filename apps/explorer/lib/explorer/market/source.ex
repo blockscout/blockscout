@@ -51,22 +51,22 @@ defmodule Explorer.Market.Source do
 
   # Native coin processing
   @callback native_coin_fetching_enabled?() :: boolean() | :ignore
-  @callback fetch_native_coin() :: {:ok, Token.t()} | {:error, any} | :ignore
+  @callback fetch_native_coin() :: {:ok, Token.t()} | {:error, any()} | :ignore
 
   # Secondary coin processing
   @callback secondary_coin_fetching_enabled?() :: boolean() | :ignore
-  @callback fetch_secondary_coin() :: {:ok, Token.t()} | {:error, any} | :ignore
+  @callback fetch_secondary_coin() :: {:ok, Token.t()} | {:error, any()} | :ignore
 
   # Tokens processing
   @type state() :: any()
   @type fetch_finished?() :: boolean()
   @callback tokens_fetching_enabled?() :: boolean() | :ignore
   @callback fetch_tokens(state() | nil, non_neg_integer()) ::
-              {:ok, state(), fetch_finished?(), [token_params]} | {:error, any} | :ignore
+              {:ok, state(), fetch_finished?(), [token_params]} | {:error, any()} | :ignore
             when token_params: %{
                    required(:contract_address_hash) => Hash.Address.t(),
                    required(:type) => String.t(),
-                   optional(any) => any
+                   optional(any()) => any()
                  }
 
   # Price history processing
@@ -79,11 +79,11 @@ defmodule Explorer.Market.Source do
 
   @callback native_coin_price_history_fetching_enabled?() :: boolean() | :ignore
   @callback fetch_native_coin_price_history(previous_days :: non_neg_integer()) ::
-              {:ok, [history_price_record()]} | {:error, any} | :ignore
+              {:ok, [history_price_record()]} | {:error, any()} | :ignore
 
   @callback secondary_coin_price_history_fetching_enabled?() :: boolean() | :ignore
   @callback fetch_secondary_coin_price_history(previous_days :: non_neg_integer()) ::
-              {:ok, [history_price_record()]} | {:error, any} | :ignore
+              {:ok, [history_price_record()]} | {:error, any()} | :ignore
 
   # Market cap history processing
   @type history_market_cap_record() :: %{
@@ -93,7 +93,7 @@ defmodule Explorer.Market.Source do
 
   @callback market_cap_history_fetching_enabled?() :: boolean() | :ignore
   @callback fetch_market_cap_history(previous_days :: non_neg_integer()) ::
-              {:ok, [history_market_cap_record()]} | {:error, any} | :ignore
+              {:ok, [history_market_cap_record()]} | {:error, any()} | :ignore
 
   # TVL history processing
   @type history_tvl_record() :: %{
@@ -103,7 +103,7 @@ defmodule Explorer.Market.Source do
 
   @callback tvl_history_fetching_enabled?() :: boolean() | :ignore
   @callback fetch_tvl_history(previous_days :: non_neg_integer()) ::
-              {:ok, [history_tvl_record()]} | {:error, any} | :ignore
+              {:ok, [history_tvl_record()]} | {:error, any()} | :ignore
 
   @doc """
   Performs an HTTP GET request to the specified URL and processes the response.
@@ -160,7 +160,7 @@ defmodule Explorer.Market.Source do
   end
 
   @doc """
-  Returns `nil` if the date is `nil`, otherwise returns the parsed date.
+  Returns `nil` if the date is `nil` or invalid, otherwise returns the parsed date.
   Date should be in ISO8601 format
   """
   @spec maybe_get_date(String.t() | nil) :: DateTime.t() | nil

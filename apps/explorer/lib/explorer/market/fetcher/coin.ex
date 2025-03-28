@@ -173,16 +173,6 @@ defmodule Explorer.Market.Fetcher.Coin do
     end
   end
 
-  @doc """
-  Lists exchange rates for the tracked tickers.
-  """
-  @spec list :: [Token.t()] | nil
-  def list do
-    if config(:enabled) do
-      list_from_store(config(:store))
-    end
-  end
-
   @doc false
   @spec table_name() :: atom()
   def table_name do
@@ -231,13 +221,4 @@ defmodule Explorer.Market.Fetcher.Coin do
         coin
     end
   end
-
-  defp list_from_store(:ets) do
-    table_name()
-    |> :ets.tab2list()
-    |> Enum.map(fn {_, coin} -> coin end)
-    |> Enum.sort_by(fn %Token{symbol: symbol} -> symbol end)
-  end
-
-  defp list_from_store(_), do: []
 end
