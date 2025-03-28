@@ -50,7 +50,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_create_addresses_verified_fetched_coin_balance_desc_hash_index_finished,
     key: :heavy_indexes_create_smart_contracts_language_index_finished,
     key: :heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished,
-    key: :heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished,
     key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_finished,
     key: :heavy_indexes_drop_transactions_from_address_hash_with_pending_index_finished,
     key: :heavy_indexes_drop_transactions_to_address_hash_with_pending_index_finished
