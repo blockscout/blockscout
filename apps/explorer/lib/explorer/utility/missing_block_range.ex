@@ -16,6 +16,20 @@ defmodule Explorer.Utility.MissingBlockRange do
   typed_schema "missing_block_ranges" do
     field(:from_number, :integer)
     field(:to_number, :integer)
+    # Currently, the only priority that is used is `1` for contract creation
+    # blocks fetch. Whenever we introduce additional priorities, we MUST change
+    # this field to `Ecto.Enum`, like this:
+    #
+    # ```elixir
+    # field(:priority, Ecto.Enum, values: [contract_creation: 1, something_else: 2])
+    # ```
+    #
+    # or like this:
+    #
+    # ```elixir
+    # field(:priority, Ecto.Enum, values: [low: 1, medium: 2, high: 3])
+    # ```
+
     field(:priority, :integer)
   end
 
