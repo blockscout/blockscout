@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
       is_scilla_contract =
         case address do
           %Address{
-            contracts_creation_transaction: transaction
+            contract_creation_transaction: transaction
           } ->
             scilla_transaction?(transaction)
 

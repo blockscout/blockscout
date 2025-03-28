@@ -267,14 +267,24 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         %{
           "is_self_destructed" => true,
           "deployed_bytecode" => nil,
-          "creation_bytecode" => init
+          "creation_bytecode" => init,
+          "status" => "selfdestructed"
+        }
+
+      {:failed, creation_code} ->
+        %{
+          "is_self_destructed" => false,
+          "deployed_bytecode" => "0x",
+          "creation_bytecode" => creation_code,
+          "status" => "failed"
         }
 
       {:ok, contract_code} ->
         %{
           "is_self_destructed" => false,
           "deployed_bytecode" => contract_code,
-          "creation_bytecode" => AddressContractView.creation_code(address)
+          "creation_bytecode" => AddressContractView.creation_code(address),
+          "status" => "success"
         }
     end
   end

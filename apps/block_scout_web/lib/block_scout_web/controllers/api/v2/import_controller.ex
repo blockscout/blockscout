@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
 
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
-  alias Explorer.Chain.{Data, SmartContract, Token}
+  alias Explorer.Chain.{Address, Data, SmartContract, Token}
   alias Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
   alias Explorer.SmartContract.EthBytecodeDBInterface
   alias Indexer.Fetcher.TokenUpdater
@@ -114,6 +114,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
          {:api_key, ^api_key} <- {:api_key, get_api_key_header(conn)},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true)},
+         {:nonempty_bytecode, true} <- {:nonempty_bytecode, Address.smart_contract_with_nonempty_code?(address)},
          {:already_verified, smart_contract} when is_nil(smart_contract) <-
            {:already_verified, SmartContract.address_hash_to_smart_contract(address_hash, @api_true)} do
       creation_transaction_input = contract_creation_input(address.hash)
