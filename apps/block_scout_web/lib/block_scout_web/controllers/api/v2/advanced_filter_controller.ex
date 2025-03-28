@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 4]
+  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 4, fetch_scam_token_toggle: 2]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias BlockScoutWeb.CaptchaHelper
@@ -53,7 +53,12 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   """
   @spec list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def list(conn, params) do
-    full_options = params |> extract_filters() |> Keyword.merge(paging_options(params)) |> Keyword.merge(@api_true)
+    full_options =
+      params
+      |> extract_filters()
+      |> Keyword.merge(paging_options(params))
+      |> Keyword.merge(@api_true)
+      |> fetch_scam_token_toggle(conn)
 
     advanced_filters_plus_one = AdvancedFilter.list(full_options)
 
