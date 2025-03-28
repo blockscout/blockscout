@@ -48,7 +48,7 @@ config :block_scout_web, :recaptcha,
   bypass_token: ConfigHelper.safe_get_env("RE_CAPTCHA_BYPASS_TOKEN", nil),
   scoped_bypass_api_keys: [
     token_instance_refetch_metadata:
-      ConfigHelper.safe_get_env("RE_CAPTCHA_SCOPED_BYPASS_API_KEY_INSTANCE_REFETCH_METADATA", nil)
+      ConfigHelper.safe_get_env("RE_CAPTCHA_SCOPED_BYPASS_API_KEY_TOKEN_INSTANCE_REFETCH_METADATA", nil)
   ]
 
 network_path =
