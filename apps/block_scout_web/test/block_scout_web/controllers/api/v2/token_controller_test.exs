@@ -1704,7 +1704,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "fetch token instance metadata using scoped bypass api key", %{conn: conn} do
       # Configure scoped bypass api key for this test
       old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
-      scoped_bypass_api_key = "test_scoped_token_123"
+      scoped_bypass_token = "test_scoped_token_123"
 
       Application.put_env(
         :block_scout_web,
@@ -1784,7 +1784,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     } do
       # Configure scoped bypass api key for this test
       old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
-      scoped_bypass_api_key = "test_scoped_token_123"
+      scoped_bypass_token = "test_scoped_token_123"
 
       Application.put_env(
         :block_scout_web,
