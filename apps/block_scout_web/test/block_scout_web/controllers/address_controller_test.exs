@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
   import Mox
 
   alias Explorer.Chain.Address
-  alias Explorer.Counters.{AddressesCounter}
+  alias Explorer.Chain.Cache.Counters.AddressesCount
 
   describe "GET index/2" do
     setup :set_mox_global
@@ -29,8 +29,8 @@ defmodule BlockScoutWeb.AddressControllerTest do
         |> Enum.map(&insert(:address, fetched_coin_balance: &1))
         |> Enum.map(& &1.hash)
 
-      start_supervised!(AddressesCounter)
-      AddressesCounter.consolidate()
+      start_supervised!(AddressesCount)
+      AddressesCount.consolidate()
 
       conn = get(conn, address_path(conn, :index, %{type: "JSON"}))
       {:ok, %{"items" => items}} = Poison.decode(conn.resp_body)
@@ -42,8 +42,8 @@ defmodule BlockScoutWeb.AddressControllerTest do
       address = insert(:address, fetched_coin_balance: 1)
       insert(:address_name, address: address, primary: true, name: "POA Wallet")
 
-      start_supervised!(AddressesCounter)
-      AddressesCounter.consolidate()
+      start_supervised!(AddressesCount)
+      AddressesCount.consolidate()
 
       conn = get(conn, address_path(conn, :index, %{type: "JSON"}))
 

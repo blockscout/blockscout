@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Endpoint do
     plug(BlockScoutWeb.HealthRouter)
   else
     socket("/socket", BlockScoutWeb.UserSocket, websocket: [timeout: 45_000])
-    socket("/socket/v2", BlockScoutWeb.UserSocketV2, websocket: [timeout: 45_000])
+    socket("/socket/v2", BlockScoutWeb.V2.UserSocket, websocket: [timeout: 45_000])
 
     # Serve at "/" the static files from "priv/static" directory.
     #

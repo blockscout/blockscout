@@ -11,7 +11,6 @@ defmodule Explorer.Chain.Address.Schema do
     Address,
     Block,
     Data,
-    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     SignedAuthorization,
@@ -83,7 +82,6 @@ defmodule Explorer.Chain.Address.Schema do
         field(:nonce, :integer)
         field(:decompiled, :boolean, default: false)
         field(:verified, :boolean, default: false)
-        field(:has_decompiled_code?, :boolean, virtual: true)
         field(:stale?, :boolean, virtual: true)
         field(:transactions_count, :integer)
         field(:token_transfers_count, :integer)
@@ -111,7 +109,6 @@ defmodule Explorer.Chain.Address.Schema do
 
         has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
         has_one(:scam_badge, Address.ScamBadgeToAddress, foreign_key: :address_hash, references: :hash)
-        has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
 
         # In practice, this is a one-to-many relationship, but we only need to check if any signed authorization
@@ -141,13 +138,14 @@ defmodule Explorer.Chain.Address do
   alias Ecto.Changeset
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
-  alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, SmartContract, Transaction}
+  alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Helper, as: ExplorerHelper
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
+  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce verified gas_used transactions_count token_transfers_count)a
   @chain_type_optional_attrs (case @chain_type do
                                 :filecoin ->
                                   ~w(filecoin_id filecoin_robust filecoin_actor_type)a
@@ -170,7 +168,6 @@ defmodule Explorer.Chain.Address do
            except: [
              :__meta__,
              :smart_contract,
-             :decompiled_smart_contracts,
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
@@ -181,7 +178,6 @@ defmodule Explorer.Chain.Address do
            except: [
              :__meta__,
              :smart_contract,
-             :decompiled_smart_contracts,
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
@@ -293,11 +289,27 @@ defmodule Explorer.Chain.Address do
   def get(hash, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    query = from(address in Address, where: address.hash == ^hash)
+    query = address_query(hash)
 
     query
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).one()
+  end
+
+  @doc """
+  Generates an Ecto query to find an `Address` record by its hash.
+
+  ## Parameters
+
+    - `hash`: The hash of the address to search for.
+
+  ## Returns
+
+  An Ecto query that can be executed to retrieve the address with the specified hash.
+  """
+  @spec address_query(Hash.Address.t() | binary()) :: Ecto.Query.t()
+  def address_query(hash) do
+    from(address in Address, where: address.hash == ^hash)
   end
 
   def checksum(address_or_hash, iodata? \\ false)
@@ -492,6 +504,54 @@ defmodule Explorer.Chain.Address do
   end
 
   @doc """
+  Fetches addresses based on the provided list of address hashes.
+
+  ## Parameters
+
+    - `address_hashes`: A list of address hashes to fetch the corresponding addresses.
+
+  ## Returns
+
+    - A list of addresses corresponding to the provided address hashes.
+
+  This function utilizes the `Chain.hashes_to_addresses_query/1` to convert the hashes to addresses,
+  joins necessary associations with `Chain.join_associations/2`, and finally selects the repository
+  with `Chain.select_repo/1` to fetch all the addresses.
+  """
+  @spec get_addresses_by_hashes([Hash.Address.t()]) :: [Chain.Address.t()]
+  def get_addresses_by_hashes(address_hashes) do
+    necessity_by_association = %{:smart_contract => :optional, proxy_implementations_association() => :optional}
+
+    address_hashes
+    |> Chain.hashes_to_addresses_query()
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(api?: true).all()
+  end
+
+  @doc """
+  Fetches an address by its hash.
+
+  ## Parameters
+
+    - `address_hash`: The hash of the address to be fetched.
+
+  ## Returns
+
+    - `address`: The address if found.
+    - `nil`: If the address is not found.
+  """
+  @spec get_by_hash(Hash.Address.t()) :: Chain.Address.t() | nil
+  def get_by_hash(address_hash) do
+    case Chain.hash_to_address(
+           address_hash,
+           necessity_by_association: %{:smart_contract => :optional, proxy_implementations_association() => :optional}
+         ) do
+      {:ok, address} -> address
+      _ -> nil
+    end
+  end
+
+  @doc """
     Determines if the given address is a smart contract.
 
     This function checks the contract code of an address to determine if it's a
@@ -570,7 +630,6 @@ defmodule Explorer.Chain.Address do
 
         base_query
         |> Chain.join_associations(necessity_by_association)
-        |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
         |> page_addresses(paging_options)
         |> limit(^paging_options.page_size)
         |> Chain.select_repo(options).all()
@@ -632,11 +691,7 @@ defmodule Explorer.Chain.Address do
   """
   @spec address_exists?(Hash.Address.t(), [Chain.api?()]) :: boolean()
   def address_exists?(address_hash, options \\ []) do
-    query =
-      from(
-        address in Address,
-        where: address.hash == ^address_hash
-      )
+    query = Address.address_query(address_hash)
 
     Chain.select_repo(options).exists?(query)
   end
@@ -660,7 +715,7 @@ defmodule Explorer.Chain.Address do
     now = DateTime.utc_now()
 
     Repo.update_all(
-      from(address in __MODULE__, where: address.hash == ^address_hash),
+      Address.address_query(address_hash),
       [set: [contract_code: contract_code, updated_at: now]],
       timeout: @timeout
     )
@@ -687,4 +742,122 @@ defmodule Explorer.Chain.Address do
   end
 
   def creation_transaction(_address), do: nil
+
+  @doc """
+  Generates a query to fetch an address with associated bytecode.
+
+  This function constructs an Ecto query that retrieves an address
+  from the database where the `hash` matches the given `address_hash`
+  and the `contract_code` is not `nil`.
+
+  ## Parameters
+
+    - `address_hash`: The hash of the address to query for.
+
+  ## Returns
+
+  An Ecto query that can be executed to fetch the desired address.
+
+  """
+  @spec address_with_bytecode_query(Hash.Address.t()) :: Ecto.Query.t()
+  def address_with_bytecode_query(address_hash) do
+    from(
+      address in __MODULE__,
+      where: address.hash == ^address_hash and not is_nil(address.contract_code)
+    )
+  end
+
+  @doc """
+  Generates a query to retrieve addresses that have associated bytecode.
+
+  ## Parameters
+
+    - `hashes`: A list of address hashes to filter by.
+
+  ## Returns
+
+    - An Ecto query that selects addresses from the database where the `hash` is in the provided list
+      and the `contract_code` field is not `nil`.
+
+  """
+  @spec addresses_with_bytecode_query([Hash.Address.t()]) :: Ecto.Query.t()
+  def addresses_with_bytecode_query(hashes) do
+    from(
+      address in __MODULE__,
+      where: address.hash in ^hashes and not is_nil(address.contract_code)
+    )
+  end
+
+  @doc """
+  Finds contract addresses from a list of hashes.
+
+  ## Parameters
+
+    - `hashes`: A list of hashes to search for contract addresses.
+    - `options`: An optional keyword list of options.
+
+  ## Options
+
+    - `:necessity_by_association`: A map of associations with their necessity (default: `%{}`).
+
+  ## Returns
+
+    - `{:ok, addresses}`: A tuple with `:ok` and a list of found addresses.
+    - `{:error, :not_found}`: A tuple with `:error` and `:not_found` if no addresses are found.
+
+  """
+  @spec find_contract_addresses([Hash.Address.t()], [Chain.necessity_by_association_option() | Chain.api?()]) ::
+          {:ok, [Address.t()]} | {:error, :not_found}
+  def find_contract_addresses(
+        hashes,
+        options \\ []
+      ) do
+    necessity_by_association =
+      options
+      |> Keyword.get(:necessity_by_association, %{})
+      |> Map.merge(%{
+        Implementation.proxy_implementations_association() => :optional
+      })
+
+    hashes
+    |> addresses_with_bytecode_query()
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
+    |> Enum.map(fn address_result ->
+      update_address_result(address_result, options, true)
+    end)
+    |> case do
+      [] -> {:error, :not_found}
+      addresses -> {:ok, addresses}
+    end
+  end
+
+  @spec update_address_result(map() | nil, [Chain.necessity_by_association_option() | Chain.api?()], boolean()) ::
+          map() | nil
+  def update_address_result(address_result, options, decoding_from_list?) do
+    if address_result do
+      LookUpSmartContractSourcesOnDemand.trigger_fetch(
+        to_string(address_result.hash),
+        address_result.contract_code,
+        (address_result && address_result.smart_contract) || nil
+      )
+    end
+
+    case address_result do
+      %{smart_contract: nil} ->
+        if decoding_from_list? do
+          address_result
+        else
+          SmartContract.compose_address_for_unverified_smart_contract(address_result, options)
+        end
+
+      %{smart_contract: smart_contract} ->
+        CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+
+        SmartContract.check_and_update_constructor_args(address_result)
+
+      _ ->
+        address_result
+    end
+  end
 end

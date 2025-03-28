@@ -1,5 +1,6 @@
 defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
   alias Explorer.Chain.Arbitrum.LifecycleTransaction
+  alias Explorer.Chain.Cache.BackgroundMigrations
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1]
@@ -7,6 +8,22 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
   @moduledoc """
   Provides utility functions to support the handling of Arbitrum-specific data fetching and processing in the indexer.
   """
+
+  @doc """
+  Checks if the unconfirmed blocks index is ready for use.
+
+  This function verifies if the heavy DB index operation for creating the unconfirmed blocks
+  index has been completed. This check is necessary to avoid running queries that depend on
+  this index before it's fully created, which could lead to performance issues.
+
+  ## Returns
+  - `true` if the index creation is complete
+  - `false` if the index is still being created or not started yet
+  """
+  @spec unconfirmed_blocks_index_ready?() :: boolean()
+  def unconfirmed_blocks_index_ready? do
+    BackgroundMigrations.get_heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished()
+  end
 
   @doc """
     Increases a base duration by an amount specified in a map, if present.

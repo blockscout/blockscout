@@ -87,7 +87,7 @@ defmodule Explorer.Chain.Log do
 
   alias ABI.{Event, FunctionSelector}
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{ContractMethod, Hash, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, ContractMethod, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.SigProviderInterface
 
@@ -283,7 +283,7 @@ defmodule Explorer.Chain.Log do
     if !is_nil(address_hash) && Map.has_key?(acc, address_hash) do
       acc
     else
-      case Chain.find_contract_address(address_hash, address_options, false) do
+      case Chain.find_contract_address(address_hash, address_options) do
         {:ok, %{smart_contract: smart_contract}} ->
           full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, db_options)
           Map.put(acc, address_hash, full_abi)
@@ -330,7 +330,7 @@ defmodule Explorer.Chain.Log do
     if Enum.empty?(address_hashes_without_abi) do
       address_hash_abi_map
     else
-      case Chain.find_contract_addresses(address_hashes_without_abi, address_options) do
+      case Address.find_contract_addresses(address_hashes_without_abi, address_options) do
         {:ok, addresses} when is_list(addresses) ->
           update_address_hash_abi_map_with_implementations_abi(address_hash_abi_map, addresses, db_options)
 
