@@ -17,7 +17,8 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.Optimism.Deposits,
       Runner.Optimism.Withdrawals,
       Runner.Optimism.WithdrawalEvents,
-      Runner.Optimism.EIP1559ConfigUpdates
+      Runner.Optimism.EIP1559ConfigUpdates,
+      Runner.Optimism.InteropMessages
     ],
     polygon_edge: [
       Runner.PolygonEdge.Deposits,

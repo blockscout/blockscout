@@ -37,12 +37,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Fetcher.Optimism
   alias Indexer.Prometheus
   alias Timex.Duration
 
   @behaviour Block.Fetcher
 
   @minimum_safe_polling_period :timer.seconds(1)
+  @max_realtime_blocks_in_memory 10
 
   @shutdown_after :timer.minutes(1)
 
@@ -52,7 +54,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
             subscription: nil,
             previous_number: nil,
             timer: nil,
-            last_polled_hash: nil
+            last_realtime_blocks: %{}
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
@@ -65,7 +67,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           subscription: Subscription.t(),
           previous_number: pos_integer() | nil,
           timer: reference(),
-          last_polled_hash: binary() | nil
+          last_realtime_blocks: map()
         }
 
   def start_link([arguments, gen_server_options]) do
@@ -98,7 +100,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   # - `state` contains service parameters, also including:
   #   `previous_number` - the block number reported by the previous call.
   #   `timer` - the timer to call `:poll_latest_block_number` handler next time.
-  #   `last_polled_hash` - the block hash which was polled by the `:poll_latest_block_number` handler on its previous call.
+  #   `last_realtime_blocks` - a map of recent realtime blocks got earlier.
   #
   # ## Returns
   # - `{:noreply, state}` tuple where the `state` is the current or updated GenServer's state.
@@ -110,7 +112,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           subscription: %Subscription{} = subscription,
           previous_number: previous_number,
           timer: timer,
-          last_polled_hash: last_polled_hash
+          last_realtime_blocks: last_realtime_blocks
         } = state
       )
       when is_binary(quantity) do
@@ -120,7 +122,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       Publisher.broadcast([{:last_block_number, number}], :realtime)
     end
 
-    if hash != last_polled_hash do
+    if hash != Map.get(last_realtime_blocks, number) do
       Process.cancel_timer(timer)
 
       # Subscriptions don't support getting all the blocks and transactions data,
@@ -133,10 +135,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
        %{
          state
          | previous_number: number,
-           timer: new_timer
+           timer: new_timer,
+           last_realtime_blocks: update_last_realtime_blocks(last_realtime_blocks, number, hash)
        }}
     else
-      # The block from the websocket must be ignored if this block was already got by the `:poll_latest_block_number` handler
+      # the block must be ignored if this block was already got earlier.
       {:noreply, state}
     end
   end
@@ -149,39 +152,40 @@ defmodule Indexer.Block.Realtime.Fetcher do
   # - `state` contains service parameters, also including:
   #   `previous_number` - the block number reported by the previous block number fetching.
   #   `timer` - the timer to call this handler next time.
-  #   `last_polled_hash` - the block hash which was polled by this handler on its previous call.
+  #   `last_realtime_blocks` - a map of recent realtime blocks got earlier.
   #
   # ## Returns
   # - `{:noreply, state}` tuple where the `state` is the current or updated GenServer's state.
-  #   Contains updated `previous_number`, `timer`, and `last_polled_hash` values.
+  #   Contains updated `previous_number`, `timer`, and `last_realtime_blocks` values.
   @impl GenServer
   def handle_info(
         :poll_latest_block_number,
         %__MODULE__{
           block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher,
           previous_number: previous_number,
-          last_polled_hash: last_polled_hash
+          last_realtime_blocks: last_realtime_blocks
         } = state
       ) do
-    {new_previous_number, new_last_polled_hash} =
-      case EthereumJSONRPC.fetch_block_by_tag("latest", json_rpc_named_arguments) do
-        {:ok, %Blocks{blocks_params: [%{number: number, hash: hash}]}}
-        when is_nil(previous_number) or number != previous_number ->
-          number =
-            if abnormal_gap?(number, previous_number) do
-              new_number = max(number, previous_number)
-              start_fetch_and_import(new_number, block_fetcher, previous_number)
-              new_number
-            else
-              start_fetch_and_import(number, block_fetcher, previous_number)
-              number
-            end
+    {new_previous_number, new_last_realtime_blocks} =
+      with {:ok, %Blocks{blocks_params: [%{number: number, hash: hash}]}} <-
+             EthereumJSONRPC.fetch_block_by_tag("latest", json_rpc_named_arguments),
+           {:new_block, true, _} <- {:new_block, hash != last_realtime_blocks[number], number} do
+        number =
+          if abnormal_gap?(number, previous_number) do
+            new_number = max(number, previous_number)
+            start_fetch_and_import(new_number, block_fetcher, previous_number)
+            new_number
+          else
+            start_fetch_and_import(number, block_fetcher, previous_number)
+            number
+          end
 
-          fetch_validators_async()
-          {number, hash}
-
+        fetch_validators_async()
+        {number, update_last_realtime_blocks(last_realtime_blocks, number, hash)}
+      else
         _ ->
-          {previous_number, last_polled_hash}
+          # the block must be ignored if this block was already got earlier.
+          {previous_number, last_realtime_blocks}
       end
 
     timer = schedule_polling()
@@ -191,13 +195,21 @@ defmodule Indexer.Block.Realtime.Fetcher do
        state
        | previous_number: new_previous_number,
          timer: timer,
-         last_polled_hash: new_last_polled_hash
+         last_realtime_blocks: new_last_realtime_blocks
      }}
   end
 
   # don't handle other messages (e.g. :ssl_closed)
   def handle_info(_, state) do
     {:noreply, state}
+  end
+
+  @spec update_last_realtime_blocks(map(), non_neg_integer(), binary()) :: map()
+  defp update_last_realtime_blocks(last_realtime_blocks, number, hash) do
+    last_realtime_blocks
+    |> Enum.reject(fn {n, _} -> n <= number - @max_realtime_blocks_in_memory end)
+    |> Enum.into(%{})
+    |> Map.put(number, hash)
   end
 
   @impl GenServer
@@ -362,13 +374,15 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   # Removes all rows from `op_transaction_batches`, `op_withdrawals`,
-  # and `op_eip1559_config_updates` tables previously written starting
-  # from the reorg block number
-  defp do_remove_assets_by_number(:optimism, reorg_block) do
-    # credo:disable-for-lines:3 Credo.Check.Design.AliasUsage
-    Indexer.Fetcher.Optimism.EIP1559ConfigUpdate.handle_realtime_l2_reorg(reorg_block)
-    Indexer.Fetcher.Optimism.TransactionBatch.handle_l2_reorg(reorg_block)
-    Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block)
+  # `op_eip1559_config_updates`, and `op_interop_messages` tables
+  # previously written starting from the reorg block number
+  defp do_remove_assets_by_number(:optimism, reorg_block_number) do
+    # credo:disable-for-lines:5 Credo.Check.Design.AliasUsage
+    Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate)
+    Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.Interop.Message)
+    Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.Interop.MessageFailed)
+    Indexer.Fetcher.Optimism.TransactionBatch.handle_l2_reorg(reorg_block_number)
+    Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block_number)
   end
 
   # Removes all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables

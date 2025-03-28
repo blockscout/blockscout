@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
       timestamp_to_datetime: 1
     ]
 
-  import Explorer.Helper, only: [decode_data: 2]
+  import Explorer.Helper, only: [decode_data: 2, hash_to_binary: 1]
 
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain
@@ -218,8 +218,7 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
           @relayed_message_event ->
             message_hash =
               event.second_topic
-              |> String.trim_leading("0x")
-              |> Base.decode16!(case: :mixed)
+              |> hash_to_binary()
 
             {nil, nil, nil, nil, message_hash}
         end
@@ -285,15 +284,8 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
   @spec sent_message_event_parse(%{atom() => any()}) ::
           {binary(), binary(), non_neg_integer(), non_neg_integer(), binary()}
   defp sent_message_event_parse(event) do
-    sender =
-      event.second_topic
-      |> String.trim_leading("0x")
-      |> Base.decode16!(case: :mixed)
-
-    target =
-      event.third_topic
-      |> String.trim_leading("0x")
-      |> Base.decode16!(case: :mixed)
+    sender = hash_to_binary(event.second_topic)
+    target = hash_to_binary(event.third_topic)
 
     [
       amount,

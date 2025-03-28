@@ -13,6 +13,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
   require Logger
 
+  alias Explorer.Chain.Cache.LatestL1BlockNumber
   alias Explorer.Chain.RollupReorgMonitorQueue
   alias Indexer.Helper
 
@@ -160,6 +161,8 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
         } = state
       ) do
     {:ok, latest} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+
+    LatestL1BlockNumber.set_block_number(latest)
 
     if latest < prev_latest do
       Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")

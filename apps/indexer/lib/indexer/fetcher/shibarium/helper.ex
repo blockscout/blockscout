@@ -4,6 +4,7 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
   """
 
   import Ecto.Query
+  import Explorer.Helper, only: [hash_to_binary: 1]
 
   alias Explorer.Chain.Cache.Counters.Shibarium.DepositsAndWithdrawalsCount
   alias Explorer.Chain.Shibarium.{Bridge, Reader}
@@ -16,10 +17,7 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
   """
   @spec calc_operation_hash(binary(), non_neg_integer() | nil, list(), list(), non_neg_integer()) :: binary()
   def calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id) do
-    user_binary =
-      user
-      |> String.trim_leading("0x")
-      |> Base.decode16!(case: :mixed)
+    user_binary = hash_to_binary(user)
 
     amount_or_id =
       if is_nil(amount_or_id) and not Enum.empty?(erc1155_ids) do
