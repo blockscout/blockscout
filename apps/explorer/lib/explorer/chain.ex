@@ -2107,56 +2107,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec increment_last_fetched_counter(binary(), non_neg_integer()) :: {non_neg_integer(), nil}
-  def increment_last_fetched_counter(type, value) do
-    query =
-      from(counter in LastFetchedCounter,
-        where: counter.counter_type == ^type
-      )
-
-    Repo.update_all(query, [inc: [value: value]], timeout: :infinity)
-  end
-
-  @spec upsert_last_fetched_counter(map()) :: {:ok, LastFetchedCounter.t()} | {:error, Ecto.Changeset.t()}
-  def upsert_last_fetched_counter(params) do
-    changeset = LastFetchedCounter.changeset(%LastFetchedCounter{}, params)
-
-    Repo.insert(changeset,
-      on_conflict: :replace_all,
-      conflict_target: [:counter_type]
-    )
-  end
-
-  @doc """
-    Retrieves the last fetched counter value for a specific counter type.
-
-    ## Parameters
-    - `type`: The counter type identifier as a binary string
-    - `options`: Keyword list of options:
-      - `nullable`: When `true`, returns `nil` if no counter exists. Defaults to `false`,
-        returning `Decimal.new(0)` instead
-
-    ## Returns
-    - `Decimal.t()` - The counter value if found, or `Decimal.new(0)` if not found and
-      `nullable: false`
-    - `nil` - Only returned when no counter exists and `nullable: true`
-  """
-  @spec get_last_fetched_counter(binary(), Keyword.t()) :: Decimal.t() | nil
-  def get_last_fetched_counter(type, options \\ []) do
-    query =
-      from(
-        last_fetched_counter in LastFetchedCounter,
-        where: last_fetched_counter.counter_type == ^type,
-        select: last_fetched_counter.value
-      )
-
-    if options[:nullable] do
-      select_repo(options).one(query)
-    else
-      select_repo(options).one(query) || Decimal.new(0)
-    end
-  end
-
   defp block_status({number, timestamp}) do
     now = DateTime.utc_now()
     last_block_period = DateTime.diff(now, timestamp, :millisecond)
