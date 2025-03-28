@@ -1,22 +1,20 @@
 defmodule Explorer.Chain.Cache.BackgroundMigrations do
   @moduledoc """
-    Caches the completion status of various background database migrations in the Blockscout system.
+  Caches the completion status of various background database operations in the Blockscout system.
 
-    This module leverages the MapCache behavior to maintain an in-memory cache of whether specific
-    database migrations have completed. It tracks the status of several critical migrations:
+  This module leverages the MapCache behavior to maintain an in-memory cache of whether specific
+  database operations have completed. These operations include:
+  * Database table migrations
+  * Heavy index operations (creation and dropping)
+  * Data sanitization tasks
+  * Schema normalization processes
 
-    * Transactions denormalization
-    * Address token balance token type migrations (both current and historical)
-    * Token transfer token type migrations
-    * Sanitization of duplicated log index logs
-    * Arbitrum DA records normalization
+  Each operation status is cached to avoid frequent database checks, with a fallback mechanism
+  that asynchronously updates the cache when a status is not found. The default status for
+  any uncached operation is `false`, indicating the operation is not complete.
 
-    Each migration status is cached to avoid frequent database checks, with a fallback mechanism
-    that asynchronously updates the cache when a status is not found. The default status for
-    any uncached migration is `false`, indicating the migration is not complete.
-
-    The cache is particularly useful during the application startup and for performance-critical
-    operations that need to quickly check if certain data migrations have been completed.
+  The cache is particularly useful during the application startup and for performance-critical
+  operations that need to quickly check if certain database operations have been completed.
   """
 
   require Logger
@@ -45,7 +43,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_token_transfers_token_contract_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_token_transfers_block_number_index_finished,
     key: :heavy_indexes_drop_internal_transactions_from_address_hash_index_finished,
-    key: :heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished
+    key: :heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished,
+    key: :heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished
 
   @dialyzer :no_match
 
@@ -61,6 +60,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   }
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
     CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
     CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
@@ -230,6 +230,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     start_migration_status_task(
       SmartContractLanguage,
       &set_smart_contract_language_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished) do
+    start_migration_status_task(
+      CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
+      &set_heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished/1
     )
   end
 

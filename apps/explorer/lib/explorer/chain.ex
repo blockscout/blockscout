@@ -30,14 +30,12 @@ defmodule Explorer.Chain do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.Changeset
 
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
   alias EthereumJSONRPC.Utility.RangesHelper
 
   alias Explorer.Account.WatchlistAddress
-
-  alias Explorer.Counters.{LastFetchedCounter, TokenHoldersCounter, TokenTransfersCounter}
 
   alias Explorer.Chain
 
@@ -51,7 +49,6 @@ defmodule Explorer.Chain do
     BlockNumberHelper,
     CurrencyHelper,
     Data,
-    DecompiledSmartContract,
     DenormalizationHelper,
     Hash,
     Import,
@@ -73,20 +70,27 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Cache.{
     BlockNumber,
     Blocks,
-    ContractsCounter,
-    NewContractsCounter,
-    NewVerifiedContractsCounter,
     Transactions,
-    Uncles,
-    VerifiedContractsCounter,
+    Uncles
+  }
+
+  alias Explorer.Chain.Cache.Counters.{
+    BlocksCount,
+    ContractsCount,
+    LastFetchedCounter,
+    NewContractsCount,
+    NewVerifiedContractsCount,
+    TokenHoldersCount,
+    TokenTransfersCount,
+    VerifiedContractsCount,
     WithdrawalsSum
   }
 
-  alias Explorer.Chain.Cache.Block, as: BlockCache
-  alias Explorer.Chain.Cache.Helper, as: CacheHelper
+  alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Helper, as: ExplorerHelper
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.MicroserviceInterfaces.MultichainSearch
@@ -98,13 +102,6 @@ defmodule Explorer.Chain do
   @default_paging_options %PagingOptions{page_size: @default_page_size}
 
   @token_transfers_per_transaction_preview 10
-  @token_transfer_necessity_by_association %{
-    [from_address: :smart_contract] => :optional,
-    [to_address: :smart_contract] => :optional,
-    [from_address: :names] => :optional,
-    [to_address: :names] => :optional,
-    token: :optional
-  }
 
   @method_name_to_id_map %{
     "approve" => "095ea7b3",
@@ -318,36 +315,14 @@ defmodule Explorer.Chain do
   def address_hash_to_token_transfers_new(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     direction = Keyword.get(options, :direction)
+    token_address_hash = Keyword.get(options, :token_address_hash)
     filters = Keyword.get(options, :token_type)
     necessity_by_association = Keyword.get(options, :necessity_by_association)
 
     address_hash
-    |> TokenTransfer.token_transfers_by_address_hash(direction, filters, paging_options)
+    |> TokenTransfer.token_transfers_by_address_hash(direction, token_address_hash, filters, paging_options, options)
     |> join_associations(necessity_by_association)
     |> select_repo(options).all()
-  end
-
-  @spec address_hash_to_token_transfers_by_token_address_hash(
-          Hash.Address.t() | String.t(),
-          Hash.Address.t() | String.t(),
-          Keyword.t()
-        ) :: [TokenTransfer.t()]
-  def address_hash_to_token_transfers_by_token_address_hash(address_hash, token_address_hash, options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    case paging_options do
-      %PagingOptions{key: {0, 0}} ->
-        []
-
-      _ ->
-        necessity_by_association = Keyword.get(options, :necessity_by_association)
-
-        address_hash
-        |> TokenTransfer.token_transfers_by_address_hash_and_token_address_hash(token_address_hash)
-        |> join_associations(necessity_by_association)
-        |> TokenTransfer.handle_paging_options(paging_options)
-        |> select_repo(options).all()
-    end
   end
 
   @spec address_hash_to_withdrawals(
@@ -561,13 +536,6 @@ defmodule Explorer.Chain do
     |> Transaction.put_has_token_transfers_to_transaction(old_ui?)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> select_repo(options).all()
-    |> (&if(old_ui?,
-          do: &1,
-          else:
-            Enum.map(&1, fn transaction ->
-              preload_token_transfers(transaction, @token_transfer_necessity_by_association, options)
-            end)
-        )).()
   end
 
   @spec execution_node_to_transactions(Hash.Address.t(), [paging_options | necessity_by_association_option | api?()]) ::
@@ -583,9 +551,6 @@ defmodule Explorer.Chain do
     |> Transaction.put_has_token_transfers_to_transaction(false)
     |> (& &1).()
     |> select_repo(options).all()
-    |> (&Enum.map(&1, fn transaction ->
-          preload_token_transfers(transaction, @token_transfer_necessity_by_association, options)
-        end)).()
   end
 
   @spec block_to_withdrawals(
@@ -731,43 +696,6 @@ defmodule Explorer.Chain do
   def confirmations(%Block{consensus: false}, _), do: {:error, :non_consensus}
 
   def confirmations(nil, _), do: {:error, :pending}
-
-  @doc """
-  Creates a decompiled smart contract.
-  """
-
-  @spec create_decompiled_smart_contract(map()) :: {:ok, Address.t()} | {:error, Ecto.Changeset.t()}
-  def create_decompiled_smart_contract(attrs) do
-    changeset = DecompiledSmartContract.changeset(%DecompiledSmartContract{}, attrs)
-
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    Multi.new()
-    |> Multi.run(:set_address_decompiled, fn repo, _ ->
-      set_address_decompiled(repo, Changeset.get_field(changeset, :address_hash))
-    end)
-    |> Multi.insert(:decompiled_smart_contract, changeset,
-      on_conflict: :replace_all,
-      conflict_target: [:decompiler_version, :address_hash]
-    )
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{decompiled_smart_contract: decompiled_smart_contract}} -> {:ok, decompiled_smart_contract}
-      {:error, _, error_value, _} -> {:error, error_value}
-    end
-  end
-
-  defp set_address_decompiled(repo, address_hash) do
-    query =
-      from(
-        address in Address,
-        where: address.hash == ^address_hash
-      )
-
-    case repo.update_all(query, set: [decompiled: true]) do
-      {1, _} -> {:ok, []}
-      _ -> {:error, "There was an error annotating that the address has been decompiled."}
-    end
-  end
 
   @spec verified_contracts_top(non_neg_integer()) :: [Hash.Address.t()]
   def verified_contracts_top(limit) do
@@ -922,10 +850,8 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
 
-  Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
-
   """
-  @spec hash_to_address(Hash.Address.t() | binary(), [necessity_by_association_option | api?], boolean()) ::
+  @spec hash_to_address(Hash.Address.t() | binary(), [necessity_by_association_option | api?]) ::
           {:ok, Address.t()} | {:error, :not_found}
   def hash_to_address(
         hash,
@@ -937,8 +863,7 @@ defmodule Explorer.Chain do
             :token => :optional,
             :contracts_creation_transaction => :optional
           }
-        ],
-        query_decompiled_code_flag \\ false
+        ]
       ) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -950,26 +875,11 @@ defmodule Explorer.Chain do
 
     query
     |> join_associations(necessity_by_association)
-    |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
     |> select_repo(options).one()
     |> SmartContract.compose_address_for_unverified_smart_contract(hash, options)
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
-    end
-  end
-
-  def decompiled_code(address_hash, version) do
-    query =
-      from(contract in DecompiledSmartContract,
-        where: contract.address_hash == ^address_hash and contract.decompiler_version == ^version
-      )
-
-    query
-    |> Repo.one()
-    |> case do
-      nil -> {:error, :not_found}
-      contract -> {:ok, contract.decompiled_source_code}
     end
   end
 
@@ -1025,10 +935,8 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
 
-  Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
-
   """
-  @spec find_or_insert_address_from_hash(Hash.Address.t(), [necessity_by_association_option], boolean()) ::
+  @spec find_or_insert_address_from_hash(Hash.Address.t(), [necessity_by_association_option]) ::
           {:ok, Address.t()}
   def find_or_insert_address_from_hash(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
@@ -1040,16 +948,15 @@ defmodule Explorer.Chain do
             :token => :optional,
             :contracts_creation_transaction => :optional
           }
-        ],
-        query_decompiled_code_flag \\ true
+        ]
       ) do
-    case hash_to_address(hash, options, query_decompiled_code_flag) do
+    case hash_to_address(hash, options) do
       {:ok, address} ->
         {:ok, address}
 
       {:error, :not_found} ->
         Address.create(%{hash: to_string(hash)})
-        hash_to_address(hash, options, query_decompiled_code_flag)
+        hash_to_address(hash, options)
     end
   end
 
@@ -1104,15 +1011,12 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
 
-  Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
-
   """
-  @spec find_contract_address(Hash.Address.t(), [necessity_by_association_option], boolean()) ::
+  @spec find_contract_address(Hash.Address.t(), [necessity_by_association_option]) ::
           {:ok, Address.t()} | {:error, :not_found}
   def find_contract_address(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
-        options \\ [],
-        query_decompiled_code_flag \\ false
+        options \\ []
       ) do
     necessity_by_association =
       options
@@ -1131,7 +1035,6 @@ defmodule Explorer.Chain do
     address_result =
       query
       |> join_associations(necessity_by_association)
-      |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
       |> select_repo(options).one()
 
     updated_address_result = update_address_result(address_result, options, false)
@@ -1245,31 +1148,6 @@ defmodule Explorer.Chain do
 
     address_result
     |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, address_result.hash)
-  end
-
-  @spec find_decompiled_contract_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
-  def find_decompiled_contract_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
-    query =
-      from(
-        address in Address,
-        preload: [
-          :contracts_creation_internal_transaction,
-          :names,
-          :smart_contract,
-          :token,
-          :contracts_creation_transaction,
-          :decompiled_smart_contracts
-        ],
-        where: address.hash == ^hash
-      )
-
-    address = Repo.one(query)
-
-    if address do
-      {:ok, address}
-    else
-      {:error, :not_found}
-    end
   end
 
   @doc """
@@ -1391,38 +1269,33 @@ defmodule Explorer.Chain do
     end
   end
 
-  # preload_to_detect_tt?: we don't need to preload more than one token transfer in case the transaction inside the list (we don't show any token transfers on transaction tile in new UI)
   def preload_token_transfers(
         %Transaction{hash: transaction_hash, block_hash: block_hash} = transaction,
         necessity_by_association,
-        options,
-        preload_to_detect_tt? \\ true
+        options
       ) do
-    if preload_to_detect_tt? do
-      transaction
-    else
-      limit = if(preload_to_detect_tt?, do: 1, else: @token_transfers_per_transaction_preview + 1)
+    limit = @token_transfers_per_transaction_preview + 1
 
-      token_transfers =
-        TokenTransfer
-        |> (&if(is_nil(block_hash),
-              do: where(&1, [token_transfer], token_transfer.transaction_hash == ^transaction_hash),
-              else:
-                where(
-                  &1,
-                  [token_transfer],
-                  token_transfer.transaction_hash == ^transaction_hash and token_transfer.block_hash == ^block_hash
-                )
-            )).()
-        |> limit(^limit)
-        |> order_by([token_transfer], asc: token_transfer.log_index)
-        |> (&if(preload_to_detect_tt?, do: &1, else: join_associations(&1, necessity_by_association))).()
-        |> select_repo(options).all()
-        |> flat_1155_batch_token_transfers()
-        |> Enum.take(limit)
+    token_transfers =
+      TokenTransfer
+      |> (&if(is_nil(block_hash),
+            do: where(&1, [token_transfer], token_transfer.transaction_hash == ^transaction_hash),
+            else:
+              where(
+                &1,
+                [token_transfer],
+                token_transfer.transaction_hash == ^transaction_hash and token_transfer.block_hash == ^block_hash
+              )
+          )).()
+      |> limit(^limit)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
+      |> order_by([token_transfer], asc: token_transfer.log_index)
+      |> join_associations(necessity_by_association)
+      |> select_repo(options).all()
+      |> flat_1155_batch_token_transfers()
+      |> Enum.take(limit)
 
-      %Transaction{transaction | token_transfers: token_transfers}
-    end
+    %Transaction{transaction | token_transfers: token_transfers}
   end
 
   def get_token_transfers_per_transaction_preview_count, do: @token_transfers_per_transaction_preview
@@ -1541,7 +1414,7 @@ defmodule Explorer.Chain do
         _ ->
           divisor = max_saved_block_number - min_blockchain_block_number - BlockNumberHelper.null_rounds_count() + 1
 
-          ratio = get_ratio(BlockCache.estimated_count(), divisor)
+          ratio = get_ratio(BlocksCount.get(), divisor)
 
           ratio
           |> (&if(
@@ -1815,7 +1688,7 @@ defmodule Explorer.Chain do
   def get_table_rows_total_count(module, options) do
     table_name = module.__schema__(:source)
 
-    count = CacheHelper.estimated_count_from(table_name, options)
+    count = CacheCountersHelper.estimated_count_from(table_name, options)
 
     if is_nil(count) do
       select_repo(options).aggregate(module, :count, timeout: :infinity)
@@ -2663,13 +2536,6 @@ defmodule Explorer.Chain do
         |> Transaction.put_has_token_transfers_to_transaction(old_ui?)
         |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
         |> select_repo(options).all()
-        |> (&if(old_ui?,
-              do: &1,
-              else:
-                Enum.map(&1, fn transaction ->
-                  preload_token_transfers(transaction, @token_transfer_necessity_by_association, options)
-                end)
-            )).()
     end
   end
 
@@ -2922,6 +2788,7 @@ defmodule Explorer.Chain do
         |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
         |> preload([token: token], [{:token, token}])
         |> TokenTransfer.filter_by_type(token_type)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> TokenTransfer.page_token_transfer(paging_options)
         |> limit(^paging_options.page_size)
         |> order_by([token_transfer], asc: token_transfer.log_index)
@@ -3872,6 +3739,7 @@ defmodule Explorer.Chain do
   def fetch_last_token_balances(address_hash, options \\ []) do
     address_hash
     |> CurrentTokenBalance.last_token_balances()
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> select_repo(options).all()
   end
 
@@ -3888,6 +3756,7 @@ defmodule Explorer.Chain do
       _ ->
         address_hash
         |> CurrentTokenBalance.last_token_balances(options, filter)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> page_current_token_balances(paging_options)
         |> select_repo(options).all()
     end
@@ -4295,27 +4164,6 @@ defmodule Explorer.Chain do
     value
   end
 
-  defp with_decompiled_code_flag(query, _hash, false), do: query
-
-  defp with_decompiled_code_flag(query, hash, true) do
-    has_decompiled_code_query =
-      from(decompiled_contract in DecompiledSmartContract,
-        where: decompiled_contract.address_hash == ^hash,
-        limit: 1,
-        select: %{
-          address_hash: decompiled_contract.address_hash,
-          has_decompiled_code?: not is_nil(decompiled_contract.address_hash)
-        }
-      )
-
-    from(
-      address in query,
-      left_join: decompiled_code in subquery(has_decompiled_code_query),
-      on: address.hash == decompiled_code.address_hash,
-      select_merge: %{has_decompiled_code?: decompiled_code.has_decompiled_code?}
-    )
-  end
-
   defp decode_params(params, types) do
     params
     |> Base.decode16!(case: :mixed)
@@ -4383,35 +4231,6 @@ defmodule Explorer.Chain do
       from(
         address in Address,
         where: address.hash == ^address_hash and not is_nil(address.contract_code)
-      )
-
-    Repo.exists?(query)
-  end
-
-  @doc """
-  Checks if it exists a `t:Explorer.Chain.DecompiledSmartContract.t/0` for the
-  `t:Explorer.Chain.Address.t/0` with the provided `hash` and with the provided version.
-
-  Returns `:ok` if found and `:not_found` otherwise.
-  """
-  @spec check_decompiled_contract_exists(Hash.Address.t(), String.t()) :: :ok | :not_found
-  def check_decompiled_contract_exists(address_hash, version) do
-    address_hash
-    |> decompiled_contract_exists?(version)
-    |> boolean_to_check_result()
-  end
-
-  @doc """
-  Checks if it exists a `t:Explorer.Chain.DecompiledSmartContract.t/0` for the
-  `t:Explorer.Chain.Address.t/0` with the provided `hash` and with the provided version.
-
-  Returns `true` if found and `false` otherwise.
-  """
-  @spec decompiled_contract_exists?(Hash.Address.t(), String.t()) :: boolean()
-  def decompiled_contract_exists?(address_hash, version) do
-    query =
-      from(contract in DecompiledSmartContract,
-        where: contract.address_hash == ^address_hash and contract.decompiler_version == ^version
       )
 
     Repo.exists?(query)
@@ -4915,30 +4734,30 @@ defmodule Explorer.Chain do
   end
 
   def count_verified_contracts_from_cache(options \\ []) do
-    VerifiedContractsCounter.fetch(options)
+    VerifiedContractsCount.fetch(options)
   end
 
   def count_new_verified_contracts_from_cache(options \\ []) do
-    NewVerifiedContractsCounter.fetch(options)
+    NewVerifiedContractsCount.fetch(options)
   end
 
   def count_contracts_from_cache(options \\ []) do
-    ContractsCounter.fetch(options)
+    ContractsCount.fetch(options)
   end
 
   def count_new_contracts_from_cache(options \\ []) do
-    NewContractsCounter.fetch(options)
+    NewContractsCount.fetch(options)
   end
 
   def fetch_token_counters(address_hash, timeout) do
     total_token_transfers_task =
       Task.async(fn ->
-        TokenTransfersCounter.fetch(address_hash)
+        TokenTransfersCount.fetch(address_hash)
       end)
 
     total_token_holders_task =
       Task.async(fn ->
-        TokenHoldersCounter.fetch(address_hash)
+        TokenHoldersCount.fetch(address_hash)
       end)
 
     [total_token_transfers_task, total_token_holders_task]
@@ -5112,7 +4931,7 @@ defmodule Explorer.Chain do
   end
 
   def upsert_count_withdrawals(index) do
-    upsert_last_fetched_counter(%{
+    LastFetchedCounter.upsert(%{
       counter_type: "withdrawals_count",
       value: index
     })
@@ -5123,7 +4942,7 @@ defmodule Explorer.Chain do
   end
 
   def count_withdrawals_from_cache(options \\ []) do
-    "withdrawals_count" |> get_last_fetched_counter(options) |> Decimal.add(1)
+    "withdrawals_count" |> LastFetchedCounter.get(options) |> Decimal.add(1)
   end
 
   def add_fetcher_limit(query, false), do: query

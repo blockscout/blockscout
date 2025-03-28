@@ -12,10 +12,17 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @callback migration_name :: String.t()
 
   @doc """
-  Returns the name of the table. The name is used to track the operation's status in
-  `Explorer.Migrator.MigrationStatus`.
+  Returns the name of the table on which the index operation will be performed.
+
+  The name is used to track the operation's status in `Explorer.Migrator.MigrationStatus`.
+
+  It's explicitly defined as a specific atom to ensure type safety. This helps
+  prevent typos or errors when creating migrations, as dialyzer will raise an
+  error if an invalid table name is used.
+
+  If you need to add a new table, extend this type specification with the new table name.
   """
-  @callback table_name :: :logs | :internal_transactions | :token_transfers | :addresses
+  @callback table_name :: :logs | :internal_transactions | :token_transfers | :addresses | :arbitrum_batch_l2_blocks
 
   @doc """
   Specifies the type of operation to be performed on the database index.

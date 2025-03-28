@@ -21,7 +21,6 @@ defmodule BlockScoutWeb.AddressView do
   @tabs [
     "coin-balances",
     "contracts",
-    "decompiled-contracts",
     "internal-transactions",
     "token-transfers",
     "read-contract",
@@ -258,11 +257,6 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_with_write_functions?(%Address{smart_contract: _}), do: false
 
-  def has_decompiled_code?(address) do
-    address.has_decompiled_code? ||
-      (Ecto.assoc_loaded?(address.decompiled_smart_contracts) && not Enum.empty?(address.decompiled_smart_contracts))
-  end
-
   def token_title(%Token{name: nil, contract_address_hash: contract_address_hash}) do
     short_hash_left_right(contract_address_hash)
   end
@@ -365,7 +359,6 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["transactions"]), do: gettext("Transactions")
   defp tab_name(["token-transfers"]), do: gettext("Token Transfers")
   defp tab_name(["contracts"]), do: gettext("Code")
-  defp tab_name(["decompiled-contracts"]), do: gettext("Decompiled Code")
   defp tab_name(["read-contract"]), do: gettext("Read Contract")
   defp tab_name(["read-proxy"]), do: gettext("Read Proxy")
   defp tab_name(["write-contract"]), do: gettext("Write Contract")
