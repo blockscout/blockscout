@@ -107,7 +107,8 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     transaction_history_data =
       date_range
       |> Enum.map(fn row ->
-        %{date: row.date, transaction_count: row.number_of_transactions}
+        # todo: `transaction_count` property should be removed in favour `transactions_count` property with the next release after 8.0.0
+        %{date: row.date, transaction_count: row.number_of_transactions, transactions_count: row.number_of_transactions}
       end)
 
     json(conn, %{

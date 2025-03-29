@@ -37,6 +37,9 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
   def withdrawals_counters(conn, _params) do
     conn
     |> json(%{
+      withdrawals_count: Chain.count_withdrawals_from_cache(api?: true),
+      withdrawals_sum: Chain.sum_withdrawals_from_cache(api?: true),
+      # todo: Both properties below should be removed in favour `withdrawals_count` and `withdrawals_sum` properties with the next release after 8.0.0
       withdrawal_count: Chain.count_withdrawals_from_cache(api?: true),
       withdrawal_sum: Chain.sum_withdrawals_from_cache(api?: true)
     })
