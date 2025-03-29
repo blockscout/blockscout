@@ -7,5 +7,6 @@
     "mix.exs",
     "{config}/**/*.{ex,exs}"
   ],
-  line_length: 120
+  line_length: 120,
+  import_deps: [:open_api_spex]
 ]
