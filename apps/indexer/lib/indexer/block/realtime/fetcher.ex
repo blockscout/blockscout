@@ -38,6 +38,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Prometheus
+  alias Indexer.Prometheus.Instrumenter
   alias Timex.Duration
 
   @behaviour Block.Fetcher
@@ -280,6 +281,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
       |> put_in([:block_rewards], chain_import_block_rewards)
 
     with {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
+      last_batch =
+        chain_import_options[:blocks][:params]
+        |> Enum.max_by(& &1.number, fn -> nil end)
+
+      Instrumenter.set_latest_block(last_batch.number, last_batch.timestamp)
+
       async_import_remaining_block_data(
         imported,
         %{block_rewards: %{errors: block_reward_errors}}

@@ -342,4 +342,67 @@ defmodule Explorer.Chain.ZkSync.Reader do
   defp page_batches(query, %PagingOptions{key: {number}}) do
     from(tb in query, where: tb.number < ^number)
   end
+
+  @doc """
+    Gets information about the latest batch and calculates average time between commitments.
+
+    ## Parameters
+      - `options`: Options passed to `Chain.select_repo()`. (Optional)
+
+    ## Returns
+    - If batches exist and at least one batch is committed:
+      `{:ok, %{latest_batch_number: integer, latest_batch_timestamp: DateTime.t(), average_batch_time: integer}}`
+      where:
+        * latest_batch_number - number of the latest batch in the database
+        * latest_batch_timestamp - when the latest batch was committed to L1
+        * average_batch_time - average number of seconds between commits for the last 10 batches
+
+    - If no committed batches exist: `{:error, :not_found}`
+  """
+  @spec get_latest_batch_info(keyword()) :: {:ok, map()} | {:error, :not_found}
+  def get_latest_batch_info(options \\ []) do
+    import Ecto.Query
+
+    latest_batches_query =
+      from(batch in TransactionBatch,
+        join: tx in assoc(batch, :commit_transaction),
+        order_by: [desc: batch.number],
+        limit: 10,
+        select: %{
+          number: batch.number,
+          timestamp: tx.timestamp
+        }
+      )
+
+    case select_repo(options).all(latest_batches_query) do
+      [] ->
+        {:error, :not_found}
+
+      [latest_batch | other_batches] ->
+        # Calculate average time between batches
+        average_time =
+          case other_batches do
+            [] ->
+              0
+
+            batches ->
+              batches
+              |> Enum.zip(tl([latest_batch | batches]))
+              |> Enum.map(fn {newer, older} ->
+                DateTime.diff(newer.timestamp, older.timestamp, :second)
+              end)
+              # credo:disable-for-next-line
+              |> then(fn diffs ->
+                div(Enum.sum(diffs), length(diffs))
+              end)
+          end
+
+        {:ok,
+         %{
+           latest_batch_number: latest_batch.number,
+           latest_batch_timestamp: latest_batch.timestamp,
+           average_batch_time: average_time
+         }}
+    end
+  end
 end
