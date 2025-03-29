@@ -13,15 +13,18 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
+  use BlockScoutWeb.Routers.ChainTypeScope
 
   use Utils.CompileTimeEnvHelper,
     chain_type: [:explorer, :chain_type],
-    mud_enabled: [:explorer, [Explorer.Chain.Mud, :enabled]],
     graphql_enabled: [:block_scout_web, [Api.GraphQL, :enabled]],
     graphql_max_complexity: [:block_scout_web, [Api.GraphQL, :max_complexity]],
     graphql_token_limit: [:block_scout_web, [Api.GraphQL, :token_limit]],
     reading_enabled: [:block_scout_web, [__MODULE__, :reading_enabled]],
     writing_enabled: [:block_scout_web, [__MODULE__, :writing_enabled]]
+
+  use Utils.RuntimeEnvHelper,
+    mud_enabled?: [:explorer, [Explorer.Chain.Mud, :enabled]]
 
   alias BlockScoutWeb.Routers.{
     AddressBadgesApiV2Router,
@@ -31,7 +34,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     UtilsApiV2Router
   }
 
-  alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
+  alias BlockScoutWeb.Plug.{CheckApiV2, CheckFeature, RateLimit}
   alias BlockScoutWeb.Routers.AccountRouter
 
   @max_query_string_length 5_000
@@ -55,6 +58,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
+    plug(:fetch_cookies)
   end
 
   pipeline :api_v2 do
@@ -101,6 +105,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(:accepts, ["json"])
     plug(RateLimit, graphql?: true)
     plug(BlockScoutWeb.Plug.GraphQLSchemaIntrospection)
+  end
+
+  pipeline :mud do
+    plug(CheckFeature, feature_check: &mud_enabled?/0)
   end
 
   alias BlockScoutWeb.API.V2
@@ -168,7 +176,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:transaction_hash_param/state-changes", V2.TransactionController, :state_changes)
       get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
 
-      if @chain_type == :neon do
+      chain_scope :neon do
         get("/:transaction_hash_param/external-transactions", V2.TransactionController, :external_transactions)
       end
 
@@ -296,7 +304,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/polygon-edge" do
-      if @chain_type == :polygon_edge do
+      chain_scope :polygon_edge do
         get("/deposits", V2.PolygonEdgeController, :deposits)
         get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
         get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
@@ -317,7 +325,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/shibarium" do
-      if @chain_type == :shibarium do
+      chain_scope :shibarium do
         get("/deposits", V2.ShibariumController, :deposits)
         get("/deposits/count", V2.ShibariumController, :deposits_count)
         get("/withdrawals", V2.ShibariumController, :withdrawals)
@@ -389,27 +397,25 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/validators" do
-      case @chain_type do
-        :stability ->
-          scope "/stability" do
-            get("/", V2.ValidatorController, :stability_validators_list)
-            get("/counters", V2.ValidatorController, :stability_validators_counters)
-          end
+      if @chain_type == :zilliqa do
+        scope "/zilliqa" do
+          get("/", V2.ValidatorController, :zilliqa_validators_list)
+          get("/:bls_public_key", V2.ValidatorController, :zilliqa_validator)
+        end
+      end
 
-        :blackfort ->
-          scope "/blackfort" do
-            get("/", V2.ValidatorController, :blackfort_validators_list)
-            get("/counters", V2.ValidatorController, :blackfort_validators_counters)
-          end
+      chain_scope :stability do
+        scope "/stability" do
+          get("/", V2.ValidatorController, :stability_validators_list)
+          get("/counters", V2.ValidatorController, :stability_validators_counters)
+        end
+      end
 
-        :zilliqa ->
-          scope "/zilliqa" do
-            get("/", V2.ValidatorController, :zilliqa_validators_list)
-            get("/:bls_public_key", V2.ValidatorController, :zilliqa_validator)
-          end
-
-        _ ->
-          nil
+      chain_scope :blackfort do
+        scope "/blackfort" do
+          get("/", V2.ValidatorController, :blackfort_validators_list)
+          get("/counters", V2.ValidatorController, :blackfort_validators_counters)
+        end
       end
     end
 
@@ -422,17 +428,16 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/mud" do
-      if @mud_enabled do
-        get("/worlds", V2.MudController, :worlds)
-        get("/worlds/count", V2.MudController, :worlds_count)
-        get("/worlds/:world/tables", V2.MudController, :world_tables)
-        get("/worlds/:world/systems", V2.MudController, :world_systems)
-        get("/worlds/:world/systems/:system", V2.MudController, :world_system)
-        get("/worlds/:world/tables/count", V2.MudController, :world_tables_count)
-        get("/worlds/:world/tables/:table_id/records", V2.MudController, :world_table_records)
-        get("/worlds/:world/tables/:table_id/records/count", V2.MudController, :world_table_records_count)
-        get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
-      end
+      pipe_through(:mud)
+      get("/worlds", V2.MudController, :worlds)
+      get("/worlds/count", V2.MudController, :worlds_count)
+      get("/worlds/:world/tables", V2.MudController, :world_tables)
+      get("/worlds/:world/systems", V2.MudController, :world_systems)
+      get("/worlds/:world/systems/:system", V2.MudController, :world_system)
+      get("/worlds/:world/tables/count", V2.MudController, :world_tables_count)
+      get("/worlds/:world/tables/:table_id/records", V2.MudController, :world_table_records)
+      get("/worlds/:world/tables/:table_id/records/count", V2.MudController, :world_table_records_count)
+      get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
     end
 
     scope "/arbitrum" do
@@ -501,7 +506,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     if @writing_enabled do
-      post("/decompiled_smart_contract", V1.DecompiledSmartContractController, :create)
       post("/verified_smart_contracts", V1.VerifiedSmartContractController, :create)
     end
 

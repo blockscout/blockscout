@@ -2,13 +2,13 @@ defmodule BlockScoutWeb.UserSocket do
   use Phoenix.Socket
   use Absinthe.Phoenix.Socket, schema: BlockScoutWeb.GraphQL.Schema
 
-  channel("addresses:*", BlockScoutWeb.AddressChannel)
-  channel("blocks:*", BlockScoutWeb.BlockChannel)
-  channel("exchange_rate:*", BlockScoutWeb.ExchangeRateChannel)
-  channel("rewards:*", BlockScoutWeb.RewardChannel)
-  channel("transactions:*", BlockScoutWeb.TransactionChannel)
-  channel("tokens:*", BlockScoutWeb.TokenChannel)
-  channel("token_instances:*", BlockScoutWeb.TokenInstanceChannel)
+  channel("addresses_old:*", BlockScoutWeb.AddressChannel)
+  channel("blocks_old:*", BlockScoutWeb.BlockChannel)
+  channel("exchange_rate_old:*", BlockScoutWeb.ExchangeRateChannel)
+  channel("rewards_old:*", BlockScoutWeb.RewardChannel)
+  channel("transactions_old:*", BlockScoutWeb.TransactionChannel)
+  channel("tokens_old:*", BlockScoutWeb.TokenChannel)
+  channel("token_instances_old:*", BlockScoutWeb.TokenInstanceChannel)
 
   def connect(%{"locale" => locale}, socket) do
     {:ok, assign(socket, :locale, locale)}

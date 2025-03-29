@@ -24,7 +24,7 @@ defmodule Explorer.Chain.Address.TokenTransfersTest do
 
       [result] =
         address.hash
-        |> AddressTokenTransfersCsvExporter.export(from_period, to_period)
+        |> AddressTokenTransfersCsvExporter.export(from_period, to_period, [])
         |> Enum.to_list()
         |> Enum.drop(1)
         |> Enum.map(fn [
@@ -125,7 +125,7 @@ defmodule Explorer.Chain.Address.TokenTransfersTest do
 
       result =
         address.hash
-        |> AddressTokenTransfersCsvExporter.export(from_period, to_period)
+        |> AddressTokenTransfersCsvExporter.export(from_period, to_period, [])
         |> Enum.to_list()
         |> Enum.drop(1)
 

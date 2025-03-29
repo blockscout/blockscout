@@ -13,7 +13,6 @@ disable_api? = ConfigHelper.parse_bool_env_var("DISABLE_API")
 config :block_scout_web,
   version: System.get_env("BLOCKSCOUT_VERSION"),
   release_link: System.get_env("RELEASE_LINK"),
-  decompiled_smart_contract_token: System.get_env("DECOMPILED_SMART_CONTRACT_TOKEN"),
   show_percentage: ConfigHelper.parse_bool_env_var("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true"),
   checksum_address_hashes: ConfigHelper.parse_bool_env_var("CHECKSUM_ADDRESS_HASHES", "true"),
   other_networks: System.get_env("SUPPORTED_CHAINS"),
@@ -294,20 +293,24 @@ config :explorer, Explorer.ChainSpec.GenesisData,
 
 address_sum_global_ttl = ConfigHelper.parse_time_env_var("CACHE_ADDRESS_SUM_PERIOD", "1h")
 
-config :explorer, Explorer.Chain.Cache.AddressSum, global_ttl: address_sum_global_ttl
+config :explorer, Explorer.Chain.Cache.Counters.AddressesCoinBalanceSum, global_ttl: address_sum_global_ttl
 
-config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt, global_ttl: address_sum_global_ttl
+config :explorer, Explorer.Chain.Cache.Counters.AddressesCoinBalanceSumMinusBurnt, global_ttl: address_sum_global_ttl
 
-config :explorer, Explorer.Chain.Cache.GasUsage,
-  global_ttl: ConfigHelper.parse_time_env_var("CACHE_TOTAL_GAS_USAGE_PERIOD", "2h")
+config :explorer, Explorer.Chain.Cache.Counters.GasUsageSum,
+  global_ttl: ConfigHelper.parse_time_env_var("CACHE_TOTAL_GAS_USAGE_PERIOD", "2h"),
+  enabled: ConfigHelper.parse_bool_env_var("CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED")
 
-config :explorer, Explorer.Chain.Cache.Block,
+config :explorer, Explorer.Chain.Cache.Counters.BlocksCount,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_BLOCK_COUNT_PERIOD", "2h")
 
-config :explorer, Explorer.Chain.Cache.Transaction,
+config :explorer, Explorer.Chain.Cache.Counters.AddressesCount,
+  update_interval_in_milliseconds: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_COUNT_PERIOD", "30m")
+
+config :explorer, Explorer.Chain.Cache.Counters.TransactionsCount,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_TXS_COUNT_PERIOD", "2h")
 
-config :explorer, Explorer.Chain.Cache.PendingBlockOperation,
+config :explorer, Explorer.Chain.Cache.Counters.PendingBlockOperationCount,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_PBO_COUNT_PERIOD", "20m")
 
 config :explorer, Explorer.Chain.Cache.GasPriceOracle,
@@ -321,23 +324,23 @@ config :explorer, Explorer.Chain.Cache.GasPriceOracle,
   average_time_coefficient: ConfigHelper.parse_float_env_var("GAS_PRICE_ORACLE_AVERAGE_TIME_COEFFICIENT", 3),
   fast_time_coefficient: ConfigHelper.parse_float_env_var("GAS_PRICE_ORACLE_FAST_TIME_COEFFICIENT", 1)
 
-config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
+config :explorer, Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount,
   enabled: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "rsk",
   global_ttl: ConfigHelper.parse_time_env_var("ROOTSTOCK_LOCKED_BTC_CACHE_PERIOD", "10m"),
   locking_cap: ConfigHelper.parse_integer_env_var("ROOTSTOCK_LOCKING_CAP", 21_000_000)
 
 config :explorer, Explorer.Chain.Cache.OptimismFinalizationPeriod, enabled: ConfigHelper.chain_type() == :optimism
 
-config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsGasUsageSum,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_PERIOD", "30m")
 
-config :explorer, Explorer.Counters.TokenHoldersCounter,
+config :explorer, Explorer.Chain.Cache.Counters.TokenHoldersCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_TOKEN_HOLDERS_COUNTER_PERIOD", "1h")
 
-config :explorer, Explorer.Counters.TokenTransfersCounter,
+config :explorer, Explorer.Chain.Cache.Counters.TokenTransfersCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_TOKEN_TRANSFERS_COUNTER_PERIOD", "1h")
 
-config :explorer, Explorer.Counters.AverageBlockTime,
+config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime,
   enabled: true,
   period: :timer.minutes(10),
   cache_period: ConfigHelper.parse_time_env_var("CACHE_AVERAGE_BLOCK_PERIOD", "30m")
@@ -345,26 +348,26 @@ config :explorer, Explorer.Counters.AverageBlockTime,
 config :explorer, Explorer.Market.MarketHistoryCache,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_MARKET_HISTORY_PERIOD", "6h")
 
-config :explorer, Explorer.Counters.AddressTransactionsCounter,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_COUNTER_PERIOD", "1h")
 
-config :explorer, Explorer.Counters.AddressTokenUsdSum,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTokensUsdSum,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TOKENS_USD_SUM_PERIOD", "1h")
 
-config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTokenTransfersCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TOKEN_TRANSFERS_COUNTER_PERIOD", "1h")
 
-config :explorer, Explorer.Counters.LastOutputRootSizeCounter,
+config :explorer, Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount,
   enabled: ConfigHelper.chain_type() == :optimism,
   enable_consolidation: ConfigHelper.chain_type() == :optimism,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_OPTIMISM_LAST_OUTPUT_ROOT_SIZE_COUNTER_PERIOD", "5m")
 
-config :explorer, Explorer.Counters.Transactions24hStats,
+config :explorer, Explorer.Chain.Cache.Counters.Transactions24hCount,
   enabled: true,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_TRANSACTIONS_24H_STATS_PERIOD", "1h"),
   enable_consolidation: true
 
-config :explorer, Explorer.Counters.FreshPendingTransactionsCounter,
+config :explorer, Explorer.Chain.Cache.Counters.NewPendingTransactionsCount,
   enabled: true,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_FRESH_PENDING_TRANSACTIONS_COUNTER_PERIOD", "5m"),
   enable_consolidation: true
@@ -617,7 +620,7 @@ config :explorer, Explorer.Chain.Transaction,
   rootstock_remasc_address: System.get_env("ROOTSTOCK_REMASC_ADDRESS"),
   rootstock_bridge_address: System.get_env("ROOTSTOCK_BRIDGE_ADDRESS")
 
-config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTabsElementsCount,
   ttl: ConfigHelper.parse_time_env_var("ADDRESSES_TABS_COUNTERS_TTL", "10m")
 
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration,
@@ -682,6 +685,9 @@ config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
   enabled: ConfigHelper.chain_type() == :arbitrum,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_ARBITRUM_DA_RECORDS_NORMALIZATION_BATCH_SIZE", 500),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_ARBITRUM_DA_RECORDS_NORMALIZATION_CONCURRENCY", 1)
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
+  enabled: ConfigHelper.chain_type() == :arbitrum
 
 config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   enabled: ConfigHelper.chain_type() == :filecoin,

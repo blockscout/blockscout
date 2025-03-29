@@ -6,8 +6,8 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
   use GenServer
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.Token
-  alias Explorer.Counters.AverageBlockTime
   alias Explorer.Token.MetadataRetriever
   alias Timex.Duration
 

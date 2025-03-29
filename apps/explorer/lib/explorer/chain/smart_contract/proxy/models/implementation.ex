@@ -16,8 +16,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash, SmartContract}
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
 
   @burn_address_hash_string "0x0000000000000000000000000000000000000000"
@@ -52,6 +52,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         :clone_with_immutable_arguments,
         :eip7702,
         :resolved_delegate_proxy,
+        :erc7760,
         :unknown
       ],
       null: true

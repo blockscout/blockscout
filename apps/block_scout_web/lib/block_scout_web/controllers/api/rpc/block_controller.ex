@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Timex.Duration
 
   @doc """

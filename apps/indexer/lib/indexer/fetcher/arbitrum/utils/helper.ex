@@ -1,5 +1,6 @@
 defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
   alias Explorer.Chain.Arbitrum.LifecycleTransaction
+  alias Explorer.Chain.Cache.BackgroundMigrations
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1]
@@ -36,6 +37,22 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
   def update_fetcher_task_data(%{task_data: data} = state, task_tag, updates)
       when is_atom(task_tag) and is_map(updates) do
     %{state | task_data: %{data | task_tag => Map.merge(data[task_tag], updates)}}
+  end
+
+  @doc """
+  Checks if the unconfirmed blocks index is ready for use.
+
+  This function verifies if the heavy DB index operation for creating the unconfirmed blocks
+  index has been completed. This check is necessary to avoid running queries that depend on
+  this index before it's fully created, which could lead to performance issues.
+
+  ## Returns
+  - `true` if the index creation is complete
+  - `false` if the index is still being created or not started yet
+  """
+  @spec unconfirmed_blocks_index_ready?() :: boolean()
+  def unconfirmed_blocks_index_ready? do
+    BackgroundMigrations.get_heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished()
   end
 
   @doc """

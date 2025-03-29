@@ -8,26 +8,30 @@ config :explorer, Explorer.ExchangeRates.TokenExchangeRates, enabled: false
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: false
 
-config :explorer, Explorer.Counters.AverageBlockTime, enabled: false
-
-config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime, enabled: false
 
 # This historian is a GenServer whose init uses a Repo in a Task process.
 # This causes a ConnectionOwnership error
 config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
 config :explorer, Explorer.Market.History.Historian, enabled: false
 
-config :explorer, Explorer.Counters.AddressesCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Counters.LastOutputRootSizeCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Counters.Transactions24hStats, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Counters.FreshPendingTransactionsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.ContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.NewContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.VerifiedContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.NewVerifiedContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.WithdrawalsSum, enabled: false, enable_consolidation: false
+for counter <- [
+      Explorer.Chain.Cache.Counters.AddressesCount,
+      Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount,
+      Explorer.Chain.Cache.Counters.Transactions24hCount,
+      Explorer.Chain.Cache.Counters.NewPendingTransactionsCount,
+      Explorer.Chain.Cache.Counters.ContractsCount,
+      Explorer.Chain.Cache.Counters.NewContractsCount,
+      Explorer.Chain.Cache.Counters.VerifiedContractsCount,
+      Explorer.Chain.Cache.Counters.NewVerifiedContractsCount,
+      Explorer.Chain.Cache.Counters.WithdrawalsSum
+    ] do
+  config :explorer, counter,
+    enabled: false,
+    enable_consolidation: false
+end
 
-config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
+config :explorer, Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount,
   enabled: true,
   global_ttl: :timer.minutes(10),
   locking_cap: 21_000_000
@@ -63,7 +67,6 @@ for migrator <- [
       Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
 
       # Heavy DB index operations
-      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex,
@@ -77,7 +80,16 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersFromAddressHashTransactionHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHashTransactionHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropAddressesVerifiedIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedTransactionsCountDescHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractsLanguageIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsFromAddressHashWithPendingIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsToAddressHashWithPendingIndex
     ] do
   config :explorer, migrator, enabled: false
 end
