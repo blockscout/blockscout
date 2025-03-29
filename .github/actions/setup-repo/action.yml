@@ -17,7 +17,7 @@ inputs:
   docker-image:
     description: 'Docker image'
     required: true
-    default: blockscout/blockscout
+    default: ghcr.io/blockscout/blockscout
 outputs:
   docker-builder:
     description: 'Docker builder'
@@ -79,7 +79,7 @@ runs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ghcr.io/${{ inputs.docker-image }}
+        images: ${{ inputs.docker-image }}
 
     - name: Add SHORT_SHA env property with commit short sha
       shell: bash
