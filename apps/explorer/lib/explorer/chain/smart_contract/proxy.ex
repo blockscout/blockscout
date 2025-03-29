@@ -16,6 +16,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     EIP1967,
     EIP2535,
     EIP7702,
+    ERC7760,
     MasterCopy,
     ResolvedDelegateProxy
   }
@@ -205,6 +206,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         :get_implementation_address_hash_string_eip1967,
         :get_implementation_address_hash_string_eip1822,
         :get_implementation_address_hash_string_eip2535,
+        :get_implementation_address_hash_string_erc7760,
         :get_implementation_address_hash_string_resolved_delegate_proxy
       ]
 
@@ -284,6 +286,14 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         }
   def get_implementation_address_hash_string_eip2535(proxy_address_hash) do
     get_implementation_address_hash_string_by_module(EIP2535, :eip2535, proxy_address_hash)
+  end
+
+  @spec get_implementation_address_hash_string_erc7760(Hash.Address.t()) :: %{
+          implementation_address_hash_strings: [String.t() | :error | nil],
+          proxy_type: atom()
+        }
+  def get_implementation_address_hash_string_erc7760(proxy_address_hash) do
+    get_implementation_address_hash_string_by_module(ERC7760, :erc7760, proxy_address_hash)
   end
 
   @spec get_implementation_address_hash_string_resolved_delegate_proxy(Hash.Address.t()) ::

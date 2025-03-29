@@ -317,15 +317,12 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       "value" =>
         address_hash_string
         |> Chain.hash_to_address(
-          [
-            necessity_by_association: %{
-              :names => :optional,
-              :smart_contract => :optional,
-              proxy_implementations_association() => :optional
-            },
-            api?: true
-          ],
-          false
+          necessity_by_association: %{
+            :names => :optional,
+            :smart_contract => :optional,
+            proxy_implementations_association() => :optional
+          },
+          api?: true
         )
         |> address_from_db()
         |> Map.merge(value)

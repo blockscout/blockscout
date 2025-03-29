@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
   alias Explorer.Chain.{Block, Wei}
 
   alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.{Market, Repo}
   alias Timex.Duration
 

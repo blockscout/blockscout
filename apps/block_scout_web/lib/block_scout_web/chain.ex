@@ -420,19 +420,6 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def paging_options(%{"smart_contract_id" => id_str} = params) do
-    transactions_count = parse_integer(params["transaction_count"])
-    coin_balance = parse_integer(params["coin_balance"])
-    id = parse_integer(id_str)
-
-    [
-      paging_options: %{
-        @default_paging_options
-        | key: %{id: id, transactions_count: transactions_count, fetched_coin_balance: coin_balance}
-      }
-    ]
-  end
-
   def paging_options(%{"items_count" => items_count_string, "state_changes" => _}) when is_binary(items_count_string) do
     case Integer.parse(items_count_string) do
       {count, ""} -> [paging_options: %{@default_paging_options | key: {count}}]

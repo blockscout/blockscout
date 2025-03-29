@@ -109,7 +109,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         "coin_balance" => balance,
         "exchange_rate" => exchange_rate,
         "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
-        "has_decompiled_code" => AddressView.has_decompiled_code?(address),
         "has_validated_blocks" => Counters.check_if_validated_blocks_at_address(address.hash, @api_true),
         "has_logs" => Counters.check_if_logs_at_address(address.hash, @api_true),
         "has_tokens" => Counters.check_if_tokens_at_address(address.hash, @api_true),

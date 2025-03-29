@@ -143,6 +143,7 @@ defmodule Explorer.Chain.TokenTransfer do
   alias Explorer.Chain
   alias Explorer.Chain.{DenormalizationHelper, Hash, Log, TokenTransfer}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.{PagingOptions, QueryHelper, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -311,6 +312,7 @@ defmodule Explorer.Chain.TokenTransfer do
         |> preload(^preloads)
         |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
         |> maybe_filter_by_token_type(token_type)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> page_token_transfer(paging_options)
         |> limit(^paging_options.page_size)
         |> Chain.select_repo(options).all()
@@ -485,13 +487,6 @@ defmodule Explorer.Chain.TokenTransfer do
     )
   end
 
-  def token_transfers_by_address_hash_and_token_address_hash(address_hash, token_address_hash) do
-    only_consensus_transfers_query()
-    |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
-    |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
-    |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
-  end
-
   @doc """
   Retrieves token transfers associated with a given address, optionally filtered
   by direction and token types.
@@ -504,6 +499,7 @@ defmodule Explorer.Chain.TokenTransfer do
     - `:to` - transfers where `to_address` matches `address_hash`.
     - `:from` - transfers where `from_address` matches `address_hash`.
     - `nil` - includes both incoming and outgoing transfers.
+  - `token_address_hash` (`nil | Hash.Address.t()`): The token address hash to filter token transfers for.
   - `token_types` (`[binary()]`): The token types to filter, e.g `["ERC20", "ERC721"]`.
   - `paging_options` (`nil | Explorer.PagingOptions.t()`): Pagination options to
     limit the result set.
@@ -516,37 +512,48 @@ defmodule Explorer.Chain.TokenTransfer do
 
   Fetch all incoming ERC20 token transfers for a specific address:
 
-  # iex> query = token_transfers_by_address_hash(address_hash, :to, ["ERC20"], paging_options)
+  # iex> query = token_transfers_by_address_hash(address_hash, :to, nil, ["ERC20"], paging_options)
   # iex> Repo.all(query)
 
   Fetch both incoming and outgoing token transfers for a specific address
   without pagination, token type filtering, and direction filtering:
 
-  # iex> query = token_transfers_by_address_hash(address_hash, nil, [], nil)
+  # iex> query = token_transfers_by_address_hash(address_hash, nil, nil, [], nil)
+  # iex> Repo.all(query)
+
+  Fetch both incoming and outgoing token transfers for a specific address and specific token:
+
+  # iex> query = token_transfers_by_address_hash(address_hash, nil, token_address_hash, [], nil)
   # iex> Repo.all(query)
   """
   @spec token_transfers_by_address_hash(
           Hash.Address.t(),
           nil | :to | :from,
+          nil | Hash.Address.t(),
           [binary()],
-          nil | Explorer.PagingOptions.t()
+          nil | Explorer.PagingOptions.t(),
+          Keyword.t()
         ) :: Ecto.Query.t()
-  def token_transfers_by_address_hash(address_hash, direction, token_types, paging_options) do
+  def token_transfers_by_address_hash(address_hash, direction, token_address_hash, token_types, paging_options, options) do
     if direction == :to || direction == :from do
       only_consensus_transfers_query()
       |> filter_by_direction(direction, address_hash)
+      |> filter_by_token_address_hash(token_address_hash)
       |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
       |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
       |> preload([token: token], [{:token, token}])
       |> filter_by_type(token_types)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
       |> handle_paging_options(paging_options)
     else
       to_address_hash_query =
         only_consensus_transfers_query()
         |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
         |> filter_by_direction(:to, address_hash)
+        |> filter_by_token_address_hash(token_address_hash)
         |> filter_by_type(token_types)
         |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> handle_paging_options(paging_options)
         |> Chain.wrapped_union_subquery()
 
@@ -554,8 +561,10 @@ defmodule Explorer.Chain.TokenTransfer do
         only_consensus_transfers_query()
         |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
         |> filter_by_direction(:from, address_hash)
+        |> filter_by_token_address_hash(token_address_hash)
         |> filter_by_type(token_types)
         |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> handle_paging_options(paging_options)
         |> Chain.wrapped_union_subquery()
 
@@ -588,6 +597,12 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   def filter_by_type(query, _), do: query
+
+  def filter_by_token_address_hash(query, nil), do: query
+
+  def filter_by_token_address_hash(query, token_address_hash) do
+    where(query, [tt], tt.token_contract_address_hash == ^token_address_hash)
+  end
 
   @doc """
     Returns ecto query to fetch consensus token transfers
