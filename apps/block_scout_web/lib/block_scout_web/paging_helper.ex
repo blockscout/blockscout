@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.PagingHelper do
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
+  alias Explorer.Chain.InternalTransaction.CallType, as: InternalTransactionCallType
+  alias Explorer.Chain.InternalTransaction.Type, as: InternalTransactionType
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias Explorer.Chain.{SmartContract, Transaction}
   alias Explorer.{Helper, PagingOptions, SortingHelper}
@@ -97,9 +99,8 @@ defmodule BlockScoutWeb.PagingHelper do
   defp filters_to_list(filters, allowed, :downcase), do: filters |> String.downcase() |> parse_filter(allowed)
   defp filters_to_list(filters, allowed, :upcase), do: filters |> String.upcase() |> parse_filter(allowed)
 
-  # sobelow_skip ["DOS.StringToAtom"]
   def filter_options(%{"filter" => filter}, fallback) do
-    filter = filter |> parse_filter(@allowed_filter_labels) |> Enum.map(&String.to_atom/1)
+    filter = filter |> parse_filter(@allowed_filter_labels) |> Enum.map(&String.to_existing_atom/1)
     if(filter == [], do: [fallback], else: filter)
   end
 
@@ -118,12 +119,25 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def chain_ids_filter_options(_), do: [chain_id: []]
 
-  # sobelow_skip ["DOS.StringToAtom"]
   def type_filter_options(%{"type" => type}) do
-    [type: type |> parse_filter(@allowed_type_labels) |> Enum.map(&String.to_atom/1)]
+    [type: type |> parse_filter(@allowed_type_labels) |> Enum.map(&String.to_existing_atom/1)]
   end
 
   def type_filter_options(_params), do: [type: []]
+
+  @spec internal_transaction_type_options(any()) :: [{:type, list()}]
+  def internal_transaction_type_options(%{"type" => type}) do
+    [type: type |> parse_filter(InternalTransactionType.values()) |> Enum.map(&String.to_existing_atom/1)]
+  end
+
+  def internal_transaction_type_options(_params), do: [type: []]
+
+  @spec internal_transaction_call_type_options(any()) :: [{:call_type, list()}]
+  def internal_transaction_call_type_options(%{"call_type" => type}) do
+    [call_type: type |> parse_filter(InternalTransactionCallType.values()) |> Enum.map(&String.to_existing_atom/1)]
+  end
+
+  def internal_transaction_call_type_options(_params), do: [call_type: []]
 
   def method_filter_options(%{"method" => method}) do
     [method: parse_method_filter(method)]
