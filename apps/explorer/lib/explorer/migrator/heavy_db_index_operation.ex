@@ -245,8 +245,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
         Process.send_after(
           self(),
           :check_db_index_operation_progress,
-          timeout || Application.get_env(:explorer, Explorer.Migrator.HeavyDbIndexOperation)[:check_interval] ||
-            :timer.minutes(10)
+          timeout || HeavyDbIndexOperationHelper.get_check_interval()
         )
       end
 
@@ -254,8 +253,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
         Process.send_after(
           self(),
           :check_if_db_operation_need_to_be_started,
-          timeout || Application.get_env(:explorer, Explorer.Migrator.HeavyDbIndexOperation)[:check_interval] ||
-            :timer.minutes(10)
+          timeout || HeavyDbIndexOperationHelper.get_check_interval()
         )
       end
 
