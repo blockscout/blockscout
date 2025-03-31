@@ -1369,6 +1369,15 @@ defmodule Explorer.Chain do
     |> Decimal.min(Decimal.new(1))
   end
 
+  @doc """
+    Fetches the lowest block number available in the database.
+
+    Queries the database for the minimum block number among blocks marked as consensus
+    blocks. Returns 0 if no consensus blocks exist or if the query fails.
+
+    ## Returns
+    - `non_neg_integer`: The lowest block number from consensus blocks, or 0 if none found
+  """
   @spec fetch_min_block_number() :: non_neg_integer
   def fetch_min_block_number do
     query =
@@ -1385,6 +1394,15 @@ defmodule Explorer.Chain do
       0
   end
 
+  @doc """
+    Fetches the highest block number available in the database.
+
+    Queries the database for the maximum block number among blocks marked as consensus
+    blocks. Returns 0 if no consensus blocks exist or if the query fails.
+
+    ## Returns
+    - `non_neg_integer`: The highest block number from consensus blocks, or 0 if none found
+  """
   @spec fetch_max_block_number() :: non_neg_integer
   def fetch_max_block_number do
     query =
