@@ -25,16 +25,6 @@ defmodule Explorer.EthRPC do
   alias Explorer.Chain.Cache.{BlockNumber, GasPriceOracle}
   alias Explorer.Etherscan.{Blocks, Logs}
 
-  case @chain_type do
-    :ethereum ->
-      @chain_type_transaction_necessity_by_association %{
-        :beacon_blob_transaction => :optional
-      }
-
-    _ ->
-      @chain_type_transaction_necessity_by_association %{}
-  end
-
   @nil_gas_price_message "Gas price is not estimated yet"
 
   @methods %{
@@ -862,7 +852,7 @@ defmodule Explorer.EthRPC do
   def eth_get_transaction_by_hash(transaction_hash_string) do
     necessity_by_association =
       %{signed_authorizations: :optional}
-      |> Map.merge(@chain_type_transaction_necessity_by_association)
+      |> Map.merge(chain_type_transaction_necessity_by_association())
 
     validate_and_render_transaction(transaction_hash_string, &render_transaction/1,
       api?: true,
@@ -905,12 +895,20 @@ defmodule Explorer.EthRPC do
   def eth_get_transaction_receipt(transaction_hash_string) do
     necessity_by_association =
       %{block: :optional, logs: :optional}
-      |> Map.merge(@chain_type_transaction_necessity_by_association)
+      |> Map.merge(chain_type_transaction_necessity_by_association())
 
     validate_and_render_transaction(transaction_hash_string, &render_transaction_receipt/1,
       api?: true,
       necessity_by_association: necessity_by_association
     )
+  end
+
+  defp chain_type_transaction_necessity_by_association do
+    if Application.get_env(:explorer, :chain_type) == :ethereum do
+      %{:beacon_blob_transaction => :optional}
+    else
+      %{}
+    end
   end
 
   defp render_transaction_receipt(transaction) do
@@ -960,31 +958,24 @@ defmodule Explorer.EthRPC do
       |> Map.put("authorizationList", signed_authorizations)
     else
       props
+      |> (&if(transaction.type > 0, do: Map.put(&1, "authorizationList", []), else: &1)).()
     end
   end
 
   defp maybe_add_chain_type_extra_transaction_info_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
-    if Application.get_env(:explorer, :chain_type) == :ethereum do
-      if beacon_blob_transaction do
-        props
-        |> Map.put("maxFeePerBlobGas", Helper.decimal_to_hex(beacon_blob_transaction.max_fee_per_blob_gas))
-      else
-        props
-      end
+    if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
+      props
+      |> Map.put("maxFeePerBlobGas", Helper.decimal_to_hex(beacon_blob_transaction.max_fee_per_blob_gas))
     else
       props
     end
   end
 
   defp maybe_add_chain_type_extra_receipt_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
-    if Application.get_env(:explorer, :chain_type) == :ethereum do
-      if beacon_blob_transaction do
-        props
-        |> Map.put("blobGasPrice", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_price))
-        |> Map.put("blobGasUsed", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_used))
-      else
-        props
-      end
+    if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
+      props
+      |> Map.put("blobGasPrice", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_price))
+      |> Map.put("blobGasUsed", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_used))
     else
       props
     end
