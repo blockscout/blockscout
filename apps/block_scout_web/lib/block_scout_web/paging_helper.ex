@@ -355,4 +355,19 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_validators_blackfort_sorting("address_hash", "desc"), do: [desc_nulls_last: :address_hash]
 
   defp do_validators_blackfort_sorting(_, _), do: []
+
+  @spec addresses_list_sorting(%{required(String.t()) => String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
+  def addresses_list_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_addresses_list_sorting(sort_field, order)]
+  end
+
+  def addresses_list_sorting(_), do: []
+
+  defp do_addresses_list_sorting("balance", "asc"), do: [asc_nulls_first: :fetched_coin_balance]
+  defp do_addresses_list_sorting("balance", "desc"), do: [desc_nulls_last: :fetched_coin_balance]
+  defp do_addresses_list_sorting("transactions_count", "asc"), do: [asc_nulls_first: :transactions_count]
+  defp do_addresses_list_sorting("transactions_count", "desc"), do: [desc_nulls_last: :transactions_count]
+  defp do_addresses_list_sorting(_, _), do: []
 end

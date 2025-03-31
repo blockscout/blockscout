@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   import BlockScoutWeb.PagingHelper,
     only: [
+      addresses_list_sorting: 1,
       current_filter: 1,
       delete_parameters_from_next_page_params: 1,
       search_query: 1
@@ -98,7 +99,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       |> Keyword.merge(current_filter(params))
       |> Keyword.merge(search_query(params))
       |> Keyword.merge(smart_contract_addresses_paging_options(params))
-      |> Keyword.merge(smart_contract_addresses_sorting(params))
+      |> Keyword.merge(addresses_list_sorting(params))
       |> fetch_scam_token_toggle(conn)
 
     addresses_plus_one = SmartContract.verified_contract_addresses(full_options)
@@ -183,24 +184,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       "coin_balance" => coin_balance
     }
   end
-
-  @spec smart_contract_addresses_sorting(%{required(String.t()) => String.t()}) :: [
-          {:sorting, list()}
-        ]
-  defp smart_contract_addresses_sorting(%{"sort" => sort_field, "order" => order}) do
-    sorting =
-      case {sort_field, order} do
-        {"balance", "asc"} -> [{:asc_nulls_first, :fetched_coin_balance}]
-        {"balance", "desc"} -> [{:desc_nulls_last, :fetched_coin_balance}]
-        {"transactions_count", "asc"} -> [{:asc_nulls_first, :transactions_count}]
-        {"transactions_count", "desc"} -> [{:desc_nulls_last, :transactions_count}]
-        _ -> []
-      end
-
-    [sorting: sorting]
-  end
-
-  defp smart_contract_addresses_sorting(_), do: []
 
   @doc """
     POST /api/v2/smart-contracts/{address_hash}/audit-reports

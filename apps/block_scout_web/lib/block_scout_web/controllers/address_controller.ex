@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.AddressController do
     items =
       addresses_page
       |> Enum.with_index(1)
-      |> Enum.map(fn {{address, transaction_count}, index} ->
+      |> Enum.map(fn {address, index} ->
         View.render_to_string(
           AddressView,
           "_tile.html",
@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.AddressController do
           index: items_count + index,
           exchange_rate: exchange_rate,
           total_supply: total_supply,
-          transaction_count: transaction_count
+          transaction_count: address.transactions_count
         )
       end)
 

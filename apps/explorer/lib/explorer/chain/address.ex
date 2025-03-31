@@ -141,7 +141,7 @@ defmodule Explorer.Chain.Address do
   alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, SmartContract, Transaction}
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -484,8 +484,9 @@ defmodule Explorer.Chain.Address do
   @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
   def list_top_addresses(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    sorting_options = Keyword.get(options, :sorting, [])
 
-    if is_nil(paging_options.key) do
+    if is_nil(paging_options.key) and sorting_options == [] do
       paging_options.page_size
       |> Accounts.atomic_take_enough()
       |> case do
@@ -493,10 +494,7 @@ defmodule Explorer.Chain.Address do
           get_addresses(options)
 
         accounts ->
-          Enum.map(
-            accounts,
-            &{&1, &1.transactions_count || 0}
-          )
+          accounts
       end
     else
       fetch_top_addresses(options)
@@ -597,17 +595,19 @@ defmodule Explorer.Chain.Address do
   def eoa_with_code?(_), do: false
 
   defp get_addresses(options) do
-    accounts_with_n = fetch_top_addresses(options)
+    addresses = fetch_top_addresses(options)
 
-    accounts_with_n
-    |> Enum.map(fn {address, _n} -> address end)
+    addresses
     |> Accounts.update()
 
-    accounts_with_n
+    addresses
   end
+
+  @default_sorting [desc: :fetched_coin_balance, asc: :hash]
 
   defp fetch_top_addresses(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    sorting_options = Keyword.get(options, :sorting, [])
 
     necessity_by_association =
       Keyword.get(options, :necessity_by_association, %{
@@ -623,27 +623,15 @@ defmodule Explorer.Chain.Address do
       _ ->
         base_query =
           from(a in Address,
-            where: a.fetched_coin_balance > ^0,
-            order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-            select: {a, a.transactions_count}
+            where: a.fetched_coin_balance > ^0
           )
 
         base_query
         |> Chain.join_associations(necessity_by_association)
-        |> page_addresses(paging_options)
-        |> limit(^paging_options.page_size)
+        |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
+        |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
         |> Chain.select_repo(options).all()
     end
-  end
-
-  defp page_addresses(query, %PagingOptions{key: nil}), do: query
-
-  defp page_addresses(query, %PagingOptions{key: {coin_balance, hash}}) do
-    from(address in query,
-      where:
-        (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
-          address.fetched_coin_balance < ^coin_balance
-    )
   end
 
   @doc """

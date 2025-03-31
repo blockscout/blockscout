@@ -167,12 +167,25 @@ defmodule BlockScoutWeb.Chain do
   """
   @spec paging_options(any) ::
           [{:paging_options, Explorer.PagingOptions.t()}, ...] | Explorer.PagingOptions.t()
-  def paging_options(%{"hash" => hash_string, "fetched_coin_balance" => fetched_coin_balance_string})
-      when is_binary(hash_string) and is_binary(fetched_coin_balance_string) do
-    with {coin_balance, ""} <- Integer.parse(fetched_coin_balance_string),
-         {:ok, address_hash} <- string_to_address_hash(hash_string) do
-      [paging_options: %{@default_paging_options | key: {%Wei{value: Decimal.new(coin_balance)}, address_hash}}]
-    else
+  def paging_options(%{
+        "hash" => hash_string,
+        "fetched_coin_balance" => fetched_coin_balance_string,
+        "transactions_count" => transactions_count_string
+      })
+      when is_binary(hash_string) do
+    case string_to_address_hash(hash_string) do
+      {:ok, address_hash} ->
+        [
+          paging_options: %{
+            @default_paging_options
+            | key: %{
+                fetched_coin_balance: decimal_parse(fetched_coin_balance_string),
+                hash: address_hash,
+                transactions_count: parse_integer(transactions_count_string)
+              }
+          }
+        ]
+
       _ ->
         [paging_options: @default_paging_options]
     end
@@ -632,8 +645,16 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  defp paging_params({%Address{hash: hash, fetched_coin_balance: fetched_coin_balance}, _}) do
-    %{"hash" => hash, "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)}
+  defp paging_params(%Address{
+         hash: hash,
+         fetched_coin_balance: fetched_coin_balance,
+         transactions_count: transactions_count
+       }) do
+    %{
+      "hash" => hash,
+      "fetched_coin_balance" => fetched_coin_balance && Wei.to(fetched_coin_balance, :wei),
+      "transactions_count" => transactions_count
+    }
   end
 
   defp paging_params(%Token{
