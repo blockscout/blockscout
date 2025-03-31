@@ -5,7 +5,7 @@
 
     // Descended tracks whether we've just descended from an outer transaction into
 	// an inner call.
-	descended: true,
+	descended: false,
 
     // step is invoked for every opcode that the VM executes.
     step(log, db) {
