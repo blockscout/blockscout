@@ -337,7 +337,17 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Fetches block by "t:tag/0".
+    Fetches a block from the blockchain using a semantic tag identifier.
+
+    ## Parameters
+    - `tag`: One of "earliest", "latest", "pending", or "safe" to identify the block
+    - `json_rpc_named_arguments`: Configuration for the JSON-RPC connection
+
+    ## Returns
+    - `{:ok, Blocks.t()}` - Successfully retrieved block data
+    - `{:error, :invalid_tag}` - The provided tag is not recognized
+    - `{:error, :not_found}` - No block exists for the given tag
+    - `{:error, term()}` - Other errors that occurred during the request
   """
   @spec fetch_block_by_tag(tag(), json_rpc_named_arguments) ::
           {:ok, Blocks.t()} | {:error, reason :: :invalid_tag | :not_found | term()}
@@ -369,14 +379,17 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Fetches block number by `t:tag/0`.
+    Fetches the block number for a block identified by a semantic tag.
 
-  ## Returns
+    ## Parameters
+    - `tag`: One of "earliest", "latest", "pending", or "safe" to identify the block
+    - `json_rpc_named_arguments`: Configuration for the JSON-RPC connection
 
-   * `{:ok, number}` - the block number for the given `tag`.
-   * `{:error, :invalid_tag}` - When `tag` is not a valid `t:tag/0`.
-   * `{:error, reason}` - other JSONRPC error.
-
+    ## Returns
+    - `{:ok, number}` - Successfully retrieved block number
+    - `{:error, :invalid_tag}` - The provided tag is not recognized
+    - `{:error, :not_found}` - No block exists for the given tag
+    - `{:error, term()}` - Other errors that occurred during the request
   """
   @spec fetch_block_number_by_tag(tag(), json_rpc_named_arguments) ::
           {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
