@@ -11,7 +11,8 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
-  alias EthereumJSONRPC.FetchedBalances
+  require Logger
+
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.Address.{CoinBalance, CoinBalanceDaily}
@@ -99,49 +100,58 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
   def run(entries, json_rpc_named_arguments) do
     entries_by_type = Enum.group_by(entries, &elem(&1, 0), &Tuple.delete_at(&1, 0))
 
-    fetch_and_update(entries_by_type[:fetch_and_update], json_rpc_named_arguments)
-    fetch_and_import(entries_by_type[:fetch_and_import], json_rpc_named_arguments)
-    fetch_and_import_daily_balances(entries_by_type[:fetch_and_import_daily_balances], json_rpc_named_arguments)
+    all_balances_params =
+      entries_by_type
+      |> Enum.reduce([], fn {_type, params}, acc -> params ++ acc end)
+      |> Enum.uniq()
+
+    case fetch_balances(all_balances_params, json_rpc_named_arguments) do
+      {:ok, %{params_list: params_list}} ->
+        params_map = Map.new(params_list, fn params -> {{params.block_number, params.address_hash}, params} end)
+
+        entries_by_type[:fetch_and_update]
+        |> get_balances_responses(params_map)
+        |> do_update()
+
+        entries_by_type[:fetch_and_import]
+        |> get_balances_responses(params_map)
+        |> do_import()
+
+        entries_by_type[:fetch_and_import_daily_balances]
+        |> get_balances_responses(params_map)
+        |> do_import_daily_balances()
+
+      error ->
+        Logger.error(
+          "Error while fetching balances: #{inspect(error)}, balances params: #{inspect(all_balances_params)}"
+        )
+    end
 
     :ok
   end
 
-  defp fetch_and_update(nil, _json_rpc_named_arguments), do: :ok
-
-  defp fetch_and_update(params, json_rpc_named_arguments) do
-    with {:ok, %{params_list: params_list}} when params_list != [] <- fetch_balances(params, json_rpc_named_arguments),
-         address_params = CoinBalanceHelper.balances_params_to_address_params(params_list),
-         {:ok, %{addresses: addresses}} <-
-           Chain.import(%{
-             addresses: %{params: address_params, with: :balance_changeset},
-             broadcast: :on_demand
-           }) do
-      Accounts.drop(addresses)
-    else
-      _ -> :ok
-    end
+  defp get_balances_responses(balances_keys, params_map) do
+    params_map
+    |> Map.take(balances_keys || [])
+    |> Map.values()
   end
 
-  defp fetch_and_import(nil, _json_rpc_named_arguments), do: :ok
+  defp do_update([]), do: :ok
 
-  defp fetch_and_import(params, json_rpc_named_arguments) do
-    case fetch_balances(params, json_rpc_named_arguments) do
-      {:ok, fetched_balances} -> do_import(fetched_balances)
-      _ -> :ok
-    end
-  end
+  defp do_update(balances_responses) do
+    address_params = CoinBalanceHelper.balances_params_to_address_params(balances_responses)
 
-  defp fetch_and_import_daily_balances(nil, _json_rpc_named_arguments), do: :ok
-
-  defp fetch_and_import_daily_balances(params, json_rpc_named_arguments) do
-    case fetch_balances(params, json_rpc_named_arguments) do
-      {:ok, fetched_balances} -> do_import_daily_balances(fetched_balances)
+    case Chain.import(%{
+           addresses: %{params: address_params, with: :balance_changeset},
+           broadcast: :on_demand
+         }) do
+      {:ok, %{addresses: addresses}} -> Accounts.drop(addresses)
       _ -> :ok
     end
   end
 
   defp do_trigger_fetch(%Address{fetched_coin_balance_block_number: nil} = address, latest_block_number, _) do
-    BufferedTask.buffer(__MODULE__, [{:fetch_and_update, latest_block_number, address}], false)
+    BufferedTask.buffer(__MODULE__, [{:fetch_and_update, latest_block_number, to_string(address.hash)}], false)
 
     {:stale, 0}
   end
@@ -155,7 +165,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
   end
 
   defp do_trigger_historic_fetch(address_hash, block_number) do
-    BufferedTask.buffer(__MODULE__, [{:fetch_and_import, block_number, %{hash: address_hash}}], false)
+    BufferedTask.buffer(__MODULE__, [{:fetch_and_import, block_number, to_string(address_hash)}], false)
 
     {:stale, 0}
   end
@@ -169,7 +179,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
        ) do
     if address.fetched_coin_balance_block_number < stale_balance_window do
       do_trigger_balance_daily_fetch_query(address, latest_block_number, query_balances_daily)
-      BufferedTask.buffer(__MODULE__, [{:fetch_and_update, latest_block_number, address}], false)
+      BufferedTask.buffer(__MODULE__, [{:fetch_and_update, latest_block_number, to_string(address.hash)}], false)
 
       {:stale, latest_block_number}
     else
@@ -182,7 +192,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
           :current
 
         %CoinBalance{value_fetched_at: nil, block_number: block_number} ->
-          BufferedTask.buffer(__MODULE__, [{:fetch_and_import, block_number, address}], false)
+          BufferedTask.buffer(__MODULE__, [{:fetch_and_import, block_number, to_string(address.hash)}], false)
 
           {:pending, block_number}
 
@@ -196,30 +206,32 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
 
   defp do_trigger_balance_daily_fetch_query(address, latest_block_number, query) do
     if Repo.one(query) == nil do
-      BufferedTask.buffer(__MODULE__, [{:fetch_and_import_daily_balances, latest_block_number, address}], false)
+      BufferedTask.buffer(
+        __MODULE__,
+        [{:fetch_and_import_daily_balances, latest_block_number, to_string(address.hash)}],
+        false
+      )
     end
   end
 
   defp fetch_balances(params, json_rpc_named_arguments) do
     params
-    |> Enum.map(fn {block_number, address} ->
-      %{block_quantity: integer_to_quantity(block_number), hash_data: to_string(address.hash)}
+    |> Enum.map(fn {block_number, address_hash} ->
+      %{block_quantity: integer_to_quantity(block_number), hash_data: address_hash}
     end)
     |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, latest_block_number())
   end
 
-  defp do_import(%FetchedBalances{} = fetched_balances) do
-    case CoinBalanceHelper.import_fetched_balances(fetched_balances, :on_demand) do
-      {:ok, %{addresses: [address]}} -> {:ok, address}
-      _ -> :error
-    end
+  defp do_import([]), do: :ok
+
+  defp do_import(balances_responses) do
+    CoinBalanceHelper.import_fetched_balances(balances_responses, :on_demand)
   end
 
-  defp do_import_daily_balances(%FetchedBalances{} = fetched_balances) do
-    case CoinBalanceHelper.import_fetched_daily_balances(fetched_balances, :on_demand) do
-      {:ok, %{addresses: [address]}} -> {:ok, address}
-      _ -> :error
-    end
+  defp do_import_daily_balances([]), do: :ok
+
+  defp do_import_daily_balances(balances_responses) do
+    CoinBalanceHelper.import_fetched_daily_balances(balances_responses, :on_demand)
   end
 
   defp latest_block_number do
