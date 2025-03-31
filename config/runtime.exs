@@ -1064,7 +1064,6 @@ config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1.Supervisor,
 
 config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses,
   recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_RECHECK_INTERVAL", "20s"),
-  catchup_recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_BATCHES_CATCHUP_RECHECK_INTERVAL", "2s"),
   track_l1_transaction_finalization:
     ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_L1_FINALIZATION_CHECK_ENABLED", "false"),
   messages_to_blocks_shift:

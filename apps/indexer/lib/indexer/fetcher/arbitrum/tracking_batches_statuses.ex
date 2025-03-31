@@ -73,6 +73,12 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   # Process one task per batch
   @max_batch_size 1
 
+  # Catchup tasks (historical batches, confirmations, etc.) need to run as quickly as possible
+  # since they are only needed when indexing a rollup chain that already has many blocks.
+  # This interval is hardcoded since these tasks should complete rapidly and don't need
+  # to be configurable.
+  @catchup_recheck_interval 2_000
+
   @stoppable_tasks [:historical_batches, :missing_batches, :historical_confirmations, :historical_executions]
 
   @typep fetcher_task ::
@@ -101,7 +107,6 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
     config_tracker = Application.get_all_env(:indexer)[__MODULE__]
     recheck_interval = config_tracker[:recheck_interval]
-    catchup_recheck_interval = config_tracker[:catchup_recheck_interval]
     messages_to_blocks_shift = config_tracker[:messages_to_blocks_shift]
     track_l1_transaction_finalization = config_tracker[:track_l1_transaction_finalization]
     finalized_confirmations = config_tracker[:finalized_confirmations]
@@ -115,10 +120,10 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       new_batches: recheck_interval,
       new_confirmations: recheck_interval,
       new_executions: recheck_interval,
-      historical_batches: catchup_recheck_interval,
-      missing_batches: catchup_recheck_interval,
-      historical_confirmations: catchup_recheck_interval,
-      historical_executions: catchup_recheck_interval,
+      historical_batches: @catchup_recheck_interval,
+      missing_batches: @catchup_recheck_interval,
+      historical_confirmations: @catchup_recheck_interval,
+      historical_executions: @catchup_recheck_interval,
       settlement_transactions_finalization: recheck_interval
     }
 
@@ -421,8 +426,21 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       :historical_confirmations,
       &ConfirmationsDiscoveryTasks.check_unprocessed/1,
       &ConfirmationsDiscoveryTasks.historical_confirmations_discovery_completed?/1,
+      &select_historical_confirmations_interval/3,
       true
     )
+  end
+
+  # Selects interval for historical confirmations processing based on worker status.
+  # For :confirmation_missed status, uses longer :new_confirmations interval since data
+  # is not yet available. For all other statuses, uses shorter :historical_confirmations
+  # interval since data is available for rapid processing.
+  defp select_historical_confirmations_interval(:confirmation_missed, state, _task_tag) do
+    state.intervals[:new_confirmations]
+  end
+
+  defp select_historical_confirmations_interval(_status, state, :historical_confirmations) do
+    state.intervals[:historical_confirmations]
   end
 
   # Handles the discovery of historical L2-to-L1 message executions
@@ -452,12 +470,13 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
          task_tag,
          worker_function,
          completion_check_function,
+         interval_selection_function \\ fn _, state, task_tag -> state.intervals[task_tag] end,
          any_status? \\ false
        ) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
-    {status, state_after_worker_run} = worker_function.(state)
+    {worker_status, state_after_worker_run} = worker_function.(state)
 
-    case {any_status?, status} do
+    case {any_status?, worker_status} do
       {true, _} ->
         nil
 
@@ -465,14 +484,15 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         nil
 
       _ ->
-        log_error("Worker #{worker_function} returned unexpected status #{status}")
+        log_error("Worker #{worker_function} returned unexpected status #{worker_status}")
         :retry
     end
 
     updated_state = update_completed_tasks(state_after_worker_run, task_tag, completion_check_function)
 
     if rescheduled?(task_tag, updated_state) do
-      next_run_time = now + updated_state.intervals[task_tag]
+      interval = interval_selection_function.(worker_status, updated_state, task_tag)
+      next_run_time = now + interval
       BufferedTask.buffer(__MODULE__, [{next_run_time, task_tag}], false)
     end
 
