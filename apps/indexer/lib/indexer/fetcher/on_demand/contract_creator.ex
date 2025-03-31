@@ -45,7 +45,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
           GenServer.cast(__MODULE__, {:fetch, address})
 
         [{_, contract_creation_block_number}] ->
-          case :ets.lookup(@table_name, @pending_blocks_cache_key) do
+          case pending_blocks_cache() do
             [] ->
               :ignore
 
@@ -78,7 +78,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     contract_creation_block_number = find_contract_creation_block_number(initial_block_ranges, address_hash)
 
     pending_blocks =
-      case :ets.lookup(@table_name, @pending_blocks_cache_key) do
+      case pending_blocks_cache() do
         [] ->
           []
 
@@ -100,6 +100,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
     :ets.insert(@table_name, {@pending_blocks_cache_key, updated_pending_blocks})
 
+    # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
     MissingRangesManipulator.add_ranges_by_block_numbers([contract_creation_block_number], 1)
   end
 

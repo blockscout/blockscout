@@ -130,20 +130,15 @@ defmodule Explorer.Utility.MissingBlockRange do
   # - `{:ok, struct}` if a new range was created or updated
   # - `{:error, changeset}` if the operation failed
   @spec save_range(Range.t(), integer() | nil) :: :ok | {:ok, t()} | {:error, Ecto.Changeset.t()}
-  defp save_range(from..to//_, priority) when not is_nil(priority) do
-    min_number = min(from, to)
-    max_number = max(from, to)
-
-    delete_ranges_between(max_number, min_number)
-    insert_range(%{from_number: max_number, to_number: min_number, priority: priority})
-  end
-
-  defp save_range(from..to//_, nil) do
+  def save_range(from..to//_, priority) when is_nil(priority) do
     min_number = min(from, to)
     max_number = max(from, to)
 
     lower_range = get_range_by_block_number(min_number)
     higher_range = get_range_by_block_number(max_number)
+
+    IO.inspect("Gimme lower_range #{inspect(lower_range)}")
+    IO.inspect("Gimme higher_range #{inspect(higher_range)}")
 
     case {lower_range, higher_range} do
       {%__MODULE__{} = same_range, %__MODULE__{} = same_range} ->
@@ -165,6 +160,121 @@ defmodule Explorer.Utility.MissingBlockRange do
         delete_ranges_between(max_number, min_number)
         insert_range(%{from_number: max_number, to_number: min_number})
     end
+  end
+
+  def save_range(from..to//_, priority) when not is_nil(priority) do
+    min_number = min(from, to)
+    max_number = max(from, to)
+
+    lower_range = get_range_by_block_number(min_number)
+    higher_range = get_range_by_block_number(max_number)
+
+    case {lower_range, higher_range} do
+      {%__MODULE__{} = same_range, %__MODULE__{} = same_range} ->
+        if same_range.priority == priority do
+          :ok
+        else
+          delete_range(same_range.from_number..same_range.to_number)
+
+          middle_range_params =
+            %{from_number: max_number, to_number: min_number}
+            |> add_priority_to_params(priority)
+
+          higher_range_params =
+            %{from_number: same_range.from_number, to_number: max_number + 1}
+            |> add_priority_to_params(same_range.priority)
+
+          lower_range_params =
+            %{from_number: min_number - 1, to_number: same_range.to_number}
+            |> add_priority_to_params(same_range.priority)
+
+          {:ok, middle_range} = insert_range(middle_range_params)
+
+          {:ok, higher_range} =
+            if higher_range_params.from_number >= higher_range_params.to_number do
+              insert_range(higher_range_params)
+            else
+              {:ok, nil}
+            end
+
+          {:ok, lower_range} =
+            if lower_range_params.from_number >= lower_range_params.to_number do
+              insert_range(lower_range_params)
+            else
+              {:ok, nil}
+            end
+
+          {:ok, [middle_range, higher_range, lower_range] |> Enum.reject(&is_nil/1)}
+        end
+
+      {%__MODULE__{} = range, nil} ->
+        delete_ranges_between(max_number, range.from_number)
+
+        if range.priority == priority do
+          params =
+            %{from_number: max_number}
+            |> add_priority_to_params(priority)
+
+          update_range(range, params)
+        else
+          update_params = %{from_number: min_number - 1}
+
+          if range.to_number <= update_params.from_number do
+            update_range(range, update_params)
+          else
+            delete_range(range.from_number..range.to_number)
+          end
+
+          new_range_params = %{from_number: max_number, to_number: min_number, priority: priority}
+
+          insert_range(new_range_params)
+        end
+
+      {nil, %__MODULE__{} = range} ->
+        delete_ranges_between(range.to_number, min_number)
+
+        if range.priority == priority do
+          params =
+            %{to_number: min_number}
+            |> add_priority_to_params(priority)
+
+          update_range(range, params)
+        else
+          update_params = %{to_number: max_number + 1}
+
+          if range.from_number >= update_params.to_number do
+            update_range(range, update_params)
+          else
+            delete_range(range.from_number..range.to_number)
+          end
+
+          new_range_params = %{from_number: max_number, to_number: min_number, priority: priority}
+
+          insert_range(new_range_params)
+        end
+
+      {%__MODULE__{} = range_1, %__MODULE__{} = range_2} ->
+        delete_ranges_between(range_2.from_number + 1, range_1.from_number)
+
+        params =
+          %{from_number: range_2.from_number}
+          |> add_priority_to_params(priority)
+
+        update_range(range_1, params)
+
+      {nil, nil} ->
+        delete_ranges_between(max_number, min_number)
+
+        params =
+          %{from_number: max_number, to_number: min_number}
+          |> add_priority_to_params(priority)
+
+        insert_range(params)
+    end
+  end
+
+  defp add_priority_to_params(params, priority) do
+    params |> Map.merge(%{priority: priority})
   end
 
   defp delete_range(from..to//_) do
