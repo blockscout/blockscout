@@ -133,16 +133,16 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
   end
 
   @doc """
-  <!-- # Retrieves the latest block number from an Ethereum node to check endpoint availability.
-  #
-  # Removes fallback URLs from the arguments to ensure checking only the primary endpoint.
-  #
-  # ## Parameters
-  # - `json_rpc_named_arguments`: JSON-RPC configuration for the endpoint
-  #
-  # ## Returns
-  # - `{:ok, number}` if the endpoint is available
-  # - `{:error, reason}` if the endpoint is unavailable -->
+  Retrieves the latest block number from an Ethereum node to check endpoint availability.
+
+  Removes fallback URLs from the arguments to ensure checking only the primary endpoint.
+
+  ## Parameters
+  - `json_rpc_named_arguments`: JSON-RPC configuration for the endpoint
+
+  ## Returns
+  - `{:ok, number}` if the endpoint is available
+  - `{:error, reason}` if the endpoint is unavailable
   """
   @spec fetch_latest_block_number(EthereumJSONRPC.json_rpc_named_arguments()) ::
           {:ok, EthereumJSONRPC.Transport.result()} | {:error, reason :: term()}

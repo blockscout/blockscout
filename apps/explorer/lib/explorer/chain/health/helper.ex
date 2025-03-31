@@ -8,10 +8,10 @@ defmodule Explorer.Chain.Health.Helper do
       from: 2
     ]
 
-  alias Explorer.Chain
   alias Explorer.Chain.Block
+  alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
-  alias Explorer.{PagingOptions, Repo}
+  alias Explorer.Repo
 
   @max_blocks_gap_between_node_and_db 20
   @no_new_items_error_code 5001
@@ -41,16 +41,7 @@ defmodule Explorer.Chain.Health.Helper do
   @spec last_db_block_status() ::
           {:ok, non_neg_integer(), DateTime.t()} | {:stale, non_neg_integer(), DateTime.t()} | {:error, atom}
   def last_db_block_status do
-    query =
-      from(block in Block,
-        select: {block.number, block.timestamp},
-        where: block.consensus == true,
-        order_by: [desc: block.number],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
+    last_db_block()
     |> block_status()
   end
 
@@ -86,13 +77,10 @@ defmodule Explorer.Chain.Health.Helper do
   @spec last_cache_block() ::
           {non_neg_integer(), DateTime.t()} | nil
   def last_cache_block do
-    [
-      paging_options: %PagingOptions{page_size: 1}
-    ]
-    |> Chain.list_blocks()
-    |> List.last()
+    1
+    |> BlocksCache.atomic_take_enough()
     |> case do
-      %{timestamp: timestamp, number: number} ->
+      [%{timestamp: timestamp, number: number}] ->
         {number, timestamp}
 
       nil ->
