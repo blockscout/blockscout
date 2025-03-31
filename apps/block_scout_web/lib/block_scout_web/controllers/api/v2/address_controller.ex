@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     api?: true
   ]
 
-  @spec contract_address_preloads :: [keyword()]
+  @spec contract_address_preloads() :: [keyword()]
   defp contract_address_preloads do
     chain_type_associations =
       case chain_type() do

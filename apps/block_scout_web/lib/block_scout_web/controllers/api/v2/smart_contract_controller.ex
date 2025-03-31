@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   @api_true [api?: true]
 
-  @spec contract_creation_transaction_associations :: [keyword()]
+  @spec contract_creation_transaction_associations() :: [keyword()]
   defp contract_creation_transaction_associations do
     case chain_type() do
       :filecoin ->
@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     end
   end
 
-  @spec smart_contract_address_options :: keyword()
+  @spec smart_contract_address_options() :: keyword()
   defp smart_contract_address_options do
     [
       necessity_by_association: %{
@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     |> Keyword.merge(@api_true)
   end
 
-  @spec verified_smart_contract_addresses_options :: keyword()
+  @spec verified_smart_contract_addresses_options() :: keyword()
   defp verified_smart_contract_addresses_options do
     [
       necessity_by_association: %{
