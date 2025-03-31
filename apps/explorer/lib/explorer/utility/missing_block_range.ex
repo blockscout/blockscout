@@ -129,40 +129,9 @@ defmodule Explorer.Utility.MissingBlockRange do
   # - `:ok` if the range already exists
   # - `{:ok, struct}` if a new range was created or updated
   # - `{:error, changeset}` if the operation failed
+  # todo: consider left cases here
   @spec save_range(Range.t(), integer() | nil) :: :ok | {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def save_range(from..to//_, priority) when is_nil(priority) do
-    min_number = min(from, to)
-    max_number = max(from, to)
-
-    lower_range = get_range_by_block_number(min_number)
-    higher_range = get_range_by_block_number(max_number)
-
-    IO.inspect("Gimme lower_range #{inspect(lower_range)}")
-    IO.inspect("Gimme higher_range #{inspect(higher_range)}")
-
-    case {lower_range, higher_range} do
-      {%__MODULE__{} = same_range, %__MODULE__{} = same_range} ->
-        :ok
-
-      {%__MODULE__{} = range, nil} ->
-        delete_ranges_between(max_number, range.from_number)
-        update_range(range, %{from_number: max_number})
-
-      {nil, %__MODULE__{} = range} ->
-        delete_ranges_between(range.to_number, min_number)
-        update_range(range, %{to_number: min_number})
-
-      {%__MODULE__{} = range_1, %__MODULE__{} = range_2} ->
-        delete_ranges_between(range_2.from_number + 1, range_1.from_number)
-        update_range(range_1, %{from_number: range_2.from_number})
-
-      _ ->
-        delete_ranges_between(max_number, min_number)
-        insert_range(%{from_number: max_number, to_number: min_number})
-    end
-  end
-
-  def save_range(from..to//_, priority) when not is_nil(priority) do
+  def save_range(from..to//_, priority) do
     min_number = min(from, to)
     max_number = max(from, to)
 
@@ -171,110 +140,20 @@ defmodule Explorer.Utility.MissingBlockRange do
 
     case {lower_range, higher_range} do
       {%__MODULE__{} = same_range, %__MODULE__{} = same_range} ->
-        if same_range.priority == priority do
-          :ok
-        else
-          delete_range(same_range.from_number..same_range.to_number)
-
-          middle_range_params =
-            %{from_number: max_number, to_number: min_number}
-            |> add_priority_to_params(priority)
-
-          higher_range_params =
-            %{from_number: same_range.from_number, to_number: max_number + 1}
-            |> add_priority_to_params(same_range.priority)
-
-          lower_range_params =
-            %{from_number: min_number - 1, to_number: same_range.to_number}
-            |> add_priority_to_params(same_range.priority)
-
-          {:ok, middle_range} = insert_range(middle_range_params)
-
-          {:ok, higher_range} =
-            if higher_range_params.from_number >= higher_range_params.to_number do
-              insert_range(higher_range_params)
-            else
-              {:ok, nil}
-            end
-
-          {:ok, lower_range} =
-            if lower_range_params.from_number >= lower_range_params.to_number do
-              insert_range(lower_range_params)
-            else
-              {:ok, nil}
-            end
-
-          {:ok, [middle_range, higher_range, lower_range] |> Enum.reject(&is_nil/1)}
-        end
+        fill_ranges_between(same_range.from_number, same_range.to_number, priority)
 
       {%__MODULE__{} = range, nil} ->
-        delete_ranges_between(max_number, range.from_number)
-
-        if range.priority == priority do
-          params =
-            %{from_number: max_number}
-            |> add_priority_to_params(priority)
-
-          update_range(range, params)
-        else
-          update_params = %{from_number: min_number - 1}
-
-          if range.to_number <= update_params.from_number do
-            update_range(range, update_params)
-          else
-            delete_range(range.from_number..range.to_number)
-          end
-
-          new_range_params = %{from_number: max_number, to_number: min_number, priority: priority}
-
-          insert_range(new_range_params)
-        end
+        fill_ranges_between(max_number, range.to_number, priority)
 
       {nil, %__MODULE__{} = range} ->
-        delete_ranges_between(range.to_number, min_number)
-
-        if range.priority == priority do
-          params =
-            %{to_number: min_number}
-            |> add_priority_to_params(priority)
-
-          update_range(range, params)
-        else
-          update_params = %{to_number: max_number + 1}
-
-          if range.from_number >= update_params.to_number do
-            update_range(range, update_params)
-          else
-            delete_range(range.from_number..range.to_number)
-          end
-
-          new_range_params = %{from_number: max_number, to_number: min_number, priority: priority}
-
-          insert_range(new_range_params)
-        end
+        fill_ranges_between(range.from_number, min_number, priority)
 
       {%__MODULE__{} = range_1, %__MODULE__{} = range_2} ->
-        delete_ranges_between(range_2.from_number + 1, range_1.from_number)
-
-        params =
-          %{from_number: range_2.from_number}
-          |> add_priority_to_params(priority)
-
-        update_range(range_1, params)
+        fill_ranges_between(range_2.from_number, range_1.to_number, priority)
 
       {nil, nil} ->
-        delete_ranges_between(max_number, min_number)
-
-        params =
-          %{from_number: max_number, to_number: min_number}
-          |> add_priority_to_params(priority)
-
-        insert_range(params)
+        fill_ranges_between(max_number, min_number, priority)
     end
-  end
-
-  defp add_priority_to_params(params, priority) do
-    params |> Map.merge(%{priority: priority})
   end
 
   defp delete_range(from..to//_) do
@@ -417,6 +296,89 @@ defmodule Explorer.Utility.MissingBlockRange do
     number
     |> include_bound_query()
     |> Repo.one()
+  end
+
+  # Fills all missing block ranges that overlap with the interval [from, to]
+  @spec fill_ranges_between(Block.block_number(), Block.block_number(), integer() | nil) :: :ok
+  defp fill_ranges_between(from, to, priority) do
+    __MODULE__
+    |> where([r], r.from_number <= ^from)
+    |> where([r], r.to_number >= ^to)
+    |> priority_filter(priority)
+    |> Repo.delete_all()
+
+    # select all left priority ranges
+    priority_ranges = select_all_ranges_within_the_range(from, to)
+
+    if Enum.empty?(priority_ranges) do
+      # if no priority ranges inside the requested interval, fill the full range
+      range = %{from_number: from, to_number: to, priority: priority}
+      insert_range(range)
+    else
+      full_range_map_set =
+        from
+        |> Range.new(to)
+        |> Enum.to_list()
+        |> MapSet.new()
+
+      ranges_to_fill =
+        priority_ranges
+        |> Enum.reduce(full_range_map_set, fn range, acc ->
+          map_set =
+            range.from_number
+            |> Range.new(range.to_number)
+            |> Enum.to_list()
+            |> MapSet.new()
+
+          acc
+          |> MapSet.difference(map_set)
+        end)
+        |> MapSet.to_list()
+        |> Enum.sort_by(& &1, :desc)
+        |> Enum.reduce({[], {nil, nil}}, fn num, {ranges, {start_range, end_range}} ->
+          if is_nil(start_range) do
+            {ranges, {num, num}}
+          else
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+            if end_range - num > 1 do
+              {[Range.new(start_range, end_range) | ranges], {num, num}}
+            else
+              {ranges, {start_range, num}}
+            end
+          end
+        end)
+        |> then(fn {ranges, {start_range, end_range}} ->
+          if not is_nil(start_range) && not is_nil(end_range) do
+            [Range.new(start_range, end_range) | ranges]
+          else
+            ranges
+          end
+        end)
+
+      ranges_to_fill
+      |> Enum.each(fn %Range{first: first, last: last} ->
+        range_params = %{from_number: first, to_number: last, priority: priority}
+        insert_range(range_params)
+      end)
+    end
+
+    :ok
+  end
+
+  defp select_all_ranges_within_the_range(from, to) do
+    __MODULE__
+    |> where([r], r.from_number <= ^from)
+    |> where([r], r.to_number >= ^to)
+    |> order_by([r], desc: r.from_number)
+    |> Repo.all()
+  end
+
+  defp priority_filter(query, nil) do
+    where(query, [r], is_nil(r.priority))
+  end
+
+  defp priority_filter(query, _priority) do
+    query
   end
 
   # Deletes all missing block ranges that overlap with the interval [from, to]

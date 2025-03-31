@@ -36,30 +36,20 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     creator_hash = creation_transaction && creation_transaction.from_address_hash
 
     with false <- is_nil(address.contract_code),
-         true <- is_nil(creator_hash) do
-      case :ets.lookup(@table_name, address_cache_name(address.hash)) do
-        [{_, :in_progress}] ->
-          :ignore
-
-        [] ->
-          GenServer.cast(__MODULE__, {:fetch, address})
-
-        [{_, contract_creation_block_number}] ->
-          case pending_blocks_cache() do
-            [] ->
-              :ignore
-
-            [{@pending_blocks_cache_key, blocks}] ->
-              contract_creation_block =
-                Enum.find(blocks, fn %{block_number: block_number, address_hash_string: _address_hash_string} ->
-                  block_number == contract_creation_block_number
-                end)
-
-              # credo:disable-for-next-line
-              if is_nil(contract_creation_block), do: GenServer.cast(__MODULE__, {:fetch, address}), else: :ignore
-          end
-      end
+         true <- is_nil(creator_hash),
+         {:address_lookup, [{_, contract_creation_block_number}]} <-
+           {:address_lookup, :ets.lookup(@table_name, address_cache_name(address.hash))},
+         {:pending_blocks_lookup, [{@pending_blocks_cache_key, blocks}]} <-
+           {:pending_blocks_lookup, :ets.lookup(@table_name, @pending_blocks_cache_key)},
+         contract_creation_block when is_nil(contract_creation_block) <-
+           Enum.find(blocks, fn %{block_number: block_number} ->
+             block_number == contract_creation_block_number
+           end) do
+      GenServer.cast(__MODULE__, {:fetch, address})
     else
+      {:address_lookup, []} ->
+        GenServer.cast(__MODULE__, {:fetch, address})
+
       _ ->
         :ignore
     end
@@ -133,6 +123,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
           maybe_continue_binary_search(block_ranges, address_hash, nonce)
 
         _ ->
+          Logger.error("Error while fetching 'eth_getTransactionCount' for address #{to_string(address_hash)}")
+          :timer.sleep(1000)
           find_contract_creation_block_number(block_ranges, address_hash)
       end
     end

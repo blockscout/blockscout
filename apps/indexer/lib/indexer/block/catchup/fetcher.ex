@@ -153,24 +153,17 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp update_pending_contract_creator_block_numbers(pending_block_numbers, imported_block_numbers, imported) do
     updated_pending_block_numbers =
-      Enum.reduce(imported_block_numbers, pending_block_numbers, fn block_number, pending_block_numbers ->
-        item_to_delete =
-          Enum.find(pending_block_numbers, fn %{
-                                                block_number: pending_block_number,
-                                                address_hash_string: _address_hash_string
-                                              } ->
-            block_number == pending_block_number
-          end)
-
-        if item_to_delete do
-          contract_creation_block = find_contract_creation_block_in_imported(imported, item_to_delete.block_number)
+      Enum.filter(pending_block_numbers, fn pending_block_number ->
+        if Enum.member?(imported_block_numbers, pending_block_number.block_number) do
+          contract_creation_block =
+            find_contract_creation_block_in_imported(imported, pending_block_number.block_number)
 
           internal_transactions_import_params = [%{blocks: [contract_creation_block]}]
           async_import_internal_transactions(internal_transactions_import_params, true)
-          :ets.delete(ContractCreator.table_name(), item_to_delete.address_hash_string)
-          List.delete(pending_block_numbers, item_to_delete)
+          :ets.delete(ContractCreator.table_name(), pending_block_number.address_hash_string)
+          false
         else
-          pending_block_numbers
+          true
         end
       end)
 
