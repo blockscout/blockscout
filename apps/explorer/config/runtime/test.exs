@@ -67,7 +67,6 @@ for migrator <- [
       Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
 
       # Heavy DB index operations
-      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex,
@@ -81,7 +80,16 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersFromAddressHashTransactionHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHashTransactionHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropAddressesVerifiedIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedTransactionsCountDescHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractsLanguageIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsFromAddressHashWithPendingIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsToAddressHashWithPendingIndex
     ] do
   config :explorer, migrator, enabled: false
 end
