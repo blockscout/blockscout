@@ -364,7 +364,15 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {status, updated_state} = ConfirmationsDiscoveryTasks.check_new(state)
 
     # Schedule next run for this task
-    next_run_time = now + updated_state.intervals[:new_confirmations]
+    # The same interval is used when `:ok` or `:confirmation_missed` statuses are returned,
+    # expecting that a specific DB migration task interval is returned for `:not_ready` status
+    next_run_time =
+      now +
+        ConfirmationsDiscoveryTasks.select_interval_by_status(status, %{
+          standard: updated_state.intervals[:new_confirmations],
+          catchup: updated_state.intervals[:new_confirmations]
+        })
+
     BufferedTask.buffer(__MODULE__, [{next_run_time, :new_confirmations}], false)
 
     # If confirmation was missed and historical confirmations task is completed,

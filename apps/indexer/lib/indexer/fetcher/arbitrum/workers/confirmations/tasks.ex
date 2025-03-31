@@ -56,13 +56,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     process.
   """
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_warning: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_debug: 1, log_info: 1, log_warning: 1]
 
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery, as: ConfirmationsDiscovery
   alias Indexer.Helper, as: IndexerHelper
+
+  alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   require Logger
 
@@ -97,6 +99,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
            },
            optional(any()) => any()
          }
+
+  @non_ready_message "Skipping confirmations discovery since the unconfirmed blocks index is not ready yet"
 
   @doc """
     Discovers and processes new confirmations of rollup blocks within a calculated block range.
@@ -135,7 +139,18 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     - `{:confirmation_missed, new_state}`: If a confirmation is missed and further
       action is needed.
   """
-  @spec check_new(confirmations_related_state()) :: {:ok | :confirmation_missed, confirmations_related_state()}
+  @spec check_new(confirmations_related_state(), boolean()) :: {:ok | :confirmation_missed | :not_ready, confirmations_related_state()}
+  def check_new(state, check_for_readiness \\ true)
+
+  def check_new(state, true) do
+    if ArbitrumHelper.unconfirmed_blocks_index_ready?() do
+      check_new(state, false)
+    else
+      log_warning(@non_ready_message)
+      {:not_ready, state}
+    end
+  end
+
   def check_new(
         %{
           config: %{
@@ -151,7 +166,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
               end_block: historical_confirmations_end_block
             }
           }
-        } = state
+        } = state, false
       ) do
     {safe_start_block, latest_block} =
       if l1_rpc_config.finalized_confirmations do
@@ -280,7 +295,18 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
   - `{:confirmation_missed, new_state}`: If a confirmation is missed and further
   action is needed.
   """
-  @spec check_unprocessed(confirmations_related_state()) :: {:ok | :confirmation_missed, confirmations_related_state()}
+  @spec check_unprocessed(confirmations_related_state(), boolean()) :: {:ok | :confirmation_missed | :not_ready, confirmations_related_state()}
+  def check_unprocessed(state, check_for_readiness \\ true)
+
+  def check_unprocessed(state, true) do
+    if ArbitrumHelper.unconfirmed_blocks_index_ready?() do
+      check_unprocessed(state, false)
+    else
+      log_warning(@non_ready_message)
+      {:not_ready, state}
+    end
+  end
+
   def check_unprocessed(
         %{
           config: %{
@@ -295,7 +321,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
               start_block: expected_confirmation_start_block
             }
           }
-        } = state
+        } = state, false
       ) do
     {lowest_l1_block, state} = get_lowest_l1_block_for_confirmations(state)
 
@@ -497,30 +523,40 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
   end
 
   @doc """
-  Selects an appropriate interval for task scheduling based on the confirmation status.
+    Selects an appropriate interval for task scheduling based on the confirmation status.
 
-  When a confirmation is missed (:confirmation_missed), it indicates that required data
-  is not yet available either in the database or in the parent chain. In this case,
-  the :standard interval is used to allow more time for data accumulation.
+    When a confirmation is missed (:confirmation_missed), it indicates that required data
+    is not yet available either in the database or in the parent chain. In this case,
+    the :standard interval is used to allow more time for data accumulation.
 
-  For successful confirmation (:ok), the :catchup interval is used since the required
-  data is available and processing can proceed more rapidly.
+    For successful confirmation (:ok), the :catchup interval is used since the required
+    data is available and processing can proceed more rapidly.
 
-  ## Parameters
-  - `status`: The status returned by the confirmation worker (:ok or :confirmation_missed)
-  - `intervals`: A map containing :standard and :catchup intervals
+    When the system is not ready (:not_ready), typically due to pending database migrations,
+    it uses the configured DB migration check interval to periodically check readiness status.
 
-  ## Returns
-  The selected interval duration in milliseconds.
+    ## Parameters
+    - `status`: The status returned by the confirmation worker (:ok, :confirmation_missed or :not_ready)
+    - `intervals`: A map containing :standard and :catchup intervals
+
+    ## Returns
+    The selected interval duration in milliseconds.
   """
-  @spec select_interval_by_status(:ok | :confirmation_missed, %{standard: non_neg_integer(), catchup: non_neg_integer()}) ::
+  @spec select_interval_by_status(:ok | :confirmation_missed | :not_ready, %{standard: non_neg_integer(), catchup: non_neg_integer()}) ::
           non_neg_integer()
+  def select_interval_by_status(status, intervals)
+
   def select_interval_by_status(:confirmation_missed, %{standard: standard_interval, catchup: _}) do
-    log_info("Using standard interval for historical confirmations discovery since confirmation is missed")
+    log_debug("Using standard interval for the next confirmation discovery task since confirmation is missed")
     standard_interval
   end
 
   def select_interval_by_status(:ok, %{standard: _, catchup: catchup_interval}) do
     catchup_interval
+  end
+
+  def select_interval_by_status(:not_ready, _) do
+    log_debug("Using DB migration check interval for next confirmation discovery task")
+    HeavyDbIndexOperationHelper.get_check_interval()
   end
 end
