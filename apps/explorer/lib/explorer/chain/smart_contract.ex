@@ -195,8 +195,11 @@ defmodule Explorer.Chain.SmartContract do
     }
   ]
 
-  @default_languages ~w(solidity vyper yul stylus_rust)a
+  @default_languages ~w(solidity vyper yul)a
   @chain_type_languages (case @chain_type do
+                           :arbitrum ->
+                             ~w(stylus_rust)a
+
                            :zilliqa ->
                              ~w(scilla)a
 
@@ -207,6 +210,19 @@ defmodule Explorer.Chain.SmartContract do
   @languages @default_languages ++ @chain_type_languages
   @languages_enum @languages |> Enum.with_index(1)
   @language_string_to_atom @languages |> Map.new(&{to_string(&1), &1})
+
+  @type base_language :: :solidity | :vyper | :yul
+
+  case @chain_type do
+    :arbitrum ->
+      @type language :: base_language() | :stylus_rust
+
+    :zilliqa ->
+      @type language :: base_language() | :scilla
+
+    _ ->
+      @type language :: base_language()
+  end
 
   @doc """
     Returns list of languages supported by the database schema.
@@ -467,7 +483,9 @@ defmodule Explorer.Chain.SmartContract do
   * `is_yul` - field was added for storing user's choice
   * `certified` - boolean flag, which can be set for set of smart-contracts via runtime env variable to prioritize those smart-contracts in the search.
   * `is_blueprint` - boolean flag, determines if contract is ERC-5202 compatible blueprint contract or not.
-  * `language` - enum for smart contract language tracking, stands for getting rid of is_vyper_contract/is_yul bool flags.
+  * `language` - Specifies the programming language of this smart contract. Do
+     not access this field directly, use
+     `Explorer.Chain.SmartContract.language/1` instead.
   """
   Explorer.Chain.SmartContract.Schema.generate()
 
@@ -1364,17 +1382,43 @@ defmodule Explorer.Chain.SmartContract do
           {:ok, []} | {:error, String.t()}
   def set_smart_contracts_certified_flag([]), do: {:ok, []}
 
-  def set_smart_contracts_certified_flag(address_hashes) do
-    query =
+  def set_smart_contracts_certified_flag(address_hash_strings) do
+    address_hashes =
+      address_hash_strings
+      |> Enum.map(&Chain.string_to_address_hash_or_nil(&1))
+      |> Enum.reject(&is_nil/1)
+
+    currently_certified_address_hashes_query =
       from(
         contract in __MODULE__,
-        where: contract.address_hash in ^address_hashes
+        where: contract.certified == true,
+        select: contract.address_hash
       )
 
-    case Repo.update_all(query, set: [certified: true]) do
-      {1, _} -> {:ok, []}
-      _ -> {:error, "There was an error in setting certified flag."}
-    end
+    currently_certified_address_hashes =
+      currently_certified_address_hashes_query
+      |> Chain.select_repo(api?: true).all()
+
+    address_hashes_clear_certified_flag_for =
+      currently_certified_address_hashes -- address_hashes
+
+    address_hashes_set_certified_flag_for = address_hashes -- currently_certified_address_hashes
+
+    address_hashes_to_clear_query =
+      from(
+        contract in __MODULE__,
+        where: contract.address_hash in ^address_hashes_clear_certified_flag_for
+      )
+
+    Repo.update_all(address_hashes_to_clear_query, set: [certified: false])
+
+    address_hashes_to_set_query =
+      from(
+        contract in __MODULE__,
+        where: contract.address_hash in ^address_hashes_set_certified_flag_for
+      )
+
+    Repo.update_all(address_hashes_to_set_query, set: [certified: true])
   end
 
   defp check_verified_with_full_match(address_hash, options) do
@@ -1431,27 +1475,46 @@ defmodule Explorer.Chain.SmartContract do
     )
   end
 
+  # Applies filtering to the given query based on a specified contract language.
+  # If `nil` is provided, no additional filtering is applied.
   defp filter_contracts(basic_query, nil), do: basic_query
 
-  defp filter_contracts(basic_query, :solidity) do
-    basic_query
-    |> where(is_vyper_contract: ^false)
-  end
-
-  defp filter_contracts(basic_query, :vyper) do
-    basic_query
-    |> where(is_vyper_contract: ^true)
-  end
-
-  defp filter_contracts(basic_query, :yul) do
-    from(query in basic_query, where: is_nil(query.abi))
-  end
-
+  # Filters the given query by the specified contract language, then applies
+  # legacy-based filtering to maintain compatibility during migration.
   defp filter_contracts(basic_query, language) do
-    from(query in basic_query,
-      where: query.language == ^language
-    )
+    basic_query
+    |> where(language: ^language)
+    |> maybe_filter_contracts_on_legacy_fields(language)
   end
+
+  # Applies language-specific filtering based on legacy fields for backward
+  # compatibility. This ensures the correct results when the `language` field is
+  # not yet populated.
+  #
+  # TODO: This and `apply_legacy_language_filter/2` functions are a temporary
+  # measure during background migration of the `language` field and should be
+  # removed in the future releases.
+  defp maybe_filter_contracts_on_legacy_fields(basic_query, language) do
+    if BackgroundMigrations.get_smart_contract_language_finished() do
+      basic_query
+    else
+      apply_legacy_language_filter(basic_query, language)
+    end
+  end
+
+  defp apply_legacy_language_filter(query, :solidity) do
+    query |> or_where([sc], not sc.is_vyper_contract and not is_nil(sc.abi) and is_nil(sc.language))
+  end
+
+  defp apply_legacy_language_filter(query, :vyper) do
+    query |> or_where([sc], sc.is_vyper_contract and is_nil(sc.language))
+  end
+
+  defp apply_legacy_language_filter(query, :yul) do
+    query |> or_where([sc], is_nil(sc.abi) and is_nil(sc.language))
+  end
+
+  defp apply_legacy_language_filter(query, _), do: query
 
   @doc """
   Retrieves the constructor arguments for a zkSync smart contract.
@@ -1474,6 +1537,42 @@ defmodule Explorer.Chain.SmartContract do
 
       _ ->
         nil
+    end
+  end
+
+  @doc """
+  Retrieves the smart contract language, taking legacy fields into account for
+  compatibility. It first tries to retrieve the language from the `language`
+  field; if not present, it falls back to legacy boolean fields.
+
+  ## TODO
+  This function is a temporary measure during background migration of the
+  `language` field and should be removed in the future releases. Afterward, the
+  language will be retrieved directly from the `language` field. Tracked in
+  [#11822](https://github.com/blockscout/blockscout/issues/11822).
+
+  ## Parameters
+
+    - `SmartContract.t()`: The smart contract.
+
+  ## Returns
+
+    - `language()`: An atom representing the language of the smart contract.
+  """
+  @spec language(SmartContract.t()) :: language()
+  def language(smart_contract) do
+    cond do
+      not is_nil(smart_contract.language) ->
+        smart_contract.language
+
+      smart_contract.is_vyper_contract ->
+        :vyper
+
+      is_nil(smart_contract.abi) ->
+        :yul
+
+      true ->
+        :solidity
     end
   end
 

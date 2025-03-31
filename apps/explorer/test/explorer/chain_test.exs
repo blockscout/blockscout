@@ -28,7 +28,6 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Explorer.Chain.Cache.PendingBlockOperation, as: PendingBlockOperationCache
@@ -56,6 +55,11 @@ defmodule Explorer.ChainTest do
       nonconsensus_block = insert(:block, consensus: false)
       insert(:pending_block_operation, block: nonconsensus_block, block_number: nonconsensus_block.number)
 
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+
       :ok = Chain.remove_nonconsensus_blocks_from_pending_ops()
 
       assert Repo.get(PendingBlockOperation, block.hash)
@@ -71,6 +75,11 @@ defmodule Explorer.ChainTest do
 
       nonconsensus_block1 = insert(:block, consensus: false)
       insert(:pending_block_operation, block: nonconsensus_block1, block_number: nonconsensus_block1.number)
+
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
 
       :ok = Chain.remove_nonconsensus_blocks_from_pending_ops([nonconsensus_block1.hash])
 
@@ -935,8 +944,10 @@ defmodule Explorer.ChainTest do
       Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Block.child_id())
       Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Block.child_id())
 
+      initial_env = Application.get_env(:indexer, :block_ranges)
+
       on_exit(fn ->
-        Application.put_env(:indexer, :first_block, 0)
+        Application.put_env(:indexer, :block_ranges, initial_env)
       end)
     end
 
@@ -966,14 +977,13 @@ defmodule Explorer.ChainTest do
     end
 
     test "returns 1.0 if fully indexed blocks starting from given FIRST_BLOCK" do
-      Application.put_env(:indexer, :block_ranges, "5..latest")
-
       for index <- 5..9 do
         insert(:block, number: index, consensus: true)
         Process.sleep(200)
       end
 
       BlockCache.estimated_count()
+      Application.put_env(:indexer, :block_ranges, "5..latest")
 
       assert Decimal.compare(Chain.indexed_ratio_blocks(), 1) == :eq
     end
@@ -1001,6 +1011,11 @@ defmodule Explorer.ChainTest do
           insert(:pending_block_operation, block: block, block_number: block.number)
         end
       end
+
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
 
       Chain.indexed_ratio_internal_transactions()
 

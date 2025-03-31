@@ -6,6 +6,11 @@ on:
       - created
       - edited
 
+  discussion_comment:
+    types:
+      - created
+      - edited
+
 permissions:
   pull-requests: write
   issues: write

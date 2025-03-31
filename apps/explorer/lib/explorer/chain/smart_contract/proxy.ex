@@ -90,18 +90,14 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       true
     else
       _ ->
-        if options[:skip_implementation_fetch?] do
-          false
-        else
-          implementation = get_implementation(smart_contract, options)
+        implementation = get_implementation(smart_contract, options)
 
-          with false <- is_nil(implementation),
-               false <- Enum.empty?(implementation.address_hashes) do
-            has_not_burn_address_hash?(implementation.address_hashes, burn_address_hash)
-          else
-            _ ->
-              false
-          end
+        with false <- is_nil(implementation),
+             false <- Enum.empty?(implementation.address_hashes) do
+          has_not_burn_address_hash?(implementation.address_hashes, burn_address_hash)
+        else
+          _ ->
+            false
         end
     end
   end
@@ -305,7 +301,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
          proxy_type,
          proxy_address_hash
        ) do
-    implementation_address_hash_strings = module.get_implementation_address_hash_strings(proxy_address_hash)
+    implementation_address_hash_strings = module.get_implementation_address_hash_strings(proxy_address_hash, api?: true)
 
     if implementation_address_hash_strings == [] ||
          implementation_address_hash_strings == [burn_address_hash_string()] ||

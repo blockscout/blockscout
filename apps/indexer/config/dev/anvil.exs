@@ -7,9 +7,14 @@ import Config
 hackney_opts = ConfigHelper.hackney_options()
 timeout = ConfigHelper.timeout(1)
 
-config :explorer,
+config :indexer,
+  block_interval: ConfigHelper.parse_time_env_var("INDEXER_CATCHUP_BLOCK_INTERVAL", "0s"),
   json_rpc_named_arguments: [
-    transport: EthereumJSONRPC.HTTP,
+    transport:
+      if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http",
+        do: EthereumJSONRPC.HTTP,
+        else: EthereumJSONRPC.IPC
+      ),
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
       urls: ConfigHelper.parse_urls_list(:http),
@@ -21,14 +26,15 @@ config :explorer,
       ],
       http_options: [recv_timeout: timeout, timeout: timeout, hackney: hackney_opts]
     ],
-    variant: EthereumJSONRPC.Ganache
+    variant: EthereumJSONRPC.Anvil
   ],
   subscribe_named_arguments: [
-    transport: EthereumJSONRPC.WebSocket,
+    transport:
+      System.get_env("ETHEREUM_JSONRPC_WS_URL") && System.get_env("ETHEREUM_JSONRPC_WS_URL") !== "" &&
+        EthereumJSONRPC.WebSocket,
     transport_options: [
       web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
       url: System.get_env("ETHEREUM_JSONRPC_WS_URL"),
       fallback_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_WS_URL")
-    ],
-    variant: EthereumJSONRPC.Ganache
+    ]
   ]
