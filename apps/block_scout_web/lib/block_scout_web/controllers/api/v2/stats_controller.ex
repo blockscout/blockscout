@@ -179,7 +179,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       defp add_chain_type_fields(response) do
         alias Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount
 
-        case Rootstock.LockedBTCCount.get_locked_value() do
+        case LockedBTCCount.get_locked_value() do
           rootstock_locked_btc when not is_nil(rootstock_locked_btc) ->
             response |> Map.put("rootstock_locked_btc", rootstock_locked_btc)
 
