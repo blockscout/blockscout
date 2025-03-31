@@ -875,57 +875,74 @@ defmodule Explorer.Chain.Address do
   @doc """
   Returns contract creation transaction association specification.
 
-  For Filecoin chain, includes a reference to the from_address in the association.
+  ## Note
+  IMPORTANT: This association function should be used ONLY for single address
+  operations. Using it with multiple addresses may produce unexpected results.
+
+  As noted in [Ecto documentation](https://hexdocs.pm/ecto/Ecto.Query.html#preload/3-preload-queries),
+  operations like `limit` and `offset` in preload queries affect the entire
+  result set, not each individual association. When working with collections of
+  addresses, consider using window functions instead of these helpers.
 
   ## Returns
   A keyword list with the contract creation transaction association.
   """
   @spec contract_creation_transaction_association() :: keyword()
-  case @chain_type do
-    :filecoin ->
-      def contract_creation_transaction_association do
-        [
-          contract_creation_transaction: {
-            Address.contract_creation_transaction_preload_query(),
-            :from_address
-          }
-        ]
-      end
+  def contract_creation_transaction_association do
+    [
+      contract_creation_transaction: Address.contract_creation_transaction_preload_query()
+    ]
+  end
 
-    _ ->
-      def contract_creation_transaction_association do
-        [
-          contract_creation_transaction: Address.contract_creation_transaction_preload_query()
-        ]
-      end
+  @doc """
+  Same as `contract_creation_transaction_association/0`, but preloads a nested
+  association for the `from_address` field. Used for Filecoin chain type.
+  """
+  @spec contract_creation_transaction_with_from_address_association() :: keyword()
+  def contract_creation_transaction_with_from_address_association do
+    [
+      contract_creation_transaction: {
+        Address.contract_creation_transaction_preload_query(),
+        :from_address
+      }
+    ]
   end
 
   @doc """
   Returns contract creation internal transaction association specification.
 
-  For Filecoin chain, includes a reference to the from_address in the association.
+  ## Note
+  IMPORTANT: This association function should be used ONLY for single address
+  operations. Using it with multiple addresses may produce unexpected results.
+
+  As noted in [Ecto documentation](https://hexdocs.pm/ecto/Ecto.Query.html#preload/3-preload-queries),
+  operations like `limit` and `offset` in preload queries affect the entire
+  result set, not each individual association. When working with collections of
+  addresses, consider using window functions instead of these helpers.
 
   ## Returns
   A keyword list with the contract creation internal transaction association.
   """
   @spec contract_creation_internal_transaction_association() :: keyword()
-  case @chain_type do
-    :filecoin ->
-      def contract_creation_internal_transaction_association do
-        [
-          contract_creation_internal_transaction: {
-            Address.contract_creation_internal_transaction_preload_query(),
-            :from_address
-          }
-        ]
-      end
+  def contract_creation_internal_transaction_association do
+    [
+      contract_creation_internal_transaction: Address.contract_creation_internal_transaction_preload_query()
+    ]
+  end
 
-    _ ->
-      def contract_creation_internal_transaction_association do
-        [
-          contract_creation_internal_transaction: Address.contract_creation_internal_transaction_preload_query()
-        ]
-      end
+  @doc """
+  Same as `contract_creation_internal_transaction_association/0`, but
+  preloads a nested association for the `from_address` field. Used for Filecoin
+  chain type.
+  """
+  @spec contract_creation_internal_transaction_with_from_address_association() :: keyword()
+  def contract_creation_internal_transaction_with_from_address_association do
+    [
+      contract_creation_internal_transaction: {
+        Address.contract_creation_internal_transaction_preload_query(),
+        :from_address
+      }
+    ]
   end
 
   @doc """
@@ -945,6 +962,18 @@ defmodule Explorer.Chain.Address do
     [
       contract_creation_transaction_association(),
       contract_creation_internal_transaction_association()
+    ]
+  end
+
+  @doc """
+  Same as `contract_creation_transaction_associations/0`, but preloads a nested
+  association for the `from_address` field. Used for Filecoin chain type.
+  """
+  @spec contract_creation_transaction_with_from_address_associations() :: [keyword()]
+  def contract_creation_transaction_with_from_address_associations do
+    [
+      contract_creation_transaction_with_from_address_association(),
+      contract_creation_internal_transaction_with_from_address_association()
     ]
   end
 

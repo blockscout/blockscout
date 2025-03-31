@@ -940,12 +940,8 @@ defmodule Explorer.Chain do
             :names => :optional,
             :smart_contract => :optional,
             :token => :optional,
-            [
-              contract_creation_transaction: Address.contract_creation_transaction_preload_query()
-            ] => :optional,
-            [
-              contract_creation_internal_transaction: Address.contract_creation_internal_transaction_preload_query()
-            ] => :optional
+            Address.contract_creation_transaction_association() => :optional,
+            Address.contract_creation_internal_transaction_association() => :optional
           }
         ]
       ) do
