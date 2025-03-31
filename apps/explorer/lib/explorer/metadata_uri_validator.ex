@@ -6,21 +6,37 @@ defmodule Explorer.MetadataURIValidator do
   require Logger
 
   @reserved_ranges [
+    # Current (local, "this") network
     "0.0.0.0/8",
+    # Used for local communications within a private network
     "10.0.0.0/8",
+    # [Shared address space](https://en.wikipedia.org/wiki/IPv4_shared_address_space) for communications between a service provider and its subscribers when using a carrier-grade NAT
     "100.64.0.0/10",
+    # Used for [loopback addresses](https://en.wikipedia.org/wiki/Loopback_address) to the local host
     "127.0.0.0/8",
+    # Used for [link-local addresses](https://en.wikipedia.org/wiki/Link-local_address) between two hosts on a single link when no IP address is otherwise specified, such as would have normally been retrieved from a DHCP server
     "169.254.0.0/16",
+    # Used for local communications within a private network
     "172.16.0.0/12",
+    # IETF Protocol Assignments, [DS-Lite](https://en.wikipedia.org/wiki/DS-Lite)
     "192.0.0.0/29",
+    # Assigned as TEST-NET-1, documentation and examples
     "192.0.2.0/24",
+    # Reserved. Formerly used for IPv6 to IPv4 relay (included IPv6 address block)
     "192.88.99.0/24",
+    # Used for local communications within a private network
     "192.168.0.0/16",
+    # Used for benchmark testing of inter-network communications between two separate subnets
     "198.18.0.0/15",
+    # Assigned as TEST-NET-2, documentation and examples
     "198.51.100.0/24",
+    # Assigned as TEST-NET-3, documentation and examples
     "203.0.113.0/24",
+    # In use for [multicast](https://en.wikipedia.org/wiki/IP_multicast) (former Class D network)
     "224.0.0.0/4",
+    # Reserved for future use (former Class E network)
     "240.0.0.0/4",
+    # Reserved for the "limited [broadcast](https://en.wikipedia.org/wiki/Broadcast_address)" destination address
     "255.255.255.255/32"
   ]
 
@@ -58,6 +74,7 @@ defmodule Explorer.MetadataURIValidator do
     end
   end
 
+  @spec host_to_ip_list(String.t()) :: [tuple()] | nil
   defp host_to_ip_list(host) do
     host
     |> to_charlist()
@@ -74,6 +91,7 @@ defmodule Explorer.MetadataURIValidator do
     end
   end
 
+  @spec allowed_ip?(tuple()) :: boolean()
   defp allowed_ip?(ip) do
     not Enum.any?(prepare_cidr_blacklist(), fn range ->
       range

@@ -275,6 +275,31 @@ defmodule Explorer.Token.MetadataRetriever do
     end
   end
 
+  @doc """
+  Parses the response from metadata fetching.
+
+  ## Parameters
+    - response: tuple containing either:
+      - `{:ok_store_uri, metadata, uri}` - when metadata was successfully fetched and uri should be stored
+      - `{:ok, result}` - when metadata was successfully fetched but not uri should be stored
+      - `{:error, reason}` - when metadata fetch failed
+
+  ## Returns
+    - `{:ok, metadata}`
+    - `{:error, reason}`
+
+  ## Examples
+      iex> parse_fetch_json_response({:ok_store_uri, %{name: "Token"}, "ipfs://..."})
+      {:ok, %{name: "Token"}}
+
+      iex> parse_fetch_json_response({:ok, %{name: "Token"}})
+      {:ok, %{name: "Token"}}
+
+      iex> parse_fetch_json_response({:error, "Failed to fetch"})
+      {:error, "Failed to fetch"}
+  """
+  @spec parse_fetch_json_response({:ok | :error, any()} | {:ok_store_uri, any(), any()}) ::
+          {:ok, any()} | {:error, any()}
   def parse_fetch_json_response({:ok_store_uri, metadata, _uri}) do
     {:ok, metadata}
   end

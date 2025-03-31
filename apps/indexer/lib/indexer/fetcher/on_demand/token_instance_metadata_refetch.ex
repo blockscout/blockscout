@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   use GenServer
   use Indexer.Fetcher, restart: :permanent
 
-  alias EthereumJsonrpc.NFT
+  alias EthereumJSONRPC.NFT
   alias Explorer.Chain.Cache.Counters.Helper, as: CountersHelper
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Token.Instance, as: TokenInstance

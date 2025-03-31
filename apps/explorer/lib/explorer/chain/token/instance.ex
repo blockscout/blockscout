@@ -33,7 +33,7 @@ defmodule Explorer.Chain.Token.Instance do
   * `thumbnails` - info for deriving thumbnails urls. Stored as array: [file_path, sizes, original_uploaded?]
   * `media_type` - mime type of media
   * `cdn_upload_error` - error while processing(resizing)/uploading media to CDN
-  * `metadata_url` - URL metadata fetched from
+  * `metadata_url` - URL where metadata is fetched from
   * `skip_metadata_url` - bool flag indicating if metadata_url intentionally skipped
   """
   @primary_key false

@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     Common functions for Indexer.Fetcher.TokenInstance fetchers
   """
 
-  alias EthereumJsonrpc.NFT
+  alias EthereumJSONRPC.NFT
   alias Explorer.Chain
   alias Explorer.Chain.Token.Instance
   alias Explorer.Token.MetadataRetriever

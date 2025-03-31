@@ -1,4 +1,4 @@
-defmodule EthereumJsonrpc.NFT do
+defmodule EthereumJSONRPC.NFT do
   @moduledoc """
     Module responsible for requesting token_uri and uri methods which needed for NFT metadata fetching
   """
@@ -197,13 +197,5 @@ defmodule EthereumJsonrpc.NFT do
   @spec erc_721_1155_abi() :: list(map())
   def erc_721_1155_abi do
     @erc_721_1155_abi
-  end
-
-  @doc """
-  Returns tokenURI method signature.
-  """
-  @spec token_uri() :: String.t()
-  def token_uri do
-    @token_uri
   end
 end

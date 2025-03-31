@@ -6,9 +6,8 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
   use Explorer.Migrator.FillingMigration, skip_meta_update?: true
   import Ecto.Query
 
-  alias EthereumJsonrpc.NFT
+  alias EthereumJSONRPC.NFT
   alias Explorer.{Chain, MetadataURIValidator, Repo}
-  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Token.Instance
   alias Explorer.Migrator.FillingMigration
 
@@ -75,7 +74,7 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
 
   @impl FillingMigration
   def update_cache do
-    BackgroundMigrations.set_tt_denormalization_finished(true)
+    :ignore
   end
 
   # leave metadata url as empty string for errored requests in order to mark them somehow
