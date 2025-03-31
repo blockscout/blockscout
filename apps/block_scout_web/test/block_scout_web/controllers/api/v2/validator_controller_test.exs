@@ -181,7 +181,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
         _validator_probation2 = insert(:validator_stability, state: :probation)
         _validator_probation3 = insert(:validator_stability, state: :probation)
 
-        Stability.ValidatorsCount.consolidate()
+        ValidatorsCount.consolidate()
         :timer.sleep(500)
 
         percentage = (3 / 9 * 100) |> Float.floor(2)
