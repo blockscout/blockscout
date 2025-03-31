@@ -495,4 +495,32 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
       {:ok, state}
     end
   end
+
+  @doc """
+  Selects an appropriate interval for task scheduling based on the confirmation status.
+
+  When a confirmation is missed (:confirmation_missed), it indicates that required data
+  is not yet available either in the database or in the parent chain. In this case,
+  the :standard interval is used to allow more time for data accumulation.
+
+  For successful confirmation (:ok), the :catchup interval is used since the required
+  data is available and processing can proceed more rapidly.
+
+  ## Parameters
+  - `status`: The status returned by the confirmation worker (:ok or :confirmation_missed)
+  - `intervals`: A map containing :standard and :catchup intervals
+
+  ## Returns
+  The selected interval duration in milliseconds.
+  """
+  @spec select_interval_by_status(:ok | :confirmation_missed, %{standard: non_neg_integer(), catchup: non_neg_integer()}) ::
+          non_neg_integer()
+  def select_interval_by_status(:confirmation_missed, %{standard: standard_interval, catchup: _}) do
+    log_info("Using standard interval for historical confirmations discovery since confirmation is missed")
+    standard_interval
+  end
+
+  def select_interval_by_status(:ok, %{standard: _, catchup: catchup_interval}) do
+    catchup_interval
+  end
 end

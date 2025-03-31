@@ -426,7 +426,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       :historical_confirmations,
       &ConfirmationsDiscoveryTasks.check_unprocessed/1,
       &ConfirmationsDiscoveryTasks.historical_confirmations_discovery_completed?/1,
-      &select_historical_confirmations_interval/3,
+      &select_historical_confirmations_interval/2,
       true
     )
   end
@@ -435,12 +435,11 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   # For :confirmation_missed status, uses longer :new_confirmations interval since data
   # is not yet available. For all other statuses, uses shorter :historical_confirmations
   # interval since data is available for rapid processing.
-  defp select_historical_confirmations_interval(:confirmation_missed, state, _task_tag) do
-    state.intervals[:new_confirmations]
-  end
-
-  defp select_historical_confirmations_interval(_status, state, :historical_confirmations) do
-    state.intervals[:historical_confirmations]
+  defp select_historical_confirmations_interval(status, state) do
+    ConfirmationsDiscoveryTasks.select_interval_by_status(status, %{
+      standard: state.intervals[:new_confirmations],
+      catchup: state.intervals[:historical_confirmations]
+    })
   end
 
   # Handles the discovery of historical L2-to-L1 message executions
@@ -470,7 +469,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
          task_tag,
          worker_function,
          completion_check_function,
-         interval_selection_function \\ fn _, state, task_tag -> state.intervals[task_tag] end,
+         interval_selection_function \\ nil,
          any_status? \\ false
        ) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
@@ -491,7 +490,13 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     updated_state = update_completed_tasks(state_after_worker_run, task_tag, completion_check_function)
 
     if rescheduled?(task_tag, updated_state) do
-      interval = interval_selection_function.(worker_status, updated_state, task_tag)
+      interval =
+        if interval_selection_function do
+          interval_selection_function.(worker_status, updated_state)
+        else
+          updated_state.intervals[task_tag]
+        end
+
       next_run_time = now + interval
       BufferedTask.buffer(__MODULE__, [{next_run_time, task_tag}], false)
     end
