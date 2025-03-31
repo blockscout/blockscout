@@ -2468,8 +2468,7 @@ defmodule Explorer.ChainTest do
           :names => :optional,
           :smart_contract => :optional,
           :token => :optional,
-          Address.contract_creation_transaction_association() => :optional,
-          Address.contract_creation_internal_transaction_association() => :optional
+          Address.contract_creation_transaction_associations() => :optional
         }
       ]
 

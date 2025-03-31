@@ -17,8 +17,7 @@ defmodule BlockScoutWeb.AddressContractController do
         :names => :optional,
         [smart_contract: :smart_contract_additional_sources] => :optional,
         :token => :optional,
-        Address.contract_creation_transaction_association() => :optional,
-        Address.contract_creation_internal_transaction_association() => :optional
+        Address.contract_creation_transaction_associations() => :optional
       }
     ]
 
