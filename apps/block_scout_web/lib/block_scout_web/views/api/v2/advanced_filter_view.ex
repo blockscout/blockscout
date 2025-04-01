@@ -100,7 +100,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
           if(advanced_filter.type != "coin_transfer", do: advanced_filter.token_transfer.token.symbol, else: nil),
           advanced_filter.block_number,
           decimal_to_string_xsd(advanced_filter.fee),
-          decimal_to_string_xsd(exchange_rate.usd_value),
+          decimal_to_string_xsd(exchange_rate.fiat_value),
           decimal_to_string_xsd(opening_price),
           decimal_to_string_xsd(closing_price)
         ]

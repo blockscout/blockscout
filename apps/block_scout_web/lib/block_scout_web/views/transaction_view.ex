@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Market.Token
   alias Timex.Duration
 
   use Gettext, backend: BlockScoutWeb.Gettext

@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.AddressWithdrawalControllerTest do
   import Mox
 
   alias Explorer.Chain.Address
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Market.Token
 
   setup :verify_on_exit!
 

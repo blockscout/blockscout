@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
   import BlockScoutWeb.Routers.WebRouter.Helpers, only: [address_contract_path: 3]
 
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Market.Token
   alias Explorer.{Factory, TestHelper}
 
   describe "GET index/3" do
