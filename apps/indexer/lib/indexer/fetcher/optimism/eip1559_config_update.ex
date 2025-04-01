@@ -351,11 +351,10 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
         chunk_start = List.first(block_numbers)
         chunk_end = List.last(block_numbers)
 
-        Logger.error(
-          "Cannot fetch blocks #{inspect(chunk_start..chunk_end)}. Error(s): #{inspect(message)} Retrying..."
+        Optimism.log_error_message_with_retry_sleep(
+          "Cannot fetch blocks #{inspect(chunk_start..chunk_end)}. Error(s): #{inspect(message)}"
         )
 
-        :timer.sleep(3000)
         handle_updates(block_numbers, json_rpc_named_arguments)
     end
   end

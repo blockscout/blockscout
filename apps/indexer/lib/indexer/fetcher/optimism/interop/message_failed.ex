@@ -275,10 +275,9 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageFailed do
             msg -> msg
           end
 
-        error_message = "Cannot fetch blocks #{inspect(block_range)}. Error(s): #{inspect(message)}"
-
-        Logger.error("#{error_message} Retrying...")
-        :timer.sleep(3000)
+        Optimism.log_error_message_with_retry_sleep(
+          "Cannot fetch blocks #{inspect(block_range)}. Error(s): #{inspect(message)}"
+        )
 
         handle_failed_relays(
           block_range,
