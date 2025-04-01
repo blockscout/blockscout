@@ -359,4 +359,91 @@ defmodule Explorer.Helper do
       "0x" <> Base.encode16(binary_hash, case: :lower)
     end
   end
+
+  @doc """
+  Converts an integer to its hexadecimal string representation prefixed with "0x".
+
+  The resulting hexadecimal string is in lowercase.
+
+  ## Parameters
+
+    - `integer` (integer): The integer to be converted to a hexadecimal string.
+
+  ## Returns
+
+    - `binary()`: A string representing the hexadecimal value of the input integer, prefixed with "0x".
+
+  ## Examples
+
+      iex> Explorer.Helper.integer_to_hex(255)
+      "0x00ff"
+
+      iex> Explorer.Helper.integer_to_hex(4096)
+      "0x1000"
+
+  """
+  @spec integer_to_hex(integer()) :: binary()
+  def integer_to_hex(integer), do: "0x" <> String.downcase(Integer.to_string(integer, 16))
+
+  @doc """
+  Converts a `Decimal` value to its hexadecimal representation.
+
+  ## Parameters
+
+    - `decimal` (`Decimal.t()`): The decimal value to be converted.
+
+  ## Returns
+
+    - `binary()`: The hexadecimal representation of the given decimal value.
+    - `nil`: If the conversion fails.
+
+  ## Examples
+
+      iex> decimal_to_hex(Decimal.new(255))
+      "0xff"
+
+      iex> decimal_to_hex(Decimal.new(0))
+      "0x0"
+
+      iex> decimal_to_hex(nil)
+      nil
+  """
+  @spec decimal_to_hex(Decimal.t()) :: binary() | nil
+  def decimal_to_hex(decimal) do
+    decimal
+    |> Decimal.to_integer()
+    |> integer_to_hex()
+  end
+
+  @doc """
+  Converts a `DateTime` struct to its hexadecimal representation.
+
+  If the input is `nil`, the function returns `nil`.
+
+  ## Parameters
+
+    - `datetime`: A `DateTime` struct or `nil`.
+
+  ## Returns
+
+    - A binary string representing the hexadecimal value of the Unix timestamp
+      of the given `DateTime`, or `nil` if the input is `nil`.
+
+  ## Examples
+
+      iex> datetime = ~U[2023-03-15 12:34:56Z]
+      iex> Explorer.Helper.datetime_to_hex(datetime)
+      "0x6411e6b0"
+
+      iex> Explorer.Helper.datetime_to_hex(nil)
+      nil
+  """
+  @spec datetime_to_hex(DateTime.t() | nil) :: binary() | nil
+  def datetime_to_hex(nil), do: nil
+
+  def datetime_to_hex(datetime) do
+    datetime
+    |> DateTime.to_unix()
+    |> integer_to_hex()
+  end
 end
