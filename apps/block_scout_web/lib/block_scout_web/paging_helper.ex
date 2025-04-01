@@ -387,8 +387,8 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def addresses_sorting(_), do: []
 
-  defp do_addresses_sorting("balance", "asc"), do: [asc_nulls_first: :fetched_coin_balance]
-  defp do_addresses_sorting("balance", "desc"), do: [desc_nulls_last: :fetched_coin_balance]
+  defp do_addresses_sorting("balance", "asc"), do: [asc: :fetched_coin_balance]
+  defp do_addresses_sorting("balance", "desc"), do: [desc: :fetched_coin_balance]
   defp do_addresses_sorting("transactions_count", "asc"), do: [asc_nulls_first: :transactions_count]
   defp do_addresses_sorting("transactions_count", "desc"), do: [desc_nulls_last: :transactions_count]
   defp do_addresses_sorting(_, _), do: []
