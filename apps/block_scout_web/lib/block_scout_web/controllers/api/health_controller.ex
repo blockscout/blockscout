@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.API.HealthController do
         batches_indexing_status = indexing_status.batches
 
         base_health_status
-        |> Map.put(:metadata, Map.put(metadata, :batches, batches_indexing_status))
+        |> put_in([:metadata, :batches], batches_indexing_status)
         |> Map.put(:healthy, indexing_status.blocks.new.healthy and batches_indexing_status.healthy)
       else
         base_health_status

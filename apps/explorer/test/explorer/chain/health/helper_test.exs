@@ -1,10 +1,20 @@
 defmodule Explorer.Chain.Health.HelperTest do
   use Explorer.DataCase
   alias Explorer.Chain.Health.Helper, as: HealthHelper
+  alias Explorer.Chain.Cache.Blocks
+
+  setup do
+    Supervisor.terminate_child(Explorer.Supervisor, Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Blocks.child_id())
+
+    :ok
+  end
 
   describe "last_cache_block/0" do
     test "returns {block_number, block_timestamp}" do
       block = insert(:block, consensus: true)
+
+      Blocks.update(block)
 
       assert {block.number, block.timestamp} == HealthHelper.last_cache_block()
     end

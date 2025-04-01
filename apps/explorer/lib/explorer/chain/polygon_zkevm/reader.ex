@@ -14,6 +14,7 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
 
   alias Explorer.Chain.PolygonZkevm.{BatchTransaction, Bridge, BridgeL1Token, LifecycleTransaction, TransactionBatch}
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Prometheus.Instrumenter
   alias Indexer.Helper
 
   @doc """
@@ -387,23 +388,7 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
       )
 
     items = select_repo(options).all(query)
-    items_count = length(items)
 
-    if items_count > 1 do
-      latest_item = List.first(items)
-      older_item = List.last(items)
-      average_time = div(DateTime.diff(latest_item.timestamp, older_item.timestamp, :second), items_count)
-
-      {
-        :ok,
-        %{
-          latest_batch_number: latest_item.number,
-          latest_batch_timestamp: latest_item.timestamp,
-          average_batch_time: average_time
-        }
-      }
-    else
-      {:error, :not_found}
-    end
+    Instrumenter.prepare_batch_metric(items)
   end
 end

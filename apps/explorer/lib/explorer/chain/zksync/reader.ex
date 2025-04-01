@@ -19,6 +19,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
   }
 
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Prometheus.Instrumenter
 
   @doc """
     Receives total amount of batches imported to the `zksync_transaction_batches` table.
@@ -374,35 +375,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
         }
       )
 
-    case select_repo(options).all(latest_batches_query) do
-      [] ->
-        {:error, :not_found}
-
-      [latest_batch | other_batches] ->
-        # Calculate average time between batches
-        average_time =
-          case other_batches do
-            [] ->
-              0
-
-            batches ->
-              batches
-              |> Enum.zip(tl([latest_batch | batches]))
-              |> Enum.map(fn {newer, older} ->
-                DateTime.diff(newer.timestamp, older.timestamp, :second)
-              end)
-              # credo:disable-for-next-line
-              |> then(fn diffs ->
-                div(Enum.sum(diffs), length(diffs))
-              end)
-          end
-
-        {:ok,
-         %{
-           latest_batch_number: latest_batch.number,
-           latest_batch_timestamp: latest_batch.timestamp,
-           average_batch_time: average_time
-         }}
-    end
+    items = select_repo(options).all(latest_batches_query)
+    Instrumenter.prepare_batch_metric(items)
   end
 end

@@ -5,6 +5,7 @@ defmodule Explorer.Chain.Optimism.Reader do
 
   import Explorer.Chain, only: [select_repo: 1]
   alias Explorer.Chain.Optimism.FrameSequence
+  alias Explorer.Prometheus.Instrumenter
 
   @doc """
     Gets information about the latest batch and calculates average time between batches, in seconds.
@@ -30,29 +31,13 @@ defmodule Explorer.Chain.Optimism.Reader do
         order_by: [desc: fs.id],
         limit: 5,
         select: %{
-          id: fs.id,
+          number: fs.id,
           timestamp: fs.l1_timestamp
         }
       )
 
     items = select_repo(options).all(query)
-    items_count = length(items)
 
-    if items_count > 1 do
-      latest_item = List.first(items)
-      older_item = List.last(items)
-      average_time = div(DateTime.diff(latest_item.timestamp, older_item.timestamp, :second), items_count)
-
-      {
-        :ok,
-        %{
-          latest_batch_number: latest_item.id,
-          latest_batch_timestamp: latest_item.timestamp,
-          average_batch_time: average_time
-        }
-      }
-    else
-      {:error, :not_found}
-    end
+    Instrumenter.prepare_batch_metric(items)
   end
 end

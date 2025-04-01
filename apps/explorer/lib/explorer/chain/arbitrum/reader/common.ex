@@ -37,6 +37,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
 
   alias Explorer.Chain.Block, as: FullBlock
 
+  alias Explorer.Prometheus.Instrumenter
+
   @doc """
     Retrieves the number of the highest confirmed rollup block.
 
@@ -128,35 +130,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
         }
       )
 
-    case select_repo(options).all(latest_batches_query) do
-      [] ->
-        {:error, :not_found}
+    items = select_repo(options).all(latest_batches_query)
 
-      [latest_batch | other_batches] ->
-        # Calculate average time between batches
-        average_time =
-          case other_batches do
-            [] ->
-              0
-
-            batches ->
-              batches
-              |> Enum.zip(tl([latest_batch | batches]))
-              |> Enum.map(fn {newer, older} ->
-                DateTime.diff(newer.timestamp, older.timestamp, :second)
-              end)
-              # credo:disable-for-next-line
-              |> then(fn diffs ->
-                div(Enum.sum(diffs), length(diffs))
-              end)
-          end
-
-        {:ok,
-         %{
-           latest_batch_number: latest_batch.number,
-           latest_batch_timestamp: latest_batch.timestamp,
-           average_batch_time: average_time
-         }}
-    end
+    Instrumenter.prepare_batch_metric(items)
   end
 end

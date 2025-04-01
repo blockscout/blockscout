@@ -5,14 +5,15 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.Cache.Blocks
 
   setup :set_mox_from_context
 
   setup do
     old_env = Application.get_env(:explorer, Explorer.Chain.Health.Monitor)
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Health.Monitor)
-    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
-    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Blocks.child_id())
 
     new_env =
       old_env
@@ -55,6 +56,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
 
     test "returns error when last block is stale", %{conn: conn, current_block_number: current_block_number} do
       block = insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
+      Blocks.update(block)
 
       :timer.sleep(150)
 
@@ -85,7 +87,9 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
 
     test "returns ok when last block is not stale", %{conn: conn, current_block_number: current_block_number} do
       block1 = insert(:block, consensus: true, timestamp: DateTime.utc_now(), number: 2)
-      insert(:block, consensus: true, timestamp: DateTime.utc_now(), number: 1)
+      Blocks.update(block1)
+      block2 = insert(:block, consensus: true, timestamp: DateTime.utc_now(), number: 1)
+      Blocks.update(block2)
 
       :timer.sleep(150)
 
