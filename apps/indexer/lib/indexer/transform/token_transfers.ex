@@ -15,7 +15,7 @@ defmodule Indexer.Transform.TokenTransfers do
   @doc """
   Returns a list of token transfers given a list of logs.
   """
-  def parse(logs) do
+  def parse(logs, skip_additional_fetchers? \\ false) do
     initial_acc = %{tokens: [], token_transfers: []}
 
     erc20_and_erc721_token_transfers =
@@ -62,9 +62,11 @@ defmodule Indexer.Transform.TokenTransfers do
     tokens = sanitize_token_types(rough_tokens, rough_token_transfers)
     token_transfers = sanitize_weth_transfers(tokens, rough_token_transfers, weth_transfers.token_transfers)
 
-    token_transfers
-    |> filter_tokens_for_supply_update()
-    |> TokenTotalSupplyUpdater.add_tokens()
+    unless skip_additional_fetchers? do
+      token_transfers
+      |> filter_tokens_for_supply_update()
+      |> TokenTotalSupplyUpdater.add_tokens()
+    end
 
     tokens_uniq = tokens |> Enum.uniq()
 
