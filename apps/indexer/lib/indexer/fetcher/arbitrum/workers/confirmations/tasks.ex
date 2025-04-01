@@ -146,7 +146,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
       action is needed
     - `{:not_ready, state}`: If the unconfirmed blocks index is not ready yet
   """
-  @spec check_new(confirmations_related_state(), boolean()) :: {:ok | :confirmation_missed | :not_ready, confirmations_related_state()}
+  @spec check_new(confirmations_related_state(), boolean()) ::
+          {:ok | :confirmation_missed | :not_ready, confirmations_related_state()}
   def check_new(state, check_for_readiness \\ true)
 
   def check_new(state, true) do
@@ -173,7 +174,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
               end_block: historical_confirmations_end_block
             }
           }
-        } = state, false
+        } = state,
+        false
       ) do
     {safe_start_block, latest_block} =
       if l1_rpc_config.finalized_confirmations do
@@ -308,7 +310,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     action is needed
   - `{:not_ready, state}`: If the unconfirmed blocks index is not ready yet
   """
-  @spec check_unprocessed(confirmations_related_state(), boolean()) :: {:ok | :confirmation_missed | :not_ready, confirmations_related_state()}
+  @spec check_unprocessed(confirmations_related_state(), boolean()) ::
+          {:ok | :confirmation_missed | :not_ready, confirmations_related_state()}
   def check_unprocessed(state, check_for_readiness \\ true)
 
   def check_unprocessed(state, true) do
@@ -334,7 +337,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
               start_block: expected_confirmation_start_block
             }
           }
-        } = state, false
+        } = state,
+        false
       ) do
     {lowest_l1_block, state} = get_lowest_l1_block_for_confirmations(state)
 
@@ -529,7 +533,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     ## Returns
     The selected interval duration in milliseconds.
   """
-  @spec select_interval_by_status(:ok | :confirmation_missed | :not_ready, %{standard: non_neg_integer(), catchup: non_neg_integer()}) ::
+  @spec select_interval_by_status(:ok | :confirmation_missed | :not_ready, %{
+          standard: non_neg_integer(),
+          catchup: non_neg_integer()
+        }) ::
           non_neg_integer()
   def select_interval_by_status(status, intervals)
 

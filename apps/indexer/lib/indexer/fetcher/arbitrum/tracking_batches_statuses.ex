@@ -78,7 +78,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_error: 1, log_warning: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_warning: 1]
 
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks, as: BatchesDiscoveryTasks
@@ -316,7 +316,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   @spec initialize_workers(%{
           :config => map(),
           optional(any()) => any()
-        }) :: %{config => map(), :task_data => fetcher_tasks_data(), optional(any()) => any()}
+        }) :: %{:config => map(), :task_data => fetcher_tasks_data(), optional(any()) => any()}
   defp initialize_workers(state) do
     json_l1_rpc_named_arguments = state.config.l1_rpc.json_rpc_named_arguments
     l1_rollup_address = state.config.l1_rollup_address
