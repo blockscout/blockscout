@@ -33,7 +33,13 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
         {:stop, :normal, state}
 
       %{status: "wait_for_enabling_weth_filtering"} ->
-        {:stop, :normal, state}
+        if !weth_token_transfers_filtering_enabled() do
+          {:stop, :normal, state}
+        else
+          schedule_batch_migration(0)
+          MigrationStatus.set_status(@migration_name, "started")
+          {:noreply, Map.put(state, "step", "delete_not_whitelisted_weth_transfers")}
+        end
 
       status ->
         state = (status && status.meta) || %{"step" => "delete_duplicates"}
@@ -80,6 +86,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
             )
 
             MigrationStatus.set_status(@migration_name, "completed")
+            MigrationStatus.set_meta(@migration_name, nil)
 
             {:stop, :normal, state}
         end

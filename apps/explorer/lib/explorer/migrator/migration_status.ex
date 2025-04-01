@@ -67,8 +67,7 @@ defmodule Explorer.Migrator.MigrationStatus do
   @spec update_meta(String.t(), map()) :: :ok | {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
   def update_meta(migration_name, new_meta) do
     migration_name
-    |> get_migration_by_name_query()
-    |> Repo.one()
+    |> get_by_name()
     |> case do
       nil ->
         :ok
@@ -78,6 +77,24 @@ defmodule Explorer.Migrator.MigrationStatus do
 
         migration_status
         |> changeset(%{meta: updated_meta})
+        |> Repo.update()
+    end
+  end
+
+  @doc """
+  Set migration meta by its name.
+  """
+  @spec set_meta(String.t(), map() | nil) :: :ok | {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
+  def set_meta(migration_name, new_meta) do
+    migration_name
+    |> get_by_name()
+    |> case do
+      nil ->
+        :ok
+
+      migration_status ->
+        migration_status
+        |> changeset(%{meta: new_meta})
         |> Repo.update()
     end
   end
@@ -101,6 +118,12 @@ defmodule Explorer.Migrator.MigrationStatus do
       where: ms.migration_name in ^migration_names,
       select: ms.status
     )
+  end
+
+  defp get_by_name(migration_name) do
+    migration_name
+    |> get_migration_by_name_query()
+    |> Repo.one()
   end
 
   @doc """

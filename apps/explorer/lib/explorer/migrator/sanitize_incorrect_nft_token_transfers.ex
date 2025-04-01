@@ -75,6 +75,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
             Logger.info("SanitizeIncorrectNFTTokenTransfers migration finished")
 
             MigrationStatus.set_status(@migration_name, "completed")
+            MigrationStatus.set_meta(@migration_name, nil)
+
             {:stop, :normal, state}
         end
 

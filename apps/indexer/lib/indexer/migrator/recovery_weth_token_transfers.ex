@@ -5,6 +5,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
   """
 
   use GenServer, restart: :transient
+  require Logger
 
   import Ecto.Query
 
@@ -31,7 +32,18 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
         {:stop, :normal, state}
 
       migration_status ->
-        state = (migration_status && migration_status.meta) || %{"block_number" => Chain.fetch_max_block_number()}
+        max_block_number = Chain.fetch_max_block_number()
+        min_block_number = Chain.fetch_min_block_number()
+
+        state =
+          (migration_status && migration_status.meta) ||
+            %{
+              "block_number" => max_block_number,
+              "max_block_number" => max_block_number,
+              "min_block_number" => min_block_number,
+              "transaction_hash" => nil,
+              "percentage" => 0
+            }
 
         if is_nil(migration_status) do
           MigrationStatus.set_status(migration_name(), "started")
@@ -47,11 +59,20 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
   def handle_info(:migrate_batch, state) do
     case last_unprocessed_identifiers(state) do
       [] ->
-        if state["block_number"] == 0 do
+        if state["block_number"] == state["min_block_number"] do
           MigrationStatus.set_status(migration_name(), "completed")
+          MigrationStatus.set_meta(migration_name(), nil)
+
           {:stop, :normal, state}
         else
-          new_state = %{"block_number" => max(0, state["block_number"] - blocks_batch_size())}
+          new_state = %{
+            state
+            | "block_number" => max(state["min_block_number"], state["block_number"] - blocks_batch_size()),
+              "transaction_hash" => nil,
+              "percentage" =>
+                (state["max_block_number"] - state["block_number"]) /
+                  (state["max_block_number"] - state["min_block_number"]) * 100
+          }
 
           schedule_batch_migration()
 
@@ -67,7 +88,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
         |> Enum.map(&run_task/1)
         |> Task.await_many(:infinity)
 
-        new_state = Map.put(state, "transaction_hash", last_transaction_hash)
+        new_state = %{state | "transaction_hash" => last_transaction_hash}
         MigrationStatus.update_meta(migration_name(), new_state)
 
         schedule_batch_migration()
@@ -75,8 +96,6 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
         {:noreply, new_state}
     end
   end
-
-  def migration_name, do: @migration_name
 
   defp last_unprocessed_identifiers(state) do
     limit = batch_size() * concurrency()
@@ -146,11 +165,21 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
       token_transfers: %{params: token_transfers},
       timeout: :infinity
     })
+
+    if high_verbosity?() do
+      token_transfers
+      |> Enum.group_by(& &1.transaction_hash)
+      |> Enum.each(fn {transaction_hash, token_transfers} ->
+        Logger.info("Recovered #{length(token_transfers)} token transfers for transaction #{transaction_hash}")
+      end)
+    end
   end
 
   defp schedule_batch_migration(timeout \\ nil) do
     Process.send_after(self(), :migrate_batch, timeout || Application.get_env(:indexer, __MODULE__)[:timeout])
   end
+
+  def migration_name, do: @migration_name
 
   defp batch_size do
     Application.get_env(:indexer, __MODULE__)[:batch_size]
@@ -162,5 +191,9 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
 
   defp concurrency do
     Application.get_env(:indexer, __MODULE__)[:concurrency]
+  end
+
+  defp high_verbosity? do
+    Application.get_env(:indexer, __MODULE__)[:high_verbosity]
   end
 end
