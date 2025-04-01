@@ -1024,7 +1024,6 @@ defmodule Explorer.Chain.Address do
   @spec update_address_result(map() | nil, [Chain.necessity_by_association_option() | Chain.api?()], boolean()) ::
           map() | nil
   def update_address_result(address_result, options, decoding_from_list?) do
-    dbg(address_result)
     if address_result do
       LookupSmartContractSourcesOnDemand.trigger_fetch(address_result)
     end
