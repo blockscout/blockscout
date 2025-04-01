@@ -879,11 +879,13 @@ defmodule Explorer.EthRPC do
         "type" => encode_quantity(transaction.type),
         "chainId" => chain_id(),
         "v" => encode_quantity(transaction.v),
+        "yParity" => encode_quantity(transaction.v),
         "r" => encode_quantity(transaction.r),
         "s" => encode_quantity(transaction.s)
       }
       |> maybe_add_signed_authorizations(transaction)
       |> maybe_add_chain_type_extra_transaction_info_properties(transaction)
+      |> maybe_add_access_list(transaction)
 
     {:ok, result}
   end
@@ -939,28 +941,37 @@ defmodule Explorer.EthRPC do
     {:ok, props}
   end
 
-  defp maybe_add_signed_authorizations(props, transaction) do
-    if transaction.signed_authorizations do
-      signed_authorizations =
-        transaction.signed_authorizations
-        |> Enum.map(fn signed_authorization ->
-          %{
-            "chainId" => String.downcase(integer_to_quantity(signed_authorization.chain_id)),
-            "nonce" => Helper.integer_to_hex(signed_authorization.nonce),
-            "address" => to_string(signed_authorization.address),
-            "r" => Helper.decimal_to_hex(signed_authorization.r),
-            "s" => Helper.decimal_to_hex(signed_authorization.s),
-            "yParity" => Helper.integer_to_hex(signed_authorization.v)
-          }
-        end)
+  defp maybe_add_signed_authorizations(props, %Transaction{type: 4, signed_authorizations: signed_authorizations}) do
+    prepared_signed_authorizations =
+      signed_authorizations
+      |> Enum.map(fn signed_authorization ->
+        %{
+          "chainId" => String.downcase(integer_to_quantity(signed_authorization.chain_id)),
+          "nonce" => Helper.integer_to_hex(Decimal.to_integer(signed_authorization.nonce)),
+          "address" => to_string(signed_authorization.address),
+          "r" => Helper.decimal_to_hex(signed_authorization.r),
+          "s" => Helper.decimal_to_hex(signed_authorization.s),
+          "yParity" => Helper.integer_to_hex(signed_authorization.v)
+        }
+      end)
 
-      props
-      |> Map.put("authorizationList", signed_authorizations)
-    else
-      props
-      |> (&if(transaction.type > 0, do: Map.put(&1, "authorizationList", []), else: &1)).()
-    end
+    props
+    |> Map.put("authorizationList", prepared_signed_authorizations)
   end
+
+  defp maybe_add_signed_authorizations(props, %Transaction{type: 4}) do
+    props
+    |> Map.put("authorizationList", [])
+  end
+
+  defp maybe_add_signed_authorizations(props, _transaction), do: props
+
+  defp maybe_add_access_list(props, %Transaction{type: type}) when type > 0 do
+    props
+    |> Map.put("accessList", [])
+  end
+
+  defp maybe_add_access_list(props, _transaction), do: props
 
   defp maybe_add_chain_type_extra_transaction_info_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
     if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
@@ -971,6 +982,8 @@ defmodule Explorer.EthRPC do
     end
   end
 
+  defp maybe_add_chain_type_extra_transaction_info_properties(props, _transaction), do: props
+
   defp maybe_add_chain_type_extra_receipt_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
     if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
       props
@@ -980,6 +993,8 @@ defmodule Explorer.EthRPC do
       props
     end
   end
+
+  defp maybe_add_chain_type_extra_receipt_properties(props, _transaction), do: props
 
   defp validate_and_render_transaction(transaction_hash_string, render_func, params) do
     with {:transaction_hash, {:ok, transaction_hash}} <-
