@@ -356,7 +356,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)},
+         {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params, :token_instance_refetch_metadata)},
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)},
