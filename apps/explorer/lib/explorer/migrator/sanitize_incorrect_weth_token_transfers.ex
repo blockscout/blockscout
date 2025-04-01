@@ -33,12 +33,12 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
         {:stop, :normal, state}
 
       %{status: "wait_for_enabling_weth_filtering"} ->
-        if !weth_token_transfers_filtering_enabled() do
-          {:stop, :normal, state}
-        else
+        if weth_token_transfers_filtering_enabled() do
           schedule_batch_migration(0)
           MigrationStatus.set_status(@migration_name, "started")
           {:noreply, Map.put(state, "step", "delete_not_whitelisted_weth_transfers")}
+        else
+          {:stop, :normal, state}
         end
 
       status ->
