@@ -104,19 +104,18 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
     thereby enhancing efficiency.
 
     ## Parameters
-    - A map containing:
-      - `config`: Configuration settings including RPC configurations, SequencerInbox
-                  address, a shift for the message to block number mapping, and
-                  a limit for new batches discovery.
-      - `data`: Contains the starting block number for new batch discovery.
+    - `state`: A map containing:
+      - `config`: Configuration map containing RPC settings, contract addresses,
+        batch limits and other parameters
+      - `task_data`: Task-related data including:
+        - `new_batches`: Contains the `start_block` number for new batch discovery
+        - `historical_batches`: Contains data about historical batches processing
 
     ## Returns
-    - `{:ok, end_block}`: On successful discovery and processing, where `end_block`
-                          indicates the necessity to consider the next block range
-                          in the following iteration of new batch discovery.
-    - `{:ok, start_block - 1}`: If there are no new blocks to be processed,
-                                indicating that the current start block should be
-                                reconsidered in the next iteration.
+    - `{:ok, updated_state}`: Where `updated_state` includes an updated `start_block` value
+      for the next iteration. If blocks were processed successfully, `start_block` is set to
+      one after the last processed block. If no new blocks were found on L1, the state
+      remains unchanged.
   """
   @spec check_new(batches_related_state()) :: {:ok, batches_related_state()}
   def check_new(
@@ -182,8 +181,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
         end
       )
 
+      # The next iteration will consider the block range which starts from the block
+      # after the last processed block
       {:ok, ArbitrumHelper.update_fetcher_task_data(state, :new_batches, %{start_block: end_block + 1})}
     else
+      # No new blocks on L1 produced from the last iteration of the new batches discovery
       {:ok, state}
     end
   end
@@ -202,20 +204,19 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
     process targeting only previously undiscovered batches to enhance efficiency.
 
     ## Parameters
-    - A map containing:
-      - `config`: Configuration settings including the L1 rollup initialization
-        block, RPC configurations, SequencerInbox address, a shift for the message
-        to block number mapping, and a limit for new batches discovery.
-      - `data`: Contains the ending block number for the historical batch discovery.
+    - `state`: A map containing:
+      - `config`: Configuration map containing RPC settings, contract addresses,
+        batch limits and other parameters
+      - `task_data`: Task-related data including:
+        - `historical_batches`: Contains the `end_block` number for historical
+          batch discovery in the current iteration
 
     ## Returns
-    - `{:ok, start_block, new_state}`: On successful discovery and processing, where
-      `start_block` is the calculated starting block for the discovery range,
-      indicating the need to consider another block range in the next iteration of
-      historical batch discovery, and `new_state` contains updated cache data.
-    - `{:ok, l1_rollup_init_block, new_state}`: If the discovery process has reached
-      the rollup initialization block, indicating that all batches up to the rollup
-      origins have been discovered and no further action is needed.
+    - `{:ok, updated_state}`: Where `updated_state` includes an updated `end_block` value
+      for the next iteration. If the current range of blocks was processed successfully,
+      `end_block` is set to one before the starting block of the current range. If the
+      process has reached the lowest L1 block that needs to be checked, `end_block` is
+      set to one before that lowest block.
   """
   @spec check_historical(batches_related_state()) :: {:ok, batches_related_state()}
   def check_historical(
@@ -250,8 +251,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
           rollup_rpc_config
         )
 
+        # The next iteration will consider the block range which ends by the block
+        # before the last processed block
         %{end_block: start_block - 1}
       else
+        # The historical discovery process has reached the lowest L1 block that
+        # needs to be checked for batches
         %{end_block: lowest_l1_block - 1}
       end
 
@@ -299,21 +304,19 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
     into the database.
 
     ## Parameters
-    - A map containing:
-      - `config`: Configuration settings including the L1 rollup initialization
-        block, RPC configurations, SequencerInbox address, a shift for the message
-        to block number mapping, a limit for new batches discovery, and the max
-        size of the range for missing batches inspection.
-      - `data`: Contains the ending batch number for the missing batches inspection.
+    - `state`: A map containing:
+      - `config`: Configuration map containing RPC settings, contract addresses,
+        batch limits and other parameters
+      - `task_data`: Task-related data including:
+        - `missing_batches`: Contains the `end_batch` number for the missing batches
+          inspection in the current iteration.
 
     ## Returns
-    - `{:ok, start_batch, new_state}`: On successful inspection of the given batch range, where
-      `start_batch` is the calculated starting batch for the inspected range,
-      indicating the need to consider another batch range in the next iteration of
-      missing batch inspection, and `new_state` contains updated cache data.
-    - `{:ok, lowest_batch, new_state}`: If the discovery process has been finished, indicating
-      that all batches up to the rollup origins have been checked and no further
-      action is needed.
+    - `{:ok, updated_state}`: Where `updated_state` includes an updated `end_batch` value
+      for the next iteration. If the current range of batches was handled successfully,
+      `end_batch` is set to one before the starting batch of the current range. If the
+      process has reached the lowest batch boundary, `end_batch` is set to one before
+      the lowest batch.
   """
   @spec inspect_for_missing(batches_related_state()) :: {:ok, batches_related_state()}
   def inspect_for_missing(
@@ -357,8 +360,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
         )
       end
 
+      # The next iteration will consider the batch range which ends by the batch
+      # before the last processed batch
       {:ok, ArbitrumHelper.update_fetcher_task_data(new_state, :missing_batches, %{end_batch: start_batch - 1})}
     else
+      # The missing batches inspection process has reached the lowest batch boundary
       {:ok, ArbitrumHelper.update_fetcher_task_data(state, :missing_batches, %{end_batch: lowest_batch - 1})}
     end
   end

@@ -84,11 +84,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       - `data`: Contains the starting block number for new execution discovery.
 
     ## Returns
-    - `{:ok, end_block}`: On successful discovery and processing, where `end_block`
-                          indicates the necessity to consider next block range in the
-                          following iteration of new executions discovery.
-    - `{:ok, start_block - 1}`: when no new blocks on L1 produced from the last
-                                iteration of the new executions discovery.
+    - `{:ok, state}`: On successful discovery and processing, where `state` includes
+      an updated `start_block` for the next iteration if new blocks were processed,
+      or remains unchanged if no new blocks were found on L1.
   """
   @spec discover_new_l1_messages_executions(executions_related_state()) :: {:ok, executions_related_state()}
   def discover_new_l1_messages_executions(
@@ -116,8 +114,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
       discover(outbox_address, start_block, end_block, l1_rpc_config)
 
+      # The next iteration will start from the next block after the last processed block
       {:ok, ArbitrumHelper.update_fetcher_task_data(state, :new_executions, %{start_block: end_block + 1})}
     else
+      # No new blocks on L1 produced from the last iteration of the new executions discovery
       {:ok, state}
     end
   end
@@ -136,17 +136,16 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     ## Parameters
     - A map containing:
       - `config`: Configuration settings including the Arbitrum outbox contract
-                  address, the initialization block for the rollup, and JSON RPC
-                  arguments.
+        address, the initialization block for the rollup, and JSON RPC arguments.
       - `data`: Contains the ending block number for the historical execution
                 discovery.
 
     ## Returns
-    - `{:ok, start_block}`: On successful discovery and processing, where
-      `start_block` indicates the necessity to consider another block range in the
-      next iteration of historical executions discovery.
-    - `{:ok, l1_rollup_init_block}`: If the historical discovery process has reached
-      the rollup initialization block, indicating that no further action is needed.
+    - `{:ok, state}`: On successful discovery and processing, where `state` includes
+      an updated `end_block` for the next iteration. If executions were found,
+      `end_block` is set to the block before the last processed block. If the
+      historical discovery process has reached the lowest L1 block that needs to
+      be checked, `end_block` is set to one block before that lowest block.
   """
   @spec discover_historical_l1_messages_executions(executions_related_state()) :: {:ok, executions_related_state()}
   def discover_historical_l1_messages_executions(
@@ -173,8 +172,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
         discover(outbox_address, start_block, end_block, l1_rpc_config)
 
+        # The next iteration will consider the block range which ends by the block
+        # before the last processed block
         %{end_block: start_block - 1}
       else
+        # The historical discovery process has reached the lowest L1 block that
+        # needs to be checked for executions
         %{end_block: lowest_l1_block - 1}
       end
 

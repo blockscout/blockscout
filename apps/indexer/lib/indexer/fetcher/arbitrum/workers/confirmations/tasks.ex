@@ -112,6 +112,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     safe block or the block which is considered as safest if RPC does not support
     "safe" block retrieval.
 
+    Before processing confirmations, the function checks if the unconfirmed blocks index
+    is ready (when `check_for_readiness` is true). If the index is not ready, it returns
+    a `:not_ready` status without performing the discovery.
+
     Then the function fetches logs representing `SendRootUpdated` events within
     the found range to identify the new tops of rollup block confirmations. The
     discovered confirmations are processed to update the status of rollup blocks
@@ -127,17 +131,20 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     properly.
 
     ## Parameters
-    - A map containing:
-      - `config`: Configuration settings including the L1 outbox address, L1 RPC
-                  configurations and the block number limiting the lowest indexed
-                  block of the chain.
-      - `data`: Contains the starting L1 block number from which to begin the new
-                confirmation discovery.
+    - `state`: A map containing:
+      - `config`: Configuration map with outbox address, RPC settings, and rollup first block
+      - `task_data`: Task-related data including:
+        - `new_confirmations`: Contains the `start_block` from which to begin the
+          new confirmation discovery
+        - `historical_confirmations`: Contains the `end_block` for historical confirmations
+    - `check_for_readiness`: When true, checks if the unconfirmed blocks index is ready
+      before proceeding with the discovery (defaults to true)
 
     ## Returns
-    - `{:ok, new_state}`: If the discovery process completes successfully.
+    - `{:ok, new_state}`: If the discovery process completes successfully
     - `{:confirmation_missed, new_state}`: If a confirmation is missed and further
-      action is needed.
+      action is needed
+    - `{:not_ready, state}`: If the unconfirmed blocks index is not ready yet
   """
   @spec check_new(confirmations_related_state(), boolean()) :: {:ok | :confirmation_missed | :not_ready, confirmations_related_state()}
   def check_new(state, check_for_readiness \\ true)
@@ -278,22 +285,28 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
   updated rollup blocks, cross-chain messages, and newly constructed lifecycle
   transactions are imported into the database.
 
+  Before processing confirmations, the function checks if the unconfirmed blocks index
+  is ready (when `check_for_readiness` is true). If the index is not ready, it returns
+  a `:not_ready` status without performing the discovery.
+
   After processing the confirmations, the function updates the state with the
   blocks range for the next iteration.
 
   ## Parameters
-  - A map containing:
-  - `config`: Configuration settings including the L1 outbox address, rollup
-              initialization block, RPC configurations, the start block for
-              the confirmation discovery and the block number limiting the
-              lowest indexed block of the chain.
-  - `data`: Contains optional start and end L1 block numbers to limit the range
-            for historical confirmation discovery.
+  - `state`: A map containing:
+    - `config`: Configuration map containing outbox address, RPC settings, rollup
+      initialization block, start block, and first rollup block
+    - `task_data`: Task-related data including:
+      - `historical_confirmations`: Contains optional `start_block` and `end_block`
+        L1 block numbers to limit the range for historical confirmation discovery
+  - `check_for_readiness`: When true, checks if the unconfirmed blocks index is ready
+    before proceeding with the discovery (defaults to true)
 
   ## Returns
-  - `{:ok, new_state}`: If the discovery process completes successfully.
+  - `{:ok, new_state}`: If the discovery process completes successfully
   - `{:confirmation_missed, new_state}`: If a confirmation is missed and further
-  action is needed.
+    action is needed
+  - `{:not_ready, state}`: If the unconfirmed blocks index is not ready yet
   """
   @spec check_unprocessed(confirmations_related_state(), boolean()) :: {:ok | :confirmation_missed | :not_ready, confirmations_related_state()}
   def check_unprocessed(state, check_for_readiness \\ true)
@@ -449,8 +462,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
 
     ## Parameters
     - A map containing:
-      - `config`: Configuration including `l1_rollup_init_block` and `rollup_first_block`
-      - `data`: May contain a cached `lowest_l1_block_for_confirmations`
+      - `config`: Configuration including:
+        - `l1_rollup_init_block`: The initialization block for the rollup
+        - `rollup_first_block`: The first block of the rollup
+      - `task_data`: Task-related data including:
+        - `historical_confirmations`: May contain a cached `lowest_l1_block_for_confirmations`
 
     ## Returns
     - `{lowest_block, new_state}`: Where `lowest_block` is either:
@@ -490,35 +506,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
 
       cached_block ->
         {cached_block, state}
-    end
-  end
-
-  @doc """
-  Plans and executes a confirmation discovery task based on index readiness.
-
-  This function checks if the unconfirmed blocks index is ready before executing
-  the provided task function. If the index is not ready, it logs a warning and
-  returns the state unchanged. If the index is ready, it executes the provided
-  task function with the given state.
-
-  ## Parameters
-  - `task_func`: The function to execute if the index is ready. This function
-                should accept a state parameter and return a tuple with a status
-                and new state.
-  - `state`: The current state to pass to the task function.
-
-  ## Returns
-  - `{:ok, state}` if the index is not ready
-  - The result of `task_func.(state)` if the index is ready
-  """
-  @spec plan((any() -> {:ok | :confirmation_missed, %{atom() => any()}}), %{atom() => any()}) ::
-          {:ok | :confirmation_missed, %{atom() => any()}}
-  def plan(task_func, state) do
-    if ArbitrumHelper.unconfirmed_blocks_index_ready?() do
-      task_func.(state)
-    else
-      log_warning("Skipping confirmations discovery since the unconfirmed blocks index is not ready yet")
-      {:ok, state}
     end
   end
 
