@@ -43,6 +43,7 @@ defmodule Explorer.Chain.InternalTransaction do
   """
   @primary_key false
   typed_schema "internal_transactions" do
+    # todo: consider using enum: `field(:call_type, Ecto.Enum, values: [:call, :callcode, :delegatecall, :staticcall])`
     field(:call_type, CallType)
     field(:created_contract_code, Data)
     field(:error, :string)
@@ -53,6 +54,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:input, Data)
     field(:output, Data)
     field(:trace_address, {:array, :integer}, null: false)
+    # todo: consider using enum
     field(:type, Type, null: false)
     field(:value, Wei, null: false)
     field(:block_number, :integer)
