@@ -977,6 +977,7 @@ defmodule Explorer.EthRPC do
     if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
       props
       |> Map.put("maxFeePerBlobGas", Helper.decimal_to_hex(beacon_blob_transaction.max_fee_per_blob_gas))
+      |> Map.put("blobVersionedHashes", beacon_blob_transaction.blob_versioned_hashes)
     else
       props
     end
