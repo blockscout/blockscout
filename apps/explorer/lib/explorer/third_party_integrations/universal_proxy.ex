@@ -38,7 +38,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
   ## Parameters
 
-    - `proxy_params`: A map containing the parameters for the proxy request. It must include the "platform" key to identify the target platform.
+    - `proxy_params`: A map containing the parameters for the proxy request. It must include the "platform_id" key to identify the target platform.
 
   ## Configuration
 
@@ -51,7 +51,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
   ## Behavior
 
-  1. Retrieves the platform-specific configuration based on the `platform` key in `proxy_params`.
+  1. Retrieves the platform-specific configuration based on the `platform_id` key in `proxy_params`.
   2. Constructs the request URL using the `base_url` and `base` endpoint path.
   3. Parses and applies any API key and endpoint parameters.
   4. Sends the HTTP request using the Tesla library with the specified method, URL, headers, and body.
@@ -94,10 +94,10 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
           "Platform '#{platform_id}' not found in config or 'platforms' property doesn't exist at all"
 
         is_nil(url) ->
-          "'base_url' is not defined for platform '#{platform_id}' or 'base' endpoint is not defined or 'base' endpoint path is not defined"
+          "'base_url' is not defined for platform_id '#{platform_id}' or 'base' endpoint is not defined or 'base' endpoint path is not defined"
 
         is_nil(method) ->
-          "Invalid HTTP request method ${method} for platform '#{platform_id}'"
+          "Invalid HTTP request method #{method} for platform_id '#{platform_id}'"
 
         true ->
           "Unexpected error"

@@ -9,10 +9,10 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
   setup :verify_on_exit!
 
   setup do
-    System.put_env("TEST_PLATFORM_API_KEY", "test_api_key")
+    System.put_env("UNIVERSAL_PROXY_TEST_PLATFORM_API_KEY", "test_api_key")
 
     on_exit(fn ->
-      System.put_env("TEST_PLATFORM_API_KEY", "")
+      System.put_env("UNIVERSAL_PROXY_TEST_PLATFORM_API_KEY", "")
     end)
 
     :ok

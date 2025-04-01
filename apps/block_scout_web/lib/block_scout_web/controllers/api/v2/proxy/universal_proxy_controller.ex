@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.UniversalProxyController do
 
   alias Explorer.ThirdPartyIntegrations.UniversalProxy
 
-  def index(conn, %{"platform" => _platform} = params) do
+  def index(conn, %{"platform_id" => _platform_id} = params) do
     {response, status} = UniversalProxy.api_request(params)
 
     conn
