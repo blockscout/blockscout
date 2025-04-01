@@ -211,7 +211,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
          %{"location" => location, "param_name" => param_name} = endpoint_api_key,
          platform_id
        ) do
-    api_key_env_name = String.upcase(platform_id) <> "_API_KEY"
+    api_key_env_name = "UNIVERSAL_PROXY_" <> String.upcase(platform_id) <> "_API_KEY"
     endpoint_api_key_value = System.get_env(api_key_env_name)
 
     case location do
