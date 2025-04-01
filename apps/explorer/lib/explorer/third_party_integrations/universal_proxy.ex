@@ -193,8 +193,9 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   @spec parse_method(map() | nil) :: atom() | nil
   defp parse_method(nil), do: nil
 
+  # sobelow_skip ["DOS.StringToAtom"]
   defp parse_method(platform_config) do
-    raw_method = String.to_existing_atom(String.downcase(platform_config["endpoints"]["base"]["method"]))
+    raw_method = String.to_atom(String.downcase(platform_config["endpoints"]["base"]["method"]))
 
     if raw_method in @allowed_methods do
       raw_method
