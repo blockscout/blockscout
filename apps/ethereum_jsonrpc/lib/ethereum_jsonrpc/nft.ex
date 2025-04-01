@@ -117,6 +117,8 @@ defmodule EthereumJSONRPC.NFT do
     results
     |> Enum.map(fn
       {:error, error} ->
+        error = to_string(error)
+
         error =
           if error =~ "execution reverted" or error =~ @vm_execution_error do
             @vm_execution_error
