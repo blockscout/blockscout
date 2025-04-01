@@ -34,8 +34,8 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
           tags: ghcr.io/blockscout/blockscout:master, ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
@@ -56,8 +56,8 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
           tags: ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
