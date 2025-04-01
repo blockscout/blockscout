@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   import BlockScoutWeb.PagingHelper,
     only: [
-      addresses_list_sorting: 1,
+      addresses_sorting: 1,
       delete_parameters_from_next_page_params: 1,
       token_transfers_types_options: 1,
       address_transactions_sorting: 1,
@@ -780,7 +780,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       params
       |> paging_options()
       |> Keyword.merge(@api_true)
-      |> Keyword.merge(addresses_list_sorting(params))
+      |> Keyword.merge(addresses_sorting(params))
       |> Address.list_top_addresses()
       |> split_list_by_page()
 

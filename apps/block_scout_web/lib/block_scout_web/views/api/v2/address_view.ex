@@ -71,6 +71,22 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     %{"items" => Enum.map(nft_collections, &prepare_nft_collection(&1)), "next_page_params" => next_page_params}
   end
 
+  @doc """
+  Prepares an address for display in the addresses list.
+
+  ## Parameters
+    - address: Address struct containing:
+      - `:hash` - address hash
+      - `:fetched_coin_balance` - current coin balance
+      - `:transactions_count` - number of transactions
+
+  ## Returns
+    - Map containing:
+      - `:hash` - address hash
+      - `:coin_balance` - current coin balance value
+      - `:transaction_count` - number of transactions as string
+      - Additional address info fields from Helper.address_with_info/4
+  """
   @spec prepare_address_for_list(
           {atom() | %{:fetched_coin_balance => any(), :hash => any(), optional(any()) => any()}, any()}
         ) :: %{

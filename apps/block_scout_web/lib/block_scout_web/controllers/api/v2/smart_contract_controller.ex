@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   import BlockScoutWeb.PagingHelper,
     only: [
-      addresses_list_sorting: 1,
+      addresses_sorting: 1,
       current_filter: 1,
       delete_parameters_from_next_page_params: 1,
       search_query: 1
@@ -99,7 +99,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       |> Keyword.merge(current_filter(params))
       |> Keyword.merge(search_query(params))
       |> Keyword.merge(smart_contract_addresses_paging_options(params))
-      |> Keyword.merge(addresses_list_sorting(params))
+      |> Keyword.merge(addresses_sorting(params))
       |> fetch_scam_token_toggle(conn)
 
     addresses_plus_one = SmartContract.verified_contract_addresses(full_options)
