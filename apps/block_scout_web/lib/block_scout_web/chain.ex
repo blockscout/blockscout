@@ -50,6 +50,7 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
+  alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.PagingOptions
@@ -456,6 +457,16 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def paging_options(%{"timestamp" => timestamp, "init_transaction_hash" => init_transaction_hash}) do
+    with {ts, ""} <- Integer.parse(timestamp),
+         {:ok, transaction_hash} <- string_to_transaction_hash(init_transaction_hash) do
+      [paging_options: %{@default_paging_options | key: {ts, transaction_hash}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
   # clause for pagination of entities:
   # - Account's entities
   # - Optimism frame sequences
@@ -721,6 +732,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%OptimismOutputRoot{l2_output_index: index}) do
     %{"index" => index}
+  end
+
+  defp paging_params(%OptimismInteropMessage{timestamp: timestamp, init_transaction_hash: init_transaction_hash}) do
+    %{"timestamp" => DateTime.to_unix(timestamp), "init_transaction_hash" => init_transaction_hash}
   end
 
   defp paging_params(%SmartContract{} = smart_contract) do

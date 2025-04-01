@@ -26,7 +26,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   import EthereumJSONRPC, only: [fetch_blocks_by_range: 2, json_rpc: 2, quantity_to_integer: 1]
 
-  import Explorer.Helper, only: [add_0x_prefix: 1, parse_integer: 1]
+  import Explorer.Helper, only: [add_0x_prefix: 1, hash_to_binary: 1, parse_integer: 1]
 
   alias Ecto.Multi
   alias EthereumJSONRPC.Block.ByHash
@@ -37,7 +37,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
-  alias HTTPoison.Response
   alias Indexer.Fetcher.Beacon.Blob
   alias Indexer.Fetcher.Beacon.Client, as: BeaconClient
   alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
@@ -58,6 +57,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   @fetcher_name :optimism_transaction_batches
 
   @compressor_brotli 1
+  @counter_type "optimism_batches_fetcher_last_l1_block_hash"
+  @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -104,7 +105,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
            {:genesis_block_l2_invalid, is_nil(env[:genesis_block_l2]) or env[:genesis_block_l2] < 0},
          _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
+         json_rpc_named_arguments = Helper.json_rpc_named_arguments(optimism_l1_rpc),
          {:system_config_read, {start_block_l1, batch_inbox, batch_submitter}} <-
            {:system_config_read, read_system_config(system_config, json_rpc_named_arguments)},
          {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.address_correct?(batch_inbox)},
@@ -113,6 +114,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          true <- start_block_l1 > 0,
          chunk_size = parse_integer(env[:blocks_chunk_size]),
          {:chunk_size_valid, true} <- {:chunk_size_valid, !is_nil(chunk_size) && chunk_size > 0},
+         {:block_duration_valid, true} <- {:block_duration_valid, optimism_env[:block_duration] > 0},
          {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction} =
            get_last_l1_item(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
@@ -120,16 +122,21 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          {:l1_transaction_not_found, false} <-
            {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {:ok, block_check_interval, last_safe_block} <-
-           Optimism.get_block_check_interval(json_rpc_named_arguments) do
+           Helper.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
 
-      chain_id_l1 = fetch_chain_id(json_rpc_named_arguments)
+      chain_id_l1 =
+        case EthereumJSONRPC.fetch_chain_id(json_rpc_named_arguments) do
+          {:ok, id} ->
+            id
 
-      if is_nil(chain_id_l1) do
-        Logger.warning(
-          "Cannot get Chain ID from the L1 RPC. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables."
-        )
-      end
+          {:error, reason} ->
+            Logger.warning(
+              "Cannot get Chain ID from L1 RPC. Reason: #{inspect(reason)}. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables."
+            )
+
+            nil
+        end
 
       Process.send(self(), :continue, [])
 
@@ -178,6 +185,10 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
       {:chunk_size_valid, false} ->
         Logger.error("Invalid blocks chunk size value.")
+        {:stop, :normal, state}
+
+      {:block_duration_valid, false} ->
+        Logger.error("Check INDEXER_OPTIMISM_BLOCK_DURATION env variable. Its value must be a positive integer.")
         {:stop, :normal, state}
 
       {:error, error_data} ->
@@ -259,7 +270,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         chunk_start = start_block + chunk_size * current_chunk
         chunk_end = min(chunk_start + chunk_size - 1, end_block)
 
-        new_incomplete_channels =
+        {new_incomplete_channels, last_block_hash} =
           if chunk_end >= chunk_start do
             Helper.log_blocks_chunk_handling(
               chunk_start,
@@ -270,7 +281,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
               :L1
             )
 
-            {:ok, new_incomplete_channels, batches, sequences, blobs} =
+            {:ok, new_incomplete_channels, batches, sequences, blobs, last_block_hash} =
               get_transaction_batches(
                 Range.new(chunk_start, chunk_end),
                 batch_inbox,
@@ -317,9 +328,9 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
               :L1
             )
 
-            new_incomplete_channels
+            {new_incomplete_channels, last_block_hash}
           else
-            incomplete_channels_acc
+            {incomplete_channels_acc, nil}
           end
 
         reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
@@ -327,20 +338,18 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         if !is_nil(reorg_block) && reorg_block > 0 do
           new_incomplete_channels = handle_l1_reorg(reorg_block, new_incomplete_channels)
 
+          Optimism.set_last_block_hash(@empty_hash, @counter_type)
+
           {:halt, {if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end), new_incomplete_channels}}
         else
+          Optimism.set_last_block_hash(last_block_hash, @counter_type)
+
           {:cont, {chunk_end, new_incomplete_channels}}
         end
       end)
 
     new_start_block = last_written_block + 1
-
-    {:ok, new_end_block} =
-      Helper.get_block_number_by_tag(
-        "latest",
-        json_rpc_named_arguments,
-        Helper.infinite_retries_number()
-      )
+    new_end_block = Helper.fetch_latest_l1_block_number(json_rpc_named_arguments)
 
     delay =
       if new_end_block == last_written_block do
@@ -420,6 +429,11 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end)
   end
 
+  defp get_block_hash_by_number(block_number, blocks_params) do
+    block = Enum.find(blocks_params, %{hash: nil}, fn b -> b.number == block_number end)
+    block.hash
+  end
+
   defp get_block_timestamp_by_number(block_number, blocks_params) do
     block = Enum.find(blocks_params, %{timestamp: nil}, fn b -> b.number == block_number end)
     block.timestamp
@@ -440,47 +454,54 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   #   `last_transaction` is the transaction info got from the RPC (nil if not found).
   @spec get_last_l1_item(EthereumJSONRPC.json_rpc_named_arguments()) :: {non_neg_integer(), binary() | nil, map() | nil}
   defp get_last_l1_item(json_rpc_named_arguments) do
-    result =
-      Repo.one(
-        from(
-          tb in OptimismTransactionBatch,
-          inner_join: fs in FrameSequence,
-          on: fs.id == tb.frame_sequence_id,
-          select: {fs.id, fs.l1_transaction_hashes},
-          order_by: [desc: tb.l2_block_number],
-          limit: 1
-        )
-      )
+    last_l1_block_number =
+      Optimism.get_last_block_number_from_last_fetched_counter(json_rpc_named_arguments, @counter_type)
 
-    with {:empty_hashes, false} <- {:empty_hashes, is_nil(result)},
-         l1_transaction_hashes = elem(result, 1),
-         last_l1_transaction_hash = List.last(l1_transaction_hashes),
-         {:ok, last_l1_transaction} =
-           Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:empty_transaction, false, last_l1_transaction_hash} <-
-           {:empty_transaction, is_nil(last_l1_transaction), last_l1_transaction_hash} do
-      last_l1_block_number = quantity_to_integer(Map.get(last_l1_transaction, "blockNumber", 0))
-      {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction}
+    if is_nil(last_l1_block_number) do
+      result =
+        Repo.one(
+          from(
+            tb in OptimismTransactionBatch,
+            inner_join: fs in FrameSequence,
+            on: fs.id == tb.frame_sequence_id,
+            select: {fs.id, fs.l1_transaction_hashes},
+            order_by: [desc: tb.l2_block_number],
+            limit: 1
+          )
+        )
+
+      with {:empty_hashes, false} <- {:empty_hashes, is_nil(result)},
+           l1_transaction_hashes = elem(result, 1),
+           last_l1_transaction_hash = List.last(l1_transaction_hashes),
+           {:ok, last_l1_transaction} =
+             Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+           {:empty_transaction, false, last_l1_transaction_hash} <-
+             {:empty_transaction, is_nil(last_l1_transaction), last_l1_transaction_hash} do
+        last_l1_block_number = quantity_to_integer(Map.get(last_l1_transaction, "blockNumber", 0))
+        {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction}
+      else
+        {:empty_hashes, true} ->
+          {0, nil, nil}
+
+        {:empty_transaction, true, last_l1_transaction_hash} ->
+          Logger.error(
+            "Cannot find last L1 transaction from RPC by its hash (#{last_l1_transaction_hash}). Probably, there was a reorg on L1 chain. Trying to check preceding frame sequence..."
+          )
+
+          id = elem(result, 0)
+
+          Multi.new()
+          |> Multi.delete_all(
+            :delete_transaction_batches,
+            from(tb in OptimismTransactionBatch, where: tb.frame_sequence_id == ^id)
+          )
+          |> Multi.delete_all(:delete_frame_sequence, from(fs in FrameSequence, where: fs.id == ^id))
+          |> Repo.transaction()
+
+          get_last_l1_item(json_rpc_named_arguments)
+      end
     else
-      {:empty_hashes, true} ->
-        {0, nil, nil}
-
-      {:empty_transaction, true, last_l1_transaction_hash} ->
-        Logger.error(
-          "Cannot find last L1 transaction from RPC by its hash (#{last_l1_transaction_hash}). Probably, there was a reorg on L1 chain. Trying to check preceding frame sequence..."
-        )
-
-        id = elem(result, 0)
-
-        Multi.new()
-        |> Multi.delete_all(
-          :delete_transaction_batches,
-          from(tb in OptimismTransactionBatch, where: tb.frame_sequence_id == ^id)
-        )
-        |> Multi.delete_all(:delete_frame_sequence, from(fs in FrameSequence, where: fs.id == ^id))
-        |> Repo.transaction()
-
-        get_last_l1_item(json_rpc_named_arguments)
+      {last_l1_block_number, nil, nil}
     end
   end
 
@@ -496,6 +517,11 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
        ) do
     case fetch_blocks_by_range(block_range, json_rpc_named_arguments) do
       {:ok, %Blocks{transactions_params: transactions_params, blocks_params: blocks_params, errors: []}} ->
+        last_block_hash =
+          block_range
+          |> Enum.max()
+          |> get_block_hash_by_number(blocks_params)
+
         transactions_params
         |> transactions_filter(batch_submitter, batch_inbox)
         |> get_transaction_batches_inner(
@@ -505,6 +531,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           json_rpc_named_arguments_l2,
           blobs_api_url
         )
+        |> Tuple.append(last_block_hash)
 
       {_, message_or_errors} ->
         message =
@@ -521,8 +548,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           Logger.error(error_message)
           {:error, message}
         else
-          Logger.error("#{error_message} Retrying...")
-          :timer.sleep(3000)
+          Optimism.log_error_message_with_retry_sleep(error_message)
 
           get_transaction_batches(
             block_range,
@@ -561,8 +587,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         # read the data from Blockscout API
         decoded =
           blob_data
-          |> String.trim_leading("0x")
-          |> Base.decode16!(case: :lower)
+          |> hash_to_binary()
           |> OptimismTransactionBatch.decode_eip4844_blob()
 
         if is_nil(decoded) do
@@ -650,15 +675,13 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       |> Enum.find(fn b ->
         b
         |> Map.get("kzg_commitment", "0x")
-        |> String.trim_leading("0x")
-        |> Base.decode16!(case: :lower)
+        |> hash_to_binary()
         |> BeaconBlob.hash()
         |> Hash.to_string()
         |> Kernel.==(blob_hash)
       end)
       |> Map.get("blob")
-      |> String.trim_leading("0x")
-      |> Base.decode16!(case: :lower)
+      |> hash_to_binary()
       |> OptimismTransactionBatch.decode_eip4844_blob()
 
     if is_nil(decoded_blob_data) do
@@ -1028,11 +1051,15 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   end
 
   defp http_get_request(url, attempts_done \\ 0) do
-    case Application.get_env(:explorer, :http_adapter).get(url) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    recv_timeout = 5_000
+    connect_timeout = 8_000
+    client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
+
+    case Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: connect_timeout]]]) do
+      {:ok, %{body: body, status: 200}} ->
         Jason.decode(body)
 
-      {:ok, %Response{body: body, status_code: _}} ->
+      {:ok, %{body: body, status: _}} ->
         {:error, body}
 
       {:error, error} ->
@@ -1487,34 +1514,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
     if !is_nil(start_block) and Helper.address_correct?(batch_inbox) and Helper.address_correct?(batch_submitter) do
       {start_block, String.downcase(batch_inbox), String.downcase(batch_submitter)}
-    end
-  end
-
-  # Fetches the chain id from the RPC.
-  #
-  # ## Parameters
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  #
-  # ## Returns
-  # - The chain id as unsigned integer.
-  # - `nil` if the request failed.
-  @spec fetch_chain_id(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer() | nil
-  defp fetch_chain_id(json_rpc_named_arguments) do
-    error_message = &"Cannot read `eth_chainId`. Error: #{inspect(&1)}"
-
-    request = EthereumJSONRPC.request(%{id: 0, method: "eth_chainId", params: []})
-
-    case Helper.repeated_call(
-           &json_rpc/2,
-           [request, json_rpc_named_arguments],
-           error_message,
-           Helper.infinite_retries_number()
-         ) do
-      {:ok, response} ->
-        quantity_to_integer(response)
-
-      _ ->
-        nil
     end
   end
 

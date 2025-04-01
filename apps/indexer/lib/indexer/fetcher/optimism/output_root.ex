@@ -21,6 +21,8 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
 
   @fetcher_name :optimism_output_roots
   @stop_constant_key "optimism_output_roots_stopped"
+  @counter_type "optimism_output_roots_fetcher_last_l1_block_hash"
+  @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   # 32-byte signature of the event OutputProposed(bytes32 indexed outputRoot, uint256 indexed l2OutputIndex, uint256 indexed l2BlockNumber, uint256 l1Timestamp)
   @output_proposed_event "0xa7aaf2512769da4e444e3de247be2564225c2e7a8f74cfe528e46e17d24868e2"
@@ -48,6 +50,9 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
   @impl GenServer
   def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
+
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+    :timer.sleep(2000)
 
     if Constants.get_constant_value(@stop_constant_key) == "true" do
       Logger.warning("#{__MODULE__} will not start because dispute games exist.")
@@ -87,12 +92,13 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
           IndexerHelper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
 
           {:ok, result} =
-            Optimism.get_logs(
+            IndexerHelper.get_logs(
               chunk_start,
               chunk_end,
               output_oracle,
-              @output_proposed_event,
+              [@output_proposed_event],
               json_rpc_named_arguments,
+              0,
               IndexerHelper.infinite_retries_number()
             )
 
@@ -121,8 +127,15 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
 
           log_deleted_rows_count(reorg_block, deleted_count)
 
+          Optimism.set_last_block_hash(@empty_hash, @counter_type)
+
           {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
         else
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if chunk_end >= chunk_start do
+            Optimism.set_last_block_hash_by_number(chunk_end, @counter_type, json_rpc_named_arguments)
+          end
+
           {:cont, chunk_end}
         end
       end)
@@ -133,13 +146,7 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
       {:stop, :normal, state}
     else
       new_start_block = last_written_block + 1
-
-      {:ok, new_end_block} =
-        IndexerHelper.get_block_number_by_tag(
-          "latest",
-          json_rpc_named_arguments,
-          IndexerHelper.infinite_retries_number()
-        )
+      new_end_block = IndexerHelper.fetch_latest_l1_block_number(json_rpc_named_arguments)
 
       delay =
         if new_end_block == last_written_block do
@@ -213,7 +220,8 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
       :L1,
       &OutputRoot.last_root_l1_block_number_query/0,
       &OutputRoot.remove_roots_query/1,
-      json_rpc_named_arguments
+      json_rpc_named_arguments,
+      @counter_type
     )
   end
 

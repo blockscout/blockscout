@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.{Chain, Repo}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Block, Transaction}
-  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob, Withdrawal}
+  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
 
   @doc """
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
@@ -239,6 +239,77 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     count
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/interop/messages` endpoint.
+  """
+  def render("optimism_interop_messages.json", %{
+        messages: messages,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(messages, fn message ->
+          msg =
+            %{
+              "nonce" => message.nonce,
+              "timestamp" => message.timestamp,
+              "status" => message.status,
+              "init_transaction_hash" => message.init_transaction_hash,
+              "relay_transaction_hash" => message.relay_transaction_hash,
+              "sender_address_hash" => message.sender_address_hash,
+              # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `sender_address_hash` property
+              "sender" => message.sender_address_hash,
+              "target_address_hash" => message.target_address_hash,
+              # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `target_address_hash` property
+              "target" => message.target_address_hash,
+              "payload" => ExplorerHelper.add_0x_prefix(message.payload)
+            }
+
+          # add chain info depending on whether this is incoming or outgoing message
+          msg
+          |> maybe_add_chain(:init_chain, message)
+          |> maybe_add_chain(:relay_chain, message)
+        end),
+      next_page_params: next_page_params
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/interop/public-key` endpoint.
+  """
+  def render("optimism_interop_public_key.json", %{public_key: public_key}) do
+    %{"public_key" => public_key}
+  end
+
+  @doc """
+    Function to render `relay` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
+  """
+  def render("optimism_interop_response.json", %{relay_transaction_hash: relay_transaction_hash, failed: failed}) do
+    %{
+      "relay_transaction_hash" => relay_transaction_hash,
+      "failed" => failed
+    }
+  end
+
+  @doc """
+    Function to render `init` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
+  """
+  def render("optimism_interop_response.json", %{
+        sender_address_hash: sender_address_hash,
+        target_address_hash: target_address_hash,
+        init_transaction_hash: init_transaction_hash,
+        timestamp: timestamp,
+        payload: payload
+      }) do
+    %{
+      "sender_address_hash" => sender_address_hash,
+      "target_address_hash" => target_address_hash,
+      "init_transaction_hash" => init_transaction_hash,
+      "timestamp" => if(not is_nil(timestamp), do: DateTime.to_unix(timestamp)),
+      "payload" => ExplorerHelper.add_0x_prefix(payload)
+    }
+  end
+
   # Transforms an L1 batch into a map format for HTTP response.
   #
   # This function processes an Optimism L1 batch and converts it into a map that
@@ -374,6 +445,23 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         }
       end)
 
-    Map.put(out_json, "op_withdrawals", withdrawals)
+    interop_message =
+      transaction_hash
+      |> InteropMessage.message_by_transaction()
+
+    out_json = Map.put(out_json, "op_withdrawals", withdrawals)
+
+    if is_nil(interop_message) do
+      out_json
+    else
+      Map.put(out_json, "op_interop", interop_message)
+    end
+  end
+
+  defp maybe_add_chain(msg, chain_key, message) do
+    case Map.fetch(message, chain_key) do
+      {:ok, chain} -> Map.put(msg, Atom.to_string(chain_key), chain)
+      _ -> msg
+    end
   end
 end

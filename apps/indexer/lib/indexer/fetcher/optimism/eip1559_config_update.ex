@@ -26,19 +26,20 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
   require Logger
 
-  import EthereumJSONRPC, only: [fetch_blocks_by_numbers: 3, json_rpc: 2, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [fetch_blocks_by_numbers: 3]
+  import Explorer.Helper, only: [hash_to_binary: 1]
 
-  alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
-  alias Explorer.Chain.RollupReorgMonitorQueue
+  alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
   @fetcher_name :optimism_eip1559_config_updates
   @latest_block_check_interval_seconds 60
+  @counter_type "optimism_eip1559_config_updates_fetcher_last_l2_block_hash"
   @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   def child_spec(start_link_arguments) do
@@ -180,7 +181,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
           :L2
         )
 
-        reorg_block_number = handle_reorgs_queue()
+        reorg_block_number = Optimism.handle_reorgs_queue(__MODULE__, &handle_reorg/1)
 
         cond do
           is_nil(reorg_block_number) or reorg_block_number > end_block_number ->
@@ -208,8 +209,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     if is_nil(new_start_block_number) or is_nil(new_end_block_number) do
       # if there wasn't a reorg or the reorg didn't affect the current range, switch to realtime mode
       if mode == :catchup do
-        Logger.info("The fetcher catchup loop for the range #{inspect(start_block_number..end_block_number)} finished.")
-        Logger.info("Switching to realtime mode...")
+        Optimism.log_catchup_loop_finished(start_block_number, end_block_number)
       end
 
       {:noreply, %{state | mode: :realtime, last_realtime_block_number: new_last_realtime_block_number}}
@@ -238,80 +238,14 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   # ## Returns
   # - `{:noreply, state}` tuple where `state` is the new state of the fetcher containing the updated block range and other parameters.
   @impl GenServer
-  def handle_info({:chain_event, :blocks, :realtime, []}, state) do
-    Logger.info("Got an empty list of new realtime block numbers")
-    {:noreply, state}
-  end
-
-  def handle_info(
-        {:chain_event, :blocks, :realtime, blocks},
-        %{realtime_range: realtime_range, mode: mode, last_realtime_block_number: last_realtime_block_number} = state
-      ) do
-    {new_min, new_max} =
-      blocks
-      |> Enum.map(fn block -> block.number end)
-      |> Enum.min_max()
-
-    if new_min != new_max do
-      Logger.info("Got a range of new realtime block numbers: #{inspect(new_min..new_max)}")
-    else
-      Logger.info("Got a new realtime block number #{new_max}")
-    end
-
-    {start_block_number, end_block_number} =
-      case realtime_range do
-        nil -> {new_min, new_max}
-        prev_min..prev_max//_ -> {min(prev_min, new_min), max(prev_max, new_max)}
-      end
-
-    start_block_number_updated =
-      if last_realtime_block_number < start_block_number do
-        last_realtime_block_number + 1
-      else
-        start_block_number
-      end
-
-    new_realtime_range = Range.new(start_block_number_updated, end_block_number)
-
-    if mode == :realtime do
-      Logger.info("The current realtime range is #{inspect(new_realtime_range)}. Starting to handle that...")
-
-      Process.send(self(), :continue, [])
-
-      {:noreply,
-       %{
-         state
-         | start_block_number: start_block_number_updated,
-           end_block_number: end_block_number,
-           mode: :continue,
-           realtime_range: nil,
-           last_realtime_block_number: new_max
-       }}
-    else
-      {:noreply, %{state | realtime_range: new_realtime_range, last_realtime_block_number: new_max}}
-    end
+  def handle_info({:chain_event, :blocks, :realtime, blocks}, state) do
+    Optimism.handle_realtime_blocks(blocks, state)
   end
 
   @impl GenServer
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
-  end
-
-  @doc """
-    Catches L2 reorg block from the realtime block fetcher and keeps it in a queue
-    to handle that by the main loop.
-
-    ## Parameters
-    - `reorg_block_number`: The number of reorg block.
-
-    ## Returns
-    - nothing.
-  """
-  @spec handle_realtime_l2_reorg(non_neg_integer()) :: any()
-  def handle_realtime_l2_reorg(reorg_block_number) do
-    Logger.warning("L2 reorg was detected at block #{reorg_block_number}.", fetcher: @fetcher_name)
-    RollupReorgMonitorQueue.reorg_block_push(reorg_block_number, __MODULE__)
   end
 
   # Removes all rows from the `op_eip1559_config_updates` table which have `l2_block_number` greater or equal to the reorg block number.
@@ -332,33 +266,10 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       )
     end
 
-    EIP1559ConfigUpdate.set_last_l2_block_hash(@empty_hash)
+    Optimism.set_last_block_hash(@empty_hash, @counter_type)
   end
 
   defp handle_reorg(_reorg_block_number), do: :ok
-
-  # Reads reorg block numbers queue, pops the block numbers from that finding the earliest one.
-  #
-  # ## Returns
-  # - The earliest reorg block number.
-  # - `nil` if the queue is empty.
-  @spec handle_reorgs_queue() :: non_neg_integer() | nil
-  defp handle_reorgs_queue do
-    reorg_block_number =
-      Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), nil, fn _i, acc ->
-        number = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
-
-        if is_nil(number) do
-          {:halt, acc}
-        else
-          {:cont, min(number, acc)}
-        end
-      end)
-
-    handle_reorg(reorg_block_number)
-
-    reorg_block_number
-  end
 
   # Retrieves updated config parameters from the specified blocks and saves them to the database.
   # The parameters are read from the `extraData` field which format is as follows:
@@ -393,10 +304,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           block = Enum.find(blocks_params, %{extra_data: "0x"}, fn b -> b.number == block_number end)
 
-          extra_data =
-            block.extra_data
-            |> String.trim_leading("0x")
-            |> Base.decode16!(case: :mixed)
+          extra_data = hash_to_binary(block.extra_data)
 
           return =
             with {:valid_format, true} <- {:valid_format, byte_size(extra_data) >= 9},
@@ -427,7 +335,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           if block.number == last_block_number do
-            EIP1559ConfigUpdate.set_last_l2_block_hash(block.hash)
+            Optimism.set_last_block_hash(block.hash, @counter_type)
           end
 
           return
@@ -443,11 +351,10 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
         chunk_start = List.first(block_numbers)
         chunk_end = List.last(block_numbers)
 
-        Logger.error(
-          "Cannot fetch blocks #{inspect(chunk_start..chunk_end)}. Error(s): #{inspect(message)} Retrying..."
+        Optimism.log_error_message_with_retry_sleep(
+          "Cannot fetch blocks #{inspect(chunk_start..chunk_end)}. Error(s): #{inspect(message)}"
         )
 
-        :timer.sleep(3000)
         handle_updates(block_numbers, json_rpc_named_arguments)
     end
   end
@@ -512,24 +419,6 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     end
   end
 
-  # Fetches block data by its hash using RPC request.
-  #
-  # ## Parameters
-  # - `hash`: The block hash.
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  #
-  # ## Returns
-  # - `{:ok, block}` tuple in case of success.
-  # - `{:error, message}` tuple in case of failure.
-  @spec get_block_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: {:ok, any()} | {:error, any()}
-  defp get_block_by_hash(hash, json_rpc_named_arguments) do
-    req = ByHash.request(%{id: 0, hash: hash}, false)
-
-    error_message = &"eth_getBlockByHash failed. Error: #{inspect(&1)}"
-
-    Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, Helper.infinite_retries_number())
-  end
-
   # Gets the last known L2 block number from the `op_eip1559_config_updates` database table.
   # When the block number is found, the function checks that for actuality (to avoid reorg cases).
   # If the block is not consensus, the corresponding row is removed from the table and
@@ -545,34 +434,14 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   @spec get_last_l2_block_number(EthereumJSONRPC.json_rpc_named_arguments()) ::
           {:ok, non_neg_integer()} | {:error, any()}
   defp get_last_l2_block_number(json_rpc_named_arguments) do
-    last_l2_block_hash = EIP1559ConfigUpdate.last_l2_block_hash()
-
     last_l2_block_number =
-      if last_l2_block_hash != @empty_hash do
-        case get_block_by_hash(last_l2_block_hash, json_rpc_named_arguments) do
-          {:ok, nil} ->
-            # it seems there was a reorg, so we need to reset the block hash in the counter
-            # and then use the below approach taking the block hash from `op_eip1559_config_updates` table
-            EIP1559ConfigUpdate.set_last_l2_block_hash(@empty_hash)
-            nil
-
-          {:ok, last_l2_block} ->
-            # the block hash is actual, so use the block number
-            last_l2_block
-            |> Map.get("number")
-            |> quantity_to_integer()
-
-          {:error, _} ->
-            # something went wrong, so use the below approach
-            nil
-        end
-      end
+      Optimism.get_last_block_number_from_last_fetched_counter(json_rpc_named_arguments, @counter_type)
 
     if is_nil(last_l2_block_number) do
       {last_l2_block_number, last_l2_block_hash} = EIP1559ConfigUpdate.get_last_item()
 
       with {:empty_hash, false} <- {:empty_hash, is_nil(last_l2_block_hash)},
-           {:ok, last_l2_block} <- get_block_by_hash(last_l2_block_hash, json_rpc_named_arguments),
+           {:ok, last_l2_block} <- Optimism.get_block_by_hash(last_l2_block_hash, json_rpc_named_arguments),
            {:empty_block, false} <- {:empty_block, is_nil(last_l2_block)} do
         {:ok, last_l2_block_number}
       else
@@ -724,4 +593,6 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       Logger.info("Holocene activation detected")
     end
   end
+
+  def fetcher_name, do: @fetcher_name
 end

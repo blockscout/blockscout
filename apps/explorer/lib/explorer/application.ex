@@ -12,9 +12,9 @@ defmodule Explorer.Application do
     BackgroundMigrations,
     BlockNumber,
     Blocks,
+    ChainId,
     GasPriceOracle,
     MinMissingBlockNumber,
-    NetVersion,
     StateChanges,
     Transactions,
     TransactionsApiV2,
@@ -31,6 +31,7 @@ defmodule Explorer.Application do
     TransactionsCount
   }
 
+  alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Supply.RSK
 
   alias Explorer.Market.MarketHistoryCache
@@ -73,9 +74,9 @@ defmodule Explorer.Application do
       BlocksCount,
       BlockNumber,
       Blocks,
+      ChainId,
       GasPriceOracle,
       GasUsageSum,
-      NetVersion,
       PendingBlockOperationCount,
       TransactionsCount,
       StateChanges,
@@ -159,6 +160,14 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.ShrinkInternalTransactions, :indexer),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount, :blackfort),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.Counters.Stability.ValidatorsCount, :stability),
+        configure_chain_type_dependent_process(Explorer.Chain.Cache.LatestL1BlockNumber, [
+          :optimism,
+          :polygon_edge,
+          :polygon_zkevm,
+          :scroll,
+          :shibarium
+        ]),
+        configure_chain_type_dependent_con_cache(),
         Explorer.Migrator.SanitizeDuplicatedLogIndexLogs
         |> configure()
         |> configure_chain_type_dependent_process([
@@ -341,6 +350,19 @@ defmodule Explorer.Application do
       process
     else
       []
+    end
+  end
+
+  defp configure_chain_type_dependent_con_cache do
+    case Application.get_env(:explorer, :chain_type) do
+      :optimism ->
+        [
+          con_cache_child_spec(OptimismInteropMessage.interop_instance_api_url_to_public_key_cache()),
+          con_cache_child_spec(OptimismInteropMessage.interop_chain_id_to_instance_info_cache())
+        ]
+
+      _ ->
+        []
     end
   end
 
