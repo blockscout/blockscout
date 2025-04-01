@@ -609,7 +609,7 @@ config :explorer, :datadog, port: ConfigHelper.parse_integer_env_var("DATADOG_PO
 config :explorer, Explorer.Chain.Cache.TransactionActionTokensData,
   max_cache_size: ConfigHelper.parse_integer_env_var("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE", 100_000)
 
-config :explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
+config :explorer, Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand,
   fetch_interval: ConfigHelper.parse_time_env_var("MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m"),
   max_concurrency: ConfigHelper.parse_integer_env_var("MICROSERVICE_ETH_BYTECODE_DB_MAX_LOOKUPS_CONCURRENCY", 10)
 

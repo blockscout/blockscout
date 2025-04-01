@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, SmartContract, Token}
-  alias Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
+  alias Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand
   alias Explorer.SmartContract.EthBytecodeDBInterface
   alias Indexer.Fetcher.TokenUpdater
 
@@ -126,7 +126,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
                address_hash_string,
                params_to_contract_search_options(params)
              ),
-           {:ok, _} <- LookUpSmartContractSourcesOnDemand.process_contract_source(type, source, address.hash) do
+           {:ok, _} <- LookupSmartContractSourcesOnDemand.process_contract_source(type, source, address.hash) do
         conn
         |> put_view(ApiView)
         |> render(:message, %{message: "Success"})
