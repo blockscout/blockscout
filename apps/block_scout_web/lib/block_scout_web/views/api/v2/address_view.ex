@@ -87,13 +87,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       - `:transaction_count` - number of transactions as string
       - Additional address info fields from Helper.address_with_info/4
   """
-  @spec prepare_address_for_list(
-          {atom() | %{:fetched_coin_balance => any(), :hash => any(), optional(any()) => any()}, any()}
-        ) :: %{
-          optional(:coin_balance) => any(),
-          optional(:transaction_count) => binary(),
-          optional(<<_::32, _::_*8>>) => any()
-        }
+  @spec prepare_address_for_list(Address.t()) :: map()
   def prepare_address_for_list(address) do
     nil
     |> Helper.address_with_info(address, address.hash, true)
