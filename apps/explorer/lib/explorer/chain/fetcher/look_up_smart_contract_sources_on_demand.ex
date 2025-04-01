@@ -6,7 +6,8 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
 
   use GenServer
 
-  alias Explorer.Chain.{Data, SmartContract}
+  alias Explorer.Chain
+  alias Explorer.Chain.{Address, Data, SmartContract}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.SmartContract.EthBytecodeDBInterface
   alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
@@ -134,10 +135,10 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
     {:noreply, %{state | current_concurrency: counter - 1}}
   end
 
-  defp partially_verified?(_address_hash_string, true), do: nil
+  defp partially_verified?(_smart_contract, true), do: nil
 
-  defp partially_verified?(address_hash_string, _nil_smart_contract?) do
-    SmartContract.select_partially_verified_by_address_hash(address_hash_string)
+  defp partially_verified?(smart_contract, _nil_smart_contract?) do
+    smart_contract.partially_verified
   end
 
   defp check_interval(address_string) do
@@ -197,16 +198,27 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
 
   @spec stale_and_partially_verified?(String.t(), boolean()) :: boolean() | nil
   defp stale_and_partially_verified?(address_hash_string, nil_smart_contract?) do
-    check_interval(to_lowercase_string(address_hash_string)) &&
-      partially_verified?(address_hash_string, nil_smart_contract?)
+    with true <- check_interval(to_lowercase_string(address_hash_string)),
+         {:ok, address} <-
+           address_hash_string
+           |> Chain.hash_to_address(
+             necessity_by_association: %{
+               :smart_contract => :optional
+             }
+           ),
+         true <- Address.smart_contract_with_nonempty_code?(address),
+         true <- partially_verified?(address.smart_contract, nil_smart_contract?) do
+      true
+    else
+      _ ->
+        nil
+    end
   end
 
   defp check_eligibility_for_sources_fetching(address_hash_string, address_contract_code, nil_smart_contract?, state) do
     need_to_check_and_partially_verified? = stale_and_partially_verified?(address_hash_string, nil_smart_contract?)
 
-    eligibility_for_sources_fetching =
-      Data.empty?(address_contract_code) == false &&
-        eligible_for_sources_fetching?(need_to_check_and_partially_verified?)
+    eligibility_for_sources_fetching = eligible_for_sources_fetching?(need_to_check_and_partially_verified?)
 
     if eligibility_for_sources_fetching do
       GenServer.cast(
