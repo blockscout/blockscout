@@ -29,6 +29,36 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     - `:settlement_transactions_finalization`: Finalizes the status of lifecycle
       transactions, confirming the blocks and messages involved.
 
+    Task scheduling behavior:
+    Each task is responsible for its own re-scheduling. Some tasks (historical ones)
+    can be conditionally re-scheduled based on their completion status. The interval
+    between task executions is dynamic and can vary depending on:
+    - Task's returned status (e.g., :ok, :confirmation_missed, :not_ready)
+    - Current state of the system
+    - Type of the task (new vs historical)
+    For example, confirmation tasks use longer intervals when data is not yet
+    available (:confirmation_missed status) and shorter intervals when data is
+    ready for processing.
+
+    Initialization architecture:
+    The module uses a two-phase initialization process:
+    1. Static configuration in `child_spec`:
+       - Extracts configuration from application environment
+       - Sets up initial intervals for tasks
+       - Configures RPC settings and basic parameters
+       This phase handles only configuration that is locally available and does
+       not depend on external data sources, ensuring supervisor startup can
+       proceed reliably.
+
+    2. Dynamic configuration in `initialize_workers`:
+       - Retrieves contract addresses through RPC calls
+       - Determines block numbers from database state
+       - Sets up task-specific data based on current chain state
+       This phase is executed as the first scheduled task, allowing for proper
+       error handling and retries if external data sources (RPC node, database)
+       are temporarily unavailable. This separation ensures system resilience
+       by keeping supervisor startup independent of external dependencies.
+
     Discovery of rollup transaction batches is executed by requesting logs on L1
     that correspond to the `SequencerBatchDelivered` event emitted by the Arbitrum
     `SequencerInbox` contract.
@@ -92,6 +122,17 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
            | :settlement_transactions_finalization
   @typep queued_task :: :init_worker | {non_neg_integer(), fetcher_task()}
 
+  @typep stoppable_fetcher_task ::
+           :historical_batches | :missing_batches | :historical_confirmations | :historical_executions
+  @typep completion_status :: %{stoppable_fetcher_task() => boolean()}
+  @typep fetcher_tasks_intervals :: %{fetcher_task() => non_neg_integer()}
+  @typep fetcher_tasks_data :: %{fetcher_task() => map()}
+
+  # Creates a child specification for the BufferedTask supervisor. Extracts and merges
+  # configuration from application environment, sets up task intervals (standard for new
+  # tasks, catchup for historical ones), initializes RPC configurations for parent and
+  # rollup chains, and creates the initial state with task scheduling parameters.
+  # Returns a transient supervisor child spec with the configured BufferedTask.
   def child_spec([init_options, gen_server_options]) do
     {json_rpc_named_arguments, init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
 
@@ -195,6 +236,11 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   @spec run([queued_task()], map()) :: {:ok, map()} | {:retry, [queued_task()], map()} | :retry
   def run(tasks, state)
 
+  # Initializes the worker state and schedules all tasks for execution. Configures the
+  # initial state with RPC/DB values, sets up tasks in order (new batches/confirmations/
+  # executions followed by historical ones), defines their completion states, and
+  # conditionally disables missing batches discovery and settlement transactions
+  # finalization based on configuration.
   def run([:init_worker], state) do
     # Complete configuration with RPC/DB dependent values
     configured_state = initialize_workers(state)
@@ -231,6 +277,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:ok, updated_state}
   end
 
+  # Executes or returns a task back to the queue based on its timeout. If the
+  # timeout hasn't elapsed, returns the task to the queue with the same
+  # timeout. Otherwise, executes the appropriate task runner.
   def run([{timeout, task_tag}], state) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
@@ -264,6 +313,10 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   end
 
   # Initializes the worker state with contract addresses and block information
+  @spec initialize_workers(%{
+          :config => map(),
+          optional(any()) => any()
+        }) :: %{config => map(), :task_data => fetcher_tasks_data(), optional(any()) => any()}
   defp initialize_workers(state) do
     json_l1_rpc_named_arguments = state.config.l1_rpc.json_rpc_named_arguments
     l1_rollup_address = state.config.l1_rollup_address
@@ -326,6 +379,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   end
 
   # Conditionally disables missing batches discovery based on configuration
+  @spec maybe_disable_missing_batches_discovery({[queued_task()], completion_status()}, %{
+          optional(any()) => any()
+        }) :: {[queued_task()], completion_status()}
   defp maybe_disable_missing_batches_discovery({tasks, completion}, state) do
     if BatchesDiscoveryTasks.run_missing_batches_discovery?(state) do
       {tasks, completion}
@@ -336,6 +392,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   end
 
   # Conditionally disables settlement transactions finalization based on configuration
+  @spec maybe_disable_settlement_transactions_finalization({[queued_task()], completion_status()}, %{
+          optional(any()) => any()
+        }) :: {[queued_task()], completion_status()}
   defp maybe_disable_settlement_transactions_finalization({tasks, completion}, state) do
     if L1Finalization.run_settlement_transactions_finalization?(state) do
       {tasks, completion}
@@ -357,7 +416,11 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:ok, updated_state}
   end
 
-  # Handles the discovery of new confirmations for rollup blocks
+  # Handles the discovery of new confirmations for rollup blocks. Uses different intervals
+  # based on status: standard interval for :confirmation_missed, catchup interval for :ok,
+  # and DB migration check interval for :not_ready. When a confirmation is missed and
+  # historical confirmations task was completed, re-enables and reschedules the historical
+  # confirmations task with updated interval.
   defp handle_new_confirmations(state) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
@@ -441,8 +504,14 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
   # Selects interval for historical confirmations processing based on worker status.
   # For :confirmation_missed status, uses longer :new_confirmations interval since data
-  # is not yet available. For all other statuses, uses shorter :historical_confirmations
-  # interval since data is available for rapid processing.
+  # is not yet available. For :not_ready status, uses DB migration check interval to
+  # periodically check readiness. For all other statuses, uses shorter
+  # :historical_confirmations interval since data is available for rapid processing.
+  @spec select_historical_confirmations_interval(:confirmation_missed | :ok | :not_ready, %{
+          :intervals => fetcher_tasks_intervals(),
+          optional(any()) => any()
+        }) ::
+          non_neg_integer()
   defp select_historical_confirmations_interval(status, state) do
     ConfirmationsDiscoveryTasks.select_interval_by_status(status, %{
       standard: state.intervals[:new_confirmations],
@@ -472,6 +541,28 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:ok, state}
   end
 
+  # Executes a worker function and conditionally reschedules the task based on its completion status.
+  #
+  # ## Parameters
+  # - `state`: The current state containing completed tasks and intervals
+  # - `task_tag`: The identifier of the stoppable fetcher task
+  # - `worker_function`: The function to execute the task's work
+  # - `completion_check_function`: The function to check if the task is completed
+  # - `interval_selection_function`: Optional function to determine the next run interval
+  # - `any_status?`: Whether to accept any worker status or only :ok
+  #
+  # ## Returns
+  # - `{:ok, updated_state}` with the new state after task execution
+  @spec run_worker_with_conditional_rescheduling(
+          %{:completed_tasks => completion_status(), :intervals => fetcher_tasks_intervals(), optional(any()) => any()},
+          stoppable_fetcher_task(),
+          function(),
+          function(),
+          function() | nil,
+          boolean()
+        ) ::
+          {:ok,
+           %{:completed_tasks => completion_status(), :intervals => fetcher_tasks_intervals(), optional(any()) => any()}}
   defp run_worker_with_conditional_rescheduling(
          state,
          task_tag,
@@ -483,6 +574,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
     {worker_status, state_after_worker_run} = worker_function.(state)
 
+    # It allows to handle two cases when there is a strict requirement for the worker's status
+    # or when the worker's status is not important
     case {any_status?, worker_status} do
       {true, _} ->
         nil
@@ -491,8 +584,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         nil
 
       _ ->
-        log_error("Worker #{worker_function} returned unexpected status #{worker_status}")
-        :retry
+        raise("Worker #{worker_function} returned unexpected status #{worker_status}")
     end
 
     updated_state = update_completed_tasks(state_after_worker_run, task_tag, completion_check_function)
@@ -513,12 +605,22 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   end
 
   # Returns true if the task should be rescheduled (not marked as completed)
+  @spec rescheduled?(atom(), %{:completed_tasks => completion_status(), optional(any()) => any()}) :: boolean()
   defp rescheduled?(task_tag, state) when task_tag in @stoppable_tasks do
     not Map.get(state.completed_tasks, task_tag)
   end
 
   defp rescheduled?(_task_tag, _state), do: true
 
+  # Updates the completion status of a task in the state map based on the result of a completion check function.
+  @spec update_completed_tasks(
+          %{:completed_tasks => completion_status(), optional(any()) => any()},
+          stoppable_fetcher_task(),
+          function()
+        ) :: %{
+          :completed_tasks => completion_status(),
+          optional(any()) => any()
+        }
   defp update_completed_tasks(state, task_tag, completion_check_function) do
     updated_completed_tasks = Map.put(state.completed_tasks, task_tag, completion_check_function.(state))
     %{state | completed_tasks: updated_completed_tasks}
