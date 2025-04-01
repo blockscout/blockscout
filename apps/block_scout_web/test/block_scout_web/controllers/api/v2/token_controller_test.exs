@@ -1115,6 +1115,60 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       Application.put_env(:indexer, :ipfs, old_env)
     end
+
+    test "metadata dropped on token uri on demand filler", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_id: 0,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{"awesome" => "metadata"}
+      )
+
+      encoded_url_1 =
+        "0x" <>
+          (ABI.TypeEncoder.encode(["http://240.0.0.0/api/metadata.json"], %ABI.FunctionSelector{
+             function: nil,
+             types: [
+               :string
+             ]
+           })
+           |> Base.encode16(case: :lower))
+
+      token_contract_address_hash_string = to_string(token.contract_address_hash)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [
+             %{
+               id: id_1,
+               jsonrpc: "2.0",
+               method: "eth_call",
+               params: [
+                 %{
+                   data: "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000000",
+                   to: ^token_contract_address_hash_string
+                 },
+                 "latest"
+               ]
+             }
+           ],
+           _options ->
+          {:ok, [%{id: id_1, jsonrpc: "2.0", result: encoded_url_1}]}
+        end
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
+
+      assert data = json_response(request, 200)
+      assert data["metadata"] == nil
+
+      instance = Repo.one(Instance)
+      assert instance.metadata == nil
+      assert instance.error == "blacklist"
+      assert instance.skip_metadata_url == false
+    end
   end
 
   describe "/tokens/{address_hash}/instances/{token_id}/transfers" do

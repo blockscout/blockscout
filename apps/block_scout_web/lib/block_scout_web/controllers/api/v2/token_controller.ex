@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias Explorer.{Chain, Helper, PagingOptions}
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
+  alias Explorer.Migrator.BackfillMetadataURL
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
@@ -208,17 +209,40 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)},
          {:ok, token_instance} <-
            Instance.nft_instance_by_token_id_and_token_address(token_id, address_hash, @api_true) do
+      fill_metadata_url_task = maybe_run_fill_metadata_url_task(token_instance, token)
+
       token_instance =
         token_instance
         |> Chain.select_repo(@api_true).preload(owner: [:names, :smart_contract, proxy_implementations_association()])
         |> Instance.put_owner_to_token_instance(token, @api_true)
 
+      updated_token_instance =
+        case fill_metadata_url_task && (Task.yield(fill_metadata_url_task) || Task.ignore(fill_metadata_url_task)) do
+          {:ok, [%{error: error}]} when not is_nil(error) ->
+            %Instance{token_instance | metadata: nil}
+
+          _ ->
+            token_instance
+        end
+
       conn
       |> put_status(200)
       |> render(:token_instance, %{
-        token_instance: token_instance,
+        token_instance: updated_token_instance,
         token: token
       })
+    end
+  end
+
+  defp maybe_run_fill_metadata_url_task(token_instance, token) do
+    if not is_nil(token_instance.metadata) && is_nil(token_instance.skip_metadata_url) do
+      Task.async(fn ->
+        BackfillMetadataURL.update_batch([
+          {token_instance.token_contract_address_hash, token_instance.token_id, token.type}
+        ])
+      end)
+    else
+      nil
     end
   end
 

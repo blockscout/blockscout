@@ -130,7 +130,8 @@ for migrator <- [
       Explorer.Migrator.BackfillMultichainSearchDB,
       Explorer.Migrator.SanitizeVerifiedAddresses,
       Explorer.Migrator.SmartContractLanguage,
-      Explorer.Migrator.SanitizeEmptyContractCodeAddresses
+      Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
+      Explorer.Migrator.BackfillMetadataURL
     ] do
   config :explorer, migrator, enabled: true
 end
