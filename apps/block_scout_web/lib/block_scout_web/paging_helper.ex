@@ -274,6 +274,9 @@ defmodule BlockScoutWeb.PagingHelper do
 
   defp do_tokens_sorting("fiat_value", "asc"), do: [asc_nulls_first: :fiat_value]
   defp do_tokens_sorting("fiat_value", "desc"), do: [desc_nulls_last: :fiat_value]
+  defp do_tokens_sorting("holders_count", "asc"), do: [asc_nulls_first: :holder_count]
+  defp do_tokens_sorting("holders_count", "desc"), do: [desc_nulls_last: :holder_count]
+  # todo: Next 2 clauses should be removed in favour `holders_count` property with the next release after 8.0.0
   defp do_tokens_sorting("holder_count", "asc"), do: [asc_nulls_first: :holder_count]
   defp do_tokens_sorting("holder_count", "desc"), do: [desc_nulls_last: :holder_count]
   defp do_tokens_sorting("circulating_market_cap", "asc"), do: [asc_nulls_first: :circulating_market_cap]

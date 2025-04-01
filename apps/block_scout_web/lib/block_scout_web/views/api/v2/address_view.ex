@@ -82,6 +82,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   def prepare_address({address, transaction_count}) do
     nil
     |> Helper.address_with_info(address, address.hash, true)
+    |> Map.put(:transactions_count, to_string(transaction_count))
+    # todo: It should be removed in favour `transaction_count` property with the next release after 8.0.0
     |> Map.put(:transaction_count, to_string(transaction_count))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
