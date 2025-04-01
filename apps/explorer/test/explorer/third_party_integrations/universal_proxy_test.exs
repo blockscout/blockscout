@@ -80,7 +80,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
       assert status == 422
 
       assert error_message ==
-               "Invalid config: 'base_url' is not defined for platform 'test_platform' or 'base' endpoint is not defined or 'base' endpoint path is not defined"
+               "Invalid config: 'base_url' is not defined for platform_id 'test_platform' or 'base' endpoint is not defined or 'base' endpoint path is not defined"
     end
 
     test "invalid HTTP method" do
@@ -115,7 +115,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
       {error_message, status} = UniversalProxy.api_request(proxy_params)
 
       assert status == 422
-      assert error_message == "Invalid config: Invalid HTTP request method ${method} for platform 'test_platform'"
+      assert error_message == "Invalid config: Invalid HTTP request method for platform 'test_platform'"
     end
 
     test "unexpected error during request" do
@@ -305,6 +305,51 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
       )
 
       assert "https://api.test.com/test?address=0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5" =
+               UniversalProxy.parse_proxy_params(%{
+                 "platform_id" => "test_platform",
+                 "address" => "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5"
+               }).url
+    end
+
+    test "correctly parsing multiple params in the query string" do
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: %Tesla.Env{
+          status: 200,
+          body:
+            Jason.encode!(%{
+              "platforms" => %{
+                "test_platform" => %{
+                  "base_url" => "https://api.test.com",
+                  "endpoints" => %{
+                    "base" => %{
+                      "path" => "/test",
+                      "method" => "get",
+                      "params" => [
+                        %{
+                          "location" => "query",
+                          "type" => "address"
+                        },
+                        %{
+                          "location" => "query",
+                          "name" => "second_param",
+                          "value" => "42"
+                        }
+                      ]
+                    }
+                  },
+                  "api_key" => %{
+                    "location" => "header",
+                    "param_name" => "Authorization",
+                    "prefix" => "Bearer"
+                  }
+                }
+              }
+            })
+        }
+      )
+
+      assert "https://api.test.com/test?address=0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5&second_param=42" =
                UniversalProxy.parse_proxy_params(%{
                  "platform_id" => "test_platform",
                  "address" => "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5"

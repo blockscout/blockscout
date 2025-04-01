@@ -97,7 +97,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
           "'base_url' is not defined for platform_id '#{platform_id}' or 'base' endpoint is not defined or 'base' endpoint path is not defined"
 
         is_nil(method) ->
-          "Invalid HTTP request method #{method} for platform_id '#{platform_id}'"
+          "Invalid HTTP request method for platform '#{platform_id}'"
 
         true ->
           "Unexpected error"
@@ -247,6 +247,9 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
         %{"location" => _location, "type" => param_type} ->
           parse_param_location(map, param, proxy_params[param_type])
+
+        _ ->
+          map
       end
     end)
   end
@@ -268,7 +271,8 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
       "query" ->
         query_param_name = param_name(params)
-        Map.put(api_request_map, :url, url <> "?#{query_param_name}=#{value}")
+        delimiter = if String.contains?(url, "?"), do: "&", else: "?"
+        Map.put(api_request_map, :url, url <> "#{delimiter}#{query_param_name}=#{value}")
 
       "body" ->
         body_param_name = param_name(params)
@@ -287,11 +291,12 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
     do: api_request_map
 
   defp param_name(params) do
-    with true <- params["type"] in @reserved_param_types,
-         true <- not is_nil(params["name"]) do
+    with {:empty_param_type, false} <- {:empty_param_type, params["type"] not in @reserved_param_types},
+         {:empty_param_name, false} <- {:empty_param_name, is_nil(params["name"])} do
       params["name"]
     else
-      _ -> params["type"]
+      {:empty_param_type, true} -> params["name"]
+      {:empty_param_name, true} -> params["type"]
     end
   end
 
