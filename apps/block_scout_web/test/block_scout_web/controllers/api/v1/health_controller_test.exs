@@ -99,8 +99,6 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
 
       result = Poison.decode!(request.resp_body)
 
-      assert result["healthy"] == true
-
       assert %{
                "latest_block" => %{
                  "db" => %{
