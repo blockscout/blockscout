@@ -2756,7 +2756,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses")
       assert response = json_response(request, 200)
-
+      assert not is_nil(response["next_page_params"])
       request_2nd_page = get(conn, "/api/v2/addresses", response["next_page_params"])
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
@@ -2786,6 +2786,82 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert String.downcase(address["hash"]) == to_string(smart_contract.address_hash)
       assert address["is_contract"] == true
       assert address["is_verified"] == true
+    end
+
+    test "check sorting by balance asc", %{conn: conn} do
+      addresses =
+        for i <- 0..50 do
+          insert(:address, nonce: i, fetched_coin_balance: i + 1, transactions_count: 100 - i)
+        end
+
+      sort_options = %{"sort" => "balance", "order" => "asc"}
+      request = get(conn, "/api/v2/addresses", sort_options)
+      assert response = json_response(request, 200)
+      assert not is_nil(response["next_page_params"])
+
+      request_2nd_page = get(conn, "/api/v2/addresses", Map.merge(response["next_page_params"], sort_options))
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(
+        response,
+        response_2nd_page,
+        Enum.sort_by(addresses, &Decimal.to_integer(&1.fetched_coin_balance.value), :desc)
+      )
+    end
+
+    test "check sorting by transactions count asc", %{conn: conn} do
+      addresses =
+        for i <- 0..50 do
+          insert(:address, nonce: i, transactions_count: i + 1, fetched_coin_balance: 100 - i)
+        end
+
+      sort_options = %{"sort" => "transactions_count", "order" => "asc"}
+      request = get(conn, "/api/v2/addresses", sort_options)
+      assert response = json_response(request, 200)
+      assert not is_nil(response["next_page_params"])
+
+      request_2nd_page = get(conn, "/api/v2/addresses", Map.merge(response["next_page_params"], sort_options))
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, Enum.sort_by(addresses, & &1.transactions_count, :desc))
+    end
+
+    test "check sorting by balance desc", %{conn: conn} do
+      addresses =
+        for i <- 0..50 do
+          insert(:address, nonce: i, fetched_coin_balance: i + 1, transactions_count: 100 - i)
+        end
+
+      sort_options = %{"sort" => "balance", "order" => "desc"}
+      request = get(conn, "/api/v2/addresses", sort_options)
+      assert response = json_response(request, 200)
+      assert not is_nil(response["next_page_params"])
+
+      request_2nd_page = get(conn, "/api/v2/addresses", Map.merge(response["next_page_params"], sort_options))
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(
+        response,
+        response_2nd_page,
+        Enum.sort_by(addresses, &Decimal.to_integer(&1.fetched_coin_balance.value), :asc)
+      )
+    end
+
+    test "check sorting by transactions count desc", %{conn: conn} do
+      addresses =
+        for i <- 0..50 do
+          insert(:address, nonce: i, transactions_count: i + 1, fetched_coin_balance: 100 - i)
+        end
+
+      sort_options = %{"sort" => "transactions_count", "order" => "desc"}
+      request = get(conn, "/api/v2/addresses", sort_options)
+      assert response = json_response(request, 200)
+      assert not is_nil(response["next_page_params"])
+
+      request_2nd_page = get(conn, "/api/v2/addresses", Map.merge(response["next_page_params"], sort_options))
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, Enum.sort_by(addresses, & &1.transactions_count, :asc))
     end
   end
 

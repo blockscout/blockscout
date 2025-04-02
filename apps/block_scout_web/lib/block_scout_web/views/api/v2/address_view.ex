@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         total_supply: total_supply
       }) do
     %{
-      items: Enum.map(addresses, &prepare_address/1),
+      items: Enum.map(addresses, &prepare_address_for_list/1),
       next_page_params: next_page_params,
       exchange_rate: exchange_rate.usd_value,
       total_supply: total_supply && to_string(total_supply)
@@ -71,28 +71,34 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     %{"items" => Enum.map(nft_collections, &prepare_nft_collection(&1)), "next_page_params" => next_page_params}
   end
 
-  @spec prepare_address(
-          {atom() | %{:fetched_coin_balance => any(), :hash => any(), optional(any()) => any()}, any()}
-          | Explorer.Chain.Address.t()
-        ) :: %{
-          optional(:coin_balance) => any(),
-          optional(:transaction_count) => binary(),
-          optional(<<_::32, _::_*8>>) => any()
-        }
-  def prepare_address({address, transaction_count}) do
+  @doc """
+  Prepares an address for display in the addresses list.
+
+  ## Parameters
+    - address: Address struct containing:
+      - `:hash` - address hash
+      - `:fetched_coin_balance` - current coin balance
+      - `:transactions_count` - number of transactions
+
+  ## Returns
+    - Map containing:
+      - `:hash` - address hash
+      - `:coin_balance` - current coin balance value
+      - `:transaction_count` - number of transactions as string
+      - Additional address info fields from Helper.address_with_info/4
+  """
+  @spec prepare_address_for_list(Address.t()) :: map()
+  def prepare_address_for_list(address) do
     nil
     |> Helper.address_with_info(address, address.hash, true)
-    |> Map.put(:transactions_count, to_string(transaction_count))
+    |> Map.put(:transactions_count, to_string(address.transactions_count))
     # todo: It should be removed in favour `transaction_count` property with the next release after 8.0.0
-    |> Map.put(:transaction_count, to_string(transaction_count))
+    |> Map.put(:transaction_count, to_string(address.transactions_count))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
 
-  @doc """
-  Prepares address properties for rendering in /addresses and /addresses/:address_hash_param API v2 endpoints
-  """
-  @spec prepare_address(Address.t(), Plug.Conn.t() | nil) :: map()
-  def prepare_address(address, conn \\ nil) do
+  @spec prepare_address(Address.t(), Plug.Conn.t()) :: map()
+  defp prepare_address(address, conn) do
     base_info = Helper.address_with_info(conn, address, address.hash, true)
 
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value

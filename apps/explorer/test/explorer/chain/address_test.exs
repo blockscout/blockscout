@@ -75,7 +75,6 @@ defmodule Explorer.Chain.AddressTest do
 
       assert address_hashes ==
                Address.list_top_addresses()
-               |> Enum.map(fn {address, _transaction_count} -> address end)
                |> Enum.map(& &1.hash)
     end
 

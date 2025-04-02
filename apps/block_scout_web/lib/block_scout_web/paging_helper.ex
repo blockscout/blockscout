@@ -355,4 +355,41 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_validators_blackfort_sorting("address_hash", "desc"), do: [desc_nulls_last: :address_hash]
 
   defp do_validators_blackfort_sorting(_, _), do: []
+
+  @doc """
+    Generates sorting parameters for addresses list based on query parameters.
+
+    ## Parameters
+      - params: map containing:
+        - `"sort"` - field to sort by ("balance" or "transactions_count")
+        - `"order"` - sort order ("asc" or "desc")
+
+    ## Returns
+      - List with single sorting parameter tuple when valid sort parameters provided
+      - Empty list when no valid sort parameters provided
+
+    ## Examples
+        iex> addresses_sorting(%{"sort" => "balance", "order" => "desc"})
+        [sorting: [desc_nulls_last: :fetched_coin_balance]]
+
+        iex> addresses_sorting(%{"sort" => "transactions_count", "order" => "asc"})
+        [sorting: [asc_nulls_first: :transactions_count]]
+
+        iex> addresses_sorting(%{})
+        []
+  """
+  @spec addresses_sorting(%{required(String.t()) => String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
+  def addresses_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_addresses_sorting(sort_field, order)]
+  end
+
+  def addresses_sorting(_), do: []
+
+  defp do_addresses_sorting("balance", "asc"), do: [asc: :fetched_coin_balance]
+  defp do_addresses_sorting("balance", "desc"), do: [desc: :fetched_coin_balance]
+  defp do_addresses_sorting("transactions_count", "asc"), do: [asc_nulls_first: :transactions_count]
+  defp do_addresses_sorting("transactions_count", "desc"), do: [desc_nulls_last: :transactions_count]
+  defp do_addresses_sorting(_, _), do: []
 end
