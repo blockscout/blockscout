@@ -198,7 +198,8 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   defp parse_method(platform_config) do
     raw_method =
       platform_config["endpoints"]["base"]["method"]
-      |> String.slice(10)
+      # limit size of the input to prevent memory leak
+      |> String.slice(0..10)
       |> String.downcase()
       |> String.to_atom()
 
@@ -256,7 +257,14 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
           parse_param_location(map, param, value)
 
         %{"location" => _location, "type" => "chain_id_dependent", "mapping" => mapping} ->
-          parse_param_location(map, param, mapping[proxy_params["chain_id"]])
+          chain_id = proxy_params["chain_id"]
+
+          # credo:disable-for-next-line
+          if is_nil(chain_id) or is_nil(mapping[chain_id]) do
+            map
+          else
+            parse_param_location(map, param, mapping[chain_id])
+          end
 
         %{"location" => _location, "type" => param_type} ->
           parse_param_location(map, param, proxy_params[param_type])

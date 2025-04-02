@@ -127,8 +127,6 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: {:error, :timeout}
       )
 
-      Application.put_env(:explorer, Explorer.ThirdPartyIntegrations.Xname, api_key: "test_api_key")
-
       proxy_params = %{"platform_id" => "test_platform"}
       {error_message, status} = UniversalProxy.api_request(proxy_params)
 
