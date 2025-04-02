@@ -304,19 +304,28 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
   defp config do
     case :persistent_term.get(@cache_name, nil) do
-      config when not is_nil(config) ->
-        Jason.decode!(config)
+      config_string when not is_nil(config_string) ->
+        safe_parse_config_string(config_string)
 
       nil ->
         case Tesla.get(@config_url) do
           {:ok, %Tesla.Env{status: 200, body: config_string}} ->
-            :persistent_term.put(@cache_name, config_string)
-            {:ok, config} = Jason.decode(config_string)
-            config
+            safe_parse_config_string(config_string, true)
 
           _ ->
             %{}
         end
+    end
+  end
+
+  defp safe_parse_config_string(config_string, update_cache? \\ false) do
+    case Jason.decode(config_string) do
+      {:ok, config} ->
+        if update_cache?, do: :persistent_term.put(@cache_name, config_string)
+        config
+
+      {:error, _} ->
+        %{}
     end
   end
 end
