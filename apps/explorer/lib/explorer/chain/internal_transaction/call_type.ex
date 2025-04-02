@@ -142,7 +142,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
 
   ## Examples
 
-    iex> Explorer.Chain.InternalTransaction.CallType.values()
+    > Explorer.Chain.InternalTransaction.CallType.values()
     ["call", "callcode", "delegatecall", "staticcall"]
   """
   @spec values :: [String.t()]
