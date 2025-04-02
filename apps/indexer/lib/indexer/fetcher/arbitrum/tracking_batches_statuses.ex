@@ -38,13 +38,12 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     - Type of the task (new vs historical)
     - Failure frequency of the task
 
-    Tasks that fail frequently within a configurable threshold period will enter a
-    cooldown state for 10 minutes to prevent resource exhaustion. Initial tasks
-    (timeout = 0) are exempt from the failure threshold check.
-
     For example, confirmation tasks use longer intervals when data is not yet
     available (:confirmation_missed status) and shorter intervals when data is
     ready for processing.
+
+    Tasks that fail abnormally within a configurable threshold period will enter a
+    cooldown state for 10 minutes to prevent resource exhaustion.
 
     Initialization architecture:
     The module uses a two-phase initialization process:
@@ -102,7 +101,10 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
   @behaviour BufferedTask
 
-  # 250ms interval for quick task switching
+  # 250ms interval between processing buffered entries.
+  # Note: This interval has no effect on retry behavior - when a task fails or
+  # is explicitly retried via :retry return value, it is re-queued and the next
+  # available task is picked up immediately without this delay.
   @idle_interval 250
   # Only one task at a time
   @max_concurrency 1
@@ -116,7 +118,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   # since they are only needed when indexing a rollup chain that already has many blocks.
   # This interval is hardcoded since these tasks should complete rapidly and don't need
   # to be configurable.
-  @catchup_recheck_interval 2_000
+  @catchup_recheck_interval :timer.seconds(2)
 
   @stoppable_tasks [:historical_batches, :missing_batches, :historical_confirmations, :historical_executions]
 
@@ -258,16 +260,19 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     # Complete configuration with RPC/DB dependent values
     configured_state = initialize_workers(state)
 
+    # Get current timestamp for initial task scheduling
+    now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
+
     # Define all possible tasks with their initial timestamps in desired order
     default_tasks_to_run = [
-      {0, :new_batches},
-      {0, :new_confirmations},
-      {0, :new_executions},
-      {0, :historical_batches},
-      {0, :historical_confirmations},
-      {0, :historical_executions},
-      {0, :missing_batches},
-      {0, :settlement_transactions_finalization}
+      {now, :new_batches},
+      {now, :new_confirmations},
+      {now, :new_executions},
+      {now, :historical_batches},
+      {now, :historical_confirmations},
+      {now, :historical_executions},
+      {now, :missing_batches},
+      {now, :settlement_transactions_finalization}
     ]
 
     # Define default completion state for all tasks
@@ -312,8 +317,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
     with {:timeout_elapsed, true} <- {:timeout_elapsed, timeout <= now},
-         {:threshold_ok, true} <-
-           {:threshold_ok, timeout == 0 or now - timeout <= state.config.failure_interval_threshold},
+         {:threshold_ok, true} <- {:threshold_ok, now - timeout <= state.config.failure_interval_threshold},
          {:runner_defined, runner} when not is_nil(runner) <- {:runner_defined, Map.get(task_runners(), task_tag)} do
       runner.(state)
     else
@@ -426,7 +430,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       {tasks, completion}
     else
       log_info("Missing batches inspection is disabled")
-      {List.delete(tasks, {0, :missing_batches}), %{completion | missing_batches: true}}
+      {delete_task_by_tag(tasks, :missing_batches), %{completion | missing_batches: true}}
     end
   end
 
@@ -439,8 +443,14 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       {tasks, completion}
     else
       log_info("Settlement transactions finalization is disabled")
-      {List.delete(tasks, {0, :settlement_transactions_finalization}), completion}
+      {delete_task_by_tag(tasks, :settlement_transactions_finalization), completion}
     end
+  end
+
+  # Deletes a task from the tasks list by its tag, ignoring the timeout value
+  @spec delete_task_by_tag([queued_task()], fetcher_task()) :: [queued_task()]
+  defp delete_task_by_tag(tasks, tag) do
+    Enum.reject(tasks, fn {_timeout, task_tag} -> task_tag == tag end)
   end
 
   # Handles the discovery of new batches of rollup transactions
