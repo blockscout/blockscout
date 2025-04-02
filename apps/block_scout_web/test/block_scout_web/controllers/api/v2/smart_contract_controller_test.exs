@@ -651,17 +651,17 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   if Application.compile_env(:explorer, :chain_type) !== :zksync do
     describe "/smart-contracts/{address_hash} <> eth_bytecode_db" do
       setup do
-        old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand)
+        old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
 
         :ok
 
         on_exit(fn ->
-          Application.put_env(:explorer, Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand, old_interval_env)
+          Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
         end)
       end
 
       test "automatically verify contract", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand.start_link([])
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
         Application.put_env(:block_scout_web, :chain_id, 5)
@@ -745,7 +745,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       end
 
       test "automatically verify contract using search-all (ethBytecodeDbSources) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand.start_link([])
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
         Application.put_env(:block_scout_web, :chain_id, 5)
@@ -878,7 +878,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       end
 
       test "automatically verify contract using search-all (sourcifySources) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand.start_link([])
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
         Application.put_env(:block_scout_web, :chain_id, 5)
@@ -964,7 +964,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       end
 
       test "automatically verify contract using search-all (sourcifySources with libraries) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand.start_link([])
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
         Application.put_env(:block_scout_web, :chain_id, 5)
@@ -1078,7 +1078,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       end
 
       test "automatically verify contract using search-all (allianceSources) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand.start_link([])
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
         Application.put_env(:block_scout_web, :chain_id, 5)
@@ -1202,7 +1202,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       end
 
       test "automatically verify contract using search-all (prefer sourcify FULL match) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand.start_link([])
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
         Application.put_env(:block_scout_web, :chain_id, 5)
@@ -1328,7 +1328,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       end
 
       test "automatically verify contract using search-all (take eth bytecode db FULL match) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand.start_link([])
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
         Application.put_env(:block_scout_web, :chain_id, 5)
@@ -1453,9 +1453,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         GenServer.stop(pid)
       end
 
-      test "check fetch interval for LookupSmartContractSourcesOnDemand and use sources:search endpoint since chain_id is unset",
+      test "check fetch interval for LookUpSmartContractSourcesOnDemand and use sources:search endpoint since chain_id is unset",
            %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand.start_link([])
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
         Application.put_env(:block_scout_web, :chain_id, nil)
@@ -1485,9 +1485,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           eth_bytecode_db?: true
         )
 
-        old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand)
+        old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
 
-        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand, fetch_interval: 0)
+        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, fetch_interval: 0)
 
         Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
           Conn.resp(conn, 200, "{\"sources\": []}")
@@ -1557,7 +1557,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         :timer.sleep(10)
 
-        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand, fetch_interval: 10000)
+        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, fetch_interval: 10000)
 
         _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -1583,7 +1583,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                        :timer.seconds(1)
 
         Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand, old_interval_env)
+        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
         Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
         Bypass.down(bypass)
         GenServer.stop(pid)

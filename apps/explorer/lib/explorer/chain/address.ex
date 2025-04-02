@@ -139,7 +139,7 @@ defmodule Explorer.Chain.Address do
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
   alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, SmartContract, Transaction}
-  alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookupSmartContractSourcesOnDemand}
+  alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{Chain, PagingOptions, Repo}
 
@@ -1025,7 +1025,7 @@ defmodule Explorer.Chain.Address do
           map() | nil
   def update_address_result(address_result, options, decoding_from_list?) do
     if address_result do
-      LookupSmartContractSourcesOnDemand.trigger_fetch(address_result)
+      LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result)
     end
 
     case address_result do

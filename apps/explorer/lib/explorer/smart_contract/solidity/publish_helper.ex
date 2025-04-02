@@ -21,7 +21,7 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
 
   alias Ecto.Changeset
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
-  alias Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand
+  alias Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Solidity.Publisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
@@ -166,7 +166,7 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
   def check_and_verify(address_hash_string) do
     cond do
       eth_bytecode_db_enabled?() ->
-        LookupSmartContractSourcesOnDemand.trigger_fetch(address_hash_string)
+        LookUpSmartContractSourcesOnDemand.trigger_fetch(address_hash_string)
 
       sourcify_enabled?() ->
         address_hash_string

@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand do
+defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   @moduledoc """
     On demand fetcher sources for unverified smart contract from
     [Ethereum Bytecode DB](https://github.com/blockscout/blockscout-rs/tree/main/eth-bytecode-db/eth-bytecode-db)
@@ -10,14 +10,14 @@ defmodule Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand do
     fetch_interval: [
       :explorer,
       [
-        Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand,
+        Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
         :fetch_interval
       ]
     ],
     max_concurrency: [
       :explorer,
       [
-        Explorer.Chain.Fetcher.LookupSmartContractSourcesOnDemand,
+        Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
         :max_concurrency
       ]
     ]
