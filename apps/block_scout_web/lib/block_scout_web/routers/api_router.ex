@@ -359,6 +359,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     scope "/proxy" do
       scope "/3dparty" do
+        get("/:platform_id", V2.Proxy.UniversalProxyController, :index)
+
         scope "/noves-fi" do
           get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
 
