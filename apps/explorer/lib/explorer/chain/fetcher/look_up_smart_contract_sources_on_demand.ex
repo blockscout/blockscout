@@ -23,7 +23,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
     ]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Data}
+  alias Explorer.Chain.{Address, Data, SmartContract}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.SmartContract.EthBytecodeDBInterface
   alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
@@ -34,6 +34,32 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   @cache_name :smart_contracts_sources_fetching
 
   @cooldown_timeout 500
+
+  @doc """
+    Triggers the fetch of smart contract sources.
+
+    ## Parameters
+      * An `%Address{}` struct with smart contract ALREADY preloaded
+      * OR an address hash string
+
+    ## Returns
+      * `:ok` - when the fetch request has been scheduled
+      * `:ignore` - when the address is not eligible for fetching
+
+    ## Note
+    The request is ignored if:
+      * The address is not a smart contract
+      * The address has empty deployed bytecode (i.e., 0x)
+      * The smart contract is already fully verified
+  """
+  @spec trigger_fetch(any()) :: :ignore | :ok
+  def trigger_fetch(%Address{
+        smart_contract: %SmartContract{
+          partially_verified: false
+        }
+      }) do
+    :ignore
+  end
 
   def trigger_fetch(%Address{} = address) do
     address
@@ -213,6 +239,8 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
     )
   end
 
+  # Note: This function expects that the address will come with preloaded smart
+  # contract association.
   defp maybe_fetch_address(%Address{} = address) do
     {:ok, address}
   end
