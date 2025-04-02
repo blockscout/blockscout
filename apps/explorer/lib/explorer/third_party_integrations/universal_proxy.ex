@@ -32,6 +32,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   @reserved_param_types ~w(address chain_id chain_id_dependent)
 
   @config_url "https://raw.githubusercontent.com/blockscout/backend-configs/refs/heads/main/universal-proxy-config.json"
+  @cache_name :universal_proxy_config
 
   @doc """
   Makes an API request to a third-party service using the provided proxy parameters.
@@ -302,13 +303,20 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   end
 
   defp config do
-    case Tesla.get(@config_url) do
-      {:ok, %Tesla.Env{status: 200, body: config_string}} ->
-        {:ok, config} = Jason.decode(config_string)
-        config
+    case :persistent_term.get(@cache_name, nil) do
+      config when not is_nil(config) ->
+        Jason.decode!(config)
 
-      _ ->
-        %{}
+      nil ->
+        case Tesla.get(@config_url) do
+          {:ok, %Tesla.Env{status: 200, body: config_string}} ->
+            :persistent_term.put(@cache_name, config_string)
+            {:ok, config} = Jason.decode(config_string)
+            config
+
+          _ ->
+            %{}
+        end
     end
   end
 end

@@ -9,6 +9,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
   setup :verify_on_exit!
 
   setup do
+    :persistent_term.erase(:universal_proxy_config)
     System.put_env("UNIVERSAL_PROXY_TEST_PLATFORM_API_KEY", "test_api_key")
 
     on_exit(fn ->
