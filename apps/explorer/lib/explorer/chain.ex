@@ -87,6 +87,7 @@ defmodule Explorer.Chain do
   }
 
   alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
+  alias Explorer.Chain.Health.Helper, as: HealthHelper
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
@@ -1651,22 +1652,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Counts all of the block validations and groups by the `miner_hash`.
-  """
-  def each_address_block_validation_count(fun) when is_function(fun, 1) do
-    query =
-      from(
-        b in Block,
-        join: addr in Address,
-        on: b.miner_hash == addr.hash,
-        select: {b.miner_hash, count(b.miner_hash)},
-        group_by: b.miner_hash
-      )
-
-    Repo.stream_each(query, fun)
-  end
-
-  @doc """
   Return the balance in usd corresponding to this token. Return nil if the fiat_value of the token is not present.
   """
   def balance_in_fiat(%{fiat_value: fiat_value} = token_balance) when not is_nil(fiat_value) do
@@ -1877,24 +1862,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The number of `t:Explorer.Chain.Log.t/0`.
-
-      iex> transaction = :transaction |> insert() |> with_block()
-      iex> insert(:log, transaction: transaction, index: 0)
-      iex> Explorer.Chain.log_count()
-      1
-
-  When there are no `t:Explorer.Chain.Log.t/0`.
-
-      iex> Explorer.Chain.log_count()
-      0
-
-  """
-  def log_count do
-    Repo.one!(from(log in "logs", select: fragment("COUNT(*)")))
-  end
-
-  @doc """
   Max consensus block numbers.
 
   If blocks are skipped and inserted out of number order, the max number is still returned
@@ -1936,26 +1903,13 @@ defmodule Explorer.Chain do
   end
 
   def indexer_running? do
-    Application.get_env(:indexer, Indexer.Supervisor)[:enabled] or match?({:ok, _, _}, last_db_block_status())
+    Application.get_env(:indexer, Indexer.Supervisor)[:enabled] or
+      match?({:ok, _, _}, HealthHelper.last_db_block_status())
   end
 
   def internal_transactions_fetcher_running? do
     not Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] or
       match?({:ok, _, _}, last_db_internal_transaction_block_status())
-  end
-
-  def last_db_block_status do
-    query =
-      from(block in Block,
-        select: {block.number, block.timestamp},
-        where: block.consensus == true,
-        order_by: [desc: block.number],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
-    |> block_status()
   end
 
   def last_db_internal_transaction_block_status do
@@ -1969,36 +1923,8 @@ defmodule Explorer.Chain do
 
     query
     |> Repo.one()
-    |> block_status()
+    |> HealthHelper.block_status()
   end
-
-  def last_cache_block_status do
-    [
-      paging_options: %PagingOptions{page_size: 1}
-    ]
-    |> list_blocks()
-    |> List.last()
-    |> case do
-      %{timestamp: timestamp, number: number} ->
-        block_status({number, timestamp})
-
-      _ ->
-        block_status(nil)
-    end
-  end
-
-  defp block_status({number, timestamp}) do
-    now = DateTime.utc_now()
-    last_block_period = DateTime.diff(now, timestamp, :millisecond)
-
-    if last_block_period > Application.get_env(:explorer, :healthy_blocks_period) do
-      {:stale, number, timestamp}
-    else
-      {:ok, number, timestamp}
-    end
-  end
-
-  defp block_status(nil), do: {:error, :no_blocks}
 
   def fetch_min_missing_block_cache(from \\ nil, to \\ nil) do
     from_block_number = from || 0

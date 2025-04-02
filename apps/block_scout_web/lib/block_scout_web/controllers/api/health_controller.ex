@@ -3,12 +3,12 @@ defmodule BlockScoutWeb.API.HealthController do
 
   import Plug.Conn
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Health.Helper, as: HealthHelper
   alias Explorer.Migrator.MigrationStatus
-  alias Timex.Duration
 
   @ok_message "OK"
   @backfill_multichain_search_db_migration_name "backfill_multichain_search_db"
+  @rollups [:arbitrum, :zksync, :optimism, :polygon_zkevm, :scroll]
 
   @doc """
   Handles health checks for the application.
@@ -32,21 +32,48 @@ defmodule BlockScoutWeb.API.HealthController do
   end
 
   defp health(conn, _, false) do
-    with {:ok, latest_block_number_from_db, latest_block_timestamp_from_db} <- Chain.last_db_block_status(),
-         {:ok, latest_block_number_from_cache, latest_block_timestamp_from_cache} <- Chain.last_cache_block_status() do
-      send_resp(
-        conn,
-        :ok,
-        result(
-          latest_block_number_from_db,
-          latest_block_timestamp_from_db,
-          latest_block_number_from_cache,
-          latest_block_timestamp_from_cache
-        )
-      )
-    else
-      status -> send_resp(conn, :internal_server_error, encoded_error(status))
-    end
+    indexing_status = get_indexing_status()
+
+    base_health_status =
+      %{
+        metadata: %{
+          # todo: this key is left for backward compatibility
+          # and should be removed after 8.0.0 release in favour of the new health check logic based on multiple modules
+          latest_block: indexing_status.blocks.old,
+          blocks: indexing_status.blocks.new
+        }
+      }
+
+    metadata = Map.get(base_health_status, :metadata)
+
+    health_status =
+      if Application.get_env(:explorer, :chain_type) in @rollups do
+        batches_indexing_status = indexing_status.batches
+
+        base_health_status
+        |> put_in([:metadata, :batches], batches_indexing_status)
+        |> Map.put(:healthy, indexing_status.blocks.new.healthy and batches_indexing_status.healthy)
+      else
+        base_health_status
+        |> Map.put(:healthy, indexing_status.blocks.new.healthy)
+      end
+
+    # todo: this should be removed after 8.0.0. It is left for backward compatibility - it is artefact of the old response format.
+    blocks_property = Map.get(Map.get(health_status, :metadata), :blocks)
+
+    health_status_with_error =
+      health_status
+      |> (&if(Map.has_key?(metadata, :error),
+            do: &1,
+            else: Map.put(&1, :error, Map.get(blocks_property, :error))
+          )).()
+
+    send_resp(
+      conn,
+      :ok,
+      health_status_with_error
+      |> Jason.encode!()
+    )
   end
 
   defp health(conn, _params, true) do
@@ -101,7 +128,7 @@ defmodule BlockScoutWeb.API.HealthController do
   @spec readiness(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def readiness(conn, _) do
     unless Application.get_env(:nft_media_handler, :standalone_media_worker?) do
-      Chain.last_db_block_status()
+      HealthHelper.last_db_block_status()
     end
 
     send_resp(conn, :ok, @ok_message)
@@ -146,62 +173,157 @@ defmodule BlockScoutWeb.API.HealthController do
     end
   end
 
-  defp result(
-         latest_block_number_from_db,
-         latest_block_timestamp_from_db,
-         latest_block_number_from_cache,
-         latest_block_timestamp_from_cache
-       ) do
+  @spec get_indexing_status() :: map()
+  def get_indexing_status do
+    health_status = HealthHelper.get_indexing_health_data()
+
+    blocks_old = old_blocks_indexing_status(health_status)
+    blocks_new = new_blocks_indexing_status(health_status)
+
+    common_status =
+      %{
+        blocks: %{old: blocks_old, new: blocks_new}
+      }
+
+    status =
+      if Application.get_env(:explorer, :chain_type) in @rollups do
+        batches = batches_indexing_status(health_status)
+
+        common_status
+        |> Map.put(:batches, batches)
+      else
+        common_status
+      end
+
+    status
+  end
+
+  # todo: it should be removed after 8.0.0 release in favour of the new health check logic based on multiple modules
+  defp old_blocks_indexing_status(health_status) do
+    latest_block_timestamp_from_db =
+      if is_nil(health_status[:health_latest_block_timestamp_from_db]) do
+        nil
+      else
+        {:ok, latest_block_timestamp_from_db} =
+          DateTime.from_unix(Decimal.to_integer(health_status[:health_latest_block_timestamp_from_db]))
+
+        latest_block_timestamp_from_db
+      end
+
+    latest_block_timestamp_from_cache =
+      if is_nil(health_status[:health_latest_block_timestamp_from_cache]) do
+        nil
+      else
+        {:ok, latest_block_timestamp_from_cache} =
+          DateTime.from_unix(Decimal.to_integer(health_status[:health_latest_block_timestamp_from_cache]))
+
+        latest_block_timestamp_from_cache
+      end
+
     %{
-      healthy: true,
-      metadata: %{
+      db: %{
+        number: to_string(health_status[:health_latest_block_number_from_db]),
+        timestamp: to_string(latest_block_timestamp_from_db)
+      },
+      cache: %{
+        number: to_string(health_status[:health_latest_block_number_from_cache]),
+        timestamp: to_string(latest_block_timestamp_from_cache)
+      }
+    }
+  end
+
+  defp new_blocks_indexing_status(health_status) do
+    latest_block_timestamp_from_db =
+      if is_nil(health_status[:health_latest_block_timestamp_from_db]) do
+        nil
+      else
+        {:ok, latest_block_timestamp_from_db} =
+          DateTime.from_unix(Decimal.to_integer(health_status[:health_latest_block_timestamp_from_db]))
+
+        latest_block_timestamp_from_db
+      end
+
+    latest_block_timestamp_from_cache =
+      if is_nil(health_status[:health_latest_block_timestamp_from_cache]) do
+        nil
+      else
+        {:ok, latest_block_timestamp_from_cache} =
+          DateTime.from_unix(Decimal.to_integer(health_status[:health_latest_block_timestamp_from_cache]))
+
+        latest_block_timestamp_from_cache
+      end
+
+    {healthy?, code, message} =
+      case HealthHelper.blocks_indexing_healthy?(health_status) do
+        true -> {true, 0, nil}
+        other -> other
+      end
+
+    base_response =
+      %{
+        healthy: healthy?,
         latest_block: %{
           db: %{
-            number: to_string(latest_block_number_from_db),
+            number: to_string(health_status[:health_latest_block_number_from_db]),
             timestamp: to_string(latest_block_timestamp_from_db)
           },
           cache: %{
-            number: to_string(latest_block_number_from_cache),
+            number: to_string(health_status[:health_latest_block_number_from_cache]),
             timestamp: to_string(latest_block_timestamp_from_cache)
+          },
+          node: %{
+            number: to_string(health_status[:health_latest_block_number_from_node])
           }
         }
       }
-    }
-    |> Jason.encode!()
+
+    response =
+      if healthy? do
+        base_response
+      else
+        Map.put(base_response, :error, error(code, message))
+      end
+
+    response
   end
 
-  defp encoded_error({:error, :no_blocks}) do
-    %{
-      healthy: false,
-      error: error(5002, "There are no blocks in the DB.")
-    }
-    |> Jason.encode!()
-  end
+  defp batches_indexing_status(health_status) do
+    latest_batch_timestamp_from_db =
+      if is_nil(health_status[:health_latest_batch_timestamp_from_db]) do
+        nil
+      else
+        {:ok, latest_batch_timestamp_from_db} =
+          DateTime.from_unix(Decimal.to_integer(health_status[:health_latest_batch_timestamp_from_db]))
 
-  defp encoded_error({:stale, number, timestamp}) do
-    healthy_blocks_period = Application.get_env(:explorer, :healthy_blocks_period)
+        latest_batch_timestamp_from_db
+      end
 
-    healthy_blocks_period_minutes_formatted =
-      healthy_blocks_period
-      |> Duration.from_milliseconds()
-      |> Duration.to_minutes()
-      |> trunc()
+    {healthy?, code, message} =
+      case HealthHelper.batches_indexing_healthy?(health_status) do
+        true -> {true, 0, nil}
+        other -> other
+      end
 
-    %{
-      healthy: false,
-      error:
-        error(
-          5001,
-          "There are no new blocks in the DB for the last #{healthy_blocks_period_minutes_formatted} mins. Check the healthiness of the JSON RPC archive node or the DB."
-        ),
-      metadata: %{
-        latest_block: %{
-          number: to_string(number),
-          timestamp: to_string(timestamp)
+    base_response =
+      %{
+        healthy: healthy?,
+        latest_batch: %{
+          db: %{
+            number: to_string(health_status[:health_latest_batch_number_from_db]),
+            timestamp: to_string(latest_batch_timestamp_from_db),
+            average_batch_time: to_string(health_status[:health_latest_batch_average_time_from_db])
+          }
         }
       }
-    }
-    |> Jason.encode!()
+
+    response =
+      if healthy? do
+        base_response
+      else
+        Map.put(base_response, :error, error(code, message))
+      end
+
+    response
   end
 
   defp error(code, message) do

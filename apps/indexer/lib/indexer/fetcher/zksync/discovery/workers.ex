@@ -4,6 +4,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
   """
 
   alias Indexer.Fetcher.ZkSync.Utils.Db
+  alias Indexer.Prometheus.Instrumenter
 
   import Indexer.Fetcher.ZkSync.Discovery.BatchesData,
     only: [
@@ -56,6 +57,15 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
       l2_transactions_to_import,
       l2_blocks_to_import
     )
+
+    last_batch =
+      batches_list_to_import
+      |> Enum.max_by(& &1.number, fn -> nil end)
+
+    # credo:disable-for-next-line
+    if last_batch do
+      Instrumenter.set_latest_batch(last_batch.number, last_batch.timestamp)
+    end
 
     :ok
   end

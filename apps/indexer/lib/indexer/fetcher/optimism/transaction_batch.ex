@@ -41,6 +41,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias Indexer.Fetcher.Beacon.Client, as: BeaconClient
   alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
   alias Indexer.Helper
+  alias Indexer.Prometheus.Instrumenter
   alias Varint.LEB128
 
   @beacon_blob_fetcher_reference_slot_eth 8_500_000
@@ -310,6 +311,15 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
             remove_prev_frame_sequences(inserted)
             set_frame_sequences_view_ready(sequences)
+
+            last_batch =
+              sequences
+              |> Enum.max_by(& &1.id, fn -> nil end)
+
+            # credo:disable-for-next-line
+            if last_batch do
+              Instrumenter.set_latest_batch(last_batch.id, last_batch.l1_timestamp)
+            end
 
             Publisher.broadcast(
               %{
