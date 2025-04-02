@@ -31,7 +31,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   alias Explorer.Utility.{MassiveBlock, MissingRangesManipulator}
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.TaskSupervisor
-  alias Indexer.Fetcher.OnDemand.ContractCreator
+  alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
   alias Indexer.Prometheus
 
   @behaviour Block.Fetcher
@@ -122,63 +122,10 @@ defmodule Indexer.Block.Catchup.Fetcher do
         Map.put(async_import_remaining_block_data_options, :block_rewards, %{errors: block_reward_errors})
       )
 
-      async_update_cache_of_contract_creator_on_demand(imported)
+      ContractCreatorOnDemand.async_update_cache_of_contract_creator_on_demand(imported)
 
       ok
     end
-  end
-
-  defp async_update_cache_of_contract_creator_on_demand(imported) do
-    Task.async(fn ->
-      imported_block_numbers =
-        imported
-        |> Map.get(:blocks, [])
-        |> Enum.map(&Map.get(&1, :number))
-
-      unless Enum.empty?(imported_block_numbers) do
-        cache_key = ContractCreator.pending_blocks_cache_key()
-        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-        case ContractCreator.pending_blocks_cache() do
-          [{^cache_key, pending_blocks}] ->
-            update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers, imported)
-
-          [] ->
-            :ok
-        end
-      end
-    end)
-  end
-
-  defp update_pending_contract_creator_blocks([], _imported_block_numbers, _imported), do: []
-
-  defp update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers, imported) do
-    updated_pending_block_numbers =
-      Enum.filter(pending_blocks, fn pending_block ->
-        if Enum.member?(imported_block_numbers, pending_block.block_number) do
-          contract_creation_block =
-            find_contract_creation_block_in_imported(imported, pending_block.block_number)
-
-          internal_transactions_import_params = [%{blocks: [contract_creation_block]}]
-          async_import_internal_transactions(internal_transactions_import_params, true)
-
-          # todo: emit event that contract creator updated for the contract. This was the purpose keeping address_hash_string in that cache key.
-          :ets.delete(ContractCreator.table_name(), pending_block.address_hash_string)
-          false
-        else
-          true
-        end
-      end)
-
-    :ets.insert(
-      ContractCreator.table_name(),
-      {ContractCreator.pending_blocks_cache_key(), updated_pending_block_numbers}
-    )
-  end
-
-  defp find_contract_creation_block_in_imported(imported, contract_creation_block_number) do
-    Enum.find(imported[:blocks], fn %Explorer.Chain.Block{number: block_number} ->
-      block_number == contract_creation_block_number
-    end)
   end
 
   defp async_import_remaining_block_data(

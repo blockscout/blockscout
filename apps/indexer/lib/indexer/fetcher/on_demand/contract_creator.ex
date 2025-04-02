@@ -15,6 +15,11 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Utility.MissingRangesManipulator
 
+  import Indexer.Block.Fetcher,
+    only: [
+      async_import_internal_transactions: 2
+    ]
+
   @table_name :contract_creator_lookup
   @pending_blocks_cache_key "pending_blocks"
 
@@ -169,47 +174,73 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     to_string(address_hash)
   end
 
-  @doc """
-  Returns the name of the table associated with the contract creator.
+  # Retrieves the cached list of blocks where contract creator lookup is pending from the ETS table.
 
-  This function retrieves the value of the `@table_name` module attribute,
-  which is expected to hold the name of the table used for storing or
-  retrieving data related to the contract creator.
+  # The function looks up the ETS table using the key `"pending_blocks"` and returns
+  # a list of tuples where each tuple contains a string (representing the block identifier)
+  # and a list of maps (representing the block data).
+
+  # ## Returns
+
+  # - `[{String.t(), [map()]}]`: A list of tuples containing block identifiers and their associated data.
+  @spec pending_blocks_cache() :: [{String.t(), [map()]}]
+  defp pending_blocks_cache, do: :ets.lookup(@table_name, @pending_blocks_cache_key)
+
+  @doc """
+  Asynchronously updates value of ETS cache :contract_creator_lookup for key "pending_blocks":
+  removes block from the cache since the block has been imported.
   """
-  @spec table_name() :: atom()
-  def table_name do
-    @table_name
+  @spec async_update_cache_of_contract_creator_on_demand(map()) :: Task.t()
+  def async_update_cache_of_contract_creator_on_demand(imported) do
+    Task.async(fn ->
+      imported_block_numbers =
+        imported
+        |> Map.get(:blocks, [])
+        |> Enum.map(&Map.get(&1, :number))
+
+      unless Enum.empty?(imported_block_numbers) do
+        cache_key = @pending_blocks_cache_key
+        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+        case pending_blocks_cache() do
+          [{^cache_key, pending_blocks}] ->
+            update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers, imported)
+
+          [] ->
+            :ok
+        end
+      end
+    end)
   end
 
-  @doc """
-  Retrieves the cached list of blocks where contract creator lookup is pending from the ETS table.
+  defp update_pending_contract_creator_blocks([], _imported_block_numbers, _imported), do: []
 
-  The function looks up the ETS table using the key `"pending_blocks"` and returns
-  a list of tuples where each tuple contains a string (representing the block identifier)
-  and a list of maps (representing the block data).
+  defp update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers, imported) do
+    updated_pending_block_numbers =
+      Enum.filter(pending_blocks, fn pending_block ->
+        if Enum.member?(imported_block_numbers, pending_block.block_number) do
+          contract_creation_block =
+            find_contract_creation_block_in_imported(imported, pending_block.block_number)
 
-  ## Returns
+          internal_transactions_import_params = [%{blocks: [contract_creation_block]}]
+          async_import_internal_transactions(internal_transactions_import_params, true)
 
-  - `[{String.t(), [map()]}]`: A list of tuples containing block identifiers and their associated data.
+          # todo: emit event that contract creator updated for the contract. This was the purpose keeping address_hash_string in that cache key.
+          :ets.delete(@table_name, pending_block.address_hash_string)
+          false
+        else
+          true
+        end
+      end)
 
-  """
-  @spec pending_blocks_cache() :: [{String.t(), [map()]}]
-  def pending_blocks_cache, do: :ets.lookup(@table_name, @pending_blocks_cache_key)
+    :ets.insert(
+      @table_name,
+      {@pending_blocks_cache_key, updated_pending_block_numbers}
+    )
+  end
 
-  @doc """
-  Returns the cache key used for storing pending blocks.
-
-  This function retrieves the value of the module attribute `@pending_blocks_cache_key`,
-  which is used as the identifier for caching pending blocks.
-
-  ## Examples
-
-      iex> Indexer.Fetcher.OnDemand.ContractCreator.pending_blocks_cache_key()
-      "some_cache_key"
-
-  """
-  @spec pending_blocks_cache_key() :: String.t()
-  def pending_blocks_cache_key do
-    @pending_blocks_cache_key
+  defp find_contract_creation_block_in_imported(imported, contract_creation_block_number) do
+    Enum.find(imported[:blocks], fn %Explorer.Chain.Block{number: block_number} ->
+      block_number == contract_creation_block_number
+    end)
   end
 end

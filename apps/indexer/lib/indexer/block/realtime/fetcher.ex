@@ -37,6 +37,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
   alias Indexer.Fetcher.Optimism
   alias Indexer.Prometheus
   alias Indexer.Prometheus.Instrumenter
@@ -303,6 +304,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
         imported,
         %{block_rewards: %{errors: block_reward_errors}}
       )
+
+      ContractCreatorOnDemand.async_update_cache_of_contract_creator_on_demand(imported)
 
       ok
     end
