@@ -227,7 +227,14 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
         end
 
       "query" ->
-        Map.put(map, :url, url <> "?#{param_name}=#{endpoint_api_key_value}")
+        updated_uri =
+          url
+          |> URI.parse()
+          |> URI.append_query("#{param_name}=#{endpoint_api_key_value}")
+          |> URI.to_string()
+          |> URI.encode()
+
+        Map.put(map, :url, updated_uri)
 
       _ ->
         map
@@ -273,8 +280,15 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
       "query" ->
         query_param_name = param_name(params)
-        delimiter = if String.contains?(url, "?"), do: "&", else: "?"
-        Map.put(api_request_map, :url, url <> "#{delimiter}#{query_param_name}=#{value}")
+
+         updated_uri =
+          url
+          |> URI.parse()
+          |> URI.append_query("#{query_param_name}=#{value}")
+          |> URI.to_string()
+          |> URI.encode()
+  
+        Map.put(api_request_map, :url, updated_uri)
 
       "body" ->
         body_param_name = param_name(params)
