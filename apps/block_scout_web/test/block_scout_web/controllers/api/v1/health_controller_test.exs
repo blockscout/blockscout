@@ -118,13 +118,15 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
 
   test "return error when cache is stale", %{conn: conn, current_block_number: current_block_number} do
     stale_block = insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50), number: 3)
-    state_block_hash = stale_block.hash
+    Blocks.update(stale_block)
+    stale_block_hash = stale_block.hash
 
-    assert [%{hash: ^state_block_hash}] = Chain.list_blocks(paging_options: %PagingOptions{page_size: 1})
+    assert [%{hash: ^stale_block_hash}] = Chain.list_blocks(paging_options: %PagingOptions{page_size: 1})
 
-    insert(:block, consensus: true, timestamp: DateTime.utc_now(), number: 1)
+    block = insert(:block, consensus: true, timestamp: DateTime.utc_now(), number: 1)
+    Blocks.update(block)
 
-    assert [%{hash: ^state_block_hash}] = Chain.list_blocks(paging_options: %PagingOptions{page_size: 1})
+    assert [%{hash: ^stale_block_hash}] = Chain.list_blocks(paging_options: %PagingOptions{page_size: 1})
 
     :timer.sleep(150)
 

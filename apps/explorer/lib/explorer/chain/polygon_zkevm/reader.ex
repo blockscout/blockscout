@@ -374,8 +374,8 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
 
     - If less than two batches exist: `{:error, :not_found}`.
   """
-  @spec get_latest_finalized_batch_info(keyword()) :: {:ok, map()} | {:error, :not_found}
-  def get_latest_finalized_batch_info(options \\ []) do
+  @spec get_latest_batch_info(keyword()) :: {:ok, map()} | {:error, :not_found}
+  def get_latest_batch_info(options \\ []) do
     query =
       from(tb in TransactionBatch,
         where: not is_nil(tb.timestamp),
