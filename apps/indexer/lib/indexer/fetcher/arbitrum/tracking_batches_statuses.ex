@@ -36,6 +36,12 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     - Task's returned status (e.g., :ok, :confirmation_missed, :not_ready)
     - Current state of the system
     - Type of the task (new vs historical)
+    - Failure frequency of the task
+
+    Tasks that fail frequently within a configurable threshold period will enter a
+    cooldown state for 10 minutes to prevent resource exhaustion. Initial tasks
+    (timeout = 0) are exempt from the failure threshold check.
+
     For example, confirmation tasks use longer intervals when data is not yet
     available (:confirmation_missed status) and shorter intervals when data is
     ready for processing.
@@ -103,6 +109,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   # Process one task per batch
   @max_batch_size 1
 
+  # 10 minutes cooldown interval for failed tasks
+  @cooldown_interval :timer.minutes(10)
+
   # Catchup tasks (historical batches, confirmations, etc.) need to run as quickly as possible
   # since they are only needed when indexing a rollup chain that already has many blocks.
   # This interval is hardcoded since these tasks should complete rapidly and don't need
@@ -156,6 +165,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     missing_batches_range = config_tracker[:missing_batches_range]
     node_interface_address = config_tracker[:node_interface_contract]
 
+    failure_interval_threshold =
+      config_tracker[:failure_interval_threshold] || min(20 * recheck_interval, :timer.minutes(10))
+
     # Configure intervals for each task type
     intervals = %{
       new_batches: recheck_interval,
@@ -193,7 +205,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       messages_to_blocks_shift: messages_to_blocks_shift,
       confirmation_batches_depth: confirmation_batches_depth,
       node_interface_address: node_interface_address,
-      rollup_first_block: indexer_first_block
+      rollup_first_block: indexer_first_block,
+      failure_interval_threshold: failure_interval_threshold
     }
 
     # Initial state structure
@@ -277,25 +290,51 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:ok, updated_state}
   end
 
-  # Executes or returns a task back to the queue based on its timeout. If the
-  # timeout hasn't elapsed, returns the task to the queue with the same
-  # timeout. Otherwise, executes the appropriate task runner.
+  # Executes or returns a task back to the queue based on its timeout and failure threshold.
+  #
+  # The function evaluates three conditions in sequence:
+  # 1. Whether the task's timeout has elapsed (current time >= timeout)
+  # 2. Whether the task hasn't exceeded the failure threshold or is an initial task (timeout == 0)
+  #
+  # If all conditions are met, executes the appropriate task runner. Otherwise:
+  # - If timeout hasn't elapsed: Returns the task to the queue with the same timeout
+  # - If failure threshold exceeded: Applies a 10-minute cooldown and reschedules
+  #
+  # ## Parameters
+  # - `timeout`: Unix timestamp in milliseconds when the task should execute
+  # - `task_tag`: Atom identifying the type of task to run
+  # - `state`: Current state containing configuration and intervals
+  #
+  # ## Returns
+  # - `{:ok, state}` on successful execution
+  # - `{:retry, [{timeout, task_tag}], state}` when task needs to be rescheduled
   def run([{timeout, task_tag}], state) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-    if timeout > now do
-      # Task is scheduled for future execution, retry with same timeout
-      {:retry, [{timeout, task_tag}], state}
+    with {:timeout_elapsed, true} <- {:timeout_elapsed, timeout <= now},
+         {:threshold_ok, true} <-
+           {:threshold_ok, timeout == 0 or now - timeout <= state.config.failure_interval_threshold},
+         {:runner_defined, runner} when not is_nil(runner) <- {:runner_defined, Map.get(task_runners(), task_tag)} do
+      runner.(state)
     else
-      # Execute the appropriate task
-      case Map.get(task_runners(), task_tag) do
-        nil ->
-          log_warning("Unknown task type: #{inspect(task_tag)}")
-          {:ok, state}
+      {:timeout_elapsed, false} ->
+        # Task is scheduled for future execution, retry with same timeout
+        {:retry, [{timeout, task_tag}], state}
 
-        runner ->
-          runner.(state)
-      end
+      {:threshold_ok, false} ->
+        # Task has been failing too frequently, apply cooldown
+        new_timeout = now + @cooldown_interval
+
+        log_warning(
+          "Task #{task_tag} has been failing abnormally, applying cooldown for #{div(@cooldown_interval, 1000)} seconds"
+        )
+
+        {:retry, [{new_timeout, task_tag}], state}
+
+      {:runner_defined, nil} ->
+        # Unknown task type
+        log_warning("Unknown task type: #{inspect(task_tag)}")
+        {:ok, state}
     end
   end
 
