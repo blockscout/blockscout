@@ -281,13 +281,13 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
       "query" ->
         query_param_name = param_name(params)
 
-         updated_uri =
+        updated_uri =
           url
           |> URI.parse()
           |> URI.append_query("#{query_param_name}=#{value}")
           |> URI.to_string()
           |> URI.encode()
-  
+
         Map.put(api_request_map, :url, updated_uri)
 
       "body" ->
