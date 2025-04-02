@@ -139,8 +139,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
         cache_key = ContractCreator.pending_blocks_cache_key()
         # credo:disable-for-next-line Credo.Check.Refactor.Nesting
         case ContractCreator.pending_blocks_cache() do
-          [{^cache_key, pending_block_numbers}] ->
-            update_pending_contract_creator_block_numbers(pending_block_numbers, imported_block_numbers, imported)
+          [{^cache_key, pending_blocks}] ->
+            update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers, imported)
 
           [] ->
             :ok
@@ -149,18 +149,20 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end)
   end
 
-  defp update_pending_contract_creator_block_numbers([], _imported_block_numbers, _imported), do: []
+  defp update_pending_contract_creator_blocks([], _imported_block_numbers, _imported), do: []
 
-  defp update_pending_contract_creator_block_numbers(pending_block_numbers, imported_block_numbers, imported) do
+  defp update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers, imported) do
     updated_pending_block_numbers =
-      Enum.filter(pending_block_numbers, fn pending_block_number ->
-        if Enum.member?(imported_block_numbers, pending_block_number.block_number) do
+      Enum.filter(pending_blocks, fn pending_block ->
+        if Enum.member?(imported_block_numbers, pending_block.block_number) do
           contract_creation_block =
-            find_contract_creation_block_in_imported(imported, pending_block_number.block_number)
+            find_contract_creation_block_in_imported(imported, pending_block.block_number)
 
           internal_transactions_import_params = [%{blocks: [contract_creation_block]}]
           async_import_internal_transactions(internal_transactions_import_params, true)
-          :ets.delete(ContractCreator.table_name(), pending_block_number.address_hash_string)
+
+          # todo: emit event that contract creator updated for the contract. This was the purpose keeping address_hash_string in that cache key.
+          :ets.delete(ContractCreator.table_name(), pending_block.address_hash_string)
           false
         else
           true
