@@ -70,10 +70,10 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   }
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateAddressesTransactionsCountDescPartialIndex,
     CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
     CreateAddressesVerifiedHashIndex,
     CreateAddressesVerifiedTransactionsCountDescHashIndex,
-    CreateAddressesTransactionsCountDescPartialIndex,
     CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
     CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,

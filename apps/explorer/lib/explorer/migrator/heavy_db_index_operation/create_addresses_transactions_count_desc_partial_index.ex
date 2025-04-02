@@ -10,6 +10,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCou
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :addresses
@@ -26,7 +27,10 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCou
   def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations, do: []
+  def dependent_from_migrations,
+    do: [
+      CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex.migration_name()
+    ]
 
   @query_string """
   CREATE INDEX #{HeavyDbIndexOperationHelper.add_concurrently_flag?()} IF NOT EXISTS "#{@index_name}"
