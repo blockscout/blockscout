@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.V2.AddressController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Chain,
     only: [
@@ -88,22 +89,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     api?: true
   ]
 
-  case @chain_type do
-    :filecoin ->
-      @contract_address_preloads [
-        :smart_contract,
-        [contracts_creation_internal_transaction: :from_address],
-        [contracts_creation_transaction: :from_address]
-      ]
-
-    _ ->
-      @contract_address_preloads [
-        :smart_contract,
-        :contracts_creation_internal_transaction,
-        :contracts_creation_transaction
-      ]
-  end
-
   @nft_necessity_by_association [
     necessity_by_association: %{
       :token => :optional
@@ -132,6 +117,17 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     api?: true
   ]
 
+  @spec contract_address_preloads() :: [keyword()]
+  defp contract_address_preloads do
+    chain_type_associations =
+      case chain_type() do
+        :filecoin -> Address.contract_creation_transaction_with_from_address_associations()
+        _ -> Address.contract_creation_transaction_associations()
+      end
+
+    [:smart_contract | chain_type_associations]
+  end
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @doc """
@@ -144,7 +140,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, address} ->
           fully_preloaded_address =
-            Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true)
+            Address.maybe_preload_smart_contract_associations(address, contract_address_preloads(), @api_true)
 
           implementations = SmartContractHelper.pre_fetch_implementations(fully_preloaded_address)
 

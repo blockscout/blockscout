@@ -2455,21 +2455,20 @@ defmodule Explorer.ChainTest do
     test "finds a contract address" do
       address =
         insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil, names: [])
-        |> Repo.preload([
-          :contracts_creation_internal_transaction,
-          :contracts_creation_transaction,
-          :token,
-          [smart_contract: :smart_contract_additional_sources],
-          Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
-        ])
+        |> Repo.preload(
+          [
+            :token,
+            [smart_contract: :smart_contract_additional_sources],
+            Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
+          ] ++ Address.contract_creation_transaction_associations()
+        )
 
       options = [
         necessity_by_association: %{
-          :contracts_creation_internal_transaction => :optional,
           :names => :optional,
           :smart_contract => :optional,
           :token => :optional,
-          :contracts_creation_transaction => :optional
+          Address.contract_creation_transaction_associations() => :optional
         }
       ]
 

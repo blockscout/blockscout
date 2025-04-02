@@ -856,11 +856,10 @@ defmodule Explorer.Chain do
         hash,
         options \\ [
           necessity_by_association: %{
-            :contracts_creation_internal_transaction => :optional,
             :names => :optional,
             :smart_contract => :optional,
             :token => :optional,
-            :contracts_creation_transaction => :optional
+            Address.contract_creation_transaction_associations() => :optional
           }
         ]
       ) do
@@ -937,11 +936,10 @@ defmodule Explorer.Chain do
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
         options \\ [
           necessity_by_association: %{
-            :contracts_creation_internal_transaction => :optional,
             :names => :optional,
             :smart_contract => :optional,
             :token => :optional,
-            :contracts_creation_transaction => :optional
+            Address.contract_creation_transaction_associations() => :optional
           }
         ]
       ) do

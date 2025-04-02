@@ -94,14 +94,14 @@ defmodule Explorer.Chain.Address.Schema do
         has_one(:proxy_implementations, Implementation, foreign_key: :proxy_address_hash, references: :hash)
 
         has_one(
-          :contracts_creation_internal_transaction,
+          :contract_creation_internal_transaction,
           InternalTransaction,
           foreign_key: :created_contract_address_hash,
           references: :hash
         )
 
         has_one(
-          :contracts_creation_transaction,
+          :contract_creation_transaction,
           Transaction,
           foreign_key: :created_contract_address_hash,
           references: :hash
@@ -169,8 +169,8 @@ defmodule Explorer.Chain.Address do
              :__meta__,
              :smart_contract,
              :token,
-             :contracts_creation_internal_transaction,
-             :contracts_creation_transaction,
+             :contract_creation_internal_transaction,
+             :contract_creation_transaction,
              :names
            ]}
 
@@ -179,8 +179,8 @@ defmodule Explorer.Chain.Address do
              :__meta__,
              :smart_contract,
              :token,
-             :contracts_creation_internal_transaction,
-             :contracts_creation_transaction,
+             :contract_creation_internal_transaction,
+             :contract_creation_transaction,
              :names
            ]}
 
@@ -570,6 +570,34 @@ defmodule Explorer.Chain.Address do
   def smart_contract?(_), do: false
 
   @doc """
+    Determines if an address is a smart contract with non-empty bytecode.
+
+    This function verifies that an address:
+
+    1. Is a smart contract (has contract_code)
+    2. Has actual bytecode content (not just "0x")
+
+    This distinction is important because addresses can exist in several states:
+    - Regular EOA - not contracts
+    - Contracts with functioning bytecode - operational smart contracts
+    - Contracts with empty bytecode - may have been self-destructed or
+      deployment failed
+
+    ## Parameters
+      - `address`: The address to check. Can be an `Address` struct or any other
+        value.
+
+    ## Returns
+      - `true` if the address is a smart contract with actual bytecode
+      - `false` otherwise
+  """
+  @spec smart_contract_with_nonempty_code?(any()) :: boolean()
+  def smart_contract_with_nonempty_code?(%__MODULE__{contract_code: %Data{} = contract_code}),
+    do: not Data.empty?(contract_code)
+
+  def smart_contract_with_nonempty_code?(_), do: false
+
+  @doc """
     Checks if the given address is an Externally Owned Account (EOA) with code,
     as defined in EIP-7702.
 
@@ -721,15 +749,43 @@ defmodule Explorer.Chain.Address do
   - `%Transaction{}` if the creation transaction is a regular transaction.
   """
   @spec creation_transaction(any()) :: nil | InternalTransaction.t() | Transaction.t()
-  def creation_transaction(%__MODULE__{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction
+  def creation_transaction(%__MODULE__{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contract_creation_internal_transaction
   end
 
-  def creation_transaction(%__MODULE__{contracts_creation_transaction: %Transaction{}} = address) do
-    address.contracts_creation_transaction
+  def creation_transaction(%__MODULE__{contract_creation_transaction: %Transaction{}} = address) do
+    address.contract_creation_transaction
   end
 
   def creation_transaction(_address), do: nil
+
+  @doc """
+  Creates a query for preloading contract creation transactions.
+
+  This query sorts transactions by:
+
+  1. status (descending with nulls last)
+  2. block number (descending with nulls last)
+  3. index (descending with nulls last),
+
+  and limits to one result.
+
+  ## Returns
+
+  A `Ecto.Query` that can be used to preload the contract creation transaction.
+  """
+  @spec contract_creation_transaction_preload_query() :: Ecto.Query.t()
+  def contract_creation_transaction_preload_query do
+    from(
+      t in Transaction,
+      order_by: [
+        desc_nulls_last: t.status,
+        desc_nulls_last: t.block_number,
+        desc_nulls_last: t.index
+      ],
+      limit: 1
+    )
+  end
 
   @doc """
   Generates a query to fetch an address with associated bytecode.
@@ -756,6 +812,34 @@ defmodule Explorer.Chain.Address do
   end
 
   @doc """
+  Creates a query for preloading contract creation internal transactions.
+
+  This query sorts internal transactions by:
+
+  1. error (ascending with nulls first)
+  2. block number (descending)
+  3. block index (descending)
+
+  and limits to one result.
+
+  ## Returns
+
+  A `Ecto.Query` that can be used to preload the contract creation internal transaction.
+  """
+  @spec contract_creation_internal_transaction_preload_query() :: Ecto.Query.t()
+  def contract_creation_internal_transaction_preload_query do
+    from(
+      it in InternalTransaction,
+      order_by: [
+        asc_nulls_first: it.error,
+        desc: it.block_number,
+        desc: it.block_index
+      ],
+      limit: 1
+    )
+  end
+
+  @doc """
   Generates a query to retrieve addresses that have associated bytecode.
 
   ## Parameters
@@ -774,6 +858,111 @@ defmodule Explorer.Chain.Address do
       address in __MODULE__,
       where: address.hash in ^hashes and not is_nil(address.contract_code)
     )
+  end
+
+  @doc """
+  Returns contract creation transaction association specification.
+
+  ## Note
+  IMPORTANT: This association function should be used ONLY for single address
+  operations. Using it with multiple addresses may produce unexpected results.
+
+  As noted in [Ecto documentation](https://hexdocs.pm/ecto/Ecto.Query.html#preload/3-preload-queries),
+  operations like `limit` and `offset` in preload queries affect the entire
+  result set, not each individual association. When working with collections of
+  addresses, consider using window functions instead of these helpers.
+
+  ## Returns
+  A keyword list with the contract creation transaction association.
+  """
+  @spec contract_creation_transaction_association() :: keyword()
+  def contract_creation_transaction_association do
+    [
+      contract_creation_transaction: Address.contract_creation_transaction_preload_query()
+    ]
+  end
+
+  @doc """
+  Same as `contract_creation_transaction_association/0`, but preloads a nested
+  association for the `from_address` field. Used for Filecoin chain type.
+  """
+  @spec contract_creation_transaction_with_from_address_association() :: keyword()
+  def contract_creation_transaction_with_from_address_association do
+    [
+      contract_creation_transaction: {
+        Address.contract_creation_transaction_preload_query(),
+        :from_address
+      }
+    ]
+  end
+
+  @doc """
+  Returns contract creation internal transaction association specification.
+
+  ## Note
+  IMPORTANT: This association function should be used ONLY for single address
+  operations. Using it with multiple addresses may produce unexpected results.
+
+  As noted in [Ecto documentation](https://hexdocs.pm/ecto/Ecto.Query.html#preload/3-preload-queries),
+  operations like `limit` and `offset` in preload queries affect the entire
+  result set, not each individual association. When working with collections of
+  addresses, consider using window functions instead of these helpers.
+
+  ## Returns
+  A keyword list with the contract creation internal transaction association.
+  """
+  @spec contract_creation_internal_transaction_association() :: keyword()
+  def contract_creation_internal_transaction_association do
+    [
+      contract_creation_internal_transaction: Address.contract_creation_internal_transaction_preload_query()
+    ]
+  end
+
+  @doc """
+  Same as `contract_creation_internal_transaction_association/0`, but
+  preloads a nested association for the `from_address` field. Used for Filecoin
+  chain type.
+  """
+  @spec contract_creation_internal_transaction_with_from_address_association() :: keyword()
+  def contract_creation_internal_transaction_with_from_address_association do
+    [
+      contract_creation_internal_transaction: {
+        Address.contract_creation_internal_transaction_preload_query(),
+        :from_address
+      }
+    ]
+  end
+
+  @doc """
+  Returns both contract creation transaction and internal transaction
+  associations.
+
+  This is a convenience function that combines both types of contract creation
+  associations.
+
+  ## Returns
+
+  A list containing both contract creation transaction and internal transaction
+  associations.
+  """
+  @spec contract_creation_transaction_associations() :: [keyword()]
+  def contract_creation_transaction_associations do
+    [
+      contract_creation_transaction_association(),
+      contract_creation_internal_transaction_association()
+    ]
+  end
+
+  @doc """
+  Same as `contract_creation_transaction_associations/0`, but preloads a nested
+  association for the `from_address` field. Used for Filecoin chain type.
+  """
+  @spec contract_creation_transaction_with_from_address_associations() :: [keyword()]
+  def contract_creation_transaction_with_from_address_associations do
+    [
+      contract_creation_transaction_with_from_address_association(),
+      contract_creation_internal_transaction_with_from_address_association()
+    ]
   end
 
   @doc """
@@ -823,13 +1012,7 @@ defmodule Explorer.Chain.Address do
   @spec update_address_result(map() | nil, [Chain.necessity_by_association_option() | Chain.api?()], boolean()) ::
           map() | nil
   def update_address_result(address_result, options, decoding_from_list?) do
-    if address_result do
-      LookUpSmartContractSourcesOnDemand.trigger_fetch(
-        to_string(address_result.hash),
-        address_result.contract_code,
-        (address_result && address_result.smart_contract) || nil
-      )
-    end
+    LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result)
 
     case address_result do
       %{smart_contract: nil} ->

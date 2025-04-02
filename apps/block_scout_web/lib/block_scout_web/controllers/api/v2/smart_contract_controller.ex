@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.API.V2.SmartContractController do
   use BlockScoutWeb, :controller
 
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type]
+
   import BlockScoutWeb.Chain,
     only: [
       fetch_scam_token_toggle: 2,
@@ -30,23 +33,40 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.ThirdPartyIntegrations.SolidityScan
 
-  @smart_contract_address_options [
-    necessity_by_association: %{
-      :contracts_creation_internal_transaction => :optional,
-      [smart_contract: :smart_contract_additional_sources] => :optional,
-      :contracts_creation_transaction => :optional
-    },
-    api?: true
-  ]
-
-  @verified_smart_contract_addresses_options [
-    necessity_by_association: %{
-      [:token, :names, :proxy_implementations] => :optional
-    },
-    api?: true
-  ]
-
   @api_true [api?: true]
+
+  @spec contract_creation_transaction_associations() :: [keyword()]
+  defp contract_creation_transaction_associations do
+    case chain_type() do
+      :filecoin ->
+        Address.contract_creation_transaction_with_from_address_associations()
+
+      _ ->
+        Address.contract_creation_transaction_associations()
+    end
+  end
+
+  @spec smart_contract_address_options() :: keyword()
+  defp smart_contract_address_options do
+    [
+      necessity_by_association: %{
+        [smart_contract: :smart_contract_additional_sources] => :optional,
+        contract_creation_transaction_associations() => :optional
+      }
+    ]
+    |> Keyword.merge(@api_true)
+  end
+
+  @spec verified_smart_contract_addresses_options() :: keyword()
+  defp verified_smart_contract_addresses_options do
+    [
+      necessity_by_association: %{
+        [:token, :names, :proxy_implementations] => :optional,
+        contract_creation_transaction_associations() => :optional
+      }
+    ]
+    |> Keyword.merge(@api_true)
+  end
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -55,7 +75,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          _ <- PublishHelper.sourcify_check(address_hash_string),
          {:not_found, {:ok, address}} <-
-           {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)} do
+           {:not_found, Chain.find_contract_address(address_hash, smart_contract_address_options())} do
       implementations = SmartContractHelper.pre_fetch_implementations(address)
 
       conn
@@ -94,7 +114,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   def smart_contracts_list(conn, params) do
     full_options =
-      @verified_smart_contract_addresses_options
+      verified_smart_contract_addresses_options()
       |> Keyword.merge(current_filter(params))
       |> Keyword.merge(search_query(params))
       |> Keyword.merge(smart_contract_addresses_paging_options(params))
