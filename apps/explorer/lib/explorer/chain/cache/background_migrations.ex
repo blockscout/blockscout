@@ -73,6 +73,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
     CreateAddressesVerifiedHashIndex,
     CreateAddressesVerifiedTransactionsCountDescHashIndex,
+    CreateAddressesTransactionsCountDescPartialIndex,
     CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
     CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
