@@ -113,23 +113,42 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> save_batch(priority)
   end
 
-  # Saves or merges a block range into the missing blocks tracking system.
+  # Saves a range of block numbers with an optional priority.
 
-  # Handles various cases of range overlap:
-  # - If the range exactly matches an existing range, does nothing
-  # - If the range overlaps with one existing range, updates that range's bounds
-  # - If the range bridges two existing ranges, merges them into one
-  # - If no overlap exists, creates a new range record
+  # This function handles the insertion, deletion, and splitting of block ranges
+  # based on the given range and priority. It ensures that overlapping or adjacent
+  # ranges are managed correctly, taking into account their priorities.
 
   # ## Parameters
-  # - A `Range` struct representing the block range to save, where the direction
-  #   (ascending/descending) doesn't matter
+
+  #   - `from..to`: A `Range.t()` representing the range of block numbers to save.
+  #   - `priority`: An optional integer representing the priority of the range. If
+  #     `nil`, the range will not have a priority.
 
   # ## Returns
-  # - `:ok` if the range already exists
-  # - `{:ok, struct}` if a new range was created or updated
-  # - `{:error, changeset}` if the operation failed
-  # todo: consider left cases here
+
+  #   - `:ok`: If the operation completes successfully without returning a range.
+  #   - `{:ok, t()}`: If the operation completes successfully and returns a range.
+  #   - `{:error, Ecto.Changeset.t()}`: If there is an error during the operation.
+
+  # ## Behavior
+
+  # The function performs the following actions based on the existing ranges:
+
+  #   - If both the lower and higher bounds of the range belong to the same existing
+  #     range, it updates the priority and splits the range into smaller ranges if
+  #     necessary.
+  #   - If only one bound of the range overlaps with an existing range, it deletes
+  #     the overlapping range if it has a lower priority and fills the gap between
+  #     the new range and the existing range.
+  #   - If the range overlaps with two different existing ranges, it deletes the
+  #     overlapping ranges with lower priority, fills the gap between them, and
+  #     adjusts the priorities of the resulting ranges.
+  #   - If the range does not overlap with any existing range, it simply fills the
+  #     range with the given priority.
+
+  # This function ensures that the block ranges are stored in a consistent and
+  # non-overlapping manner, respecting the priority of each range.
   @spec save_range(Range.t(), integer() | nil) :: :ok | {:ok, t()} | {:error, Ecto.Changeset.t()}
   def save_range(from..to//_, priority) do
     min_number = min(from, to)
@@ -140,19 +159,106 @@ defmodule Explorer.Utility.MissingBlockRange do
 
     case {lower_range, higher_range} do
       {%__MODULE__{} = same_range, %__MODULE__{} = same_range} ->
-        fill_ranges_between(same_range.from_number, same_range.to_number, priority)
+        if is_nil(same_range.priority) && not is_nil(priority) do
+          delete_range(same_range.from_number..same_range.to_number)
+
+          inside_range_params = %{from_number: max_number, to_number: min_number, priority: priority}
+          insert_range(inside_range_params)
+
+          insert_outside_right_range_params(same_range, min_number)
+          insert_outside_left_range_params(same_range, max_number)
+        end
 
       {%__MODULE__{} = range, nil} ->
-        fill_ranges_between(max_number, range.to_number, priority)
+        delete_less_priority_range(range, priority)
+        fill_ranges_between(max_number, range.from_number + 1, priority)
+
+        split_right_range_priorities(range, priority, min_number)
 
       {nil, %__MODULE__{} = range} ->
-        fill_ranges_between(range.from_number, min_number, priority)
+        delete_less_priority_range(range, priority)
+        fill_ranges_between(range.to_number - 1, min_number, priority)
+
+        split_left_range_priorities(range, priority, max_number)
 
       {%__MODULE__{} = range_1, %__MODULE__{} = range_2} ->
-        fill_ranges_between(range_2.from_number, range_1.to_number, priority)
+        delete_less_priority_range(range_2, priority)
+        delete_less_priority_range(range_1, priority)
+
+        fill_ranges_between(range_2.to_number - 1, range_1.from_number + 1, priority)
+
+        split_left_range_priorities(range_2, priority, max_number)
+        split_right_range_priorities(range_1, priority, min_number)
 
       {nil, nil} ->
         fill_ranges_between(max_number, min_number, priority)
+    end
+  end
+
+  @spec insert_inside_left_range_params(__MODULE__.t(), Block.block_number(), integer() | nil) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp insert_inside_left_range_params(range, max_number, priority) do
+    inside_left_range_params = %{from_number: max_number, to_number: range.to_number, priority: priority}
+    insert_range(inside_left_range_params)
+  end
+
+  @spec insert_outside_left_range_params(__MODULE__.t(), Block.block_number()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp insert_outside_left_range_params(range, max_number) do
+    if range.from_number >= max_number + 1 do
+      outside_left_range_params = %{
+        from_number: range.from_number,
+        to_number: max_number + 1,
+        priority: range.priority
+      }
+
+      insert_range(outside_left_range_params)
+    end
+  end
+
+  @spec insert_inside_right_range_params(__MODULE__.t(), Block.block_number(), integer() | nil) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp insert_inside_right_range_params(range, min_number, priority) do
+    inside_right_range_params = %{from_number: range.from_number, to_number: min_number, priority: priority}
+    insert_range(inside_right_range_params)
+  end
+
+  @spec insert_outside_right_range_params(__MODULE__.t(), Block.block_number()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp insert_outside_right_range_params(range, min_number) do
+    if min_number - 1 >= range.to_number do
+      outside_right_range_params = %{
+        from_number: min_number - 1,
+        to_number: range.to_number,
+        priority: range.priority
+      }
+
+      insert_range(outside_right_range_params)
+    end
+  end
+
+  @spec delete_less_priority_range(__MODULE__.t(), integer() | nil) :: any()
+  defp delete_less_priority_range(range, priority) do
+    if is_nil(range.priority) && not is_nil(priority) do
+      delete_range(range.from_number..range.to_number)
+    end
+  end
+
+  @spec split_left_range_priorities(__MODULE__.t(), integer() | nil, Block.block_number()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp split_left_range_priorities(range, priority, pivot_number) do
+    if is_nil(range.priority) && not is_nil(priority) do
+      insert_inside_left_range_params(range, pivot_number, priority)
+      insert_outside_left_range_params(range, pivot_number)
+    end
+  end
+
+  @spec split_right_range_priorities(__MODULE__.t(), integer() | nil, Block.block_number()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp split_right_range_priorities(range, priority, pivot_number) do
+    if is_nil(range.priority) && not is_nil(priority) do
+      insert_inside_right_range_params(range, pivot_number, priority)
+      insert_outside_right_range_params(range, pivot_number)
     end
   end
 
