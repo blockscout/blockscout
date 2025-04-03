@@ -4,7 +4,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   """
 
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.Cache.NetVersion
+  alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Address, Block, Hash, Transaction}
   alias Explorer.Repo
   alias Explorer.Utility.Microservice
@@ -100,7 +100,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
          blocks: blocks,
          transactions: transactions
        }) do
-    chain_id = NetVersion.get_version()
+    chain_id = ChainId.get_id()
     block_ranges = get_block_ranges(blocks)
 
     addresses =

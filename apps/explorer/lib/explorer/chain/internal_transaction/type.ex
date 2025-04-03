@@ -22,8 +22,10 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   end}
   """
   if @chain_type == :arbitrum do
+    @type_values ["call", "create", "create2", "reward", "selfdestruct", "stop", "invalid"]
     @type t :: :call | :create | :create2 | :reward | :selfdestruct | :stop | :invalid
   else
+    @type_values ["call", "create", "create2", "reward", "selfdestruct", "stop"]
     @type t :: :call | :create | :create2 | :reward | :selfdestruct | :stop
   end
 
@@ -161,4 +163,15 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   @impl Ecto.Type
   @spec type() :: :string
   def type, do: :string
+
+  @doc """
+  Returns the list of internal transaction type values.
+
+  ## Example
+
+    > Explorer.Chain.InternalTransaction.Type.values()
+    ["call", "create", "create2", "reward", "selfdestruct", "stop"]
+  """
+  @spec values :: [String.t()]
+  def values, do: @type_values
 end

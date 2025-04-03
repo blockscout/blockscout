@@ -796,8 +796,10 @@ defmodule Explorer.Token.MetadataRetrieverTest do
         Conn.resp(conn, 200, json)
       end)
 
-      assert {:ok, %{metadata: %{"name" => "Sérgio Mendonça"}}} ==
-               MetadataRetriever.fetch_json({:ok, ["http://localhost:#{bypass.port}#{path}"]})
+      url = "http://localhost:#{bypass.port}#{path}"
+
+      assert {:ok_store_uri, %{metadata: %{"name" => "Sérgio Mendonça"}}, url} ==
+               MetadataRetriever.fetch_json({:ok, [url]})
     end
 
     test "fetches json metadata when HTTP status 301", %{bypass: bypass} do
@@ -824,8 +826,10 @@ defmodule Explorer.Token.MetadataRetrieverTest do
         Conn.resp(conn, 200, json)
       end)
 
-      {:ok, %{metadata: metadata}} =
-        MetadataRetriever.fetch_metadata_from_uri("http://localhost:#{bypass.port}#{path}", [])
+      url = "http://localhost:#{bypass.port}#{path}"
+
+      {:ok_store_uri, %{metadata: metadata}, ^url} =
+        MetadataRetriever.fetch_metadata_from_uri(url, [])
 
       assert Map.get(metadata, "attributes") == Jason.decode!(attributes)
     end
@@ -954,11 +958,12 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
     test "Fetches metadata from '${url}'", %{bypass: bypass} do
       path = "/data/8/8578.json"
+      url = "http://localhost:#{bypass.port}#{path}"
 
       data =
         {:ok,
          [
-           "'http://localhost:#{bypass.port}#{path}'"
+           "'#{url}'"
          ]}
 
       json = """
@@ -979,10 +984,10 @@ defmodule Explorer.Token.MetadataRetrieverTest do
         Conn.resp(conn, 200, json)
       end)
 
-      assert {:ok,
+      assert {:ok_store_uri,
               %{
                 metadata: Jason.decode!(json)
-              }} == MetadataRetriever.fetch_json(data)
+              }, url} == MetadataRetriever.fetch_json(data)
     end
 
     test "Process custom execution reverted" do
@@ -1062,11 +1067,14 @@ defmodule Explorer.Token.MetadataRetrieverTest do
         Conn.resp(conn, 200, json)
       end)
 
-      assert {:ok,
+      url = "http://localhost:#{bypass.port}#{path}"
+
+      assert {:ok_store_uri,
               %{
                 metadata: Jason.decode!(json)
-              }} ==
-               MetadataRetriever.fetch_json({:ok, ["http://localhost:#{bypass.port}#{path}"]})
+              },
+              url} ==
+               MetadataRetriever.fetch_json({:ok, [url]})
     end
   end
 

@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [id_to_params: 1, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [id_to_params: 1, json_rpc: 2, quantity_to_integer: 1]
   import Explorer.Helper, only: [decode_data: 2]
 
   alias EthereumJSONRPC.Block.ByNumber
@@ -27,6 +27,8 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
 
   @fetcher_name :optimism_deposits
   @address_prefix "0x000000000000000000000000"
+  @counter_type "optimism_deposits_fetcher_last_l1_block_hash"
+  @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -85,12 +87,13 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
           Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
 
           {:ok, result} =
-            Optimism.get_logs(
+            Helper.get_logs(
               chunk_start,
               chunk_end,
               optimism_portal,
-              @transaction_deposited_event,
+              [@transaction_deposited_event],
               json_rpc_named_arguments,
+              0,
               Helper.infinite_retries_number()
             )
 
@@ -121,16 +124,21 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
 
           log_deleted_rows_count(reorg_block, deleted_count)
 
+          Optimism.set_last_block_hash(@empty_hash, @counter_type)
+
           {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
         else
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if chunk_end >= chunk_start do
+            Optimism.set_last_block_hash_by_number(chunk_end, @counter_type, json_rpc_named_arguments)
+          end
+
           {:cont, chunk_end}
         end
       end)
 
     new_start_block = last_written_block + 1
-
-    {:ok, new_end_block} =
-      Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+    new_end_block = Helper.fetch_latest_l1_block_number(json_rpc_named_arguments)
 
     delay =
       if new_end_block == last_written_block do
@@ -272,7 +280,8 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
       :L1,
       &Deposit.last_deposit_l1_block_number_query/0,
       &Deposit.remove_deposits_query/1,
-      json_rpc_named_arguments
+      json_rpc_named_arguments,
+      @counter_type
     )
   end
 
@@ -308,7 +317,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
 
-    case Optimism.repeated_request(request, error_message, json_rpc_named_arguments, retries) do
+    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
       {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
       {:error, _} -> []
     end

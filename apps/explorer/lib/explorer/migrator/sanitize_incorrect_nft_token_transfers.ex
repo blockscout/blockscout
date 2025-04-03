@@ -11,7 +11,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
 
   require Logger
 
-  alias Explorer.Chain.{Block, Log, TokenTransfer}
+  alias Explorer.Chain.{Block, Log, Token, TokenTransfer}
   alias Explorer.Migrator.MigrationStatus
   alias Explorer.Repo
 
@@ -29,30 +29,54 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
 
   @impl true
   def handle_continue(:ok, state) do
-    case MigrationStatus.get_status(@migration_name) do
-      "completed" ->
+    case MigrationStatus.fetch(@migration_name) do
+      %{status: "completed"} ->
         {:stop, :normal, state}
 
-      _ ->
-        MigrationStatus.set_status(@migration_name, "started")
+      status ->
+        state = (status && status.meta) || %{"step" => "delete_erc_721"}
+
+        if is_nil(status) do
+          MigrationStatus.set_status(@migration_name, "started")
+          MigrationStatus.update_meta(@migration_name, state)
+        end
+
         schedule_batch_migration(0)
-        {:noreply, %{step: :delete}}
+        {:noreply, state}
     end
   end
 
   @impl true
-  def handle_info(:migrate_batch, %{step: step} = state) do
+  def handle_info(:migrate_batch, %{"step" => step} = state) do
     case last_unprocessed_identifiers(step) do
       [] ->
         case step do
-          :delete ->
-            Logger.info("SanitizeIncorrectNFTTokenTransfers deletion finished, continuing with blocks re-fetch")
-            schedule_batch_migration()
-            {:noreply, %{step: :refetch}}
+          "delete_erc_721" ->
+            Logger.info("SanitizeIncorrectNFTTokenTransfers `delete_erc_721` step is finished")
 
-          :refetch ->
+            schedule_batch_migration()
+
+            new_state = %{"step" => "delete_erc_1155"}
+            MigrationStatus.update_meta(@migration_name, new_state)
+
+            {:noreply, new_state}
+
+          "delete_erc_1155" ->
+            Logger.info("SanitizeIncorrectNFTTokenTransfers `delete_erc_1155` step is finished")
+
+            schedule_batch_migration()
+
+            new_state = %{"step" => "refetch"}
+            MigrationStatus.update_meta(@migration_name, new_state)
+
+            {:noreply, new_state}
+
+          "refetch" ->
             Logger.info("SanitizeIncorrectNFTTokenTransfers migration finished")
+
             MigrationStatus.set_status(@migration_name, "completed")
+            MigrationStatus.set_meta(@migration_name, nil)
+
             {:stop, :normal, state}
         end
 
@@ -77,27 +101,34 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
     |> Repo.all(timeout: :infinity)
   end
 
-  defp unprocessed_identifiers(:delete) do
-    from(
-      tt in TokenTransfer,
-      left_join: l in Log,
-      on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index,
-      left_join: t in assoc(tt, :token),
-      where:
-        t.type == ^"ERC-721" and
-          (l.first_topic == ^TokenTransfer.weth_deposit_signature() or
-             l.first_topic == ^TokenTransfer.weth_withdrawal_signature()),
-      or_where: t.type == ^"ERC-1155" and is_nil(tt.amount) and is_nil(tt.amounts) and is_nil(tt.token_ids),
-      select: {tt.transaction_hash, tt.block_hash, tt.log_index}
+  defp unprocessed_identifiers("delete_erc_721") do
+    base_query = from(log in Log, as: :log)
+
+    logs_query =
+      base_query
+      |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
+      |> join(:left, [log], token in Token, on: log.address_hash == token.contract_address_hash)
+      |> where([log, token], token.type == ^"ERC-721")
+      |> select([log], %{block_hash: log.block_hash, transaction_hash: log.transaction_hash, index: log.index})
+
+    TokenTransfer
+    |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
+    |> join(:inner, [tt], log in subquery(logs_query),
+      on: tt.block_hash == log.block_hash and tt.transaction_hash == log.transaction_hash and tt.log_index == log.index
     )
   end
 
-  defp unprocessed_identifiers(:refetch) do
+  defp unprocessed_identifiers("delete_erc_1155") do
+    TokenTransfer
+    |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
+    |> where([tt], tt.token_type == ^"ERC-1155" and is_nil(tt.amount) and is_nil(tt.amounts) and is_nil(tt.token_ids))
+  end
+
+  defp unprocessed_identifiers("refetch") do
     from(
       tt in TokenTransfer,
-      join: t in assoc(tt, :token),
       join: b in assoc(tt, :block),
-      where: t.type == ^"ERC-721" and is_nil(tt.token_ids),
+      where: tt.token_type == ^"ERC-721" and is_nil(tt.token_ids),
       where: b.consensus == true,
       where: b.refetch_needed == false,
       select: tt.block_number,
@@ -107,14 +138,14 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
 
   defp run_task(batch, step), do: Task.async(fn -> handle_batch(batch, step) end)
 
-  defp handle_batch(token_transfer_ids, :delete) do
+  defp handle_batch(block_numbers, "refetch") do
+    Block.set_refetch_needed(block_numbers)
+  end
+
+  defp handle_batch(token_transfer_ids, _delete_step) do
     query = TokenTransfer.by_ids_query(token_transfer_ids)
 
     Repo.delete_all(query, timeout: :infinity)
-  end
-
-  defp handle_batch(block_numbers, :refetch) do
-    Block.set_refetch_needed(block_numbers)
   end
 
   defp schedule_batch_migration(timeout \\ nil) do
@@ -126,8 +157,6 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
   end
 
   defp concurrency do
-    default = 4 * System.schedulers_online()
-
-    Application.get_env(:explorer, __MODULE__)[:concurrency] || default
+    Application.get_env(:explorer, __MODULE__)[:concurrency]
   end
 end

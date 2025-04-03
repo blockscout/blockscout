@@ -742,8 +742,9 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-  Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
-  which were verified previously, returns a single t:SmartContract.t/0
+  Finds metadata for verification of a contract from verified twins: contracts
+  with the same bytecode which were verified previously, returns a single
+  t:SmartContract.t/0
   """
   alias Explorer.Chain.SmartContract
 
@@ -765,7 +766,8 @@ defmodule Explorer.Chain.SmartContract do
 
   def get_address_verified_bytecode_twin_contract(%Hash{} = address_hash, options) do
     with target_address <- Chain.select_repo(options).get(Address, address_hash),
-         false <- is_nil(target_address) do
+         false <- is_nil(target_address),
+         true <- Address.smart_contract_with_nonempty_code?(target_address) do
       target_address
       |> get_verified_bytecode_twin_contract(options)
       |> check_and_update_constructor_args()
@@ -776,7 +778,24 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-  Returns verified smart-contract with the same bytecode of the given smart-contract
+    Returns a verified smart contract that shares identical bytecode with the
+    given address.
+
+    This function searches the database for previously verified contracts that
+    have the same bytecode (identified by contract_code_md5) as the target
+    address. These "bytecode twins" allow users to view verified source code for
+    contracts that haven't been explicitly verified themselves.
+
+    ## Parameters
+      - address: The target address struct to find a bytecode twin for
+      - options: Options to pass to the database query
+        - :api? - Boolean indicating if the call is from an API endpoint
+
+    ## Returns
+      - A `SmartContract` struct of the bytecode twin if found
+      - `nil` if:
+        - No verified contract with matching bytecode exists
+        - The only matching contracts belong to the target address itself
   """
   @spec get_verified_bytecode_twin_contract(Address.t(), [Chain.necessity_by_association_option() | Chain.api?()]) ::
           SmartContract.t() | nil
@@ -785,28 +804,24 @@ defmodule Explorer.Chain.SmartContract do
       :smart_contract_additional_sources => :optional
     }
 
-    case target_address do
-      %{contract_code: %Chain.Data{bytes: contract_code_bytes}} ->
-        target_address_hash = target_address.hash
+    target_address_hash = target_address.hash
 
-        contract_code_md5 = Helper.contract_code_md5(contract_code_bytes)
+    contract_code_md5 =
+      target_address.contract_code.bytes
+      |> Helper.contract_code_md5()
 
-        verified_bytecode_twin_contract_query =
-          from(
-            smart_contract in __MODULE__,
-            where: smart_contract.contract_code_md5 == ^contract_code_md5,
-            where: smart_contract.address_hash != ^target_address_hash,
-            select: smart_contract,
-            limit: 1
-          )
+    verified_bytecode_twin_contract_query =
+      from(
+        smart_contract in __MODULE__,
+        where: smart_contract.contract_code_md5 == ^contract_code_md5,
+        where: smart_contract.address_hash != ^target_address_hash,
+        select: smart_contract,
+        limit: 1
+      )
 
-        verified_bytecode_twin_contract_query
-        |> Chain.join_associations(necessity_by_association)
-        |> Chain.select_repo(options).one(timeout: 10_000)
-
-      _ ->
-        nil
-    end
+    verified_bytecode_twin_contract_query
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).one(timeout: 10_000)
   end
 
   @doc """

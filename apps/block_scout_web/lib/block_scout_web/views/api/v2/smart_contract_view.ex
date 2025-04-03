@@ -267,14 +267,24 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         %{
           "is_self_destructed" => true,
           "deployed_bytecode" => nil,
-          "creation_bytecode" => init
+          "creation_bytecode" => init,
+          "status" => "selfdestructed"
+        }
+
+      {:failed, creation_code} ->
+        %{
+          "is_self_destructed" => false,
+          "deployed_bytecode" => "0x",
+          "creation_bytecode" => creation_code,
+          "status" => "failed"
         }
 
       {:ok, contract_code} ->
         %{
           "is_self_destructed" => false,
           "deployed_bytecode" => contract_code,
-          "creation_bytecode" => AddressContractView.creation_code(address)
+          "creation_bytecode" => AddressContractView.creation_code(address),
+          "status" => "success"
         }
     end
   end
@@ -305,6 +315,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         "address" => APIV2Helper.address_with_info(nil, address, address.hash, false),
         "compiler_version" => smart_contract.compiler_version,
         "optimization_enabled" => smart_contract.optimization,
+        "transactions_count" => address.transactions_count,
+        # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
         "transaction_count" => address.transactions_count,
         "language" => SmartContract.language(smart_contract),
         "verified_at" => smart_contract.inserted_at,

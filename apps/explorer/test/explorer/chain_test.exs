@@ -27,7 +27,6 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Cache.Counters.{BlocksCount, TransactionsCount, PendingBlockOperationCount}
   alias Explorer.Chain.InternalTransaction.Type
 
@@ -104,38 +103,6 @@ defmodule Explorer.ChainTest do
     test "returns 0 on empty table" do
       start_supervised!(AddressesCount)
       assert 0 == AddressesCount.fetch()
-    end
-  end
-
-  describe "last_db_block_status/0" do
-    test "return no_blocks errors if db is empty" do
-      assert {:error, :no_blocks} = Chain.last_db_block_status()
-    end
-
-    test "returns {:ok, last_block_period} if block is in healthy period" do
-      insert(:block, consensus: true)
-
-      assert {:ok, _, _} = Chain.last_db_block_status()
-    end
-
-    test "return {:stale, _, _} if block is not in healthy period" do
-      insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
-
-      assert {:stale, _, _} = Chain.last_db_block_status()
-    end
-  end
-
-  describe "last_cache_block_status/0" do
-    test "returns success if cache is not stale" do
-      insert(:block, consensus: true)
-
-      assert {:ok, _, _} = Chain.last_cache_block_status()
-    end
-
-    test "return {:stale, _, _} if cache is stale" do
-      insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
-
-      assert {:stale, _, _} = Chain.last_cache_block_status()
     end
   end
 
@@ -1570,23 +1537,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "each_address_block_validation_count/0" do
-    test "streams block validation count grouped by the address that validated them (`address_hash`)" do
-      address = insert(:address)
-
-      insert(:block, miner: address, miner_hash: address.hash)
-
-      {:ok, agent_pid} = Agent.start_link(fn -> [] end)
-
-      Chain.each_address_block_validation_count(fn entry -> Agent.update(agent_pid, &[entry | &1]) end)
-
-      results = Agent.get(agent_pid, &Enum.reverse/1)
-
-      assert length(results) == 1
-      assert results == [{address.hash, 1}]
-    end
-  end
-
   describe "number_to_block/1" do
     test "without block" do
       assert {:error, :not_found} = Chain.number_to_block(-1)
@@ -2455,21 +2405,20 @@ defmodule Explorer.ChainTest do
     test "finds a contract address" do
       address =
         insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil, names: [])
-        |> Repo.preload([
-          :contracts_creation_internal_transaction,
-          :contracts_creation_transaction,
-          :token,
-          [smart_contract: :smart_contract_additional_sources],
-          Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
-        ])
+        |> Repo.preload(
+          [
+            :token,
+            [smart_contract: :smart_contract_additional_sources],
+            Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
+          ] ++ Address.contract_creation_transaction_associations()
+        )
 
       options = [
         necessity_by_association: %{
-          :contracts_creation_internal_transaction => :optional,
           :names => :optional,
           :smart_contract => :optional,
           :token => :optional,
-          :contracts_creation_transaction => :optional
+          Address.contract_creation_transaction_associations() => :optional
         }
       ]
 

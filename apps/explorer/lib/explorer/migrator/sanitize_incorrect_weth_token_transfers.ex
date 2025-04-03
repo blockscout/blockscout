@@ -16,7 +16,6 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
   alias Explorer.Repo
 
   @migration_name "sanitize_incorrect_weth_transfers"
-  @default_batch_size 500
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -29,45 +28,66 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
 
   @impl true
   def handle_continue(:ok, state) do
-    case MigrationStatus.get_status(@migration_name) do
-      "completed" ->
+    case MigrationStatus.fetch(@migration_name) do
+      %{status: "completed"} ->
         {:stop, :normal, state}
 
-      _ ->
-        MigrationStatus.set_status(@migration_name, "started")
+      %{status: "wait_for_enabling_weth_filtering"} ->
+        if weth_token_transfers_filtering_enabled() do
+          schedule_batch_migration(0)
+          MigrationStatus.set_status(@migration_name, "started")
+          {:noreply, Map.put(state, "step", "delete_not_whitelisted_weth_transfers")}
+        else
+          {:stop, :normal, state}
+        end
+
+      status ->
+        state = (status && status.meta) || %{"step" => "delete_duplicates"}
+
+        if is_nil(status) do
+          MigrationStatus.set_status(@migration_name, "started")
+          MigrationStatus.update_meta(@migration_name, state)
+        end
+
         schedule_batch_migration(0)
-        {:noreply, %{step: :delete_duplicates}}
+        {:noreply, state}
     end
   end
 
   @impl true
-  def handle_info(:migrate_batch, %{step: step} = state) do
-    if step == :delete_not_whitelisted_weth_transfers and
-         !Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:weth_token_transfers_filtering_enabled] do
+  def handle_info(:migrate_batch, %{"step" => step} = state) do
+    if step == "delete_not_whitelisted_weth_transfers" and !weth_token_transfers_filtering_enabled() do
+      MigrationStatus.set_status(@migration_name, "wait_for_enabling_weth_filtering")
       {:stop, :normal, state}
     else
       process_batch(state)
     end
   end
 
-  defp process_batch(%{step: step} = state) do
+  defp process_batch(%{"step" => step} = state) do
     case last_unprocessed_identifiers(step) do
       [] ->
         case step do
-          :delete_duplicates ->
+          "delete_duplicates" ->
             Logger.info(
               "SanitizeIncorrectWETHTokenTransfers deletion of duplicates finished, continuing with deletion of not whitelisted weth transfers"
             )
 
             schedule_batch_migration()
-            {:noreply, %{step: :delete_not_whitelisted_weth_transfers}}
 
-          :delete_not_whitelisted_weth_transfers ->
+            new_state = %{"step" => "delete_not_whitelisted_weth_transfers"}
+            MigrationStatus.update_meta(@migration_name, new_state)
+
+            {:noreply, new_state}
+
+          "delete_not_whitelisted_weth_transfers" ->
             Logger.info(
               "SanitizeIncorrectWETHTokenTransfers deletion of not whitelisted weth transfers finished. Sanitizing is completed."
             )
 
             MigrationStatus.set_status(@migration_name, "completed")
+            MigrationStatus.set_meta(@migration_name, nil)
+
             {:stop, :normal, state}
         end
 
@@ -92,20 +112,18 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
     |> Repo.all(timeout: :infinity)
   end
 
-  defp unprocessed_identifiers(:delete_duplicates) do
+  defp unprocessed_identifiers("delete_duplicates") do
     weth_transfers =
-      from(
-        tt in TokenTransfer,
-        left_join: l in Log,
-        on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index,
-        where:
-          l.first_topic == ^TokenTransfer.weth_deposit_signature() or
-            l.first_topic == ^TokenTransfer.weth_withdrawal_signature()
-      )
+      token_transfers_with_logs_query()
+      |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
+
+    not_weth_transfers =
+      token_transfers_with_logs_query()
+      |> where(^Log.first_topic_is_not_deposit_or_withdrawal_signature())
 
     from(
       weth_tt in subquery(weth_transfers),
-      inner_join: tt in TokenTransfer,
+      inner_join: tt in subquery(not_weth_transfers),
       on: weth_tt.block_hash == tt.block_hash and weth_tt.transaction_hash == tt.transaction_hash,
       where:
         weth_tt.log_index != tt.log_index and weth_tt.token_contract_address_hash == tt.token_contract_address_hash and
@@ -115,18 +133,19 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
     )
   end
 
-  defp unprocessed_identifiers(:delete_not_whitelisted_weth_transfers) do
+  defp unprocessed_identifiers("delete_not_whitelisted_weth_transfers") do
+    token_transfers_with_logs_query()
+    |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
+    |> where([tt], tt.token_contract_address_hash not in ^whitelisted_weth_contracts())
+    |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
+  end
+
+  defp token_transfers_with_logs_query do
     from(
       tt in TokenTransfer,
       left_join: l in Log,
-      on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index,
-      where:
-        (l.first_topic == ^TokenTransfer.weth_deposit_signature() or
-           l.first_topic == ^TokenTransfer.weth_withdrawal_signature()) and
-          tt.token_contract_address_hash not in ^Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[
-            :whitelisted_weth_contracts
-          ],
-      select: {tt.transaction_hash, tt.block_hash, tt.log_index}
+      as: :log,
+      on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index
     )
   end
 
@@ -143,12 +162,18 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
   end
 
   defp batch_size do
-    Application.get_env(:explorer, __MODULE__)[:batch_size] || @default_batch_size
+    Application.get_env(:explorer, __MODULE__)[:batch_size]
   end
 
   defp concurrency do
-    default = 4 * System.schedulers_online()
+    Application.get_env(:explorer, __MODULE__)[:concurrency]
+  end
 
-    Application.get_env(:explorer, __MODULE__)[:concurrency] || default
+  defp whitelisted_weth_contracts do
+    Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:whitelisted_weth_contracts]
+  end
+
+  defp weth_token_transfers_filtering_enabled do
+    Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:weth_token_transfers_filtering_enabled]
   end
 end

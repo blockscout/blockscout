@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.SmartContractController do
 
   alias BlockScoutWeb.AddressView
   alias Explorer.Chain
-  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.SmartContract.{Reader, Writer}
 
@@ -155,11 +155,10 @@ defmodule BlockScoutWeb.SmartContractController do
   def show(conn, params) do
     address_options = [
       necessity_by_association: %{
-        :contracts_creation_internal_transaction => :optional,
         :names => :optional,
         :smart_contract => :optional,
         :token => :optional,
-        :contracts_creation_transaction => :optional
+        Address.contract_creation_transaction_associations() => :optional
       }
     ]
 

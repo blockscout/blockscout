@@ -212,7 +212,6 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
            proxy_implementations_association() => :optional
          }
        )
-       |> Enum.map(fn address -> {address, address.transactions_count} end)
        |> maybe_preload_ens()
        |> maybe_preload_metadata()
      )}
