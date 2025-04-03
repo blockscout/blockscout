@@ -130,7 +130,8 @@ for migrator <- [
       Explorer.Migrator.BackfillMultichainSearchDB,
       Explorer.Migrator.SanitizeVerifiedAddresses,
       Explorer.Migrator.SmartContractLanguage,
-      Explorer.Migrator.SanitizeEmptyContractCodeAddresses
+      Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
+      Explorer.Migrator.BackfillMetadataURL
     ] do
   config :explorer, migrator, enabled: true
 end
@@ -159,7 +160,9 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractsLanguageIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsFromAddressHashWithPendingIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsToAddressHashWithPendingIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsToAddressHashWithPendingIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountDescPartialIndex
     ] do
   config :explorer, index_operation, enabled: true
 end

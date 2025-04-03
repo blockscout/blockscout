@@ -32,6 +32,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "type" => search_result.type,
       "name" => search_result.name,
       "symbol" => search_result.symbol,
+      "address_hash" => search_result.address_hash,
+      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => search_result.address_hash,
       "token_url" => token_path(Endpoint, :show, search_result.address_hash),
       "address_url" => address_path(Endpoint, :show, search_result.address_hash),
@@ -52,6 +54,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     %{
       "type" => search_result.type,
       "name" => search_result.name,
+      "address_hash" => search_result.address_hash,
+      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => search_result.address_hash,
       "url" => address_path(Endpoint, :show, search_result.address_hash),
       "is_smart_contract_verified" => search_result.verified,
@@ -66,6 +70,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     %{
       "type" => search_result.type,
       "name" => search_result.name,
+      "address_hash" => search_result.address_hash,
+      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => search_result.address_hash,
       "url" => address_path(Endpoint, :show, search_result.address_hash),
       "is_smart_contract_verified" => search_result.verified,
@@ -79,6 +85,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     %{
       "type" => search_result.type,
       "name" => search_result.name,
+      "address_hash" => search_result.address_hash,
+      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => search_result.address_hash,
       "url" => address_path(Endpoint, :show, search_result.address_hash),
       "is_smart_contract_verified" => search_result.verified,

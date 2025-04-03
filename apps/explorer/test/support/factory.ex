@@ -1350,4 +1350,36 @@ defmodule Explorer.Factory do
   def celo_pending_epoch_block_operation_factory do
     %CeloPendingEpochBlockOperation{}
   end
+
+  def withdrawal_log_factory(params) do
+    weth_log(TokenTransfer.weth_withdrawal_signature(), params)
+  end
+
+  def deposit_log_factory(params) do
+    weth_log(TokenTransfer.weth_deposit_signature(), params)
+  end
+
+  defp weth_log(first_topic, %{
+         from_address: from_address,
+         token_contract_address: token_contract_address,
+         amount: amount,
+         transaction: transaction,
+         block: block
+       }) do
+    data = "0x" <> (Integer.to_string(amount, 16) |> String.downcase() |> String.pad_leading(64, "0"))
+
+    %Log{
+      address: token_contract_address,
+      address_hash: token_contract_address.hash,
+      block: block,
+      block_number: block.number,
+      data: data,
+      first_topic: first_topic,
+      second_topic: zero_padded_address_hash_string(from_address.hash),
+      third_topic: nil,
+      fourth_topic: nil,
+      index: sequence("log_index", & &1),
+      transaction: transaction
+    }
+  end
 end

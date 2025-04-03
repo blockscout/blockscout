@@ -180,10 +180,6 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     [to_string(address_hash)]
   end
 
-  defp item_to_address_hash_strings({%Address{} = address, _}) do
-    item_to_address_hash_strings(address)
-  end
-
   defp item_to_address_hash_strings(%Address{hash: hash}) do
     [to_string(hash)]
   end
@@ -282,10 +278,6 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
       current_token_balance
       | address: alter_address(current_token_balance.address, address_hash, names, field_to_put_info)
     }
-  end
-
-  defp put_meta_to_item({%Address{} = address, count}, names, field_to_put_info) do
-    {put_meta_to_item(address, names, field_to_put_info), count}
   end
 
   defp put_meta_to_item(%Address{} = address, names, field_to_put_info) do

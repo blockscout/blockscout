@@ -365,15 +365,25 @@ defmodule EthereumJSONRPC do
     |> fetch_blocks_by_params(&Block.ByNephew.request/1, json_rpc_named_arguments)
   end
 
-  @spec fetch_net_version(json_rpc_named_arguments) :: {:ok, non_neg_integer()} | {:error, reason :: term}
-  def fetch_net_version(json_rpc_named_arguments) do
+  @doc """
+    Fetches chain ID from RPC node using `eth_chainId` JSON-RPC request.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: A keyword list of JSON-RPC configuration options.
+
+    ## Returns
+    - `{:ok, id}` tuple where `id` is the chain id integer.
+    - `{:error, reason}` tuple in case of error.
+  """
+  @spec fetch_chain_id(json_rpc_named_arguments) :: {:ok, non_neg_integer()} | {:error, reason :: term}
+  def fetch_chain_id(json_rpc_named_arguments) do
     result =
-      %{id: 0, method: "net_version", params: []}
+      %{id: 0, method: "eth_chainId", params: []}
       |> request()
       |> json_rpc(json_rpc_named_arguments)
 
     case result do
-      {:ok, bin_number} -> {:ok, String.to_integer(bin_number)}
+      {:ok, id} -> {:ok, quantity_to_integer(id)}
       other -> other
     end
   end

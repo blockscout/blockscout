@@ -86,8 +86,9 @@ By following these conventions, we can maintain a clean and understandable codeb
 
 When contributing to the API v2, please adhere to the following naming conventions for response fields to ensure clarity and consistency:
 
-- The block number should be returned as a number in the `block_number` property.
-- The transaction hash should be returned as a hex string in the `transaction_hash` property.
+- The block number should be returned as a number in the property with the name which ends with `block_number`.
+- All hashes (transaction, block address etc.) should be returned as a hex string in the property which ends with `_hash`.
+- Property name for aggregations like counts and sums should contain plural form of entity and `_count`, `_sum` suffix respecively, e.g. `transactions_count`, `blocks_count`, `withdrawals_sum`.
 - All fields that contain the "index" suffix should be returned as numbers.
 
 ## Compile time Environment Variables

@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.V2.AddressController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Chain,
     only: [
@@ -16,6 +17,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   import BlockScoutWeb.PagingHelper,
     only: [
+      addresses_sorting: 1,
       delete_parameters_from_next_page_params: 1,
       token_transfers_types_options: 1,
       address_transactions_sorting: 1,
@@ -87,22 +89,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     api?: true
   ]
 
-  case @chain_type do
-    :filecoin ->
-      @contract_address_preloads [
-        :smart_contract,
-        [contracts_creation_internal_transaction: :from_address],
-        [contracts_creation_transaction: :from_address]
-      ]
-
-    _ ->
-      @contract_address_preloads [
-        :smart_contract,
-        :contracts_creation_internal_transaction,
-        :contracts_creation_transaction
-      ]
-  end
-
   @nft_necessity_by_association [
     necessity_by_association: %{
       :token => :optional
@@ -131,6 +117,17 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     api?: true
   ]
 
+  @spec contract_address_preloads() :: [keyword()]
+  defp contract_address_preloads do
+    chain_type_associations =
+      case chain_type() do
+        :filecoin -> Address.contract_creation_transaction_with_from_address_associations()
+        _ -> Address.contract_creation_transaction_associations()
+      end
+
+    [:smart_contract | chain_type_associations]
+  end
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @doc """
@@ -143,7 +140,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, address} ->
           fully_preloaded_address =
-            Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true)
+            Address.maybe_preload_smart_contract_associations(address, contract_address_preloads(), @api_true)
 
           implementations = SmartContractHelper.pre_fetch_implementations(fully_preloaded_address)
 
@@ -779,10 +776,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       params
       |> paging_options()
       |> Keyword.merge(@api_true)
+      |> Keyword.merge(addresses_sorting(params))
       |> Address.list_top_addresses()
       |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, addresses, params)
+    next_page_params = next_page_params(next_page, addresses, delete_parameters_from_next_page_params(params))
 
     exchange_rate = Market.get_coin_exchange_rate()
     total_supply = Chain.total_supply()

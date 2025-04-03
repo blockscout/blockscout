@@ -5,7 +5,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
   require Logger
 
-  alias Explorer.Repo
+  alias Explorer.{MetadataURIValidator, Repo}
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Reader
@@ -20,8 +20,6 @@ defmodule Explorer.Token.MetadataRetriever do
   @erc1155_token_id_placeholder "{id}"
 
   @max_error_length 255
-
-  @ignored_hosts ["localhost", "127.0.0.1", "0.0.0.0", "", nil]
 
   # TODO: Consider using the `EthereumJSONRPC.ERC20` module to retrieve token metadata
   @contract_abi [
@@ -259,7 +257,7 @@ defmodule Explorer.Token.MetadataRetriever do
           sanitized_name = String.trim(name)
           uri = {:ok, [sanitized_name]}
 
-          with {:ok, %{metadata: metadata}} <- fetch_json(uri, nil, nil, false),
+          with {:ok, %{metadata: metadata}} <- uri |> fetch_json(nil, nil, false) |> parse_fetch_json_response(),
                true <- Map.has_key?(metadata, "name"),
                false <- is_nil(metadata["name"]) do
             name_metadata = %{:name => metadata["name"]}
@@ -275,6 +273,39 @@ defmodule Explorer.Token.MetadataRetriever do
     else
       base_metadata
     end
+  end
+
+  @doc """
+  Parses the response from metadata fetching.
+
+  ## Parameters
+    - response: tuple containing either:
+      - `{:ok_store_uri, metadata, uri}` - when metadata was successfully fetched and uri should be stored
+      - `{:ok, result}` - when metadata was successfully fetched but not uri should be stored
+      - `{:error, reason}` - when metadata fetch failed
+
+  ## Returns
+    - `{:ok, metadata}`
+    - `{:error, reason}`
+
+  ## Examples
+      iex> parse_fetch_json_response({:ok_store_uri, %{name: "Token"}, "ipfs://..."})
+      {:ok, %{name: "Token"}}
+
+      iex> parse_fetch_json_response({:ok, %{name: "Token"}})
+      {:ok, %{name: "Token"}}
+
+      iex> parse_fetch_json_response({:error, "Failed to fetch"})
+      {:error, "Failed to fetch"}
+  """
+  @spec parse_fetch_json_response({:ok | :error, any()} | {:ok_store_uri, any(), any()}) ::
+          {:ok, any()} | {:error, any()}
+  def parse_fetch_json_response({:ok_store_uri, metadata, _uri}) do
+    {:ok, metadata}
+  end
+
+  def parse_fetch_json_response(other) do
+    other
   end
 
   defp set_skip_metadata(token_to_update) do
@@ -580,8 +611,11 @@ defmodule Explorer.Token.MetadataRetriever do
   @doc """
     Fetch/parse metadata using smart-contract's response
   """
-  @spec fetch_json(any, binary() | nil, binary() | nil, boolean) ::
-          {:error, binary} | {:error_code, any} | {:ok, %{metadata: any}}
+  @spec(
+    fetch_json(any, integer() | nil, binary() | nil, boolean) ::
+      {:error, binary} | {:error_code, any} | {:ok, %{metadata: any}},
+    {:ok_store_uri, %{metadata: any}, binary()}
+  )
   def fetch_json(uri, token_id \\ nil, hex_token_id \\ nil, from_base_uri? \\ false)
 
   def fetch_json({:ok, [""]}, _token_id, _hex_token_id, _from_base_uri?) do
@@ -746,7 +780,7 @@ defmodule Explorer.Token.MetadataRetriever do
   defp fetch_from_arweave(uid, hex_token_id) do
     arweave_url = arweave_link(uid)
 
-    ipfs_params = [ipfs?: false]
+    ipfs_params = [ipfs?: false, arweave?: true]
     fetch_metadata_inner(arweave_url, ipfs_params, nil, hex_token_id)
   end
 
@@ -785,14 +819,26 @@ defmodule Explorer.Token.MetadataRetriever do
       {:ok, %{"name" => "Example Token", "description" => "An example token"}}
 
       iex> fetch_metadata_from_uri("http://localhost/metadata", [ipfs?: false])
-      {:error, "ignored host localhost"}
+      {:error, :blacklist}
 
   """
-  @spec fetch_metadata_from_uri(String.t(), keyword(), String.t() | nil) :: {:ok, %{metadata: any}} | {:error, binary}
+  @spec fetch_metadata_from_uri(String.t(), keyword(), String.t() | nil) :: {:ok, %{metadata: any}} | {:error, binary()}
   def fetch_metadata_from_uri(uri, ipfs_params, hex_token_id \\ nil) do
-    case Mix.env() != :test && URI.parse(uri) do
-      %URI{host: host} when host in @ignored_hosts ->
-        {:error, "ignored host #{host}"}
+    case Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper)[:host_filtering_enabled?] &&
+           !ipfs?(ipfs_params) && !arweave?(ipfs_params) && MetadataURIValidator.validate_uri(uri) do
+      {:error, reason} ->
+        if reason == :blacklist do
+          Logger.warning(
+            [
+              "Request to token uri failed: #{inspect(uri)}.",
+              "Host is blacklisted.",
+              "To disable IPs blacklisting set INDEXER_TOKEN_INSTANCE_HOST_FILTERING_ENABLED=false"
+            ],
+            fetcher: :token_instances
+          )
+        end
+
+        {:error, reason |> to_string() |> truncate_error()}
 
       _ ->
         fetch_metadata_from_uri_request(uri, hex_token_id, ipfs_params)
@@ -810,7 +856,13 @@ defmodule Explorer.Token.MetadataRetriever do
       {:ok, %Response{body: body, status_code: 200, headers: response_headers}} ->
         content_type = get_content_type_from_headers(response_headers)
 
-        check_content_type(content_type, uri, hex_token_id, body, ipfs_params)
+        case check_content_type(content_type, uri, hex_token_id, body, ipfs_params) do
+          {:ok, metadata} ->
+            process_result(metadata, uri, ipfs_params)
+
+          {:error, reason} ->
+            {:error, reason}
+        end
 
       {:ok, %Response{body: body, status_code: code}} ->
         Logger.debug(
@@ -838,8 +890,20 @@ defmodule Explorer.Token.MetadataRetriever do
       {:error, "request error"}
   end
 
+  defp process_result(metadata, uri, ipfs_params) do
+    if arweave?(ipfs_params) || ipfs?(ipfs_params) do
+      {:ok, metadata}
+    else
+      {:ok_store_uri, metadata, uri}
+    end
+  end
+
   defp ipfs?(ipfs_params) do
     Keyword.get(ipfs_params, :ipfs?)
+  end
+
+  defp arweave?(ipfs_params) do
+    Keyword.get(ipfs_params, :arweave?)
   end
 
   defp check_content_type(content_type, uri, hex_token_id, body, ipfs_params) do

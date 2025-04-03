@@ -9,8 +9,7 @@ defmodule Indexer.Transform.TransactionActions do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.Helper, only: [decode_data: 2]
 
-  alias Explorer.Chain.Cache.NetVersion
-  alias Explorer.Chain.Cache.{TransactionActionTokensData, TransactionActionUniswapPools}
+  alias Explorer.Chain.Cache.{ChainId, TransactionActionTokensData, TransactionActionUniswapPools}
   alias Explorer.Chain.{Address, Hash, Token, TransactionAction}
   alias Explorer.Repo
   alias Indexer.Helper, as: IndexerHelper
@@ -129,7 +128,7 @@ defmodule Indexer.Transform.TransactionActions do
     if Application.get_env(:indexer, Indexer.Fetcher.TransactionAction.Supervisor)[:enabled] do
       actions = []
 
-      chain_id = NetVersion.get_version()
+      chain_id = ChainId.get_id()
 
       if not is_nil(protocols_to_rewrite) do
         logs

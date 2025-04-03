@@ -7,17 +7,17 @@ defmodule BlockScoutWeb.AddressContractController do
 
   alias BlockScoutWeb.AccessHelper
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     address_options = [
       necessity_by_association: %{
-        :contracts_creation_internal_transaction => :optional,
         :names => :optional,
         [smart_contract: :smart_contract_additional_sources] => :optional,
         :token => :optional,
-        :contracts_creation_transaction => :optional
+        Address.contract_creation_transaction_associations() => :optional
       }
     ]
 

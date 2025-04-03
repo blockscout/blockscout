@@ -2,72 +2,16 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   @moduledoc """
     Common functions for Indexer.Fetcher.TokenInstance fetchers
   """
+
+  alias EthereumJSONRPC.NFT
   alias Explorer.Chain
   alias Explorer.Chain.Token.Instance
-  alias Explorer.SmartContract.Reader
   alias Explorer.Token.MetadataRetriever
   alias Indexer.NFTMediaHandler.Queue
 
   require Logger
 
   @cryptokitties_address_hash "0x06012c8cf97bead5deae237070f9587f8e7a266d"
-
-  @token_uri "c87b56dd"
-  @base_uri "6c0360eb"
-  @uri "0e89341c"
-
-  @erc_721_1155_abi [
-    %{
-      "inputs" => [],
-      "name" => "baseURI",
-      "outputs" => [
-        %{
-          "internalType" => "string",
-          "name" => "",
-          "type" => "string"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "type" => "function",
-      "stateMutability" => "view",
-      "payable" => false,
-      "outputs" => [
-        %{"type" => "string", "name" => ""}
-      ],
-      "name" => "tokenURI",
-      "inputs" => [
-        %{
-          "type" => "uint256",
-          "name" => "_tokenId"
-        }
-      ],
-      "constant" => true
-    },
-    %{
-      "type" => "function",
-      "stateMutability" => "view",
-      "payable" => false,
-      "outputs" => [
-        %{
-          "type" => "string",
-          "name" => "",
-          "internalType" => "string"
-        }
-      ],
-      "name" => "uri",
-      "inputs" => [
-        %{
-          "type" => "uint256",
-          "name" => "_id",
-          "internalType" => "uint256"
-        }
-      ],
-      "constant" => true
-    }
-  ]
 
   @spec batch_fetch_instances([%{}]) :: list()
   def batch_fetch_instances(token_instances) do
@@ -85,7 +29,8 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     cryptokitties =
       (splitted[true] || [])
       |> Enum.map(fn {contract_address_hash, token_id} ->
-        {{:ok, ["https://api.cryptokitties.co/kitties/{id}"]}, to_string(token_id), contract_address_hash, token_id}
+        {{:ok, ["https://api.cryptokitties.co/kitties/{id}"]}, to_string(token_id), contract_address_hash, token_id,
+         false}
       end)
 
     other = splitted[false] || []
@@ -95,114 +40,39 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
       |> Enum.map(fn {contract_address_hash, _token_id} -> contract_address_hash end)
       |> Enum.uniq()
       |> Chain.get_token_types()
-      |> Map.new(fn {hash, type} -> {to_string(hash), type} end)
+      |> Map.new(fn {hash, type} -> {hash.bytes, type} end)
 
-    {results, failed_results, instances_to_retry} =
-      other
-      |> batch_fetch_instances_inner(token_types_map, cryptokitties)
-      |> Enum.reduce({[], [], []}, fn {{_task, res}, {_result, _normalized_token_id, contract_address_hash, token_id}},
-                                      {results, failed_results, instances_to_retry} ->
-        case res do
-          {:ok, {:error, "VM execution error"} = result} ->
-            add_failed_to_retry_result(
-              results,
-              failed_results,
-              instances_to_retry,
-              contract_address_hash,
-              token_id,
-              result
-            )
+    other
+    |> batch_fetch_instances_inner(token_types_map, cryptokitties)
+    |> Enum.map(fn {{_task, res}, {_result, _normalized_token_id, contract_address_hash, token_id, _from_base_uri?}} ->
+      case res do
+        {:ok, result} ->
+          result_to_insert_params(result, contract_address_hash, token_id)
 
-          {:ok, result} ->
-            {[
-               result_to_insert_params(result, contract_address_hash, token_id)
-               | results
-             ], failed_results, instances_to_retry}
-
-          {:exit, reason} ->
-            {[
-               result_to_insert_params(
-                 {:error, MetadataRetriever.truncate_error("Terminated:" <> inspect(reason))},
-                 contract_address_hash,
-                 token_id
-               )
-               | results
-             ], failed_results, instances_to_retry}
-        end
-      end)
-
-    total_results =
-      if Application.get_env(:indexer, __MODULE__)[:base_uri_retry?] do
-        {success_results_from_retry, failed_results_after_retry} =
-          instances_to_retry
-          |> batch_fetch_instances_inner(token_types_map, [], true)
-          |> Enum.reduce({[], []}, fn {{_task, res}, {_result, _normalized_token_id, contract_address_hash, token_id}},
-                                      {success, failed} ->
-            # credo:disable-for-next-line
-            case res do
-              {:ok, result} ->
-                {[
-                   result_to_insert_params(result, contract_address_hash, token_id)
-                   | success
-                 ], failed}
-
-              {:exit, reason} ->
-                {
-                  success,
-                  [
-                    result_to_insert_params(
-                      {:error, MetadataRetriever.truncate_error("Terminated:" <> inspect(reason))},
-                      contract_address_hash,
-                      token_id
-                    )
-                    | failed
-                  ]
-                }
-            end
-          end)
-
-        results ++ success_results_from_retry ++ failed_results_after_retry
-      else
-        results ++ failed_results
+        {:exit, reason} ->
+          result_to_insert_params(
+            {:error, MetadataRetriever.truncate_error("Terminated:" <> inspect(reason))},
+            contract_address_hash,
+            token_id
+          )
       end
-
-    upsert_with_rescue(total_results)
+    end)
+    |> upsert_with_rescue()
   end
 
-  defp add_failed_to_retry_result(results, failed_results, instances_to_retry, contract_address_hash, token_id, result) do
-    {
-      results,
-      [
-        result_to_insert_params(result, contract_address_hash, token_id)
-        | failed_results
-      ],
-      [{contract_address_hash, token_id} | instances_to_retry]
-    }
-  end
-
-  defp batch_fetch_instances_inner(_token_instances, _token_types_map, _cryptokitties, from_base_uri? \\ false)
-
-  defp batch_fetch_instances_inner(token_instances, token_types_map, cryptokitties, from_base_uri?) do
+  defp batch_fetch_instances_inner(token_instances, token_types_map, cryptokitties) do
     contract_results =
       (token_instances
        |> Enum.map(fn {contract_address_hash, token_id} ->
-         token_id = prepare_token_id(token_id)
-         contract_address_hash_string = to_string(contract_address_hash)
-
-         prepare_request(
-           token_types_map[String.downcase(contract_address_hash_string)],
-           contract_address_hash_string,
-           token_id,
-           from_base_uri?
-         )
+         {contract_address_hash, token_id, token_types_map[contract_address_hash.bytes]}
        end)
-       |> Reader.query_contracts(@erc_721_1155_abi, [], false)
-       |> Enum.zip_reduce(token_instances, [], fn result, {contract_address_hash, token_id}, acc ->
-         token_id = prepare_token_id(token_id)
+       |> NFT.batch_metadata_url_request(Application.get_env(:explorer, :json_rpc_named_arguments))
+       |> Enum.zip_reduce(token_instances, [], fn {result, from_base_uri?}, {contract_address_hash, token_id}, acc ->
+         token_id = NFT.prepare_token_id(token_id)
 
          [
-           {result, normalize_token_id(token_types_map[String.downcase(to_string(contract_address_hash))], token_id),
-            contract_address_hash, token_id}
+           {result, normalize_token_id(token_types_map[contract_address_hash.bytes], token_id), contract_address_hash,
+            token_id, from_base_uri?}
            | acc
          ]
        end)
@@ -210,45 +80,11 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
         cryptokitties
 
     contract_results
-    |> Enum.map(fn {result, normalized_token_id, _contract_address_hash, token_id} ->
+    |> Enum.map(fn {result, normalized_token_id, _contract_address_hash, token_id, from_base_uri?} ->
       Task.async(fn -> MetadataRetriever.fetch_json(result, token_id, normalized_token_id, from_base_uri?) end)
     end)
     |> Task.yield_many(:infinity)
     |> Enum.zip(contract_results)
-  end
-
-  @doc """
-  Prepares token id for request.
-  """
-  @spec prepare_token_id(any) :: any
-  def prepare_token_id(%Decimal{} = token_id), do: Decimal.to_integer(token_id)
-  def prepare_token_id(token_id), do: token_id
-
-  def prepare_request(erc_721_404, contract_address_hash_string, token_id, from_base_uri?)
-      when erc_721_404 in ["ERC-404", "ERC-721"] do
-    request = %{
-      contract_address: contract_address_hash_string,
-      block_number: nil
-    }
-
-    if from_base_uri? do
-      request |> Map.put(:method_id, @base_uri) |> Map.put(:args, [])
-    else
-      request |> Map.put(:method_id, @token_uri) |> Map.put(:args, [token_id])
-    end
-  end
-
-  def prepare_request(_token_type, contract_address_hash_string, token_id, from_base_uri?) do
-    request = %{
-      contract_address: contract_address_hash_string,
-      block_number: nil
-    }
-
-    if from_base_uri? do
-      request |> Map.put(:method_id, @base_uri) |> Map.put(:args, [])
-    else
-      request |> Map.put(:method_id, @uri) |> Map.put(:args, [token_id])
-    end
   end
 
   @spec normalize_token_id(binary(), integer()) :: nil | binary()
@@ -262,6 +98,19 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
       token_id: token_id,
       token_contract_address_hash: token_contract_address_hash,
       metadata: metadata,
+      skip_metadata_url: true,
+      error: nil,
+      refetch_after: nil
+    }
+  end
+
+  defp result_to_insert_params({:ok_store_uri, %{metadata: metadata}, uri}, token_contract_address_hash, token_id) do
+    %{
+      token_id: token_id,
+      token_contract_address_hash: token_contract_address_hash,
+      metadata: metadata,
+      metadata_url: uri,
+      skip_metadata_url: false,
       error: nil,
       refetch_after: nil
     }
@@ -315,19 +164,5 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
         end)
         |> upsert_with_rescue(true)
       end
-  end
-
-  @doc """
-  Returns the ABI of uri, tokenURI, baseURI getters for ERC721 and ERC1155 tokens.
-  """
-  def erc_721_1155_abi do
-    @erc_721_1155_abi
-  end
-
-  @doc """
-  Returns tokenURI method signature.
-  """
-  def token_uri do
-    @token_uri
   end
 end
