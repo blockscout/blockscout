@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Contract creation tx block number binary search ([#10530](https://github.com/blockscout/blockscout/issues/10530))
 - Enhance health endpoint logic: track L2-rollup batches health ([#11888](https://github.com/blockscout/blockscout/issues/11888))
 - Universal API Proxy ([#12119](https://github.com/blockscout/blockscout/issues/12119))
 - Add sorting by tx count and balance to `/api/v2/addresses` ([#12168](https://github.com/blockscout/blockscout/issues/12168))
