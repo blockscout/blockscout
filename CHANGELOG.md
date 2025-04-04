@@ -25,6 +25,7 @@
 
 ### 🐛 Bug Fixes
 
+- (BufferedTask-based approach for fetching Arbitrum-specific settlement info [#12192](https://github.com/blockscout/blockscout/pull/12192))
 - Contract creation transaction associations and bytecode twin detection ([#12086](https://github.com/blockscout/blockscout/issues/12086))
 - Improve background migrations + new `Indexer.Migrator.RecoveryWETHTokenTransfers` ([#12065](https://github.com/blockscout/blockscout/issues/12065))
 - Update docker cache references to use ghcr.io ([#12178](https://github.com/blockscout/blockscout/issues/12178))
