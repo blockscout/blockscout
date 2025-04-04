@@ -10,7 +10,7 @@ jobs:
     name: Push Docker image to GitHub Container Registry
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 7.0.2
+      RELEASE_VERSION: 8.0.0
       DOCKER_CHAIN_NAME: rsk
     steps:
       - uses: actions/checkout@v4

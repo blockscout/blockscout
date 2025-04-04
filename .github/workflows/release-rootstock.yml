@@ -14,7 +14,7 @@ jobs:
     name: Push Docker image to GitHub Container Registry
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 7.0.2
+      RELEASE_VERSION: 8.0.0
     steps:
       - uses: actions/checkout@v4
       - name: Setup repo

@@ -31,6 +31,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   alias Explorer.Utility.{MassiveBlock, MissingRangesManipulator}
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.TaskSupervisor
+  alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
   alias Indexer.Prometheus
 
   @behaviour Block.Fetcher
@@ -120,6 +121,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
         imported,
         Map.put(async_import_remaining_block_data_options, :block_rewards, %{errors: block_reward_errors})
       )
+
+      ContractCreatorOnDemand.async_update_cache_of_contract_creator_on_demand(imported)
 
       ok
     end
