@@ -98,7 +98,7 @@ When contributing to the API v2, please adhere to the following naming conventio
 We strongly favor **runtime configuration** over compile-time configuration
 whenever possible. This approach:
 
-- Reduces the number of docker images needed
+- Reduces the number of Docker images needed
 - Increases deployment flexibility
 - Simplifies maintenance and testing
 
@@ -111,7 +111,7 @@ flowchart TD
     A[Add/Modify Configuration Option or Chain Type] --> B{Is it feature-specific behavior of a function?}
     B -->|Yes| C[Use RuntimeEnvHelper or Application.get_env/3 and pattern matching]
     B -->|No| D{Does it need new database tables?}
-    D -->|Yes| E[Create new repo and handle at runtime in config_helper.ex]
+    D -->|Yes| E[Create new Ecto.Repo and handle it at runtime in config_helper.ex]
     D -->|No| F{Is it an API endpoint?}
     F -->|Yes| G[Use chain_scope macro or CheckFeature plug]
     F -->|No| H{Does it modify existing database schema?}
@@ -153,8 +153,8 @@ defp do_foo(_), do: :baz
 
 If your feature or chain-specific functionality requires new database tables:
 
-1. Create a new repository module in `apps/explorer/lib/explorer/repo.ex`.
-2. Add the repo to `config/config_helper.exs` in the `repos/0` function.
+1. Define a new repository module in `apps/explorer/lib/explorer/repo.ex`.
+2. Add the repository to `config/config_helper.exs` in the `repos/0` function.
 3. Include a runtime check to load this repo conditionally:
 
 ```elixir
@@ -221,6 +221,12 @@ end
 
 To prepare for future runtime refactoring, isolate these schema-specific changes
 as much as possible.
+
+This limitation stems from Ecto schemas being defined at compile-time. When
+different chain types need variations in shared tables (additional fields,
+different constraints), these schema differences cannot be modified at runtime.
+We're currently researching approaches for dynamic schema adjustment based on
+runtime configuration.
 
 For reference on which chain types still require compile-time configuration, see
 the [Chain-Specific Environment

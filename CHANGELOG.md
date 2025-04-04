@@ -74,7 +74,7 @@
 - Treat `SHRINK_INTERNAL_TRANSACTIONS_ENABLED` as runtime env ([#12110](https://github.com/blockscout/blockscout/issues/12110))
 - Docker compose reduce env output ([#12111](https://github.com/blockscout/blockscout/issues/12111))
 - Replaced the link to the blockscout badge ([#12106](https://github.com/blockscout/blockscout/issues/12106))
-- Remove default JSON RPC ednpoint ([#12071](https://github.com/blockscout/blockscout/issues/12071))
+- Remove default JSON RPC endpoint ([#12071](https://github.com/blockscout/blockscout/issues/12071))
 - Remove token object from API v2 api/v2/tokens/:hash/holders endpoint ([#12022](https://github.com/blockscout/blockscout/issues/12022))
 - Remove Read/Write smart-contract API v2 endpoints ([#12026](https://github.com/blockscout/blockscout/issues/12026))
 - Use DB replica, if it's enabled, for proxy-related queries ([#12020](https://github.com/blockscout/blockscout/issues/12020))
