@@ -1,5 +1,92 @@
 # Changelog
 
+## 8.0.0
+
+### 🚀 Features
+
+- Enhance health endpoint logic: track L2-rollup batches health ([#11888](https://github.com/blockscout/blockscout/issues/11888))
+- Universal API Proxy ([#12119](https://github.com/blockscout/blockscout/issues/12119))
+- Add sorting by tx count and balance to `/api/v2/addresses` ([#12168](https://github.com/blockscout/blockscout/issues/12168))
+- Support OP interop messages ([#11903](https://github.com/blockscout/blockscout/issues/11903))
+- Store and validate metadata_url ([#12102](https://github.com/blockscout/blockscout/issues/12102))
+- Captcha scoped bypass token for token instance metadata refetch ([#12147](https://github.com/blockscout/blockscout/issues/12147))
+- Add filter by `type` and `call_type` to `/api/v2/blocks/{:block_hash}/internal-transactions` ([#11968](https://github.com/blockscout/blockscout/issues/11968))
+- ERC-7760 proxy type support ([#12057](https://github.com/blockscout/blockscout/issues/12057))
+- Extend scam tokens feature on other endpoints ([#11975](https://github.com/blockscout/blockscout/issues/11975))
+- JSON RPC metrics ([#12070](https://github.com/blockscout/blockscout/issues/12070))
+- Add search by transaction hash capability at api/v2/internal-transactions endpoint ([#12025](https://github.com/blockscout/blockscout/issues/12025))
+- Add ENS and metadata preload to /api/v2/proxy/metadata/addresses ([#11962](https://github.com/blockscout/blockscout/issues/11962))
+- Zilliqa stakers API ([#11615](https://github.com/blockscout/blockscout/issues/11615))
+- Refine setting of certified flag on smart-contracts ([#11855](https://github.com/blockscout/blockscout/issues/11855))
+- Add PendingTransactionOperation ([#11157](https://github.com/blockscout/blockscout/issues/11157))
+- Allow from_period and to_period to be timestamps in CSV export functionality ([#11862](https://github.com/blockscout/blockscout/issues/11862))
+- Add support of ResolvedDelegateProxy proxy pattern ([#11720](https://github.com/blockscout/blockscout/issues/11720))
+
+### 🐛 Bug Fixes
+
+- Contract creation transaction associations and bytecode twin detection ([#12086](https://github.com/blockscout/blockscout/issues/12086))
+- Improve background migrations + new `Indexer.Migrator.RecoveryWETHTokenTransfers` ([#12065](https://github.com/blockscout/blockscout/issues/12065))
+- Update docker cache references to use ghcr.io ([#12178](https://github.com/blockscout/blockscout/issues/12178))
+- Add blob and authorization list info to ETH RPC API ([#12150](https://github.com/blockscout/blockscout/issues/12150))
+- Fix Stability web test ([#12171](https://github.com/blockscout/blockscout/issues/12171))
+- Fix Rootstock failed tests ([#12169](https://github.com/blockscout/blockscout/issues/12169))
+- Unify Block Range Collector behavior for undefined and single range ([#12153](https://github.com/blockscout/blockscout/issues/12153))
+- Signed_authorizations table migrate nonce to numeric(20,0) ([#12157](https://github.com/blockscout/blockscout/issues/12157))
+- Refactor smart-contract API v2 endpoint output ([#12076](https://github.com/blockscout/blockscout/issues/12076))
+- Managing gas usage sum cache and address count cache ([#12149](https://github.com/blockscout/blockscout/issues/12149))
+- Web3 wallet login on Rootstock ([#12121](https://github.com/blockscout/blockscout/issues/12121))
+- Refactor a query to get missing confirmation for Arbitrum blocks ([#11914](https://github.com/blockscout/blockscout/issues/11914))
+- Fix error in old UI ([#12112](https://github.com/blockscout/blockscout/issues/12112))
+- OnDemand fetchers memory consumption for api mode ([#12082](https://github.com/blockscout/blockscout/issues/12082))
+- Implement DA record deduplication for Arbitrum batch processing ([#12095](https://github.com/blockscout/blockscout/issues/12095))
+- Empty contract code addresses ([#12023](https://github.com/blockscout/blockscout/issues/12023))
+- Unify response for single and batch 1155 transfer in RPC API ([#12083](https://github.com/blockscout/blockscout/issues/12083))
+- Is_verified for verified eip7702 proxies ([#12033](https://github.com/blockscout/blockscout/issues/12033))
+- Recovered functionality of Arbitrum batch fetcher ([#12059](https://github.com/blockscout/blockscout/issues/12059))
+- Fix flaking test ([#12013](https://github.com/blockscout/blockscout/issues/12013))
+- Confirmations of Arbitrum blocks near genesis ([#11790](https://github.com/blockscout/blockscout/issues/11790))
+- Fix finding of first block to index ([#11875](https://github.com/blockscout/blockscout/issues/11875))
+- Async fetch internal transactions from reindex migration ([#11959](https://github.com/blockscout/blockscout/issues/11959))
+- Fix Indexer.Fetcher.ContractCode unhandled error ([#11873](https://github.com/blockscout/blockscout/issues/11873))
+
+### 🚜 Refactor
+
+- Consistency with the core application in properties namings in rollups-related API endpoints ([#12055](https://github.com/blockscout/blockscout/issues/12055))
+
+### ⚡ Performance
+
+- `/api/v2/smart-contracts` endpoint ([#12060](https://github.com/blockscout/blockscout/issues/12060))
+- Optimize query for user token transfers list filtered by token ([#12039](https://github.com/blockscout/blockscout/issues/12039))
+- Improve watchlist rendering performance ([#11999](https://github.com/blockscout/blockscout/issues/11999))
+
+### ⚙️ Miscellaneous Tasks
+
+- Migrate images to ghcr.io ([#12128](https://github.com/blockscout/blockscout/issues/12128))
+- Don't send transaction interpretation request for failed tx ([#12164](https://github.com/blockscout/blockscout/issues/12164))
+- Move `redstone` chain type to runtime ([#12124](https://github.com/blockscout/blockscout/issues/12124))
+- Move `DISABLE_INDEXER` option to runtime ([#12139](https://github.com/blockscout/blockscout/issues/12139))
+- Drop transactions index duplicates ([#12144](https://github.com/blockscout/blockscout/issues/12144))
+- CDN improvement: batch DB upsert ([#11918](https://github.com/blockscout/blockscout/issues/11918))
+- Partially move chain types to runtime ([#12114](https://github.com/blockscout/blockscout/issues/12114))
+- Chain counters refactoring and setup persistency for global counters in the DB ([#11849](https://github.com/blockscout/blockscout/issues/11849))
+- Remove legacy decompiled contracts API ([#11998](https://github.com/blockscout/blockscout/issues/11998))
+- Eliminate intercept for V2 socket channels ([#12003](https://github.com/blockscout/blockscout/issues/12003))
+- Treat `SHRINK_INTERNAL_TRANSACTIONS_ENABLED` as runtime env ([#12110](https://github.com/blockscout/blockscout/issues/12110))
+- Docker compose reduce env output ([#12111](https://github.com/blockscout/blockscout/issues/12111))
+- Replaced the link to the blockscout badge ([#12106](https://github.com/blockscout/blockscout/issues/12106))
+- Remove default JSON RPC ednpoint ([#12071](https://github.com/blockscout/blockscout/issues/12071))
+- Remove token object from API v2 api/v2/tokens/:hash/holders endpoint ([#12022](https://github.com/blockscout/blockscout/issues/12022))
+- Remove Read/Write smart-contract API v2 endpoints ([#12026](https://github.com/blockscout/blockscout/issues/12026))
+- Use DB replica, if it's enabled, for proxy-related queries ([#12020](https://github.com/blockscout/blockscout/issues/12020))
+- Ganache -> Anvil JSON RPC Variant ([#12066](https://github.com/blockscout/blockscout/issues/12066))
+- Remove `is_vyper_contract` from the `/api/v2/smart-contracts/{address_hash}` endpoint response ([#11823](https://github.com/blockscout/blockscout/issues/11823))
+- Eliminate warnings in `epoch_logs.ex` ([#12027](https://github.com/blockscout/blockscout/issues/12027))
+- Migrate to `language` enum field in `smart_contracts` table ([#11813](https://github.com/blockscout/blockscout/issues/11813))
+- Fetch epoch logs and rewards until `CELO_L2_MIGRATION_BLOCK` ([#11949](https://github.com/blockscout/blockscout/issues/11949))
+- GraphQL introspection plug ([#11843](https://github.com/blockscout/blockscout/issues/11843))
+- Remove duplicate endpoints for 3d party proxies ([#11940](https://github.com/blockscout/blockscout/issues/11940))
+- Limit number of implementations proxy before insertion into the DB ([#11882](https://github.com/blockscout/blockscout/issues/11882))
+
 ## 7.0.2
 
 ### ⚡ Performance
