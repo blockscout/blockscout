@@ -10,6 +10,36 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
   """
 
   @doc """
+    Updates the data for a task of the batches fetcher.
+
+    This function takes the current state, a task tag, and a map of updates, then
+    merges the updates with the existing task data for that tag.
+
+    ## Parameters
+    - `state`: The current state map containing task_data
+    - `task_tag`: The atom key for the task (e.g. :new_executions or :historical_executions)
+    - `updates`: Map of values to merge with the current task data
+
+    ## Returns
+    - Updated state with merged task data
+
+    ## Examples
+
+        iex> state = %{task_data: %{new_executions: %{start_block: 100}}}
+        iex> update_fetcher_task_data(state, :new_executions, %{start_block: 200})
+        %{task_data: %{new_executions: %{start_block: 200}}}
+  """
+  @spec update_fetcher_task_data(
+          %{:task_data => %{optional(atom()) => map()}, optional(any()) => any()},
+          atom(),
+          map()
+        ) :: %{:task_data => %{optional(atom()) => map()}, optional(any()) => any()}
+  def update_fetcher_task_data(%{task_data: data} = state, task_tag, updates)
+      when is_atom(task_tag) and is_map(updates) do
+    %{state | task_data: %{data | task_tag => Map.merge(data[task_tag], updates)}}
+  end
+
+  @doc """
   Checks if the unconfirmed blocks index is ready for use.
 
   This function verifies if the heavy DB index operation for creating the unconfirmed blocks

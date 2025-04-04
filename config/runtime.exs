@@ -1114,7 +1114,9 @@ config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses,
   new_batches_limit: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_NEW_BATCHES_LIMIT", 10),
   node_interface_contract:
     ConfigHelper.safe_get_env("INDEXER_ARBITRUM_NODE_INTERFACE_CONTRACT", "0x00000000000000000000000000000000000000C8"),
-  missing_batches_range: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSING_BATCHES_RANGE", 10000)
+  missing_batches_range: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSING_BATCHES_RANGE", 10000),
+  failure_interval_threshold:
+    ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_FAILURE_THRESHOLD", "10m")
 
 config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_ENABLED")
