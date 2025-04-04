@@ -114,6 +114,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
 
       stale_balance_window ->
         address_hashes
+        |> Enum.uniq()
         |> Chain.fetch_last_token_balances_include_unfetched()
         |> delete_invalid_balances()
         |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
