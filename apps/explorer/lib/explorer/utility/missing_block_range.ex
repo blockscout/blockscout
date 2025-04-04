@@ -16,11 +16,26 @@ defmodule Explorer.Utility.MissingBlockRange do
   typed_schema "missing_block_ranges" do
     field(:from_number, :integer)
     field(:to_number, :integer)
+    # Currently, the only priority that is used is `1` for contract creation
+    # blocks fetch. Whenever we introduce additional priorities, we MUST change
+    # this field to `Ecto.Enum`, like this:
+    #
+    # ```elixir
+    # field(:priority, Ecto.Enum, values: [contract_creation: 1, something_else: 2])
+    # ```
+    #
+    # or like this:
+    #
+    # ```elixir
+    # field(:priority, Ecto.Enum, values: [low: 1, medium: 2, high: 3])
+    # ```
+
+    field(:priority, :integer)
   end
 
   @doc false
   def changeset(range \\ %__MODULE__{}, params) do
-    cast(range, params, [:from_number, :to_number])
+    cast(range, params, [:from_number, :to_number, :priority])
   end
 
   @doc """
@@ -37,6 +52,23 @@ defmodule Explorer.Utility.MissingBlockRange do
     Repo.one(min_max_block_query())
   end
 
+  @doc """
+  Retrieves the latest batch of missing block ranges from the database.
+
+  This function queries the database for the latest missing block ranges and processes them
+  to return a list of ranges, each represented as a `Range` struct. The size of the batch
+  can be customized by providing the `size` argument, or it defaults to `@default_returning_batch_size`.
+
+  ## Parameters
+
+    - `size` (integer, optional): The maximum number of blocks to include in the batch. Defaults to `@default_returning_batch_size`.
+
+  ## Returns
+
+    - A list of `Range` structs, where each range represents a contiguous block range of missing blocks.
+
+  """
+  @spec get_latest_batch(integer()) :: [__MODULE__.t()]
   def get_latest_batch(size \\ @default_returning_batch_size) do
     size
     |> get_latest_ranges_query()
@@ -59,32 +91,66 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> Enum.reverse()
   end
 
-  def add_ranges_by_block_numbers(numbers) do
+  @doc """
+  Adds ranges derived from a list of block numbers and saves them with a given priority.
+
+  ## Parameters
+
+    - `numbers`: A list of block numbers to be converted into ranges.
+    - `priority`: The priority level to associate with the saved ranges.
+
+  ## Returns
+
+    - The result of the `save_batch/2` function, which processes and persists the ranges.
+
+  This function first converts the list of block numbers into ranges using `numbers_to_ranges/1`
+  and then saves the resulting ranges in a batch with the specified priority.
+  """
+  @spec add_ranges_by_block_numbers([Block.block_number()], integer() | nil) :: [__MODULE__.t()]
+  def add_ranges_by_block_numbers(numbers, priority) do
     numbers
     |> numbers_to_ranges()
-    |> save_batch()
+    |> save_batch(priority)
   end
 
-  @doc """
-    Saves or merges a block range into the missing blocks tracking system.
+  # Saves a range of block numbers with an optional priority.
 
-    Handles various cases of range overlap:
-    - If the range exactly matches an existing range, does nothing
-    - If the range overlaps with one existing range, updates that range's bounds
-    - If the range bridges two existing ranges, merges them into one
-    - If no overlap exists, creates a new range record
+  # This function handles the insertion, deletion, and splitting of block ranges
+  # based on the given range and priority. It ensures that overlapping or adjacent
+  # ranges are managed correctly, taking into account their priorities.
 
-    ## Parameters
-    - A `Range` struct representing the block range to save, where the direction
-      (ascending/descending) doesn't matter
+  # ## Parameters
 
-    ## Returns
-    - `:ok` if the range already exists
-    - `{:ok, struct}` if a new range was created or updated
-    - `{:error, changeset}` if the operation failed
-  """
-  @spec save_range(Range.t()) :: :ok | {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def save_range(from..to//_) do
+  #   - `from..to`: A `Range.t()` representing the range of block numbers to save.
+  #   - `priority`: An optional integer representing the priority of the range. If
+  #     `nil`, the range will not have a priority.
+
+  # ## Returns
+
+  #   - `:ok`: If the operation completes successfully without returning a range.
+  #   - `{:ok, t()}`: If the operation completes successfully and returns a range.
+  #   - `{:error, Ecto.Changeset.t()}`: If there is an error during the operation.
+
+  # ## Behavior
+
+  # The function performs the following actions based on the existing ranges:
+
+  #   - If both the lower and higher bounds of the range belong to the same existing
+  #     range, it updates the priority and splits the range into smaller ranges if
+  #     necessary.
+  #   - If only one bound of the range overlaps with an existing range, it deletes
+  #     the overlapping range if it has a lower priority and fills the gap between
+  #     the new range and the existing range.
+  #   - If the range overlaps with two different existing ranges, it deletes the
+  #     overlapping ranges with lower priority, fills the gap between them, and
+  #     adjusts the priorities of the resulting ranges.
+  #   - If the range does not overlap with any existing range, it simply fills the
+  #     range with the given priority.
+
+  # This function ensures that the block ranges are stored in a consistent and
+  # non-overlapping manner, respecting the priority of each range.
+  @spec save_range(Range.t(), integer() | nil) :: :ok | {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def save_range(from..to//_, priority) do
     min_number = min(from, to)
     max_number = max(from, to)
 
@@ -93,27 +159,110 @@ defmodule Explorer.Utility.MissingBlockRange do
 
     case {lower_range, higher_range} do
       {%__MODULE__{} = same_range, %__MODULE__{} = same_range} ->
-        :ok
+        if is_nil(same_range.priority) && not is_nil(priority) do
+          delete_range(same_range.from_number..same_range.to_number)
+
+          inside_range_params = %{from_number: max_number, to_number: min_number, priority: priority}
+          insert_range(inside_range_params)
+
+          insert_outside_right_range_params(same_range, min_number)
+          insert_outside_left_range_params(same_range, max_number)
+        end
 
       {%__MODULE__{} = range, nil} ->
-        delete_ranges_between(max_number, range.from_number)
-        update_range(range, %{from_number: max_number})
+        delete_less_priority_range(range, priority)
+        fill_ranges_between(max_number, range.from_number + 1, priority)
+
+        split_right_range_priorities(range, priority, min_number)
 
       {nil, %__MODULE__{} = range} ->
-        delete_ranges_between(range.to_number, min_number)
-        update_range(range, %{to_number: min_number})
+        delete_less_priority_range(range, priority)
+        fill_ranges_between(range.to_number - 1, min_number, priority)
+
+        split_left_range_priorities(range, priority, max_number)
 
       {%__MODULE__{} = range_1, %__MODULE__{} = range_2} ->
-        delete_ranges_between(range_2.from_number + 1, range_1.from_number)
-        update_range(range_1, %{from_number: range_2.from_number})
+        delete_less_priority_range(range_2, priority)
+        delete_less_priority_range(range_1, priority)
 
-      _ ->
-        delete_ranges_between(max_number, min_number)
-        insert_range(%{from_number: max_number, to_number: min_number})
+        fill_ranges_between(range_2.to_number - 1, range_1.from_number + 1, priority)
+
+        split_left_range_priorities(range_2, priority, max_number)
+        split_right_range_priorities(range_1, priority, min_number)
+
+      {nil, nil} ->
+        fill_ranges_between(max_number, min_number, priority)
     end
   end
 
-  def delete_range(from..to//_) do
+  @spec insert_inside_left_range_params(__MODULE__.t(), Block.block_number(), integer() | nil) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp insert_inside_left_range_params(range, max_number, priority) do
+    inside_left_range_params = %{from_number: max_number, to_number: range.to_number, priority: priority}
+    insert_range(inside_left_range_params)
+  end
+
+  @spec insert_outside_left_range_params(__MODULE__.t(), Block.block_number()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp insert_outside_left_range_params(range, max_number) do
+    if range.from_number >= max_number + 1 do
+      outside_left_range_params = %{
+        from_number: range.from_number,
+        to_number: max_number + 1,
+        priority: range.priority
+      }
+
+      insert_range(outside_left_range_params)
+    end
+  end
+
+  @spec insert_inside_right_range_params(__MODULE__.t(), Block.block_number(), integer() | nil) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp insert_inside_right_range_params(range, min_number, priority) do
+    inside_right_range_params = %{from_number: range.from_number, to_number: min_number, priority: priority}
+    insert_range(inside_right_range_params)
+  end
+
+  @spec insert_outside_right_range_params(__MODULE__.t(), Block.block_number()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp insert_outside_right_range_params(range, min_number) do
+    if min_number - 1 >= range.to_number do
+      outside_right_range_params = %{
+        from_number: min_number - 1,
+        to_number: range.to_number,
+        priority: range.priority
+      }
+
+      insert_range(outside_right_range_params)
+    end
+  end
+
+  @spec delete_less_priority_range(__MODULE__.t(), integer() | nil) :: any()
+  defp delete_less_priority_range(range, priority) do
+    if is_nil(range.priority) && not is_nil(priority) do
+      delete_range(range.from_number..range.to_number)
+    end
+  end
+
+  @spec split_left_range_priorities(__MODULE__.t(), integer() | nil, Block.block_number()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp split_left_range_priorities(range, priority, pivot_number) do
+    if is_nil(range.priority) && not is_nil(priority) do
+      insert_inside_left_range_params(range, pivot_number, priority)
+      insert_outside_left_range_params(range, pivot_number)
+    end
+  end
+
+  @spec split_right_range_priorities(__MODULE__.t(), integer() | nil, Block.block_number()) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  defp split_right_range_priorities(range, priority, pivot_number) do
+    if is_nil(range.priority) && not is_nil(priority) do
+      insert_inside_right_range_params(range, pivot_number, priority)
+      insert_outside_right_range_params(range, pivot_number)
+    end
+  end
+
+  defp delete_range(from..to//_) do
     min_number = min(from, to)
     max_number = max(from, to)
 
@@ -173,11 +322,13 @@ defmodule Explorer.Utility.MissingBlockRange do
     ## Returns
     - `:ok` regardless of individual range save results
   """
-  @spec save_batch(Range.t() | [Range.t()]) :: list()
-  def save_batch(batch) do
+  @spec save_batch(Range.t() | [Range.t()], integer() | nil) :: [__MODULE__.t()]
+  def save_batch(batch, priority \\ nil) do
     batch
     |> List.wrap()
-    |> Enum.map(&save_range/1)
+    |> Enum.map(fn batches ->
+      save_range(batches, priority)
+    end)
   end
 
   @doc """
@@ -191,7 +342,7 @@ defmodule Explorer.Utility.MissingBlockRange do
     - Returns `nil` if no intersecting ranges are found, or an `Explorer.Utility.MissingBlockRange` instance of the first intersecting range otherwise.
   """
   @spec intersects_with_range(Block.block_number(), Block.block_number()) ::
-          nil | Explorer.Utility.MissingBlockRange.t()
+          nil | __MODULE__.t()
   def intersects_with_range(lower_number, higher_number)
       when is_integer(lower_number) and lower_number >= 0 and
              is_integer(higher_number) and lower_number <= higher_number do
@@ -246,11 +397,94 @@ defmodule Explorer.Utility.MissingBlockRange do
     - A single range record of `Explorer.Utility.MissingBlockRange` that includes
       the given block number, or `nil` if no such range is found.
   """
-  @spec get_range_by_block_number(Block.block_number()) :: nil | Explorer.Utility.MissingBlockRange.t()
+  @spec get_range_by_block_number(Block.block_number()) :: nil | __MODULE__.t()
   def get_range_by_block_number(number) do
     number
     |> include_bound_query()
     |> Repo.one()
+  end
+
+  # Fills all missing block ranges that overlap with the interval [from, to]
+  @spec fill_ranges_between(Block.block_number(), Block.block_number(), integer() | nil) :: :ok
+  defp fill_ranges_between(from, to, priority) do
+    __MODULE__
+    |> where([r], r.from_number <= ^from)
+    |> where([r], r.to_number >= ^to)
+    |> priority_filter(priority)
+    |> Repo.delete_all()
+
+    # select all left priority ranges
+    priority_ranges = select_all_ranges_within_the_range(from, to)
+
+    if Enum.empty?(priority_ranges) do
+      # if no priority ranges inside the requested interval, fill the full range
+      range = %{from_number: from, to_number: to, priority: priority}
+      insert_range(range)
+    else
+      full_range_map_set =
+        from
+        |> Range.new(to)
+        |> Enum.to_list()
+        |> MapSet.new()
+
+      ranges_to_fill =
+        priority_ranges
+        |> Enum.reduce(full_range_map_set, fn range, acc ->
+          map_set =
+            range.from_number
+            |> Range.new(range.to_number)
+            |> Enum.to_list()
+            |> MapSet.new()
+
+          acc
+          |> MapSet.difference(map_set)
+        end)
+        |> MapSet.to_list()
+        |> Enum.sort_by(& &1, :desc)
+        |> Enum.reduce({[], {nil, nil}}, fn num, {ranges, {start_range, end_range}} ->
+          if is_nil(start_range) do
+            {ranges, {num, num}}
+          else
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+            if end_range - num > 1 do
+              {[Range.new(start_range, end_range) | ranges], {num, num}}
+            else
+              {ranges, {start_range, num}}
+            end
+          end
+        end)
+        |> then(fn {ranges, {start_range, end_range}} ->
+          if not is_nil(start_range) && not is_nil(end_range) do
+            [Range.new(start_range, end_range) | ranges]
+          else
+            ranges
+          end
+        end)
+
+      ranges_to_fill
+      |> Enum.each(fn %Range{first: first, last: last} ->
+        range_params = %{from_number: first, to_number: last, priority: priority}
+        insert_range(range_params)
+      end)
+    end
+
+    :ok
+  end
+
+  defp select_all_ranges_within_the_range(from, to) do
+    __MODULE__
+    |> where([r], r.from_number <= ^from)
+    |> where([r], r.to_number >= ^to)
+    |> order_by([r], desc: r.from_number)
+    |> Repo.all()
+  end
+
+  defp priority_filter(query, nil) do
+    where(query, [r], is_nil(r.priority))
+  end
+
+  defp priority_filter(query, _priority) do
+    query
   end
 
   # Deletes all missing block ranges that overlap with the interval [from, to]
@@ -315,8 +549,8 @@ defmodule Explorer.Utility.MissingBlockRange do
     from(r in __MODULE__, select: %{min: min(r.to_number), max: max(r.from_number)})
   end
 
-  def get_latest_ranges_query(size) do
-    from(r in __MODULE__, order_by: [desc: r.from_number], limit: ^size)
+  defp get_latest_ranges_query(size) do
+    from(r in __MODULE__, order_by: [desc_nulls_last: r.priority, desc: r.from_number], limit: ^size)
   end
 
   @doc """

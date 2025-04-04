@@ -145,7 +145,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           implementations = SmartContractHelper.pre_fetch_implementations(fully_preloaded_address)
 
           CoinBalanceOnDemand.trigger_fetch(address)
-          ContractCodeOnDemand.trigger_fetch(address)
+          ContractCodeOnDemand.trigger_fetch(fully_preloaded_address)
 
           conn
           |> put_status(200)

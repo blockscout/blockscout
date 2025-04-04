@@ -11,6 +11,7 @@ defmodule Indexer.Block.FetcherTest do
   alias Indexer.Block.Fetcher
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
+  alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
 
   alias Indexer.Fetcher.{
     ContractCode,
@@ -66,6 +67,7 @@ defmodule Indexer.Block.FetcherTest do
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
+      {:ok, _pid} = ContractCreatorOnDemand.start_link([[], []])
 
       UncleBlock.Supervisor.Case.start_supervised!(
         block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
