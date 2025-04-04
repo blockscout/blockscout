@@ -238,9 +238,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             address_hash
             |> Chain.fetch_last_token_balances(@api_true |> fetch_scam_token_toggle(conn))
 
-          Task.start_link(fn ->
-            TokenBalanceOnDemand.trigger_fetch(address_hash)
-          end)
+          TokenBalanceOnDemand.trigger_fetch(address_hash)
 
           conn
           |> put_status(200)
@@ -687,9 +685,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               |> fetch_scam_token_toggle(conn)
             )
 
-          Task.start_link(fn ->
-            TokenBalanceOnDemand.trigger_fetch(address_hash)
-          end)
+          TokenBalanceOnDemand.trigger_fetch(address_hash)
 
           {tokens, next_page} = split_list_by_page(results_plus_one)
 

@@ -93,7 +93,7 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
     end)
   end
 
-  def import_fetched_balances(%FetchedBalances{params_list: params_list}, broadcast_type \\ false) do
+  def import_fetched_balances(params_list, broadcast_type \\ false) do
     value_fetched_at = DateTime.utc_now()
 
     importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
@@ -112,7 +112,7 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
     })
   end
 
-  def import_fetched_daily_balances(%FetchedBalances{params_list: params_list}, broadcast_type \\ false) do
+  def import_fetched_daily_balances(params_list, broadcast_type \\ false) do
     value_fetched_at = DateTime.utc_now()
 
     importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
@@ -130,8 +130,8 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
     })
   end
 
-  defp run_fetched_balances(%FetchedBalances{errors: errors} = fetched_balances, fetcher_type) do
-    with {:ok, imported} <- import_fetched_balances(fetched_balances, fetcher_type) do
+  defp run_fetched_balances(%FetchedBalances{errors: errors, params_list: params_list}, fetcher_type) do
+    with {:ok, imported} <- import_fetched_balances(params_list, fetcher_type) do
       Accounts.drop(imported[:addresses])
     end
 
