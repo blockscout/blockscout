@@ -91,4 +91,34 @@ defmodule Explorer.Chain.Celo.Helper do
   def block_number_to_epoch_number(block_number) when is_integer(block_number) do
     (block_number / @blocks_per_epoch) |> Float.ceil() |> trunc()
   end
+
+  @doc """
+  Convert the burn fraction from FixidityLib value to decimal.
+
+  ## Examples
+
+      iex> Explorer.Chain.Celo.Helper.burn_fraction_decimal(800_000_000_000_000_000_000_000)
+      Decimal.new("0.800000000000000000000000")
+  """
+  @spec burn_fraction_decimal(integer()) :: Decimal.t()
+  def burn_fraction_decimal(burn_fraction_fixidity_lib)
+      when is_integer(burn_fraction_fixidity_lib) do
+    base = Decimal.new(1, 1, 24)
+    fraction = Decimal.new(1, burn_fraction_fixidity_lib, 0)
+    Decimal.div(fraction, base)
+  end
+
+  @doc """
+  Checks if a block with given number appeared prior to Celo L2 migration.
+  """
+  @spec premigration_block_number?(Block.block_number()) :: boolean()
+  def premigration_block_number?(block_number) do
+    l2_migration_block_number = Application.get_env(:explorer, :celo)[:l2_migration_block]
+
+    if l2_migration_block_number do
+      block_number <= l2_migration_block_number
+    else
+      true
+    end
+  end
 end

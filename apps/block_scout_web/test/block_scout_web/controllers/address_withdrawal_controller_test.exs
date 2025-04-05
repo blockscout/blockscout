@@ -14,33 +14,26 @@ defmodule BlockScoutWeb.AddressWithdrawalControllerTest do
   describe "GET index/2" do
     setup :set_mox_global
 
-    setup do
-      configuration = Application.get_env(:explorer, :checksum_function)
-      Application.put_env(:explorer, :checksum_function, :eth)
-
-      on_exit(fn ->
-        Application.put_env(:explorer, :checksum_function, configuration)
-      end)
-    end
-
     test "with invalid address hash", %{conn: conn} do
       conn = get(conn, address_withdrawal_path(conn, :index, "invalid_address"))
 
       assert html_response(conn, 422)
     end
 
-    test "with valid address hash without address in the DB", %{conn: conn} do
-      conn =
-        get(
-          conn,
-          address_withdrawal_path(conn, :index, Address.checksum("0x8bf38d4764929064f2d4d3a56520a76ab3df415b"), %{
-            "type" => "JSON"
-          })
-        )
+    if Application.compile_env(:explorer, :chain_type) !== :rsk do
+      test "with valid address hash without address in the DB", %{conn: conn} do
+        conn =
+          get(
+            conn,
+            address_withdrawal_path(conn, :index, Address.checksum("0x8bf38d4764929064f2d4d3a56520a76ab3df415b"), %{
+              "type" => "JSON"
+            })
+          )
 
-      assert json_response(conn, 200)
-      tiles = json_response(conn, 200)["items"]
-      assert tiles |> length() == 0
+        assert json_response(conn, 200)
+        tiles = json_response(conn, 200)["items"]
+        assert tiles |> length() == 0
+      end
     end
 
     test "returns withdrawals for the address", %{conn: conn} do

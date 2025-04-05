@@ -25,7 +25,8 @@ defmodule ConfigHelper do
         stability: Explorer.Repo.Stability,
         suave: Explorer.Repo.Suave,
         zilliqa: Explorer.Repo.Zilliqa,
-        zksync: Explorer.Repo.ZkSync
+        zksync: Explorer.Repo.ZkSync,
+        neon: Explorer.Repo.Neon
       }
       |> Map.get(chain_type())
 
@@ -98,14 +99,20 @@ defmodule ConfigHelper do
     end
   end
 
-  @spec parse_time_env_var(String.t(), String.t() | nil) :: non_neg_integer()
-  def parse_time_env_var(env_var, default_value) do
-    case env_var |> safe_get_env(default_value) |> String.downcase() |> Integer.parse() do
-      {milliseconds, "ms"} -> milliseconds
-      {hours, "h"} -> :timer.hours(hours)
-      {minutes, "m"} -> :timer.minutes(minutes)
-      {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
-      _ -> 0
+  @spec parse_time_env_var(String.t(), String.t() | nil) :: non_neg_integer() | nil
+  def parse_time_env_var(env_var, default_value \\ nil) do
+    case safe_get_env(env_var, default_value) do
+      "" ->
+        nil
+
+      value ->
+        case value |> String.downcase() |> Integer.parse() do
+          {milliseconds, "ms"} -> milliseconds
+          {hours, "h"} -> :timer.hours(hours)
+          {minutes, "m"} -> :timer.minutes(minutes)
+          {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
+          _ -> raise "Invalid time format in environment variable #{env_var}: #{value}"
+        end
     end
   end
 
@@ -322,11 +329,15 @@ defmodule ConfigHelper do
   def parse_url_env_var(env_var, default_value \\ nil, trailing_slash_needed? \\ false) do
     with url when not is_nil(url) <- safe_get_env(env_var, default_value),
          url <- String.trim_trailing(url, "/"),
+         true <- url != "",
          {url, true} <- {url, trailing_slash_needed?} do
       url <> "/"
     else
       {url, false} ->
         url
+
+      false ->
+        default_value
 
       nil ->
         nil
@@ -350,7 +361,8 @@ defmodule ConfigHelper do
     "suave",
     "zetachain",
     "zilliqa",
-    "zksync"
+    "zksync",
+    "neon"
   ]
 
   @spec chain_type() :: atom() | nil

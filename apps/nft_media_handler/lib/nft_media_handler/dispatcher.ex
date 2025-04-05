@@ -76,20 +76,24 @@ defmodule NFTMediaHandler.Dispatcher do
   defp run_task(batch, node, folder),
     do:
       {TaskSupervisor.async_nolink(NFTMediaHandler.TaskSupervisor, fn ->
-         Enum.map(batch, fn url ->
+         batch
+         |> Enum.map(fn url ->
            try do
-             url
-             |> NFTMediaHandler.prepare_and_upload_by_url(folder)
-             |> DispatcherInterface.store_result(url, node)
+             result =
+               url
+               |> NFTMediaHandler.prepare_and_upload_by_url(folder)
+
+             {result, url}
            rescue
              error ->
                Logger.error(
                  "Failed to fetch and upload url (#{url}): #{Exception.format(:error, error, __STACKTRACE__)}"
                )
 
-               DispatcherInterface.store_result({:error, error}, url, node)
+               {{:error, error}, url}
            end
          end)
+         |> DispatcherInterface.store_result(node)
        end).ref, {batch, node}}
 
   defp timeout, do: Application.get_env(:nft_media_handler, :worker_spawn_tasks_timeout)

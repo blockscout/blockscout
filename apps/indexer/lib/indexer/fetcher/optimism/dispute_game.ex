@@ -17,6 +17,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   alias Explorer.Application.Constants
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.Optimism.{DisputeGame, Withdrawal}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper, as: IndexerHelper
 
@@ -51,6 +52,9 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   @impl GenServer
   def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
+
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+    :timer.sleep(2000)
 
     env = Application.get_all_env(:indexer)[Optimism]
     system_config = env[:optimism_l1_system_config]
@@ -340,7 +344,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
             ]
           })
 
-        calldata = "0x" <> Base.encode16(encoded_call, case: :lower)
+        calldata = ExplorerHelper.add_0x_prefix(encoded_call)
 
         Contract.eth_call_request(calldata, dispute_game_factory, index, nil, nil)
       end)
@@ -362,7 +366,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
         [extra_data] = Helper.decode_data(extra_data_by_index[game.index], [:bytes])
 
         game
-        |> Map.put(:extra_data, "0x" <> Base.encode16(extra_data, case: :lower))
+        |> Map.put(:extra_data, ExplorerHelper.add_0x_prefix(extra_data))
         |> Map.put(:resolved_at, sanitize_resolved_at(resolved_at_by_index[game.index]))
         |> Map.put(:status, quantity_to_integer(status_by_index[game.index]))
       end)
@@ -398,7 +402,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       |> Enum.map(fn game ->
         address =
           if is_binary(game.address) do
-            "0x" <> Base.encode16(game.address, case: :lower)
+            ExplorerHelper.add_0x_prefix(game.address)
           else
             game.address
           end

@@ -8,8 +8,10 @@ defmodule Explorer.Chain.AdvancedFilter do
   import Ecto.Query
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.{Chain, Helper, PagingOptions}
   alias Explorer.Chain.{Address, Data, DenormalizationHelper, Hash, InternalTransaction, TokenTransfer, Transaction}
+  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
 
   @primary_key false
   typed_embedded_schema null: false do
@@ -88,8 +90,20 @@ defmodule Explorer.Chain.AdvancedFilter do
 
     block_numbers_age =
       [
-        from: age[:from] && Chain.timestamp_to_block_number(age[:from], :after, Keyword.get(options, :api?, false)),
-        to: age[:to] && Chain.timestamp_to_block_number(age[:to], :before, Keyword.get(options, :api?, false))
+        from:
+          age[:from] &&
+            BlockGeneralReader.timestamp_to_block_number(
+              age[:from],
+              :after,
+              Keyword.get(options, :api?, false)
+            ),
+        to:
+          age[:to] &&
+            BlockGeneralReader.timestamp_to_block_number(
+              age[:to],
+              :before,
+              Keyword.get(options, :api?, false)
+            )
       ]
 
     tasks =
@@ -491,6 +505,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       |> page_token_transfers(paging_options)
 
     token_transfer_query
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> limit_query(paging_options)
     |> query_function.(false)
     |> limit_query(paging_options)

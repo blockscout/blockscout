@@ -8,14 +8,16 @@ defmodule Indexer.Helper do
   import EthereumJSONRPC,
     only: [
       fetch_block_number_by_tag: 2,
+      id_to_params: 1,
+      integer_to_quantity: 1,
       json_rpc: 2,
       quantity_to_integer: 1,
-      integer_to_quantity: 1,
       request: 1
     ]
 
-  alias EthereumJSONRPC.Block.ByNumber
+  alias EthereumJSONRPC.Block.{ByNumber, ByTag}
   alias EthereumJSONRPC.{Blocks, Transport}
+  alias Explorer.Chain.Cache.LatestL1BlockNumber
   alias Explorer.Chain.Hash
   alias Explorer.SmartContract.Reader, as: ContractReader
 
@@ -108,9 +110,9 @@ defmodule Indexer.Helper do
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
     with {:ok, first_block_timestamp} <-
-           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, @infinite_retries_number),
+           get_block_timestamp_by_number_or_tag(first_block, json_rpc_named_arguments, @infinite_retries_number),
          {:ok, last_safe_block_timestamp} <-
-           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, @infinite_retries_number) do
+           get_block_timestamp_by_number_or_tag(last_safe_block, json_rpc_named_arguments, @infinite_retries_number) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
@@ -480,7 +482,9 @@ defmodule Indexer.Helper do
          retries_left,
          retries_done
        ) do
-    case json_rpc(requests, json_rpc_named_arguments) do
+    requests
+    |> json_rpc(json_rpc_named_arguments)
+    |> case do
       {:ok, responses_list} = batch_responses ->
         standardized_error =
           Enum.reduce_while(responses_list, %{}, fn one_response, acc ->
@@ -500,7 +504,6 @@ defmodule Indexer.Helper do
         {:error, message, err}
     end
     |> case do
-      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
       {:ok, responses, _} ->
         responses
 
@@ -589,8 +592,7 @@ defmodule Indexer.Helper do
       Map.put(acc, block_number, 0)
     end)
     |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-    |> Stream.with_index()
-    |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+    |> id_to_params()
     |> Blocks.requests(&ByNumber.request(&1, transaction_details, false))
     |> Enum.chunk_every(@block_by_number_chunk_size)
     |> Enum.reduce([], fn current_requests, results_acc ->
@@ -610,22 +612,36 @@ defmodule Indexer.Helper do
 
   @doc """
   Fetches block timestamp by its number using RPC request.
+  The number can be `:latest`.
   Performs a specified number of retries (up to) if the first attempt returns error.
+
+  ## Parameters
+  - `number`: Block number or `:latest` to fetch the latest block.
+  - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  - `retries`: Number of retry attempts if the request fails.
+
+  ## Returns
+  - `{:ok, timestamp}` where `timestamp` is the block timestamp as a Unix timestamp.
+  - `{:error, reason}` if the request fails after all retries.
   """
-  @spec get_block_timestamp_by_number(non_neg_integer(), list(), non_neg_integer()) ::
+  @spec get_block_timestamp_by_number_or_tag(non_neg_integer() | :latest, list(), non_neg_integer()) ::
           {:ok, non_neg_integer()} | {:error, any()}
-  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
-    func = &get_block_timestamp_by_number_inner/2
+  def get_block_timestamp_by_number_or_tag(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
+    func = &get_block_timestamp_inner/2
     args = [number, json_rpc_named_arguments]
     error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
     repeated_call(func, args, error_message, retries)
   end
 
-  defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do
-    result =
-      %{id: 0, number: number}
-      |> ByNumber.request(false)
-      |> json_rpc(json_rpc_named_arguments)
+  defp get_block_timestamp_inner(number, json_rpc_named_arguments) do
+    request =
+      if number == :latest do
+        ByTag.request(%{id: 0, tag: "latest"})
+      else
+        ByNumber.request(%{id: 0, number: number}, false)
+      end
+
+    result = json_rpc(request, json_rpc_named_arguments)
 
     with {:ok, block} <- result,
          false <- is_nil(block),
@@ -653,8 +669,41 @@ defmodule Indexer.Helper do
     end
   end
 
-  # Pauses the process, incrementally increasing the sleep time up to a maximum of 20 minutes.
-  defp pause_before_retry(retries_done) do
+  @doc """
+  Pauses the process, incrementally increasing the sleep time up to a maximum of 20 minutes.
+
+  ## Parameters
+  - `retries_done`: How many retries have already been done.
+
+  ## Returns
+  - Nothing.
+  """
+  @spec pause_before_retry(non_neg_integer()) :: :ok
+  def pause_before_retry(retries_done) do
     :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
+  end
+
+  @doc """
+    Fetches the `latest` block number from L1. If the block number is cached in `Explorer.Chain.Cache.LatestL1BlockNumber`,
+    the cached value is used. The cached value is updated in `Indexer.Fetcher.RollupL1ReorgMonitor` module.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection on L1.
+
+    ## Returns
+    - The block number.
+  """
+  @spec fetch_latest_l1_block_number(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer()
+  def fetch_latest_l1_block_number(json_rpc_named_arguments) do
+    case LatestL1BlockNumber.get_block_number() do
+      nil ->
+        {:ok, latest} =
+          get_block_number_by_tag("latest", json_rpc_named_arguments, @infinite_retries_number)
+
+        latest
+
+      latest_from_cache ->
+        latest_from_cache
+    end
   end
 end

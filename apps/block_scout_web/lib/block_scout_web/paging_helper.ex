@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.PagingHelper do
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
+  alias Explorer.Chain.InternalTransaction.CallType, as: InternalTransactionCallType
+  alias Explorer.Chain.InternalTransaction.Type, as: InternalTransactionType
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias Explorer.Chain.{SmartContract, Transaction}
   alias Explorer.{Helper, PagingOptions, SortingHelper}
@@ -97,9 +99,8 @@ defmodule BlockScoutWeb.PagingHelper do
   defp filters_to_list(filters, allowed, :downcase), do: filters |> String.downcase() |> parse_filter(allowed)
   defp filters_to_list(filters, allowed, :upcase), do: filters |> String.upcase() |> parse_filter(allowed)
 
-  # sobelow_skip ["DOS.StringToAtom"]
   def filter_options(%{"filter" => filter}, fallback) do
-    filter = filter |> parse_filter(@allowed_filter_labels) |> Enum.map(&String.to_atom/1)
+    filter = filter |> parse_filter(@allowed_filter_labels) |> Enum.map(&String.to_existing_atom/1)
     if(filter == [], do: [fallback], else: filter)
   end
 
@@ -118,12 +119,25 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def chain_ids_filter_options(_), do: [chain_id: []]
 
-  # sobelow_skip ["DOS.StringToAtom"]
   def type_filter_options(%{"type" => type}) do
-    [type: type |> parse_filter(@allowed_type_labels) |> Enum.map(&String.to_atom/1)]
+    [type: type |> parse_filter(@allowed_type_labels) |> Enum.map(&String.to_existing_atom/1)]
   end
 
   def type_filter_options(_params), do: [type: []]
+
+  @spec internal_transaction_type_options(any()) :: [{:type, list()}]
+  def internal_transaction_type_options(%{"type" => type}) do
+    [type: type |> parse_filter(InternalTransactionType.values()) |> Enum.map(&String.to_existing_atom/1)]
+  end
+
+  def internal_transaction_type_options(_params), do: [type: []]
+
+  @spec internal_transaction_call_type_options(any()) :: [{:call_type, list()}]
+  def internal_transaction_call_type_options(%{"call_type" => type}) do
+    [call_type: type |> parse_filter(InternalTransactionCallType.values()) |> Enum.map(&String.to_existing_atom/1)]
+  end
+
+  def internal_transaction_call_type_options(_params), do: [call_type: []]
 
   def method_filter_options(%{"method" => method}) do
     [method: parse_method_filter(method)]
@@ -260,24 +274,14 @@ defmodule BlockScoutWeb.PagingHelper do
 
   defp do_tokens_sorting("fiat_value", "asc"), do: [asc_nulls_first: :fiat_value]
   defp do_tokens_sorting("fiat_value", "desc"), do: [desc_nulls_last: :fiat_value]
+  defp do_tokens_sorting("holders_count", "asc"), do: [asc_nulls_first: :holder_count]
+  defp do_tokens_sorting("holders_count", "desc"), do: [desc_nulls_last: :holder_count]
+  # todo: Next 2 clauses should be removed in favour `holders_count` property with the next release after 8.0.0
   defp do_tokens_sorting("holder_count", "asc"), do: [asc_nulls_first: :holder_count]
   defp do_tokens_sorting("holder_count", "desc"), do: [desc_nulls_last: :holder_count]
   defp do_tokens_sorting("circulating_market_cap", "asc"), do: [asc_nulls_first: :circulating_market_cap]
   defp do_tokens_sorting("circulating_market_cap", "desc"), do: [desc_nulls_last: :circulating_market_cap]
   defp do_tokens_sorting(_, _), do: []
-
-  @spec smart_contracts_sorting(%{required(String.t()) => String.t()}) :: [{:sorting, SortingHelper.sorting_params()}]
-  def smart_contracts_sorting(%{"sort" => sort_field, "order" => order}) do
-    [sorting: do_smart_contracts_sorting(sort_field, order)]
-  end
-
-  def smart_contracts_sorting(_), do: []
-
-  defp do_smart_contracts_sorting("balance", "asc"), do: [{:asc_nulls_first, :fetched_coin_balance, :address}]
-  defp do_smart_contracts_sorting("balance", "desc"), do: [{:desc_nulls_last, :fetched_coin_balance, :address}]
-  defp do_smart_contracts_sorting("transactions_count", "asc"), do: [{:asc_nulls_first, :transactions_count, :address}]
-  defp do_smart_contracts_sorting("transactions_count", "desc"), do: [{:desc_nulls_last, :transactions_count, :address}]
-  defp do_smart_contracts_sorting(_, _), do: []
 
   @spec address_transactions_sorting(%{required(String.t()) => String.t()}) :: [
           {:sorting, SortingHelper.sorting_params()}
@@ -351,4 +355,41 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_validators_blackfort_sorting("address_hash", "desc"), do: [desc_nulls_last: :address_hash]
 
   defp do_validators_blackfort_sorting(_, _), do: []
+
+  @doc """
+    Generates sorting parameters for addresses list based on query parameters.
+
+    ## Parameters
+      - params: map containing:
+        - `"sort"` - field to sort by ("balance" or "transactions_count")
+        - `"order"` - sort order ("asc" or "desc")
+
+    ## Returns
+      - List with single sorting parameter tuple when valid sort parameters provided
+      - Empty list when no valid sort parameters provided
+
+    ## Examples
+        iex> addresses_sorting(%{"sort" => "balance", "order" => "desc"})
+        [sorting: [desc_nulls_last: :fetched_coin_balance]]
+
+        iex> addresses_sorting(%{"sort" => "transactions_count", "order" => "asc"})
+        [sorting: [asc_nulls_first: :transactions_count]]
+
+        iex> addresses_sorting(%{})
+        []
+  """
+  @spec addresses_sorting(%{required(String.t()) => String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
+  def addresses_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_addresses_sorting(sort_field, order)]
+  end
+
+  def addresses_sorting(_), do: []
+
+  defp do_addresses_sorting("balance", "asc"), do: [asc: :fetched_coin_balance]
+  defp do_addresses_sorting("balance", "desc"), do: [desc: :fetched_coin_balance]
+  defp do_addresses_sorting("transactions_count", "asc"), do: [asc_nulls_first: :transactions_count]
+  defp do_addresses_sorting("transactions_count", "desc"), do: [desc_nulls_last: :transactions_count]
+  defp do_addresses_sorting(_, _), do: []
 end

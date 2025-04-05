@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   alias BlockScoutWeb.{BlockView, Endpoint}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Beacon.Blob, Block, Hash, Transaction, UserOperation}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Plug.Conn.Query
 
   def render("search_results.json", %{search_results: search_results, next_page_params: next_page_params}) do
@@ -31,6 +32,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "type" => search_result.type,
       "name" => search_result.name,
       "symbol" => search_result.symbol,
+      "address_hash" => search_result.address_hash,
+      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => search_result.address_hash,
       "token_url" => token_path(Endpoint, :show, search_result.address_hash),
       "address_url" => address_path(Endpoint, :show, search_result.address_hash),
@@ -51,6 +54,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     %{
       "type" => search_result.type,
       "name" => search_result.name,
+      "address_hash" => search_result.address_hash,
+      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => search_result.address_hash,
       "url" => address_path(Endpoint, :show, search_result.address_hash),
       "is_smart_contract_verified" => search_result.verified,
@@ -65,6 +70,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     %{
       "type" => search_result.type,
       "name" => search_result.name,
+      "address_hash" => search_result.address_hash,
+      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => search_result.address_hash,
       "url" => address_path(Endpoint, :show, search_result.address_hash),
       "is_smart_contract_verified" => search_result.verified,
@@ -74,8 +81,24 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     }
   end
 
+  def prepare_search_result(%{type: "metadata_tag"} = search_result) do
+    %{
+      "type" => search_result.type,
+      "name" => search_result.name,
+      "address_hash" => search_result.address_hash,
+      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
+      "address" => search_result.address_hash,
+      "url" => address_path(Endpoint, :show, search_result.address_hash),
+      "is_smart_contract_verified" => search_result.verified,
+      "ens_info" => search_result[:ens_info],
+      "certified" => if(search_result.certified, do: search_result.certified, else: false),
+      "priority" => search_result.priority,
+      "metadata" => search_result.metadata
+    }
+  end
+
   def prepare_search_result(%{type: "block"} = search_result) do
-    block_hash = hash_to_string(search_result.block_hash)
+    block_hash = ExplorerHelper.add_0x_prefix(search_result.block_hash)
 
     {:ok, block} =
       Chain.hash_to_block(hash(search_result.block_hash),
@@ -97,7 +120,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   def prepare_search_result(%{type: "transaction"} = search_result) do
-    transaction_hash = hash_to_string(search_result.transaction_hash)
+    transaction_hash = ExplorerHelper.add_0x_prefix(search_result.transaction_hash)
 
     %{
       "type" => search_result.type,
@@ -109,7 +132,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   def prepare_search_result(%{type: "user_operation"} = search_result) do
-    user_operation_hash = hash_to_string(search_result.user_operation_hash)
+    user_operation_hash = ExplorerHelper.add_0x_prefix(search_result.user_operation_hash)
 
     %{
       "type" => search_result.type,
@@ -120,7 +143,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   def prepare_search_result(%{type: "blob"} = search_result) do
-    blob_hash = hash_to_string(search_result.blob_hash)
+    blob_hash = ExplorerHelper.add_0x_prefix(search_result.blob_hash)
 
     %{
       "type" => search_result.type,
@@ -129,9 +152,6 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "priority" => search_result.priority
     }
   end
-
-  defp hash_to_string(%Hash{bytes: bytes}), do: hash_to_string(bytes)
-  defp hash_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
   defp hash(%Hash{} = hash), do: hash
 

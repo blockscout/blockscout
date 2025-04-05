@@ -13,17 +13,18 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   Router for API
   """
   use BlockScoutWeb, :router
+  use BlockScoutWeb.Routers.ChainTypeScope
 
   use Utils.CompileTimeEnvHelper,
     chain_type: [:explorer, :chain_type],
-    mud_enabled: [:explorer, [Explorer.Chain.Mud, :enabled]],
     graphql_enabled: [:block_scout_web, [Api.GraphQL, :enabled]],
     graphql_max_complexity: [:block_scout_web, [Api.GraphQL, :max_complexity]],
     graphql_token_limit: [:block_scout_web, [Api.GraphQL, :token_limit]],
     reading_enabled: [:block_scout_web, [__MODULE__, :reading_enabled]],
     writing_enabled: [:block_scout_web, [__MODULE__, :writing_enabled]]
 
-  alias BlockScoutWeb.AddressTransactionController
+  use Utils.RuntimeEnvHelper,
+    mud_enabled?: [:explorer, [Explorer.Chain.Mud, :enabled]]
 
   alias BlockScoutWeb.Routers.{
     AddressBadgesApiV2Router,
@@ -33,7 +34,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     UtilsApiV2Router
   }
 
-  alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
+  alias BlockScoutWeb.Plug.{CheckApiV2, CheckFeature, RateLimit}
   alias BlockScoutWeb.Routers.AccountRouter
 
   @max_query_string_length 5_000
@@ -57,6 +58,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
+    plug(:fetch_cookies)
   end
 
   pipeline :api_v2 do
@@ -102,6 +104,11 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
     plug(RateLimit, graphql?: true)
+    plug(BlockScoutWeb.Plug.GraphQLSchemaIntrospection)
+  end
+
+  pipeline :mud do
+    plug(CheckFeature, feature_check: &mud_enabled?/0)
   end
 
   alias BlockScoutWeb.API.V2
@@ -115,6 +122,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     delete("/token-info", V2.ImportController, :delete_token_info)
 
     get("/smart-contracts/:address_hash_param", V2.ImportController, :try_to_search_contract)
+
+    if @chain_type == :optimism do
+      post("/optimism/interop/", V2.OptimismController, :interop_import)
+    end
   end
 
   scope "/v2", as: :api_v2 do
@@ -169,6 +180,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:transaction_hash_param/state-changes", V2.TransactionController, :state_changes)
       get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
 
+      chain_scope :neon do
+        get("/:transaction_hash_param/external-transactions", V2.TransactionController, :external_transactions)
+      end
+
       if @chain_type == :ethereum do
         get("/:transaction_hash_param/blobs", V2.TransactionController, :blobs)
       end
@@ -178,10 +193,9 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/", V2.TokenTransferController, :token_transfers)
     end
 
-    # todo: enable this endpoint when DB index for underlying DB query will be installed.
-    # scope "/internal-transactions" do
-    #   get("/", V2.InternalTransactionController, :internal_transactions)
-    # end
+    scope "/internal-transactions" do
+      get("/", V2.InternalTransactionController, :internal_transactions)
+    end
 
     scope "/blocks" do
       get("/", V2.BlockController, :blocks)
@@ -216,9 +230,13 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:address_hash_param/token-balances", V2.AddressController, :token_balances)
       get("/:address_hash_param/tokens", V2.AddressController, :tokens)
       get("/:address_hash_param/transactions", V2.AddressController, :transactions)
+      get("/:address_hash_param/transactions/csv", V2.CsvExportController, :transactions_csv)
       get("/:address_hash_param/token-transfers", V2.AddressController, :token_transfers)
+      get("/:address_hash_param/token-transfers/csv", V2.CsvExportController, :token_transfers_csv)
       get("/:address_hash_param/internal-transactions", V2.AddressController, :internal_transactions)
+      get("/:address_hash_param/internal-transactions/csv", V2.CsvExportController, :internal_transactions_csv)
       get("/:address_hash_param/logs", V2.AddressController, :logs)
+      get("/:address_hash_param/logs/csv", V2.CsvExportController, :logs_csv)
       get("/:address_hash_param/blocks-validated", V2.AddressController, :blocks_validated)
       get("/:address_hash_param/coin-balance-history", V2.AddressController, :coin_balance_history)
       get("/:address_hash_param/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
@@ -228,6 +246,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
       if @chain_type == :celo do
         get("/:address_hash_param/election-rewards", V2.AddressController, :celo_election_rewards)
+        get("/:address_hash_param/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
       end
     end
 
@@ -285,11 +304,14 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/withdrawals/count", V2.OptimismController, :withdrawals_count)
         get("/games", V2.OptimismController, :games)
         get("/games/count", V2.OptimismController, :games_count)
+        get("/interop/messages", V2.OptimismController, :interop_messages)
+        get("/interop/messages/count", V2.OptimismController, :interop_messages_count)
+        get("/interop/public-key", V2.OptimismController, :interop_public_key)
       end
     end
 
     scope "/polygon-edge" do
-      if @chain_type == :polygon_edge do
+      chain_scope :polygon_edge do
         get("/deposits", V2.PolygonEdgeController, :deposits)
         get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
         get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
@@ -310,7 +332,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/shibarium" do
-      if @chain_type == :shibarium do
+      chain_scope :shibarium do
         get("/deposits", V2.ShibariumController, :deposits)
         get("/deposits/count", V2.ShibariumController, :deposits_count)
         get("/withdrawals", V2.ShibariumController, :withdrawals)
@@ -336,12 +358,24 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/proxy" do
-      scope "/noves-fi" do
-        get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
+      scope "/3dparty" do
+        get("/:platform_id", V2.Proxy.UniversalProxyController, :index)
 
-        get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+        scope "/noves-fi" do
+          get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
 
-        get("/transaction-descriptions", V2.Proxy.NovesFiController, :describe_transactions)
+          get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+
+          get("/transaction-descriptions", V2.Proxy.NovesFiController, :describe_transactions)
+        end
+
+        scope "/xname" do
+          get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
+        end
+
+        scope "/solidityscan" do
+          get("/smart-contracts/:address_hash/report", V2.SmartContractController, :solidityscan_report)
+        end
       end
 
       scope "/account-abstraction" do
@@ -357,14 +391,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/accounts", V2.Proxy.AccountAbstractionController, :accounts)
         get("/bundles", V2.Proxy.AccountAbstractionController, :bundles)
         get("/operations", V2.Proxy.AccountAbstractionController, :operations)
-      end
-
-      scope "/zerion" do
-        get("/wallets/:address_hash_param/portfolio", V2.Proxy.ZerionController, :wallet_portfolio)
-      end
-
-      scope "/xname" do
-        get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
+        get("/status", V2.Proxy.AccountAbstractionController, :status)
       end
 
       scope "/metadata" do
@@ -379,21 +406,25 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/validators" do
-      case @chain_type do
-        :stability ->
-          scope "/stability" do
-            get("/", V2.ValidatorController, :stability_validators_list)
-            get("/counters", V2.ValidatorController, :stability_validators_counters)
-          end
+      if @chain_type == :zilliqa do
+        scope "/zilliqa" do
+          get("/", V2.ValidatorController, :zilliqa_validators_list)
+          get("/:bls_public_key", V2.ValidatorController, :zilliqa_validator)
+        end
+      end
 
-        :blackfort ->
-          scope "/blackfort" do
-            get("/", V2.ValidatorController, :blackfort_validators_list)
-            get("/counters", V2.ValidatorController, :blackfort_validators_counters)
-          end
+      chain_scope :stability do
+        scope "/stability" do
+          get("/", V2.ValidatorController, :stability_validators_list)
+          get("/counters", V2.ValidatorController, :stability_validators_counters)
+        end
+      end
 
-        _ ->
-          nil
+      chain_scope :blackfort do
+        scope "/blackfort" do
+          get("/", V2.ValidatorController, :blackfort_validators_list)
+          get("/counters", V2.ValidatorController, :blackfort_validators_counters)
+        end
       end
     end
 
@@ -406,17 +437,16 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/mud" do
-      if @mud_enabled do
-        get("/worlds", V2.MudController, :worlds)
-        get("/worlds/count", V2.MudController, :worlds_count)
-        get("/worlds/:world/tables", V2.MudController, :world_tables)
-        get("/worlds/:world/systems", V2.MudController, :world_systems)
-        get("/worlds/:world/systems/:system", V2.MudController, :world_system)
-        get("/worlds/:world/tables/count", V2.MudController, :world_tables_count)
-        get("/worlds/:world/tables/:table_id/records", V2.MudController, :world_table_records)
-        get("/worlds/:world/tables/:table_id/records/count", V2.MudController, :world_table_records_count)
-        get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
-      end
+      pipe_through(:mud)
+      get("/worlds", V2.MudController, :worlds)
+      get("/worlds/count", V2.MudController, :worlds_count)
+      get("/worlds/:world/tables", V2.MudController, :world_tables)
+      get("/worlds/:world/systems", V2.MudController, :world_systems)
+      get("/worlds/:world/systems/:system", V2.MudController, :world_system)
+      get("/worlds/:world/tables/count", V2.MudController, :world_tables_count)
+      get("/worlds/:world/tables/:table_id/records", V2.MudController, :world_table_records)
+      get("/worlds/:world/tables/:table_id/records/count", V2.MudController, :world_table_records_count)
+      get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
     end
 
     scope "/arbitrum" do
@@ -461,29 +491,20 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   scope "/v1", as: :api_v1 do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC, V1}
-    alias BlockScoutWeb.API.V1.{GasPriceOracleController, HealthController}
+    alias BlockScoutWeb.API.V1.GasPriceOracleController
     alias BlockScoutWeb.API.V2.SearchController
 
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
 
-    get("/transactions-csv", AddressTransactionController, :transactions_csv)
-
-    get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)
-
-    get("/internal-transactions-csv", AddressTransactionController, :internal_transactions_csv)
-
-    get("/logs-csv", AddressTransactionController, :logs_csv)
+    # todo: remove these old CSV export related endpoints in 7.2.0 or higher since they are moved to /api/v2/** path
+    get("/transactions-csv", V2.CsvExportController, :transactions_csv)
+    get("/token-transfers-csv", V2.CsvExportController, :token_transfers_csv)
+    get("/internal-transactions-csv", V2.CsvExportController, :internal_transactions_csv)
+    get("/logs-csv", V2.CsvExportController, :logs_csv)
 
     if @chain_type == :celo do
-      get("/celo-election-rewards-csv", AddressTransactionController, :celo_election_rewards_csv)
-    end
-
-    # todo: remove it in the future. Path /api/health should be used instead.
-    scope "/health" do
-      get("/", HealthController, :health_old)
-      get("/liveness", HealthController, :liveness)
-      get("/readiness", HealthController, :readiness)
+      get("/celo-election-rewards-csv", V2.CsvExportController, :celo_election_rewards_csv)
     end
 
     get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)
@@ -494,7 +515,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     if @writing_enabled do
-      post("/decompiled_smart_contract", V1.DecompiledSmartContractController, :create)
       post("/verified_smart_contracts", V1.VerifiedSmartContractController, :create)
     end
 
@@ -512,11 +532,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   end
 
   scope "/health" do
-    alias BlockScoutWeb.API.V1.HealthController
-    get("/", HealthController, :health)
-    get("/liveness", HealthController, :liveness)
-    get("/readiness", HealthController, :readiness)
-    get("/multichain-search-export", HealthController, :multichain_search_db_export)
+    get("/", BlockScoutWeb.API.HealthController, :health)
+    get("/liveness", BlockScoutWeb.API.HealthController, :liveness)
+    get("/readiness", BlockScoutWeb.API.HealthController, :readiness)
+    get("/multichain-search-export", BlockScoutWeb.API.HealthController, :multichain_search_db_export)
   end
 
   # For backward compatibility. Should be removed

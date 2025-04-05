@@ -1,6 +1,6 @@
 # BlockScout Web
 
-This is a tool for inspecting and analyzing the POA Network blockchain from a web browser.
+BlockScoutWeb is the API and presentation layer of BlockScout built on the Phoenix framework. It exposes RESTful and GraphQL APIs for accessing blockchain data. It directs HTTP requests through Phoenix routers to controllers that manage resources like addresses, transactions, blocks, and tokens. It formats responses as JSON via view modules. It provides real-time updates on new blocks, transactions, and exchange rates using Phoenix Channels. It supports smart contract verification through multiple methods including integration with Sourcify. Custom plugs add functionalities such as rate limiting, API version checks, and logging. Configuration is retrieved from the application environment. It manages errors through fallback controllers.
 
 ## Machine Requirements
 
@@ -33,7 +33,7 @@ You can also run IEx (Interactive Elixir): `$ iex -S mix phx.server` (This can b
 * Lint the Elixir code: `mix credo --strict`
 * Run the dialyzer: `mix dialyzer --halt-exit-status`
 * Check the Elixir code for vulnerabilities: `mix sobelow --config`
-* Update translations templates and translations and check there are no uncommitted changes: `mix gettext.extract --merge`
+* Update translation templates and translations and check there are no uncommitted changes: `mix gettext.extract --merge`
 * Lint the JavaScript code: `cd assets && npm run eslint`
 
 ## Internationalization

@@ -43,6 +43,7 @@ defmodule Explorer.Chain.InternalTransaction do
   """
   @primary_key false
   typed_schema "internal_transactions" do
+    # todo: consider using enum: `field(:call_type, Ecto.Enum, values: [:call, :callcode, :delegatecall, :staticcall])`
     field(:call_type, CallType)
     field(:created_contract_code, Data)
     field(:error, :string)
@@ -53,6 +54,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:input, Data)
     field(:output, Data)
     field(:trace_address, {:array, :integer}, null: false)
+    # todo: consider using enum
     field(:type, Type, null: false)
     field(:value, Wei, null: false)
     field(:block_number, :integer)
@@ -770,6 +772,8 @@ defmodule Explorer.Chain.InternalTransaction do
   def block_to_internal_transactions(hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    type_filter = Keyword.get(options, :type)
+    call_type_filter = Keyword.get(options, :call_type)
 
     __MODULE__
     |> where([internal_transaction], internal_transaction.block_hash == ^hash)
@@ -777,6 +781,8 @@ defmodule Explorer.Chain.InternalTransaction do
     |> where_is_different_from_parent_transaction()
     |> where_nonpending_block()
     |> page_block_internal_transaction(paging_options)
+    |> filter_by_type(type_filter, call_type_filter)
+    |> filter_by_call_type(call_type_filter)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.block_index)
     |> Chain.select_repo(options).all()
@@ -789,6 +795,23 @@ defmodule Explorer.Chain.InternalTransaction do
       where: transaction.hash == ^hash,
       where: child.block_hash == transaction.block_hash
     )
+  end
+
+  # filter by `type` is automatically ignored if `call_type_filter` is not empty,
+  # as applying both filter simultaneously have no sense
+  defp filter_by_type(query, _, [_ | _]), do: query
+  defp filter_by_type(query, [], _), do: query
+
+  defp filter_by_type(query, types, _) do
+    query
+    |> where([internal_transaction], internal_transaction.type in ^types)
+  end
+
+  defp filter_by_call_type(query, []), do: query
+
+  defp filter_by_call_type(query, call_types) do
+    query
+    |> where([internal_transaction], internal_transaction.call_type in ^call_types)
   end
 
   @doc """
@@ -841,6 +864,7 @@ defmodule Explorer.Chain.InternalTransaction do
         __MODULE__
         |> where_nonpending_block()
         |> Chain.page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
+        |> where_internal_transactions_by_transaction_hash(Keyword.get(options, :transaction_hash))
         |> order_by([internal_transaction],
           desc: internal_transaction.block_number,
           desc: internal_transaction.transaction_index,
@@ -861,5 +885,12 @@ defmodule Explorer.Chain.InternalTransaction do
 
   def internal_transaction_to_block_paging_options(%__MODULE__{block_index: block_index}) do
     %{"block_index" => block_index}
+  end
+
+  defp where_internal_transactions_by_transaction_hash(query, nil), do: query
+
+  defp where_internal_transactions_by_transaction_hash(query, transaction_hash) do
+    query
+    |> where([internal_transaction], internal_transaction.transaction_hash == ^transaction_hash)
   end
 end

@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     DenormalizationHelper,
     Import,
     PendingBlockOperation,
+    PendingOperationsHelper,
     Token,
     Token.Instance,
     TokenTransfer,
@@ -74,7 +75,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
 
       {:ok,
-       filter_by_height_range(nonconsensus_items, fn {number, _hash} -> RangesHelper.traceable_block_number?(number) end)}
+       RangesHelper.filter_by_height_range(nonconsensus_items, fn {number, _hash} ->
+         RangesHelper.traceable_block_number?(number)
+       end)}
     end
 
     multi
@@ -97,14 +100,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :blocks
       )
     end)
-    |> Multi.run(:new_pending_operations, fn repo, %{blocks: blocks} ->
+    |> Multi.run(:new_pending_block_operations, fn repo, %{blocks: blocks} ->
       Instrumenter.block_import_stage_runner(
         fn ->
-          new_pending_operations(repo, blocks, insert_options)
+          new_pending_block_operations(repo, blocks, insert_options)
         end,
         :address_referencing,
         :blocks,
-        :new_pending_operations
+        :new_pending_block_operations
       )
     end)
     |> Multi.run(:uncle_fetched_block_second_degree_relations, fn repo, _ ->
@@ -461,24 +464,30 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       {:error, %{exception: postgrex_error, consensus_block_numbers: consensus_block_numbers}}
   end
 
-  defp new_pending_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
-    sorted_pending_ops =
-      inserted_blocks
-      |> filter_by_height_range(&RangesHelper.traceable_block_number?(&1.number))
-      |> Enum.filter(& &1.consensus)
-      |> Enum.map(&%{block_hash: &1.hash, block_number: &1.number})
-      |> Enum.sort()
+  defp new_pending_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
+    case PendingOperationsHelper.pending_operations_type() do
+      "blocks" ->
+        sorted_pending_ops =
+          inserted_blocks
+          |> RangesHelper.filter_by_height_range(&RangesHelper.traceable_block_number?(&1.number))
+          |> Enum.filter(& &1.consensus)
+          |> Enum.map(&%{block_hash: &1.hash, block_number: &1.number})
+          |> Enum.sort()
 
-    Import.insert_changes_list(
-      repo,
-      sorted_pending_ops,
-      conflict_target: :block_hash,
-      on_conflict: :nothing,
-      for: PendingBlockOperation,
-      returning: true,
-      timeout: timeout,
-      timestamps: timestamps
-    )
+        Import.insert_changes_list(
+          repo,
+          sorted_pending_ops,
+          conflict_target: :block_hash,
+          on_conflict: :nothing,
+          for: PendingBlockOperation,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
+
+      _other_type ->
+        {:ok, []}
+    end
   end
 
   defp delete_address_coin_balances(_repo, [], _options), do: {:ok, []}
@@ -497,7 +506,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     query =
       from(cb in Address.CoinBalance,
-        select: cb.address_hash,
+        select: {cb.address_hash, cb.block_number},
         inner_join: ordered_address_coin_balance in subquery(ordered_query),
         on:
           ordered_address_coin_balance.address_hash == cb.address_hash and
@@ -505,9 +514,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       )
 
     try do
-      {_count, deleted_coin_balances_address_hashes} = repo.delete_all(query, timeout: timeout)
+      {_count, deleted_coin_balances} = repo.delete_all(query, timeout: timeout)
 
-      {:ok, deleted_coin_balances_address_hashes}
+      {:ok, deleted_coin_balances}
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, block_numbers: non_consensus_block_numbers}}
@@ -516,10 +525,22 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   defp derive_address_fetched_coin_balances(_repo, [], _options), do: {:ok, []}
 
-  defp derive_address_fetched_coin_balances(repo, deleted_balances_address_hashes, options) do
+  defp derive_address_fetched_coin_balances(repo, deleted_coin_balances, options) do
+    {deleted_balances_address_hashes, deleted_balances_block_numbers} = Enum.unzip(deleted_coin_balances)
+
+    filtered_address_hashes_query =
+      from(a in Address,
+        where:
+          a.hash in ^deleted_balances_address_hashes and
+            a.fetched_coin_balance_block_number in ^deleted_balances_block_numbers,
+        select: a.hash
+      )
+
+    filtered_address_hashes = repo.all(filtered_address_hashes_query)
+
     last_balances_query =
       from(cb in Address.CoinBalance,
-        where: cb.address_hash in ^deleted_balances_address_hashes,
+        where: cb.address_hash in ^filtered_address_hashes,
         where: not is_nil(cb.value),
         distinct: cb.address_hash,
         order_by: [asc: cb.address_hash, desc: cb.block_number],
@@ -1017,14 +1038,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       end)
 
     where(invalid_neighbors_query, [block], block.consensus)
-  end
-
-  defp filter_by_height_range(blocks, filter_func) do
-    if RangesHelper.trace_ranges_present?() do
-      Enum.filter(blocks, &filter_func.(&1))
-    else
-      blocks
-    end
   end
 
   defp celo_pending_epoch_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do

@@ -9,11 +9,11 @@ defmodule Explorer.Mixfile do
       config_path: "../../config/config.exs",
       deps: deps(),
       deps_path: "../../deps",
-      description: "Read-access to indexed block chain data.",
+      description: "Read-access to indexed blockchain data.",
       dialyzer: [
         plt_add_deps: :app_tree,
         plt_add_apps: ~w(ex_unit mix)a,
-        ignore_warnings: "../../.dialyzer-ignore"
+        ignore_warnings: "../../.dialyzer_ignore.exs"
       ],
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -24,8 +24,8 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.10.0",
-      xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper]]
+      version: "8.0.0",
+      xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.InternalTransaction]]
     ]
   end
 
@@ -57,7 +57,7 @@ defmodule Explorer.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:bamboo, "~> 2.3.0"},
+      {:bamboo, "~> 2.4.0"},
       {:mime, "~> 2.0"},
       {:bcrypt_elixir, "~> 3.0"},
       # benchmark optimizations
@@ -110,10 +110,10 @@ defmodule Explorer.Mixfile do
       {:spandex_ecto, "~> 0.7.0"},
       # Attach `:prometheus_ecto` to `:ecto`
       {:telemetry, "~> 1.3.0"},
-      # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
+      # `Timex.Duration` for `Explorer.Chain.Cache.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.13.0"},
+      {:tesla, "~> 1.14.1"},
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
@@ -128,7 +128,9 @@ defmodule Explorer.Mixfile do
       {:oauth2, "~> 2.0"},
       {:siwe, github: "royal-markets/siwe-ex", ref: "51c9c08240eb7eea3c35693011f8d260cd9bb3be"},
       {:joken, "~> 2.6"},
-      {:utils, in_umbrella: true}
+      {:utils, in_umbrella: true},
+      {:dns, "~> 2.4.0"},
+      {:inet_cidr, "~> 1.0.0"}
     ]
   end
 

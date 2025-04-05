@@ -5,7 +5,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   use GenServer
   use Spandex.Decorators
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Indexer.Tracer
   require Logger
@@ -31,19 +30,23 @@ defmodule Indexer.Block.Realtime.Fetcher do
     ]
 
   alias Ecto.Changeset
-  alias EthereumJSONRPC.Subscription
+  alias EthereumJSONRPC.{Blocks, Subscription}
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Counters.AverageBlockTime
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
+  alias Indexer.Fetcher.Optimism
   alias Indexer.Prometheus
+  alias Indexer.Prometheus.Instrumenter
   alias Timex.Duration
 
   @behaviour Block.Fetcher
 
   @minimum_safe_polling_period :timer.seconds(1)
+  @max_realtime_blocks_in_memory 10
 
   @shutdown_after :timer.minutes(1)
 
@@ -52,7 +55,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defstruct block_fetcher: nil,
             subscription: nil,
             previous_number: nil,
-            timer: nil
+            timer: nil,
+            last_realtime_blocks: %{}
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
@@ -64,7 +68,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
           },
           subscription: Subscription.t(),
           previous_number: pos_integer() | nil,
-          timer: reference()
+          timer: reference(),
+          last_realtime_blocks: map()
         }
 
   def start_link([arguments, gen_server_options]) do
@@ -86,14 +91,30 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {:noreply, %__MODULE__{state | timer: timer} |> subscribe_to_new_heads(subscribe_named_arguments)}
   end
 
+  # This handler catches blocks appeared in websocket (if WS is enabled).
+  #
+  # It takes into account the block hash which was lastly polled by the `:poll_latest_block_number` handler: if a block with
+  # the same hash is already polled, the handler ignores it. Otherwise, the handler starts fetching and importing the block, and
+  # schedules a new polling.
+  #
+  # ## Parameters
+  # - `{subscription, {:ok, block}}` where `subscription` is an instance of WS subscription.
+  # - `state` contains service parameters, also including:
+  #   `previous_number` - the block number reported by the previous call.
+  #   `timer` - the timer to call `:poll_latest_block_number` handler next time.
+  #   `last_realtime_blocks` - a map of recent realtime blocks got earlier.
+  #
+  # ## Returns
+  # - `{:noreply, state}` tuple where the `state` is the current or updated GenServer's state.
   @impl GenServer
   def handle_info(
-        {subscription, {:ok, %{"number" => quantity}}},
+        {subscription, {:ok, %{"number" => quantity, "hash" => hash}}},
         %__MODULE__{
           block_fetcher: %Block.Fetcher{} = block_fetcher,
           subscription: %Subscription{} = subscription,
           previous_number: previous_number,
-          timer: timer
+          timer: timer,
+          last_realtime_blocks: last_realtime_blocks
         } = state
       )
       when is_binary(quantity) do
@@ -103,47 +124,70 @@ defmodule Indexer.Block.Realtime.Fetcher do
       Publisher.broadcast([{:last_block_number, number}], :realtime)
     end
 
-    # Subscriptions don't support getting all the blocks and transactions data,
-    # so we need to go back and get the full block
-    start_fetch_and_import(number, block_fetcher, previous_number)
+    if hash != Map.get(last_realtime_blocks, number) do
+      Process.cancel_timer(timer)
 
-    Process.cancel_timer(timer)
-    new_timer = schedule_polling()
+      # Subscriptions don't support getting all the blocks and transactions data,
+      # so we need to go back and get the full block
+      start_fetch_and_import(number, block_fetcher, previous_number)
 
-    {:noreply,
-     %{
-       state
-       | previous_number: number,
-         timer: new_timer
-     }}
+      new_timer = schedule_polling()
+
+      {:noreply,
+       %{
+         state
+         | previous_number: number,
+           timer: new_timer,
+           last_realtime_blocks: update_last_realtime_blocks(last_realtime_blocks, number, hash)
+       }}
+    else
+      # the block must be ignored if this block was already got earlier.
+      {:noreply, state}
+    end
   end
 
+  # This handler gets the latest block using RPC request to get the latest block number.
+  # It fetches the latest block number, starts its fetching and importing, and schedules the next polling iteration.
+  #
+  # ## Parameters
+  # - `:poll_latest_block_number`: The message that triggers the fetching process.
+  # - `state` contains service parameters, also including:
+  #   `previous_number` - the block number reported by the previous block number fetching.
+  #   `timer` - the timer to call this handler next time.
+  #   `last_realtime_blocks` - a map of recent realtime blocks got earlier.
+  #
+  # ## Returns
+  # - `{:noreply, state}` tuple where the `state` is the current or updated GenServer's state.
+  #   Contains updated `previous_number`, `timer`, and `last_realtime_blocks` values.
   @impl GenServer
   def handle_info(
         :poll_latest_block_number,
         %__MODULE__{
           block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher,
-          previous_number: previous_number
+          previous_number: previous_number,
+          last_realtime_blocks: last_realtime_blocks
         } = state
       ) do
-    new_previous_number =
-      case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
-        {:ok, number} when is_nil(previous_number) or number != previous_number ->
-          number =
-            if abnormal_gap?(number, previous_number) do
-              new_number = max(number, previous_number)
-              start_fetch_and_import(new_number, block_fetcher, previous_number)
-              new_number
-            else
-              start_fetch_and_import(number, block_fetcher, previous_number)
-              number
-            end
+    {new_previous_number, new_last_realtime_blocks} =
+      with {:ok, %Blocks{blocks_params: [%{number: number, hash: hash}]}} <-
+             EthereumJSONRPC.fetch_block_by_tag("latest", json_rpc_named_arguments),
+           {:new_block, true, _} <- {:new_block, hash != last_realtime_blocks[number], number} do
+        number =
+          if abnormal_gap?(number, previous_number) do
+            new_number = max(number, previous_number)
+            start_fetch_and_import(new_number, block_fetcher, previous_number)
+            new_number
+          else
+            start_fetch_and_import(number, block_fetcher, previous_number)
+            number
+          end
 
-          fetch_validators_async()
-          number
-
+        fetch_validators_async()
+        {number, update_last_realtime_blocks(last_realtime_blocks, number, hash)}
+      else
         _ ->
-          previous_number
+          # the block must be ignored if this block was already got earlier.
+          {previous_number, last_realtime_blocks}
       end
 
     timer = schedule_polling()
@@ -152,7 +196,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
      %{
        state
        | previous_number: new_previous_number,
-         timer: timer
+         timer: timer,
+         last_realtime_blocks: new_last_realtime_blocks
      }}
   end
 
@@ -161,26 +206,38 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {:noreply, state}
   end
 
+  @spec update_last_realtime_blocks(map(), non_neg_integer(), binary()) :: map()
+  defp update_last_realtime_blocks(last_realtime_blocks, number, hash) do
+    last_realtime_blocks
+    |> Enum.reject(fn {n, _} -> n <= number - @max_realtime_blocks_in_memory end)
+    |> Enum.into(%{})
+    |> Map.put(number, hash)
+  end
+
   @impl GenServer
   def terminate(_reason, %__MODULE__{timer: timer}) do
     Process.cancel_timer(timer)
   end
 
-  case @chain_type do
-    :stability ->
-      defp fetch_validators_async do
-        GenServer.cast(Indexer.Fetcher.Stability.Validator, :update_validators_list)
-      end
+  defp fetch_validators_async do
+    chain_type = Application.get_env(:explorer, :chain_type)
+    do_fetch_validators_async(chain_type)
+  end
 
-    :blackfort ->
-      defp fetch_validators_async do
-        GenServer.cast(Indexer.Fetcher.Blackfort.Validator, :update_validators_list)
-      end
+  defp do_fetch_validators_async(:stability) do
+    alias Indexer.Fetcher.Stability.Validator, as: StabilityValidator
 
-    _ ->
-      defp fetch_validators_async do
-        :ignore
-      end
+    StabilityValidator.trigger_update_validators_list()
+  end
+
+  defp do_fetch_validators_async(:blackfort) do
+    alias Indexer.Fetcher.Blackfort.Validator, as: BlackfortValidator
+
+    BlackfortValidator.trigger_update_validators_list()
+  end
+
+  defp do_fetch_validators_async(_chain_type) do
+    :ignore
   end
 
   defp subscribe_to_new_heads(%__MODULE__{subscription: nil} = state, subscribe_named_arguments)
@@ -207,9 +264,15 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp schedule_polling do
     polling_period =
-      case AverageBlockTime.average_block_time() do
-        {:error, :disabled} -> 2_000
-        block_time -> min(round(Duration.to_milliseconds(block_time) / 2), 30_000)
+      case Application.get_env(:indexer, __MODULE__)[:polling_period] do
+        nil ->
+          case AverageBlockTime.average_block_time() do
+            {:error, :disabled} -> 2_000
+            block_time -> min(round(Duration.to_milliseconds(block_time) / 2), 30_000)
+          end
+
+        period ->
+          period
       end
 
     safe_polling_period = max(polling_period, @minimum_safe_polling_period)
@@ -231,10 +294,18 @@ defmodule Indexer.Block.Realtime.Fetcher do
       |> put_in([:block_rewards], chain_import_block_rewards)
 
     with {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
+      last_batch =
+        chain_import_options[:blocks][:params]
+        |> Enum.max_by(& &1.number, fn -> nil end)
+
+      Instrumenter.set_latest_block(last_batch.number, last_batch.timestamp)
+
       async_import_remaining_block_data(
         imported,
         %{block_rewards: %{errors: block_reward_errors}}
       )
+
+      ContractCreatorOnDemand.async_update_cache_of_contract_creator_on_demand(imported)
 
       ok
     end
@@ -307,54 +378,54 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   @spec remove_assets_by_number(non_neg_integer()) :: any()
-
-  case @chain_type do
-    :optimism ->
-      # Removes all rows from `op_transaction_batches` and `op_withdrawals` tables
-      # previously written starting from the reorg block number
-      defp remove_assets_by_number(reorg_block) do
-        # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
-        Indexer.Fetcher.Optimism.TransactionBatch.handle_l2_reorg(reorg_block)
-        Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block)
-      end
-
-    :polygon_edge ->
-      # Removes all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables
-      # previously written starting from the reorg block number
-      defp remove_assets_by_number(reorg_block) do
-        # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
-        Indexer.Fetcher.PolygonEdge.Withdrawal.remove(reorg_block)
-        Indexer.Fetcher.PolygonEdge.DepositExecute.remove(reorg_block)
-      end
-
-    :polygon_zkevm ->
-      # Removes all rows from `polygon_zkevm_bridge` table
-      # previously written starting from the reorg block number
-      defp remove_assets_by_number(reorg_block) do
-        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-        Indexer.Fetcher.PolygonZkevm.BridgeL2.reorg_handle(reorg_block)
-      end
-
-    :shibarium ->
-      # Removes all rows from `shibarium_bridge` table
-      # previously written starting from the reorg block number
-      defp remove_assets_by_number(reorg_block) do
-        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-        Indexer.Fetcher.Shibarium.L2.reorg_handle(reorg_block)
-      end
-
-    :scroll ->
-      # Removes all rows from `scroll_bridge` and `scroll_l1_fee_params` tables
-      # previously written starting from the reorg block number
-      defp remove_assets_by_number(reorg_block) do
-        # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
-        Indexer.Fetcher.Scroll.BridgeL2.reorg_handle(reorg_block)
-        Indexer.Fetcher.Scroll.L1FeeParam.handle_l2_reorg(reorg_block)
-      end
-
-    _ ->
-      defp remove_assets_by_number(_), do: :ok
+  defp remove_assets_by_number(reorg_block) do
+    chain_type = Application.get_env(:explorer, :chain_type)
+    do_remove_assets_by_number(chain_type, reorg_block)
   end
+
+  # Removes all rows from `op_transaction_batches`, `op_withdrawals`,
+  # `op_eip1559_config_updates`, and `op_interop_messages` tables
+  # previously written starting from the reorg block number
+  defp do_remove_assets_by_number(:optimism, reorg_block_number) do
+    # credo:disable-for-lines:5 Credo.Check.Design.AliasUsage
+    Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate)
+    Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.Interop.Message)
+    Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.Interop.MessageFailed)
+    Indexer.Fetcher.Optimism.TransactionBatch.handle_l2_reorg(reorg_block_number)
+    Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block_number)
+  end
+
+  # Removes all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables
+  # previously written starting from the reorg block number
+  defp do_remove_assets_by_number(:polygon_edge, reorg_block) do
+    # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
+    Indexer.Fetcher.PolygonEdge.Withdrawal.remove(reorg_block)
+    Indexer.Fetcher.PolygonEdge.DepositExecute.remove(reorg_block)
+  end
+
+  # Removes all rows from `polygon_zkevm_bridge` table
+  # previously written starting from the reorg block number
+  defp do_remove_assets_by_number(:polygon_zkevm, reorg_block) do
+    # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+    Indexer.Fetcher.PolygonZkevm.BridgeL2.reorg_handle(reorg_block)
+  end
+
+  # Removes all rows from `shibarium_bridge` table
+  # previously written starting from the reorg block number
+  defp do_remove_assets_by_number(:shibarium, reorg_block) do
+    # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+    Indexer.Fetcher.Shibarium.L2.reorg_handle(reorg_block)
+  end
+
+  # Removes all rows from `scroll_bridge` and `scroll_l1_fee_params` tables
+  # previously written starting from the reorg block number
+  defp do_remove_assets_by_number(:scroll, reorg_block) do
+    # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
+    Indexer.Fetcher.Scroll.BridgeL2.reorg_handle(reorg_block)
+    Indexer.Fetcher.Scroll.L1FeeParam.handle_l2_reorg(reorg_block)
+  end
+
+  defp do_remove_assets_by_number(_, _), do: :ok
 
   @decorate span(tracer: Tracer)
   defp do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry) do

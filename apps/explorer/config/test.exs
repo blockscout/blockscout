@@ -71,7 +71,8 @@ for repo <- [
       Explorer.Repo.Stability,
       Explorer.Repo.Suave,
       Explorer.Repo.Zilliqa,
-      Explorer.Repo.ZkSync
+      Explorer.Repo.ZkSync,
+      Explorer.Repo.Neon
     ] do
   config :explorer, repo,
     database: database,
@@ -105,3 +106,5 @@ config :explorer, Explorer.ExchangeRates.Source.TransactionAndLog,
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: false
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: false
+
+config :tesla, adapter: Explorer.Mock.TeslaAdapter

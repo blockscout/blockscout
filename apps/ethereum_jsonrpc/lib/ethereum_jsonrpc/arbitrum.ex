@@ -247,9 +247,17 @@ defmodule EthereumJSONRPC.Arbitrum do
     |> TypeDecoder.decode_raw(types)
   end
 
-  # Casting value into the Ethereum address (hex-string, 0x-prefixed)
+  @doc """
+    Casts a value into an Ethereum address (hex-string, 0x-prefixed, not checksummed).
+
+    ## Parameters
+      - value: `0x` prefixed hex string or byte array to be cast into an Ethereum address.
+
+    ## Returns
+      - A string representing the Ethereum address in hex format, prefixed with '0x'
+  """
   @spec value_to_address(binary()) :: String.t()
-  defp value_to_address(value) do
+  def value_to_address(value) do
     hex =
       cond do
         is_binary(value) and String.starts_with?(value, "0x") -> String.trim_leading(value, "0x")

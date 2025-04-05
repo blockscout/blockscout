@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   require Logger
 
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.RPC.{AddressController, Helper}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, SmartContract}
@@ -16,7 +17,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
-  import BlockScoutWeb.API.V2.AddressController, only: [validate_address: 2, validate_address: 3]
 
   if @chain_type == :zksync do
     @optimization_runs "0"
@@ -32,6 +32,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   @addresses_required "Query parameter contractaddresses is required"
   @contract_not_found "Smart-contract not found or is not verified"
   @restricted_access "Access to this address is restricted"
+  @not_a_smart_contract "The address is not a smart contract"
 
   @addresses_limit 10
   @api_true [api?: true]
@@ -50,7 +51,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
           {:ok, _address_hash, address} ->
             Address.maybe_preload_smart_contract_associations(
               address,
-              [:contracts_creation_internal_transaction, :contracts_creation_transaction],
+              Address.contract_creation_transaction_associations(),
               @api_true
             )
 
@@ -71,6 +72,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:params, external_libraries} <-
            {:params, fetch_external_libraries(params)},
+         {:not_a_smart_contract, bytecode} when bytecode != "0x" <-
+           {:not_a_smart_contract, Chain.smart_contract_bytecode(casted_address_hash, @api_true)},
          {:publish, {:ok, _}} <-
            {:publish, Publisher.publish(address_hash, fetched_params, external_libraries)} do
       address = Contracts.address_hash_to_address_with_source_code(casted_address_hash)
@@ -107,6 +110,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error)
+
+      {:not_a_smart_contract, _} ->
+        render(conn, :error, error: @not_a_smart_contract, data: @not_a_smart_contract)
     end
   end
 
@@ -147,8 +153,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       ) do
     with {:check_verified_status, false} <-
            {:check_verified_status, SmartContract.verified_with_full_match?(address_hash)},
-         {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
+         {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
+         {:not_a_smart_contract, bytecode} when bytecode != "0x" <-
+           {:not_a_smart_contract, Chain.smart_contract_bytecode(casted_address_hash, @api_true)},
          uid <- VerificationStatus.generate_uid(address_hash) do
       Que.add(SolidityPublisherWorker, {"json_api", fetched_params, json_input, uid})
 
@@ -162,6 +170,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error, data: error)
+
+      {:not_a_smart_contract, _} ->
+        render(conn, :error, error: @not_a_smart_contract, data: @not_a_smart_contract)
     end
   end
 
@@ -178,8 +189,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       ) do
     with {:check_verified_status, false} <-
            {:check_verified_status, SmartContract.verified_with_full_match?(address_hash)},
-         {:format, {:ok, _casted_address_hash}} <- to_address_hash(address_hash),
+         {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_solidity_single_file_params(params)},
+         {:not_a_smart_contract, bytecode} when bytecode != "0x" <-
+           {:not_a_smart_contract, Chain.smart_contract_bytecode(casted_address_hash, @api_true)},
          external_libraries <- fetch_external_libraries_for_verifysourcecode(params),
          uid <- VerificationStatus.generate_uid(address_hash) do
       Que.add(SolidityPublisherWorker, {"flattened_api", fetched_params, external_libraries, uid})
@@ -194,6 +207,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error, data: error)
+
+      {:not_a_smart_contract, _} ->
+        render(conn, :error, error: @not_a_smart_contract, data: @not_a_smart_contract)
     end
   end
 
@@ -413,6 +429,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def verify_vyper_contract(conn, %{"addressHash" => address_hash} = params) do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_vyper_verify_params(params)},
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
+         {:not_a_smart_contract, bytecode} when bytecode != "0x" <-
+           {:not_a_smart_contract, Chain.smart_contract_bytecode(casted_address_hash, @api_true)},
          {:publish, {:ok, _}} <-
            {:publish, VyperPublisher.publish(address_hash, fetched_params)} do
       address = Contracts.address_hash_to_address_with_source_code(casted_address_hash)
@@ -441,6 +459,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error)
+
+      {:not_a_smart_contract, _} ->
+        render(conn, :error, error: @not_a_smart_contract, data: @not_a_smart_contract)
     end
   end
 
@@ -486,7 +507,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
       _ = PublishHelper.check_and_verify(address_param)
-      address = Contracts.address_hash_to_address_with_source_code(address_hash, false)
+      address = Contracts.address_hash_to_address_with_source_code(address_hash)
 
       render(conn, :getsourcecode, %{
         contract: address || %Address{hash: address_hash, smart_contract: nil}
@@ -507,15 +528,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       :verified ->
         Contracts.list_verified_contracts(page_size, offset, opts)
 
-      :decompiled ->
-        not_decompiled_with_version = Map.get(opts, :not_decompiled_with_version)
-        Contracts.list_decompiled_contracts(page_size, offset, not_decompiled_with_version)
-
       :unverified ->
         Contracts.list_unordered_unverified_contracts(page_size, offset)
-
-      :not_decompiled ->
-        Contracts.list_unordered_not_decompiled_contracts(page_size, offset)
 
       :empty ->
         Contracts.list_empty_contracts(page_size, offset)
@@ -528,7 +542,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp add_filters(options, params) do
     options
     |> add_filter(params)
-    |> add_param(params, :not_decompiled_with_version)
     |> AddressController.put_timestamp(params, "verified_at_start_timestamp")
     |> AddressController.put_timestamp(params, "verified_at_end_timestamp")
   end
@@ -543,27 +556,12 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
-  defp add_param({:ok, options}, params, key) do
-    case Map.fetch(params, Atom.to_string(key)) do
-      {:ok, value} -> {:ok, Map.put(options, key, value)}
-      :error -> {:ok, options}
-    end
-  end
-
-  defp add_param(options, _params, _key) do
-    options
-  end
-
   defp contracts_filter(nil), do: {:ok, nil}
   defp contracts_filter(1), do: {:ok, :verified}
-  defp contracts_filter(2), do: {:ok, :decompiled}
-  defp contracts_filter(3), do: {:ok, :unverified}
-  defp contracts_filter(4), do: {:ok, :not_decompiled}
-  defp contracts_filter(5), do: {:ok, :empty}
+  defp contracts_filter(2), do: {:ok, :unverified}
+  defp contracts_filter(3), do: {:ok, :empty}
   defp contracts_filter("verified"), do: {:ok, :verified}
-  defp contracts_filter("decompiled"), do: {:ok, :decompiled}
   defp contracts_filter("unverified"), do: {:ok, :unverified}
-  defp contracts_filter("not_decompiled"), do: {:ok, :not_decompiled}
   defp contracts_filter("empty"), do: {:ok, :empty}
 
   defp contracts_filter(filter) when is_bitstring(filter) do
@@ -576,7 +574,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp contracts_filter(filter), do: {:error, contracts_filter_error_message(filter)}
 
   defp contracts_filter_error_message(filter) do
-    "#{filter} is not a valid value for `filter`. Please use one of: verified, decompiled, unverified, not_decompiled, 1, 2, 3, 4."
+    "#{filter} is not a valid value for `filter`. Please use one of: verified, unverified, 1, 2."
   end
 
   defp fetch_address(params) do
@@ -596,7 +594,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
           :not_found
 
         {contract, _} ->
-          {:ok, SmartContract.preload_decompiled_smart_contract(contract)}
+          {:ok, contract}
       end
 
     {:contract, result}
@@ -747,4 +745,21 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp parse_optimization(true), do: true
 
   defp parse_optimization(_), do: :error
+
+  @doc """
+   Checks if this valid address hash string, and this address is not prohibited address.
+   Returns the `{:ok, address_hash, address}` if address hash passed all the checks.
+  """
+  @spec validate_address(String.t(), any(), Keyword.t()) ::
+          {:format, :error}
+          | {:not_found, {:error, :not_found}}
+          | {:restricted_access, true}
+          | {:ok, Hash.t(), Address.t()}
+  def validate_address(address_hash_string, params, options \\ @api_true) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, options)} do
+      {:ok, address_hash, address}
+    end
+  end
 end
