@@ -177,6 +177,8 @@ config :explorer, Explorer.Tags.AddressTag.Cataloger, enabled: true
 
 config :explorer, Explorer.SmartContract.CertifiedSmartContractCataloger, enabled: true
 
+config :explorer, Explorer.Utility.RateLimiter, enabled: true
+
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
 config :explorer, Explorer.Tracer,

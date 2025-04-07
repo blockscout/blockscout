@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.AddressLogsController do
         "index.html",
         address: address,
         current_path: Controller.current_full_path(conn),
-        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(AccessHelper.conn_to_ip_string(conn), address),
         exchange_rate: Market.get_coin_exchange_rate(),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         tags: get_address_tags(address_hash, current_user(conn))

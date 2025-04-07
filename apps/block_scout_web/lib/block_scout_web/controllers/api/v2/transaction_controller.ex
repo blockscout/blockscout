@@ -570,7 +570,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def state_changes(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
       state_changes_plus_next_page =
-        transaction |> TransactionStateHelper.state_changes(params |> paging_options() |> Keyword.merge(@api_true))
+        transaction
+        |> TransactionStateHelper.state_changes(
+          params
+          |> paging_options()
+          |> Keyword.merge(@api_true)
+          |> Keyword.put(:ip, AccessHelper.conn_to_ip_string(conn))
+        )
 
       {state_changes, next_page} = split_list_by_page(state_changes_plus_next_page)
 

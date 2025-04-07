@@ -13,15 +13,18 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   alias Explorer.Chain.Address
   alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Utility.AddressContractCodeFetchAttempt
+  alias Explorer.Utility.{AddressContractCodeFetchAttempt, RateLimiter}
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
 
   @max_delay :timer.hours(168)
 
-  @spec trigger_fetch(Address.t()) :: :ok
-  def trigger_fetch(address) do
+  @spec trigger_fetch(String.t() | nil, Address.t()) :: :ok
+  def trigger_fetch(ip \\ nil, address) do
     if is_nil(address.contract_code) do
-      GenServer.cast(__MODULE__, {:fetch, address})
+      case RateLimiter.check_rate(ip, :on_demand) do
+        :allow -> GenServer.cast(__MODULE__, {:fetch, address})
+        :deny -> :ok
+      end
     else
       ContractCreatorOnDemand.trigger_fetch(address)
     end

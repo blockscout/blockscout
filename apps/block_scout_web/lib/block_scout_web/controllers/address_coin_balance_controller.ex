@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(conn, "index.html",
         address: address,
-        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(AccessHelper.conn_to_ip_string(conn), address),
         exchange_rate: Market.get_coin_exchange_rate(),
         current_path: Controller.current_full_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
@@ -100,7 +100,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
               conn,
               "index.html",
               address: address,
-              coin_balance_status: nil,
+              coin_balance_status: CoinBalanceOnDemand.trigger_fetch(AccessHelper.conn_to_ip_string(conn), address),
               exchange_rate: Market.get_coin_exchange_rate(),
               counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
               current_path: Controller.current_full_path(conn),

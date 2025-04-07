@@ -1009,10 +1009,14 @@ defmodule Explorer.Chain.Address do
     end
   end
 
-  @spec update_address_result(map() | nil, [Chain.necessity_by_association_option() | Chain.api?()], boolean()) ::
+  @spec update_address_result(
+          map() | nil,
+          [Chain.necessity_by_association_option() | Chain.api?() | Chain.ip()],
+          boolean()
+        ) ::
           map() | nil
   def update_address_result(address_result, options, decoding_from_list?) do
-    LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result)
+    LookUpSmartContractSourcesOnDemand.trigger_fetch(options[:ip], address_result)
 
     case address_result do
       %{smart_contract: nil} ->
@@ -1023,7 +1027,7 @@ defmodule Explorer.Chain.Address do
         end
 
       %{smart_contract: smart_contract} ->
-        CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+        CheckBytecodeMatchingOnDemand.trigger_check(options[:ip], address_result, smart_contract)
 
         SmartContract.check_and_update_constructor_args(address_result)
 

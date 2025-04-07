@@ -806,6 +806,19 @@ config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
   retry_interval: ConfigHelper.parse_time_env_var("ADDRESSES_BLACKLIST_RETRY_INTERVAL", "5s"),
   provider: ConfigHelper.parse_catalog_value("ADDRESSES_BLACKLIST_PROVIDER", ["blockaid"], false, "blockaid")
 
+rate_limiter_redis_url = System.get_env("RATE_LIMITER_REDIS_URL")
+
+config :explorer, Explorer.Utility.RateLimiter,
+  storage: (rate_limiter_redis_url && :redis) || :ets,
+  redis_url: rate_limiter_redis_url,
+  on_demand: [
+    time_interval_limit: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_TIME_INTERVAL", "5s"),
+    limit_by_ip: ConfigHelper.parse_integer_env_var("RATE_LIMITER_ON_DEMAND_LIMIT_BY_IP", 100),
+    exp_timeout_coeff: ConfigHelper.parse_integer_env_var("RATE_LIMITER_ON_DEMAND_EXPONENTIAL_TIMEOUT_COEFF", 100),
+    max_ban_interval: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_MAX_BAN_INTERVAL", "1h"),
+    limitation_period: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_LIMITATION_PERIOD", "1h")
+  ]
+
 ###############
 ### Indexer ###
 ###############

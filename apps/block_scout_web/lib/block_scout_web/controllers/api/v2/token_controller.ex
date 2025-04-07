@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
-      TokenTotalSupplyOnDemand.trigger_fetch(address_hash)
+      TokenTotalSupplyOnDemand.trigger_fetch(AccessHelper.conn_to_ip_string(conn), address_hash)
 
       conn
       |> token_response(token, address_hash)
@@ -390,7 +390,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         token_instance
         |> put_token_to_instance(token)
 
-      TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance_with_token)
+      conn
+      |> AccessHelper.conn_to_ip_string()
+      |> TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance_with_token)
 
       conn
       |> put_status(200)
@@ -411,7 +413,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)} do
-      NFTCollectionMetadataRefetchOnDemand.trigger_refetch(token)
+      NFTCollectionMetadataRefetchOnDemand.trigger_refetch(AccessHelper.conn_to_ip_string(conn), token)
 
       conn
       |> put_status(200)

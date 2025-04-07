@@ -42,6 +42,8 @@ config :explorer, Explorer.Tracer, disabled?: false
 
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: false
 
+config :explorer, Explorer.Utility.RateLimiter, enabled: false
+
 for migrator <- [
       # Background migrations
       Explorer.Migrator.TransactionsDenormalization,

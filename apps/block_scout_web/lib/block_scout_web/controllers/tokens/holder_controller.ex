@@ -69,7 +69,8 @@ defmodule BlockScoutWeb.Tokens.HolderController do
         current_path: Controller.current_full_path(conn),
         token: token,
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
-        token_total_supply_status: TokenTotalSupplyOnDemand.trigger_fetch(address_hash),
+        token_total_supply_status:
+          TokenTotalSupplyOnDemand.trigger_fetch(AccessHelper.conn_to_ip_string(conn), address_hash),
         tags: get_address_tags(address_hash, current_user(conn))
       )
     else

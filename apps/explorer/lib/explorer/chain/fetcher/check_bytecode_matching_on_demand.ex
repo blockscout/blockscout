@@ -9,16 +9,22 @@ defmodule Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand do
   alias Ecto.Changeset
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Repo
+  alias Explorer.Utility.RateLimiter
 
   # seconds
   @check_bytecode_interval 86_400
 
-  def trigger_check(_address, %NotLoaded{}) do
+  def trigger_check(ip \\ nil, address, smart_contract)
+
+  def trigger_check(_ip, _address, %NotLoaded{}) do
     :ignore
   end
 
-  def trigger_check(address, _) do
-    GenServer.cast(__MODULE__, {:check, address})
+  def trigger_check(ip, address, _) do
+    case RateLimiter.check_rate(ip, :on_demand) do
+      :allow -> GenServer.cast(__MODULE__, {:check, address})
+      :deny -> :ok
+    end
   end
 
   defp check_bytecode_matching(address) do
