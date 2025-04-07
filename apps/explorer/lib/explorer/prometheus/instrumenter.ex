@@ -75,6 +75,8 @@ defmodule Explorer.Prometheus.Instrumenter do
     registry: :public
   ]
 
+  @gauge [name: :batch_average_time, help: "L2 average batch time"]
+
   def block_import_stage_runner(function, stage, runner, step) do
     {time, result} = :timer.tc(function)
 
@@ -125,6 +127,10 @@ defmodule Explorer.Prometheus.Instrumenter do
 
   def increment_failed_uploading_media_number do
     Counter.inc(name: :failed_uploading_media_number, registry: :public)
+  end
+
+  defp batch_average_time(average_time) do
+    Gauge.set([name: :batch_average_time], average_time)
   end
 
   @doc """
@@ -182,6 +188,8 @@ defmodule Explorer.Prometheus.Instrumenter do
         {:error, :not_found}
 
       [batch] ->
+        batch_average_time(0)
+
         {
           :ok,
           %{
@@ -195,6 +203,7 @@ defmodule Explorer.Prometheus.Instrumenter do
         latest_batch = List.first(batches)
         older_batch = List.last(batches)
         average_time = div(DateTime.diff(latest_batch.timestamp, older_batch.timestamp, :second), length(batches) - 1)
+        batch_average_time(average_time)
 
         {
           :ok,
