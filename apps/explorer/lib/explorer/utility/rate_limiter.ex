@@ -41,6 +41,12 @@ defmodule Explorer.Utility.RateLimiter do
     {:noreply, state}
   end
 
+  @doc """
+    Checks if `identifier` is banned from `action` right now.
+    If it's not banned, then checks the current calls rate and decides if it should be banned.
+    Returns `:allow` if `identifier` is not banned from `action` and its current calls rate is below the limit.
+    Returns `:deny` in other case.
+  """
   @spec check_rate(String.t() | nil, atom()) :: :allow | :deny
   def check_rate(nil, _action), do: :allow
 
@@ -112,7 +118,7 @@ defmodule Explorer.Utility.RateLimiter do
     max_ban_interval = config[:max_ban_interval]
     max_bans_count = :math.log(max_ban_interval / 1000 / coef)
 
-    ban_interval = floor(coef * :math.exp(min(bans_count, max_bans_count)))
+    ban_interval = floor(coef * 1000 * :math.exp(min(bans_count, max_bans_count)))
     expire_after = ban_interval + config[:limitation_period]
 
     set_value(key, "#{now() + ban_interval}:#{bans_count + 1}", expire_after)
@@ -134,7 +140,7 @@ defmodule Explorer.Utility.RateLimiter do
   defp set_value(key, value, expire_after) do
     case Application.get_env(:explorer, __MODULE__)[:storage] do
       :redis ->
-        Redix.command(:redix, ["SET", key, value, "EX", expire_after])
+        Redix.command(:redix, ["SET", key, value, "EX", floor(expire_after / 1000)])
 
       :ets ->
         :ets.insert(@ets_table_name, {key, value})

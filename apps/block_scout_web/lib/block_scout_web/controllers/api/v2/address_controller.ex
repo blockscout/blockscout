@@ -236,6 +236,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   """
   @spec token_balances(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def token_balances(conn, %{"address_hash_param" => address_hash_string} = params) do
+    ip = AccessHelper.conn_to_ip_string(conn)
+
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, _address} ->
@@ -243,7 +245,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             address_hash
             |> Chain.fetch_last_token_balances(@api_true |> fetch_scam_token_toggle(conn))
 
-          TokenBalanceOnDemand.trigger_fetch(AccessHelper.conn_to_ip_string(conn), address_hash)
+          TokenBalanceOnDemand.trigger_fetch(ip, address_hash)
 
           conn
           |> put_status(200)
@@ -677,6 +679,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   """
   @spec tokens(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def tokens(conn, %{"address_hash_param" => address_hash_string} = params) do
+    ip = AccessHelper.conn_to_ip_string(conn)
+
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, _address} ->
@@ -690,7 +694,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               |> fetch_scam_token_toggle(conn)
             )
 
-          TokenBalanceOnDemand.trigger_fetch(AccessHelper.conn_to_ip_string(conn), address_hash)
+          TokenBalanceOnDemand.trigger_fetch(ip, address_hash)
 
           {tokens, next_page} = split_list_by_page(results_plus_one)
 
