@@ -118,8 +118,8 @@ defmodule Explorer.Utility.RateLimiter do
     max_ban_interval = config[:max_ban_interval]
     max_bans_count = :math.log(max_ban_interval / 1000 / coef)
 
-    ban_interval = floor(coef * 1000 * :math.exp(min(bans_count, max_bans_count)))
-    expire_after = ban_interval + config[:limitation_period]
+    ban_interval = floor(coef * :math.exp(min(bans_count, max_bans_count)))
+    expire_after = ban_interval * 1000 + config[:limitation_period]
 
     set_value(key, "#{now() + ban_interval}:#{bans_count + 1}", expire_after)
   end
