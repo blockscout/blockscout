@@ -106,10 +106,10 @@ defmodule Explorer.Application do
   defp configurable_children do
     configurable_children_set =
       [
-        configure(Explorer.ExchangeRates),
-        configure(Explorer.ExchangeRates.TokenExchangeRates),
+        configure_mode_dependent_process(Explorer.Market.Fetcher.Coin, :api),
+        configure_mode_dependent_process(Explorer.Market.Fetcher.Token, :indexer),
+        configure_mode_dependent_process(Explorer.Market.Fetcher.History, :indexer),
         configure(Explorer.ChainSpec.GenesisData),
-        configure(Explorer.Market.History.Cataloger),
         configure(Explorer.Chain.Cache.Counters.ContractsCount),
         configure(Explorer.Chain.Cache.Counters.NewContractsCount),
         configure(Explorer.Chain.Cache.Counters.VerifiedContractsCount),

@@ -237,15 +237,19 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Utility.EndpointAvailabilityChecker, e
 disable_indexer? = ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 disable_webapp? = ConfigHelper.parse_bool_env_var("DISABLE_WEBAPP")
 app_mode = ConfigHelper.mode()
-disable_exchange_rates? = ConfigHelper.parse_bool_env_var("DISABLE_EXCHANGE_RATES")
 
-exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
+disable_exchange_rates? =
+  if System.get_env("DISABLE_MARKET"),
+    do: ConfigHelper.parse_bool_env_var("DISABLE_MARKET"),
+    else: ConfigHelper.parse_bool_env_var("DISABLE_EXCHANGE_RATES")
+
+coin = System.get_env("COIN") || "ETH"
 
 config :explorer,
   mode: app_mode,
   ecto_repos: ConfigHelper.repos(),
-  coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
-  coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
+  coin: coin,
+  coin_name: System.get_env("COIN_NAME") || "ETH",
   allowed_solidity_evm_versions:
     System.get_env("CONTRACT_VERIFICATION_ALLOWED_SOLIDITY_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,shanghai,cancun,default",
@@ -380,76 +384,123 @@ config :explorer, Explorer.Chain.Cache.Counters.NewPendingTransactionsCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_FRESH_PENDING_TRANSACTIONS_COUNTER_PERIOD", "5m"),
   enable_consolidation: true
 
-cmc_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID")
-cg_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_ID")
-cc_secondary_coin_symbol = System.get_env("EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL")
-mobula_secondary_coin_id = System.get_env("EXCHANGE_RATES_MOBULA_SECONDARY_COIN_ID")
+config :explorer, Explorer.Market.Source,
+  native_coin_source:
+    ConfigHelper.market_source("MARKET_NATIVE_COIN_SOURCE") || ConfigHelper.market_source("EXCHANGE_RATES_SOURCE"),
+  secondary_coin_source:
+    ConfigHelper.market_source("MARKET_SECONDARY_COIN_SOURCE") ||
+      ConfigHelper.market_source("EXCHANGE_RATES_SECONDARY_COIN_SOURCE"),
+  tokens_source:
+    ConfigHelper.market_source("MARKET_TOKENS_SOURCE") || ConfigHelper.market_source("TOKEN_EXCHANGE_RATES_SOURCE"),
+  native_coin_history_source:
+    ConfigHelper.market_source("MARKET_NATIVE_COIN_HISTORY_SOURCE") ||
+      ConfigHelper.market_source("EXCHANGE_RATES_PRICE_SOURCE"),
+  secondary_coin_history_source: ConfigHelper.market_source("MARKET_SECONDARY_COIN_HISTORY_SOURCE"),
+  market_cap_history_source:
+    ConfigHelper.market_source("MARKET_CAP_HISTORY_SOURCE") ||
+      ConfigHelper.market_source("EXCHANGE_RATES_MARKET_CAP_SOURCE"),
+  tvl_history_source:
+    ConfigHelper.market_source("MARKET_TVL_HISTORY_SOURCE") || ConfigHelper.market_source("EXCHANGE_RATES_TVL_SOURCE")
 
-config :explorer, Explorer.ExchangeRates,
+config :explorer, Explorer.Market.Source.CoinGecko,
+  platform: System.get_env("MARKET_COINGECKO_PLATFORM_ID") || System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
+  base_url:
+    System.get_env("MARKET_COINGECKO_BASE_URL") ||
+      System.get_env("EXCHANGE_RATES_COINGECKO_BASE_URL", "https://api.coingecko.com/api/v3"),
+  base_pro_url:
+    System.get_env("MARKET_COINGECKO_BASE_PRO_URL") ||
+      System.get_env("EXCHANGE_RATES_COINGECKO_BASE_PRO_URL", "https://pro-api.coingecko.com/api/v3"),
+  api_key: System.get_env("MARKET_COINGECKO_API_KEY") || System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
+  coin_id: System.get_env("MARKET_COINGECKO_COIN_ID") || System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
+  secondary_coin_id:
+    System.get_env("MARKET_COINGECKO_SECONDARY_COIN_ID") || System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_ID"),
+  currency: "usd"
+
+config :explorer, Explorer.Market.Source.CoinMarketCap,
+  base_url:
+    System.get_env("MARKET_COINMARKETCAP_BASE_URL") ||
+      System.get_env("EXCHANGE_RATES_COINMARKETCAP_BASE_URL", "https://pro-api.coinmarketcap.com/v2"),
+  api_key: System.get_env("MARKET_COINMARKETCAP_API_KEY") || System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
+  coin_id: System.get_env("MARKET_COINMARKETCAP_COIN_ID") || System.get_env("EXCHANGE_RATES_COINMARKETCAP_COIN_ID"),
+  secondary_coin_id:
+    System.get_env("MARKET_COINMARKETCAP_SECONDARY_COIN_ID") ||
+      System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID"),
+  currency_id: "2781"
+
+config :explorer, Explorer.Market.Source.CryptoCompare,
+  base_url: System.get_env("MARKET_CRYPTOCOMPARE_BASE_URL", "https://min-api.cryptocompare.com"),
+  coin_symbol: System.get_env("MARKET_CRYPTOCOMPARE_COIN_SYMBOL", coin),
+  secondary_coin_symbol:
+    System.get_env("MARKET_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL") ||
+      System.get_env("EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL"),
+  currency: "USD"
+
+config :explorer, Explorer.Market.Source.CryptoRank,
+  platform:
+    ConfigHelper.parse_integer_or_nil_env_var("MARKET_CRYPTORANK_PLATFORM_ID") ||
+      ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_PLATFORM_ID"),
+  base_url:
+    System.get_env("MARKET_CRYPTORANK_BASE_URL") ||
+      System.get_env("EXCHANGE_RATES_CRYPTORANK_BASE_URL", "https://api.cryptorank.io/v1/"),
+  api_key: System.get_env("MARKET_CRYPTORANK_API_KEY") || System.get_env("EXCHANGE_RATES_CRYPTORANK_API_KEY"),
+  coin_id:
+    System.get_env("MARKET_CRYPTORANK_COIN_ID") ||
+      ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_COIN_ID"),
+  secondary_coin_id:
+    System.get_env("MARKET_CRYPTORANK_SECONDARY_COIN_ID") ||
+      ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_SECONDARY_COIN_ID")
+
+config :explorer, Explorer.Market.Source.DefiLlama,
+  coin_id: System.get_env("MARKET_DEFILLAMA_COIN_ID"),
+  base_url: "https://api.llama.fi/v2"
+
+config :explorer, Explorer.Market.Source.Mobula,
+  platform: System.get_env("MARKET_MOBULA_PLATFORM_ID") || System.get_env("EXCHANGE_RATES_MOBULA_CHAIN_ID"),
+  base_url:
+    System.get_env("MARKET_MOBULA_BASE_URL") ||
+      System.get_env("EXCHANGE_RATES_MOBULA_BASE_URL", "https://api.mobula.io/api/1"),
+  api_key: System.get_env("MARKET_MOBULA_API_KEY") || System.get_env("EXCHANGE_RATES_MOBULA_API_KEY"),
+  coin_id: System.get_env("MARKET_MOBULA_COIN_ID") || System.get_env("EXCHANGE_RATES_MOBULA_COIN_ID"),
+  secondary_coin_id:
+    System.get_env("MARKET_MOBULA_SECONDARY_COIN_ID") || System.get_env("EXCHANGE_RATES_MOBULA_SECONDARY_COIN_ID")
+
+config :explorer, Explorer.Market.Fetcher.Coin,
   store: :ets,
-  enabled: !disable_exchange_rates?,
+  enabled: !disable_exchange_rates? && ConfigHelper.parse_bool_env_var("MARKET_COIN_FETCHER_ENABLED", "true"),
   enable_consolidation: true,
-  secondary_coin_enabled:
-    !disable_exchange_rates? && (cmc_secondary_coin_id || cg_secondary_coin_id || mobula_secondary_coin_id),
-  fetch_btc_value: ConfigHelper.parse_bool_env_var("EXCHANGE_RATES_FETCH_BTC_VALUE"),
-  cache_period: ConfigHelper.parse_time_env_var("CACHE_EXCHANGE_RATES_PERIOD", "10m")
+  cache_period: ConfigHelper.parse_time_env_var("MARKET_COIN_CACHE_PERIOD", "10m")
 
-config :explorer, Explorer.ExchangeRates.Source,
-  source: ConfigHelper.exchange_rates_source(),
-  secondary_coin_source: ConfigHelper.exchange_rates_secondary_coin_source(),
-  price_source: ConfigHelper.exchange_rates_price_source(),
-  secondary_coin_price_source: ConfigHelper.exchange_rates_secondary_coin_price_source(),
-  market_cap_source: ConfigHelper.exchange_rates_market_cap_source(),
-  tvl_source: ConfigHelper.exchange_rates_tvl_source()
+config :explorer, Explorer.Market.Fetcher.Token,
+  enabled:
+    !disable_exchange_rates? &&
+      ConfigHelper.parse_bool_env_var(
+        "MARKET_TOKENS_FETCHER_ENABLED",
+        ConfigHelper.safe_get_env("DISABLE_TOKEN_EXCHANGE_RATE", "true")
+      ),
+  interval:
+    ConfigHelper.parse_time_env_var(
+      "MARKET_TOKENS_INTERVAL",
+      ConfigHelper.safe_get_env("TOKEN_EXCHANGE_RATE_INTERVAL", "10s")
+    ),
+  refetch_interval:
+    ConfigHelper.parse_time_env_var(
+      "MARKET_TOKENS_REFETCH_INTERVAL",
+      ConfigHelper.safe_get_env("TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL", "1h")
+    ),
+  max_batch_size:
+    ConfigHelper.parse_integer_env_var(
+      "MARKET_TOKENS_MAX_BATCH_SIZE",
+      ConfigHelper.parse_integer_env_var("TOKEN_EXCHANGE_RATE_MAX_BATCH_SIZE", 500)
+    )
 
-config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
-  base_url: System.get_env("EXCHANGE_RATES_COINMARKETCAP_BASE_URL"),
-  api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
-  coin_id: System.get_env("EXCHANGE_RATES_COINMARKETCAP_COIN_ID"),
-  secondary_coin_id: cmc_secondary_coin_id
-
-config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
-  platform: System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
-  base_url: System.get_env("EXCHANGE_RATES_COINGECKO_BASE_URL"),
-  base_pro_url: System.get_env("EXCHANGE_RATES_COINGECKO_BASE_PRO_URL"),
-  api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
-  coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
-  secondary_coin_id: cg_secondary_coin_id
-
-config :explorer, Explorer.ExchangeRates.Source.Mobula,
-  platform: System.get_env("EXCHANGE_RATES_MOBULA_CHAIN_ID"),
-  base_url: System.get_env("EXCHANGE_RATES_MOBULA_BASE_URL", "https://api.mobula.io/api/1"),
-  api_key: System.get_env("EXCHANGE_RATES_MOBULA_API_KEY"),
-  coin_id: System.get_env("EXCHANGE_RATES_MOBULA_COIN_ID"),
-  secondary_coin_id: mobula_secondary_coin_id
-
-config :explorer, Explorer.ExchangeRates.Source.DefiLlama, coin_id: System.get_env("EXCHANGE_RATES_DEFILLAMA_COIN_ID")
-
-config :explorer, Explorer.Market.History.Source.Price.CryptoCompare, secondary_coin_symbol: cc_secondary_coin_symbol
-
-config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
-  enabled: !ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_EXCHANGE_RATE", "true"),
-  interval: ConfigHelper.parse_time_env_var("TOKEN_EXCHANGE_RATE_INTERVAL", "5s"),
-  refetch_interval: ConfigHelper.parse_time_env_var("TOKEN_EXCHANGE_RATE_REFETCH_INTERVAL", "1h"),
-  max_batch_size: ConfigHelper.parse_integer_env_var("TOKEN_EXCHANGE_RATE_MAX_BATCH_SIZE", 150),
-  source: ConfigHelper.token_exchange_rates_source()
-
-cryptorank_secondary_coin_id = ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_SECONDARY_COIN_ID")
-
-config :explorer, Explorer.ExchangeRates.Source.Cryptorank,
-  platform: ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_PLATFORM_ID"),
-  base_url: System.get_env("EXCHANGE_RATES_CRYPTORANK_BASE_URL", "https://api.cryptorank.io/v1/"),
-  api_key: System.get_env("EXCHANGE_RATES_CRYPTORANK_API_KEY"),
-  coin_id: ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_COIN_ID"),
-  secondary_coin_id: cryptorank_secondary_coin_id,
-  limit: ConfigHelper.parse_integer_env_var("EXCHANGE_RATES_CRYPTORANK_LIMIT", 1000)
-
-config :explorer, Explorer.Market.History.Cataloger,
-  enabled: !disable_indexer? && !disable_exchange_rates?,
+config :explorer, Explorer.Market.Fetcher.History,
+  enabled: !disable_exchange_rates? && ConfigHelper.parse_bool_env_var("MARKET_HISTORY_FETCHER_ENABLED", "true"),
   history_fetch_interval: ConfigHelper.parse_time_env_var("MARKET_HISTORY_FETCH_INTERVAL", "1h"),
-  secondary_coin_enabled:
-    cmc_secondary_coin_id || cg_secondary_coin_id || cc_secondary_coin_symbol || mobula_secondary_coin_id ||
-      cryptorank_secondary_coin_id
+  first_fetch_day_count:
+    ConfigHelper.parse_integer_env_var(
+      "MARKET_HISTORY_FIRST_FETCH_DAY_COUNT",
+      ConfigHelper.parse_integer_env_var("EXCHANGE_RATES_HISTORY_FIRST_FETCH_DAY_COUNT", 365)
+    )
 
 config :explorer, Explorer.Chain.Transaction, suave_bid_contracts: System.get_env("SUAVE_BID_CONTRACTS", "")
 

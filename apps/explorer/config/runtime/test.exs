@@ -2,9 +2,9 @@ import Config
 
 alias EthereumJSONRPC.Variant
 
-config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets, fetch_btc_value: true
-
-config :explorer, Explorer.ExchangeRates.TokenExchangeRates, enabled: false
+config :explorer, Explorer.Market.Fetcher.Coin, enabled: false, store: :ets, fetch_btc_value: true
+config :explorer, Explorer.Market.Fetcher.History, enabled: false
+config :explorer, Explorer.Market.Fetcher.Token, enabled: false
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: false
 
@@ -13,7 +13,6 @@ config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime, enabled: false
 # This historian is a GenServer whose init uses a Repo in a Task process.
 # This causes a ConnectionOwnership error
 config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
-config :explorer, Explorer.Market.History.Historian, enabled: false
 
 for counter <- [
       Explorer.Chain.Cache.Counters.AddressesCount,

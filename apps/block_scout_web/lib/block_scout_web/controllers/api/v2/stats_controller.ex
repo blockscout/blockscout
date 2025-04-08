@@ -41,8 +41,8 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     coin_price_change =
       case Market.fetch_recent_history() do
         [_today, yesterday | _] ->
-          exchange_rate.usd_value && yesterday.closing_price &&
-            exchange_rate.usd_value
+          exchange_rate.fiat_value && yesterday.closing_price &&
+            exchange_rate.fiat_value
             |> Decimal.div(yesterday.closing_price)
             |> Decimal.sub(1)
             |> Decimal.mult(100)
@@ -64,9 +64,9 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "average_block_time" => AverageBlockTime.average_block_time() |> Duration.to_milliseconds(),
         "coin_image" => exchange_rate.image_url,
         "secondary_coin_image" => secondary_coin_exchange_rate.image_url,
-        "coin_price" => exchange_rate.usd_value,
+        "coin_price" => exchange_rate.fiat_value,
         "coin_price_change_percentage" => coin_price_change,
-        "secondary_coin_price" => secondary_coin_exchange_rate.usd_value,
+        "secondary_coin_price" => secondary_coin_exchange_rate.fiat_value,
         "total_gas_used" => GasUsageSum.total() |> to_string(),
         "transactions_today" => Enum.at(transaction_stats, 0).number_of_transactions |> to_string(),
         "gas_used_today" => Enum.at(transaction_stats, 0).gas_used,
@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "gas_price_updated_at" => GasPriceOracle.get_updated_at(),
         "static_gas_price" => gas_price,
         "market_cap" => Helper.market_cap(market_cap_type, exchange_rate),
-        "tvl" => exchange_rate.tvl_usd,
+        "tvl" => exchange_rate.tvl,
         "network_utilization_percentage" => network_utilization_percentage()
       }
       |> add_chain_type_fields()
@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
           [
             %{
               today
-              | closing_price: exchange_rate.usd_value
+              | closing_price: exchange_rate.fiat_value
             }
             | the_rest
           ]

@@ -56,6 +56,7 @@
 ### 🚜 Refactor
 
 - Consistency with the core application in properties namings in rollups-related API endpoints ([#12055](https://github.com/blockscout/blockscout/issues/12055))
+- Refactor market related code ([#11844](https://github.com/blockscout/blockscout/pull/11844))
 
 ### ⚡ Performance
 
