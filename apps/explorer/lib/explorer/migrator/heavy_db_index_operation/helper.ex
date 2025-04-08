@@ -233,4 +233,20 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
       index_name
     end
   end
+
+  @doc """
+    Returns the configured check interval for heavy DB operations.
+    If not configured, defaults to 10 minutes.
+
+    ## Examples
+
+        iex> get_check_interval()
+        600_000 # 10 minutes in milliseconds
+
+  """
+  @spec get_check_interval() :: timeout()
+  def get_check_interval do
+    Application.get_env(:explorer, Explorer.Migrator.HeavyDbIndexOperation)[:check_interval] ||
+      :timer.minutes(10)
+  end
 end

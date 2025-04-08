@@ -2453,6 +2453,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
       Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
       old_env = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance)
+      configuration = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor)
+      Application.put_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor, disabled?: false)
+      Indexer.Fetcher.OnDemand.TokenBalance.Supervisor.Case.start_supervised!()
 
       Application.put_env(
         :indexer,
@@ -2461,6 +2464,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       )
 
       on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor, configuration)
         Application.put_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance, old_env)
       end)
     end
@@ -2521,70 +2525,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                                                     method: "eth_call",
                                                     params: [
                                                       %{
-                                                        data: "0x00fdd58e" <> request_1,
-                                                        to: contract_address_1
-                                                      },
-                                                      ^block_number_hex
-                                                    ]
-                                                  },
-                                                  %{
-                                                    id: id_2,
-                                                    jsonrpc: "2.0",
-                                                    method: "eth_call",
-                                                    params: [
-                                                      %{
-                                                        data: "0x00fdd58e" <> request_2,
-                                                        to: contract_address_2
-                                                      },
-                                                      ^block_number_hex
-                                                    ]
-                                                  }
-                                                ],
-                                                _options ->
-        types_list = [:address, {:uint, 256}]
-
-        [address_1, token_id_1] = request_1 |> Base.decode16!(case: :lower) |> TypeDecoder.decode_raw(types_list)
-
-        assert address_1 == address.hash.bytes
-
-        result_1 =
-          balances_erc_1155[{contract_address_1 |> String.downcase(), to_string(token_id_1)}]
-          |> List.wrap()
-          |> TypeEncoder.encode_raw([{:uint, 256}], :standard)
-          |> Base.encode16(case: :lower)
-
-        [address_2, token_id_2] = request_2 |> Base.decode16!(case: :lower) |> TypeDecoder.decode_raw(types_list)
-
-        assert address_2 == address.hash.bytes
-
-        result_2 =
-          balances_erc_1155[{contract_address_2 |> String.downcase(), to_string(token_id_2)}]
-          |> List.wrap()
-          |> TypeEncoder.encode_raw([{:uint, 256}], :standard)
-          |> Base.encode16(case: :lower)
-
-        {:ok,
-         [
-           %{
-             id: id_1,
-             jsonrpc: "2.0",
-             result: "0x" <> result_1
-           },
-           %{
-             id: id_2,
-             jsonrpc: "2.0",
-             result: "0x" <> result_2
-           }
-         ]}
-      end)
-
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [
-                                                  %{
-                                                    id: id_1,
-                                                    jsonrpc: "2.0",
-                                                    method: "eth_call",
-                                                    params: [
-                                                      %{
                                                         data: "0x70a08231" <> request_1,
                                                         to: contract_address_1
                                                       },
@@ -2626,6 +2566,30 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                                                       },
                                                       ^block_number_hex
                                                     ]
+                                                  },
+                                                  %{
+                                                    id: id_5,
+                                                    jsonrpc: "2.0",
+                                                    method: "eth_call",
+                                                    params: [
+                                                      %{
+                                                        data: "0x00fdd58e" <> request_5,
+                                                        to: contract_address_5
+                                                      },
+                                                      ^block_number_hex
+                                                    ]
+                                                  },
+                                                  %{
+                                                    id: id_6,
+                                                    jsonrpc: "2.0",
+                                                    method: "eth_call",
+                                                    params: [
+                                                      %{
+                                                        data: "0x00fdd58e" <> request_6,
+                                                        to: contract_address_6
+                                                      },
+                                                      ^block_number_hex
+                                                    ]
                                                   }
                                                 ],
                                                 _options ->
@@ -2663,6 +2627,28 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           |> TypeEncoder.encode_raw([{:uint, 256}], :standard)
           |> Base.encode16(case: :lower)
 
+        types_list = [:address, {:uint, 256}]
+
+        [address_5, token_id_5] = request_5 |> Base.decode16!(case: :lower) |> TypeDecoder.decode_raw(types_list)
+
+        assert address_5 == address.hash.bytes
+
+        result_5 =
+          balances_erc_1155[{contract_address_5 |> String.downcase(), to_string(token_id_5)}]
+          |> List.wrap()
+          |> TypeEncoder.encode_raw([{:uint, 256}], :standard)
+          |> Base.encode16(case: :lower)
+
+        [address_6, token_id_6] = request_6 |> Base.decode16!(case: :lower) |> TypeDecoder.decode_raw(types_list)
+
+        assert address_6 == address.hash.bytes
+
+        result_6 =
+          balances_erc_1155[{contract_address_6 |> String.downcase(), to_string(token_id_6)}]
+          |> List.wrap()
+          |> TypeEncoder.encode_raw([{:uint, 256}], :standard)
+          |> Base.encode16(case: :lower)
+
         {:ok,
          [
            %{
@@ -2684,6 +2670,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
              id: id_4,
              jsonrpc: "2.0",
              result: "0x" <> result_4
+           },
+           %{
+             id: id_5,
+             jsonrpc: "2.0",
+             result: "0x" <> result_5
+           },
+           %{
+             id: id_6,
+             jsonrpc: "2.0",
+             result: "0x" <> result_6
            }
          ]}
       end)

@@ -396,7 +396,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
     ## Returns
     - A tuple containing the minimum and maximum batch numbers or `{nil, nil}` if no batches are found.
   """
-  @spec get_min_max_batch_numbers() :: {non_neg_integer(), non_neg_integer()} | {nil | nil}
+  @spec get_min_max_batch_numbers() :: {non_neg_integer() | nil, non_neg_integer() | nil}
   def get_min_max_batch_numbers do
     query =
       from(batch in L1Batch,
