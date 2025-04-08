@@ -20,8 +20,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   @max_delay :timer.hours(168)
 
   @spec trigger_refetch(String.t() | nil, TokenInstance.t()) :: :ok
-  def trigger_refetch(ip \\ nil, token_instance) do
-    case RateLimiter.check_rate(ip, :on_demand) do
+  def trigger_refetch(caller \\ nil, token_instance) do
+    case RateLimiter.check_rate(caller, :on_demand) do
       :allow -> GenServer.cast(__MODULE__, {:refetch, token_instance})
       :deny -> :ok
     end

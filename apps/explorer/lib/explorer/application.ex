@@ -274,7 +274,7 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsToAddressHashWithPendingIndex,
           :indexer
         ),
-        # configure_mode_dependent_process(Explorer.Migrator.BackfillMetadataURL, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.BackfillMetadataURL, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndex,
           :indexer

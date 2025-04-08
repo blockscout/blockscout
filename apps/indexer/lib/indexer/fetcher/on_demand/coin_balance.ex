@@ -49,8 +49,8 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
           | {:pending, block_number}
 
   @spec trigger_fetch(String.t() | nil, Address.t()) :: balance_status
-  def trigger_fetch(ip \\ nil, address) do
-    if __MODULE__.Supervisor.disabled?() or RateLimiter.check_rate(ip, :on_demand) == :deny do
+  def trigger_fetch(caller \\ nil, address) do
+    if __MODULE__.Supervisor.disabled?() or RateLimiter.check_rate(caller, :on_demand) == :deny do
       :current
     else
       latest_block_number = latest_block_number()
@@ -66,8 +66,8 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
   end
 
   @spec trigger_historic_fetch(String.t() | nil, Hash.Address.t(), non_neg_integer()) :: balance_status
-  def trigger_historic_fetch(ip \\ nil, address_hash, block_number) do
-    if __MODULE__.Supervisor.disabled?() or RateLimiter.check_rate(ip, :on_demand) == :deny do
+  def trigger_historic_fetch(caller \\ nil, address_hash, block_number) do
+    if __MODULE__.Supervisor.disabled?() or RateLimiter.check_rate(caller, :on_demand) == :deny do
       :current
     else
       do_trigger_historic_fetch(address_hash, block_number)

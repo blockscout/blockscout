@@ -20,9 +20,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   @max_delay :timer.hours(168)
 
   @spec trigger_fetch(String.t() | nil, Address.t()) :: :ok
-  def trigger_fetch(ip \\ nil, address) do
+  def trigger_fetch(caller \\ nil, address) do
     if is_nil(address.contract_code) do
-      case RateLimiter.check_rate(ip, :on_demand) do
+      case RateLimiter.check_rate(caller, :on_demand) do
         :allow -> GenServer.cast(__MODULE__, {:fetch, address})
         :deny -> :ok
       end

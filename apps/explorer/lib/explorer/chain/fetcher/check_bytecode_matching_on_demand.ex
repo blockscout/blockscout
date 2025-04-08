@@ -14,14 +14,14 @@ defmodule Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand do
   # seconds
   @check_bytecode_interval 86_400
 
-  def trigger_check(ip \\ nil, address, smart_contract)
+  def trigger_check(caller \\ nil, address, smart_contract)
 
-  def trigger_check(_ip, _address, %NotLoaded{}) do
+  def trigger_check(_caller, _address, %NotLoaded{}) do
     :ignore
   end
 
-  def trigger_check(ip, address, _) do
-    case RateLimiter.check_rate(ip, :on_demand) do
+  def trigger_check(caller, address, _) do
+    case RateLimiter.check_rate(caller, :on_demand) do
       :allow -> GenServer.cast(__MODULE__, {:check, address})
       :deny -> :ok
     end

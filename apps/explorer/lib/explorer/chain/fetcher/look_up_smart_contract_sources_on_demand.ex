@@ -54,9 +54,9 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
       * The smart contract is already fully verified
   """
   @spec trigger_fetch(String.t() | nil, any()) :: :ignore | :ok
-  def trigger_fetch(ip \\ nil, address_or_hash)
+  def trigger_fetch(caller \\ nil, address_or_hash)
 
-  def trigger_fetch(_ip, %Address{
+  def trigger_fetch(_caller, %Address{
         smart_contract: %SmartContract{
           partially_verified: false
         }
@@ -64,8 +64,8 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
     :ignore
   end
 
-  def trigger_fetch(ip, address_or_hash) do
-    case RateLimiter.check_rate(ip, :on_demand) do
+  def trigger_fetch(caller, address_or_hash) do
+    case RateLimiter.check_rate(caller, :on_demand) do
       :allow -> do_trigger_fetch(address_or_hash)
       :deny -> :ignore
     end

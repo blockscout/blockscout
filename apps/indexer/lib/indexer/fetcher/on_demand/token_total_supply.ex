@@ -19,8 +19,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
   ## Interface
 
   @spec trigger_fetch(String.t() | nil, Hash.Address.t()) :: :ok
-  def trigger_fetch(ip \\ nil, address_hash) do
-    case RateLimiter.check_rate(ip, :on_demand) do
+  def trigger_fetch(caller \\ nil, address_hash) do
+    case RateLimiter.check_rate(caller, :on_demand) do
       :allow -> GenServer.cast(__MODULE__, {:fetch_and_update, address_hash})
       :deny -> :ok
     end

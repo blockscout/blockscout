@@ -33,8 +33,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   ]
 
   @spec trigger_fetch(String.t() | nil, Hash.Address.t()) :: :ok
-  def trigger_fetch(ip \\ nil, address_hash) do
-    if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(ip, :on_demand) == :allow do
+  def trigger_fetch(caller \\ nil, address_hash) do
+    if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(caller, :on_demand) == :allow do
       BufferedTask.buffer(__MODULE__, [{:fetch, address_hash}], false)
     end
   end
@@ -47,8 +47,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
           Decimal.t() | nil,
           non_neg_integer()
         ) :: :ok
-  def trigger_historic_fetch(ip \\ nil, address_hash, contract_address_hash, token_type, token_id, block_number) do
-    if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(ip, :on_demand) == :allow do
+  def trigger_historic_fetch(caller \\ nil, address_hash, contract_address_hash, token_type, token_id, block_number) do
+    if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(caller, :on_demand) == :allow do
       BufferedTask.buffer(
         __MODULE__,
         [{:historic_fetch, {address_hash, contract_address_hash, token_type, token_id, block_number}}],
