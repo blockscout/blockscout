@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
     Protected by `x-api-key` header.
   """
   @spec try_to_search_contract(Plug.Conn.t(), map()) ::
-          {:not_verified_or_partially_verified, boolean()}
+          {:already_verified, boolean()}
           | {:api_key, nil | binary()}
           | {:format, :error}
           | {:not_found, {:error, :not_found}}
