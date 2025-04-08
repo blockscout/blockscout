@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
     Protected by `x-api-key` header.
   """
   @spec try_to_search_contract(Plug.Conn.t(), map()) ::
-          {:not_verified_or_partially_verified, boolean()}
+          {:already_verified, boolean()}
           | {:api_key, nil | binary()}
           | {:format, :error}
           | {:not_found, {:error, :not_found}}
@@ -122,9 +122,10 @@ defmodule BlockScoutWeb.API.V2.ImportController do
               api?: true
             )},
          {:nonempty_bytecode, true} <- {:nonempty_bytecode, Address.smart_contract_with_nonempty_code?(address)},
-         {:not_verified_or_partially_verified, true} <-
-           {:not_verified_or_partially_verified,
-            is_nil(address.smart_contract) or address.smart_contract.partially_verified} do
+         {:already_verified, false} <-
+           {:already_verified,
+            not is_nil(address.smart_contract) and
+              not address.smart_contract.partially_verified} do
       creation_transaction_input = contract_creation_input(address.hash)
 
       with {:ok, %{"sourceType" => type} = source} <-
