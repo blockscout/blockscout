@@ -29,6 +29,7 @@ defmodule Indexer.Transform.TokenTransfers do
         (log.first_topic == TokenTransfer.weth_deposit_signature() ||
            log.first_topic == TokenTransfer.weth_withdrawal_signature()) &&
           TokenTransfer.whitelisted_weth_contract?(log.address_hash)
+          && !is_nil(log.second_topic)
       end)
       |> Enum.reduce(initial_acc, &do_parse/2)
       |> drop_repeated_token_transfers(erc20_and_erc721_token_transfers.token_transfers)

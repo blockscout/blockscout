@@ -6,7 +6,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
 
   import Explorer.Helper, only: [decode_data: 2]
   import Indexer.Fetcher.Celo.Helper, only: [abi_to_method_id: 1]
-  import Indexer.Helper, only: [read_contracts_with_retries: 4]
+
+  import Indexer.Helper,
+    only: [
+      read_contracts_with_retries_by_chunks: 3,
+      read_contracts_with_retries: 4
+    ]
 
   alias Explorer.Repo
   alias Indexer.Fetcher.Celo.ValidatorGroupVotes
@@ -21,6 +26,8 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
   require Logger
 
   @repeated_request_max_retries 3
+
+  @requests_chunk_size 100
 
   @epoch_rewards_distributed_to_voters_topic "0x91ba34d62474c14d6c623cd322f4256666c7a45b7fdaa3378e009d39dfcec2a7"
 
@@ -110,11 +117,17 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
       |> Enum.concat()
 
     {responses, []} =
-      read_contracts_with_retries(
+      read_contracts_with_retries_by_chunks(
         requests,
-        @get_active_votes_for_group_by_account_abi,
-        json_rpc_named_arguments,
-        @repeated_request_max_retries
+        @requests_chunk_size,
+        fn requests ->
+          read_contracts_with_retries(
+            requests,
+            @get_active_votes_for_group_by_account_abi,
+            json_rpc_named_arguments,
+            @repeated_request_max_retries
+          )
+        end
       )
 
     diffs =
