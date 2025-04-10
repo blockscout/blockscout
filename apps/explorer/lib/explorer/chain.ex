@@ -163,6 +163,7 @@ defmodule Explorer.Chain do
   @type paging_options :: {:paging_options, PagingOptions.t()}
   @typep balance_by_day :: %{date: String.t(), value: Wei.t()}
   @type api? :: {:api?, true | false}
+  @type ip :: {:ip, String.t()}
   @type show_scam_tokens? :: {:show_scam_tokens?, true | false}
 
   @doc """

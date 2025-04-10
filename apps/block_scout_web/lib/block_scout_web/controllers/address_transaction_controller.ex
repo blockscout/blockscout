@@ -108,6 +108,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
   end
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
+    ip = AccessHelper.conn_to_ip_string(conn)
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
@@ -115,7 +117,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         conn,
         "index.html",
         address: address,
-        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
         exchange_rate: Market.get_coin_exchange_rate(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
@@ -145,7 +147,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
               conn,
               "index.html",
               address: address,
-              coin_balance_status: nil,
+              coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
               exchange_rate: Market.get_coin_exchange_rate(),
               filter: params["filter"],
               counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),

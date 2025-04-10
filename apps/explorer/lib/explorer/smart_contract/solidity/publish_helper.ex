@@ -163,10 +163,10 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
     ]
   end
 
-  def check_and_verify(address_hash_string) do
+  def check_and_verify(address_hash_string, options \\ []) do
     cond do
       eth_bytecode_db_enabled?() ->
-        LookUpSmartContractSourcesOnDemand.trigger_fetch(address_hash_string)
+        LookUpSmartContractSourcesOnDemand.trigger_fetch(options[:ip], address_hash_string)
 
       sourcify_enabled?() ->
         address_hash_string

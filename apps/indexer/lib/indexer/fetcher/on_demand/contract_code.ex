@@ -10,18 +10,22 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
 
   import EthereumJSONRPC, only: [fetch_codes: 2]
 
+  alias Explorer.Chain
   alias Explorer.Chain.Address
   alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Utility.AddressContractCodeFetchAttempt
+  alias Explorer.Utility.{AddressContractCodeFetchAttempt, RateLimiter}
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
 
   @max_delay :timer.hours(168)
 
-  @spec trigger_fetch(Address.t()) :: :ok
-  def trigger_fetch(address) do
+  @spec trigger_fetch(String.t() | nil, Address.t()) :: :ok
+  def trigger_fetch(caller \\ nil, address) do
     if is_nil(address.contract_code) do
-      GenServer.cast(__MODULE__, {:fetch, address})
+      case RateLimiter.check_rate(caller, :on_demand) do
+        :allow -> GenServer.cast(__MODULE__, {:fetch, address})
+        :deny -> :ok
+      end
     else
       ContractCreatorOnDemand.trigger_fetch(address)
     end
@@ -103,16 +107,16 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
          contract_code_object = List.first(fetched_codes),
          false <- is_nil(contract_code_object),
          true <- contract_code_object.code !== "0x" do
-      case Address.set_contract_code(address.hash, contract_code_object.code) do
-        {1, _} ->
+      case Chain.import(%{addresses: %{params: [%{hash: address.hash, contract_code: contract_code_object.code}]}}) do
+        {:ok, _} ->
           Publisher.broadcast(%{fetched_bytecode: [address.hash, contract_code_object.code]}, :on_demand)
 
           ContractCreatorOnDemand.trigger_fetch(address)
 
           AddressContractCodeFetchAttempt.delete(address.hash)
 
-        _ ->
-          Logger.error(fn -> "Error while setting address #{inspect(to_string(address.hash))} deployed bytecode" end)
+        error ->
+          Logger.error(fn -> "Error while setting address #{address.hash} deployed bytecode: #{inspect(error)}" end)
       end
     else
       {:fetched_code, {:error, _}} ->
