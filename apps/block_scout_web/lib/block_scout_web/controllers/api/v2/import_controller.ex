@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
 
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Data, SmartContract, Token}
+  alias Explorer.Chain.{Address, Data, Token}
   alias Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
   alias Explorer.SmartContract.EthBytecodeDBInterface
   alias Indexer.Fetcher.TokenUpdater
@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
     Protected by `x-api-key` header.
   """
   @spec try_to_search_contract(Plug.Conn.t(), map()) ::
-          {:already_verified, nil | SmartContract.t()}
+          {:already_verified, boolean()}
           | {:api_key, nil | binary()}
           | {:format, :error}
           | {:not_found, {:error, :not_found}}
@@ -113,10 +113,19 @@ defmodule BlockScoutWeb.API.V2.ImportController do
            {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
          {:api_key, ^api_key} <- {:api_key, get_api_key_header(conn)},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true)},
+         {:not_found, {:ok, address}} <-
+           {:not_found,
+            Chain.hash_to_address(address_hash,
+              necessity_by_association: %{
+                :smart_contract => :optional
+              },
+              api?: true
+            )},
          {:nonempty_bytecode, true} <- {:nonempty_bytecode, Address.smart_contract_with_nonempty_code?(address)},
-         {:already_verified, smart_contract} when is_nil(smart_contract) <-
-           {:already_verified, SmartContract.address_hash_to_smart_contract(address_hash, @api_true)} do
+         {:already_verified, false} <-
+           {:already_verified,
+            not (is_nil(address.smart_contract) or
+                   address.smart_contract.partially_verified)} do
       creation_transaction_input = contract_creation_input(address.hash)
 
       with {:ok, %{"sourceType" => type} = source} <-

@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
     only: [address_internal_transaction_path: 3, address_internal_transaction_path: 4]
 
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction}
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Market.Token
 
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do

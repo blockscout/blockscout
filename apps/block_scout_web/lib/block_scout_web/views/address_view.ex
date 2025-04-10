@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
+  alias Explorer.Market.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
