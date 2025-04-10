@@ -130,7 +130,8 @@ defmodule Explorer.Mixfile do
       {:joken, "~> 2.6"},
       {:utils, in_umbrella: true},
       {:dns, "~> 2.4.0"},
-      {:inet_cidr, "~> 1.0.0"}
+      {:inet_cidr, "~> 1.0.0"},
+      {:hammer, "~> 6.0"}
     ]
   end
 

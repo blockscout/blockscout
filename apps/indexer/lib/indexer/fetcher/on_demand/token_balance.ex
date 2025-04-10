@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   alias Explorer.Chain.Hash
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Token.BalanceReader
+  alias Explorer.Utility.RateLimiter
   alias Indexer.BufferedTask
   alias Timex.Duration
 
@@ -31,22 +32,23 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
     metadata: [fetcher: :token_balance_on_demand]
   ]
 
-  @spec trigger_fetch(Hash.Address.t()) :: :ok
-  def trigger_fetch(address_hash) do
-    unless __MODULE__.Supervisor.disabled?() do
+  @spec trigger_fetch(String.t() | nil, Hash.Address.t()) :: :ok
+  def trigger_fetch(caller \\ nil, address_hash) do
+    if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(caller, :on_demand) == :allow do
       BufferedTask.buffer(__MODULE__, [{:fetch, address_hash}], false)
     end
   end
 
   @spec trigger_historic_fetch(
+          String.t() | nil,
           Hash.t(),
           Hash.t(),
           String.t(),
           Decimal.t() | nil,
           non_neg_integer()
         ) :: :ok
-  def trigger_historic_fetch(address_hash, contract_address_hash, token_type, token_id, block_number) do
-    unless __MODULE__.Supervisor.disabled?() do
+  def trigger_historic_fetch(caller \\ nil, address_hash, contract_address_hash, token_type, token_id, block_number) do
+    if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(caller, :on_demand) == :allow do
       BufferedTask.buffer(
         __MODULE__,
         [{:historic_fetch, {address_hash, contract_address_hash, token_type, token_id, block_number}}],
