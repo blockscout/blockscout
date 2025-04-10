@@ -10,7 +10,7 @@ defmodule Indexer.Transform.TokenTransfers do
 
   alias Explorer.Repo
   alias Explorer.Chain.{Hash, Token, TokenTransfer}
-  # alias Indexer.Fetcher.TokenTotalSupplyUpdater
+  alias Indexer.Fetcher.TokenTotalSupplyUpdater
 
   @doc """
   Returns a list of token transfers given a list of logs.
