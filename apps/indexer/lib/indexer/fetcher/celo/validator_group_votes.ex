@@ -25,7 +25,6 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
 
   @max_request_retries 3
 
-
   @validator_group_vote_activated_topic "0x45aac85f38083b18efe2d441a65b9c1ae177c78307cb5a5d4aec8f7dbcaeabfe"
   @validator_group_active_vote_revoked_topic "0xae7458f8697a680da6be36406ea0b8f40164915ac9cc40c0dad05a2ff6e8c6a8"
 
