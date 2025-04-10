@@ -8,12 +8,13 @@ defmodule Explorer.Utility.RateLimiter do
   require Logger
 
   @ets_table_name :rate_limiter
+  @redis_conn_name :redix_rate_limiter
 
   def start_link(_) do
     config = Application.get_env(:explorer, __MODULE__)
 
     case config[:storage] do
-      :redis -> Redix.start_link(config[:redis_url], name: :redix_rate_limiter)
+      :redis -> Redix.start_link(config[:redis_url], name: @redis_conn_name)
       :ets -> GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
     end
   end
@@ -51,25 +52,16 @@ defmodule Explorer.Utility.RateLimiter do
   def check_rate(nil, _action), do: :allow
 
   def check_rate(identifier, action) do
-    if Application.get_env(:explorer, __MODULE__)[:enabled] do
-      key = key(identifier, action)
-
-      case get_value(key) do
-        {:ok, ban_data} when not is_nil(ban_data) ->
-          [try_after, bans_count] = parse_ban_data(ban_data)
-
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          if now() > try_after do
-            do_check_rate_limit(key, bans_count, action)
-          else
-            :deny
-          end
-
-        _ ->
-          do_check_rate_limit(key, 0, action)
-      end
+    with {:enabled, true} <- {:enabled, Application.get_env(:explorer, __MODULE__)[:enabled]},
+         key = key(identifier, action),
+         {:ban_data, _key, {:ok, ban_data}} when not is_nil(ban_data) <- {:ban_data, key, get_value(key)},
+         [try_after, bans_count] = parse_ban_data(ban_data),
+         {:ban_expired, true} <- {:ban_expired, now() > try_after} do
+      do_check_rate_limit(key, bans_count, action)
     else
-      :allow
+      {:enabled, _false} -> :allow
+      {:ban_data, key, _not_found} -> do_check_rate_limit(key, 0, action)
+      {:ban_expired, false} -> :deny
     end
   end
 
@@ -127,7 +119,7 @@ defmodule Explorer.Utility.RateLimiter do
   defp get_value(key) do
     case Application.get_env(:explorer, __MODULE__)[:storage] do
       :redis ->
-        Redix.command(:redix, ["GET", key])
+        Redix.command(@redis_conn_name, ["GET", key])
 
       :ets ->
         case :ets.lookup(@ets_table_name, key) do
@@ -140,7 +132,14 @@ defmodule Explorer.Utility.RateLimiter do
   defp set_value(key, value, expire_after) do
     case Application.get_env(:explorer, __MODULE__)[:storage] do
       :redis ->
-        Redix.command(:redix, ["SET", key, value, "EX", floor(expire_after / 1000)])
+        case Redix.command(@redis_conn_name, ["SET", key, value, "EX", floor(expire_after / 1000)]) do
+          {:ok, "OK"} ->
+            :ok
+
+          {:error, err} ->
+            Logger.error(["Failed to set value for key #{key} in Redis: ", inspect(err)])
+            :error
+        end
 
       :ets ->
         :ets.insert(@ets_table_name, {key, value})
