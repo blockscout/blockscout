@@ -144,7 +144,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
         val
 
       _ ->
-        CoinBalanceOnDemand.trigger_historic_fetch(address_hash, block_number)
+        CoinBalanceOnDemand.trigger_historic_fetch(options[:ip], address_hash, block_number)
         %Wei{value: Decimal.new(0)}
     end
   end
@@ -173,6 +173,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
 
       _ ->
         TokenBalanceOnDemand.trigger_historic_fetch(
+          options[:ip],
           address_hash,
           token.contract_address_hash,
           token.type,

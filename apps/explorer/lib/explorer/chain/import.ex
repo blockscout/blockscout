@@ -320,7 +320,7 @@ defmodule Explorer.Chain.Import do
       repo.safe_insert_all(
         ecto_schema_module,
         timestamped_changes_list,
-        Keyword.delete(options, :for)
+        Keyword.drop(options, [:for, :fields_to_update])
       )
 
     {:ok, inserted}

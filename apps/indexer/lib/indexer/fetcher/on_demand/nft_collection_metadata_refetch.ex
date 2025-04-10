@@ -10,10 +10,14 @@ defmodule Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch do
 
   alias Explorer.Chain.Token
   alias Explorer.Chain.Token.Instance, as: TokenInstance
+  alias Explorer.Utility.RateLimiter
 
-  @spec trigger_refetch(Token.t()) :: :ok
-  def trigger_refetch(token) do
-    GenServer.cast(__MODULE__, {:refetch, token})
+  @spec trigger_refetch(String.t() | nil, Token.t()) :: :ok
+  def trigger_refetch(caller \\ nil, token) do
+    case RateLimiter.check_rate(caller, :on_demand) do
+      :allow -> GenServer.cast(__MODULE__, {:refetch, token})
+      :deny -> :ok
+    end
   end
 
   defp fetch_metadata(token) do

@@ -169,25 +169,25 @@ defmodule Explorer.Helper do
   @doc """
   Decode json
   """
-  @spec decode_json(any()) :: map() | list() | nil
-  def decode_json(data, nft? \\ false)
+  @spec decode_json(any(), boolean()) :: map() | list() | {:error, any()} | nil
+  def decode_json(data, error_as_tuple? \\ false)
 
   def decode_json(nil, _), do: nil
 
-  def decode_json(data, nft?) do
+  def decode_json(data, error_as_tuple?) do
     if String.valid?(data) do
-      safe_decode_json(data, nft?)
+      safe_decode_json(data, error_as_tuple?)
     else
       data
       |> :unicode.characters_to_binary(:latin1)
-      |> safe_decode_json(nft?)
+      |> safe_decode_json(error_as_tuple?)
     end
   end
 
-  defp safe_decode_json(data, nft?) do
+  defp safe_decode_json(data, error_as_tuple?) do
     case Jason.decode(data) do
       {:ok, decoded} -> decoded
-      _ -> if nft?, do: {:error, data}, else: %{error: data}
+      {:error, reason} -> if error_as_tuple?, do: {:error, reason}, else: %{error: data}
     end
   end
 
@@ -462,5 +462,27 @@ defmodule Explorer.Helper do
     hash
     |> String.trim_leading("0x")
     |> Base.decode16!(case: :mixed)
+  end
+
+  @doc """
+  Converts a Unix timestamp to a Date struct.
+
+  Takes a non-negative integer representing seconds since Unix epoch (January 1,
+  1970, 00:00:00 UTC) and returns the corresponding date.
+
+  ## Parameters
+  - `unix_timestamp`: Non-negative integer of seconds since Unix epoch
+
+  ## Returns
+  - A Date struct representing the date part of the timestamp
+
+  ## Raises
+  - ArgumentError: If the timestamp is invalid
+  """
+  @spec unix_timestamp_to_date(non_neg_integer(), System.time_unit()) :: Date.t()
+  def unix_timestamp_to_date(unix_timestamp, unit \\ :second) do
+    unix_timestamp
+    |> DateTime.from_unix!(unit)
+    |> DateTime.to_date()
   end
 end

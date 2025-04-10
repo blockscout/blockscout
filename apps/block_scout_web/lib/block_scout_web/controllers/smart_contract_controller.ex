@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.SmartContractController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.AddressView
+  alias BlockScoutWeb.{AccessHelper, AddressView}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
@@ -14,7 +14,8 @@ defmodule BlockScoutWeb.SmartContractController do
     address_options = [
       necessity_by_association: %{
         :smart_contract => :optional
-      }
+      },
+      ip: AccessHelper.conn_to_ip_string(conn)
     ]
 
     is_custom_abi = parse_boolean(params["is_custom_abi"])
@@ -159,7 +160,8 @@ defmodule BlockScoutWeb.SmartContractController do
         :smart_contract => :optional,
         :token => :optional,
         Address.contract_creation_transaction_associations() => :optional
-      }
+      },
+      ip: AccessHelper.conn_to_ip_string(conn)
     ]
 
     custom_abi =

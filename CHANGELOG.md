@@ -4,6 +4,8 @@
 
 ### 🚀 Features
 
+- Rate limiter for on-demand fetchers ([#12218](https://github.com/blockscout/blockscout/issues/12218))
+- Add average batch time (L2) to prometheus metrics ([#12217](https://github.com/blockscout/blockscout/issues/12217))
 - Contract creation tx block number binary search ([#10530](https://github.com/blockscout/blockscout/issues/10530))
 - Enhance health endpoint logic: track L2-rollup batches health ([#11888](https://github.com/blockscout/blockscout/issues/11888))
 - Universal API Proxy ([#12119](https://github.com/blockscout/blockscout/issues/12119))
@@ -25,7 +27,10 @@
 
 ### 🐛 Bug Fixes
 
-- (BufferedTask-based approach for fetching Arbitrum-specific settlement info [#12192](https://github.com/blockscout/blockscout/pull/12192))
+- Handle unconfigured coin fetcher ETS access ([#12228](https://github.com/blockscout/blockscout/pull/12228))
+- Negate condition for language check in solidityscan controller ([#12222](https://github.com/blockscout/blockscout/pull/12222))
+- Look up sources for partially verified smart contracts ([#12221](https://github.com/blockscout/blockscout/pull/12221))
+- BufferedTask-based approach for fetching Arbitrum-specific settlement info ([#12192](https://github.com/blockscout/blockscout/pull/12192))
 - Contract creation transaction associations and bytecode twin detection ([#12086](https://github.com/blockscout/blockscout/issues/12086))
 - Improve background migrations + new `Indexer.Migrator.RecoveryWETHTokenTransfers` ([#12065](https://github.com/blockscout/blockscout/issues/12065))
 - Update docker cache references to use ghcr.io ([#12178](https://github.com/blockscout/blockscout/issues/12178))
@@ -54,6 +59,7 @@
 ### 🚜 Refactor
 
 - Consistency with the core application in properties namings in rollups-related API endpoints ([#12055](https://github.com/blockscout/blockscout/issues/12055))
+- Refactor market related code ([#11844](https://github.com/blockscout/blockscout/pull/11844))
 
 ### ⚡ Performance
 

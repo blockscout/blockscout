@@ -82,7 +82,7 @@ config :explorer, Explorer.Chain.Cache.TransactionActionTokensData, enabled: tru
 
 config :explorer, Explorer.Chain.Cache.TransactionActionUniswapPools, enabled: true
 
-config :explorer, Explorer.ExchangeRates.TokenExchangeRates, enabled: true
+config :explorer, Explorer.Market.Fetcher.Token, enabled: true
 
 config :explorer, Explorer.Chain.Cache.Counters.TokenHoldersCount,
   enabled: true,
@@ -176,6 +176,8 @@ config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :ti
 config :explorer, Explorer.Tags.AddressTag.Cataloger, enabled: true
 
 config :explorer, Explorer.SmartContract.CertifiedSmartContractCataloger, enabled: true
+
+config :explorer, Explorer.Utility.RateLimiter, enabled: true
 
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime_usec]
 

@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     %{
       items: Enum.map(addresses, &prepare_address_for_list/1),
       next_page_params: next_page_params,
-      exchange_rate: exchange_rate.usd_value,
+      exchange_rate: exchange_rate.fiat_value,
       total_supply: total_supply && to_string(total_supply)
     }
   end
@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     base_info = Helper.address_with_info(conn, address, address.hash, true)
 
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
-    exchange_rate = Market.get_coin_exchange_rate().usd_value
+    exchange_rate = Market.get_coin_exchange_rate().fiat_value
 
     creation_transaction = Address.creation_transaction(address)
     creator_hash = creation_transaction && creation_transaction.from_address_hash
