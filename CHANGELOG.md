@@ -27,6 +27,7 @@
 
 ### 🐛 Bug Fixes
 
+- Handle unconfigured coin fetcher ETS access ([#12228](https://github.com/blockscout/blockscout/pull/12228))
 - Negate condition for language check in solidityscan controller ([#12222](https://github.com/blockscout/blockscout/pull/12222))
 - Look up sources for partially verified smart contracts ([#12221](https://github.com/blockscout/blockscout/pull/12221))
 - BufferedTask-based approach for fetching Arbitrum-specific settlement info ([#12192](https://github.com/blockscout/blockscout/pull/12192))
