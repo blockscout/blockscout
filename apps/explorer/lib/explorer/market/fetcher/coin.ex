@@ -165,7 +165,7 @@ defmodule Explorer.Market.Fetcher.Coin do
   end
 
   defp do_get_coin_exchange_rate(secondary_coin?) do
-    if config(:store) == :ets && config(:enabled) do
+    if config(:store) == :ets && config(:enabled) && :ets.whereis(table_name()) != :undefined do
       case :ets.lookup(table_name(), secondary_coin?) do
         [{_, coin} | _] -> coin
         _ -> nil
