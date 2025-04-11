@@ -279,6 +279,23 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
     Reader.get_uncompleted_l1_to_l2_messages_ids()
   end
 
+  @doc """
+    Retrieves L2-to-L1 messages by their IDs and converts them to maps.
+
+    ## Parameters
+    - `message_ids`: A list of message IDs to retrieve.
+
+    ## Returns
+    - A list of maps representing L2-to-L1 messages compatible with the database import
+      operation. If no messages with the provided IDs are found, an empty list is returned.
+  """
+  @spec l2_to_l1_messages_by_ids([non_neg_integer()]) :: [Message.to_import()]
+  def l2_to_l1_messages_by_ids(message_ids) when is_list(message_ids) do
+    message_ids
+    |> Reader.l2_to_l1_messages_by_ids()
+    |> Enum.map(&message_to_map/1)
+  end
+
   @spec message_to_map(Message.t()) :: Message.to_import()
   defp message_to_map(message) do
     [

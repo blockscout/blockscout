@@ -370,4 +370,26 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
 
     Repo.all(query)
   end
+
+  @doc """
+    Retrieves L2-to-L1 messages by their IDs.
+
+    ## Parameters
+    - `message_ids`: A list of message IDs to retrieve.
+
+    ## Returns
+    - A list of `Explorer.Chain.Arbitrum.Message` corresponding to the message IDs from
+      the input list. The output list may be smaller than the input list if some IDs do not
+      correspond to any existing messages.
+  """
+  @spec l2_to_l1_messages_by_ids([non_neg_integer()]) :: [Message.t()]
+  def l2_to_l1_messages_by_ids(message_ids) when is_list(message_ids) do
+    query =
+      from(msg in Message,
+        where: msg.direction == :from_l2 and msg.message_id in ^message_ids,
+        order_by: [desc: msg.message_id]
+      )
+
+    Repo.all(query)
+  end
 end
