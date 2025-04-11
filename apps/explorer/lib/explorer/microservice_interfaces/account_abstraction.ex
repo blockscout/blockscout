@@ -139,12 +139,8 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
 
   defp http_get_request(url, query_params) do
     case HTTPoison.get(url, [], params: query_params) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        {:ok, response_json} = Jason.decode(body)
-        {200, response_json}
-
-      # Do not log 404 errors since they are expected
-      {_, %Response{body: body, status_code: 404 = status_code}} ->
+      {:ok, %Response{body: body, status_code: status_code}}
+      when status_code in [200, 404] ->
         {:ok, response_json} = Jason.decode(body)
         {status_code, response_json}
 
