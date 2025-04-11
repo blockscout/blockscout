@@ -139,9 +139,10 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
 
   defp http_get_request(url, query_params) do
     case HTTPoison.get(url, [], params: query_params) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+      {:ok, %Response{body: body, status_code: status_code}}
+      when status_code in [200, 404] ->
         {:ok, response_json} = Jason.decode(body)
-        {200, response_json}
+        {status_code, response_json}
 
       {_, %Response{body: body, status_code: status_code} = error} ->
         old_truncate = Application.get_env(:logger, :truncate)
