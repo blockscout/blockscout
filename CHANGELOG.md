@@ -27,6 +27,7 @@
 
 ### 🐛 Bug Fixes
 
+- Add missing load of health_latest_batch_average_time_from_db ([#12240](https://github.com/blockscout/blockscout/pull/12240))
 - Handle unconfigured coin fetcher ETS access ([#12228](https://github.com/blockscout/blockscout/pull/12228))
 - Negate condition for language check in solidityscan controller ([#12222](https://github.com/blockscout/blockscout/pull/12222))
 - Look up sources for partially verified smart contracts ([#12221](https://github.com/blockscout/blockscout/pull/12221))
@@ -63,6 +64,7 @@
 
 ### ⚡ Performance
 
+- Add index for slow `/api/v2/addresses?sort=transactions_count&order=asc` ([#12230](https://github.com/blockscout/blockscout/pull/12230))
 - `/api/v2/smart-contracts` endpoint ([#12060](https://github.com/blockscout/blockscout/issues/12060))
 - Optimize query for user token transfers list filtered by token ([#12039](https://github.com/blockscout/blockscout/issues/12039))
 - Improve watchlist rendering performance ([#11999](https://github.com/blockscout/blockscout/issues/11999))
