@@ -143,6 +143,11 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
         {:ok, response_json} = Jason.decode(body)
         {200, response_json}
 
+      # Do not log 404 errors since they are expected
+      {_, %Response{body: body, status_code: 404 = status_code}} ->
+        {:ok, response_json} = Jason.decode(body)
+        {status_code, response_json}
+
       {_, %Response{body: body, status_code: status_code} = error} ->
         old_truncate = Application.get_env(:logger, :truncate)
         Logger.configure(truncate: :infinity)
