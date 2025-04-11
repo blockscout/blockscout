@@ -34,6 +34,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
   alias Explorer.Prometheus.Instrumenter
+  alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
 
   @behaviour Runner
@@ -68,11 +69,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     hashes = Enum.map(changes_list, & &1.hash)
 
-    consensus_block_numbers = consensus_block_numbers(changes_list)
-
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     run_func = fn repo ->
-      {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
+      {:ok, nonconsensus_items} = lose_consensus(repo, changes_list, insert_options)
 
       {:ok,
        RangesHelper.filter_by_height_range(nonconsensus_items, fn {number, _hash} ->
@@ -399,10 +398,13 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     |> Enum.map(& &1.number)
   end
 
-  def lose_consensus(repo, hashes, consensus_block_numbers, changes_list, %{
+  def lose_consensus(repo, changes_list, %{
         timeout: timeout,
         timestamps: %{updated_at: updated_at}
       }) do
+    hashes = Enum.map(changes_list, & &1.hash)
+    consensus_block_numbers = consensus_block_numbers(changes_list)
+
     acquire_query =
       from(
         block in where_invalid_neighbor(changes_list),
@@ -461,7 +463,30 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     {:ok, removed_consensus_block_hashes}
   rescue
     postgrex_error in Postgrex.Error ->
-      {:error, %{exception: postgrex_error, consensus_block_numbers: consensus_block_numbers}}
+      {:error, %{exception: postgrex_error}}
+  end
+
+  @doc """
+    Processes consensus for blocks that failed to import completely.
+
+    This function handles the consistency updates needed when a block import fails,
+    ensuring that the chain's consensus state remains valid.
+
+    ## Parameters
+    - `blocks_changes`: List of block changes to process
+
+    ## Returns
+    - `{:ok, removed_consensus_block_hashes}`: List of hashes for blocks that lost consensus
+    - `{:error, reason}`: The error encountered during processing
+  """
+  @spec process_blocks_consensus([map()]) :: {:ok, [{non_neg_integer(), binary()}]} | {:error, map()}
+  def process_blocks_consensus(blocks_changes) do
+    opts = %{
+      timeout: @timeout,
+      timestamps: %{updated_at: DateTime.utc_now()}
+    }
+
+    lose_consensus(ExplorerRepo, blocks_changes, opts)
   end
 
   defp new_pending_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
