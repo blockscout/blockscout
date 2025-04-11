@@ -71,6 +71,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Suppress logging for expected 404 errors in account abstraction ([#12242](https://github.com/blockscout/blockscout/pull/12242))
 - Upgrade on demand balances fetchers ([#12104](https://github.com/blockscout/blockscout/pull/12104))
 - Migrate images to ghcr.io ([#12128](https://github.com/blockscout/blockscout/issues/12128))
 - Don't send transaction interpretation request for failed tx ([#12164](https://github.com/blockscout/blockscout/issues/12164))
