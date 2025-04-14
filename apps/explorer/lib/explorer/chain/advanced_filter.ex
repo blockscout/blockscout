@@ -11,6 +11,8 @@ defmodule Explorer.Chain.AdvancedFilter do
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.{Chain, Helper, PagingOptions}
   alias Explorer.Chain.{Address, Data, DenormalizationHelper, Hash, InternalTransaction, TokenTransfer, Transaction}
+  alias Explorer.Chain.Transaction.Status
+
   alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
 
   @primary_key false
@@ -19,6 +21,8 @@ defmodule Explorer.Chain.AdvancedFilter do
     field(:type, :string)
     field(:input, Data)
     field(:timestamp, :utc_datetime_usec)
+    field(:status, Status)
+    field(:created_from, Ecto.Enum, values: [:transaction, :internal_transaction, :token_transfer])
 
     belongs_to(
       :from_address,
@@ -80,7 +84,7 @@ defmodule Explorer.Chain.AdvancedFilter do
           | {:timeout, timeout()}
         ]
 
-  @spec list(options()) :: [__MODULE__.t()]
+  @spec list(options()) :: [t()]
   def list(options \\ []) do
     paging_options = Keyword.get(options, :paging_options)
 
@@ -134,6 +138,8 @@ defmodule Explorer.Chain.AdvancedFilter do
       to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
       created_contract_address: [:names, :smart_contract, proxy_implementations_association()]
     )
+    |> sanitize_fee()
+    |> assign_type()
   end
 
   defp queries(options, paging_options) do
@@ -168,14 +174,48 @@ defmodule Explorer.Chain.AdvancedFilter do
     end
   end
 
+  defp sanitize_fee(advanced_filters) do
+    Stream.scan(advanced_filters, fn
+      %__MODULE__{hash: hash} = advanced_filter, %__MODULE__{hash: hash} ->
+        %__MODULE__{advanced_filter | fee: Decimal.new(0)}
+
+      advanced_filter, _ ->
+        advanced_filter
+    end)
+  end
+
+  defp assign_type(advanced_filters) do
+    Stream.map(advanced_filters, fn advanced_filter ->
+      type =
+        cond do
+          advanced_filter.created_from in ~w(transaction internal_transaction)a and
+              Decimal.gt?(advanced_filter.value, 0) ->
+            "coin_transfer"
+
+          advanced_filter.created_from in ~w(transaction internal_transaction)a and
+              is_nil(advanced_filter.to_address_hash) ->
+            "contract_creation"
+
+          advanced_filter.created_from in ~w(transaction internal_transaction)a ->
+            "contract_interaction"
+
+          true ->
+            advanced_filter.token_transfer.token_type
+        end
+
+      %{advanced_filter | type: type}
+    end)
+  end
+
   defp to_advanced_filter(%Transaction{} = transaction) do
     %{value: decimal_transaction_value} = transaction.value
 
     %__MODULE__{
       hash: transaction.hash,
-      type: "coin_transfer",
+      created_from: :transaction,
       input: transaction.input,
       timestamp: transaction.block_timestamp,
+      status: transaction.status,
       from_address_hash: transaction.from_address_hash,
       to_address_hash: transaction.to_address_hash,
       created_contract_address_hash: transaction.created_contract_address_hash,
@@ -191,9 +231,10 @@ defmodule Explorer.Chain.AdvancedFilter do
 
     %__MODULE__{
       hash: internal_transaction.transaction.hash,
-      type: "coin_transfer",
+      created_from: :internal_transaction,
       input: internal_transaction.input,
       timestamp: internal_transaction.transaction.block_timestamp,
+      status: internal_transaction.transaction.status,
       from_address_hash: internal_transaction.from_address_hash,
       to_address_hash: internal_transaction.to_address_hash,
       created_contract_address_hash: internal_transaction.created_contract_address_hash,
@@ -210,9 +251,10 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp to_advanced_filter(%TokenTransfer{} = token_transfer) do
     %__MODULE__{
       hash: token_transfer.transaction.hash,
-      type: token_transfer.token_type,
+      created_from: :token_transfer,
       input: token_transfer.transaction.input,
       timestamp: token_transfer.transaction.block_timestamp,
+      status: token_transfer.transaction.status,
       from_address_hash: token_transfer.from_address_hash,
       to_address_hash: token_transfer.to_address_hash,
       created_contract_address_hash: nil,
@@ -454,6 +496,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       if DenormalizationHelper.transactions_denormalization_finished?() do
         from(token_transfer in TokenTransfer,
           as: :token_transfer,
+          hints: ["token_transfers_denormalized"],
           join: transaction in assoc(token_transfer, :transaction),
           as: :transaction,
           join: token in assoc(token_transfer, :token),
@@ -476,6 +519,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       else
         from(token_transfer in TokenTransfer,
           as: :token_transfer,
+          hints: ["/*+ IndexScan(transactions transactions_has_token_transfers_index) */"],
           join: transaction in assoc(token_transfer, :transaction),
           as: :transaction,
           join: token in assoc(token_transfer, :token),
@@ -712,7 +756,7 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp apply_token_transfers_filters(query_function, options) do
     query_function
-    |> filter_by_transaction_type(options[:transaction_types])
+    |> filter_token_transfer_by_types(options[:transaction_types])
     |> filter_token_transfers_by_methods(options[:methods])
     |> filter_token_transfers_by_age(options)
     |> filter_by_token(options[:token_contract_address_hashes])
@@ -726,6 +770,7 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp apply_transactions_filters(query, options, order_by) do
     query
+    |> filter_transaction_by_types(options[:transaction_types])
     |> filter_transactions_by_amount(options[:amount][:from], options[:amount][:to])
     |> filter_transactions_by_methods(options[:methods])
     |> only_collated_transactions()
@@ -742,19 +787,66 @@ defmodule Explorer.Chain.AdvancedFilter do
     query |> where(not is_nil(as(:transaction).block_number) and not is_nil(as(:transaction).index))
   end
 
-  defp filter_by_transaction_type(query_function, [_ | _] = transaction_types) do
+  @transaction_types ["COIN_TRANSFER", "CONTRACT_INTERACTION", "CONTRACT_CREATION"]
+  defp filter_transaction_by_types(query, nil), do: query
+
+  defp filter_transaction_by_types(query, types) do
+    if Enum.all?(@transaction_types, &Enum.member?(types, &1)) do
+      query
+    else
+      dynamic_condition =
+        @transaction_types
+        |> Enum.reduce(nil, fn
+          type, dynamic_condition ->
+            if type in types do
+              filter_transaction_by_type(type, dynamic_condition)
+            else
+              dynamic_condition
+            end
+        end)
+
+      query =
+        if "CONTRACT_CREATION" in types and has_named_binding?(query, :to_address) do
+          join(query, :left, [t], a in assoc(t, :to_address), as: :to_address)
+        else
+          query
+        end
+
+      query |> where(^dynamic_condition)
+    end
+  end
+
+  defp filter_transaction_by_type("COIN_TRANSFER", nil), do: dynamic([t], t.value > ^0)
+
+  defp filter_transaction_by_type("COIN_TRANSFER", dynamic_condition),
+    do: dynamic([t], t.value > ^0 or ^dynamic_condition)
+
+  defp filter_transaction_by_type("CONTRACT_INTERACTION", nil),
+    do: dynamic([to_address: to_address], not is_nil(to_address.contract_code))
+
+  defp filter_transaction_by_type("CONTRACT_INTERACTION", dynamic_condition),
+    do: dynamic([to_address: to_address], not is_nil(to_address.contract_code) or ^dynamic_condition)
+
+  defp filter_transaction_by_type("CONTRACT_CREATION", nil), do: dynamic([t], is_nil(t.to_address_hash))
+
+  defp filter_transaction_by_type("CONTRACT_CREATION", dynamic_condition),
+    do: dynamic([t], is_nil(t.to_address_hash) or ^dynamic_condition)
+
+  defp filter_token_transfer_by_types(query_function, [_ | _] = types) do
+    types = types -- @transaction_types
+
     if DenormalizationHelper.tt_denormalization_finished?() do
       fn query, unnested? ->
-        query |> where([token_transfer], token_transfer.token_type in ^transaction_types) |> query_function.(unnested?)
+        query |> where([token_transfer], token_transfer.token_type in ^types) |> query_function.(unnested?)
       end
     else
       fn query, unnested? ->
-        query |> where([token: token], token.type in ^transaction_types) |> query_function.(unnested?)
+        query |> where([token: token], token.type in ^types) |> query_function.(unnested?)
       end
     end
   end
 
-  defp filter_by_transaction_type(query_function, _), do: query_function
+  defp filter_token_transfer_by_types(query_function, _), do: query_function
 
   defp filter_transactions_by_methods(query, [_ | _] = methods) do
     prepared_methods = prepare_methods(methods)

@@ -132,7 +132,7 @@ for migrator <- [
       Explorer.Migrator.SmartContractLanguage,
       Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
       Explorer.Migrator.BackfillMetadataURL,
-      Explorer.Migrator.TransactionHasTokenTransfers,
+      Explorer.Migrator.TransactionHasTokenTransfers
     ] do
   config :explorer, migrator, enabled: true
 end
