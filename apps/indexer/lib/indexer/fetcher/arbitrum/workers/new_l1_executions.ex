@@ -17,9 +17,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
   For each discovered execution, the module also identifies the corresponding L2-to-L1
   message in the database and updates its status to `:relayed`, setting its
-  `completion_transaction_hash` to link it with the execution transaction. This
-  ensures that message lifecycles are properly tracked from initiation through
-  to execution.
+  `completion_transaction_hash` to link it with the execution transaction. If a
+  message is not found in the database, a placeholder message is created with minimal
+  required fields that will be merged with the full message data when it is discovered
+  later.
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
@@ -289,8 +290,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   # associates them with the extracted executions, forming lifecycle transactions
   # enriched with timestamps and finalization statuses. Subsequently, unique
   # identifiers for the lifecycle transactions are determined, and the connection
-  # between execution records and lifecycle transactions is established. Finally,
-  # it updates the status of corresponding L2-to-L1 messages to `:relayed`.
+  # between execution records and lifecycle transactions is established.
+  #
+  # For each discovered execution, the function:
+  # 1. Attempts to find a corresponding L2-to-L1 message in the database
+  # 2. If found, updates the message's status to `:relayed` and sets its
+  #    `completion_transaction_hash` to link it with the execution transaction
+  # 3. If not found, creates a placeholder message with minimal required fields
+  #    (direction, message_id, completion_transaction_hash, and status) that will
+  #    be merged with the full message data when it is discovered later
   #
   # ## Parameters
   # - `logs`: A collection of log entries to be processed.
@@ -303,7 +311,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   #   - A list of lifecycle transactions with updated timestamps, finalization
   #     statuses, and unique identifiers.
   #   - A list of detailed execution information for L2-to-L1 messages.
-  #   - A list of updated L2-to-L1 messages with their status set to `:relayed`.
+  #   - A list of updated and placeholder L2-to-L1 messages with their status
+  #     set to `:relayed`.
   # All lists are prepared for database importation.
   @spec process_execution_logs(
           [%{String.t() => any()}],
@@ -346,19 +355,61 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
         |> Map.drop([:execution_transaction_hash])
       end)
 
-    messages =
+    # Get existing messages for the discovered executions
+    existing_messages =
       executions_by_msg_id
       |> Map.keys()
       |> DbMessages.l2_to_l1_messages_by_ids()
-      |> Enum.map(fn message ->
-        # Get the execution directly from the map using message_id as key
-        execution = executions_by_msg_id[message.message_id]
 
-        # Update message status and completion transaction hash
+    # Update existing messages with execution info
+    updated_messages =
+      existing_messages
+      |> Enum.map(fn message ->
+        execution = executions_by_msg_id[message.message_id]
         %{message | status: :relayed, completion_transaction_hash: execution.execution_transaction_hash}
       end)
 
+    # Create placeholder messages for missing message IDs
+    placeholder_messages = prepare_placeholder_messages(executions_by_msg_id, existing_messages)
+
+    # Combine updated and placeholder messages
+    messages = updated_messages ++ placeholder_messages
+
     {Map.values(lifecycle_transactions), executions, messages}
+  end
+
+  # Creates placeholder messages for executions that don't have corresponding messages in the database.
+  #
+  # This function identifies message IDs that exist in the executions map but don't have
+  # corresponding messages in the database. For each such ID, it creates a placeholder
+  # message with minimal required fields (direction, message_id, completion_transaction_hash,
+  # and status) that will be merged with the actual message data when it is discovered.
+  #
+  # ## Parameters
+  # - `executions_by_msg_id`: A map where keys are message IDs and values contain execution details
+  # - `existing_messages`: A list of messages that already exist in the database
+  #
+  # ## Returns
+  # - A list of placeholder messages for executions without corresponding messages
+  @spec prepare_placeholder_messages(
+          %{non_neg_integer() => %{message_id: non_neg_integer(), execution_transaction_hash: binary()}},
+          [Explorer.Chain.Arbitrum.Message.to_import()]
+        ) :: [Arbitrum.Message.to_import()]
+  defp prepare_placeholder_messages(executions_by_msg_id, existing_messages) do
+    # Create a set of existing message IDs for efficient lookup
+    existing_message_ids = MapSet.new(existing_messages, & &1.message_id)
+
+    # Find message IDs that exist in executions but not in messages
+    executions_by_msg_id
+    |> Enum.reject(fn {msg_id, _} -> MapSet.member?(existing_message_ids, msg_id) end)
+    |> Enum.map(fn {_msg_id, execution} ->
+      %{
+        direction: :from_l2,
+        message_id: execution.message_id,
+        completion_transaction_hash: execution.execution_transaction_hash,
+        status: :relayed
+      }
+    end)
   end
 
   # Parses logs to extract new execution transactions for L2-to-L1 messages.
