@@ -126,7 +126,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     unless logs == [] do
       messages =
         logs
-        |> Messaging.handle_filtered_l2_to_l1_messages(__MODULE__)
+        |> Messaging.handle_filtered_l2_to_l1_messages()
 
       Messaging.import_to_db(messages)
     end
