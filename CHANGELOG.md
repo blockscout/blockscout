@@ -72,6 +72,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add typed_ecto_schema to release ([#12255](https://github.com/blockscout/blockscout/pull/12255))
 - Suppress logging for expected 404 errors in account abstraction ([#12242](https://github.com/blockscout/blockscout/pull/12242))
 - Upgrade on demand balances fetchers ([#12104](https://github.com/blockscout/blockscout/pull/12104))
 - Migrate images to ghcr.io ([#12128](https://github.com/blockscout/blockscout/issues/12128))
