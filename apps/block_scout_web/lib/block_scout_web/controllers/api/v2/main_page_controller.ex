@@ -31,7 +31,6 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
         [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
       }
       |> Map.merge(@chain_type_transaction_necessity_by_association),
-    paging_options: %PagingOptions{page_size: 6},
     api?: true
   ]
 
