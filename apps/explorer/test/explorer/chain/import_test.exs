@@ -12,6 +12,7 @@ defmodule Explorer.Chain.ImportTest do
     Log,
     Hash,
     Import,
+    InternalTransaction,
     PendingBlockOperation,
     Token,
     TokenTransfer,
@@ -19,6 +20,7 @@ defmodule Explorer.Chain.ImportTest do
   }
 
   alias Explorer.Chain.Events.Subscriber
+  alias Explorer.Utility.MissingBlockRange
 
   @moduletag :capturelog
 
@@ -378,6 +380,18 @@ defmodule Explorer.Chain.ImportTest do
         update_in(@import_data, [:logs, :params], fn params ->
           [params |> Enum.at(0) |> Map.put(:block_hash, not_existing_block_hash)]
         end)
+
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+      on_exit(fn ->
+        Repo.delete_all(Address)
+        Repo.delete_all(Transaction)
+        Repo.delete_all(InternalTransaction)
+        Repo.delete_all(TokenTransfer)
+        Repo.delete_all(Token)
+        Repo.delete_all(MissingBlockRange)
+        Repo.delete_all(Block)
+      end)
 
       assert_raise(Postgrex.Error, fn -> Import.all(incorrect_data) end)
       assert [] = Repo.all(Log)

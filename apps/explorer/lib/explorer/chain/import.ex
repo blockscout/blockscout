@@ -83,6 +83,8 @@ defmodule Explorer.Chain.Import do
   # milliseconds
   @transaction_timeout :timer.minutes(4)
 
+  @max_import_concurrency 10
+
   @imported_table_rows @all_runners
                        |> Stream.map(&Map.put(&1.imported_table_row(), :key, &1.option_key()))
                        |> Enum.map_join("\n", fn %{
@@ -362,7 +364,6 @@ defmodule Explorer.Chain.Import do
     Enum.reduce_while(multis_batches, {:ok, %{}}, fn multis, {:ok, acc_changes} ->
       multis
       |> run_parallel_multis(options)
-      |> Task.yield_many(:infinity)
       |> handle_task_results(acc_changes)
       |> case do
         {:ok, changes} -> {:cont, {:ok, changes}}
@@ -378,7 +379,10 @@ defmodule Explorer.Chain.Import do
   end
 
   defp run_parallel_multis(multis, options) do
-    Enum.map(multis, fn multi -> Task.async(fn -> import_transaction(multi, options) end) end)
+    Task.async_stream(multis, fn multi -> import_transaction(multi, options) end,
+      timeout: :infinity,
+      max_concurrency: @max_import_concurrency
+    )
   end
 
   defp import_transaction(multi, options) when is_map(options) do
@@ -388,7 +392,7 @@ defmodule Explorer.Chain.Import do
   end
 
   defp handle_task_results(task_results, acc_changes) do
-    Enum.reduce_while(task_results, {:ok, acc_changes}, fn {_task, task_result}, {:ok, acc_changes_inner} ->
+    Enum.reduce_while(task_results, {:ok, acc_changes}, fn task_result, {:ok, acc_changes_inner} ->
       case task_result do
         {:ok, {:ok, changes}} -> {:cont, {:ok, Map.merge(acc_changes_inner, changes)}}
         {:ok, {:exception, exception, stacktrace}} -> reraise exception, stacktrace
