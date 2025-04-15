@@ -41,14 +41,14 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
       assert [] = json_response(request, 200)
     end
 
-    test "get last 6 transactions", %{conn: conn} do
-      transactions = insert_list(10, :transaction) |> with_block() |> Enum.take(-6) |> Enum.reverse()
+    test "get last 50 transactions", %{conn: conn} do
+      transactions = insert_list(60, :transaction) |> with_block() |> Enum.take(-50) |> Enum.reverse()
 
       request = get(conn, "/api/v2/main-page/transactions")
       assert response = json_response(request, 200)
-      assert Enum.count(response) == 6
+      assert Enum.count(response) == 50
 
-      for i <- 0..5 do
+      for i <- 0..49 do
         compare_item(Enum.at(transactions, i), Enum.at(response, i))
       end
     end
