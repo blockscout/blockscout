@@ -27,6 +27,7 @@
 
 ### 🐛 Bug Fixes
 
+- CSV export: download items for the given day if from / to period are equal ([#12260](https://github.com/blockscout/blockscout/pull/12260))
 - Upgrade missing balanceOf token condition ([#12254](https://github.com/blockscout/blockscout/pull/12254))
 - Add missing load of health_latest_batch_average_time_from_db ([#12240](https://github.com/blockscout/blockscout/pull/12240))
 - Handle unconfigured coin fetcher ETS access ([#12228](https://github.com/blockscout/blockscout/pull/12228))
