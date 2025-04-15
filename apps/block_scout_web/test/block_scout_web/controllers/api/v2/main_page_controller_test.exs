@@ -60,9 +60,7 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
       assert %{"message" => "Unauthorized"} = json_response(request, 401)
     end
 
-    test "get last 6 transactions", %{conn: conn} do
-      insert_list(10, :transaction) |> with_block()
-
+    test "get last 50 transactions", %{conn: conn} do
       auth = build(:auth)
       {:ok, user} = Identity.find_or_create(auth)
 
@@ -106,16 +104,16 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
           notify_email: true
         })
 
-      transactions_1 = insert_list(2, :transaction, from_address: address_1) |> with_block()
-      transactions_2 = insert_list(1, :transaction, from_address: address_2, to_address: address_1) |> with_block()
-      transactions_3 = insert_list(3, :transaction, to_address: address_2) |> with_block()
+      transactions_1 = insert_list(20, :transaction, from_address: address_1) |> with_block()
+      transactions_2 = insert_list(10, :transaction, from_address: address_2, to_address: address_1) |> with_block()
+      transactions_3 = insert_list(30, :transaction, to_address: address_2) |> with_block()
       transactions = (transactions_1 ++ transactions_2 ++ transactions_3) |> Enum.reverse()
 
       request = get(conn, "/api/v2/main-page/transactions/watchlist")
       assert response = json_response(request, 200)
-      assert Enum.count(response) == 6
+      assert Enum.count(response) == 50
 
-      for i <- 0..5 do
+      for i <- 0..49 do
         compare_item(Enum.at(transactions, i), Enum.at(response, i), %{
           address_1.hash => watchlist_address_1.name,
           address_2.hash => watchlist_address_2.name
