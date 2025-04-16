@@ -1,87 +1,153 @@
+# For WebSocket support
 map $http_upgrade $connection_upgrade {
-
-  default upgrade;
-  ''      close;
+    default upgrade;
+    ''      close;
 }
 
+# Main application server (HTTP Port 80)
 server {
     listen       80;
-    server_name  localhost;
-    proxy_http_version 1.1;
+    # Use IP or domain name if DNS is configured
+    server_name  34.239.9.106 explorer.igralabs.com; 
+    
+    proxy_http_version 1.1; # Set globally for the server block
 
-    location ~ ^/(api(?!-docs$)|socket|sitemap.xml|auth/auth0|auth/auth0/callback|auth/logout) {
-        proxy_pass            ${BACK_PROXY_PASS};
-        proxy_http_version    1.1;
-        proxy_set_header      Host "$host";
-        proxy_set_header      X-Real-IP "$remote_addr";
-        proxy_set_header      X-Forwarded-For "$proxy_add_x_forwarded_for";
-        proxy_set_header      X-Forwarded-Proto "$scheme";
-        proxy_set_header      Upgrade "$http_upgrade";
+    # Location for Backend API, WebSockets, etc.
+    location ~ ^/(api|socket|sitemap.xml|auth/auth0|auth/auth0/callback|auth/logout) {
+        proxy_pass            ${BACK_PROXY_PASS}; # Ensure this variable is set
+        proxy_set_header      Host $host;
+        proxy_set_header      X-Real-IP $remote_addr;
+        proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header      X-Forwarded-Proto $scheme; # Scheme will be 'http'
+        # WebSocket headers
+        proxy_set_header      Upgrade $http_upgrade;
         proxy_set_header      Connection $connection_upgrade;
         proxy_cache_bypass    $http_upgrade;
+
+        # --- CORS Handling for API (Port 80) ---
+        # Remove potential upstream CORS headers
+        proxy_hide_header     Access-Control-Allow-Origin;
+        proxy_hide_header     Access-Control-Allow-Methods;
+        proxy_hide_header     Access-Control-Allow-Headers;
+        proxy_hide_header     Access-Control-Allow-Credentials;
+
+        # Add required CORS headers
+        # Using '*' since credentials aren't explicitly enabled here, but specify origin if needed
+        add_header            Access-Control-Allow-Origin 'http://explorer.igralabs.com' always; 
+        add_header            Access-Control-Allow-Methods 'GET, POST, OPTIONS' always;
+        # Added 'updated-gas-oracle' to the allowed headers list
+        add_header            Access-Control-Allow-Headers 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,updated-gas-oracle' always;
+        # If you absolutely MUST send credentials to this endpoint:
+        # add_header            Access-Control-Allow-Credentials 'true' always; # Risky over HTTP!
+
+        # Handle OPTIONS preflight requests specifically for this location
+        if ($request_method = 'OPTIONS') {
+           add_header            Access-Control-Allow-Origin 'http://explorer.igralabs.com' always; # Must match frontend origin
+           add_header            Access-Control-Allow-Methods 'GET, POST, OPTIONS' always;
+           add_header            Access-Control-Allow-Headers 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,updated-gas-oracle' always;
+           # If using credentials: add_header Access-Control-Allow-Credentials 'true' always; # Risky over HTTP!
+           add_header            Access-Control-Max-Age 1728000;
+           add_header            Content-Type 'text/plain charset=UTF-8';
+           add_header            Content-Length 0;
+           return 204;
+        }
+        # --- End CORS Handling ---
     }
+
+    # Location for Frontend application
     location / {
-        proxy_pass            ${FRONT_PROXY_PASS};
-        proxy_http_version    1.1;
-        proxy_set_header      Host "$host";
-        proxy_set_header      X-Real-IP "$remote_addr";
-        proxy_set_header      X-Forwarded-For "$proxy_add_x_forwarded_for";
-        proxy_set_header      X-Forwarded-Proto "$scheme";
-        proxy_set_header      Upgrade "$http_upgrade";
+        proxy_pass            ${FRONT_PROXY_PASS}; # Ensure this variable is set
+        proxy_set_header      Host $host;
+        proxy_set_header      X-Real-IP $remote_addr;
+        proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header      X-Forwarded-Proto $scheme; # Scheme will be 'http'
+        # WebSocket headers (might not be needed for frontend, but harmless)
+        proxy_set_header      Upgrade $http_upgrade;
         proxy_set_header      Connection $connection_upgrade;
         proxy_cache_bypass    $http_upgrade;
+
+        # No CORS needed usually if frontend served & API called from same domain/port 80
+        # If assets *are* fetched cross-origin by scripts, you might need:
+        # add_header 'Access-Control-Allow-Origin' 'http://explorer.igralabs.com' always;
     }
 }
+
+# Stats service proxy (HTTP Port 8080)
 server {
     listen       8080;
-    server_name  localhost;
+    # Use IP or domain name if DNS is configured
+    server_name  34.239.9.106 explorer.igralabs.com; 
+
     proxy_http_version 1.1;
+
+    # --- CORS Handling for Stats (Port 8080) ---
+    # WARNING: Allow-Credentials over HTTP is risky and may not work reliably.
+    # Specify the exact HTTP origin of your frontend.
+    add_header 'Access-Control-Allow-Origin' 'http://explorer.igralabs.com' always;
+    add_header 'Access-Control-Allow-Credentials' 'true' always; # Requires specific origin
+    add_header 'Access-Control-Allow-Methods' 'PUT, GET, POST, OPTIONS, DELETE, PATCH' always;
+    add_header 'Access-Control-Allow-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,x-csrf-token' always; # Add any other necessary headers
+
+    # Remove potential upstream CORS headers
     proxy_hide_header Access-Control-Allow-Origin;
     proxy_hide_header Access-Control-Allow-Methods;
-    add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
-    add_header 'Access-Control-Allow-Credentials' 'true' always;
-    add_header 'Access-Control-Allow-Methods' 'PUT, GET, POST, OPTIONS, DELETE, PATCH' always;
+    proxy_hide_header Access-Control-Allow-Headers;
+    proxy_hide_header Access-Control-Allow-Credentials;
+    # --- End CORS Handling ---
 
     location / {
-        proxy_pass            http://stats:8050/;
-        proxy_http_version    1.1;
-        proxy_set_header      Host "$host";
-        proxy_set_header      X-Real-IP "$remote_addr";
-        proxy_set_header      X-Forwarded-For "$proxy_add_x_forwarded_for";
-        proxy_set_header      X-Forwarded-Proto "$scheme";
-        proxy_set_header      Upgrade "$http_upgrade";
+        # Handle OPTIONS preflight requests
+        if ($request_method = 'OPTIONS') {
+           add_header 'Access-Control-Allow-Origin' 'http://explorer.igralabs.com' always; # Must match above
+           add_header 'Access-Control-Allow-Credentials' 'true' always; # Must match above
+           add_header 'Access-Control-Allow-Methods' 'PUT, GET, POST, OPTIONS, DELETE, PATCH' always;
+           add_header 'Access-Control-Allow-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,x-csrf-token' always; # Must match above
+           add_header 'Access-Control-Max-Age' 1728000;
+           add_header 'Content-Type' 'text/plain charset=UTF-8';
+           add_header 'Content-Length' 0;
+           return 204;
+        }
+
+        proxy_pass            http://stats:8050/; # Your internal stats service
+        proxy_set_header      Host $host;
+        proxy_set_header      X-Real-IP $remote_addr;
+        proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header      X-Forwarded-Proto $scheme; # Scheme will be 'http'
+        # WebSocket headers
+        proxy_set_header      Upgrade $http_upgrade;
         proxy_set_header      Connection $connection_upgrade;
         proxy_cache_bypass    $http_upgrade;
     }
 }
+
+# Visualizer service proxy (HTTP Port 8081)
 server {
     listen       8081;
-    server_name  localhost;
+    # Use IP or domain name if DNS is configured
+    server_name  34.239.9.106 explorer.igralabs.com; 
+
     proxy_http_version 1.1;
-    proxy_hide_header Access-Control-Allow-Origin;
-    proxy_hide_header Access-Control-Allow-Methods;
-    add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
-    add_header 'Access-Control-Allow-Credentials' 'true' always;
+
+    # --- CORS Handling for Visualizer (Port 8081) ---
+    # WARNING: Allow-Credentials over HTTP is risky and may not work reliably.
+    # Specify the exact HTTP origin of your frontend.
+    add_header 'Access-Control-Allow-Origin' 'http://explorer.igralabs.com' always;
+    add_header 'Access-Control-Allow-Credentials' 'true' always; # Requires specific origin
     add_header 'Access-Control-Allow-Methods' 'PUT, GET, POST, OPTIONS, DELETE, PATCH' always;
     add_header 'Access-Control-Allow-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,x-csrf-token' always;
 
+    # Remove potential upstream CORS headers
+    proxy_hide_header Access-Control-Allow-Origin;
+    proxy_hide_header Access-Control-Allow-Methods;
+    proxy_hide_header Access-Control-Allow-Headers;
+    proxy_hide_header Access-Control-Allow-Credentials;
+    # --- End CORS Handling ---
+
     location / {
-        proxy_pass            http://visualizer:8050/;
-        proxy_http_version    1.1;
-        proxy_buffering       off;
-        proxy_set_header      Host "$host";
-        proxy_set_header      X-Real-IP "$remote_addr";
-        proxy_connect_timeout 30m;
-        proxy_read_timeout    30m;
-        proxy_send_timeout    30m;
-        proxy_set_header      X-Forwarded-For "$proxy_add_x_forwarded_for";
-        proxy_set_header      X-Forwarded-Proto "$scheme";
-        proxy_set_header      Upgrade "$http_upgrade";
-        proxy_set_header      Connection $connection_upgrade;
-        proxy_cache_bypass    $http_upgrade;
+        # Handle OPTIONS preflight requests (already present in original config)
         if ($request_method = 'OPTIONS') {
-            add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
-            add_header 'Access-Control-Allow-Credentials' 'true' always;
+            add_header 'Access-Control-Allow-Origin' 'http://explorer.igralabs.com' always; # Must match above
+            add_header 'Access-Control-Allow-Credentials' 'true' always; # Must match above
             add_header 'Access-Control-Allow-Methods' 'PUT, GET, POST, OPTIONS, DELETE, PATCH' always;
             add_header 'Access-Control-Allow-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,x-csrf-token' always;
             add_header 'Access-Control-Max-Age' 1728000;
@@ -89,5 +155,20 @@ server {
             add_header 'Content-Length' 0;
             return 204;
         }
+
+        proxy_pass            http://visualizer:8050/; # Your internal visualizer service
+        proxy_buffering       off;
+        proxy_set_header      Host $host;
+        proxy_set_header      X-Real-IP $remote_addr;
+        proxy_connect_timeout 30m;
+        proxy_read_timeout    30m;
+        proxy_send_timeout    30m;
+        proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header      X-Forwarded-Proto $scheme; # Scheme will be 'http'
+        # WebSocket headers
+        proxy_set_header      Upgrade $http_upgrade;
+        proxy_set_header      Connection $connection_upgrade;
+        proxy_cache_bypass    $http_upgrade;
     }
 }
+

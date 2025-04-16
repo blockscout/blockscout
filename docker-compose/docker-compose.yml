@@ -36,8 +36,9 @@ services:
     environment:
         ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
         ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
-        CHAIN_ID: '1337'
+        CHAIN_ID: '2600'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   nft_media_handler:
     depends_on:
