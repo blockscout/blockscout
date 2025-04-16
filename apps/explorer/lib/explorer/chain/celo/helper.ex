@@ -93,6 +93,34 @@ defmodule Explorer.Chain.Celo.Helper do
   end
 
   @doc """
+  Converts an epoch number to a block range.
+
+  ## Parameters
+  - `epoch_number` (`non_neg_integer()`): The epoch number to convert.
+
+  ## Returns
+  - `{Block.block_number(), Block.block_number()}`: A tuple containing the start
+    and end block numbers of the epoch.
+
+  ## Examples
+
+      iex> Explorer.Chain.Celo.Helper.epoch_number_to_block_range(1)
+      {0, 17279}
+
+      iex> Explorer.Chain.Celo.Helper.epoch_number_to_block_range(2)
+      {17280, 34559}
+  """
+  @spec epoch_number_to_block_range(epoch_number :: non_neg_integer()) ::
+          {Block.block_number(), Block.block_number()}
+  def epoch_number_to_block_range(epoch_number)
+      when is_integer(epoch_number) and epoch_number > 0 do
+    start_block = (epoch_number - 1) * @blocks_per_epoch
+    end_block = epoch_number * @blocks_per_epoch - 1
+
+    {start_block, end_block}
+  end
+
+  @doc """
   Convert the burn fraction from FixidityLib value to decimal.
 
   ## Examples
