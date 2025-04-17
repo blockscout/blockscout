@@ -248,6 +248,7 @@ coin = System.get_env("COIN") || "ETH"
 config :explorer,
   mode: app_mode,
   ecto_repos: ConfigHelper.repos(),
+  chain_type: ConfigHelper.chain_type(),
   coin: coin,
   coin_name: System.get_env("COIN_NAME") || "ETH",
   allowed_solidity_evm_versions:
@@ -818,6 +819,8 @@ config :explorer, Explorer.Utility.RateLimiter,
     max_ban_interval: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_MAX_BAN_INTERVAL", "1h"),
     limitation_period: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_LIMITATION_PERIOD", "1h")
   ]
+
+config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED")
 
 ###############
 ### Indexer ###
