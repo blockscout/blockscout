@@ -1,5 +1,15 @@
 # Changelog
 
+## 8.0.1
+
+### 🐛 Bug Fixes
+
+- Read `CHAIN_TYPE` and `MUD_INDEXER_ENABLED` envs in runtime config ([#12270](https://github.com/blockscout/blockscout/issues/12270))
+
+### ⚙️ Miscellaneous Tasks
+
+- Update docker compose to use ghcr.io images ([#12177](https://github.com/blockscout/blockscout/issues/12177))
+
 ## 8.0.0
 
 ### 🚀 Features
