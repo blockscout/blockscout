@@ -9,6 +9,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Decrease PBO to PTO migration batch size ([#12279](https://github.com/blockscout/blockscout/pull/12279))
 - Decrease PendingOperationsHelper blocks_batch_size ([#12276](https://github.com/blockscout/blockscout/pull/12276))
 - Update docker compose to use ghcr.io images ([#12177](https://github.com/blockscout/blockscout/issues/12177))
 
