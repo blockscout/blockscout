@@ -189,6 +189,8 @@ defmodule Explorer.Chain.Health.Helper do
         Application.get_env(:explorer, Explorer.Chain.Health.Monitor)[:healthy_blocks_period]
 
       with true <- last_block_db_delay > blocks_indexing_delay_threshold,
+           {:empty_health_latest_block_number_from_node, false} <-
+             {:empty_health_latest_block_number_from_node, is_nil(health_status.health_latest_block_number_from_node)},
            true <-
              Decimal.compare(
                Decimal.sub(
@@ -197,14 +199,19 @@ defmodule Explorer.Chain.Health.Helper do
                ),
                Decimal.new(@max_blocks_gap_between_node_and_db)
              ) == :gt do
-        {false, @no_new_items_error_code,
-         "There are no new blocks in the DB for the last #{round(last_block_db_delay / 1_000 / 60)} mins. Check the healthiness of the JSON RPC archive node or the DB."}
+        no_new_block_status(last_block_db_delay)
       else
+        {:empty_health_latest_block_number_from_node, true} -> no_new_block_status(last_block_db_delay)
         _ -> true
       end
     else
       {false, @no_items_error_code, "There are no blocks in the DB."}
     end
+  end
+
+  defp no_new_block_status(last_block_db_delay) do
+    {false, @no_new_items_error_code,
+     "There are no new blocks in the DB for the last #{round(last_block_db_delay / 1_000 / 60)} mins. Check the healthiness of the JSON RPC archive node or the DB."}
   end
 
   @spec batches_indexing_healthy?(map() | nil) :: boolean() | {boolean(), non_neg_integer(), binary()}
