@@ -91,7 +91,7 @@ defmodule Indexer.Prometheus.Instrumenter do
   @spec set_latest_block(number :: integer, timestamp :: DateTime.t()) :: :ok
   def set_latest_block(number, timestamp) do
     latest_block_number(number)
-    latest_block_timestamp(DateTime.to_unix(timestamp))
+    latest_block_timestamp(timestamp)
   end
 
   if @chain_type in @rollups do
@@ -118,7 +118,7 @@ defmodule Indexer.Prometheus.Instrumenter do
     @spec set_latest_batch(number :: integer, timestamp :: DateTime.t()) :: :ok
     def set_latest_batch(number, timestamp) do
       latest_batch_number(number)
-      latest_batch_timestamp(DateTime.to_unix(timestamp))
+      latest_batch_timestamp(timestamp)
     end
   else
     @doc """
