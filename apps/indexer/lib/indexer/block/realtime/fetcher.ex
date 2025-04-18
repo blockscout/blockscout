@@ -294,11 +294,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
       |> put_in([:block_rewards], chain_import_block_rewards)
 
     with {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
-      last_batch =
+      last_block =
         chain_import_options[:blocks][:params]
         |> Enum.max_by(& &1.number, fn -> nil end)
 
-      Instrumenter.set_latest_block(last_batch.number, last_batch.timestamp)
+      Instrumenter.set_latest_block(last_block.number, last_block.timestamp)
 
       async_import_remaining_block_data(
         imported,
