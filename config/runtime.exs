@@ -272,7 +272,7 @@ config :explorer,
   replica_max_lag: ConfigHelper.parse_time_env_var("REPLICA_MAX_LAG", "5m")
 
 config :explorer, Explorer.Chain.Health.Monitor,
-  check_interval: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_CHECK_INTERVAL", "5m"),
+  check_interval: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_CHECK_INTERVAL", "1m"),
   healthy_blocks_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_BLOCKS_PERIOD", "5m"),
   healthy_batches_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_BATCHES_PERIOD", "4h")
 
