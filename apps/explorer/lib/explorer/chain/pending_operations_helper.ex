@@ -7,7 +7,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   alias Explorer.Repo
 
   @transactions_batch_size 1000
-  @blocks_batch_size 30
+  @blocks_batch_size 10
 
   def pending_operations_type do
     if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.Geth and
