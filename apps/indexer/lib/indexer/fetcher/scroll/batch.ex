@@ -19,6 +19,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   import Ecto.Query
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  import Explorer.Helper, only: [hash_to_binary: 1]
 
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Ecto.Multi
@@ -60,6 +61,20 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     {:ok, %{}, {:continue, :ok}}
   end
 
+  # defp get_l2_block_range_from_blob(blob_data_hex) do
+  #   blob_payload =
+  #     blob_data_hex
+  #     |> hash_to_binary()
+  #     |> Batch.decode_eip4844_blob()
+
+  #   if is_nil(blob_payload) do
+  #     Logger.warning("Invalid blob")
+  #   else
+  #     <<_prev_l1_message_queue_hash::binary-size(32), _post_l1_message_queue_hash::binary-size(32), initial_l2_block_number::size(64), num_blocks::size(16), _::binary>> = blob_payload
+  #     Logger.warning("#{initial_l2_block_number}..#{initial_l2_block_number+num_blocks-1}")
+  #   end
+  # end
+
   @impl GenServer
   def handle_continue(_, state) do
     Logger.metadata(fetcher: @fetcher_name)
@@ -84,6 +99,8 @@ defmodule Indexer.Fetcher.Scroll.Batch do
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
          {:scroll_chain_contract_address_is_valid, true} <-
            {:scroll_chain_contract_address_is_valid, Helper.address_correct?(env[:scroll_chain_contract])},
+         {:eip4844_blobs_api_url_undefined, false} <-
+           {:eip4844_blobs_api_url_undefined, env[:eip4844_blobs_api_url] == ""},
          start_block = env[:start_block],
          true <- start_block > 0,
          {last_l1_block_number, last_l1_transaction_hash} = Reader.last_l1_batch_item(),
@@ -99,6 +116,19 @@ defmodule Indexer.Fetcher.Scroll.Batch do
          # on L1 while the instance was down, and so we can use `last_l1_block_number` as the starting point
          {:l1_transaction_not_found, false} <-
            {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)} do
+      l1_chain_id =
+        case EthereumJSONRPC.fetch_chain_id(json_rpc_named_arguments) do
+          {:ok, id} ->
+            id
+
+          {:error, reason} ->
+            Logger.warning(
+              "Cannot get Chain ID from L1 RPC. Reason: #{inspect(reason)}. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables."
+            )
+
+            nil
+        end
+
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -108,7 +138,10 @@ defmodule Indexer.Fetcher.Scroll.Batch do
          json_rpc_named_arguments: json_rpc_named_arguments,
          end_block: safe_block,
          start_block: max(start_block, last_l1_block_number),
-         eth_get_logs_range_size: Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:l1_eth_get_logs_range_size]
+         eth_get_logs_range_size:
+           Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:l1_eth_get_logs_range_size],
+         eip4844_blobs_api_url: trim_url(env[:eip4844_blobs_api_url]),
+         l1_chain_id: l1_chain_id
        }}
     else
       {:start_block_undefined, true} ->
@@ -121,6 +154,13 @@ defmodule Indexer.Fetcher.Scroll.Batch do
 
       {:scroll_chain_contract_address_is_valid, false} ->
         Logger.error("L1 ScrollChain contract address is invalid or not defined.")
+        {:stop, :normal, %{}}
+
+      {:eip4844_blobs_api_url_undefined, true} ->
+        Logger.error(
+          "Blockscout Blobs API URL is not defined. Please, check INDEXER_SCROLL_L1_BATCH_BLOCKSCOUT_BLOBS_API_URL env variable."
+        )
+
         {:stop, :normal, %{}}
 
       {:start_block_valid, false, last_l1_block_number, safe_block} ->
@@ -176,7 +216,9 @@ defmodule Indexer.Fetcher.Scroll.Batch do
           json_rpc_named_arguments: json_rpc_named_arguments,
           end_block: end_block,
           start_block: start_block,
-          eth_get_logs_range_size: eth_get_logs_range_size
+          eth_get_logs_range_size: eth_get_logs_range_size,
+          eip4844_blobs_api_url: eip4844_blobs_api_url,
+          l1_chain_id: l1_chain_id
         } = state
       ) do
     time_before = Timex.now()
@@ -194,7 +236,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
           {batches, bundles, start_by_final_batch_number} =
             {chunk_start, chunk_end}
             |> get_logs_all(scroll_chain_contract, json_rpc_named_arguments)
-            |> prepare_items(json_rpc_named_arguments)
+            |> prepare_items(json_rpc_named_arguments, eip4844_blobs_api_url, l1_chain_id)
 
           import_items(batches, bundles, start_by_final_batch_number)
 
@@ -312,32 +354,52 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         Enum.member?(transaction_hashes, transaction["hash"])
       end)
       |> Enum.map(fn transaction ->
-        {transaction["hash"], {transaction["input"], transaction["blobVersionedHashes"]}}
+        {transaction["hash"], {transaction["input"], transaction["blobVersionedHashes"] || []}}
       end)
       |> Enum.into(%{})
       |> Map.merge(acc)
     end)
   end
 
-  # Extracts the L2 block range from the call data of a batch commitment
+  # Extracts the L2 block range from the call data or EIP-4844 blob of a batch commitment
   # transaction.
   #
   # This function decodes the input data from either a `commitBatch` or
-  # `commitBatchWithBlobProof` function call, extracts the chunks containing L2
-  # block numbers, and by identifying the minimum and maximum block numbers in the
-  # chunks, determines the range of L2 block numbers included in the batch.
+  # `commitBatchWithBlobProof` function call. If the call is not exists, it takes the
+  # batch info from EIP-4844 blob. Determines the range of L2 block numbers included in the batch.
   #
   # ## Parameters
-  # - `input`: A binary string representing the input data of a batch commitment
-  #   transaction.
+  # - `input`: A binary string representing the input data of a batch commitment transaction.
+  # - `blob_versioned_hash`: A binary string representing the EIP-4844 blob hash if it's needed.
+  # - `eip4844_blobs_api_url`: URL of Blockscout Blobs API to get EIP-4844 blobs.
+  # - `block_timestamp`: L1 block timestamp of the commitment transaction.
+  # - `batch_number`: The batch number corresponding to the batch commitment transaction.
+  # - `l1_chain_id`: Chain ID for L1.
   #
   # ## Returns
   # - A `BlockRange.t()` struct containing the minimum and maximum L2 block
   #   numbers included in the batch.
-  @spec input_to_l2_block_range(binary()) :: BlockRange.t()
-  defp input_to_l2_block_range(input) do
+  # - `nil` if the block range cannot be determined.
+  @spec input_to_l2_block_range(
+          binary(),
+          binary() | nil,
+          binary(),
+          DateTime.t(),
+          non_neg_integer(),
+          non_neg_integer() | nil
+        ) :: BlockRange.t() | nil
+  defp input_to_l2_block_range(
+         input,
+         blob_versioned_hash,
+         eip4844_blobs_api_url,
+         block_timestamp,
+         batch_number,
+         l1_chain_id
+       ) do
     chunks =
-      case input do
+      input
+      |> String.downcase()
+      |> case do
         # commitBatch(uint8 _version, bytes _parentBatchHeader, bytes[] _chunks, bytes _skippedL1MessageBitmap)
         "0x1325aca0" <> encoded_params ->
           [_version, _parent_batch_header, chunks, _skipped_l1_message_bitmap] =
@@ -374,27 +436,104 @@ defmodule Indexer.Fetcher.Scroll.Batch do
             )
 
           chunks
+
+        # Post-Euclid-phase-2
+        # commitBatches(uint8 version, bytes32 parentBatchHash, bytes32 lastBatchHash)
+        "0x9bbaa2ba" <> _encoded_params ->
+          nil
+
+        # Post-Euclid-phase-2
+        # commitAndFinalizeBatch(uint8 version, bytes32 parentBatchHash, (bytes batchHeader, uint256 totalL1MessagesPoppedOverall, bytes32 postStateRoot, bytes32 withdrawRoot, bytes zkProof))
+        "0x27dcaf6f" <> _encoded_params ->
+          nil
       end
 
     {:ok, l2_block_range} =
-      chunks
-      |> Enum.reduce([], fn chunk, acc ->
-        <<chunk_length::size(8), chunk_data::binary>> = chunk
-
-        chunk_l2_block_numbers =
-          Enum.map(Range.new(0, chunk_length - 1, 1), fn i ->
-            # chunk format is described here: https://github.com/scroll-tech/scroll-contracts/blob/main/src/libraries/codec/ChunkCodecV1.sol
-            chunk_data
-            |> :binary.part(i * 60, 8)
-            |> :binary.decode_unsigned()
-          end)
-
-        acc ++ chunk_l2_block_numbers
-      end)
-      |> Enum.min_max()
-      |> BlockRange.cast()
+      if is_nil(chunks) do
+        # this is post-Euclid phase, so we get L2 block range info from an EIP-4844 blob
+        get_l2_block_range_post_euclid(
+          eip4844_blobs_api_url,
+          blob_versioned_hash,
+          block_timestamp,
+          batch_number,
+          l1_chain_id
+        )
+      else
+        # this is pre-Euclid phase, so we get L2 block range info from the call data
+        get_l2_block_range_pre_euclid(chunks)
+      end
 
     l2_block_range
+  end
+
+  @spec get_l2_block_range_pre_euclid(list()) :: {:ok, BlockRange.t()} | {:error, any()}
+  defp get_l2_block_range_pre_euclid(chunks) do
+    chunks
+    |> Enum.reduce([], fn chunk, acc ->
+      <<chunk_length::size(8), chunk_data::binary>> = chunk
+
+      chunk_l2_block_numbers =
+        Enum.map(Range.new(0, chunk_length - 1, 1), fn i ->
+          # chunk format is described here: https://github.com/scroll-tech/scroll-contracts/blob/main/src/libraries/codec/ChunkCodecV1.sol
+          chunk_data
+          |> :binary.part(i * 60, 8)
+          |> :binary.decode_unsigned()
+        end)
+
+      acc ++ chunk_l2_block_numbers
+    end)
+    |> Enum.min_max()
+    |> BlockRange.cast()
+  end
+
+  @spec get_l2_block_range_post_euclid(String.t(), String.t(), DateTime.t(), non_neg_integer(), non_neg_integer()) ::
+          {:ok, BlockRange.t() | nil}
+  defp get_l2_block_range_post_euclid(eip4844_blobs_api_url, blob_hash, block_timestamp, batch_number, l1_chain_id) do
+    case get_blob_data_from_server(eip4844_blobs_api_url, blob_hash, block_timestamp, l1_chain_id) do
+      {nil, _} ->
+        Logger.warning(
+          "Cannot get the blob #{blob_hash} from the Blockscout Blobs API and Beacon Node. L2 block range will be unknown for the batch ##{batch_number}."
+        )
+
+        {:ok, nil}
+
+      {encoded_payload, source} ->
+        decoded_payload = Batch.decode_eip4844_blob(encoded_payload)
+
+        if is_nil(decoded_payload) do
+          Logger.warning(
+            "Cannot decode the blob #{blob_hash} taken from the #{source}. L2 block range will be unknown for the batch ##{batch_number}."
+          )
+
+          {:ok, nil}
+        else
+          Logger.info(
+            "L2 block range for the batch ##{batch_number} is taken from the #{source}. Blob hash: #{blob_hash}"
+          )
+
+          <<_prev_l1_message_queue_hash::binary-size(32), _post_l1_message_queue_hash::binary-size(32),
+            initial_l2_block_number::size(64), num_blocks::size(16), _::binary>> = decoded_payload
+
+          BlockRange.cast({initial_l2_block_number, initial_l2_block_number + num_blocks - 1})
+        end
+    end
+  end
+
+  @spec get_blob_data_from_server(String.t(), String.t(), DateTime.t(), non_neg_integer() | nil) ::
+          {binary() | nil, String.t()}
+  defp get_blob_data_from_server(eip4844_blobs_api_url, blob_hash, block_timestamp, l1_chain_id) do
+    with {:ok, response} <- Helper.http_get_request(eip4844_blobs_api_url <> "/" <> blob_hash),
+         blob_data = Map.get(response, "blob_data"),
+         false <- is_nil(blob_data) do
+      {hash_to_binary(blob_data), "Blockscout Blobs API"}
+    else
+      _ ->
+        Logger.warning(
+          "Cannot get the blob #{blob_hash} from Blockscout Blobs API. Trying to get that from the Beacon Node..."
+        )
+
+        {Helper.get_eip4844_blob_from_beacon_node(blob_hash, block_timestamp, l1_chain_id), "Beacon Node"}
+    end
   end
 
   # Imports batches and bundles into the database.
@@ -442,6 +581,8 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   # ## Parameters
   # - `events`: A list of Scroll events to process.
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  # - `eip4844_blobs_api_url`: URL of Blockscout Blobs API to get EIP-4844 blobs.
+  # - `l1_chain_id`: Chain ID for L1.
   #
   # ## Returns
   # A tuple containing two lists and a map:
@@ -449,23 +590,31 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   # - List of structures describing L1 transactions finalizing batches in form of
   #   bundles, ready for import to the DB.
   # - A map defining start batch number by final one for bundles.
-  @spec prepare_items([%{atom() => any()}], EthereumJSONRPC.json_rpc_named_arguments()) ::
+  @spec prepare_items(
+          [%{atom() => any()}],
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          String.t(),
+          non_neg_integer() | nil
+        ) ::
           {[Batch.to_import()], [%{atom() => any()}], %{non_neg_integer() => non_neg_integer()}}
-  defp prepare_items([], _), do: {[], [], %{}}
+  defp prepare_items([], _, _, _), do: {[], [], %{}}
 
-  defp prepare_items(events, json_rpc_named_arguments) do
+  defp prepare_items(events, json_rpc_named_arguments, eip4844_blobs_api_url, l1_chain_id) do
     blocks = Helper.get_blocks_by_events(events, json_rpc_named_arguments, Helper.infinite_retries_number(), true)
 
-    commit_transaction_hashes =
+    ordered_batch_numbers_by_transaction_hash =
       events
-      |> Enum.reduce([], fn event, acc ->
-        if event.first_topic == @commit_batch_event do
-          [event.transaction_hash | acc]
-        else
-          acc
-        end
+      |> Enum.filter(&(&1.first_topic == @commit_batch_event))
+      |> Enum.sort(&(&1.index < &2.index))
+      |> Enum.reduce(%{}, fn event, acc ->
+        batch_number = quantity_to_integer(event.second_topic)
+        batch_numbers = [batch_number | Map.get(acc, event.transaction_hash, [])]
+        Map.put(acc, event.transaction_hash, batch_numbers)
       end)
+      |> Enum.map(fn {transaction_hash, batch_numbers} -> {transaction_hash, Enum.reverse(batch_numbers)} end)
+      |> Enum.into(%{})
 
+    commit_transaction_hashes = Map.keys(ordered_batch_numbers_by_transaction_hash)
     commit_transaction_input_by_hash = get_transaction_input_by_hash(blocks, commit_transaction_hashes)
 
     timestamps =
@@ -483,68 +632,108 @@ defmodule Indexer.Fetcher.Scroll.Batch do
       |> Enum.reduce({prev_final_batch_number, [], [], %{}}, fn event,
                                                                 {prev_final_batch_number_acc, batches_acc, bundles_acc,
                                                                  start_by_final_batch_number_acc} ->
+        block_number = quantity_to_integer(event.block_number)
+        block_timestamp = Map.get(timestamps, block_number)
         batch_number = quantity_to_integer(event.second_topic)
 
         if event.first_topic == @commit_batch_event do
-          commit_block_number = quantity_to_integer(event.block_number)
+          new_batch =
+            handle_commit_batch_event(
+              event.transaction_hash,
+              block_number,
+              block_timestamp,
+              batch_number,
+              commit_transaction_input_by_hash,
+              ordered_batch_numbers_by_transaction_hash,
+              eip4844_blobs_api_url,
+              l1_chain_id
+            )
 
-          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
-          {l2_block_range, container} =
-            if batch_number == 0 do
-              {:ok, range} = BlockRange.cast("[0,0]")
-              {range, :in_calldata}
-            else
-              {input, blob_versioned_hashes} =
-                commit_transaction_input_by_hash
-                |> Map.get(event.transaction_hash)
-
-              # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
-              container =
-                if is_nil(blob_versioned_hashes) or blob_versioned_hashes == [] do
-                  :in_calldata
-                else
-                  :in_blob4844
-                end
-
-              {input_to_l2_block_range(input), container}
-            end
-
-          new_batches_acc = [
-            %{
-              number: batch_number,
-              commit_transaction_hash: event.transaction_hash,
-              commit_block_number: commit_block_number,
-              commit_timestamp: Map.get(timestamps, commit_block_number),
-              l2_block_range: l2_block_range,
-              container: container
-            }
-            | batches_acc
-          ]
-
-          {prev_final_batch_number_acc, new_batches_acc, bundles_acc, start_by_final_batch_number_acc}
+          {prev_final_batch_number_acc, [new_batch | batches_acc], bundles_acc, start_by_final_batch_number_acc}
         else
-          finalize_block_number = quantity_to_integer(event.block_number)
-
-          new_bundles_acc = [
-            %{
-              final_batch_number: batch_number,
-              finalize_transaction_hash: event.transaction_hash,
-              finalize_block_number: finalize_block_number,
-              finalize_timestamp: Map.get(timestamps, finalize_block_number)
-            }
-            | bundles_acc
-          ]
-
-          start_batch_number = prev_final_batch_number_acc + 1
+          new_bundle = handle_finalize_batch_event(event.transaction_hash, block_number, block_timestamp, batch_number)
 
           new_start_by_final_batch_number_acc =
-            Map.put(start_by_final_batch_number_acc, batch_number, start_batch_number)
+            Map.put(start_by_final_batch_number_acc, batch_number, prev_final_batch_number_acc + 1)
 
-          {batch_number, batches_acc, new_bundles_acc, new_start_by_final_batch_number_acc}
+          {batch_number, batches_acc, [new_bundle | bundles_acc], new_start_by_final_batch_number_acc}
         end
       end)
 
     {batches, bundles, start_by_final_batch_number}
+  end
+
+  @spec handle_commit_batch_event(
+          String.t(),
+          non_neg_integer(),
+          DateTime.t(),
+          non_neg_integer(),
+          map(),
+          map(),
+          String.t(),
+          non_neg_integer()
+        ) :: map()
+  defp handle_commit_batch_event(
+         transaction_hash,
+         block_number,
+         block_timestamp,
+         batch_number,
+         commit_transaction_input_by_hash,
+         ordered_batch_numbers_by_transaction_hash,
+         eip4844_blobs_api_url,
+         l1_chain_id
+       ) do
+    {l2_block_range, container} =
+      if batch_number == 0 do
+        {:ok, range} = BlockRange.cast("[0,0]")
+        {range, :in_calldata}
+      else
+        {input, blob_versioned_hashes} =
+          commit_transaction_input_by_hash
+          |> Map.get(transaction_hash)
+
+        container =
+          if blob_versioned_hashes == [] do
+            :in_calldata
+          else
+            :in_blob4844
+          end
+
+        batch_index =
+          ordered_batch_numbers_by_transaction_hash
+          |> Map.get(transaction_hash, [])
+          |> Enum.find_index(&(&1 == batch_number))
+
+        blob_versioned_hash = Enum.at(blob_versioned_hashes, batch_index)
+
+        {input_to_l2_block_range(
+           input,
+           blob_versioned_hash,
+           eip4844_blobs_api_url,
+           block_timestamp,
+           batch_number,
+           l1_chain_id
+         ), container}
+      end
+
+    %{
+      number: batch_number,
+      commit_transaction_hash: transaction_hash,
+      commit_block_number: block_number,
+      commit_timestamp: block_timestamp,
+      l2_block_range: l2_block_range,
+      container: container
+    }
+  end
+
+  @spec handle_finalize_batch_event(String.t(), non_neg_integer(), DateTime.t(), non_neg_integer()) :: map()
+  defp handle_finalize_batch_event(transaction_hash, block_number, block_timestamp, batch_number) do
+    %{
+      final_batch_number: batch_number,
+      finalize_transaction_hash: transaction_hash,
+      finalize_block_number: block_number,
+      finalize_timestamp: block_timestamp
+    }
   end
 
   # Handles L1 block reorg: removes all batch rows from the `scroll_batches` table
@@ -590,5 +779,11 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         "As L1 reorg was detected, some bundles with finalize_block_number >= #{reorg_block} were removed from the scroll_batch_bundles table. Number of removed rows: #{deleted_bundles_count}."
       )
     end
+  end
+
+  defp trim_url(url) do
+    url
+    |> String.trim()
+    |> String.trim_trailing("/")
   end
 end
