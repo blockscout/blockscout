@@ -55,13 +55,6 @@ defmodule Explorer.Chain.CsvExport.Helper do
   """
   @spec block_from_period(String.t(), String.t()) :: {Block.block_number(), Block.block_number()}
   def block_from_period(from_period, to_period) do
-    to_period =
-      if from_period == to_period do
-        to_period <> "T23:59:59Z"
-      else
-        to_period
-      end
-
     from_block = convert_date_string_to_block(from_period, :after, :from)
     to_block = convert_date_string_to_block(to_period, :before, :to)
 
@@ -87,8 +80,8 @@ defmodule Explorer.Chain.CsvExport.Helper do
       {:ok, _date} ->
         range_time =
           case range_type do
-            :from -> date_string <> "T00:00:00Z"
-            :to -> date_string <> "T23:59:59Z"
+            :from -> "T00:00:00Z"
+            :to -> "T23:59:59Z"
           end
 
         date_string <> range_time
