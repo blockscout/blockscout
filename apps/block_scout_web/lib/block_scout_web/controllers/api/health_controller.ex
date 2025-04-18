@@ -68,9 +68,16 @@ defmodule BlockScoutWeb.API.HealthController do
             else: Map.put(&1, :error, Map.get(blocks_property, :error))
           )).()
 
+    status =
+      if Map.get(health_status, :healthy) do
+        :ok
+      else
+        500
+      end
+
     send_resp(
       conn,
-      :ok,
+      status,
       health_status_with_error
       |> Jason.encode!()
     )
