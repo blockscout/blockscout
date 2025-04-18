@@ -62,6 +62,9 @@ defmodule Explorer.Chain.Health.Monitor do
             now
           )
         ]
+      else
+        _ ->
+          []
       end
 
     base_params = maybe_add_block_from_node_to_params?(db_and_cache_params, json_rpc_named_arguments, now)
