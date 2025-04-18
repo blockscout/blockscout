@@ -348,12 +348,12 @@ defmodule Explorer.Chain.Import do
         {:ok, result}
 
       error ->
-        set_refetch_needed_for_partially_imported_blocks(options)
+        handle_partially_imported_blocks(options)
         error
     end
   rescue
     exception ->
-      set_refetch_needed_for_partially_imported_blocks(options)
+      handle_partially_imported_blocks(options)
       reraise exception, __STACKTRACE__
   end
 
@@ -406,14 +406,15 @@ defmodule Explorer.Chain.Import do
     end)
   end
 
-  defp set_refetch_needed_for_partially_imported_blocks(%{blocks: %{params: blocks_params}}) do
+  defp handle_partially_imported_blocks(%{blocks: %{params: blocks_params}}) do
     block_numbers = Enum.map(blocks_params, & &1.number)
     Block.set_refetch_needed(block_numbers)
+    Import.Runner.Blocks.process_blocks_consensus(blocks_params)
 
     Logger.warning("Set refetch_needed for partially imported block because of error: #{inspect(block_numbers)}")
   end
 
-  defp set_refetch_needed_for_partially_imported_blocks(_options), do: :ok
+  defp handle_partially_imported_blocks(_options), do: :ok
 
   @spec timestamps() :: timestamps
   def timestamps do
