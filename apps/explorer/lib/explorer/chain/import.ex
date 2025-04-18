@@ -28,10 +28,6 @@ defmodule Explorer.Chain.Import do
     ]
   ]
 
-  # in order so that foreign keys are inserted before being referenced
-  @configured_runners Enum.flat_map(@stages, fn stage_batch ->
-                        Enum.flat_map(stage_batch, fn stage -> stage.runners() end)
-                      end)
   @all_runners Enum.flat_map(@stages, fn stage_batch ->
                  Enum.flat_map(stage_batch, fn stage -> stage.all_runners() end)
                end)
@@ -151,6 +147,13 @@ defmodule Explorer.Chain.Import do
     end
   end
 
+  defp configured_runners do
+    # in order so that foreign keys are inserted before being referenced
+    Enum.flat_map(@stages, fn stage_batch ->
+      Enum.flat_map(stage_batch, fn stage -> stage.runners() end)
+    end)
+  end
+
   defp runner_to_changes_list(runner_options_pairs) when is_list(runner_options_pairs) do
     runner_options_pairs
     |> Stream.map(fn {runner, options} -> runner_changes_list(runner, options) end)
@@ -204,8 +207,8 @@ defmodule Explorer.Chain.Import do
     local_options = Map.drop(options, @global_options)
 
     {reverse_runner_options_pairs, unknown_options} =
-      Enum.reduce(@configured_runners, {[], local_options}, fn runner,
-                                                               {acc_runner_options_pairs, unknown_options} = acc ->
+      Enum.reduce(configured_runners(), {[], local_options}, fn runner,
+                                                                {acc_runner_options_pairs, unknown_options} = acc ->
         option_key = runner.option_key()
 
         case local_options do

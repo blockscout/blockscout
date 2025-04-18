@@ -4,6 +4,7 @@
 
 ### 🐛 Bug Fixes
 
+- Unbind import from compile-time chain_type ([#12277](https://github.com/blockscout/blockscout/pull/12277))
 - Read `CHAIN_TYPE` and `MUD_INDEXER_ENABLED` envs in runtime config ([#12270](https://github.com/blockscout/blockscout/issues/12270))
 
 ### ⚙️ Miscellaneous Tasks
