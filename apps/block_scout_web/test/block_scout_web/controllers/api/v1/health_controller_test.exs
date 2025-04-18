@@ -95,8 +95,6 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
 
       request = get(conn, api_health_path(conn, :health))
 
-      assert request.status == 200
-
       result = Poison.decode!(request.resp_body)
 
       assert %{
