@@ -18,9 +18,9 @@ defmodule Explorer.Chain.Scroll.Batch do
   alias Explorer.Chain.Scroll.BatchBundle
   alias ExZstd.DCtx
 
-  @optional_attrs ~w(bundle_id)a
+  @optional_attrs ~w(bundle_id l2_block_range)a
 
-  @required_attrs ~w(number commit_transaction_hash commit_block_number commit_timestamp l2_block_range container)a
+  @required_attrs ~w(number commit_transaction_hash commit_block_number commit_timestamp container)a
   @zstd_magic_number <<0x28, 0xB5, 0x2F, 0xFD>>
   @codec_version 7
 

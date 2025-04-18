@@ -61,20 +61,6 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     {:ok, %{}, {:continue, :ok}}
   end
 
-  # defp get_l2_block_range_from_blob(blob_data_hex) do
-  #   blob_payload =
-  #     blob_data_hex
-  #     |> hash_to_binary()
-  #     |> Batch.decode_eip4844_blob()
-
-  #   if is_nil(blob_payload) do
-  #     Logger.warning("Invalid blob")
-  #   else
-  #     <<_prev_l1_message_queue_hash::binary-size(32), _post_l1_message_queue_hash::binary-size(32), initial_l2_block_number::size(64), num_blocks::size(16), _::binary>> = blob_payload
-  #     Logger.warning("#{initial_l2_block_number}..#{initial_l2_block_number+num_blocks-1}")
-  #   end
-  # end
-
   @impl GenServer
   def handle_continue(_, state) do
     Logger.metadata(fetcher: @fetcher_name)
