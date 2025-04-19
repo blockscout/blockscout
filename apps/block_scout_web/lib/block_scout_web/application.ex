@@ -15,8 +15,8 @@ defmodule BlockScoutWeb.Application do
       Supervisor.start_link([Supervisor.child_spec(HealthEndpoint, [])], opts)
     else
       base_children = [Supervisor.child_spec(Endpoint, [])]
-      api_children = setup_and_define_children()
-      all_children = base_children ++ api_children
+      {first_api_children, last_api_children} = setup_and_define_children()
+      all_children = first_api_children ++ base_children ++ last_api_children
 
       Supervisor.start_link(all_children, opts)
     end
@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.Application do
   if @disable_api? do
     defp setup_and_define_children do
       BlockScoutWeb.Prometheus.Exporter.setup()
-      []
+      {[], []}
     end
   else
     defp setup_and_define_children do
@@ -60,18 +60,21 @@ defmodule BlockScoutWeb.Application do
       )
 
       # Define workers and child supervisors to be supervised
-      [
-        # Start the endpoint when the application starts
-        {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
-        {Absinthe.Subscription, Endpoint},
-        {MainPageRealtimeEventHandler, name: MainPageRealtimeEventHandler},
-        {RealtimeEventHandler, name: RealtimeEventHandler},
-        {SmartContractRealtimeEventHandler, name: SmartContractRealtimeEventHandler},
-        {BlocksIndexedCounter, name: BlocksIndexedCounter},
-        {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
-        {EventHandlersMetrics, []},
-        {ChainMetrics, []}
-      ]
+      {
+        [
+          {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
+          {MainPageRealtimeEventHandler, name: MainPageRealtimeEventHandler},
+          {RealtimeEventHandler, name: RealtimeEventHandler},
+          {SmartContractRealtimeEventHandler, name: SmartContractRealtimeEventHandler},
+          {BlocksIndexedCounter, name: BlocksIndexedCounter},
+          {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
+          {EventHandlersMetrics, []},
+          {ChainMetrics, []}
+        ],
+        [
+          {Absinthe.Subscription, Endpoint}
+        ]
+      }
     end
   end
 end
