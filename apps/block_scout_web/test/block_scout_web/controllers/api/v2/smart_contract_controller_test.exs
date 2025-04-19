@@ -60,7 +60,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                %{
                  "proxy_type" => nil,
                  "implementations" => [],
-                 "is_self_destructed" => false,
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" => nil,
                  "status" => "success"
@@ -82,7 +81,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                %{
                  "proxy_type" => nil,
                  "implementations" => [],
-                 "is_self_destructed" => false,
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" =>
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
@@ -162,7 +160,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "external_libraries" => [%{"name" => "ABC", "address_hash" => Address.checksum(lib_address)}],
         "constructor_args" => target_contract.constructor_arguments,
         "decoded_constructor_args" => nil,
-        "is_self_destructed" => false,
         "deployed_bytecode" =>
           "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
         "creation_bytecode" =>
@@ -269,7 +266,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
             %{"name" => "_implementationAddress", "type" => "address"}
           ]
         ],
-        "is_self_destructed" => false,
         "deployed_bytecode" =>
           "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
         "creation_bytecode" =>
@@ -374,7 +370,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "external_libraries" => [%{"name" => "ABC", "address_hash" => Address.checksum(lib_address)}],
         "constructor_args" => nil,
         "decoded_constructor_args" => nil,
-        "is_self_destructed" => false,
         "deployed_bytecode" =>
           "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
         "creation_bytecode" =>
@@ -472,7 +467,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       |> with_block(status: :ok)
 
       correct_response = %{
-        "is_self_destructed" => false,
         "deployed_bytecode" => proxy_deployed_bytecode,
         "creation_bytecode" => proxy_transaction_input,
         "proxy_type" => "eip1167",
@@ -533,7 +527,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "external_libraries" => target_contract.external_libraries,
         "constructor_args" => target_contract.constructor_arguments,
         "decoded_constructor_args" => nil,
-        "is_self_destructed" => false,
         "deployed_bytecode" =>
           "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
         "creation_bytecode" =>
@@ -633,7 +626,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       "implementations" => [
         %{"address" => formatted_implementation_address_hash_string, "name" => implementation_contract.name}
       ],
-      "is_self_destructed" => false,
       "deployed_bytecode" => proxy_deployed_bytecode,
       "creation_bytecode" => proxy_transaction_input
     }
@@ -722,7 +714,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  %{
                    "proxy_type" => nil,
                    "implementations" => [],
-                   "is_self_destructed" => false,
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
@@ -808,7 +799,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  %{
                    "proxy_type" => nil,
                    "implementations" => [],
-                   "is_self_destructed" => false,
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
@@ -941,7 +931,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  %{
                    "proxy_type" => "unknown",
                    "implementations" => [],
-                   "is_self_destructed" => false,
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
@@ -1029,7 +1018,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  %{
                    "proxy_type" => nil,
                    "implementations" => [],
-                   "is_self_destructed" => false,
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
@@ -1146,7 +1134,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "implementations" => [
                      prepare_implementation(%{"address" => formatted_implementation_address_hash_string, "name" => nil})
                    ],
-                   "is_self_destructed" => false,
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
@@ -1272,7 +1259,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "implementations" => [
                      prepare_implementation(%{"address" => formatted_implementation_address_hash_string, "name" => nil})
                    ],
-                   "is_self_destructed" => false,
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
@@ -1398,7 +1384,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "implementations" => [
                      prepare_implementation(%{"address" => formatted_implementation_address_hash_string, "name" => nil})
                    ],
-                   "is_self_destructed" => false,
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
