@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView}
-  alias Explorer.Chain.{Address, Data, Transaction}
+  alias Explorer.Chain.{Address, AdvancedFilter, Data, Transaction}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
@@ -62,6 +62,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       "TokenContractAddressHash",
       "TokenDecimals",
       "TokenSymbol",
+      "TokenValue",
       "BlockNumber",
       "Fee",
       "CurrentPrice",
@@ -80,33 +81,62 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
 
         {opening_price, closing_price} = date_to_prices[DateTime.to_date(advanced_filter.timestamp)]
 
-        [
-          to_string(advanced_filter.hash),
-          advanced_filter.type,
-          method_id,
-          advanced_filter.timestamp,
-          Address.checksum(advanced_filter.from_address_hash),
-          Address.checksum(advanced_filter.to_address_hash),
-          Address.checksum(advanced_filter.created_contract_address_hash),
-          decimal_to_string_xsd(advanced_filter.value),
-          if(advanced_filter.type != "coin_transfer",
-            do: Address.checksum(advanced_filter.token_transfer.token.contract_address_hash),
-            else: nil
-          ),
-          if(advanced_filter.type != "coin_transfer",
-            do: decimal_to_string_xsd(advanced_filter.token_transfer.token.decimals),
-            else: nil
-          ),
-          if(advanced_filter.type != "coin_transfer", do: advanced_filter.token_transfer.token.symbol, else: nil),
-          advanced_filter.block_number,
-          decimal_to_string_xsd(advanced_filter.fee),
-          decimal_to_string_xsd(exchange_rate.fiat_value),
-          decimal_to_string_xsd(opening_price),
-          decimal_to_string_xsd(closing_price)
-        ]
+        prepare_advanced_filter_csv_row(advanced_filter, exchange_rate, opening_price, closing_price, method_id)
       end)
 
     Stream.concat([row_names], af_lists)
+  end
+
+  defp prepare_advanced_filter_csv_row(
+         %AdvancedFilter{type: "coin_transfer"} = advanced_filter,
+         exchange_rate,
+         opening_price,
+         closing_price,
+         method_id
+       ) do
+    [
+      to_string(advanced_filter.hash),
+      advanced_filter.type,
+      method_id,
+      advanced_filter.timestamp,
+      Address.checksum(advanced_filter.from_address_hash),
+      Address.checksum(advanced_filter.to_address_hash),
+      Address.checksum(advanced_filter.created_contract_address_hash),
+      decimal_to_string_xsd(advanced_filter.value),
+      nil,
+      nil,
+      nil,
+      nil,
+      advanced_filter.block_number,
+      decimal_to_string_xsd(advanced_filter.fee),
+      decimal_to_string_xsd(exchange_rate.usd_value),
+      decimal_to_string_xsd(opening_price),
+      decimal_to_string_xsd(closing_price)
+    ]
+  end
+
+  defp prepare_advanced_filter_csv_row(advanced_filter, exchange_rate, opening_price, closing_price, method_id) do
+    [
+      to_string(advanced_filter.hash),
+      advanced_filter.type,
+      method_id,
+      advanced_filter.timestamp,
+      Address.checksum(advanced_filter.from_address_hash),
+      Address.checksum(advanced_filter.to_address_hash),
+      Address.checksum(advanced_filter.created_contract_address_hash),
+      decimal_to_string_xsd(advanced_filter.value),
+      Address.checksum(advanced_filter.token_transfer.token.contract_address_hash),
+      decimal_to_string_xsd(advanced_filter.token_transfer.token.decimals),
+      advanced_filter.token_transfer.token.symbol,
+      advanced_filter.token_transfer.amount
+      |> Decimal.div(advanced_filter.token_transfer.token.decimals)
+      |> decimal_to_string_xsd(),
+      advanced_filter.block_number,
+      decimal_to_string_xsd(advanced_filter.fee),
+      decimal_to_string_xsd(exchange_rate.usd_value),
+      decimal_to_string_xsd(opening_price),
+      decimal_to_string_xsd(closing_price)
+    ]
   end
 
   defp prepare_advanced_filter(advanced_filter, decoded_input) do
@@ -114,7 +144,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       hash: advanced_filter.hash,
       type: advanced_filter.type,
       method:
-        if(advanced_filter.type != "coin_transfer",
+        if(advanced_filter.created_from == :token_transfer,
           do:
             Transaction.method_name(
               %Transaction{
@@ -155,12 +185,12 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
         ),
       value: advanced_filter.value,
       total:
-        if(advanced_filter.type != "coin_transfer",
+        if(advanced_filter.created_from == :token_transfer,
           do: TokenTransferView.prepare_token_transfer_total(advanced_filter.token_transfer),
           else: nil
         ),
       token:
-        if(advanced_filter.type != "coin_transfer",
+        if(advanced_filter.created_from == :token_transfer,
           do: TokenView.render("token.json", %{token: advanced_filter.token_transfer.token}),
           else: nil
         ),
