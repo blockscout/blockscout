@@ -1344,7 +1344,8 @@ config :indexer, Indexer.Fetcher.Scroll.BridgeL2,
 
 config :indexer, Indexer.Fetcher.Scroll.Batch,
   scroll_chain_contract: System.get_env("INDEXER_SCROLL_L1_CHAIN_CONTRACT"),
-  start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_SCROLL_L1_BATCH_START_BLOCK")
+  start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_SCROLL_L1_BATCH_START_BLOCK"),
+  eip4844_blobs_api_url: System.get_env("INDEXER_SCROLL_L1_BATCH_BLOCKSCOUT_BLOBS_API_URL", "")
 
 config :indexer, Indexer.Fetcher.Scroll.BridgeL1.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
 
