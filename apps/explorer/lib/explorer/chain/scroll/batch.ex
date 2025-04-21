@@ -107,7 +107,7 @@ defmodule Explorer.Chain.Scroll.Batch do
     with {:version_is_supported, true} <- {:version_is_supported, version == @codec_version},
          {:size_is_correct, true} <- {:size_is_correct, blob_payload_size + 5 <= byte_size(blob_data_raw)},
          {:compression_flag_is_correct, true} <-
-           {:compression_flag_is_correct, is_compressed == 1 or is_compressed == 0},
+           {:compression_flag_is_correct, is_compressed in [0, 1]},
          <<payload::binary-size(blob_payload_size), _::binary>> = rest,
          {:is_compressed, 1, _payload} <- {:is_compressed, is_compressed, payload},
          {:ok, decompressed} <- DCtx.decompress(DCtx.new(), @zstd_magic_number <> payload) do
