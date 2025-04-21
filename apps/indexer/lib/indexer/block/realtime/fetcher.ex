@@ -298,7 +298,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
         chain_import_options[:blocks][:params]
         |> Enum.max_by(& &1.number, fn -> nil end)
 
-      Instrumenter.set_latest_block(last_block.number, last_block.timestamp)
+      if not is_nil(last_block) do
+        Instrumenter.set_latest_block(last_block.number, last_block.timestamp)
+      end
 
       async_import_remaining_block_data(
         imported,
