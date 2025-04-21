@@ -126,7 +126,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
          start_block: max(start_block, last_l1_block_number),
          eth_get_logs_range_size:
            Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:l1_eth_get_logs_range_size],
-         eip4844_blobs_api_url: trim_url(env[:eip4844_blobs_api_url]),
+         eip4844_blobs_api_url: Helper.trim_url(env[:eip4844_blobs_api_url]),
          l1_chain_id: l1_chain_id
        }}
     else
@@ -824,11 +824,5 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         "As L1 reorg was detected, some bundles with finalize_block_number >= #{reorg_block} were removed from the scroll_batch_bundles table. Number of removed rows: #{deleted_bundles_count}."
       )
     end
-  end
-
-  defp trim_url(url) do
-    url
-    |> String.trim()
-    |> String.trim_trailing("/")
   end
 end

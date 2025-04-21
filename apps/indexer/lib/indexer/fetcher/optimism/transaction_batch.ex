@@ -131,8 +131,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
        %{
          batch_inbox: batch_inbox,
          batch_submitter: batch_submitter,
-         eip4844_blobs_api_url: trim_url(env[:eip4844_blobs_api_url]),
-         celestia_blobs_api_url: trim_url(env[:celestia_blobs_api_url]),
+         eip4844_blobs_api_url: Helper.trim_url(env[:eip4844_blobs_api_url]),
+         celestia_blobs_api_url: Helper.trim_url(env[:celestia_blobs_api_url]),
          block_check_interval: block_check_interval,
          start_block: start_block,
          end_block: last_safe_block,
@@ -1434,12 +1434,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   defp first_byte(_transaction_input) do
     nil
-  end
-
-  defp trim_url(url) do
-    url
-    |> String.trim()
-    |> String.trim_trailing("/")
   end
 
   defp zlib_decompress(bytes) do

@@ -851,4 +851,21 @@ defmodule Indexer.Helper do
       Logger.warning("Cannot get the blob #{blob_hash} from the Beacon Node. Reason: #{inspect(reason)}")
       nil
   end
+
+  @doc """
+    Removes leading and trailing whitespaces and trailing slash (/) from URL string to prepare it
+    for concatenation with another part of URL.
+
+    ## Parameters
+    - `url`: The source URL to be trimmed.
+
+    ## Returns
+    - Clear URL without trailing slash and leading and trailing whitespaces.
+  """
+  @spec trim_url(String.t()) :: String.t()
+  def trim_url(url) do
+    url
+    |> String.trim()
+    |> String.trim_trailing("/")
+  end
 end
