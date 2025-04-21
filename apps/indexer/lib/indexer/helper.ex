@@ -775,6 +775,20 @@ defmodule Indexer.Helper do
     end
   end
 
+  @doc """
+    Sends an HTTP request to Beacon Node to get EIP-4844 blob data by blob's versioned hash.
+
+    ## Parameters
+    - `blob_hash`: The blob versioned hash in form of `0x` string.
+    - `l1_block_timestamp`: Timestamp of L1 block to convert it to beacon slot.
+    - `l1_chain_id`: ID of L1 chain to automatically define parameters for calculating beacon slot.
+      If ID is `nil` or unknown, the parameters are taken from the fallback INDEXER_BEACON_BLOB_FETCHER_REFERENCE_SLOT,
+      INDEXER_BEACON_BLOB_FETCHER_REFERENCE_TIMESTAMP, INDEXER_BEACON_BLOB_FETCHER_SLOT_DURATION env variables.
+
+    ## Returns
+    - A binary with the blob data in case of success.
+    - `nil` in case of failure.
+  """
   @spec get_eip4844_blob_from_beacon_node(String.t(), DateTime.t(), non_neg_integer() | nil) :: binary() | nil
   def get_eip4844_blob_from_beacon_node(blob_hash, l1_block_timestamp, l1_chain_id) do
     beacon_config =

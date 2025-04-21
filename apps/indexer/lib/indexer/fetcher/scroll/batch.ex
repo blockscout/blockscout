@@ -347,8 +347,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     end)
   end
 
-  # Extracts the L2 block range from the call data or EIP-4844 blob of a batch commitment
-  # transaction.
+  # Extracts the L2 block range from the calldata or EIP-4844 blob of a batch commitment transaction.
   #
   # This function decodes the input data from either a `commitBatch` or
   # `commitBatchWithBlobProof` function call. If the call is not exists, it takes the
@@ -356,15 +355,14 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   #
   # ## Parameters
   # - `input`: A binary string representing the input data of a batch commitment transaction.
-  # - `blob_versioned_hash`: A binary string representing the EIP-4844 blob hash if it's needed.
-  # - `eip4844_blobs_api_url`: URL of Blockscout Blobs API to get EIP-4844 blobs.
-  # - `block_timestamp`: L1 block timestamp of the commitment transaction.
-  # - `batch_number`: The batch number corresponding to the batch commitment transaction.
-  # - `l1_chain_id`: Chain ID for L1.
+  # - `blob_versioned_hash`: A binary string representing the EIP-4844 blob hash (for post-Euclid phase).
+  # - `eip4844_blobs_api_url`: URL of Blockscout Blobs API to get EIP-4844 blobs (for post-Euclid phase).
+  # - `block_timestamp`: L1 block timestamp of the commitment transaction (for post-Euclid phase).
+  # - `batch_number`: The batch number corresponding to the batch commitment transaction (for post-Euclid phase).
+  # - `l1_chain_id`: Chain ID for L1 (for post-Euclid phase).
   #
   # ## Returns
-  # - A `BlockRange.t()` struct containing the minimum and maximum L2 block
-  #   numbers included in the batch.
+  # - A `BlockRange.t()` struct containing the minimum and maximum L2 block numbers included in the batch.
   # - `nil` if the block range cannot be determined.
   @spec input_to_l2_block_range(
           binary(),
@@ -445,13 +443,20 @@ defmodule Indexer.Fetcher.Scroll.Batch do
           l1_chain_id
         )
       else
-        # this is pre-Euclid phase, so we get L2 block range info from the call data
+        # this is pre-Euclid phase, so we get L2 block range info from the calldata
         get_l2_block_range_pre_euclid(chunks)
       end
 
     l2_block_range
   end
 
+  # Parses chunks of L2 blocks info taken from calldata of the batch commitment transaction.
+  #
+  # ## Parameters
+  # - `chunks`: The list of chunks in the format defined in https://github.com/scroll-tech/scroll-contracts/blob/main/src/libraries/codec/ChunkCodecV1.sol.
+  #
+  # ## Returns
+  # - `{:ok, BlockRange.t()}` tuple containing the block range.
   @spec get_l2_block_range_pre_euclid(list()) :: {:ok, BlockRange.t()} | {:error, any()}
   defp get_l2_block_range_pre_euclid(chunks) do
     chunks
@@ -460,7 +465,6 @@ defmodule Indexer.Fetcher.Scroll.Batch do
 
       chunk_l2_block_numbers =
         Enum.map(Range.new(0, chunk_length - 1, 1), fn i ->
-          # chunk format is described here: https://github.com/scroll-tech/scroll-contracts/blob/main/src/libraries/codec/ChunkCodecV1.sol
           chunk_data
           |> :binary.part(i * 60, 8)
           |> :binary.decode_unsigned()
@@ -472,6 +476,20 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     |> BlockRange.cast()
   end
 
+  # Gets and parses EIP-4844 blob from the remote Blockscout Blobs API (or directly from Beacon Node as fallback data source).
+  #
+  # ## Parameters
+  # - `eip4844_blobs_api_url`: URL of Blockscout Blobs API.
+  # - `blob_hash`: The blob versioned hash in form of `0x` string.
+  # - `block_timestamp`: Timestamp of L1 block to convert it to beacon slot (when using fallback request to the Beacon Node).
+  # - `batch_number`: The batch number for logging purposes.
+  # - `l1_chain_id`: ID of L1 chain to automatically define parameters for calculating beacon slot (when using fallback
+  #   request to the Beacon Node). If ID is `nil` or unknown, the parameters are taken from the fallback
+  #   INDEXER_BEACON_BLOB_FETCHER_REFERENCE_SLOT, INDEXER_BEACON_BLOB_FETCHER_REFERENCE_TIMESTAMP, INDEXER_BEACON_BLOB_FETCHER_SLOT_DURATION
+  #   env variables.
+  #
+  # ## Returns
+  # - `{:ok, BlockRange.t() | nil}` tuple containing the block range (or `nil` if the blob is invalid or cannot be read).
   @spec get_l2_block_range_post_euclid(String.t(), String.t(), DateTime.t(), non_neg_integer(), non_neg_integer()) ::
           {:ok, BlockRange.t() | nil}
   defp get_l2_block_range_post_euclid(eip4844_blobs_api_url, blob_hash, block_timestamp, batch_number, l1_chain_id) do
@@ -505,6 +523,20 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     end
   end
 
+  # Sends an HTTP request to Blockscout Blobs API (or Beacon Node as fallback source) to get EIP-4844 blob data
+  # by blob's versioned hash.
+  #
+  # ## Parameters
+  # - `eip4844_blobs_api_url`: URL of Blockscout Blobs API.
+  # - `blob_hash`: The blob versioned hash in form of `0x` string.
+  # - `block_timestamp`: Timestamp of L1 block to convert it to beacon slot.
+  # - `l1_chain_id`: ID of L1 chain to automatically define parameters for calculating beacon slot.
+  #   If ID is `nil` or unknown, the parameters are taken from the fallback INDEXER_BEACON_BLOB_FETCHER_REFERENCE_SLOT,
+  #   INDEXER_BEACON_BLOB_FETCHER_REFERENCE_TIMESTAMP, INDEXER_BEACON_BLOB_FETCHER_SLOT_DURATION env variables.
+  #
+  # ## Returns
+  # - `{binary() | nil, source}` tuple where the first item is a binary with the blob data in case of success (or `nil`
+  #   in case of failure), and the second item is the data source name for logging purposes.
   @spec get_blob_data_from_server(String.t(), String.t(), DateTime.t(), non_neg_integer() | nil) ::
           {binary() | nil, String.t()}
   defp get_blob_data_from_server(eip4844_blobs_api_url, blob_hash, block_timestamp, l1_chain_id) do
@@ -649,6 +681,22 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     {batches, bundles, start_by_final_batch_number}
   end
 
+  # Handles the `CommitBatch` event and prepares a map describing a batch to import to the database.
+  #
+  # ## Parameters
+  # - `transaction_hash`: The commit L1 transaction hash in form of `0x` string.
+  # - `block_number`: The commit L1 block number.
+  # - `block_timestamp`: The commit L1 block timestamp.
+  # - `batch_number`: The batch number.
+  # - `commit_transaction_input_by_hash`: A map containing the commit transaction inputs by their hashes.
+  #   The map key is a transaction hash, the value is the input in form of `0x` string.
+  # - `ordered_batch_numbers_by_transaction_hash`: A map containing the commit batch numbers by commit transaction hashes.
+  #   The map key is a transaction hash, the value is the list of batch numbers committed by the transaction.
+  # - `eip4844_blobs_api_url`: URL of Blockscout Blobs API to get EIP-4844 blobs.
+  # - `l1_chain_id`: Chain ID for L1.
+  #
+  # ## Returns
+  # - A map describing a batch, see `Batch.to_import()`.
   @spec handle_commit_batch_event(
           String.t(),
           non_neg_integer(),
@@ -658,7 +706,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
           map(),
           String.t(),
           non_neg_integer()
-        ) :: map()
+        ) :: Batch.to_import()
   defp handle_commit_batch_event(
          transaction_hash,
          block_number,
@@ -712,7 +760,18 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     }
   end
 
-  @spec handle_finalize_batch_event(String.t(), non_neg_integer(), DateTime.t(), non_neg_integer()) :: map()
+  # Handles the `FinalizeBatch` event and prepares a map describing a batch bundle to import to the database.
+  #
+  # ## Parameters
+  # - `transaction_hash`: The finalization L1 transaction hash.
+  # - `block_number`: The finalization L1 block number.
+  # - `block_timestamp`: The finalization L1 block timestamp.
+  # - `batch_number`: The final batch number in the bundle.
+  #
+  # ## Returns
+  # - A map describing a batch bundle, see `BatchBundle.to_import()`.
+  @spec handle_finalize_batch_event(String.t(), non_neg_integer(), DateTime.t(), non_neg_integer()) ::
+          BatchBundle.to_import()
   defp handle_finalize_batch_event(transaction_hash, block_number, block_timestamp, batch_number) do
     %{
       final_batch_number: batch_number,
