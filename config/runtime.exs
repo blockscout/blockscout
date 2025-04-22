@@ -343,6 +343,9 @@ config :explorer, Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount,
 
 config :explorer, Explorer.Chain.Cache.OptimismFinalizationPeriod, enabled: ConfigHelper.chain_type() == :optimism
 
+config :explorer, Explorer.Chain.Cache.ArbitrumSettlement,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_ENABLED")
+
 config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsGasUsageSum,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_PERIOD", "30m")
 
@@ -1165,8 +1168,10 @@ config :indexer, Indexer.Fetcher.Arbitrum,
 config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1,
   recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_TRACKING_MESSAGES_ON_L1_RECHECK_INTERVAL", "20s")
 
-config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1.Supervisor,
-  enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BRIDGE_MESSAGES_TRACKING_ENABLED")
+arbitrum_settlement_enabled = ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_ENABLED")
+arbitrum_messages_enabled = ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BRIDGE_MESSAGES_TRACKING_ENABLED")
+
+config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1.Supervisor, enabled: arbitrum_messages_enabled
 
 config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses,
   recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_RECHECK_INTERVAL", "20s"),
@@ -1182,19 +1187,21 @@ config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses,
   failure_interval_threshold:
     ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_FAILURE_THRESHOLD", "10m")
 
-config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses.Supervisor,
-  enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_ENABLED")
+config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses.Supervisor, enabled: arbitrum_settlement_enabled
+
+config :indexer, Indexer.Fetcher.Arbitrum.L2ToL1StatusReconciler,
+  max_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MESSAGES_FROM_ROLLUP_BATCH_SIZE", 50)
+
+config :indexer, Indexer.Fetcher.Arbitrum.L2ToL1StatusReconciler.Supervisor, disabled?: not arbitrum_settlement_enabled
 
 config :indexer, Indexer.Fetcher.Arbitrum.RollupMessagesCatchup,
   recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_RECHECK_INTERVAL", "1h"),
   missed_messages_blocks_depth:
     ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_BLOCKS_DEPTH", 10000)
 
-config :indexer, Indexer.Fetcher.Arbitrum.RollupMessagesCatchup.Supervisor,
-  enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BRIDGE_MESSAGES_TRACKING_ENABLED")
+config :indexer, Indexer.Fetcher.Arbitrum.RollupMessagesCatchup.Supervisor, enabled: arbitrum_messages_enabled
 
-config :indexer, Indexer.Fetcher.Arbitrum.MessagesToL2Matcher.Supervisor,
-  disabled?: not ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BRIDGE_MESSAGES_TRACKING_ENABLED")
+config :indexer, Indexer.Fetcher.Arbitrum.MessagesToL2Matcher.Supervisor, disabled?: not arbitrum_messages_enabled
 
 config :indexer, Indexer.Fetcher.Arbitrum.DataBackfill,
   recheck_interval:
