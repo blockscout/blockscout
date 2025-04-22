@@ -392,4 +392,58 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
 
     Repo.all(query)
   end
+
+  @doc """
+    Streams messages directed from rollup to parent chain with initiated or sent status up to a specified rollup block number.
+
+    For each message, it returns:
+    - `{message_id, block_number}` for messages with `:initiated` status
+    - `{message_id, block_number, :sent}` for messages with `:sent` status
+
+    ## Parameters
+    - `initial`: The initial accumulator value for the stream.
+    - `reducer`: A function that processes each entry in the stream, receiving
+      the entry and the current accumulator, and returning a new accumulator.
+    - `max_block`: The maximum rollup block number to consider. Messages from blocks
+      higher than this will not be included in the stream. Mostly used to efficiently
+      re-use the composite index.
+
+    ## Returns
+    - `{:ok, accumulator}`: The final accumulator value after streaming through
+      the initiated and sent L2-to-L1 messages.
+  """
+  @spec stream_unconfirmed_messages_from_l2({0, []}, function(), non_neg_integer()) ::
+          {:ok,
+           {non_neg_integer(), [{non_neg_integer(), non_neg_integer()} | {non_neg_integer(), non_neg_integer(), :sent}]}}
+  def stream_unconfirmed_messages_from_l2(initial, reducer, max_block)
+      when max_block >= 0 do
+    query =
+      from(msg in Message,
+        where:
+          msg.direction == :from_l2 and
+            msg.originating_transaction_block_number <= ^max_block and
+            msg.status in [:initiated, :sent],
+        select: {msg.message_id, msg.originating_transaction_block_number, msg.status},
+        order_by: [asc: msg.originating_transaction_block_number]
+      )
+
+    # Create a custom reducer that transforms the database results into the format
+    # expected by L2ToL1StatusReconciler:
+    # - For messages with `:initiated` status: convert {id, block, status} -> {id, block}
+    # - For messages with `:sent` status: keep as {id, block, :sent}
+    # This matches the pattern matching in L2ToL1StatusReconciler.process_message
+    modified_reducer = fn {id, block, status}, acc ->
+      entry = if status == :sent, do: {id, block, :sent}, else: {id, block}
+      reducer.(entry, acc)
+    end
+
+    # This query is safe to run even with hundreds of thousands of records because:
+    # 1. Repo.stream_reduce uses database cursors under the hood, fetching records in batches (default 500)
+    # 2. Each batch is loaded into memory only when needed and released after processing
+    # 3. The query uses a composite index on (direction, originating_transaction_block_number, status)
+    #    making the filtering and ordering efficient
+    # 4. Results start flowing to the reducer function as soon as the first batch is fetched
+    #    rather than waiting for the entire result set
+    Repo.stream_reduce(query, initial, modified_reducer)
+  end
 end

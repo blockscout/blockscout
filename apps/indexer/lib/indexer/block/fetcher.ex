@@ -18,7 +18,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Block.Fetcher.Receipts
-  alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
+  alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Fetcher.Celo.EpochBlockOperations, as: CeloEpochBlockOperations
   alias Indexer.Fetcher.Celo.EpochLogs, as: CeloEpochLogs
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
@@ -287,7 +287,11 @@ defmodule Indexer.Block.Fetcher do
         transactions: inserted[:transactions]
       })
 
-      async_match_arbitrum_messages_to_l2(arbitrum_transactions_for_further_handling)
+      # Schedule Arbitrum-specific tasks for identified messages and transactions.
+      ArbitrumHelper.schedule_messages_for_processing(
+        arbitrum_xlevel_messages,
+        arbitrum_transactions_for_further_handling
+      )
 
       result
     else
@@ -787,14 +791,6 @@ defmodule Indexer.Block.Fetcher do
 
       Map.put(token_transfer, :token, token)
     end)
-  end
-
-  # Asynchronously schedules matching of Arbitrum L1-to-L2 messages where the message ID is hashed.
-  @spec async_match_arbitrum_messages_to_l2([map()]) :: :ok
-  defp async_match_arbitrum_messages_to_l2([]), do: :ok
-
-  defp async_match_arbitrum_messages_to_l2(transactions_with_messages_from_l1) do
-    ArbitrumMessagesToL2Matcher.async_discover_match(transactions_with_messages_from_l1)
   end
 
   # workaround for cases when RPC send logs with same index within one block

@@ -16,7 +16,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Message
-  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   require Logger
 
   @zero_hex_prefix "0x" <> String.duplicate("0", 56)
@@ -156,18 +155,17 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   end
 
   @doc """
-    Processes a list of filtered logs representing L2-to-L1 messages, enriching and categorizing them based on their current state.
+    Processes a list of filtered logs representing L2-to-L1 messages, enriching and categorizing them.
 
     This function takes filtered log events, typically representing L2-to-L1 messages, and
-    processes each to construct a comprehensive message structure. It determines the
-    status of each message by comparing its block number against the highest committed and
-    confirmed block numbers.
+    processes each to construct a comprehensive message structure. All messages are set
+    with the status `:initiated`.
 
     ## Parameters
     - `filtered_logs`: A list of log entries, each representing an L2-to-L1 message event.
 
     ## Returns
-    - A list of L2-to-L1 messages with detailed information and current status, ready for
+    - A list of L2-to-L1 messages with detailed information and `:initiated` status, ready for
       database import.
   """
   @spec handle_filtered_l2_to_l1_messages([min_log]) :: [Message.to_import()]
@@ -176,10 +174,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   def handle_filtered_l2_to_l1_messages([]), do: []
 
   def handle_filtered_l2_to_l1_messages(filtered_logs) when is_list(filtered_logs) do
-    # Get values before the loop parsing the events to reduce number of DB requests
-    highest_committed_block = DbSettlement.highest_committed_block(-1)
-    highest_confirmed_block = DbSettlement.highest_confirmed_block(-1)
-
     messages =
       filtered_logs
       |> Enum.map(fn event ->
@@ -196,7 +190,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
           originating_transaction_hash: event.transaction_hash,
           origination_timestamp: Timex.from_unix(fields.timestamp),
           originating_transaction_block_number: fields.arb_block_number,
-          status: status_l2_to_l1_message(fields.arb_block_number, highest_committed_block, highest_confirmed_block)
+          status: :initiated
         }
         |> complete_to_params()
       end)
@@ -242,18 +236,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     |> Enum.reduce(%{}, fn key, out ->
       Map.put(out, key, Map.get(incomplete, key))
     end)
-  end
-
-  # Determines the status of an L2-to-L1 message based on its block number and the highest
-  # committed and confirmed block numbers.
-  @spec status_l2_to_l1_message(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
-          :confirmed | :sent | :initiated
-  defp status_l2_to_l1_message(msg_block, highest_committed_block, highest_confirmed_block) do
-    cond do
-      highest_confirmed_block >= msg_block -> :confirmed
-      highest_committed_block >= msg_block -> :sent
-      true -> :initiated
-    end
   end
 
   # Checks if the given request ID is a plain message ID (starts with 56 zero
