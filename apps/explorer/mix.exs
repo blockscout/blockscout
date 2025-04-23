@@ -81,7 +81,7 @@ defmodule Explorer.Mixfile do
       # Data factory for testing
       {:ex_machina, "~> 2.3", only: [:test]},
       # ZSTD compression/decompression
-      {:zstd, "~> 1.1", hex: :nextroll_zstd},
+      {:ezstd, "~> 1.2"},
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 2.0"},
       {:jason, "~> 1.3"},
