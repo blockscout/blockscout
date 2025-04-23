@@ -110,7 +110,7 @@ defmodule Explorer.Chain.Scroll.Batch do
            {:compression_flag_is_correct, is_compressed in [0, 1]},
          <<payload::binary-size(blob_payload_size), _::binary>> = rest,
          {:is_compressed, 1, _payload} <- {:is_compressed, is_compressed, payload},
-         {:ok, decompressed} <- DCtx.decompress(DCtx.new(), @zstd_magic_number <> payload) do
+         decompressed when decompressed != :error <- :zstd.decompress(@zstd_magic_number <> payload) do
       decompressed
     else
       {:version_is_supported, false} ->
@@ -128,7 +128,7 @@ defmodule Explorer.Chain.Scroll.Batch do
       {:is_compressed, 0, payload} ->
         payload
 
-      {:error, reason} ->
+      :error ->
         Logger.error("Failed to decompress blob payload: #{inspect(reason)}")
         nil
     end
