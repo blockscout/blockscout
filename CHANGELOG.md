@@ -1,5 +1,18 @@
 # Changelog
 
+## 8.0.2
+
+### 🐛 Bug Fixes
+
+- Rename left props in API v2 with new naming convention ([#12314](https://github.com/blockscout/blockscout/issues/12314))
+- Temporary disable PendingTransactionOperation ([#12312](https://github.com/blockscout/blockscout/issues/12312))
+- Add `bash` to `builder-deps` build stage ([#12316](https://github.com/blockscout/blockscout/issues/12316))
+- Build on macos ([#12308](https://github.com/blockscout/blockscout/issues/12308))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add Scroll Euclid upgrade support ([#12294](https://github.com/blockscout/blockscout/issues/12294))
+
 ## 8.0.1
 
 ### 🐛 Bug Fixes

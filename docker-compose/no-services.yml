@@ -34,7 +34,7 @@ services:
         DISABLE_WEBAPP: "false"
         API_V1_WRITE_METHODS_DISABLED: "false"
         ADMIN_PANEL_ENABLED: ""
-        RELEASE_VERSION: 8.0.1
+        RELEASE_VERSION: 8.0.2
     links:
       - db:database
     environment:
