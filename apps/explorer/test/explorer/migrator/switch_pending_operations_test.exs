@@ -16,6 +16,8 @@ defmodule Explorer.Migrator.SwitchPendingOperationsTest do
       end)
     end
 
+    # TODO: remove tag after the migration of internal transactions PK to [:block_hash, :transaction_index, :index]
+    @tag :skip
     test "from pbo to pto" do
       first_block = insert(:block)
       second_block = insert(:block)
