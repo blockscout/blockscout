@@ -2,36 +2,6 @@
 
 ## 8.0.2
 
-### 🐛 Bug Fixes
-
-- Fix Indexer.Helper.http_get_request function ([#12317](https://github.com/blockscout/blockscout/pull/12317))
-- Rename left props in API v2 with new naming convention ([#12314](https://github.com/blockscout/blockscout/issues/12314))
-- Temporary disable PendingTransactionOperation ([#12312](https://github.com/blockscout/blockscout/issues/12312))
-- Add `bash` to `builder-deps` build stage ([#12316](https://github.com/blockscout/blockscout/issues/12316))
-- Build on macos ([#12308](https://github.com/blockscout/blockscout/issues/12308))
-
-### ⚙️ Miscellaneous Tasks
-
-- Add Scroll Euclid upgrade support ([#12294](https://github.com/blockscout/blockscout/issues/12294))
-
-## 8.0.1
-
-### 🐛 Bug Fixes
-
-- Fix MissingBlockRange.fill_ranges_between/3 for empty range ([#12319](https://github.com/blockscout/blockscout/pull/12319))
-- Fix CSV export "to" range to include the whole day in all cases ([#12286](https://github.com/blockscout/blockscout/pull/12286))
-- Return compatibility with previous version of health endpoint([#12280](https://github.com/blockscout/blockscout/pull/12280))
-- Unbind import from compile-time chain_type ([#12277](https://github.com/blockscout/blockscout/pull/12277))
-- Read `CHAIN_TYPE` and `MUD_INDEXER_ENABLED` envs in runtime config ([#12270](https://github.com/blockscout/blockscout/issues/12270))
-
-### ⚙️ Miscellaneous Tasks
-
-- Decrease PBO to PTO migration batch size ([#12279](https://github.com/blockscout/blockscout/pull/12279))
-- Decrease PendingOperationsHelper blocks_batch_size ([#12276](https://github.com/blockscout/blockscout/pull/12276))
-- Update docker compose to use ghcr.io images ([#12177](https://github.com/blockscout/blockscout/issues/12177))
-
-## 8.0.0
-
 ### 🚀 Features
 
 - Rate limiter for on-demand fetchers ([#12218](https://github.com/blockscout/blockscout/issues/12218))
@@ -57,6 +27,16 @@
 
 ### 🐛 Bug Fixes
 
+- Fix Indexer.Helper.http_get_request function ([#12317](https://github.com/blockscout/blockscout/pull/12317))
+- Rename left props in API v2 with new naming convention ([#12314](https://github.com/blockscout/blockscout/issues/12314))
+- Temporary disable PendingTransactionOperation ([#12312](https://github.com/blockscout/blockscout/issues/12312))
+- Add `bash` to `builder-deps` build stage ([#12316](https://github.com/blockscout/blockscout/issues/12316))
+- Build on macos ([#12308](https://github.com/blockscout/blockscout/issues/12308))
+- Fix MissingBlockRange.fill_ranges_between/3 for empty range ([#12319](https://github.com/blockscout/blockscout/pull/12319))
+- Fix CSV export "to" range to include the whole day in all cases ([#12286](https://github.com/blockscout/blockscout/pull/12286))
+- Return compatibility with previous version of health endpoint([#12280](https://github.com/blockscout/blockscout/pull/12280))
+- Unbind import from compile-time chain_type ([#12277](https://github.com/blockscout/blockscout/pull/12277))
+- Read `CHAIN_TYPE` and `MUD_INDEXER_ENABLED` envs in runtime config ([#12270](https://github.com/blockscout/blockscout/issues/12270))
 - Limit max import concurrency ([#12261](https://github.com/blockscout/blockscout/pull/12261))
 - CSV export: download items for the given day if from / to period are equal ([#12260](https://github.com/blockscout/blockscout/pull/12260))
 - Upgrade missing balanceOf token condition ([#12254](https://github.com/blockscout/blockscout/pull/12254))
@@ -105,6 +85,10 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add Scroll Euclid upgrade support ([#12294](https://github.com/blockscout/blockscout/issues/12294))
+- Decrease PBO to PTO migration batch size ([#12279](https://github.com/blockscout/blockscout/pull/12279))
+- Decrease PendingOperationsHelper blocks_batch_size ([#12276](https://github.com/blockscout/blockscout/pull/12276))
+- Update docker compose to use ghcr.io images ([#12177](https://github.com/blockscout/blockscout/issues/12177))
 - Add typed_ecto_schema to release ([#12255](https://github.com/blockscout/blockscout/pull/12255))
 - Suppress logging for expected 404 errors in account abstraction ([#12242](https://github.com/blockscout/blockscout/pull/12242))
 - Upgrade on demand balances fetchers ([#12104](https://github.com/blockscout/blockscout/pull/12104))
