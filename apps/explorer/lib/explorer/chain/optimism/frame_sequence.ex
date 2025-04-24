@@ -162,6 +162,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
           __MODULE__.t()
           | %{:l1_timestamp => DateTime.t(), :l1_transaction_hashes => list(), optional(any()) => any()}
         ) :: %{
+          :number => non_neg_integer(),
           :internal_id => non_neg_integer(),
           :l1_timestamp => DateTime.t(),
           :l2_start_block_number => non_neg_integer(),
@@ -182,6 +183,8 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
         batch
       ) do
     %{
+      :number => internal_id,
+      # todo: "internal_id" should be removed in favour `number` property with the next release after 8.0.0
       :internal_id => internal_id,
       :l1_timestamp => batch.l1_timestamp,
       :l2_start_block_number => l2_block_number_from,

@@ -92,7 +92,11 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
         %{
           "id" => withdraw.message_id,
           "status" => withdraw.status,
+          "caller_address_hash" => withdraw.caller,
+          # todo: "caller"" should be removed in favour `caller_address_hash` property with the next release after 8.0.0
           "caller" => withdraw.caller,
+          "destination_address_hash" => withdraw.destination,
+          # todo: "destination" should be removed in favour `destination_address_hash` property with the next release after 8.0.0
           "destination" => withdraw.destination,
           "arb_block_number" => withdraw.arb_block_number,
           "eth_block_number" => withdraw.eth_block_number,

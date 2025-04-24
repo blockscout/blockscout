@@ -387,6 +387,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   #   call of a smart contract on L1)
   @spec obtain_token_withdrawal_data(binary()) ::
           %{
+            address_hash: Explorer.Chain.Hash.Address.t(),
             address: Explorer.Chain.Hash.Address.t(),
             destination: Explorer.Chain.Hash.Address.t(),
             amount: non_neg_integer(),
@@ -418,7 +419,11 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     token_info = ERC20.fetch_token_properties(ArbitrumRpc.value_to_address(token), json_l1_rpc_named_arguments)
 
     %{
+      address_hash: token_bin,
+      # todo: "address" should be removed in favour `address_hash` property with the next release after 8.0.0
       address: token_bin,
+      destination_address_hash: to_bin,
+      # todo: "destination" should be removed in favour `destination_address_hash` property with the next release after 8.0.0
       destination: to_bin,
       amount: amount,
       decimals: token_info.decimals,
