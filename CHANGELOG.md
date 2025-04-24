@@ -17,6 +17,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix MissingBlockRange.fill_ranges_between/3 for empty range ([#12319](https://github.com/blockscout/blockscout/pull/12319))
 - Fix CSV export "to" range to include the whole day in all cases ([#12286](https://github.com/blockscout/blockscout/pull/12286))
 - Return compatibility with previous version of health endpoint([#12280](https://github.com/blockscout/blockscout/pull/12280))
 - Unbind import from compile-time chain_type ([#12277](https://github.com/blockscout/blockscout/pull/12277))
