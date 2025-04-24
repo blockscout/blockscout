@@ -724,7 +724,7 @@ defmodule Indexer.Helper do
   end
 
   @doc """
-    Sends HTTP GET request to the given URL and returns JSON response. Makes max nine attempts and then returns an error in case of failure.
+    Sends HTTP GET request to the given URL and returns JSON response. Makes max 10 attempts and then returns an error in case of failure.
     There is a timeout between attempts (increasing from 3 seconds to 20 minutes max as the number of attempts increases).
 
     ## Parameters
