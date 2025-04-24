@@ -746,32 +746,47 @@ defmodule Indexer.Helper do
         Jason.decode(body)
 
       {:ok, %{body: body, status: _}} ->
-        {:error, body}
+        http_get_request_error(url, body, attempts_done)
 
       {:error, error} ->
-        old_truncate = Application.get_env(:logger, :truncate)
-        Logger.configure(truncate: :infinity)
+        http_get_request_error(url, error, attempts_done)
+    end
+  end
 
-        Logger.error(fn ->
-          [
-            "Error while sending request to #{url}: ",
-            inspect(error, limit: :infinity, printable_limit: :infinity)
-          ]
-        end)
+  # Handles HTTP GET error and tries to re-call the `http_get_request` function after sleep.
+  #
+  # ## Parameters
+  # - `url`: The URL which needs to be requested.
+  # - `error`: The error description for logging purposes.
+  # - `attempts_done`: The number of attempts done. Incremented by the function itself.
+  #
+  # ## Returns
+  # - `{:ok, response}` tuple of the re-call was successful.
+  # - `{:error, reason}` if all attempts were failed.
+  @spec http_get_request_error(String.t(), any(), non_neg_integer()) :: {:ok, map()} | {:error, any()}
+  defp http_get_request_error(url, error, attempts_done) do
+    old_truncate = Application.get_env(:logger, :truncate)
+    Logger.configure(truncate: :infinity)
 
-        Logger.configure(truncate: old_truncate)
+    Logger.error(fn ->
+      [
+        "Error while sending request to #{url}: ",
+        inspect(error, limit: :infinity, printable_limit: :infinity)
+      ]
+    end)
 
-        # retry to send the request
-        attempts_done = attempts_done + 1
+    Logger.configure(truncate: old_truncate)
 
-        if attempts_done < 3 do
-          # wait up to 20 minutes and then retry
-          :timer.sleep(min(3000 * Integer.pow(2, attempts_done - 1), 1_200_000))
-          Logger.info("Retry to send the request to #{url} ...")
-          http_get_request(url, attempts_done)
-        else
-          {:error, "Error while sending request to #{url}"}
-        end
+    # retry to send the request
+    attempts_done = attempts_done + 1
+
+    if attempts_done < 3 do
+      # wait up to 20 minutes and then retry
+      :timer.sleep(min(3000 * Integer.pow(2, attempts_done - 1), 1_200_000))
+      Logger.info("Retry to send the request to #{url} ...")
+      http_get_request(url, attempts_done)
+    else
+      {:error, "Error while sending request to #{url}"}
     end
   end
 
