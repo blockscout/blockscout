@@ -16,7 +16,6 @@ defmodule Explorer.Chain.Scroll.Batch do
   alias Explorer.Chain.Block.Range, as: BlockRange
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Scroll.BatchBundle
-  alias ExZstd.DCtx
 
   @optional_attrs ~w(bundle_id l2_block_range)a
 
@@ -110,7 +109,7 @@ defmodule Explorer.Chain.Scroll.Batch do
            {:compression_flag_is_correct, is_compressed in [0, 1]},
          <<payload::binary-size(blob_payload_size), _::binary>> = rest,
          {:is_compressed, 1, _payload} <- {:is_compressed, is_compressed, payload},
-         {:ok, decompressed} <- DCtx.decompress(DCtx.new(), @zstd_magic_number <> payload) do
+         decompressed when is_binary(decompressed) <- :ezstd.decompress(@zstd_magic_number <> payload) do
       decompressed
     else
       {:version_is_supported, false} ->
