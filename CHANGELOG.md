@@ -4,6 +4,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix Indexer.Helper.http_get_request function ([#12317](https://github.com/blockscout/blockscout/pull/12317))
 - Rename left props in API v2 with new naming convention ([#12314](https://github.com/blockscout/blockscout/issues/12314))
 - Temporary disable PendingTransactionOperation ([#12312](https://github.com/blockscout/blockscout/issues/12312))
 - Add `bash` to `builder-deps` build stage ([#12316](https://github.com/blockscout/blockscout/issues/12316))
