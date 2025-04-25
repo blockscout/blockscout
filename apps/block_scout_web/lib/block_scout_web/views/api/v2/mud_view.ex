@@ -82,6 +82,8 @@ defmodule BlockScoutWeb.API.V2.MudView do
 
   defp prepare_world_for_list(%Address{} = address) do
     %{
+      "address_hash" => Helper.address_with_info(address, address.hash),
+      # todo: "address" should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => Helper.address_with_info(address, address.hash),
       "transactions_count" => address.transactions_count,
       # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
@@ -93,6 +95,8 @@ defmodule BlockScoutWeb.API.V2.MudView do
   defp prepare_system_for_list({system_id, system}) do
     %{
       name: system_id |> Table.from() |> Map.get(:table_full_name),
+      address_hash: system,
+      # todo: "address" should be removed in favour `address_hash` property with the next release after 8.0.0
       address: system
     }
   end

@@ -129,6 +129,7 @@ defmodule Explorer.Chain.Health.Helper do
     - "health_latest_block_number_from_node"
     - "health_latest_batch_number_from_db",
     - "health_latest_batch_timestamp_from_db"
+    - "health_latest_batch_average_time_from_db"
 
   The retrieved values are then reduced into a map with the following keys:
     - `:health_latest_block_number_from_db`
@@ -138,6 +139,7 @@ defmodule Explorer.Chain.Health.Helper do
     - `:health_latest_block_number_from_node`
     - `:health_latest_batch_number_from_db`
     - `:health_latest_batch_timestamp_from_db`
+    - `:health_latest_batch_average_time_from_db`
 
   Each key in the map is assigned the corresponding value fetched from the `LastFetchedCounter`.
 
@@ -154,7 +156,8 @@ defmodule Explorer.Chain.Health.Helper do
         "health_latest_block_timestamp_from_db",
         "health_latest_block_number_from_node",
         "health_latest_batch_number_from_db",
-        "health_latest_batch_timestamp_from_db"
+        "health_latest_batch_timestamp_from_db",
+        "health_latest_batch_average_time_from_db"
       ])
 
     values
@@ -166,7 +169,8 @@ defmodule Explorer.Chain.Health.Helper do
         health_latest_block_timestamp_from_cache: nil,
         health_latest_block_number_from_node: nil,
         health_latest_batch_number_from_db: nil,
-        health_latest_batch_timestamp_from_db: nil
+        health_latest_batch_timestamp_from_db: nil,
+        health_latest_batch_average_time_from_db: nil
       },
       fn {key, value}, acc ->
         Map.put(acc, String.to_existing_atom(key), value)
@@ -185,6 +189,8 @@ defmodule Explorer.Chain.Health.Helper do
         Application.get_env(:explorer, Explorer.Chain.Health.Monitor)[:healthy_blocks_period]
 
       with true <- last_block_db_delay > blocks_indexing_delay_threshold,
+           {:empty_health_latest_block_number_from_node, false} <-
+             {:empty_health_latest_block_number_from_node, is_nil(health_status.health_latest_block_number_from_node)},
            true <-
              Decimal.compare(
                Decimal.sub(
@@ -193,14 +199,19 @@ defmodule Explorer.Chain.Health.Helper do
                ),
                Decimal.new(@max_blocks_gap_between_node_and_db)
              ) == :gt do
-        {false, @no_new_items_error_code,
-         "There are no new blocks in the DB for the last #{round(last_block_db_delay / 1_000 / 60)} mins. Check the healthiness of the JSON RPC archive node or the DB."}
+        no_new_block_status(last_block_db_delay)
       else
+        {:empty_health_latest_block_number_from_node, true} -> no_new_block_status(last_block_db_delay)
         _ -> true
       end
     else
       {false, @no_items_error_code, "There are no blocks in the DB."}
     end
+  end
+
+  defp no_new_block_status(last_block_db_delay) do
+    {false, @no_new_items_error_code,
+     "There are no new blocks in the DB for the last #{round(last_block_db_delay / 1_000 / 60)} mins. Check the healthiness of the JSON RPC archive node or the DB."}
   end
 
   @spec batches_indexing_healthy?(map() | nil) :: boolean() | {boolean(), non_neg_integer(), binary()}

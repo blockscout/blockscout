@@ -28,6 +28,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   alias Explorer.SmartContract.EthBytecodeDBInterface
   alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
+  alias Explorer.Utility.RateLimiter
 
   import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3, contract_creation_input: 1]
 
@@ -52,8 +53,10 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
       * The address has empty deployed bytecode (i.e., 0x)
       * The smart contract is already fully verified
   """
-  @spec trigger_fetch(any()) :: :ignore | :ok
-  def trigger_fetch(%Address{
+  @spec trigger_fetch(String.t() | nil, any()) :: :ignore | :ok
+  def trigger_fetch(caller \\ nil, address_or_hash)
+
+  def trigger_fetch(_caller, %Address{
         smart_contract: %SmartContract{
           partially_verified: false
         }
@@ -61,7 +64,14 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
     :ignore
   end
 
-  def trigger_fetch(%Address{} = address) do
+  def trigger_fetch(caller, address_or_hash) do
+    case RateLimiter.check_rate(caller, :on_demand) do
+      :allow -> do_trigger_fetch(address_or_hash)
+      :deny -> :ignore
+    end
+  end
+
+  defp do_trigger_fetch(%Address{} = address) do
     address
     |> Address.smart_contract_with_nonempty_code?()
     |> if do
@@ -71,11 +81,11 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
     end
   end
 
-  def trigger_fetch(address_hash_string) when is_binary(address_hash_string) do
+  defp do_trigger_fetch(address_hash_string) when is_binary(address_hash_string) do
     GenServer.cast(__MODULE__, {:check_eligibility, address_hash_string})
   end
 
-  def trigger_fetch(_address) do
+  defp do_trigger_fetch(_address) do
     :ignore
   end
 

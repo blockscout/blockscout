@@ -169,7 +169,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
         "abi" => target_contract.abi,
         "proxy_type" => "eip1967",
-        "implementations" => [%{"address" => formatted_implementation_address_hash_string, "name" => nil}],
+        "implementations" => [
+          %{
+            "address_hash" => formatted_implementation_address_hash_string,
+            "address" => formatted_implementation_address_hash_string,
+            "name" => nil
+          }
+        ],
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
         "language" => target_contract |> SmartContract.language() |> to_string(),
@@ -478,6 +484,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "proxy_type" => "eip1167",
         "implementations" => [
           %{
+            "address_hash" => Address.checksum(implementation_contract.address_hash),
             "address" => Address.checksum(implementation_contract.address_hash),
             "name" => implementation_contract.name
           }
@@ -631,7 +638,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     correct_response = %{
       "proxy_type" => "clone_with_immutable_arguments",
       "implementations" => [
-        %{"address" => formatted_implementation_address_hash_string, "name" => implementation_contract.name}
+        %{
+          "address_hash" => formatted_implementation_address_hash_string,
+          "address" => formatted_implementation_address_hash_string,
+          "name" => implementation_contract.name
+        }
       ],
       "is_self_destructed" => false,
       "deployed_bytecode" => proxy_deployed_bytecode,
@@ -1144,7 +1155,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  %{
                    "proxy_type" => "eip1967",
                    "implementations" => [
-                     prepare_implementation(%{"address" => formatted_implementation_address_hash_string, "name" => nil})
+                     prepare_implementation(%{
+                       "address_hash" => formatted_implementation_address_hash_string,
+                       "address" => formatted_implementation_address_hash_string,
+                       "name" => nil
+                     })
                    ],
                    "is_self_destructed" => false,
                    "deployed_bytecode" => to_string(address.contract_code),
@@ -1157,7 +1172,15 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert response = json_response(request, 200)
         assert %{"proxy_type" => "eip1967"} = response
 
-        assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
+        assert %{
+                 "implementations" => [
+                   %{
+                     "address_hash" => ^formatted_implementation_address_hash_string,
+                     "address" => ^formatted_implementation_address_hash_string,
+                     "name" => nil
+                   }
+                 ]
+               } =
                  response
 
         assert %{"is_verified" => true} = response
@@ -1270,7 +1293,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  %{
                    "proxy_type" => "eip1967",
                    "implementations" => [
-                     prepare_implementation(%{"address" => formatted_implementation_address_hash_string, "name" => nil})
+                     prepare_implementation(%{
+                       "address_hash" => formatted_implementation_address_hash_string,
+                       "address" => formatted_implementation_address_hash_string,
+                       "name" => nil
+                     })
                    ],
                    "is_self_destructed" => false,
                    "deployed_bytecode" => to_string(address.contract_code),
@@ -1283,7 +1310,15 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert response = json_response(request, 200)
         assert %{"proxy_type" => "eip1967"} = response
 
-        assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
+        assert %{
+                 "implementations" => [
+                   %{
+                     "address_hash" => ^formatted_implementation_address_hash_string,
+                     "address" => ^formatted_implementation_address_hash_string,
+                     "name" => nil
+                   }
+                 ]
+               } =
                  response
 
         assert %{"is_verified" => true} = response
@@ -1396,7 +1431,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  %{
                    "proxy_type" => "eip1967",
                    "implementations" => [
-                     prepare_implementation(%{"address" => formatted_implementation_address_hash_string, "name" => nil})
+                     prepare_implementation(%{
+                       "address_hash" => formatted_implementation_address_hash_string,
+                       "address" => formatted_implementation_address_hash_string,
+                       "name" => nil
+                     })
                    ],
                    "is_self_destructed" => false,
                    "deployed_bytecode" => to_string(address.contract_code),
@@ -1409,7 +1448,15 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert response = json_response(request, 200)
         assert %{"proxy_type" => "eip1967"} = response
 
-        assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
+        assert %{
+                 "implementations" => [
+                   %{
+                     "address_hash" => ^formatted_implementation_address_hash_string,
+                     "address" => ^formatted_implementation_address_hash_string,
+                     "name" => nil
+                   }
+                 ]
+               } =
                  response
 
         assert %{"is_verified" => true} = response

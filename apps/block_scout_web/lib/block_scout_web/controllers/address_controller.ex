@@ -114,19 +114,21 @@ defmodule BlockScoutWeb.AddressController do
   end
 
   def show(conn, %{"id" => address_hash_string} = params) do
+    ip = AccessHelper.conn_to_ip_string(conn)
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       fully_preloaded_address =
         Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true)
 
-      ContractCodeOnDemand.trigger_fetch(fully_preloaded_address)
+      ContractCodeOnDemand.trigger_fetch(ip, fully_preloaded_address)
 
       render(
         conn,
         "_show_address_transactions.html",
         address: address,
-        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
         exchange_rate: Market.get_coin_exchange_rate(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
@@ -152,11 +154,13 @@ defmodule BlockScoutWeb.AddressController do
 
         case Chain.Hash.Address.validate(address_hash_string) do
           {:ok, _} ->
+            ContractCodeOnDemand.trigger_fetch(ip, address)
+
             render(
               conn,
               "_show_address_transactions.html",
               address: address,
-              coin_balance_status: nil,
+              coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
               exchange_rate: Market.get_coin_exchange_rate(),
               filter: params["filter"],
               counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),

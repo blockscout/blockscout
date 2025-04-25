@@ -1125,22 +1125,57 @@ defmodule Explorer.Chain.Transaction do
   transactions that are linked to the given address_hash through a direction.
   """
   def matching_address_queries_list(query, :from, address_hashes) when is_list(address_hashes) do
-    [where(query, [t], t.from_address_hash in ^address_hashes)]
+    [
+      from(
+        a in fragment("SELECT unnest(?) as from_address_hash", type(^address_hashes, {:array, Hash.Address})),
+        as: :address_hashes,
+        cross_lateral_join:
+          transaction in subquery(
+            query
+            |> where([transaction], transaction.from_address_hash == parent_as(:address_hashes).from_address_hash)
+          ),
+        as: :transaction,
+        select: transaction
+      )
+    ]
   end
 
   def matching_address_queries_list(query, :to, address_hashes) when is_list(address_hashes) do
     [
-      where(query, [t], t.to_address_hash in ^address_hashes),
-      where(query, [t], t.created_contract_address_hash in ^address_hashes)
+      from(
+        a in fragment("SELECT unnest(?) as to_address_hash", type(^address_hashes, {:array, Hash.Address})),
+        as: :address_hashes,
+        cross_lateral_join:
+          transaction in subquery(
+            query
+            |> where([transaction], transaction.to_address_hash == parent_as(:address_hashes).to_address_hash)
+          ),
+        as: :transaction,
+        select: transaction
+      ),
+      from(
+        a in fragment(
+          "SELECT unnest(?) as created_contract_address_hash",
+          type(^address_hashes, {:array, Hash.Address})
+        ),
+        as: :address_hashes,
+        cross_lateral_join:
+          transaction in subquery(
+            query
+            |> where(
+              [transaction],
+              transaction.created_contract_address_hash == parent_as(:address_hashes).created_contract_address_hash
+            )
+          ),
+        as: :transaction,
+        select: transaction
+      )
     ]
   end
 
   def matching_address_queries_list(query, _direction, address_hashes) when is_list(address_hashes) do
-    [
-      where(query, [t], t.from_address_hash in ^address_hashes),
-      where(query, [t], t.to_address_hash in ^address_hashes),
-      where(query, [t], t.created_contract_address_hash in ^address_hashes)
-    ]
+    matching_address_queries_list(query, :from, address_hashes) ++
+      matching_address_queries_list(query, :to, address_hashes)
   end
 
   def matching_address_queries_list(query, :from, address_hash) do
@@ -1805,22 +1840,53 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Adds a `has_token_transfers` field to the query via `select_merge` if second argument is `false` and returns
-  the query untouched otherwise.
-  """
-  @spec put_has_token_transfers_to_transaction(Ecto.Query.t() | atom, boolean) :: Ecto.Query.t()
-  def put_has_token_transfers_to_transaction(query, true), do: query
+  Adds a `has_token_transfers` field to the query when second argument is `false`.
 
-  def put_has_token_transfers_to_transaction(query, false) do
-    from(transaction in query,
-      select_merge: %{
-        has_token_transfers:
-          fragment(
-            "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
-            transaction.hash
-          )
-      }
-    )
+  When the second argument is `true`, returns the query untouched. When `false`,
+  adds a field indicating whether the transaction has any token transfers by using
+  a subquery to check if token_transfers table contains the transaction hash.
+
+  ## Parameters
+  - `query`: The Ecto query to be modified
+  - `false_or_true`: Boolean indicating whether to add the field (when `false`) or
+    leave the query untouched (when `true`)
+  - `options`: Additional options for query construction
+    - `:aliased?`: When `true`, uses the aliased transaction reference in the query
+
+  ## Returns
+  - The modified Ecto query with the `has_token_transfers` field added via
+    `select_merge` (when second parameter is `false`)
+  - The original query unchanged (when second parameter is `true`)
+  """
+  @spec put_has_token_transfers_to_transaction(Ecto.Query.t() | atom, boolean, keyword) :: Ecto.Query.t()
+  def put_has_token_transfers_to_transaction(query, old_ui?, options \\ [])
+
+  def put_has_token_transfers_to_transaction(query, true, _options), do: query
+
+  def put_has_token_transfers_to_transaction(query, false, options) do
+    aliased? = Keyword.get(options, :aliased?, false)
+
+    if aliased? do
+      from(transaction in query,
+        select_merge: %{
+          has_token_transfers:
+            fragment(
+              "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
+              as(:transaction).hash
+            )
+        }
+      )
+    else
+      from(transaction in query,
+        select_merge: %{
+          has_token_transfers:
+            fragment(
+              "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
+              transaction.hash
+            )
+        }
+      )
+    end
   end
 
   @doc """

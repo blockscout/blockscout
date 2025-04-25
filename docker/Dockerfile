@@ -3,7 +3,7 @@ FROM hexpm/elixir:1.17.3-erlang-27.1-alpine-3.20.3 AS builder-deps
 WORKDIR /app
 
 RUN apk --no-cache --update add \
-    alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file gcompat libstdc++ curl ca-certificates git make
+    alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file gcompat libstdc++ curl ca-certificates git make bash
 
 # Cache elixir deps
 COPY mix.exs mix.lock ./

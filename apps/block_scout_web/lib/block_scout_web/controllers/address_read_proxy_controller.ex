@@ -11,13 +11,16 @@ defmodule BlockScoutWeb.AddressReadProxyController do
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
+    ip = AccessHelper.conn_to_ip_string(conn)
+
     address_options = [
       necessity_by_association: %{
         :names => :optional,
         :smart_contract => :optional,
         :token => :optional,
         Address.contract_creation_transaction_associations() => :optional
-      }
+      },
+      ip: ip
     ]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -30,7 +33,7 @@ defmodule BlockScoutWeb.AddressReadProxyController do
         address: address,
         type: :proxy,
         action: :read,
-        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
         exchange_rate: Market.get_coin_exchange_rate(),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
         tags: get_address_tags(address_hash, current_user(conn))
