@@ -274,22 +274,33 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     withdrawal_l2_block_number <= last_root_l2_block_number
   end
 
-  defp game_by_index(game_index) do
-    if not is_nil(game_index) do
-      Repo.replica().one(
-        from(
-          g in DisputeGame,
-          select: %{created_at: g.created_at, resolved_at: g.resolved_at, status: g.status},
-          where: g.index == ^game_index
-        )
+  defp game_by_address_or_index(nil, nil), do: nil
+
+  defp game_by_address_or_index(game_address, nil) do
+    Repo.replica().one(
+      from(
+        g in DisputeGame,
+        select: %{created_at: g.created_at, resolved_at: g.resolved_at, status: g.status},
+        where: g.address == ^game_address,
+        limit: 1
       )
-    end
+    )
+  end
+
+  defp game_by_address_or_index(nil, game_index) do
+    Repo.replica().one(
+      from(
+        g in DisputeGame,
+        select: %{created_at: g.created_at, resolved_at: g.resolved_at, status: g.status},
+        where: g.index == ^game_index
+      )
+    )
   end
 
   # Determines the current withdrawal status by the list of the bound WithdrawalProven events.
   #
   # ## Parameters
-  # - `proven_events`: A list of WithdrawalProven events. Each item is `{l1_timestamp, game_index}` tuple.
+  # - `proven_events`: A list of WithdrawalProven events. Each item is `{l1_timestamp, game_address, game_index}` tuple.
   # - `respected_games`: A list of games returned by the `respected_games()` function.
   #
   # ## Returns
@@ -300,15 +311,15 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   defp handle_proven_status(proven_events, respected_games) do
     statuses =
       proven_events
-      |> Enum.reduce_while([], fn {l1_timestamp, game_index}, acc ->
-        game = game_by_index(game_index)
+      |> Enum.reduce_while([], fn {l1_timestamp, game_address, game_index}, acc ->
+        game = game_by_address_or_index(game_address, game_index)
 
         # credo:disable-for-lines:16 Credo.Check.Refactor.PipeChainStart
         cond do
-          is_nil(game_index) and not Enum.empty?(respected_games) ->
+          is_nil(game) and not Enum.empty?(respected_games) ->
             # here we cannot exactly determine the status `Waiting a game to resolve` or
             # `Ready for relay` or `In challenge period`
-            # as we don't know the game index. In this case we display the `Proven` status
+            # as we don't know the game index and address. In this case we display the `Proven` status
             {@withdrawal_status_proven, nil}
 
           is_nil(game) or DateTime.compare(l1_timestamp, game.created_at) == :lt ->
@@ -349,14 +360,15 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   # - `withdrawal_hash`: The withdrawal hash for which the function should return the events.
   #
   # ## Returns
-  # - A list of `{l1_timestamp, game_index}` tuples where `l1_timestamp` is the L1 block timestamp
-  #   when the event appeared, `game_index` is the bound dispute game index (can be `nil`).
+  # - A list of `{l1_timestamp, game_address, game_index}` tuples where `l1_timestamp` is the L1 block timestamp
+  #   when the event appeared, `game_address` is the bound dispute game contract address (can be `nil`),
+  #   `game_index` is the bound dispute game index (can be `nil`).
   @spec proven_events_by_hash(Hash.t()) :: [{DateTime.t(), non_neg_integer()}]
   defp proven_events_by_hash(withdrawal_hash) do
     Repo.replica().all(
       from(
         we in WithdrawalEvent,
-        select: {we.l1_timestamp, we.game_index},
+        select: {we.l1_timestamp, we.game_address, we.game_index},
         where: we.withdrawal_hash == ^withdrawal_hash and we.l1_event_type == :WithdrawalProven,
         order_by: [asc: we.l1_block_number]
       ),

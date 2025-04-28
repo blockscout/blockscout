@@ -220,16 +220,16 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     |> Enum.map(fn event ->
       transaction_hash = event["transactionHash"]
 
-      {l1_event_type, game_index} =
+      {l1_event_type, game_index, game_address} =
         if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
-          game_index =
+          {game_index, game_address} =
             input_by_hash
             |> Map.get(transaction_hash)
-            |> input_to_game_index()
+            |> input_to_game_index_or_address()
 
-          {"WithdrawalProven", game_index}
+          {"WithdrawalProven", game_index, game_address}
         else
-          {"WithdrawalFinalized", nil}
+          {"WithdrawalFinalized", nil, nil}
         end
 
       l1_block_number = quantity_to_integer(event["blockNumber"])
@@ -240,20 +240,10 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         l1_timestamp: Map.get(timestamps, l1_block_number),
         l1_transaction_hash: transaction_hash,
         l1_block_number: l1_block_number,
-        game_index: game_index
+        game_index: game_index,
+        game_address: game_address
       }
     end)
-    |> Enum.reduce(%{}, fn e, acc ->
-      key = {e.withdrawal_hash, e.l1_event_type}
-      prev_game_index = Map.get(acc, key, %{game_index: 0}).game_index
-
-      if prev_game_index < e.game_index or is_nil(prev_game_index) do
-        Map.put(acc, key, e)
-      else
-        acc
-      end
-    end)
-    |> Map.values()
   end
 
   @doc """
@@ -323,26 +313,49 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     end
   end
 
-  defp input_to_game_index(input) do
+  defp input_to_game_index_or_address(input) do
     method_signature = String.slice(input, 0..9)
 
-    if method_signature == "0x4870496f" do
-      # the signature of `proveWithdrawalTransaction(tuple _transaction, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
+    case method_signature do
+      "0x4870496f" ->
+        # the signature of `proveWithdrawalTransaction(tuple _transaction, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
 
-      # to get (slice) `_disputeGameIndex` from the transaction input, we need to know its offset in the input string (represented as 0x...):
-      # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_transaction` tuple offset, totally is 74
-      game_index_offset = String.length(method_signature) + 32 * 2
-      game_index_length = 32 * 2
+        # to get (slice) `_disputeGameIndex` from the transaction input, we need to know its offset in the input string (represented as 0x...):
+        # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_transaction` tuple offset, totally is 74
+        game_index_offset = String.length(method_signature) + 32 * 2
+        game_index_length = 32 * 2
 
-      game_index_range_start = game_index_offset
-      game_index_range_end = game_index_range_start + game_index_length - 1
+        game_index_range_start = game_index_offset
+        game_index_range_end = game_index_range_start + game_index_length - 1
 
-      {game_index, ""} =
-        input
-        |> String.slice(game_index_range_start..game_index_range_end)
-        |> Integer.parse(16)
+        {game_index, ""} =
+          input
+          |> String.slice(game_index_range_start..game_index_range_end)
+          |> Integer.parse(16)
 
-      game_index
+        {game_index, nil}
+
+      "0x8c90dd65" ->
+        # the signature of `proveWithdrawalTransaction(tuple _tx, address _disputeGameProxy, uint256 _outputRootIndex, tuple _superRootProof, tuple _outputRootProof, bytes[] _withdrawalProof)` method
+
+        # to get (slice) `_disputeGameIndex` from the transaction input, we need to know its offset in the input string (represented as 0x...):
+        # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_transaction` tuple offset, totally is 74
+        game_address_offset = String.length(method_signature) + 32 * 2
+        game_address_length = 32 * 2
+
+        game_address_range_start = game_address_offset
+        game_address_range_end = game_address_range_start + game_address_length - 1
+
+        game_address =
+          input
+          |> String.slice(game_address_range_start..game_address_range_end)
+          |> String.trim_leading("000000000000000000000000")
+          |> String.pad_leading(42, "0x")
+
+        {nil, game_address}
+
+      _ ->
+        {nil, nil}
     end
   end
 end
