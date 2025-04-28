@@ -115,6 +115,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
     end
 
     test "updates contract_code after 2nd attempt" do
+      threshold_configuration = Application.get_env(:indexer, ContractCodeOnDemand)[:threshold]
       threshold = parse_time_env_var("CONTRACT_CODE_ON_DEMAND_FETCHER_THRESHOLD", "500ms")
       Application.put_env(:indexer, ContractCodeOnDemand, threshold: threshold)
 
@@ -190,11 +191,13 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
 
       assert_receive({:chain_event, :fetched_bytecode, :on_demand, [^address_hash, ^contract_code]})
 
-      default_threshold = parse_time_env_var("CONTRACT_CODE_ON_DEMAND_FETCHER_THRESHOLD", "5s")
-      Application.put_env(:indexer, ContractCodeOnDemand, threshold: default_threshold)
+      on_exit(fn ->
+        Application.put_env(:indexer, ContractCodeOnDemand, threshold: threshold_configuration)
+      end)
     end
 
     test "updates code for eip7702 address" do
+      threshold_configuration = Application.get_env(:indexer, ContractCodeOnDemand)[:threshold]
       threshold = parse_time_env_var("CONTRACT_CODE_ON_DEMAND_FETCHER_THRESHOLD", "1ms")
       Application.put_env(:indexer, ContractCodeOnDemand, threshold: threshold)
 
@@ -266,8 +269,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
         end
       end)
 
-      default_threshold = parse_time_env_var("CONTRACT_CODE_ON_DEMAND_FETCHER_THRESHOLD", "5s")
-      Application.put_env(:indexer, ContractCodeOnDemand, threshold: default_threshold)
+      on_exit(fn ->
+        Application.put_env(:indexer, ContractCodeOnDemand, threshold: threshold_configuration)
+      end)
     end
 
     defp parse_time_env_var(env_var, default_value) do
