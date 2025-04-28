@@ -63,7 +63,6 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.{Chain, Helper, Repo}
-  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Utility.{MissingBlockRange, MissingRangesManipulator}
 
@@ -393,23 +392,17 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   @spec last_block() :: non_neg_integer()
   defp last_block do
     last_block = Application.get_env(:indexer, :last_block)
-    if last_block, do: last_block + 1, else: fetch_max_block_number()
+    if last_block, do: last_block + 1, else: fetch_max_block_number_from_node()
   end
 
-  # Retrieves the highest block number from cache or blockchain.
-  @spec fetch_max_block_number() :: non_neg_integer()
-  defp fetch_max_block_number do
-    case BlockNumber.get_max() do
-      0 ->
-        json_rpc_named_arguments = Application.get_env(:indexer, :json_rpc_named_arguments)
+  # Retrieves the highest block number from blockchain.
+  @spec fetch_max_block_number_from_node() :: non_neg_integer()
+  defp fetch_max_block_number_from_node do
+    json_rpc_named_arguments = Application.get_env(:indexer, :json_rpc_named_arguments)
 
-        case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
-          {:ok, number} -> number
-          _ -> 0
-        end
-
-      number ->
-        number
+    case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
+      {:ok, number} -> number
+      _ -> 0
     end
   end
 
