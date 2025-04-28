@@ -4,7 +4,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
 
   import Mox
 
-  alias Explorer.Chain.{Address, Data}
+  alias Explorer.Chain.{Address, Data, Hash}
+  alias Explorer.Chain.SmartContract.Proxy.EIP7702
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Utility.AddressContractCodeFetchAttempt
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
@@ -227,6 +229,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
           {:ok, [%{id: id, result: code}]}
         end)
 
+        code = code |> Data.cast() |> elem(1)
+
         address = assert(Repo.get(Address, address_hash))
         assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
@@ -234,10 +238,10 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
 
         address = assert(Repo.get(Address, address_hash))
 
-        if code == "0x" do
+        if Data.empty?(code) do
           assert is_nil(address.contract_code)
         else
-          assert address.contract_code |> to_string() == code |> Data.cast() |> elem(1) |> to_string()
+          assert address.contract_code == code
         end
 
         attempts = Repo.get(AddressContractCodeFetchAttempt, address_hash)
@@ -246,6 +250,19 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
           assert is_nil(attempts)
         else
           assert attempts.retries_number == attempts_number
+        end
+
+        proxy_implementations = Implementation.get_proxy_implementations(address_hash)
+
+        if Data.empty?(code) do
+          assert is_nil(proxy_implementations)
+        else
+          implementations = [EIP7702.get_delegate_address(code.bytes) |> Hash.Address.cast() |> elem(1)]
+
+          assert proxy_implementations.proxy_address_hash == address_hash
+          assert proxy_implementations.proxy_type == :eip7702
+          assert proxy_implementations.address_hashes == implementations
+          assert proxy_implementations.names == [nil]
         end
       end)
 

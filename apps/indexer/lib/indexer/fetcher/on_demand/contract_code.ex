@@ -15,6 +15,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
   alias Explorer.Chain.Import.Runner.Addresses
+  alias Explorer.Chain.SmartContract.Proxy.EIP7702
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Repo
   alias Explorer.Utility.{AddressContractCodeFetchAttempt, RateLimiter}
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
@@ -117,6 +119,23 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
              timestamps: Import.timestamps()
            }) do
         {:ok, _} ->
+          # Update EIP7702 proxy addresses to avoid inconsistencies between addresses and proxy_implementations tables.
+          # Other proxy types are not handled here, since their bytecode doesn't change the way EIP7702 bytecode does.
+          cond do
+            is_nil(fetched_code) ->
+              Implementation.delete_implementations(address.hash)
+
+            # TODO: it's better to use a generic code like this, but it does unnecessary minimal proxy checks and DB lookups
+            # Address.eoa_with_code?(new_address) ->
+            #   Proxy.fetch_implementation_address_hash(address.hash, [], [])
+
+            delegate = EIP7702.get_delegate_address(fetched_code.bytes) ->
+              Implementation.save_implementation_data([delegate |> to_string()], address.hash, :eip7702, [])
+
+            true ->
+              :ok
+          end
+
           Publisher.broadcast(%{fetched_bytecode: [address.hash, contract_code_object.code]}, :on_demand)
 
           ContractCreatorOnDemand.trigger_fetch(address)
