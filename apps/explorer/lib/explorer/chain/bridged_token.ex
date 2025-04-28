@@ -20,11 +20,11 @@ defmodule Explorer.Chain.BridgedToken do
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
+    Address,
     BridgedToken,
     Hash,
     InternalTransaction,
     Search,
-    SmartContract,
     Token,
     Transaction
   }
@@ -219,7 +219,7 @@ defmodule Explorer.Chain.BridgedToken do
   def fetch_omni_bridged_tokens_metadata(token_addresses) do
     Enum.each(token_addresses, fn token_address_hash ->
       created_from_internal_transaction_success_query =
-        SmartContract.creation_internal_transaction_query(token_address_hash)
+        Address.creation_internal_transaction_query(token_address_hash)
 
       created_from_internal_transaction_success =
         created_from_internal_transaction_success_query

@@ -2792,7 +2792,7 @@ defmodule Explorer.Chain do
       end
     else
       case address_hash
-           |> SmartContract.creation_internal_transaction_query()
+           |> Address.creation_internal_transaction_query()
            |> Repo.one() do
         %{init: init, created_contract_code: created_contract_code} ->
           init_str = Data.to_string(init)
