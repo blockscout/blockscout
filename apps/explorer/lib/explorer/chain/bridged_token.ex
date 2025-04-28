@@ -25,6 +25,7 @@ defmodule Explorer.Chain.BridgedToken do
     Hash,
     InternalTransaction,
     Search,
+    SmartContract,
     Token,
     Transaction
   }
