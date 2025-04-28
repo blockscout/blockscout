@@ -2791,20 +2791,9 @@ defmodule Explorer.Chain do
         %{init: Data.to_string(input), created_contract_code: Data.to_string(created_contract_code)}
       end
     else
-      creation_int_transaction_query =
-        from(
-          itx in InternalTransaction,
-          join: t in assoc(itx, :transaction),
-          where: itx.created_contract_address_hash == ^address_hash,
-          where: t.status == ^1,
-          select: %{init: itx.init, created_contract_code: itx.created_contract_code},
-          order_by: [desc: itx.block_number],
-          limit: ^1
-        )
-
-      res = creation_int_transaction_query |> Repo.one()
-
-      case res do
+      case address_hash
+           |> SmartContract.creation_internal_transaction_query()
+           |> Repo.one() do
         %{init: init, created_contract_code: created_contract_code} ->
           init_str = Data.to_string(init)
           created_contract_code_str = Data.to_string(created_contract_code)
