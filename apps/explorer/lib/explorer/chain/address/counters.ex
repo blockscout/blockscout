@@ -212,29 +212,18 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   defp address_hash_to_internal_transactions_limited_count_query(address_hash) do
+    # todo: use InternalTransactionArchive
     query_to_address_hash_wrapped =
-      InternalTransaction
-      |> InternalTransaction.where_nonpending_block()
-      |> InternalTransaction.where_address_fields_match(address_hash, :to_address_hash)
-      |> InternalTransaction.where_is_different_from_parent_transaction()
-      |> limit(@counters_limit)
-      |> wrapped_union_subquery()
+      address_hash_to_internal_transactions_limited_count_by_address_type_query(:to_address_hash, address_hash)
 
     query_from_address_hash_wrapped =
-      InternalTransaction
-      |> InternalTransaction.where_nonpending_block()
-      |> InternalTransaction.where_address_fields_match(address_hash, :from_address_hash)
-      |> InternalTransaction.where_is_different_from_parent_transaction()
-      |> limit(@counters_limit)
-      |> wrapped_union_subquery()
+      address_hash_to_internal_transactions_limited_count_by_address_type_query(:from_address_hash, address_hash)
 
     query_created_contract_address_hash_wrapped =
-      InternalTransaction
-      |> InternalTransaction.where_nonpending_block()
-      |> InternalTransaction.where_address_fields_match(address_hash, :created_contract_address_hash)
-      |> InternalTransaction.where_is_different_from_parent_transaction()
-      |> limit(@counters_limit)
-      |> wrapped_union_subquery()
+      address_hash_to_internal_transactions_limited_count_by_address_type_query(
+        :created_contract_address_hash,
+        address_hash
+      )
 
     query_to_address_hash_wrapped
     |> union(^query_from_address_hash_wrapped)
@@ -242,6 +231,15 @@ defmodule Explorer.Chain.Address.Counters do
     |> wrapped_union_subquery()
     |> InternalTransaction.where_is_different_from_parent_transaction()
     |> limit(@counters_limit)
+  end
+
+  defp address_hash_to_internal_transactions_limited_count_by_address_type_query(address_type, address_hash) do
+    InternalTransaction
+    |> InternalTransaction.where_nonpending_block()
+    |> InternalTransaction.where_address_fields_match(address_hash, address_type)
+    |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> limit(@counters_limit)
+    |> wrapped_union_subquery()
   end
 
   def address_counters(address, options \\ []) do

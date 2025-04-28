@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias BlockScoutWeb.Cldr.Number
   alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, InternalTransactionArchive, Transaction, Wei}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Market.Token
   alias Timex.Duration
@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.TransactionView do
   @token_creation_type :token_spawning
   @token_transfer_type :token_transfer
 
-  defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
+  defguardp is_transaction_type(mod) when mod in [InternalTransaction, InternalTransactionArchive, Transaction]
 
   defdelegate formatted_timestamp(block), to: BlockView
 

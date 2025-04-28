@@ -517,9 +517,11 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   defp list_internal_transactions(transaction_hash) do
-    case Etherscan.list_internal_transactions(transaction_hash) do
-      [] -> {:error, :not_found}
-      internal_transactions -> {:ok, internal_transactions}
+    with {:ok, transaction} <- Chain.hash_to_transaction(transaction_hash, []) do
+      case Etherscan.list_internal_transactions(transaction) do
+        [] -> {:error, :not_found}
+        internal_transactions -> {:ok, internal_transactions}
+      end
     end
   end
 

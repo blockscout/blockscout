@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.AddressController do
       @contract_address_preloads [
         :smart_contract,
         [contract_creation_internal_transaction: :from_address],
+        [contract_archival_creation_internal_transaction: :from_address],
         [contract_creation_transaction: :from_address]
       ]
 
@@ -35,6 +36,7 @@ defmodule BlockScoutWeb.AddressController do
       @contract_address_preloads [
         :smart_contract,
         :contract_creation_internal_transaction,
+        :contract_archival_creation_internal_transaction,
         :contract_creation_transaction
       ]
   end

@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Address.Schema do
     Data,
     Hash,
     InternalTransaction,
+    InternalTransactionArchive,
     SignedAuthorization,
     SmartContract,
     Token,
@@ -101,6 +102,13 @@ defmodule Explorer.Chain.Address.Schema do
         )
 
         has_one(
+          :contract_archival_creation_internal_transaction,
+          InternalTransactionArchive,
+          foreign_key: :created_contract_address_hash,
+          references: :hash
+        )
+
+        has_one(
           :contract_creation_transaction,
           Transaction,
           foreign_key: :created_contract_address_hash,
@@ -138,7 +146,17 @@ defmodule Explorer.Chain.Address do
   alias Ecto.Changeset
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
-  alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, SmartContract, Transaction}
+
+  alias Explorer.Chain.{
+    Address,
+    Data,
+    Hash,
+    InternalTransaction,
+    InternalTransactionArchive,
+    SmartContract,
+    Transaction
+  }
+
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
@@ -170,6 +188,7 @@ defmodule Explorer.Chain.Address do
              :smart_contract,
              :token,
              :contract_creation_internal_transaction,
+             :contract_archival_creation_internal_transaction,
              :contract_creation_transaction,
              :names
            ]}
@@ -180,6 +199,7 @@ defmodule Explorer.Chain.Address do
              :smart_contract,
              :token,
              :contract_creation_internal_transaction,
+             :contract_archival_creation_internal_transaction,
              :contract_creation_transaction,
              :names
            ]}
@@ -726,6 +746,10 @@ defmodule Explorer.Chain.Address do
     address.contract_creation_internal_transaction
   end
 
+  def creation_transaction(%__MODULE__{contract_creation_internal_transaction: %InternalTransactionArchive{}} = address) do
+    address.contract_archival_creation_internal_transaction
+  end
+
   def creation_transaction(%__MODULE__{contract_creation_transaction: %Transaction{}} = address) do
     address.contract_creation_transaction
   end
@@ -803,6 +827,18 @@ defmodule Explorer.Chain.Address do
   def contract_creation_internal_transaction_preload_query do
     from(
       it in InternalTransaction,
+      order_by: [
+        asc_nulls_first: it.error,
+        desc: it.block_number
+      ],
+      limit: 1
+    )
+  end
+
+  @spec contract_archival_creation_internal_transaction_preload_query() :: Ecto.Query.t()
+  def contract_archival_creation_internal_transaction_preload_query do
+    from(
+      it in InternalTransactionArchive,
       order_by: [
         asc_nulls_first: it.error,
         desc: it.block_number
@@ -890,6 +926,14 @@ defmodule Explorer.Chain.Address do
     ]
   end
 
+  @spec contract_archival_creation_internal_transaction_association() :: keyword()
+  def contract_archival_creation_internal_transaction_association do
+    [
+      contract_archival_creation_internal_transaction:
+        Address.contract_archival_creation_internal_transaction_preload_query()
+    ]
+  end
+
   @doc """
   Same as `contract_creation_internal_transaction_association/0`, but
   preloads a nested association for the `from_address` field. Used for Filecoin
@@ -900,6 +944,16 @@ defmodule Explorer.Chain.Address do
     [
       contract_creation_internal_transaction: {
         Address.contract_creation_internal_transaction_preload_query(),
+        :from_address
+      }
+    ]
+  end
+
+  @spec contract_archival_creation_internal_transaction_with_from_address_association() :: keyword()
+  def contract_archival_creation_internal_transaction_with_from_address_association do
+    [
+      contract_archival_creation_internal_transaction: {
+        Address.contract_archival_creation_internal_transaction_preload_query(),
         :from_address
       }
     ]
@@ -921,7 +975,8 @@ defmodule Explorer.Chain.Address do
   def contract_creation_transaction_associations do
     [
       contract_creation_transaction_association(),
-      contract_creation_internal_transaction_association()
+      contract_creation_internal_transaction_association(),
+      contract_archival_creation_internal_transaction_association()
     ]
   end
 
@@ -1021,11 +1076,22 @@ defmodule Explorer.Chain.Address do
   """
   @spec creation_internal_transaction_query(binary() | Hash.t()) :: Ecto.Query.t()
   def creation_internal_transaction_query(address_hash) do
+    creation_internal_transaction_from_realtime =
+      creation_internal_transaction_from_specific_data_source_query(address_hash, InternalTransaction)
+
+    creation_internal_transaction_from_archive =
+      creation_internal_transaction_from_specific_data_source_query(address_hash, InternalTransactionArchive)
+
+    creation_internal_transaction_from_realtime
+    |> union_all(^creation_internal_transaction_from_archive)
+  end
+
+  defp creation_internal_transaction_from_specific_data_source_query(address_hash, data_source) do
     from(
-      it in InternalTransaction,
-      inner_join: t in assoc(it, :transaction),
+      it in data_source,
+      inner_join: transaction in assoc(it, :transaction),
       where: it.created_contract_address_hash == ^address_hash,
-      where: t.status == ^1,
+      where: transaction.status == ^1,
       order_by: [desc: it.block_number],
       limit: 1
     )

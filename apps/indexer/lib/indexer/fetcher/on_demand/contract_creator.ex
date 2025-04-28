@@ -37,7 +37,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   @spec trigger_fetch(Address.t()) :: :ok | :ignore
   def trigger_fetch(address) do
-    # we expect here, that address has 'contract_creation_internal_transaction' and 'contract_creation_transaction' preloads
+    # we expect here, that address has 'contract_creation_internal_transaction', 'contract_archival_creation_internal_transaction' and 'contract_creation_transaction' preloads
     creation_transaction = Address.creation_transaction(address)
     creator_hash = creation_transaction && creation_transaction.from_address_hash
 
