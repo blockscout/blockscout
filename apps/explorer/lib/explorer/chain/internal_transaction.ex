@@ -6,7 +6,7 @@ defmodule Explorer.Chain.InternalTransaction do
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Block, Data, Hash, PendingBlockOperation, Transaction, Wei}
   alias Explorer.Chain.DenormalizationHelper
-  alias Explorer.Chain.InternalTransaction.{Action, CallType, Result, Type}
+  alias Explorer.Chain.InternalTransaction.{CallType, Type}
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -574,10 +574,6 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
-  def where_block_number_is_not_null(query) do
-    where(query, [t], not is_nil(t.block_number))
-  end
-
   @doc """
   Filters out internal_transactions of blocks that are flagged as needing fetching
   of internal_transactions
@@ -587,123 +583,6 @@ defmodule Explorer.Chain.InternalTransaction do
     |> where(
       [it],
       fragment("(SELECT block_hash FROM pending_block_operations WHERE block_hash = ? LIMIT 1) IS NULL", it.block_hash)
-    )
-  end
-
-  def internal_transactions_to_raw(internal_transactions) when is_list(internal_transactions) do
-    internal_transactions
-    |> Enum.map(&internal_transaction_to_raw/1)
-    |> add_subtraces()
-  end
-
-  defp internal_transaction_to_raw(%{type: :call} = transaction) do
-    %{
-      call_type: call_type,
-      to_address_hash: to_address_hash,
-      from_address_hash: from_address_hash,
-      input: input,
-      gas: gas,
-      value: value,
-      trace_address: trace_address
-    } = transaction
-
-    action = %{
-      "callType" => call_type,
-      "to" => to_address_hash,
-      "from" => from_address_hash,
-      "input" => input,
-      "gas" => gas,
-      "value" => value
-    }
-
-    %{
-      "type" => "call",
-      "action" => Action.to_raw(action),
-      "traceAddress" => trace_address
-    }
-    |> put_raw_call_error_or_result(transaction)
-  end
-
-  defp internal_transaction_to_raw(%{type: type} = transaction) when type in [:create, :create2] do
-    %{
-      from_address_hash: from_address_hash,
-      gas: gas,
-      init: init,
-      trace_address: trace_address,
-      value: value
-    } = transaction
-
-    action = %{"from" => from_address_hash, "gas" => gas, "init" => init, "value" => value}
-
-    %{
-      "type" => Atom.to_string(type),
-      "action" => Action.to_raw(action),
-      "traceAddress" => trace_address
-    }
-    |> put_raw_create_error_or_result(transaction)
-  end
-
-  defp internal_transaction_to_raw(%{type: :selfdestruct} = transaction) do
-    %{
-      to_address_hash: to_address_hash,
-      from_address_hash: from_address_hash,
-      trace_address: trace_address,
-      value: value
-    } = transaction
-
-    action = %{
-      "address" => from_address_hash,
-      "balance" => value,
-      "refundAddress" => to_address_hash
-    }
-
-    %{
-      "type" => "suicide",
-      "action" => Action.to_raw(action),
-      "traceAddress" => trace_address
-    }
-  end
-
-  defp add_subtraces(traces) do
-    Enum.map(traces, fn trace ->
-      Map.put(trace, "subtraces", count_subtraces(trace, traces))
-    end)
-  end
-
-  defp count_subtraces(%{"traceAddress" => trace_address}, traces) do
-    Enum.count(traces, fn %{"traceAddress" => trace_address_candidate} ->
-      direct_descendant?(trace_address, trace_address_candidate)
-    end)
-  end
-
-  defp direct_descendant?([], [_]), do: true
-
-  defp direct_descendant?([elem | remaining_left], [elem | remaining_right]),
-    do: direct_descendant?(remaining_left, remaining_right)
-
-  defp direct_descendant?(_, _), do: false
-
-  defp put_raw_call_error_or_result(raw, %{error: error}) when not is_nil(error) do
-    Map.put(raw, "error", error)
-  end
-
-  defp put_raw_call_error_or_result(raw, %{gas_used: gas_used, output: output}) do
-    Map.put(raw, "result", Result.to_raw(%{"gasUsed" => gas_used, "output" => output}))
-  end
-
-  defp put_raw_create_error_or_result(raw, %{error: error}) when not is_nil(error) do
-    Map.put(raw, "error", error)
-  end
-
-  defp put_raw_create_error_or_result(raw, %{
-         created_contract_code: code,
-         created_contract_address_hash: created_contract_address_hash,
-         gas_used: gas_used
-       }) do
-    Map.put(
-      raw,
-      "result",
-      Result.to_raw(%{"gasUsed" => gas_used, "code" => code, "address" => created_contract_address_hash})
     )
   end
 
@@ -720,7 +599,6 @@ defmodule Explorer.Chain.InternalTransaction do
       the `index` that is passed.
 
   """
-
   @spec all_transaction_to_internal_transactions(Hash.Full.t(), [
           Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
         ]) :: [
