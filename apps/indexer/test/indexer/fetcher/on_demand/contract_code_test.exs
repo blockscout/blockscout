@@ -4,11 +4,11 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
 
   import Mox
 
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Data}
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Utility.AddressContractCodeFetchAttempt
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
-
+  alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
   @moduletag :capture_log
 
   setup :set_mox_global
@@ -20,6 +20,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
 
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
     start_supervised!({ContractCodeOnDemand, [mocked_json_rpc_named_arguments, [name: ContractCodeOnDemand]]})
+    start_supervised!({ContractCreatorOnDemand, name: ContractCreatorOnDemand})
 
     %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
   end
@@ -186,6 +187,67 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       assert is_nil(Repo.get(AddressContractCodeFetchAttempt, address_hash))
 
       assert_receive({:chain_event, :fetched_bytecode, :on_demand, [^address_hash, ^contract_code]})
+
+      default_threshold = parse_time_env_var("CONTRACT_CODE_ON_DEMAND_FETCHER_THRESHOLD", "5s")
+      Application.put_env(:indexer, ContractCodeOnDemand, threshold: default_threshold)
+    end
+
+    test "updates code for eip7702 address" do
+      threshold = parse_time_env_var("CONTRACT_CODE_ON_DEMAND_FETCHER_THRESHOLD", "1ms")
+      Application.put_env(:indexer, ContractCodeOnDemand, threshold: threshold)
+
+      address = insert(:address)
+      address_hash = address.hash
+      string_address_hash = to_string(address.hash)
+
+      test_cases = [
+        {"0x", 1},
+        {"0x", 2},
+        {"0xef0100aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0},
+        {"0xef0100aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 1},
+        {"0xef0100bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", 0},
+        {"0xef0100bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", 1},
+        {"0xef0100bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", 2},
+        {"0x", 0},
+        {"0x", 1}
+      ]
+
+      test_cases
+      |> Enum.map(fn {code, attempts_number} ->
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [
+                                  %{
+                                    id: id,
+                                    jsonrpc: "2.0",
+                                    method: "eth_getCode",
+                                    params: [^string_address_hash, "latest"]
+                                  }
+                                ],
+                                _ ->
+          {:ok, [%{id: id, result: code}]}
+        end)
+
+        address = assert(Repo.get(Address, address_hash))
+        assert ContractCodeOnDemand.trigger_fetch(address) == :ok
+
+        :timer.sleep(100)
+
+        address = assert(Repo.get(Address, address_hash))
+
+        if code == "0x" do
+          assert is_nil(address.contract_code)
+        else
+          assert address.contract_code |> to_string() == code |> Data.cast() |> elem(1) |> to_string()
+        end
+
+        attempts = Repo.get(AddressContractCodeFetchAttempt, address_hash)
+
+        if attempts_number == 0 do
+          assert is_nil(attempts)
+        else
+          assert attempts.retries_number == attempts_number
+        end
+      end)
 
       default_threshold = parse_time_env_var("CONTRACT_CODE_ON_DEMAND_FETCHER_THRESHOLD", "5s")
       Application.put_env(:indexer, ContractCodeOnDemand, threshold: default_threshold)

@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   alias Ecto.{Multi, Repo}
   alias Explorer.Chain.Filecoin.PendingAddressOperation, as: FilecoinPendingAddressOperation
   alias Explorer.Chain.Import.Runner
-  alias Explorer.Chain.{Address, Hash, Import, Transaction}
+  alias Explorer.Chain.{Address, Import, Transaction}
   alias Explorer.Prometheus.Instrumenter
 
   require Ecto.Query
@@ -163,7 +163,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
          (is_nil(existing_address.nonce) or new_address[:nonce] > existing_address.nonce))
   end
 
-  @spec insert(Repo.t(), [%{hash: Hash.Address.t()}], %{
+  @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
@@ -232,7 +232,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       # where any of `set`s would make a change
       # This is so that tuples are only generated when a change would occur
       where:
-        fragment("COALESCE(?, EXCLUDED.contract_code) IS DISTINCT FROM ?", address.contract_code, address.contract_code) or
+        fragment("COALESCE(EXCLUDED.contract_code, ?) IS DISTINCT FROM ?", address.contract_code, address.contract_code) or
           fragment(
             "EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND (? IS NULL OR EXCLUDED.fetched_coin_balance_block_number >= ?)",
             address.fetched_coin_balance_block_number,

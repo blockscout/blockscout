@@ -43,6 +43,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
     with false <- is_nil(address.contract_code),
          true <- is_nil(creator_hash),
+         false <- Address.eoa_with_code?(address),
          {:address_lookup, [{_, contract_creation_block_number}]} <-
            {:address_lookup, :ets.lookup(@table_name, address_cache_name(address.hash))},
          {:pending_blocks_lookup, [{@pending_blocks_cache_key, blocks}]} <-

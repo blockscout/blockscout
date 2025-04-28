@@ -10,10 +10,12 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
 
   import EthereumJSONRPC, only: [fetch_codes: 2]
 
-  alias Explorer.Chain
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Data}
   alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Events.Publisher
+  alias Explorer.Chain.Import
+  alias Explorer.Chain.Import.Runner.Addresses
+  alias Explorer.Repo
   alias Explorer.Utility.{AddressContractCodeFetchAttempt, RateLimiter}
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
 
@@ -21,7 +23,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
 
   @spec trigger_fetch(String.t() | nil, Address.t()) :: :ok
   def trigger_fetch(caller \\ nil, address) do
-    if is_nil(address.contract_code) do
+    if is_nil(address.contract_code) or Address.eoa_with_code?(address) do
       case RateLimiter.check_rate(caller, :on_demand) do
         :allow -> GenServer.cast(__MODULE__, {:fetch, address})
         :deny -> :ok
@@ -106,17 +108,20 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
             )},
          contract_code_object = List.first(fetched_codes),
          false <- is_nil(contract_code_object),
-         true <- contract_code_object.code !== "0x" do
-      case Chain.import(%{addresses: %{params: [%{hash: address.hash, contract_code: contract_code_object.code}]}}) do
+         {:ok, fetched_code} <-
+           (contract_code_object.code == "0x" && {:ok, nil}) || Data.cast(contract_code_object.code),
+         true <- fetched_code != address.contract_code do
+      case Addresses.insert(Repo, [%{hash: address.hash, contract_code: fetched_code}], %{
+             timeout: :infinity,
+             on_conflict: {:replace, [:contract_code, :updated_at]},
+             timestamps: Import.timestamps()
+           }) do
         {:ok, _} ->
           Publisher.broadcast(%{fetched_bytecode: [address.hash, contract_code_object.code]}, :on_demand)
 
           ContractCreatorOnDemand.trigger_fetch(address)
 
           AddressContractCodeFetchAttempt.delete(address.hash)
-
-        error ->
-          Logger.error(fn -> "Error while setting address #{address.hash} deployed bytecode: #{inspect(error)}" end)
       end
     else
       {:fetched_code, {:error, _}} ->
