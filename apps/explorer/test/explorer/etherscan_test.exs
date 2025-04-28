@@ -619,7 +619,7 @@ defmodule Explorer.EtherscanTest do
     test "with empty db" do
       transaction = build(:transaction)
 
-      assert Etherscan.list_internal_transactions(transaction.hash) == []
+      assert Etherscan.list_internal_transactions(transaction) == []
     end
 
     test "response includes all the expected fields" do
@@ -648,7 +648,7 @@ defmodule Explorer.EtherscanTest do
         )
         |> with_contract_creation(contract_address)
 
-      [found_internal_transaction] = Etherscan.list_internal_transactions(transaction.hash)
+      [found_internal_transaction] = Etherscan.list_internal_transactions(transaction)
 
       assert found_internal_transaction.block_number == block.number
       assert found_internal_transaction.block_timestamp == block.timestamp
@@ -672,7 +672,7 @@ defmodule Explorer.EtherscanTest do
         |> insert()
         |> with_block()
 
-      assert Etherscan.list_internal_transactions(transaction.hash) == []
+      assert Etherscan.list_internal_transactions(transaction) == []
     end
 
     test "with transaction with multiple internal transactions" do
@@ -693,7 +693,7 @@ defmodule Explorer.EtherscanTest do
         )
       end
 
-      found_internal_transactions = Etherscan.list_internal_transactions(transaction.hash)
+      found_internal_transactions = Etherscan.list_internal_transactions(transaction)
 
       # excluding of internal transactions with type=call and index=0
       assert length(found_internal_transactions) == 2
@@ -741,12 +741,12 @@ defmodule Explorer.EtherscanTest do
         transaction_index: transaction2.index
       )
 
-      internal_transactions1 = Etherscan.list_internal_transactions(transaction1.hash)
+      internal_transactions1 = Etherscan.list_internal_transactions(transaction1)
 
       # excluding of internal transactions with type=call and index=0
       assert length(internal_transactions1) == 1
 
-      internal_transactions2 = Etherscan.list_internal_transactions(transaction2.hash)
+      internal_transactions2 = Etherscan.list_internal_transactions(transaction2)
 
       assert length(internal_transactions2) == 1
     end

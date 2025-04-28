@@ -22,6 +22,7 @@ defmodule Explorer.Chain.Address.Counters do
     Block,
     Hash,
     InternalTransaction,
+    InternalTransactionArchive,
     Log,
     TokenTransfer,
     Transaction,
@@ -222,29 +223,28 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   defp address_hash_to_internal_transactions_limited_count_query(address_hash) do
+    pivot_block_number = Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
+
     query_to_address_hash_wrapped =
-      InternalTransaction
-      |> InternalTransaction.where_nonpending_block()
-      |> InternalTransaction.where_address_fields_match(address_hash, :to_address_hash)
-      |> InternalTransaction.where_is_different_from_parent_transaction()
-      |> limit(@counters_limit)
-      |> wrapped_union_subquery()
+      address_hash_to_internal_transactions_limited_count_by_address_type_from_realtime_and_archive_query(
+        pivot_block_number,
+        :to_address_hash,
+        address_hash
+      )
 
     query_from_address_hash_wrapped =
-      InternalTransaction
-      |> InternalTransaction.where_nonpending_block()
-      |> InternalTransaction.where_address_fields_match(address_hash, :from_address_hash)
-      |> InternalTransaction.where_is_different_from_parent_transaction()
-      |> limit(@counters_limit)
-      |> wrapped_union_subquery()
+      address_hash_to_internal_transactions_limited_count_by_address_type_from_realtime_and_archive_query(
+        pivot_block_number,
+        :from_address_hash,
+        address_hash
+      )
 
     query_created_contract_address_hash_wrapped =
-      InternalTransaction
-      |> InternalTransaction.where_nonpending_block()
-      |> InternalTransaction.where_address_fields_match(address_hash, :created_contract_address_hash)
-      |> InternalTransaction.where_is_different_from_parent_transaction()
-      |> limit(@counters_limit)
-      |> wrapped_union_subquery()
+      address_hash_to_internal_transactions_limited_count_by_address_type_from_realtime_and_archive_query(
+        pivot_block_number,
+        :created_contract_address_hash,
+        address_hash
+      )
 
     query_to_address_hash_wrapped
     |> union_all(^query_from_address_hash_wrapped)
@@ -257,6 +257,51 @@ defmodule Explorer.Chain.Address.Counters do
       deposit in BeaconDeposit,
       where: deposit.from_address_hash == ^address_hash
     )
+  end
+
+  defp address_hash_to_internal_transactions_limited_count_by_address_type_from_realtime_and_archive_query(
+         nil,
+         address_type,
+         address_hash
+       ) do
+    InternalTransaction
+    |> address_hash_to_internal_transactions_limited_count_by_address_type_query(
+      address_type,
+      address_hash
+    )
+  end
+
+  defp address_hash_to_internal_transactions_limited_count_by_address_type_from_realtime_and_archive_query(
+         pivot_block_number,
+         address_type,
+         address_hash
+       )
+       when not is_nil(pivot_block_number) do
+    InternalTransaction
+    |> address_hash_to_internal_transactions_limited_count_by_address_type_query(
+      address_type,
+      address_hash
+    )
+    |> union_all(
+      ^address_hash_to_internal_transactions_limited_count_by_address_type_query(
+        InternalTransactionArchive,
+        address_type,
+        address_hash
+      )
+    )
+  end
+
+  defp address_hash_to_internal_transactions_limited_count_by_address_type_query(
+         data_source,
+         address_type,
+         address_hash
+       ) do
+    data_source
+    |> InternalTransaction.where_nonpending_block()
+    |> InternalTransaction.where_address_fields_match(address_hash, address_type)
+    |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> limit(@counters_limit)
+    |> wrapped_union_subquery()
   end
 
   def address_counters(address, options \\ []) do

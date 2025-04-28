@@ -842,6 +842,12 @@ config :explorer, Explorer.Chain.TokenTransfer,
   whitelisted_weth_contracts: ConfigHelper.parse_list_env_var("WHITELISTED_WETH_CONTRACTS", ""),
   weth_token_transfers_filtering_enabled: ConfigHelper.parse_bool_env_var("WETH_TOKEN_TRANSFERS_FILTERING_ENABLED")
 
+internal_transactions_archive_pivot_block_number =
+  ConfigHelper.parse_integer_or_nil_env_var("INTERNAL_TRANSACTION_ARCHIVE_PIVOT_BLOCK_NUMBER")
+
+config :explorer, Explorer.Chain.InternalTransactionArchive,
+  pivot_block_number: internal_transactions_archive_pivot_block_number
+
 config :explorer, Explorer.Chain.Metrics,
   enabled: ConfigHelper.parse_bool_env_var("PUBLIC_METRICS_ENABLED", "false"),
   update_period_hours: ConfigHelper.parse_integer_env_var("PUBLIC_METRICS_UPDATE_PERIOD_HOURS", 24)
@@ -902,7 +908,9 @@ last_block = ConfigHelper.parse_integer_or_nil_env_var("LAST_BLOCK")
 
 block_ranges = ConfigHelper.safe_get_env("BLOCK_RANGES", "#{first_block}..#{last_block || "latest"}")
 
-trace_first_block = ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0)
+trace_first_block =
+  internal_transactions_archive_pivot_block_number || ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0)
+
 trace_last_block = ConfigHelper.parse_integer_or_nil_env_var("TRACE_LAST_BLOCK")
 
 trace_block_ranges =

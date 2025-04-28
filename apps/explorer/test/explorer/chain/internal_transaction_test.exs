@@ -87,7 +87,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
     test "with transaction without internal transactions" do
       transaction = insert(:transaction)
 
-      assert [] = InternalTransaction.transaction_to_internal_transactions(transaction.hash)
+      assert [] = InternalTransaction.transaction_to_internal_transactions(transaction)
     end
 
     test "with transaction with internal transactions returns all internal transactions for a given transaction hash excluding parent trace" do
@@ -118,7 +118,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
           transaction_index: transaction.index
         )
 
-      results = [internal_transaction | _] = InternalTransaction.transaction_to_internal_transactions(transaction.hash)
+      results = [internal_transaction | _] = InternalTransaction.transaction_to_internal_transactions(transaction)
 
       # excluding of internal transactions with type=call and index=0
       assert 1 == length(results)
@@ -155,7 +155,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
                  to_address: %Ecto.Association.NotLoaded{},
                  transaction: %Ecto.Association.NotLoaded{}
                }
-             ] = InternalTransaction.transaction_to_internal_transactions(transaction.hash)
+             ] = InternalTransaction.transaction_to_internal_transactions(transaction)
 
       assert [
                %InternalTransaction{
@@ -165,7 +165,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
                }
              ] =
                InternalTransaction.transaction_to_internal_transactions(
-                 transaction.hash,
+                 transaction,
                  necessity_by_association: %{
                    :from_address => :optional,
                    :to_address => :optional,
@@ -189,7 +189,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
         transaction_index: transaction.index
       )
 
-      result = InternalTransaction.transaction_to_internal_transactions(transaction.hash)
+      result = InternalTransaction.transaction_to_internal_transactions(transaction)
 
       assert Enum.empty?(result)
     end
@@ -210,7 +210,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
           transaction_index: transaction.index
         )
 
-      actual = Enum.at(InternalTransaction.transaction_to_internal_transactions(transaction.hash), 0)
+      actual = Enum.at(InternalTransaction.transaction_to_internal_transactions(transaction), 0)
 
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
@@ -232,7 +232,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
           transaction_index: transaction.index
         )
 
-      actual = Enum.at(InternalTransaction.transaction_to_internal_transactions(transaction.hash), 0)
+      actual = Enum.at(InternalTransaction.transaction_to_internal_transactions(transaction), 0)
 
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
@@ -255,7 +255,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
           transaction_index: transaction.index
         )
 
-      actual = Enum.at(InternalTransaction.transaction_to_internal_transactions(transaction.hash), 0)
+      actual = Enum.at(InternalTransaction.transaction_to_internal_transactions(transaction), 0)
 
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
@@ -297,7 +297,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
         )
 
       result =
-        transaction.hash
+        transaction
         |> InternalTransaction.transaction_to_internal_transactions()
         |> Enum.map(&{&1.transaction_hash, &1.index})
 
@@ -342,21 +342,21 @@ defmodule Explorer.Chain.InternalTransactionTest do
         )
 
       assert [{second_transaction_hash, second_index}, {third_transaction_hash, third_index}] ==
-               transaction.hash
+               transaction
                |> InternalTransaction.transaction_to_internal_transactions(
                  paging_options: %PagingOptions{key: {-1}, page_size: 2}
                )
                |> Enum.map(&{&1.transaction_hash, &1.index})
 
       assert [{second_transaction_hash, second_index}] ==
-               transaction.hash
+               transaction
                |> InternalTransaction.transaction_to_internal_transactions(
                  paging_options: %PagingOptions{key: {-1}, page_size: 1}
                )
                |> Enum.map(&{&1.transaction_hash, &1.index})
 
       assert [{third_transaction_hash, third_index}] ==
-               transaction.hash
+               transaction
                |> InternalTransaction.transaction_to_internal_transactions(
                  paging_options: %PagingOptions{key: {1}, page_size: 2}
                )
@@ -368,7 +368,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
     test "with transaction without internal transactions" do
       transaction = insert(:transaction)
 
-      assert [] = InternalTransaction.all_transaction_to_internal_transactions(transaction.hash)
+      assert [] = InternalTransaction.all_transaction_to_internal_transactions(transaction)
     end
 
     test "with transaction with internal transactions returns all internal transactions for a given transaction hash" do
@@ -400,7 +400,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
         )
 
       results =
-        [internal_transaction | _] = InternalTransaction.all_transaction_to_internal_transactions(transaction.hash)
+        [internal_transaction | _] = InternalTransaction.all_transaction_to_internal_transactions(transaction)
 
       assert 2 == length(results)
 
@@ -436,7 +436,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
                  to_address: %Ecto.Association.NotLoaded{},
                  transaction: %Ecto.Association.NotLoaded{}
                }
-             ] = InternalTransaction.all_transaction_to_internal_transactions(transaction.hash)
+             ] = InternalTransaction.all_transaction_to_internal_transactions(transaction)
 
       assert [
                %InternalTransaction{
@@ -446,7 +446,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
                }
              ] =
                InternalTransaction.all_transaction_to_internal_transactions(
-                 transaction.hash,
+                 transaction,
                  necessity_by_association: %{
                    :from_address => :optional,
                    :to_address => :optional,
@@ -470,7 +470,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
         transaction_index: transaction.index
       )
 
-      result = InternalTransaction.all_transaction_to_internal_transactions(transaction.hash)
+      result = InternalTransaction.all_transaction_to_internal_transactions(transaction)
 
       assert Enum.empty?(result) == false
     end
@@ -491,7 +491,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
           transaction_index: transaction.index
         )
 
-      actual = Enum.at(InternalTransaction.all_transaction_to_internal_transactions(transaction.hash), 0)
+      actual = Enum.at(InternalTransaction.all_transaction_to_internal_transactions(transaction), 0)
 
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
@@ -513,7 +513,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
           transaction_index: transaction.index
         )
 
-      actual = Enum.at(InternalTransaction.all_transaction_to_internal_transactions(transaction.hash), 0)
+      actual = Enum.at(InternalTransaction.all_transaction_to_internal_transactions(transaction), 0)
 
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
@@ -536,7 +536,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
           transaction_index: transaction.index
         )
 
-      actual = Enum.at(InternalTransaction.all_transaction_to_internal_transactions(transaction.hash), 0)
+      actual = Enum.at(InternalTransaction.all_transaction_to_internal_transactions(transaction), 0)
 
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
@@ -568,7 +568,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
         )
 
       result =
-        transaction.hash
+        transaction
         |> InternalTransaction.all_transaction_to_internal_transactions()
         |> Enum.map(&{&1.transaction_hash, &1.index})
 
@@ -612,21 +612,21 @@ defmodule Explorer.Chain.InternalTransactionTest do
         )
 
       assert [{transaction_hash, index}, {second_transaction_hash, second_index}] ==
-               transaction.hash
+               transaction
                |> InternalTransaction.all_transaction_to_internal_transactions(
                  paging_options: %PagingOptions{key: {-1}, page_size: 2}
                )
                |> Enum.map(&{&1.transaction_hash, &1.index})
 
       assert [{transaction_hash, index}] ==
-               transaction.hash
+               transaction
                |> InternalTransaction.all_transaction_to_internal_transactions(
                  paging_options: %PagingOptions{key: {-1}, page_size: 1}
                )
                |> Enum.map(&{&1.transaction_hash, &1.index})
 
       assert [{third_transaction_hash, third_index}] ==
-               transaction.hash
+               transaction
                |> InternalTransaction.all_transaction_to_internal_transactions(
                  paging_options: %PagingOptions{key: {1}, page_size: 2}
                )

@@ -333,6 +333,7 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp page_transactions(query, _), do: query
 
   defp internal_transactions_query(paging_options, options) do
+    # todo: use InternalTransactionArchive
     query =
       if DenormalizationHelper.transactions_denormalization_finished?() do
         from(internal_transaction in InternalTransaction,
