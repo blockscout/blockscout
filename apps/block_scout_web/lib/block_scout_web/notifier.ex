@@ -239,13 +239,15 @@ defmodule BlockScoutWeb.Notifier do
     # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("transactions_old:#{transaction_hash}", "raw_trace", %{raw_trace_origin: transaction_hash})
 
-    internal_transactions = InternalTransaction.all_transaction_to_internal_transactions(transaction_hash)
+    with {:ok, transaction} <- Chain.hash_to_transaction(transaction_hash, []) do
+      internal_transactions = InternalTransaction.all_transaction_to_internal_transactions(transaction)
 
-    v2_params = %{
-      raw_trace: TransactionView.render("raw_trace.json", %{internal_transactions: internal_transactions})
-    }
+      v2_params = %{
+        raw_trace: TransactionView.render("raw_trace.json", %{internal_transactions: internal_transactions})
+      }
 
-    Endpoint.broadcast("transactions:#{transaction_hash}", "raw_trace", v2_params)
+      Endpoint.broadcast("transactions:#{transaction_hash}", "raw_trace", v2_params)
+    end
   end
 
   # internal transactions broadcast disabled on the indexer level, therefore it out of scope of the refactoring within https://github.com/blockscout/blockscout/pull/7474
