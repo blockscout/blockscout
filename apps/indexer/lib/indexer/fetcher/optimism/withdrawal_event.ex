@@ -191,6 +191,15 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     end)
   end
 
+  # Prepares withdrawal events from `eth_getLogs` response to be imported to DB.
+  #
+  # ## Parameters
+  # - `events`: The list of L1 withdrawal events from `eth_getLogs` response.
+  # - `json_rpc_named_arguments`: JSON-RPC configuration containing transport options for L1.
+  #
+  # ## Returns
+  # - A list of `WithdrawalEvent` maps.
+  @spec prepare_events([map()], EthereumJSONRPC.json_rpc_named_arguments()) :: [WithdrawalEvent.to_import()]
   defp prepare_events(events, json_rpc_named_arguments) do
     blocks =
       events
@@ -313,6 +322,16 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     end
   end
 
+  # Parses input of the prove L1 transaction and retrieves dispute game index or contract address
+  # (depending on whether Super Roots are active) from that.
+  #
+  # ## Parameters
+  # - `input`: The L1 transaction input in form of `0x` string.
+  #
+  # ## Returns
+  # - `{game_index, game_address}` tuple where one of the elements is not `nil`, but another one is `nil` (and vice versa).
+  #   Both elements can be `nil` if the input cannot be parsed (or has unsupported format).
+  @spec input_to_game_index_or_address(String.t()) :: {non_neg_integer() | nil, String.t() | nil}
   defp input_to_game_index_or_address(input) do
     method_signature = String.slice(input, 0..9)
 

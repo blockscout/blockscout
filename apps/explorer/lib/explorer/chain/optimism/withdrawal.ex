@@ -274,6 +274,17 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     withdrawal_l2_block_number <= last_root_l2_block_number
   end
 
+  # Fetches dispute game info from DB by game's contract address or game's unique index.
+  #
+  # ## Parameters
+  # - `game_address`: Game's contract address. Must be `nil` if unknown.
+  # - `game_index`: Game unique index. Must be `nil` if unknown.
+  #
+  # ## Returns
+  # - A map with necessary info about the dispute game.
+  # - `nil` if the dispute game not found in DB or both input parameters are `nil`.
+  @spec game_by_address_or_index(Hash.t() | nil, non_neg_integer() | nil) ::
+          %{:created_at => DateTime.t(), :resolved_at => DateTime.t(), :status => non_neg_integer()} | nil
   defp game_by_address_or_index(nil, nil), do: nil
 
   defp game_by_address_or_index(game_address, nil) do
@@ -295,6 +306,10 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         where: g.index == ^game_index
       )
     )
+  end
+
+  defp game_by_address_or_index(_game_address, game_index) do
+    game_by_address_or_index(nil, game_index)
   end
 
   # Determines the current withdrawal status by the list of the bound WithdrawalProven events.
