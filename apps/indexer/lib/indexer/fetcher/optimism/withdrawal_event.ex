@@ -236,9 +236,9 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
             |> Map.get(transaction_hash)
             |> input_to_game_index_or_address()
 
-          {"WithdrawalProven", game_index, game_address}
+          {:WithdrawalProven, game_index, game_address}
         else
-          {"WithdrawalFinalized", nil, nil}
+          {:WithdrawalFinalized, nil, nil}
         end
 
       l1_block_number = quantity_to_integer(event["blockNumber"])

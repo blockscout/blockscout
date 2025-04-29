@@ -378,7 +378,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   # - A list of `{l1_timestamp, game_address, game_index}` tuples where `l1_timestamp` is the L1 block timestamp
   #   when the event appeared, `game_address` is the bound dispute game contract address (can be `nil`),
   #   `game_index` is the bound dispute game index (can be `nil`).
-  @spec proven_events_by_hash(Hash.t()) :: [{DateTime.t(), non_neg_integer()}]
+  @spec proven_events_by_hash(Hash.t()) :: [{DateTime.t(), Hash.t() | nil, non_neg_integer() | nil}]
   defp proven_events_by_hash(withdrawal_hash) do
     Repo.replica().all(
       from(
