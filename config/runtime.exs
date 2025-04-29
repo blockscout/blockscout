@@ -248,6 +248,7 @@ coin = System.get_env("COIN") || "ETH"
 config :explorer,
   mode: app_mode,
   ecto_repos: ConfigHelper.repos(),
+  chain_type: ConfigHelper.chain_type(),
   coin: coin,
   coin_name: System.get_env("COIN_NAME") || "ETH",
   allowed_solidity_evm_versions:
@@ -271,7 +272,7 @@ config :explorer,
   replica_max_lag: ConfigHelper.parse_time_env_var("REPLICA_MAX_LAG", "5m")
 
 config :explorer, Explorer.Chain.Health.Monitor,
-  check_interval: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_CHECK_INTERVAL", "5m"),
+  check_interval: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_CHECK_INTERVAL", "1m"),
   healthy_blocks_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_BLOCKS_PERIOD", "5m"),
   healthy_batches_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_BATCHES_PERIOD", "4h")
 
@@ -828,6 +829,8 @@ config :explorer, Explorer.Utility.RateLimiter,
     limitation_period: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_LIMITATION_PERIOD", "1h")
   ]
 
+config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED")
+
 ###############
 ### Indexer ###
 ###############
@@ -1354,7 +1357,8 @@ config :indexer, Indexer.Fetcher.Scroll.BridgeL2,
 
 config :indexer, Indexer.Fetcher.Scroll.Batch,
   scroll_chain_contract: System.get_env("INDEXER_SCROLL_L1_CHAIN_CONTRACT"),
-  start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_SCROLL_L1_BATCH_START_BLOCK")
+  start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_SCROLL_L1_BATCH_START_BLOCK"),
+  eip4844_blobs_api_url: System.get_env("INDEXER_SCROLL_L1_BATCH_BLOCKSCOUT_BLOBS_API_URL", "")
 
 config :indexer, Indexer.Fetcher.Scroll.BridgeL1.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
 

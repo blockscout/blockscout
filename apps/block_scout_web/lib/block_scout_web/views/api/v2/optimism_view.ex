@@ -333,6 +333,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           FrameSequence.t()
           | %{:l1_timestamp => DateTime.t(), :l1_transaction_hashes => list(), optional(any()) => any()}
         ) :: %{
+          :number => non_neg_integer(),
           :internal_id => non_neg_integer(),
           :l1_timestamp => DateTime.t(),
           :l2_start_block_number => non_neg_integer(),

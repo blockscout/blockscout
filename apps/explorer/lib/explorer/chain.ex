@@ -271,6 +271,7 @@ defmodule Explorer.Chain do
 
   def address_hashes_to_mined_transactions_without_rewards(address_hashes, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     address_hashes
     |> address_hashes_to_mined_transactions_tasks(options)
@@ -278,19 +279,23 @@ defmodule Explorer.Chain do
     |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
     |> Enum.dedup_by(& &1.hash)
     |> Enum.take(paging_options.page_size)
+    |> select_repo(options).preload(Map.keys(necessity_by_association))
   end
 
   defp address_hashes_to_mined_transactions_tasks(address_hashes, options) do
     direction = Keyword.get(options, :direction)
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     options
     |> Transaction.address_to_transactions_tasks_query(true)
     |> Transaction.not_pending_transactions()
-    |> join_associations(necessity_by_association)
-    |> Transaction.put_has_token_transfers_to_transaction(false)
     |> Transaction.matching_address_queries_list(direction, address_hashes)
-    |> Enum.map(fn query -> Task.async(fn -> select_repo(options).all(query) end) end)
+    |> Enum.map(fn query ->
+      Task.async(fn ->
+        query
+        |> Transaction.put_has_token_transfers_to_transaction(false, aliased?: true)
+        |> select_repo(options).all()
+      end)
+    end)
   end
 
   @spec address_hash_to_token_transfers(Hash.Address.t(), Keyword.t()) :: [Transaction.t()]
