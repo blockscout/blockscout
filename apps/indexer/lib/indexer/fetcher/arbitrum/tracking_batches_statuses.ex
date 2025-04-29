@@ -511,7 +511,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   defp handle_new_executions(state) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-    {:ok, updated_state} = NewL1Executions.discover_new_l1_messages_executions(state)
+    {_, updated_state} = NewL1Executions.discover_new_l1_messages_executions(state)
 
     next_run_time = now + updated_state.intervals[:new_executions]
     BufferedTask.buffer(__MODULE__, [{next_run_time, :new_executions}], false)
@@ -574,7 +574,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       state,
       :historical_executions,
       &NewL1Executions.discover_historical_l1_messages_executions/1,
-      &NewL1Executions.historical_executions_discovery_completed?/1
+      &NewL1Executions.historical_executions_discovery_completed?/1,
+      nil,
+      true
     )
   end
 

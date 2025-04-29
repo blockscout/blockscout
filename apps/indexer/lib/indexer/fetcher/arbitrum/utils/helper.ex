@@ -358,4 +358,19 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
 
     :ok
   end
+
+  @doc """
+    Checks if the migration of L1 executions to crosslevel messages is completed.
+
+    This function checks the cache to determine if the migration that moves data from
+    arbitrum_l1_executions to arbitrum_crosslevel_messages has finished.
+
+    ## Returns
+    - `true` if the migration is completed
+    - `false` if the migration is still in progress or not started
+  """
+  @spec l1_executions_migration_completed?() :: boolean()
+  def l1_executions_migration_completed? do
+    BackgroundMigrations.get_arbitrum_migrate_from_l1_executions_finished()
+  end
 end

@@ -152,13 +152,11 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   @spec l1_block_of_latest_execution() :: FullBlock.block_number() | nil
   def l1_block_of_latest_execution do
     query =
-      from(
-        transaction in LifecycleTransaction,
-        inner_join: ex in L1Execution,
-        on: transaction.id == ex.execution_id,
-        select: transaction.block_number,
-        order_by: [desc: transaction.block_number],
-        limit: 1
+      from(txn in LifecycleTransaction,
+        join: msg in Message,
+        on: txn.hash == msg.completion_transaction_hash,
+        where: msg.direction == :from_l2,
+        select: max(txn.block_number)
       )
 
     query
@@ -174,13 +172,11 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   @spec l1_block_of_earliest_execution() :: FullBlock.block_number() | nil
   def l1_block_of_earliest_execution do
     query =
-      from(
-        transaction in LifecycleTransaction,
-        inner_join: ex in L1Execution,
-        on: transaction.id == ex.execution_id,
-        select: transaction.block_number,
-        order_by: [asc: transaction.block_number],
-        limit: 1
+      from(txn in LifecycleTransaction,
+        join: msg in Message,
+        on: txn.hash == msg.completion_transaction_hash,
+        where: msg.direction == :from_l2,
+        select: min(txn.block_number)
       )
 
     query

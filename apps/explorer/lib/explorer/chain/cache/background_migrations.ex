@@ -28,6 +28,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :sanitize_duplicated_log_index_logs_finished,
     key: :backfill_multichain_search_db_finished,
     key: :arbitrum_da_records_normalization_finished,
+    key: :arbitrum_migrate_from_l1_executions_finished,
     key: :sanitize_verified_addresses_finished,
     key: :smart_contract_language_finished,
     key: :heavy_indexes_create_logs_block_hash_index_finished,
@@ -298,6 +299,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     start_migration_status_task(
       ArbitrumDaRecordsNormalization,
       &set_arbitrum_da_records_normalization_finished/1
+    )
+  end
+
+  defp handle_fallback(:arbitrum_migrate_from_l1_executions_finished) do
+    start_migration_status_task(
+      ArbitrumMigrateFromL1Executions,
+      &set_arbitrum_migrate_from_l1_executions_finished/1
     )
   end
 
