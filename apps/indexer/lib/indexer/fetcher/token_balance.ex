@@ -22,8 +22,8 @@ defmodule Indexer.Fetcher.TokenBalance do
   # alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.Hash
   # alias Explorer.Utility.MissingBalanceOfToken
-  # alias Indexer.{BufferedTask, TokenBalances, Tracer}
   alias Indexer.{BufferedTask, Tracer}
+  # alias Indexer.{BufferedTask, TokenBalances, Tracer}
   alias Indexer.Fetcher.TokenBalance.Supervisor, as: TokenBalanceSupervisor
 
   @behaviour BufferedTask
@@ -31,7 +31,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   @default_max_batch_size 100
   @default_max_concurrency 10
 
-  # @timeout :timer.minutes(10)
+  @timeout :timer.minutes(10)
 
   @spec async_fetch(
           [
@@ -118,7 +118,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   #     {:retry, entries}
   #   end
   # end
-  def run(_, _json_rpc_named_arguments) do
+  def run(_entries, _json_rpc_named_arguments) do
     :ok
   end
 
@@ -168,7 +168,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   #   {missing_balance_of_balances, other_failed_balances} =
   #     Enum.split_with(failed_token_balances, fn
   #       %{error: :unable_to_decode} -> true
-  #       %{error: error} when is_binary(error) -> error =~ "execution reverted"
+  #       %{error: error} when is_binary(error) -> String.match?(error, ~r/execution.*revert/)
   #       _ -> false
   #     end)
 

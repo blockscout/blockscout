@@ -32,28 +32,14 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.{Blocks, Contract}
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Beacon.Blob, as: BeaconBlob
-  alias Explorer.Chain.{Block, Hash, RollupReorgMonitorQueue}
+  alias Explorer.Chain.{Block, RollupReorgMonitorQueue}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
-  alias Indexer.Fetcher.Beacon.Blob
-  alias Indexer.Fetcher.Beacon.Client, as: BeaconClient
   alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
   alias Indexer.Helper
   alias Indexer.Prometheus.Instrumenter
   alias Varint.LEB128
-
-  @beacon_blob_fetcher_reference_slot_eth 8_500_000
-  @beacon_blob_fetcher_reference_timestamp_eth 1_708_824_023
-  @beacon_blob_fetcher_reference_slot_sepolia 4_400_000
-  @beacon_blob_fetcher_reference_timestamp_sepolia 1_708_533_600
-  @beacon_blob_fetcher_reference_slot_holesky 1_000_000
-  @beacon_blob_fetcher_reference_timestamp_holesky 1_707_902_400
-  @beacon_blob_fetcher_slot_duration 12
-  @chain_id_eth 1
-  @chain_id_sepolia 11_155_111
-  @chain_id_holesky 17000
 
   @fetcher_name :optimism_transaction_batches
 
@@ -145,8 +131,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
        %{
          batch_inbox: batch_inbox,
          batch_submitter: batch_submitter,
-         eip4844_blobs_api_url: trim_url(env[:eip4844_blobs_api_url]),
-         celestia_blobs_api_url: trim_url(env[:celestia_blobs_api_url]),
+         eip4844_blobs_api_url: Helper.trim_url(env[:eip4844_blobs_api_url]),
+         celestia_blobs_api_url: Helper.trim_url(env[:celestia_blobs_api_url]),
          block_check_interval: block_check_interval,
          start_block: start_block,
          end_block: last_safe_block,
@@ -591,7 +577,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
        ) do
     blob_versioned_hashes
     |> Enum.reduce([], fn blob_hash, inputs_acc ->
-      with {:ok, response} <- http_get_request(blobs_api_url <> "/" <> blob_hash),
+      with {:ok, response} <- Helper.http_get_request(blobs_api_url <> "/" <> blob_hash),
            blob_data = Map.get(response, "blob_data"),
            false <- is_nil(blob_data) do
         # read the data from Blockscout API
@@ -638,65 +624,11 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          inputs_acc,
          chain_id_l1
        ) do
-    beacon_config =
-      case chain_id_l1 do
-        @chain_id_eth ->
-          %{
-            reference_slot: @beacon_blob_fetcher_reference_slot_eth,
-            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_eth,
-            slot_duration: @beacon_blob_fetcher_slot_duration
-          }
+    blob = Helper.get_eip4844_blob_from_beacon_node(blob_hash, block_timestamp, chain_id_l1)
 
-        @chain_id_sepolia ->
-          %{
-            reference_slot: @beacon_blob_fetcher_reference_slot_sepolia,
-            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_sepolia,
-            slot_duration: @beacon_blob_fetcher_slot_duration
-          }
-
-        @chain_id_holesky ->
-          %{
-            reference_slot: @beacon_blob_fetcher_reference_slot_holesky,
-            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_holesky,
-            slot_duration: @beacon_blob_fetcher_slot_duration
-          }
-
-        _ ->
-          :indexer
-          |> Application.get_env(Blob)
-          |> Keyword.take([:reference_slot, :reference_timestamp, :slot_duration])
-          |> Enum.into(%{})
-      end
-
-    {:ok, fetched_blobs} =
-      block_timestamp
-      |> DateTime.to_unix()
-      |> Blob.timestamp_to_slot(beacon_config)
-      |> BeaconClient.get_blob_sidecars()
-
-    blobs = Map.get(fetched_blobs, "data", [])
-
-    if Enum.empty?(blobs) do
-      raise "Empty data"
-    end
-
-    decoded_blob_data =
-      blobs
-      |> Enum.find(fn b ->
-        b
-        |> Map.get("kzg_commitment", "0x")
-        |> hash_to_binary()
-        |> BeaconBlob.hash()
-        |> Hash.to_string()
-        |> Kernel.==(blob_hash)
-      end)
-      |> Map.get("blob")
-      |> hash_to_binary()
-      |> OptimismTransactionBatch.decode_eip4844_blob()
-
-    if is_nil(decoded_blob_data) do
-      raise "Invalid blob"
-    else
+    with false <- is_nil(blob),
+         decoded_blob_data = OptimismTransactionBatch.decode_eip4844_blob(blob),
+         {:blob_data_invalid, false} <- {:blob_data_invalid, is_nil(decoded_blob_data)} do
       Logger.info(
         "The input for transaction #{transaction_hash} is taken from the Beacon Node. Blob hash: #{blob_hash}"
       )
@@ -707,12 +639,14 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       }
 
       [input | inputs_acc]
-    end
-  rescue
-    reason ->
-      Logger.warning("Cannot decode the blob #{blob_hash} taken from the Beacon Node. Reason: #{inspect(reason)}")
+    else
+      true ->
+        inputs_acc
 
-      inputs_acc
+      {:blob_data_invalid, true} ->
+        Logger.warning("Cannot decode invalid blob #{blob_hash} taken from the Beacon Node.")
+        inputs_acc
+    end
   end
 
   defp celestia_blob_to_input("0x" <> transaction_input, transaction_hash, blobs_api_url) do
@@ -737,7 +671,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
     url = blobs_api_url <> "?height=#{height}&commitment=" <> commitment_string
 
-    with {:ok, response} <- http_get_request(url),
+    with {:ok, response} <- Helper.http_get_request(url),
          namespace = Map.get(response, "namespace"),
          data = Map.get(response, "data"),
          true <- !is_nil(namespace) and !is_nil(data) do
@@ -1058,45 +992,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   @spec requires_l1_reorg_monitor?() :: boolean()
   def requires_l1_reorg_monitor? do
     Optimism.requires_l1_reorg_monitor?()
-  end
-
-  defp http_get_request(url, attempts_done \\ 0) do
-    recv_timeout = 5_000
-    connect_timeout = 8_000
-    client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
-
-    case Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: connect_timeout]]]) do
-      {:ok, %{body: body, status: 200}} ->
-        Jason.decode(body)
-
-      {:ok, %{body: body, status: _}} ->
-        {:error, body}
-
-      {:error, error} ->
-        old_truncate = Application.get_env(:logger, :truncate)
-        Logger.configure(truncate: :infinity)
-
-        Logger.error(fn ->
-          [
-            "Error while sending request to Blobs API: #{url}: ",
-            inspect(error, limit: :infinity, printable_limit: :infinity)
-          ]
-        end)
-
-        Logger.configure(truncate: old_truncate)
-
-        # retry to send the request
-        attempts_done = attempts_done + 1
-
-        if attempts_done < 3 do
-          # wait up to 20 minutes and then retry
-          :timer.sleep(min(3000 * Integer.pow(2, attempts_done - 1), 1_200_000))
-          Logger.info("Retry to send the request to #{url} ...")
-          http_get_request(url, attempts_done)
-        else
-          {:error, "Error while sending request to Blobs API"}
-        end
-    end
   end
 
   defp channel_complete?(channel) do
@@ -1539,12 +1434,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   defp first_byte(_transaction_input) do
     nil
-  end
-
-  defp trim_url(url) do
-    url
-    |> String.trim()
-    |> String.trim_trailing("/")
   end
 
   defp zlib_decompress(bytes) do

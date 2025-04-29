@@ -162,7 +162,8 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsFromAddressHashWithPendingIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsToAddressHashWithPendingIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountDescPartialIndex
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountDescPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex
     ] do
   config :explorer, index_operation, enabled: true
 end
@@ -192,8 +193,6 @@ config :explorer,
 config :explorer, :http_adapter, HTTPoison
 
 config :explorer, Explorer.Chain.BridgedToken, enabled: ConfigHelper.parse_bool_env_var("BRIDGED_TOKENS_ENABLED")
-
-config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED")
 
 config :logger, :explorer,
   # keep synced with `config/config.exs`

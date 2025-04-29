@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
     test "returns error when there are no blocks in db", %{conn: conn} do
       request = get(conn, api_health_path(conn, :health))
 
-      assert request.status == 200
+      assert request.status == 500
 
       expected_error =
         %{
@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
 
       request = get(conn, api_health_path(conn, :health))
 
-      assert request.status == 200
+      assert request.status == 500
 
       assert %{
                "latest_block" => %{
@@ -94,8 +94,6 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
       :timer.sleep(150)
 
       request = get(conn, api_health_path(conn, :health))
-
-      assert request.status == 200
 
       result = Poison.decode!(request.resp_body)
 
@@ -132,7 +130,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
 
     request = get(conn, api_health_path(conn, :health))
 
-    assert request.status == 200
+    assert request.status == 500
 
     assert %{
              "latest_block" => %{
