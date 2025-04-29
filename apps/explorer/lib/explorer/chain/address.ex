@@ -805,8 +805,7 @@ defmodule Explorer.Chain.Address do
       it in InternalTransaction,
       order_by: [
         asc_nulls_first: it.error,
-        desc: it.block_number,
-        desc: it.block_index
+        desc: it.block_number
       ],
       limit: 1
     )
