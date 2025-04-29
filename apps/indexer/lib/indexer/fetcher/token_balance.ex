@@ -31,7 +31,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   @default_max_batch_size 100
   @default_max_concurrency 10
 
-  @timeout :timer.minutes(10)
+  # @timeout :timer.minutes(10)
 
   @spec async_fetch(
           [
