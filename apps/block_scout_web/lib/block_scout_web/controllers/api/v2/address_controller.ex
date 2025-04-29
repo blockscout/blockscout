@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Hash, Transaction}
+  alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Address.Counters
 
   alias Explorer.Chain.Token.Instance
@@ -417,7 +417,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(current_filter(params))
             |> Keyword.merge(@api_true)
 
-          results_plus_one = Chain.address_to_internal_transactions(address_hash, full_options)
+          results_plus_one = InternalTransaction.address_to_internal_transactions(address_hash, full_options)
           {internal_transactions, next_page} = split_list_by_page(results_plus_one)
 
           next_page_params =

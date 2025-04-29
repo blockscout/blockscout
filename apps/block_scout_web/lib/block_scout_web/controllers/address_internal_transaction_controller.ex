@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
 
   alias BlockScoutWeb.{AccessHelper, Controller, InternalTransactionView}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.{Address, InternalTransaction, Wei}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      internal_transactions_plus_one = Chain.address_to_internal_transactions(address_hash, full_options)
+      internal_transactions_plus_one = InternalTransaction.address_to_internal_transactions(address_hash, full_options)
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
       next_page_path =
