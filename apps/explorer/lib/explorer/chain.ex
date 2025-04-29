@@ -1442,24 +1442,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The number of `t:Explorer.Chain.InternalTransaction.t/0`.
-
-      iex> transaction = :transaction |> insert() |> with_block()
-      iex> insert(:internal_transaction, index: 0, transaction: transaction, block_hash: transaction.block_hash, block_index: 0)
-      iex> Explorer.Chain.internal_transaction_count()
-      1
-
-  If there are none, the count is `0`.
-
-      iex> Explorer.Chain.internal_transaction_count()
-      0
-
-  """
-  def internal_transaction_count do
-    Repo.aggregate(InternalTransaction.where_nonpending_block(), :count, :transaction_hash)
-  end
-
-  @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0` in the `t:Explorer.Chain.Block.t/0`.
 
   ## Options
