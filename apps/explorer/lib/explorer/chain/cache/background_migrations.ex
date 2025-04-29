@@ -64,6 +64,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     AddressCurrentTokenBalanceTokenType,
     AddressTokenBalanceTokenType,
     ArbitrumDaRecordsNormalization,
+    ArbitrumMigrateFromL1Executions,
     BackfillMultichainSearchDB,
     SanitizeDuplicatedLogIndexLogs,
     SmartContractLanguage,
