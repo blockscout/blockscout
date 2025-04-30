@@ -122,6 +122,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
           # Update EIP7702 proxy addresses to avoid inconsistencies between addresses and proxy_implementations tables.
           # Other proxy types are not handled here, since their bytecode doesn't change the way EIP7702 bytecode does.
           cond do
+            Address.smart_contract?(address) and !Address.eoa_with_code?(address) ->
+              :ok
+
             is_nil(fetched_code) ->
               Implementation.delete_implementations(address.hash)
 
