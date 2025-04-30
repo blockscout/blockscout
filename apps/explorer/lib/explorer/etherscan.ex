@@ -14,7 +14,8 @@ defmodule Explorer.Etherscan do
       offset: 2,
       preload: 2,
       preload: 3,
-      select_merge: 3
+      select_merge: 3,
+      union_all: 2
     ]
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -22,7 +23,18 @@ defmodule Explorer.Etherscan do
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
-  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, InternalTransaction, TokenTransfer, Transaction}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    DenormalizationHelper,
+    Hash,
+    InternalTransaction,
+    InternalTransactionArchive,
+    TokenTransfer,
+    Transaction
+  }
+
   alias Explorer.Chain.Transaction.History.TransactionStats
 
   @default_options %{
@@ -189,18 +201,21 @@ defmodule Explorer.Etherscan do
       end
 
     if direction do
-      options
-      |> internal_transactions_with_transactions_and_blocks_query()
-      |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
-      |> InternalTransaction.where_address_fields_match(address_hash, direction)
-      |> InternalTransaction.where_is_different_from_parent_transaction()
-      |> where_start_block_match(options)
-      |> where_end_block_match(options)
-      |> InternalTransaction.where_nonpending_block()
+      InternalTransaction
+      |> list_internal_transactions_by_direction_query(address_hash, direction, options)
+      |> Chain.wrapped_union_subquery()
+      |> union_all(
+        ^list_internal_transactions_by_direction_query(InternalTransactionArchive, address_hash, direction, options)
+      )
       |> Repo.replica().all()
     else
       consensus_blocks = Block.consensus_blocks_query()
-      query = internal_transactions_query(options, consensus_blocks)
+
+      query =
+        InternalTransaction
+        |> internal_transactions_query(options, consensus_blocks)
+        |> Chain.wrapped_union_subquery()
+        |> union_all(^internal_transactions_query(InternalTransactionArchive, options, consensus_blocks))
 
       query_to_address_hash_wrapped =
         list_internal_transactions_by_address_type_query(:to_address_hash, address_hash, query, options)
@@ -226,6 +241,40 @@ defmodule Explorer.Etherscan do
     end
   end
 
+  def list_internal_transactions(
+        :all,
+        raw_options
+      ) do
+    options = Map.merge(@default_options, raw_options)
+
+    consensus_blocks = Block.consensus_blocks_query()
+
+    InternalTransaction
+    |> list_internal_transactions_all_query(consensus_blocks, options)
+    |> Chain.wrapped_union_subquery()
+    |> union_all(^list_internal_transactions_all_query(InternalTransactionArchive, consensus_blocks, options))
+    |> Repo.replica().all()
+  end
+
+  defp list_internal_transactions_all_query(data_source, consensus_blocks, options) do
+    data_source
+    |> internal_transactions_query(options, consensus_blocks)
+    |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> where_start_block_match(options)
+    |> where_end_block_match(options)
+  end
+
+  defp list_internal_transactions_by_direction_query(data_source, address_hash, direction, options) do
+    data_source
+    |> internal_transactions_with_transactions_and_blocks_query(options)
+    |> data_source.where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_address_fields_match(address_hash, direction)
+    |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> where_start_block_match(options)
+    |> where_end_block_match(options)
+    |> InternalTransaction.where_nonpending_block()
+  end
+
   defp list_internal_transactions_by_address_type_query(address_type, address_hash, query, options) do
     query
     |> InternalTransaction.where_address_fields_match(address_hash, address_type)
@@ -235,27 +284,10 @@ defmodule Explorer.Etherscan do
     |> Chain.wrapped_union_subquery()
   end
 
-  def list_internal_transactions(
-        :all,
-        raw_options
-      ) do
-    options = Map.merge(@default_options, raw_options)
-
-    consensus_blocks = Block.consensus_blocks_query()
-
-    options
-    |> internal_transactions_query(consensus_blocks)
-    |> InternalTransaction.where_is_different_from_parent_transaction()
-    |> where_start_block_match(options)
-    |> where_end_block_match(options)
-    |> Repo.replica().all()
-  end
-
-  defp internal_transactions_with_transactions_and_blocks_query(options) do
-    # todo: use InternalTransactionArchive
+  defp internal_transactions_with_transactions_and_blocks_query(data_source, options) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       from(
-        it in InternalTransaction,
+        it in data_source,
         inner_join: transaction in assoc(it, :transaction),
         where: not is_nil(transaction.block_hash),
         order_by: [{^options.order_by_direction, transaction.block_number}],
@@ -269,7 +301,7 @@ defmodule Explorer.Etherscan do
       )
     else
       from(
-        it in InternalTransaction,
+        it in data_source,
         inner_join: transaction in assoc(it, :transaction),
         inner_join: block in assoc(transaction, :block),
         order_by: [{^options.order_by_direction, transaction.block_number}],
@@ -284,10 +316,9 @@ defmodule Explorer.Etherscan do
     end
   end
 
-  defp internal_transactions_query(options, consensus_blocks) do
-    # todo: use InternalTransactionArchive
+  defp internal_transactions_query(data_source, options, consensus_blocks) do
     from(
-      it in InternalTransaction,
+      it in data_source,
       inner_join: block in subquery(consensus_blocks),
       on: it.block_number == block.number,
       order_by: [
