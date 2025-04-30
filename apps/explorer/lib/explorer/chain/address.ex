@@ -1027,7 +1027,7 @@ defmodule Explorer.Chain.Address do
       where: it.created_contract_address_hash == ^address_hash,
       where: t.status == ^1,
       order_by: [desc: it.block_number],
-      limit: ^1
+      limit: 1
     )
   end
 end
