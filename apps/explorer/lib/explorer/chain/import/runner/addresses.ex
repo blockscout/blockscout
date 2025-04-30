@@ -73,7 +73,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     multi
     |> Multi.run(:filter_addresses, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
-        fn -> filter_addresses(repo, ordered_changes_list) end,
+        fn -> filter_addresses(repo, ordered_changes_list, options[option_key()][:fields_to_update]) end,
         :addresses,
         :addresses,
         :filter_addresses
@@ -120,10 +120,13 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   @impl Import.Runner
   def timeout, do: @timeout
 
+  @impl Import.Runner
+  def runner_specific_options, do: [:fields_to_update]
+
   ## Private Functions
 
-  @spec filter_addresses(Repo.t(), [map()]) :: {:ok, {[map()], map()}}
-  defp filter_addresses(repo, changes_list) do
+  @spec filter_addresses(Repo.t(), [map()], [atom()] | nil) :: {:ok, {[map()], map()}}
+  defp filter_addresses(repo, changes_list, fields_to_update) do
     hashes = Enum.map(changes_list, & &1.hash)
 
     existing_addresses_query =
@@ -142,7 +145,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       |> Enum.reduce([], fn address, acc ->
         existing_address = existing_addresses_map[address.hash]
 
-        if should_update?(address, existing_address) do
+        if should_update?(address, existing_address, fields_to_update) do
           [address | acc]
         else
           acc
@@ -153,14 +156,20 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     {:ok, {filtered_addresses, existing_addresses_map}}
   end
 
-  defp should_update?(new_address, existing_address) do
-    is_nil(existing_address) or
-      (not is_nil(new_address[:contract_code]) and new_address[:contract_code] != existing_address.contract_code) or
+  defp should_update?(_new_address, nil, _fields_to_replace), do: true
+
+  defp should_update?(new_address, existing_address, nil) do
+    (not is_nil(new_address[:contract_code]) and new_address[:contract_code] != existing_address.contract_code) or
       (not is_nil(new_address[:fetched_coin_balance_block_number]) and
          (is_nil(existing_address.fetched_coin_balance_block_number) or
             new_address[:fetched_coin_balance_block_number] >= existing_address.fetched_coin_balance_block_number)) or
       (not is_nil(new_address[:nonce]) and
          (is_nil(existing_address.nonce) or new_address[:nonce] > existing_address.nonce))
+  end
+
+  defp should_update?(new_address, existing_address, fields_to_replace) do
+    fields_to_replace
+    |> Enum.any?(fn field -> Map.get(existing_address, field) != Map.get(new_address, field) end)
   end
 
   @spec insert(Repo.t(), [map()], %{

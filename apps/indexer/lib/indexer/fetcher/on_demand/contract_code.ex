@@ -10,14 +10,12 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
 
   import EthereumJSONRPC, only: [fetch_codes: 2]
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Data}
   alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Chain.Import
-  alias Explorer.Chain.Import.Runner.Addresses
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.Repo
   alias Explorer.Utility.{AddressContractCodeFetchAttempt, RateLimiter}
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
 
@@ -113,10 +111,12 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
          {:ok, fetched_code} <-
            (contract_code_object.code == "0x" && {:ok, nil}) || Data.cast(contract_code_object.code),
          true <- fetched_code != address.contract_code do
-      case Addresses.insert(Repo, [%{hash: address.hash, contract_code: fetched_code}], %{
-             timeout: :infinity,
-             on_conflict: {:replace, [:contract_code, :updated_at]},
-             timestamps: Import.timestamps()
+      case Chain.import(%{
+             addresses: %{
+               params: [%{hash: address.hash, contract_code: fetched_code}],
+               on_conflict: {:replace, [:contract_code, :updated_at]},
+               fields_to_update: [:contract_code]
+             }
            }) do
         {:ok, _} ->
           # Update EIP7702 proxy addresses to avoid inconsistencies between addresses and proxy_implementations tables.
