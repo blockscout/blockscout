@@ -1442,24 +1442,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The number of `t:Explorer.Chain.InternalTransaction.t/0`.
-
-      iex> transaction = :transaction |> insert() |> with_block()
-      iex> insert(:internal_transaction, index: 0, transaction: transaction, block_hash: transaction.block_hash, block_index: 0)
-      iex> Explorer.Chain.internal_transaction_count()
-      1
-
-  If there are none, the count is `0`.
-
-      iex> Explorer.Chain.internal_transaction_count()
-      0
-
-  """
-  def internal_transaction_count do
-    Repo.aggregate(InternalTransaction.where_nonpending_block(), :count, :transaction_hash)
-  end
-
-  @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0` in the `t:Explorer.Chain.Block.t/0`.
 
   ## Options
@@ -2791,20 +2773,9 @@ defmodule Explorer.Chain do
         %{init: Data.to_string(input), created_contract_code: Data.to_string(created_contract_code)}
       end
     else
-      creation_int_transaction_query =
-        from(
-          itx in InternalTransaction,
-          join: t in assoc(itx, :transaction),
-          where: itx.created_contract_address_hash == ^address_hash,
-          where: t.status == ^1,
-          select: %{init: itx.init, created_contract_code: itx.created_contract_code},
-          order_by: [desc: itx.block_number],
-          limit: ^1
-        )
-
-      res = creation_int_transaction_query |> Repo.one()
-
-      case res do
+      case address_hash
+           |> Address.creation_internal_transaction_query()
+           |> Repo.one() do
         %{init: init, created_contract_code: created_contract_code} ->
           init_str = Data.to_string(init)
           created_contract_code_str = Data.to_string(created_contract_code)
