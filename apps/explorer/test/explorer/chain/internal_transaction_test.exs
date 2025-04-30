@@ -636,6 +636,460 @@ defmodule Explorer.Chain.InternalTransactionTest do
     end
   end
 
+  describe "address_to_internal_transactions/1" do
+    test "with single transaction containing two internal transactions" do
+      address = insert(:address)
+
+      block = insert(:block, number: 2000)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
+        insert(:internal_transaction,
+          index: 1,
+          transaction: transaction,
+          to_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 1,
+          transaction_index: transaction.index
+        )
+
+      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
+        insert(:internal_transaction,
+          index: 2,
+          transaction: transaction,
+          to_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 2,
+          transaction_index: transaction.index
+        )
+
+      result =
+        address.hash
+        |> InternalTransaction.address_to_internal_transactions()
+        |> Enum.map(&{&1.transaction_hash, &1.index})
+
+      assert Enum.member?(result, {first_transaction_hash, first_index})
+      assert Enum.member?(result, {second_transaction_hash, second_index})
+    end
+
+    test "loads associations in necessity_by_association" do
+      %Address{hash: address_hash} = address = insert(:address)
+      block = insert(:block, number: 2000)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        to_address: address,
+        index: 0,
+        block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        transaction_index: transaction.index
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        to_address: address,
+        index: 1,
+        block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 1,
+        transaction_index: transaction.index
+      )
+
+      assert [
+               %InternalTransaction{
+                 from_address: %Ecto.Association.NotLoaded{},
+                 to_address: %Ecto.Association.NotLoaded{},
+                 transaction: %Ecto.Association.NotLoaded{}
+               }
+               | _
+             ] = InternalTransaction.address_to_internal_transactions(address_hash)
+
+      assert [
+               %InternalTransaction{
+                 from_address: %Address{},
+                 to_address: %Address{},
+                 transaction: %Transaction{}
+               }
+               | _
+             ] =
+               InternalTransaction.address_to_internal_transactions(
+                 address_hash,
+                 necessity_by_association: %{
+                   [from_address: :names] => :optional,
+                   [to_address: :names] => :optional,
+                   :transaction => :optional
+                 }
+               )
+    end
+
+    test "returns results in reverse chronological order by block number, transaction index, internal transaction index" do
+      address = insert(:address)
+
+      block = insert(:block, number: 7000)
+
+      pending_transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      %InternalTransaction{transaction_hash: first_pending_transaction_hash, index: first_pending_index} =
+        insert(
+          :internal_transaction,
+          transaction: pending_transaction,
+          to_address: address,
+          index: 1,
+          block_number: pending_transaction.block_number,
+          block_hash: pending_transaction.block_hash,
+          block_index: 1,
+          transaction_index: pending_transaction.index
+        )
+
+      %InternalTransaction{transaction_hash: second_pending_transaction_hash, index: second_pending_index} =
+        insert(
+          :internal_transaction,
+          transaction: pending_transaction,
+          to_address: address,
+          index: 2,
+          block_number: pending_transaction.block_number,
+          block_hash: pending_transaction.block_hash,
+          block_index: 2,
+          transaction_index: pending_transaction.index
+        )
+
+      a_block = insert(:block, number: 2000)
+
+      first_a_transaction =
+        :transaction
+        |> insert()
+        |> with_block(a_block)
+
+      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
+        insert(
+          :internal_transaction,
+          transaction: first_a_transaction,
+          to_address: address,
+          index: 1,
+          block_number: first_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 1,
+          transaction_index: first_a_transaction.index
+        )
+
+      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
+        insert(
+          :internal_transaction,
+          transaction: first_a_transaction,
+          to_address: address,
+          index: 2,
+          block_number: first_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 2,
+          transaction_index: first_a_transaction.index
+        )
+
+      second_a_transaction =
+        :transaction
+        |> insert()
+        |> with_block(a_block)
+
+      %InternalTransaction{transaction_hash: third_transaction_hash, index: third_index} =
+        insert(
+          :internal_transaction,
+          transaction: second_a_transaction,
+          to_address: address,
+          index: 1,
+          block_number: second_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 4,
+          transaction_index: second_a_transaction.index
+        )
+
+      %InternalTransaction{transaction_hash: fourth_transaction_hash, index: fourth_index} =
+        insert(
+          :internal_transaction,
+          transaction: second_a_transaction,
+          to_address: address,
+          index: 2,
+          block_number: second_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 5,
+          transaction_index: second_a_transaction.index
+        )
+
+      b_block = insert(:block, number: 6000)
+
+      first_b_transaction =
+        :transaction
+        |> insert()
+        |> with_block(b_block)
+
+      %InternalTransaction{transaction_hash: fifth_transaction_hash, index: fifth_index} =
+        insert(
+          :internal_transaction,
+          transaction: first_b_transaction,
+          to_address: address,
+          index: 1,
+          block_number: first_b_transaction.block_number,
+          block_hash: b_block.hash,
+          block_index: 1,
+          transaction_index: first_b_transaction.index
+        )
+
+      %InternalTransaction{transaction_hash: sixth_transaction_hash, index: sixth_index} =
+        insert(
+          :internal_transaction,
+          transaction: first_b_transaction,
+          to_address: address,
+          index: 2,
+          block_number: first_b_transaction.block_number,
+          block_hash: b_block.hash,
+          block_index: 2,
+          transaction_index: first_b_transaction.index
+        )
+
+      result =
+        address.hash
+        |> InternalTransaction.address_to_internal_transactions()
+        |> Enum.map(&{&1.transaction_hash, &1.index})
+
+      assert [
+               {second_pending_transaction_hash, second_pending_index},
+               {first_pending_transaction_hash, first_pending_index},
+               {sixth_transaction_hash, sixth_index},
+               {fifth_transaction_hash, fifth_index},
+               {fourth_transaction_hash, fourth_index},
+               {third_transaction_hash, third_index},
+               {second_transaction_hash, second_index},
+               {first_transaction_hash, first_index}
+             ] == result
+    end
+
+    test "pages by {block_number, transaction_index, index}" do
+      address = insert(:address)
+
+      pending_transaction = insert(:transaction)
+
+      old_block = insert(:block, consensus: false)
+
+      insert(
+        :internal_transaction,
+        transaction: pending_transaction,
+        to_address: address,
+        block_hash: old_block.hash,
+        block_index: 1,
+        index: 1
+      )
+
+      insert(
+        :internal_transaction,
+        transaction: pending_transaction,
+        to_address: address,
+        block_hash: old_block.hash,
+        block_index: 2,
+        index: 2
+      )
+
+      a_block = insert(:block, number: 2000)
+
+      first_a_transaction =
+        :transaction
+        |> insert()
+        |> with_block(a_block)
+
+      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
+        insert(
+          :internal_transaction,
+          transaction: first_a_transaction,
+          to_address: address,
+          index: 1,
+          block_number: first_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 1,
+          transaction_index: first_a_transaction.index
+        )
+
+      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
+        insert(
+          :internal_transaction,
+          transaction: first_a_transaction,
+          to_address: address,
+          index: 2,
+          block_number: first_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 2,
+          transaction_index: first_a_transaction.index
+        )
+
+      second_a_transaction =
+        :transaction
+        |> insert()
+        |> with_block(a_block)
+
+      %InternalTransaction{transaction_hash: third_transaction_hash, index: third_index} =
+        insert(
+          :internal_transaction,
+          transaction: second_a_transaction,
+          to_address: address,
+          index: 1,
+          block_number: second_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 4,
+          transaction_index: second_a_transaction.index
+        )
+
+      %InternalTransaction{transaction_hash: fourth_transaction_hash, index: fourth_index} =
+        insert(
+          :internal_transaction,
+          transaction: second_a_transaction,
+          to_address: address,
+          index: 2,
+          block_number: second_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 5,
+          transaction_index: second_a_transaction.index
+        )
+
+      b_block = insert(:block, number: 6000)
+
+      first_b_transaction =
+        :transaction
+        |> insert()
+        |> with_block(b_block)
+
+      %InternalTransaction{transaction_hash: fifth_transaction_hash, index: fifth_index} =
+        insert(
+          :internal_transaction,
+          transaction: first_b_transaction,
+          to_address: address,
+          index: 1,
+          block_number: first_b_transaction.block_number,
+          block_hash: b_block.hash,
+          block_index: 1,
+          transaction_index: first_b_transaction.index
+        )
+
+      %InternalTransaction{transaction_hash: sixth_transaction_hash, index: sixth_index} =
+        insert(
+          :internal_transaction,
+          transaction: first_b_transaction,
+          to_address: address,
+          index: 2,
+          block_number: first_b_transaction.block_number,
+          block_hash: b_block.hash,
+          block_index: 2,
+          transaction_index: first_b_transaction.index
+        )
+
+      # When paged, internal transactions need an associated block number, so `second_pending` and `first_pending` are
+      # excluded.
+      assert [
+               {sixth_transaction_hash, sixth_index},
+               {fifth_transaction_hash, fifth_index},
+               {fourth_transaction_hash, fourth_index},
+               {third_transaction_hash, third_index},
+               {second_transaction_hash, second_index},
+               {first_transaction_hash, first_index}
+             ] ==
+               address.hash
+               |> InternalTransaction.address_to_internal_transactions(
+                 paging_options: %PagingOptions{key: {6001, 3, 2}, page_size: 8}
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.index})
+
+      # block number ==, transaction index ==, internal transaction index <
+      assert [
+               {fourth_transaction_hash, fourth_index},
+               {third_transaction_hash, third_index},
+               {second_transaction_hash, second_index},
+               {first_transaction_hash, first_index}
+             ] ==
+               address.hash
+               |> InternalTransaction.address_to_internal_transactions(
+                 paging_options: %PagingOptions{key: {6000, 0, 1}, page_size: 8}
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.index})
+
+      # block number ==, transaction index <
+      assert [
+               {fourth_transaction_hash, fourth_index},
+               {third_transaction_hash, third_index},
+               {second_transaction_hash, second_index},
+               {first_transaction_hash, first_index}
+             ] ==
+               address.hash
+               |> InternalTransaction.address_to_internal_transactions(
+                 paging_options: %PagingOptions{key: {6000, -1, -1}, page_size: 8}
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.index})
+
+      # block number <
+      assert [] ==
+               address.hash
+               |> InternalTransaction.address_to_internal_transactions(
+                 paging_options: %PagingOptions{key: {2000, -1, -1}, page_size: 8}
+               )
+               |> Enum.map(&{&1.transaction_hash, &1.index})
+    end
+
+    test "excludes internal transactions of type `call` when they are alone in the parent transaction" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      insert(:internal_transaction,
+        index: 0,
+        to_address: address,
+        transaction: transaction,
+        block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        transaction_index: transaction.index
+      )
+
+      assert Enum.empty?(InternalTransaction.address_to_internal_transactions(address_hash))
+    end
+
+    test "includes internal transactions of type `create` even when they are alone in the parent transaction" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      expected =
+        insert(
+          :internal_transaction_create,
+          index: 0,
+          from_address: address,
+          transaction: transaction,
+          block_hash: transaction.block_hash,
+          block_index: 0,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
+
+      actual = Enum.at(InternalTransaction.address_to_internal_transactions(address_hash), 0)
+
+      assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
+    end
+  end
+
   defp call_type(opts) do
     defaults = [
       type: :call,

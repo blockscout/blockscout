@@ -3,8 +3,7 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactions do
   Exports internal transactions to a csv file.
   """
 
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, Hash, Transaction, Wei}
+  alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.CsvExport.Helper
 
   @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
@@ -40,7 +39,7 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactions do
             else: &1
           )).()
 
-    Chain.address_to_internal_transactions(address_hash, options)
+    InternalTransaction.address_to_internal_transactions(address_hash, options)
   end
 
   defp to_csv_format(internal_transactions) do
