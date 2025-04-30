@@ -201,8 +201,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     functions =
       [
         :get_implementation_address_hash_string_eip1167,
-        :get_implementation_address_hash_string_clones_with_immutable_arguments,
         :get_implementation_address_hash_string_eip7702,
+        :get_implementation_address_hash_string_clones_with_immutable_arguments,
         :get_implementation_address_hash_string_eip1967,
         :get_implementation_address_hash_string_eip1822,
         :get_implementation_address_hash_string_eip2535,

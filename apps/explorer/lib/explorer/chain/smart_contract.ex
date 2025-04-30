@@ -685,13 +685,7 @@ defmodule Explorer.Chain.SmartContract do
         %{init: Data.to_string(input), transaction: transaction}
       end
     else
-      creation_int_transaction_query =
-        from(
-          itx in InternalTransaction,
-          join: t in assoc(itx, :transaction),
-          where: itx.created_contract_address_hash == ^address_hash,
-          where: t.status == ^1
-        )
+      creation_int_transaction_query = Address.creation_internal_transaction_query(address_hash)
 
       internal_transaction = creation_int_transaction_query |> Repo.one()
 

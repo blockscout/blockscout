@@ -11,7 +11,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   import Ecto.Query,
     only: [
       from: 2,
-      select: 3
+      select: 3,
+      where: 3
     ]
 
   alias Explorer.{Chain, Repo}
@@ -421,6 +422,28 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       names: names
     })
     |> Repo.update()
+  end
+
+  @doc """
+  Deletes all proxy implementations associated with the given proxy address hash.
+
+  ## Parameters
+
+    - `address_hash` (binary): The hash of the proxy address whose implementations
+      should be deleted.
+
+  ## Returns
+
+    - `{count, nil}`: A tuple where `count` is the number of records deleted.
+
+  This function uses a query to find all proxy implementations matching the
+  provided `address_hash` and deletes them from the database.
+  """
+  @spec delete_implementations(Hash.Address.t()) :: {non_neg_integer(), nil}
+  def delete_implementations(address_hash) do
+    __MODULE__
+    |> where([proxy_implementations], proxy_implementations.proxy_address_hash == ^address_hash)
+    |> Repo.delete_all()
   end
 
   # Cut off implementations per proxy up to @max_implementations_number_per_proxy number
