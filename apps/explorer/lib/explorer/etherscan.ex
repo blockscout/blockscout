@@ -260,8 +260,7 @@ defmodule Explorer.Etherscan do
     data_source
     |> internal_transactions_query(options, consensus_blocks)
     |> InternalTransaction.where_is_different_from_parent_transaction()
-    |> where_start_block_match(options)
-    |> where_end_block_match(options)
+    |> where_start_and_end_block_number_match(options)
   end
 
   defp list_internal_transactions_by_direction_query(data_source, address_hash, direction, options) do
@@ -270,8 +269,7 @@ defmodule Explorer.Etherscan do
     |> data_source.where_transaction_has_multiple_internal_transactions()
     |> InternalTransaction.where_address_fields_match(address_hash, direction)
     |> InternalTransaction.where_is_different_from_parent_transaction()
-    |> where_start_block_match(options)
-    |> where_end_block_match(options)
+    |> where_start_and_end_block_number_match(options)
     |> InternalTransaction.where_nonpending_block()
   end
 
@@ -279,8 +277,7 @@ defmodule Explorer.Etherscan do
     query
     |> InternalTransaction.where_address_fields_match(address_hash, address_type)
     |> InternalTransaction.where_is_different_from_parent_transaction()
-    |> where_start_block_match(options)
-    |> where_end_block_match(options)
+    |> where_start_and_end_block_number_match(options)
     |> Chain.wrapped_union_subquery()
   end
 
@@ -571,18 +568,18 @@ defmodule Explorer.Etherscan do
           offset: ^offset(options),
           select:
             merge(map(t, ^@transaction_fields), %{
+              confirmations: fragment("? - ?", ^max_block_number, t.block_number),
               block_timestamp: b.timestamp,
-              confirmations: fragment("? - ?", ^max_block_number, t.block_number)
+              block_number: b.number
             })
         )
       end
 
     query
+    |> Chain.wrapped_union_subquery()
     |> where_address_match(address_hash, options)
-    |> where_start_transaction_block_match(options)
-    |> where_end_transaction_block_match(options)
-    |> where_start_timestamp_match(options)
-    |> where_end_timestamp_match(options)
+    |> where_start_and_end_block_number_match(options)
+    |> where_start_and_end_block_timestamp_match(options)
     |> Repo.replica().all()
   end
 
@@ -723,36 +720,22 @@ defmodule Explorer.Etherscan do
     |> Repo.replica().all()
   end
 
-  defp where_start_block_match(query, %{startblock: nil}), do: query
+  defp where_start_block_number_match(query, %{startblock: nil}), do: query
 
-  defp where_start_block_match(query, %{startblock: start_block}) do
-    where(query, [..., block], block.number >= ^start_block)
+  defp where_start_block_number_match(query, %{startblock: start_block}) do
+    where(query, [q], q.block_number >= ^start_block)
   end
 
-  defp where_end_block_match(query, %{endblock: nil}), do: query
+  defp where_end_block_number_match(query, %{endblock: nil}), do: query
 
-  defp where_end_block_match(query, %{endblock: end_block}) do
-    where(query, [..., block], block.number <= ^end_block)
+  defp where_end_block_number_match(query, %{endblock: end_block}) do
+    where(query, [q], q.block_number <= ^end_block)
   end
 
-  defp where_start_transaction_block_match(query, %{startblock: nil}), do: query
-
-  defp where_start_transaction_block_match(query, %{startblock: start_block} = params) do
-    if DenormalizationHelper.transactions_denormalization_finished?() do
-      where(query, [transaction], transaction.block_number >= ^start_block)
-    else
-      where_start_block_match(query, params)
-    end
-  end
-
-  defp where_end_transaction_block_match(query, %{endblock: nil}), do: query
-
-  defp where_end_transaction_block_match(query, %{endblock: end_block} = params) do
-    if DenormalizationHelper.transactions_denormalization_finished?() do
-      where(query, [transaction], transaction.block_number <= ^end_block)
-    else
-      where_end_block_match(query, params)
-    end
+  defp where_start_and_end_block_number_match(query, options) do
+    query
+    |> where_start_block_number_match(options)
+    |> where_end_block_number_match(options)
   end
 
   defp where_start_block_match_tt(query, %{startblock: nil}), do: query
@@ -767,24 +750,22 @@ defmodule Explorer.Etherscan do
     where(query, [tt], tt.block_number <= ^end_block)
   end
 
-  defp where_start_timestamp_match(query, %{start_timestamp: nil}), do: query
+  defp where_start_block_timestamp_match(query, %{start_timestamp: nil}), do: query
 
-  defp where_start_timestamp_match(query, %{start_timestamp: start_timestamp}) do
-    if DenormalizationHelper.transactions_denormalization_finished?() do
-      where(query, [transaction], ^start_timestamp <= transaction.block_timestamp)
-    else
-      where(query, [..., block], ^start_timestamp <= block.timestamp)
-    end
+  defp where_start_block_timestamp_match(query, %{start_timestamp: start_timestamp}) do
+    where(query, [q], ^start_timestamp <= q.block_timestamp)
   end
 
-  defp where_end_timestamp_match(query, %{end_timestamp: nil}), do: query
+  defp where_end_block_timestamp_match(query, %{end_timestamp: nil}), do: query
 
-  defp where_end_timestamp_match(query, %{end_timestamp: end_timestamp}) do
-    if DenormalizationHelper.transactions_denormalization_finished?() do
-      where(query, [transaction], transaction.block_timestamp <= ^end_timestamp)
-    else
-      where(query, [..., block], block.timestamp <= ^end_timestamp)
-    end
+  defp where_end_block_timestamp_match(query, %{end_timestamp: end_timestamp}) do
+    where(query, [q], q.block_timestamp <= ^end_timestamp)
+  end
+
+  defp where_start_and_end_block_timestamp_match(query, options) do
+    query
+    |> where_start_block_timestamp_match(options)
+    |> where_end_block_timestamp_match(options)
   end
 
   defp where_contract_address_match(query, nil), do: query
