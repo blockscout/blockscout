@@ -1165,23 +1165,37 @@ defmodule Explorer.Chain.InternalTransaction do
       _ ->
         transaction_hash_from_options = Keyword.get(options, :transaction_hash)
 
-        __MODULE__
-        |> internal_transactions_query(paging_options, transaction_hash_from_options)
-        |> union_all(
-          ^internal_transactions_query(InternalTransactionArchive, paging_options, transaction_hash_from_options)
-        )
+        preloads =
+          DenormalizationHelper.extend_transaction_preload([
+            :block,
+            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
+          ])
+
+        pivot_block_number =
+          Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
+
+        # todo: enhance logic to prevent requesting from both tables when pivot  block number is set and requested dataset effectively is in one table.
+        base_query =
+          if is_nil(pivot_block_number) do
+            __MODULE__
+            |> internal_transactions_query(paging_options, transaction_hash_from_options)
+          else
+            __MODULE__
+            |> internal_transactions_query(paging_options, transaction_hash_from_options)
+            |> Chain.wrapped_union_subquery()
+            |> union_all(
+              ^internal_transactions_query(InternalTransactionArchive, paging_options, transaction_hash_from_options)
+            )
+          end
+
+        base_query
+        |> preload(^preloads)
         |> Chain.select_repo(options).all()
     end
   end
 
   defp internal_transactions_query(data_source, paging_options, transaction_hash_from_options) do
-    preloads =
-      DenormalizationHelper.extend_transaction_preload([
-        :block,
-        [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
-        [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
-      ])
-
     data_source
     |> where_nonpending_block()
     |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
@@ -1192,7 +1206,6 @@ defmodule Explorer.Chain.InternalTransaction do
       desc: internal_transaction.index
     )
     |> limit(^paging_options.page_size)
-    |> preload(^preloads)
   end
 
   defp page_block_internal_transaction(query, %PagingOptions{key: %{block_index: block_index}}) do
