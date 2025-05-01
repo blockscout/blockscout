@@ -630,7 +630,7 @@ defmodule Explorer.Chain.InternalTransaction do
           [
             __MODULE__.t() | InternalTransactionArchive.t()
           ]
-  def transaction_to_internal_transactions(%Transaction{} = transaction, options) when is_list(options) do
+  def transaction_to_internal_transactions(%Transaction{} = transaction, options \\ []) when is_list(options) do
     data_source = choose_between_realtime_and_archive_data_source(transaction.block_number)
     transaction_to_internal_transactions(transaction.hash, data_source, options)
   end
@@ -751,7 +751,7 @@ defmodule Explorer.Chain.InternalTransaction do
     pivot_block_number = Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
 
     cond do
-      pivot_block_number < from_block ->
+      is_nil(pivot_block_number) || pivot_block_number < from_block ->
         do_address_to_internal_transactions_query(
           direction,
           hash,
@@ -805,7 +805,7 @@ defmodule Explorer.Chain.InternalTransaction do
     pivot_block_number = Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
 
     cond do
-      pivot_block_number < from_block ->
+      is_nil(pivot_block_number) || pivot_block_number < from_block ->
         do_address_to_internal_transactions_query(
           direction,
           hash,
@@ -849,6 +849,16 @@ defmodule Explorer.Chain.InternalTransaction do
     pivot_block_number = Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
 
     cond do
+      is_nil(pivot_block_number) ->
+        do_address_to_internal_transactions_query(
+          direction,
+          hash,
+          __MODULE__,
+          from_block,
+          to_block,
+          paging_options
+        )
+
       pivot_block_number <= to_block ->
         direction
         |> do_address_to_internal_transactions_query(
@@ -889,25 +899,38 @@ defmodule Explorer.Chain.InternalTransaction do
          to_block,
          paging_options
        ) do
-    direction
-    |> do_address_to_internal_transactions_query(
-      hash,
-      __MODULE__,
-      from_block,
-      to_block,
-      paging_options
-    )
-    |> Chain.wrapped_union_subquery()
-    |> union_all(
-      ^do_address_to_internal_transactions_query(
+    pivot_block_number = Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
+
+    if is_nil(pivot_block_number) do
+      do_address_to_internal_transactions_query(
         direction,
         hash,
-        InternalTransactionArchive,
+        __MODULE__,
         from_block,
         to_block,
         paging_options
       )
-    )
+    else
+      direction
+      |> do_address_to_internal_transactions_query(
+        hash,
+        __MODULE__,
+        from_block,
+        to_block,
+        paging_options
+      )
+      |> Chain.wrapped_union_subquery()
+      |> union_all(
+        ^do_address_to_internal_transactions_query(
+          direction,
+          hash,
+          InternalTransactionArchive,
+          from_block,
+          to_block,
+          paging_options
+        )
+      )
+    end
   end
 
   defp do_address_to_internal_transactions_query(
@@ -1208,8 +1231,9 @@ defmodule Explorer.Chain.InternalTransaction do
   """
   @spec choose_between_realtime_and_archive_data_source(non_neg_integer()) :: module()
   def choose_between_realtime_and_archive_data_source(block_number) do
-    if block_number >
-         Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number] do
+    pivot_block_number = Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
+
+    if is_nil(pivot_block_number) || block_number > pivot_block_number do
       __MODULE__
     else
       InternalTransactionArchive

@@ -1083,6 +1083,7 @@ defmodule Explorer.Chain.Address do
       creation_internal_transaction_from_specific_data_source_query(address_hash, InternalTransactionArchive)
 
     creation_internal_transaction_from_realtime
+    |> Chain.wrapped_union_subquery()
     |> union_all(^creation_internal_transaction_from_archive)
   end
 

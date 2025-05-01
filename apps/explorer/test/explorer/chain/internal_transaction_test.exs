@@ -299,7 +299,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
         )
 
       result =
-        transaction.hash
+        transaction
         |> InternalTransaction.transaction_to_internal_transactions()
         |> Enum.map(&{&1.transaction_hash, &1.index})
 
