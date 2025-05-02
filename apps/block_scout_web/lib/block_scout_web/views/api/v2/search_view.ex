@@ -153,6 +153,14 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     }
   end
 
+  def prepare_search_result(%{type: "tac_operation"} = search_result) do
+    %{
+      "type" => search_result.type,
+      "tac_operation" => search_result.tac_operation,
+      "priority" => search_result.priority
+    }
+  end
+
   defp hash(%Hash{} = hash), do: hash
 
   defp hash(bytes),
