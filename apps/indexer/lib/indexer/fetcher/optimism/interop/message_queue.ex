@@ -31,11 +31,13 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
   import Indexer.Fetcher.Optimism.Interop.Helper, only: [log_cant_get_chain_id_from_rpc: 0]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Optimism.InteropMessage
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
+  @counter_type "optimism_interop_messages_queue_iteration"
   @fetcher_name :optimism_interop_messages_queue
   @api_endpoint_import "/api/v2/import/optimism/interop/"
 
@@ -111,6 +113,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
          timeout: :timer.seconds(env[:connect_timeout]),
          recv_timeout: :timer.seconds(env[:recv_timeout]),
          export_expiration_blocks: div(env[:export_expiration] * 24 * 3600, block_duration),
+         iterations_done: Decimal.to_integer(LastFetchedCounter.get(@counter_type)),
          json_rpc_named_arguments: json_rpc_named_arguments
        }}
     else
@@ -162,6 +165,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
           timeout: timeout,
           recv_timeout: recv_timeout,
           export_expiration_blocks: export_expiration_blocks,
+          iterations_done: iterations_done,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
@@ -169,6 +173,20 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
       Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
     private_key = hash_to_binary(Application.get_all_env(:indexer)[__MODULE__][:private_key])
+
+    LastFetchedCounter.upsert(%{
+      counter_type: @counter_type,
+      value: iterations_done
+    })
+
+    # the first three iterations scan all incomplete messages,
+    # but subsequent scans are limited by INDEXER_OPTIMISM_INTEROP_EXPORT_EXPIRATION_DAYS env
+    export_expiration_blocks =
+      if iterations_done < 3 do
+        latest_block_number
+      else
+        export_expiration_blocks
+      end
 
     updated_chainscout_map =
       current_chain_id
@@ -215,7 +233,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
 
     Process.send_after(self(), :continue, :timer.seconds(3))
 
-    {:noreply, %{state | chainscout_map: updated_chainscout_map}}
+    {:noreply, %{state | chainscout_map: updated_chainscout_map, iterations_done: iterations_done + 1}}
   end
 
   @impl GenServer

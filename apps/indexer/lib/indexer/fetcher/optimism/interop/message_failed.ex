@@ -59,9 +59,8 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageFailed do
 
   @impl GenServer
   def init(args) do
-    :ignore
-    # json_rpc_named_arguments = args[:json_rpc_named_arguments]
-    # {:ok, %{}, {:continue, json_rpc_named_arguments}}
+    json_rpc_named_arguments = args[:json_rpc_named_arguments]
+    {:ok, %{}, {:continue, json_rpc_named_arguments}}
   end
 
   # Initialization function which is used instead of `init` to avoid Supervisor's stop in case of any critical issues
