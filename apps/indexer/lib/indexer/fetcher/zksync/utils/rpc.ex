@@ -5,8 +5,12 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
 
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
+  alias ABI.{FunctionSelector, TypeDecoder}
+  alias EthereumJSONRPC.ZkSync.Constants.Contracts, as: ZkSyncContracts
   alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Helper, as: IndexerHelper
+
+  import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_error: 1, log_info: 1]
 
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
   @zero_hash_binary <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
@@ -375,5 +379,65 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
       )
 
     responses
+  end
+
+  @doc """
+    Extracts batch numbers from the calldata of a proof transaction.
+
+    ## Parameters
+    - `calldata`: The calldata from the parent chain transaction
+
+    ## Returns
+    - A list of batch numbers that were proven by the transaction
+  """
+  @spec get_proven_batches_from_calldata(binary()) :: [non_neg_integer()]
+  def get_proven_batches_from_calldata(calldata) do
+    proven_batches =
+      case calldata do
+        "0x7f61885c" <> encoded_params ->
+          [_prev_batch, proven_batches, _proof] =
+            decode_params(encoded_params, ZkSyncContracts.prove_batches_selector_with_abi())
+
+          extract_batch_numbers(proven_batches)
+
+        # Pre-v26 proveBatchesSharedBridge
+        "0xc37533bb" <> encoded_params ->
+          [_chainid, _prev_batch, proven_batches, _proof] =
+            decode_params(encoded_params, ZkSyncContracts.prove_batches_shared_bridge_c37533bb_selector_with_abi())
+
+          extract_batch_numbers(proven_batches)
+
+        # v26+ proveBatchesSharedBridge
+        "0xe12a6137" <> encoded_params ->
+          [_chainid, process_from, process_to, _proof_data] =
+            decode_params(encoded_params, ZkSyncContracts.prove_batches_shared_bridge_e12a6137_selector_with_abi())
+
+          Enum.to_list(process_from..process_to)
+
+        _ ->
+          log_error("Unknown calldata format: #{calldata}")
+
+          []
+      end
+
+    log_info("Discovered #{length(proven_batches)} proven batches in the prove transaction")
+
+    proven_batches
+  end
+
+  # Decodes encoded parameters using the provided function selector.
+  # credo:disable-for-next-line Credo.Check.Warning.SpecWithStruct
+  @spec decode_params(binary(), %FunctionSelector{}) :: list()
+  defp decode_params(encoded_params, function_selector) do
+    encoded_params
+    |> Base.decode16!(case: :lower)
+    |> TypeDecoder.decode(function_selector)
+  end
+
+  # Extracts batch numbers from a list of StoredBatchInfo tuples.
+  @spec extract_batch_numbers([any()]) :: [non_neg_integer()]
+  defp extract_batch_numbers(proven_batches) do
+    proven_batches
+    |> Enum.map(fn batch_info -> elem(batch_info, 0) end)
   end
 end
