@@ -36,6 +36,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Update version across all files
+        run: |
+          chmod +x bin/version_bump.sh
+          ./bin/version_bump.sh --update-to-version ${{ env.VERSION }}
+
       - name: Check if VERSION follows the x.x.x format
         run: |
           if [[ "${{ env.VERSION }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
