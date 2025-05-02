@@ -63,6 +63,7 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
     ],
     celo: [
       Runner.Celo.ValidatorGroupVotes,
+      Runner.Celo.Epochs,
       Runner.Celo.ElectionRewards,
       Runner.Celo.EpochRewards
     ],

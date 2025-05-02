@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
   alias Explorer.Chain.Celo.{ElectionReward, EpochReward}
   alias Explorer.Chain.Hash
-  alias Explorer.Chain.{Block, Token, Transaction, Wei}
+  alias Explorer.Chain.{Block, Token, Transaction, Wei, Celo.Epoch}
 
   @address_params [
     necessity_by_association: %{
@@ -26,66 +26,61 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     api?: true
   ]
 
-  def render("celo_epoch.json", %{epoch_number: epoch_number, epoch_distribution: nil}) do
-    %{
-      number: epoch_number,
-      distribution: nil,
-      aggregated_election_rewards: nil
-    }
+  @spec prepare_distribution(EpochReward.t() | nil) ::
+          %{
+            optional(:reserve_bolster_transfer) => nil | %{optional(String.t()) => any()},
+            optional(:community_transfer) => nil | %{optional(String.t()) => any()},
+            optional(:carbon_offsetting_transfer) => nil | %{optional(String.t()) => any()}
+          }
+          | nil
+  defp prepare_distribution(%EpochReward{} = distribution) do
+    Map.new(
+      [
+        reserve_bolster_transfer: distribution.reserve_bolster_transfer,
+        community_transfer: distribution.community_transfer,
+        carbon_offsetting_transfer: distribution.carbon_offsetting_transfer
+      ],
+      fn {field, token_transfer} ->
+        token_transfer_json =
+          token_transfer &&
+            TransactionView.render(
+              "token_transfer.json",
+              %{token_transfer: token_transfer, conn: nil}
+            )
+
+        {field, token_transfer_json}
+      end
+    )
   end
 
-  def render(
-        "celo_epoch.json",
-        %{
-          epoch_number: epoch_number,
-          epoch_distribution: %EpochReward{
-            reserve_bolster_transfer: reserve_bolster_transfer,
-            community_transfer: community_transfer,
-            carbon_offsetting_transfer: carbon_offsetting_transfer
-          },
-          aggregated_election_rewards: aggregated_election_rewards
-        }
-      ) do
-    distribution_json =
-      Map.new(
-        [
-          reserve_bolster_transfer: reserve_bolster_transfer,
-          community_transfer: community_transfer,
-          carbon_offsetting_transfer: carbon_offsetting_transfer
-        ],
-        fn {field, token_transfer} ->
-          token_transfer_json =
-            token_transfer &&
-              TransactionView.render(
-                "token_transfer.json",
-                %{token_transfer: token_transfer, conn: nil}
-              )
+  defp prepare_distribution(_), do: nil
 
-          {field, token_transfer_json}
-        end
-      )
-
-    aggregated_election_rewards_json =
-      Map.new(
-        aggregated_election_rewards,
-        fn {type, %{total: total, count: count, token: token}} ->
-          {type,
-           %{
-             total: total,
-             count: count,
-             token:
-               TokenView.render("token.json", %{
-                 token: token,
-                 contract_address_hash: token && token.contract_address_hash
-               })
-           }}
-        end
-      )
+  def render("celo_epoch.json", %{epoch: epoch}) do
+    # aggregated_election_rewards_json =
+    #   Map.new(
+    #     aggregated_election_rewards,
+    #     fn {type, %{total: total, count: count, token: token}} ->
+    #       {type,
+    #        %{
+    #          total: total,
+    #          count: count,
+    #          token:
+    #            TokenView.render("token.json", %{
+    #              token: token,
+    #              contract_address_hash: token && token.contract_address_hash
+    #            })
+    #        }}
+    #     end
+    #   )
 
     %{
-      number: epoch_number,
-      distribution: distribution_json,
-      aggregated_election_rewards: aggregated_election_rewards_json
+      number: epoch.number,
+      start_block_number: epoch.start_block_number,
+      end_block_number: epoch.end_block_number,
+      start_processing_block_hash: epoch.start_processing_block_hash,
+      end_processing_block_hash: epoch.end_processing_block_hash,
+      distribution: prepare_distribution(epoch.distribution)
+      # aggregated_election_rewards: aggregated_election_rewards_json
     }
   end
 
@@ -112,12 +107,65 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     end
   end
 
-  def render("celo_election_rewards.json", %{
+  def render("celo_epoch_election_rewards.json", %{
         rewards: rewards,
         next_page_params: next_page_params
       }) do
+    rewards_json =
+      rewards
+      |> Enum.map(fn reward ->
+        %{
+          amount: reward.amount,
+          account:
+            Helper.address_with_info(
+              reward.account_address,
+              reward.account_address_hash
+            ),
+          associated_account:
+            Helper.address_with_info(
+              reward.associated_account_address,
+              reward.associated_account_address_hash
+            )
+        }
+      end)
+
     %{
-      "items" => Enum.map(rewards, &prepare_election_reward/1),
+      "items" => rewards_json,
+      "next_page_params" => next_page_params
+    }
+  end
+
+  def render("celo_address_election_rewards.json", %{
+        rewards: rewards,
+        next_page_params: next_page_params
+      }) do
+    rewards_json =
+      rewards
+      |> Enum.map(fn reward ->
+        %{
+          amount: reward.amount,
+          epoch_number: reward.epoch_number,
+          account:
+            Helper.address_with_info(
+              reward.account_address,
+              reward.account_address_hash
+            ),
+          associated_account:
+            Helper.address_with_info(
+              reward.associated_account_address,
+              reward.associated_account_address_hash
+            ),
+          type: reward.type,
+          token:
+            TokenView.render("token.json", %{
+              token: reward.token,
+              contract_address_hash: reward.token.contract_address_hash
+            })
+        }
+      end)
+
+    %{
+      "items" => rewards_json,
       "next_page_params" => next_page_params
     }
   end
@@ -187,57 +235,6 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       end
 
     Map.put(out_json, "celo", %{"gas_token" => token_json})
-  end
-
-  @spec prepare_election_reward(Explorer.Chain.Celo.ElectionReward.t()) :: %{
-          :account => nil | %{optional(String.t()) => any()},
-          :amount => Decimal.t(),
-          :associated_account => nil | %{optional(String.t()) => any()},
-          optional(:block_hash) => Hash.Full.t(),
-          optional(:block_number) => Block.block_number(),
-          optional(:epoch_number) => non_neg_integer(),
-          optional(:type) => ElectionReward.type()
-        }
-  defp prepare_election_reward(%ElectionReward{block: %NotLoaded{}} = reward) do
-    %{
-      amount: reward.amount,
-      account:
-        Helper.address_with_info(
-          reward.account_address,
-          reward.account_address_hash
-        ),
-      associated_account:
-        Helper.address_with_info(
-          reward.associated_account_address,
-          reward.associated_account_address_hash
-        )
-    }
-  end
-
-  defp prepare_election_reward(%ElectionReward{token: %Token{}, block: %Block{}} = reward) do
-    %{
-      amount: reward.amount,
-      block_number: reward.block.number,
-      block_hash: reward.block_hash,
-      block_timestamp: reward.block.timestamp,
-      epoch_number: reward.block.number |> CeloHelper.block_number_to_epoch_number(),
-      account:
-        Helper.address_with_info(
-          reward.account_address,
-          reward.account_address_hash
-        ),
-      associated_account:
-        Helper.address_with_info(
-          reward.associated_account_address,
-          reward.associated_account_address_hash
-        ),
-      type: reward.type,
-      token:
-        TokenView.render("token.json", %{
-          token: reward.token,
-          contract_address_hash: reward.token.contract_address_hash
-        })
-    }
   end
 
   # Get the breakdown of the base fee for the case when FeeHandler is a contract

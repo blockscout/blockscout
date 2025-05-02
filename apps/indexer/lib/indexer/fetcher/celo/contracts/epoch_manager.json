@@ -1,0 +1,969 @@
+[
+    {
+        "stateMutability": "nonpayable",
+        "type": "constructor",
+        "inputs": [
+            {
+                "name": "test",
+                "internalType": "bool",
+                "type": "bool"
+            }
+        ]
+    },
+    {
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+            {
+                "name": "newEpochDuration",
+                "internalType": "uint256",
+                "type": "uint256",
+                "indexed": true
+            }
+        ],
+        "name": "EpochDurationSet"
+    },
+    {
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+            {
+                "name": "epochNumber",
+                "internalType": "uint256",
+                "type": "uint256",
+                "indexed": true
+            }
+        ],
+        "name": "EpochProcessingEnded"
+    },
+    {
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+            {
+                "name": "epochNumber",
+                "internalType": "uint256",
+                "type": "uint256",
+                "indexed": true
+            }
+        ],
+        "name": "EpochProcessingStarted"
+    },
+    {
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+            {
+                "name": "group",
+                "internalType": "address",
+                "type": "address",
+                "indexed": true
+            },
+            {
+                "name": "epochNumber",
+                "internalType": "uint256",
+                "type": "uint256",
+                "indexed": true
+            }
+        ],
+        "name": "GroupMarkedForProcessing"
+    },
+    {
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+            {
+                "name": "group",
+                "internalType": "address",
+                "type": "address",
+                "indexed": true
+            },
+            {
+                "name": "epochNumber",
+                "internalType": "uint256",
+                "type": "uint256",
+                "indexed": true
+            }
+        ],
+        "name": "GroupProcessed"
+    },
+    {
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+            {
+                "name": "newOracleAddress",
+                "internalType": "address",
+                "type": "address",
+                "indexed": true
+            }
+        ],
+        "name": "OracleAddressSet"
+    },
+    {
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+            {
+                "name": "previousOwner",
+                "internalType": "address",
+                "type": "address",
+                "indexed": true
+            },
+            {
+                "name": "newOwner",
+                "internalType": "address",
+                "type": "address",
+                "indexed": true
+            }
+        ],
+        "name": "OwnershipTransferred"
+    },
+    {
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+            {
+                "name": "registryAddress",
+                "internalType": "address",
+                "type": "address",
+                "indexed": true
+            }
+        ],
+        "name": "RegistrySet"
+    },
+    {
+        "type": "event",
+        "anonymous": false,
+        "inputs": [
+            {
+                "name": "validator",
+                "internalType": "address",
+                "type": "address",
+                "indexed": true
+            },
+            {
+                "name": "validatorPayment",
+                "internalType": "uint256",
+                "type": "uint256",
+                "indexed": false
+            },
+            {
+                "name": "group",
+                "internalType": "address",
+                "type": "address",
+                "indexed": true
+            },
+            {
+                "name": "groupPayment",
+                "internalType": "uint256",
+                "type": "uint256",
+                "indexed": false
+            },
+            {
+                "name": "beneficiary",
+                "internalType": "address",
+                "type": "address",
+                "indexed": true
+            },
+            {
+                "name": "delegatedPayment",
+                "internalType": "uint256",
+                "type": "uint256",
+                "indexed": false
+            }
+        ],
+        "name": "ValidatorEpochPaymentDistributed"
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ],
+        "name": "electedAccounts",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "address",
+                "type": "address"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ],
+        "name": "electedSigners",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "address",
+                "type": "address"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "epochDuration",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "epochProcessing",
+        "outputs": [
+            {
+                "name": "status",
+                "internalType": "enum EpochManager.EpochProcessStatus",
+                "type": "uint8"
+            },
+            {
+                "name": "perValidatorReward",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "totalRewardsVoter",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "totalRewardsCommunity",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "totalRewardsCarbonFund",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "firstKnownEpoch",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "initialized",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "bool",
+                "type": "bool"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "isSystemInitialized",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "bool",
+                "type": "bool"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "oracleAddress",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "address",
+                "type": "address"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "address",
+                "type": "address"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "",
+                "internalType": "address",
+                "type": "address"
+            }
+        ],
+        "name": "processedGroups",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "registry",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "contract IRegistry",
+                "type": "address"
+            }
+        ]
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [],
+        "name": "renounceOwnership",
+        "outputs": []
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "registryAddress",
+                "internalType": "address",
+                "type": "address"
+            }
+        ],
+        "name": "setRegistry",
+        "outputs": []
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "toProcessGroups",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "newOwner",
+                "internalType": "address",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": []
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "",
+                "internalType": "address",
+                "type": "address"
+            }
+        ],
+        "name": "validatorPendingPaymwents",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "registryAddress",
+                "internalType": "address",
+                "type": "address"
+            },
+            {
+                "name": "newEpochDuration",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ],
+        "name": "initialize",
+        "outputs": []
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "firstEpochNumber",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "firstEpochBlock",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "firstElected",
+                "internalType": "address[]",
+                "type": "address[]"
+            }
+        ],
+        "name": "initializeSystem",
+        "outputs": []
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [],
+        "name": "startNextEpochProcess",
+        "outputs": []
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [],
+        "name": "setToProcessGroups",
+        "outputs": []
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "groups",
+                "internalType": "address[]",
+                "type": "address[]"
+            },
+            {
+                "name": "lessers",
+                "internalType": "address[]",
+                "type": "address[]"
+            },
+            {
+                "name": "greaters",
+                "internalType": "address[]",
+                "type": "address[]"
+            }
+        ],
+        "name": "processGroups",
+        "outputs": []
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "group",
+                "internalType": "address",
+                "type": "address"
+            },
+            {
+                "name": "lesser",
+                "internalType": "address",
+                "type": "address"
+            },
+            {
+                "name": "greater",
+                "internalType": "address",
+                "type": "address"
+            }
+        ],
+        "name": "processGroup",
+        "outputs": []
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "groups",
+                "internalType": "address[]",
+                "type": "address[]"
+            },
+            {
+                "name": "lessers",
+                "internalType": "address[]",
+                "type": "address[]"
+            },
+            {
+                "name": "greaters",
+                "internalType": "address[]",
+                "type": "address[]"
+            }
+        ],
+        "name": "finishNextEpochProcess",
+        "outputs": []
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "validator",
+                "internalType": "address",
+                "type": "address"
+            }
+        ],
+        "name": "sendValidatorPayment",
+        "outputs": []
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "getCurrentEpoch",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "getCurrentEpochNumber",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "getEpochProcessingState",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "isBlocked",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "bool",
+                "type": "bool"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "numberOfElectedInCurrentSet",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "getElectedAccounts",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "address[]",
+                "type": "address[]"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "index",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ],
+        "name": "getElectedAccountByIndex",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "address",
+                "type": "address"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "getElectedSigners",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "address[]",
+                "type": "address[]"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "index",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ],
+        "name": "getElectedSignerByIndex",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "address",
+                "type": "address"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "epoch",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ],
+        "name": "getFirstBlockAtEpoch",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "epoch",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ],
+        "name": "getLastBlockAtEpoch",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "_blockNumber",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ],
+        "name": "getEpochNumberOfBlock",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "_blockNumber",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ],
+        "name": "getEpochByBlockNumber",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "pure",
+        "type": "function",
+        "inputs": [],
+        "name": "getVersionNumber",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "newEpochDuration",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ],
+        "name": "setEpochDuration",
+        "outputs": []
+    },
+    {
+        "stateMutability": "nonpayable",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "newOracleAddress",
+                "internalType": "address",
+                "type": "address"
+            }
+        ],
+        "name": "setOracleAddress",
+        "outputs": []
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "isIndividualProcessing",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "bool",
+                "type": "bool"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "isEpochProcessingStarted",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "bool",
+                "type": "bool"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "isTimeForNextEpoch",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "bool",
+                "type": "bool"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "isOnEpochProcess",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "bool",
+                "type": "bool"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [],
+        "name": "systemAlreadyInitialized",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "bool",
+                "type": "bool"
+            }
+        ]
+    },
+    {
+        "stateMutability": "view",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "epochNumber",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ],
+        "name": "getEpochByNumber",
+        "outputs": [
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "internalType": "uint256",
+                "type": "uint256"
+            }
+        ]
+    }
+]

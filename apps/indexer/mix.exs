@@ -72,7 +72,8 @@ defmodule Indexer.MixProject do
       {:logger_json, "~> 5.1"},
       {:varint, "~> 1.4"},
       {:utils, in_umbrella: true},
-      {:cachex, "~> 4.0"}
+      {:cachex, "~> 4.0"},
+      {:ethers, "~> 0.6.5"},
     ]
   end
 

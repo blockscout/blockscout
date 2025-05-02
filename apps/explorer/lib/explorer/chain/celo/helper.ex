@@ -43,10 +43,13 @@ defmodule Explorer.Chain.Celo.Helper do
       {:error, :not_found}
   """
   @spec validate_epoch_block_number(Block.block_number()) :: :ok | {:error, :not_found}
-  def validate_epoch_block_number(block_number) when is_epoch_block_number(block_number),
-    do: :ok
-
-  def validate_epoch_block_number(_block_number), do: {:error, :not_found}
+  def validate_epoch_block_number(block_number) do
+    if premigration_block_number?(block_number) and epoch_block_number?(block_number) do
+      :ok
+    else
+      {:error, :not_found}
+    end
+  end
 
   @doc """
   Checks if a block number belongs to a block that finalized an epoch.

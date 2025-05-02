@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Import do
   alias Explorer.Account.Notify
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.{Block, Import}
+  alias Explorer.Chain.Import.Stage
   alias Explorer.Repo
 
   require Logger
@@ -146,6 +147,17 @@ defmodule Explorer.Chain.Import do
       Notify.async(data[:transactions])
       Publisher.broadcast(data, Map.get(options, :broadcast, false))
       {:ok, data}
+    end
+  end
+
+  def all_single_multi(runners, options) do
+    with {:ok, runner_options_pairs} <- validate_options(options),
+         {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
+         {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs) do
+      timestamps = timestamps()
+      full_options = Map.put(options, :timestamps, timestamps)
+      {multi, _remaining_runner_to_changes_list} = Stage.single_multi(runners, runner_to_changes_list, full_options)
+      {:ok, multi}
     end
   end
 
