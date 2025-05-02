@@ -343,6 +343,9 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
           pl -> hash_to_binary(pl)
         end
 
+      [transfer_token_address_hash, transfer_from_address_hash, transfer_to_address_hash, transfer_amount] =
+        InteropMessage.decode_payload(payload)
+
       %{
         sender_address_hash: Map.get(response, "sender_address_hash"),
         target_address_hash: Map.get(response, "target_address_hash"),
@@ -351,7 +354,11 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
         init_transaction_hash: Map.get(response, "init_transaction_hash"),
         relay_chain_id: message.relay_chain_id,
         timestamp: timestamp,
-        payload: payload
+        payload: payload,
+        transfer_token_address_hash: transfer_token_address_hash,
+        transfer_from_address_hash: transfer_from_address_hash,
+        transfer_to_address_hash: transfer_to_address_hash,
+        transfer_amount: transfer_amount
       }
     end
   end

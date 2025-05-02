@@ -320,6 +320,9 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
         if Enum.at(event["topics"], 0) == @sent_message_event do
           [sender_address_hash, payload] = decode_data(event["data"], [:address, :bytes])
 
+          [transfer_token_address_hash, transfer_from_address_hash, transfer_to_address_hash, transfer_amount] =
+            InteropMessage.decode_payload(payload)
+
           %{
             sender_address_hash: sender_address_hash,
             target_address_hash: truncate_address_hash(Enum.at(event["topics"], 2)),
@@ -329,7 +332,11 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
             block_number: block_number,
             timestamp: Map.get(timestamps, block_number),
             relay_chain_id: quantity_to_integer(Enum.at(event["topics"], 1)),
-            payload: payload
+            payload: payload,
+            transfer_token_address_hash: transfer_token_address_hash,
+            transfer_from_address_hash: transfer_from_address_hash,
+            transfer_to_address_hash: transfer_to_address_hash,
+            transfer_amount: transfer_amount
           }
         else
           %{

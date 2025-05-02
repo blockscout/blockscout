@@ -8,12 +8,13 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
   import Explorer.Helper, only: [add_0x_prefix: 1]
 
+  alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain.Hash
   alias Explorer.{PagingOptions, Repo}
   alias Indexer.Fetcher.Optimism.Interop.MessageQueue, as: InteropMessageQueue
 
   @required_attrs ~w(nonce init_chain_id relay_chain_id)a
-  @optional_attrs ~w(sender_address_hash target_address_hash init_transaction_hash block_number timestamp relay_transaction_hash payload failed)a
+  @optional_attrs ~w(sender_address_hash target_address_hash init_transaction_hash block_number timestamp relay_transaction_hash payload failed transfer_token_address_hash transfer_from_address_hash transfer_to_address_hash transfer_amount)a
   @interop_instance_api_url_to_public_key_cache :interop_instance_api_url_to_public_key_cache
   @interop_chain_id_to_instance_info_cache :interop_chain_id_to_instance_info_cache
 
@@ -29,6 +30,10 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     * `relay_transaction_hash` - Transaction hash (on the target chain) associated with the message relay transaction. Can be `nil` (when relay transaction is not indexed yet).
     * `payload` - Message payload to call target with. Can be `nil` (when SentMessage event is not indexed yet).
     * `failed` - Fail status of the relay transaction. Can be `nil` (when relay transaction is not indexed yet).
+    * `transfer_token_address_hash` - Address of SuperchainERC20 token transferred within this message. Can be `nil` (if this is ETH transfer or not transfer operation at all).
+    * `transfer_from_address_hash` - The cross-chain transfer `from` address. Can be `nil` (if this is not transfer operation).
+    * `transfer_to_address_hash` - The cross-chain transfer `to` address. Can be `nil` (if this is not transfer operation).
+    * `transfer_amount` - The cross-chain transfer amount. Can be `nil` (if this is not transfer operation).
   """
   @primary_key false
   typed_schema "op_interop_messages" do
@@ -43,6 +48,10 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     field(:relay_transaction_hash, Hash.Full)
     field(:payload, :binary)
     field(:failed, :boolean)
+    field(:transfer_token_address_hash, Hash.Address)
+    field(:transfer_from_address_hash, Hash.Address)
+    field(:transfer_to_address_hash, Hash.Address)
+    field(:transfer_amount, :decimal)
 
     timestamps()
   end
@@ -242,6 +251,53 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
         |> page_messages(paging_options)
         |> limit(^paging_options.page_size)
         |> select_repo(options).all(timeout: :infinity)
+    end
+  end
+
+  @doc """
+    Decodes message payload to get cross-chain transfer details (such as token address, from, to addresses, and amount).
+    If the message doesn't encode cross-chain transfer, the function returns nils.
+
+    ## Parameters
+    - `payload`: The payload to decode.
+
+    ## Returns
+    - A list consisting of the following elements: `[token_address, from_address, to_address, amount]`.
+    - A list with nils if the message doesn't encode a cross-chain transfer: `[nil, nil, nil, nil]`.
+  """
+  @spec decode_payload(binary() | nil) :: list()
+  def decode_payload(payload) do
+    case payload do
+      # relayERC20(address _token, address _from, address _to, uint256 _amount)
+      <<0x7C, 0xFD, 0x6D, 0xBC>> <> encoded_params ->
+        TypeDecoder.decode(
+          encoded_params,
+          %FunctionSelector{
+            function: "relayERC20",
+            types: [
+              :address,
+              :address,
+              :address,
+              {:uint, 256}
+            ]
+          }
+        )
+
+      # relayETH(address _from, address _to, uint256 _amount)
+      <<0x4F, 0x0E, 0xDC, 0xC9>> <> encoded_params ->
+        encoded_params
+        |> TypeDecoder.decode(%FunctionSelector{
+          function: "relayETH",
+          types: [
+            :address,
+            :address,
+            {:uint, 256}
+          ]
+        })
+        |> List.insert_at(0, nil)
+
+      _ ->
+        List.duplicate(nil, 4)
     end
   end
 
