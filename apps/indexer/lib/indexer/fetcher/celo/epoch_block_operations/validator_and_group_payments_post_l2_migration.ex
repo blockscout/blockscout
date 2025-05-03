@@ -2,6 +2,8 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPos
   @moduledoc """
   Fetches validator and group payments for the epoch post L2 migration.
   """
+  require Logger
+
   use Utils.RuntimeEnvHelper,
     epoch_manager_contract_address_hash: [
       :explorer,

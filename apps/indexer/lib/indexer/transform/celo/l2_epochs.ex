@@ -29,7 +29,7 @@ defmodule Indexer.Transform.Celo.L2Epochs do
   defp do_parse(logs) do
     logs
     |> Enum.filter(
-      &(not Helper.premigration_block_number?(&1.block_number) and
+      &(not Helper.pre_migration_block_number?(&1.block_number) and
           &1.address_hash == epoch_manager_contract_address() |> String.downcase() and
           &1.first_topic in [
             @epoch_processing_started_topic,

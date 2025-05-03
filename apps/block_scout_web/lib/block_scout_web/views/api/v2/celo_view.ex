@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
-  alias Explorer.Chain.Cache.CeloCoreContracts
+  alias Explorer.Chain.Cache.{CeloCoreContracts, CeloEpochs}
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
   alias Explorer.Chain.Celo.{ElectionReward, EpochReward}
   alias Explorer.Chain.Hash
@@ -55,23 +55,39 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   defp prepare_distribution(_), do: nil
 
-  def render("celo_epoch.json", %{epoch: epoch}) do
-    # aggregated_election_rewards_json =
-    #   Map.new(
-    #     aggregated_election_rewards,
-    #     fn {type, %{total: total, count: count, token: token}} ->
-    #       {type,
-    #        %{
-    #          total: total,
-    #          count: count,
-    #          token:
-    #            TokenView.render("token.json", %{
-    #              token: token,
-    #              contract_address_hash: token && token.contract_address_hash
-    #            })
-    #        }}
-    #     end
-    #   )
+  def render("celo_epoch.json", %{
+        epoch: epoch,
+        aggregated_election_rewards: aggregated_election_rewards
+      }) do
+    distribution_json =
+      epoch.distribution
+      |> prepare_distribution()
+
+    aggregated_election_rewards_json =
+      Map.new(
+        aggregated_election_rewards,
+        fn {type, %{total: total, count: count, token: token}} ->
+          {type,
+           %{
+             total: total,
+             count: count,
+             token:
+               TokenView.render("token.json", %{
+                 token: token,
+                 contract_address_hash: token && token.contract_address_hash
+               })
+           }}
+        end
+      )
+      # For L2, delegated payments are implemented differently. They're
+      # distributed on-demand via direct payments rather than through epoch
+      # processing, so we need to handle them separately.
+      |> (&(if CeloHelper.premigration_epoch_number?(epoch.number) do
+              &1
+            else
+              &1
+              |> Map.put(:delegated_payment, nil)
+            end)).()
 
     %{
       number: epoch.number,
@@ -79,8 +95,8 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       end_block_number: epoch.end_block_number,
       start_processing_block_hash: epoch.start_processing_block_hash,
       end_processing_block_hash: epoch.end_processing_block_hash,
-      distribution: prepare_distribution(epoch.distribution)
-      # aggregated_election_rewards: aggregated_election_rewards_json
+      distribution: distribution_json,
+      aggregated_election_rewards: aggregated_election_rewards_json
     }
   end
 
@@ -183,11 +199,20 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   ## Returns
   - A map extended with data related to Celo.
   """
-  def extend_block_json_response(out_json, %Block{} = block, single_block?) do
+  def extend_block_json_response(out_json, block, single_block?) do
+    epoch_number = CeloEpochs.block_number_to_epoch_number(block.number)
+
     celo_json =
       %{
-        "is_epoch_block" => CeloHelper.epoch_block_number?(block.number),
-        "epoch_number" => CeloHelper.block_number_to_epoch_number(block.number)
+        # todo: keep `is_epoch_block` for compatibility with frontend and remove
+        # when new frontend is bound to `is_l1_era_epoch_block` property
+        "is_epoch_block" =>
+          CeloHelper.pre_migration_block_number?(block.number) and
+            CeloHelper.epoch_block_number?(block.number),
+        "is_l1_era_epoch_block" =>
+          CeloHelper.pre_migration_block_number?(block.number) and
+            CeloHelper.epoch_block_number?(block.number),
+        "epoch_number" => epoch_number
       }
       |> maybe_add_base_fee_info(block, single_block?)
 

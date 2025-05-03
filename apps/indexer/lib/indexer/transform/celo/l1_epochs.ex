@@ -17,7 +17,7 @@ defmodule Indexer.Transform.Celo.L1Epochs do
   defp do_parse(blocks) do
     blocks
     |> Enum.filter(fn %{number: number} ->
-      Helper.premigration_block_number?(number) and
+      Helper.pre_migration_block_number?(number) and
         Helper.epoch_block_number?(number)
     end)
     |> Enum.map(fn block ->

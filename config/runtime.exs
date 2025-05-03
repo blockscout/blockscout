@@ -565,9 +565,6 @@ config :explorer, :celo,
   celo_unreleased_treasury_contract_address: System.get_env("CELO_UNRELEASED_TREASURY_CONTRACT"),
   validators_contract_address: System.get_env("CELO_VALIDATORS_CONTRACT")
 
-config :ethereumex,
-  url: :eth_call |> ConfigHelper.parse_urls_list() |> Enum.at(0)
-
 config :explorer, Explorer.Chain.Cache.CeloCoreContracts,
   contracts: ConfigHelper.parse_json_env_var("CELO_CORE_CONTRACTS")
 
@@ -757,6 +754,10 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   enabled: ConfigHelper.chain_type() == :filecoin,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_CONCURRENCY", 1)
+
+config :explorer, Explorer.Migrator.CeloL2Epochs, enabled: ConfigHelper.chain_type() == :celo
+
+config :explorer, Explorer.Chain.Cache.CeloEpochs, enabled: ConfigHelper.chain_type() == :celo
 
 config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),

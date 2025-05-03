@@ -151,20 +151,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   end
 
   @doc """
-  Returns a map of reward type atoms to their corresponding token atoms.
-
-  ## Returns
-  - A map where the keys are reward type atoms and the values are token atoms.
-
-  ## Examples
-
-      iex> ElectionReward.reward_type_atom_to_token_atom()
-      %{voter: :celo_token, validator: :usd_token, group: :usd_token, delegated_payment: :usd_token}
-  """
-  @spec reward_type_atom_to_token_atom() :: %{type => atom()}
-  def reward_type_atom_to_token_atom, do: @reward_type_atom_to_token_atom
-
-  @doc """
   Retrieves aggregated election rewards by block hash.
 
   ## Parameters
@@ -181,14 +167,12 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       ...>   byte_count: 32,
       ...>   bytes: <<0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b :: big-integer-size(32)-unit(8)>>
       ...> }
-      iex> Explorer.Chain.Celo.Reader.block_hash_to_aggregated_election_rewards_by_type(block_hash)
+      iex> Explorer.Chain.Celo.Reader.epoch_number_to_rewards_aggregated_by_type(block_hash)
       %{voter_reward: %{total: %Decimal{}, count: 2}, ...}
   """
-  @spec epoch_number_to_election_rewards_aggregated_by_type(
-          Hash.Full.t(),
-          Keyword.t()
-        ) :: %{atom() => Wei.t() | nil}
-  def epoch_number_to_election_rewards_aggregated_by_type(epoch_number, options \\ []) do
+  @spec epoch_number_to_rewards_aggregated_by_type(integer(), Keyword.t()) ::
+          %{atom() => Wei.t() | nil}
+  def epoch_number_to_rewards_aggregated_by_type(epoch_number, options \\ []) do
     reward_type_to_aggregated_rewards =
       __MODULE__
       |> where([r], r.epoch_number == ^epoch_number)

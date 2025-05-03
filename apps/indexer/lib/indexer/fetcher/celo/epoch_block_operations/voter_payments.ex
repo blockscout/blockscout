@@ -63,7 +63,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
         %Epoch{start_processing_block: start_block, end_processing_block: end_block} = epoch,
         json_rpc_named_arguments
       ) do
-    # :ok = ValidatorGroupVotes.fetch(end_block.number)
+    :ok = ValidatorGroupVotes.fetch(end_block.number)
 
     {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, start_block.number)
 

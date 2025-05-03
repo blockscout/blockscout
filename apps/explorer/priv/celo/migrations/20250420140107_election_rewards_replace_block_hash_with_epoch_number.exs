@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.ModifyElectionRewardsTable do
+defmodule Explorer.Repo.Migrations.ElectionRewardsReplaceBlockHashWithEpochNumber do
   use Ecto.Migration
 
   def change do

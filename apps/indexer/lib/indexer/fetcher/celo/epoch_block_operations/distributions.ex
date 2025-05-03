@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.Distributions do
     ]
 
   import Ecto.Query, only: [from: 2, subquery: 1]
-  import Explorer.Chain.Celo.Helper, only: [premigration_block_number?: 1]
+  import Explorer.Chain.Celo.Helper, only: [pre_migration_block_number?: 1]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Explorer.Repo
@@ -107,7 +107,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.Distributions do
             tt.token_contract_address_hash == ^celo_token_contract_address_hash
       )
 
-    if premigration_block_number?(block_number) do
+    if pre_migration_block_number?(block_number) do
       celo_sender_address_hash = burn_address_hash_string()
 
       from(tt in query, where: tt.from_address_hash == ^celo_sender_address_hash and is_nil(tt.transaction_hash))

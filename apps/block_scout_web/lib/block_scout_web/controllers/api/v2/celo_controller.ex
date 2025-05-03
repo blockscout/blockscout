@@ -11,15 +11,13 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
 
-  alias BlockScoutWeb.API.V2.CeloView
-  alias Explorer.Chain.Celo.{Epoch, ElectionReward, Reader}
+  alias Explorer.Chain.Celo.{Epoch, ElectionReward}
 
   @api_true [api?: true]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def epochs(conn, _params) do
-
   end
 
   def epoch(conn, %{"number" => number_string}) do
@@ -32,10 +30,13 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
     with {:ok, number} <- parse_epoch_number(number_string),
          {:ok, epoch} <- Epoch.from_number(number, options) do
-      dbg(epoch)
+      aggregated_rewards = ElectionReward.epoch_number_to_rewards_aggregated_by_type(epoch.number, options)
 
       conn
-      |> render(:celo_epoch, %{epoch: epoch})
+      |> render(:celo_epoch, %{
+        epoch: epoch,
+        aggregated_election_rewards: aggregated_rewards
+      })
     end
   end
 
