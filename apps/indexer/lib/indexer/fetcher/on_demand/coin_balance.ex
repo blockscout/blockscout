@@ -18,6 +18,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
   alias Explorer.Chain.Address.{CoinBalance, CoinBalanceDaily}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
+  alias Explorer.Utility.RateLimiter
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.CoinBalance.Helper, as: CoinBalanceHelper
   alias Timex.Duration
@@ -47,9 +48,9 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
           | {:stale, block_number}
           | {:pending, block_number}
 
-  @spec trigger_fetch(Address.t()) :: balance_status
-  def trigger_fetch(address) do
-    if __MODULE__.Supervisor.disabled?() do
+  @spec trigger_fetch(String.t() | nil, Address.t()) :: balance_status
+  def trigger_fetch(caller \\ nil, address) do
+    if __MODULE__.Supervisor.disabled?() or RateLimiter.check_rate(caller, :on_demand) == :deny do
       :current
     else
       latest_block_number = latest_block_number()
@@ -64,9 +65,9 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
     end
   end
 
-  @spec trigger_historic_fetch(Hash.Address.t(), non_neg_integer()) :: balance_status
-  def trigger_historic_fetch(address_hash, block_number) do
-    if __MODULE__.Supervisor.disabled?() do
+  @spec trigger_historic_fetch(String.t() | nil, Hash.Address.t(), non_neg_integer()) :: balance_status
+  def trigger_historic_fetch(caller \\ nil, address_hash, block_number) do
+    if __MODULE__.Supervisor.disabled?() or RateLimiter.check_rate(caller, :on_demand) == :deny do
       :current
     else
       do_trigger_historic_fetch(address_hash, block_number)

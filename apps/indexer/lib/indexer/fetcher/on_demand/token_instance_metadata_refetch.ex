@@ -14,14 +14,17 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   alias Explorer.Chain.Token.Instance, as: TokenInstance
   alias Explorer.SmartContract.Reader
   alias Explorer.Token.MetadataRetriever
-  alias Explorer.Utility.TokenInstanceMetadataRefetchAttempt
+  alias Explorer.Utility.{RateLimiter, TokenInstanceMetadataRefetchAttempt}
   alias Indexer.NFTMediaHandler.Queue
 
   @max_delay :timer.hours(168)
 
-  @spec trigger_refetch(TokenInstance.t()) :: :ok
-  def trigger_refetch(token_instance) do
-    GenServer.cast(__MODULE__, {:refetch, token_instance})
+  @spec trigger_refetch(String.t() | nil, TokenInstance.t()) :: :ok
+  def trigger_refetch(caller \\ nil, token_instance) do
+    case RateLimiter.check_rate(caller, :on_demand) do
+      :allow -> GenServer.cast(__MODULE__, {:refetch, token_instance})
+      :deny -> :ok
+    end
   end
 
   defp fetch_metadata(token_instance, state) do

@@ -243,6 +243,7 @@
         "extname",
         "extremums",
         "exvcr",
+        "ezstd",
         "Faileddi",
         "falala",
         "feelin",
@@ -325,6 +326,7 @@
         "invalidsortoption",
         "invalidstart",
         "inversed",
+        "iolist",
         "ipfs",
         "ipos",
         "itxs",
@@ -655,6 +657,7 @@
         "ufixed",
         "uncatalog",
         "unclosable",
+        "unconfigured",
         "unfetched",
         "unfinalized",
         "Unichain",
@@ -737,7 +740,8 @@
         "zkbob",
         "zkevm",
         "zksolc",
-        "zksync"
+        "zksync",
+        "zstd"
     ],
     "enableFiletypes": [
         "dotenv",

@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.VisualizeSol2umlController do
   use BlockScoutWeb, :controller
+  alias BlockScoutWeb.AccessHelper
   alias Explorer.Chain
   alias Explorer.Visualize.Sol2uml
 
@@ -7,7 +8,8 @@ defmodule BlockScoutWeb.VisualizeSol2umlController do
     address_options = [
       necessity_by_association: %{
         :smart_contract => :optional
-      }
+      },
+      ip: AccessHelper.conn_to_ip_string(conn)
     ]
 
     if Sol2uml.enabled?() do
@@ -43,7 +45,8 @@ defmodule BlockScoutWeb.VisualizeSol2umlController do
     address_options = [
       necessity_by_association: %{
         :smart_contract => :optional
-      }
+      },
+      ip: AccessHelper.conn_to_ip_string(conn)
     ]
 
     with true <- Sol2uml.enabled?(),

@@ -30,7 +30,13 @@ defmodule BlockScoutWeb.TransactionStateController do
            AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <-
            AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
-      state_changes_plus_next_page = transaction |> TransactionStateHelper.state_changes(paging_options(params))
+      state_changes_plus_next_page =
+        transaction
+        |> TransactionStateHelper.state_changes(
+          params
+          |> paging_options()
+          |> Keyword.put(:ip, AccessHelper.conn_to_ip_string(conn))
+        )
 
       {state_changes, next_page} = split_list_by_page(state_changes_plus_next_page)
 

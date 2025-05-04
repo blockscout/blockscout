@@ -406,7 +406,7 @@ defmodule Explorer.Utility.MissingBlockRange do
 
   # Fills all missing block ranges that overlap with the interval [from, to]
   @spec fill_ranges_between(Block.block_number(), Block.block_number(), integer() | nil) :: :ok
-  defp fill_ranges_between(from, to, priority) do
+  defp fill_ranges_between(from, to, priority) when from >= to do
     __MODULE__
     |> where([r], r.from_number <= ^from)
     |> where([r], r.to_number >= ^to)
@@ -470,6 +470,8 @@ defmodule Explorer.Utility.MissingBlockRange do
 
     :ok
   end
+
+  defp fill_ranges_between(_from, _to, _priority), do: :ok
 
   defp select_all_ranges_within_the_range(from, to) do
     __MODULE__

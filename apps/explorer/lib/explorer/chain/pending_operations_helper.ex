@@ -7,13 +7,20 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   alias Explorer.Repo
 
   @transactions_batch_size 1000
-  @blocks_batch_size 100
+  @blocks_batch_size 10
 
   def pending_operations_type do
-    if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.Geth and
-         not Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)[:block_traceable?],
-       do: "transactions",
-       else: "blocks"
+    # TODO: bring back this condition after the migration of internal transactions PK to [:block_hash, :transaction_index, :index]
+    # if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.Geth and
+    #      not Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)[:block_traceable?],
+    #    do: "transactions",
+    #    else: "blocks"
+
+    if Application.get_env(:explorer, :non_existing_variable, false) do
+      "transactions"
+    else
+      "blocks"
+    end
   end
 
   def actual_entity do

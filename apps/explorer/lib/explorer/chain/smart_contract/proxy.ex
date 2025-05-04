@@ -201,8 +201,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     functions =
       [
         :get_implementation_address_hash_string_eip1167,
-        :get_implementation_address_hash_string_clones_with_immutable_arguments,
         :get_implementation_address_hash_string_eip7702,
+        :get_implementation_address_hash_string_clones_with_immutable_arguments,
         :get_implementation_address_hash_string_eip1967,
         :get_implementation_address_hash_string_eip1822,
         :get_implementation_address_hash_string_eip2535,
@@ -499,14 +499,25 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       case address do
         %Hash{} = address_hash ->
           [
-            %{"address" => Address.checksum(address_hash), "name" => name} |> chain_type_fields(implementations_info)
+            # todo: "address" should be removed in favour `address_hash` property with the next release after 8.0.0
+            %{
+              "address_hash" => Address.checksum(address_hash),
+              "address" => Address.checksum(address_hash),
+              "name" => name
+            }
+            |> chain_type_fields(implementations_info)
             | acc
           ]
 
         _ ->
           with {:ok, address_hash} <- string_to_address_hash(address),
                checksummed_address <- Address.checksum(address_hash) do
-            [%{"address" => checksummed_address, "name" => name} |> chain_type_fields(implementations_info) | acc]
+            [
+              # todo: "address" should be removed in favour `address_hash` property with the next release after 8.0.0
+              %{"address_hash" => checksummed_address, "address" => checksummed_address, "name" => name}
+              |> chain_type_fields(implementations_info)
+              | acc
+            ]
           else
             _ -> acc
           end

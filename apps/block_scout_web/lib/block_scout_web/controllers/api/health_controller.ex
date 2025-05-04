@@ -52,7 +52,9 @@ defmodule BlockScoutWeb.API.HealthController do
 
         base_health_status
         |> put_in([:metadata, :batches], batches_indexing_status)
-        |> Map.put(:healthy, indexing_status.blocks.new.healthy and batches_indexing_status.healthy)
+        # todo: return this when "latest block" metric starts remain non-empty all time
+        # |> Map.put(:healthy, indexing_status.blocks.new.healthy and batches_indexing_status.healthy)
+        |> Map.put(:healthy, indexing_status.blocks.new.healthy)
       else
         base_health_status
         |> Map.put(:healthy, indexing_status.blocks.new.healthy)
@@ -68,9 +70,16 @@ defmodule BlockScoutWeb.API.HealthController do
             else: Map.put(&1, :error, Map.get(blocks_property, :error))
           )).()
 
+    status =
+      if Map.get(health_status, :healthy) do
+        :ok
+      else
+        500
+      end
+
     send_resp(
       conn,
-      :ok,
+      status,
       health_status_with_error
       |> Jason.encode!()
     )

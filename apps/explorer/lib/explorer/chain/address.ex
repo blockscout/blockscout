@@ -184,8 +184,6 @@ defmodule Explorer.Chain.Address do
              :names
            ]}
 
-  @timeout :timer.minutes(1)
-
   @typedoc """
    * `fetched_coin_balance` - The last fetched balance from Nethermind
    * `fetched_coin_balance_block_number` - the `t:Explorer.Chain.Block.t/0` `t:Explorer.Chain.Block.block_number/0` for
@@ -713,31 +711,6 @@ defmodule Explorer.Chain.Address do
   end
 
   @doc """
-   Sets the contract code for the given address.
-
-   This function updates the contract code and the `updated_at` timestamp for an
-   address in the database.
-
-   ## Parameters
-   - `address_hash`: The hash of the address to update.
-   - `contract_code`: The new contract code to set.
-
-   ## Returns
-   A tuple `{count, nil}`, where `count` is the number of rows updated
-   (typically 1 if the address exists, 0 otherwise).
-  """
-  @spec set_contract_code(Hash.Address.t(), binary()) :: {non_neg_integer(), nil}
-  def set_contract_code(address_hash, contract_code) when not is_nil(address_hash) and is_binary(contract_code) do
-    now = DateTime.utc_now()
-
-    Repo.update_all(
-      Address.address_query(address_hash),
-      [set: [contract_code: contract_code, updated_at: now]],
-      timeout: @timeout
-    )
-  end
-
-  @doc """
   Retrieves the creation transaction for a given address.
 
   ## Parameters
@@ -832,8 +805,7 @@ defmodule Explorer.Chain.Address do
       it in InternalTransaction,
       order_by: [
         asc_nulls_first: it.error,
-        desc: it.block_number,
-        desc: it.block_index
+        desc: it.block_number
       ],
       limit: 1
     )
@@ -1009,10 +981,14 @@ defmodule Explorer.Chain.Address do
     end
   end
 
-  @spec update_address_result(map() | nil, [Chain.necessity_by_association_option() | Chain.api?()], boolean()) ::
+  @spec update_address_result(
+          map() | nil,
+          [Chain.necessity_by_association_option() | Chain.api?() | Chain.ip()],
+          boolean()
+        ) ::
           map() | nil
   def update_address_result(address_result, options, decoding_from_list?) do
-    LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result)
+    LookUpSmartContractSourcesOnDemand.trigger_fetch(options[:ip], address_result)
 
     case address_result do
       %{smart_contract: nil} ->
@@ -1023,12 +999,35 @@ defmodule Explorer.Chain.Address do
         end
 
       %{smart_contract: smart_contract} ->
-        CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
+        CheckBytecodeMatchingOnDemand.trigger_check(options[:ip], address_result, smart_contract)
 
         SmartContract.check_and_update_constructor_args(address_result)
 
       _ ->
         address_result
     end
+  end
+
+  @doc """
+  Constructs a query to retrieve the most recent internal transaction that created
+  a smart contract at the specified `address_hash`.
+
+  The query joins the `InternalTransaction` with its associated `Transaction`,
+  filters for internal transactions where the `created_contract_address_hash` matches
+  the given `address_hash`, and ensures that the transaction status is successful (`status == 1`).
+
+  The results are ordered by `block_number` in descending order, and the query is limited
+  to return only the most recent matching internal transaction.
+  """
+  @spec creation_internal_transaction_query(binary() | Hash.t()) :: Ecto.Query.t()
+  def creation_internal_transaction_query(address_hash) do
+    from(
+      it in InternalTransaction,
+      inner_join: t in assoc(it, :transaction),
+      where: it.created_contract_address_hash == ^address_hash,
+      where: t.status == ^1,
+      order_by: [desc: it.block_number],
+      limit: 1
+    )
   end
 end

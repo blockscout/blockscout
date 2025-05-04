@@ -39,10 +39,12 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   @api_true [api?: true]
 
   def token(conn, %{"address_hash_param" => address_hash_string} = params) do
+    ip = AccessHelper.conn_to_ip_string(conn)
+
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
-      TokenTotalSupplyOnDemand.trigger_fetch(address_hash)
+      TokenTotalSupplyOnDemand.trigger_fetch(ip, address_hash)
 
       conn
       |> token_response(token, address_hash)
@@ -390,7 +392,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         token_instance
         |> put_token_to_instance(token)
 
-      TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance_with_token)
+      conn
+      |> AccessHelper.conn_to_ip_string()
+      |> TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance_with_token)
 
       conn
       |> put_status(200)
@@ -403,6 +407,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         params
       ) do
     address_hash_string = params["address_hash_param"]
+    ip = AccessHelper.conn_to_ip_string(conn)
 
     with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
            {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
@@ -411,7 +416,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)} do
-      NFTCollectionMetadataRefetchOnDemand.trigger_refetch(token)
+      NFTCollectionMetadataRefetchOnDemand.trigger_refetch(ip, token)
 
       conn
       |> put_status(200)

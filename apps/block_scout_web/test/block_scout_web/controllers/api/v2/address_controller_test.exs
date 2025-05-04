@@ -83,6 +83,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "metadata" => nil
       }
 
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:ok, []}
+      end)
+
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
       check_response(correct_response, json_response(request, 200))
     end
@@ -276,7 +280,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "creation_transaction_hash" => ^transaction_hash,
                "proxy_type" => "eip1167",
                "implementations" => [
-                 %{"address" => ^checksummed_implementation_contract_address_hash, "name" => ^name}
+                 %{
+                   "address_hash" => ^checksummed_implementation_contract_address_hash,
+                   "address" => ^checksummed_implementation_contract_address_hash,
+                   "name" => ^name
+                 }
                ]
              } = json_response(request, 200)
     end
@@ -321,7 +329,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "creator_address_hash" => ^from,
                "creation_transaction_hash" => ^transaction_hash,
                "proxy_type" => "eip1967",
-               "implementations" => [%{"address" => ^implementation_address_hash_string, "name" => nil}]
+               "implementations" => [
+                 %{
+                   "address_hash" => ^implementation_address_hash_string,
+                   "address" => ^implementation_address_hash_string,
+                   "name" => nil
+                 }
+               ]
              } = json_response(request, 200)
     end
 
@@ -388,7 +402,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "creator_address_hash" => ^from,
                "creation_transaction_hash" => ^transaction_hash,
                "proxy_type" => "resolved_delegate_proxy",
-               "implementations" => [%{"address" => ^implementation_address_hash_string, "name" => nil}]
+               "implementations" => [
+                 %{
+                   "address_hash" => ^implementation_address_hash_string,
+                   "address" => ^implementation_address_hash_string,
+                   "name" => nil
+                 }
+               ]
              } = json_response(request, 200)
     end
 
