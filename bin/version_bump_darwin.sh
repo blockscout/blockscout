@@ -61,20 +61,20 @@ bump_version() {
 
     # Replace the old version with the new version in the mix.exs files
     for MIX_FILE in "${MIX_FILES[@]}"; do
-        sed -i "s/version: \"$current_version\"/version: \"$new_version\"/" "$MIX_FILE"
+        sed -i '' "s/version: \"$current_version\"/version: \"$new_version\"/" "$MIX_FILE"
     done
 
-    sed -i "s/version: \"$current_version\"/version: \"$new_version\"/" "$CONFIG_FILE"
-    sed -i "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_FILE"
-    sed -i "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_NO_SERVICES_FILE"
-    sed -i "s/RELEASE_VERSION ?= '$current_version'/RELEASE_VERSION ?= '$new_version'/" "$MAKE_FILE"
+    sed -i '' "s/version: \"$current_version\"/version: \"$new_version\"/" "$CONFIG_FILE"
+    sed -i '' "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_FILE"
+    sed -i '' "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_NO_SERVICES_FILE"
+    sed -i '' "s/RELEASE_VERSION ?= '$current_version'/RELEASE_VERSION ?= '$new_version'/" "$MAKE_FILE"
 
     # Replace the old version with the new version in the GitHub workflows files
     for WORKFLOW_FILE in "${WORKFLOW_FILES[@]}"; do
-        sed -i "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$WORKFLOW_FILE"
+        sed -i '' "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$WORKFLOW_FILE"
     done
 
-    sed -i "s/\"blockscout-$current_version\"/\"blockscout-$new_version\"/" "$METADATA_RETRIEVER_FILE"
+    sed -i '' "s/\"blockscout-$current_version\"/\"blockscout-$new_version\"/" "$METADATA_RETRIEVER_FILE"
 
     echo "Version bumped from $current_version to $new_version"
 }
