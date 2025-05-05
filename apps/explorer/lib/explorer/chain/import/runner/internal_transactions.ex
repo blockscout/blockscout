@@ -15,7 +15,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     Hash,
     Import,
     InternalTransaction,
-    PendingBlockOperation,
     PendingOperationsHelper,
     PendingTransactionOperation,
     Transaction
@@ -324,14 +323,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     case PendingOperationsHelper.pending_operations_type() do
       "blocks" ->
         query =
-          from(
-            pending_ops in PendingBlockOperation,
-            where: pending_ops.block_hash in ^block_hashes,
-            select: pending_ops.block_hash,
-            # Enforce PendingBlockOperation ShareLocks order (see docs: sharelocks.md)
-            order_by: [asc: pending_ops.block_hash],
-            lock: "FOR UPDATE"
-          )
+          block_hashes
+          |> PendingOperationsHelper.block_hash_in_query()
+          |> select([pbo], pbo.block_hash)
+          |> order_by([pbo], asc: pbo.block_hash)
+          |> lock("FOR UPDATE")
 
         {:ok, {:block_hashes, repo.all(query)}}
 
@@ -829,10 +825,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
             |> MapSet.difference(MapSet.new(invalid_block_hashes))
             |> MapSet.to_list()
 
-          from(
-            pending_ops in PendingBlockOperation,
-            where: pending_ops.block_hash in ^valid_block_hashes
-          )
+          PendingOperationsHelper.block_hash_in_query(valid_block_hashes)
 
         {:transaction_hashes, transaction_hashes} ->
           from(
