@@ -6,10 +6,13 @@ defmodule BlockScoutWeb.Application do
   use Application
   use Utils.CompileTimeEnvHelper, disable_api?: [:block_scout_web, :disable_api?]
 
-  alias BlockScoutWeb.{Endpoint, HealthEndpoint}
+  alias BlockScoutWeb.{Endpoint, HealthEndpoint, RateLimit.Hammer}
+  alias BlockScoutWeb.Utility.RateLimitConfigHelper
 
   def start(_type, _args) do
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
+
+    RateLimitConfigHelper.fetch_config()
 
     if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
       Supervisor.start_link([Supervisor.child_spec(HealthEndpoint, [])], opts)
@@ -54,10 +57,6 @@ defmodule BlockScoutWeb.Application do
       PublicExporter.setup()
 
       APILogger.message(
-        "Current global API rate limit #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:global_limit])} reqs/sec"
-      )
-
-      APILogger.message(
         "Current API rate limit by key #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_key])} reqs/sec"
       )
 
@@ -75,7 +74,8 @@ defmodule BlockScoutWeb.Application do
           {BlocksIndexedCounter, name: BlocksIndexedCounter},
           {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
           {EventHandlersMetrics, []},
-          {ChainMetrics, []}
+          {ChainMetrics, []},
+          Hammer.child_for_supervisor()
         ],
         [
           {Absinthe.Subscription, Endpoint}

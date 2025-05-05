@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   import Explorer.Helper, only: [parse_integer: 1]
 
-  alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
+  alias BlockScoutWeb.AccessHelper
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.AuditReport
@@ -235,7 +235,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   def audit_report_submission(conn, %{"address_hash" => address_hash_string} = params) do
     with {:disabled, true} <- {:disabled, Application.get_env(:explorer, :air_table_audit_reports)[:enabled]},
          {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
-         {:recaptcha, _} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)},
          audit_report_params <- %{
            address_hash: address_hash,
            submitter_name: params["submitter_name"],

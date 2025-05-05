@@ -110,25 +110,44 @@ config :block_scout_web, :contract,
   certified_list: ConfigHelper.parse_list_env_var("CONTRACT_CERTIFIED_LIST", ""),
   partial_reverification_disabled: !ConfigHelper.parse_bool_env_var("CONTRACT_ENABLE_PARTIAL_REVERIFICATION")
 
-default_global_api_rate_limit = 50
+default_global_api_rate_limit = 25
 default_api_rate_limit_by_key = 10
+api_rate_limit_redis_url = ConfigHelper.safe_get_env("API_RATE_LIMIT_HAMMER_REDIS_URL", nil)
 
 config :block_scout_web, :api_rate_limit,
   disabled: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_DISABLED"),
-  global_limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT", default_global_api_rate_limit),
-  limit_by_key: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_KEY", default_api_rate_limit_by_key),
-  limit_by_whitelisted_ip:
-    ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP", default_global_api_rate_limit),
-  time_interval_limit: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s"),
-  limit_by_ip: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_IP", 3000),
-  time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_IP_TIME_INTERVAL", "5m"),
-  static_api_key: System.get_env("API_RATE_LIMIT_STATIC_API_KEY"),
-  no_rate_limit_api_key: System.get_env("API_NO_RATE_LIMIT_API_KEY"),
+  static_api_key_value: System.get_env("API_RATE_LIMIT_STATIC_API_KEY"),
+  static_api_key: %{
+    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_KEY", default_api_rate_limit_by_key),
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s")
+  },
+  whitelisted_ip: %{
+    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP", default_global_api_rate_limit),
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s")
+  },
+  ip: %{
+    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_IP", 500),
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_IP_TIME_INTERVAL", "15m")
+  },
+  temporary_token: %{
+    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN", 4),
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s")
+  },
+  account_api_key: %{
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s")
+  },
+  no_rate_limit_api_key_value: System.get_env("API_NO_RATE_LIMIT_API_KEY"),
   whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS"),
   is_blockscout_behind_proxy: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_IS_BLOCKSCOUT_BEHIND_PROXY"),
-  api_v2_ui_limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN", 5),
-  api_v2_token_ttl_seconds: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL_IN_SECONDS", 18000),
-  eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5)
+  api_v2_token_ttl: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL", "30m"),
+  eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5),
+  redis_url: if(api_rate_limit_redis_url == "", do: nil, else: api_rate_limit_redis_url),
+  rate_limit_backend:
+    if(api_rate_limit_redis_url == "",
+      do: BlockScoutWeb.RateLimit.Hammer.ETS,
+      else: BlockScoutWeb.RateLimit.Hammer.Redis
+    ),
+  config_url: System.get_env("API_RATE_LIMIT_CONFIG_URL")
 
 default_graphql_rate_limit = 10
 
@@ -144,7 +163,7 @@ config :block_scout_web, Api.GraphQL,
   limit_by_key: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT_BY_KEY", default_graphql_rate_limit),
   time_interval_limit: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_TIME_INTERVAL", "1s"),
   limit_by_ip: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP", 500),
-  time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP_TIME_INTERVAL", "5m"),
+  time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP_TIME_INTERVAL", "1h"),
   static_api_key: System.get_env("API_GRAPHQL_RATE_LIMIT_STATIC_API_KEY")
 
 # Configures History
@@ -841,11 +860,13 @@ config :explorer, Explorer.Utility.RateLimiter,
   redis_url: rate_limiter_redis_url,
   on_demand: [
     time_interval_limit: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_TIME_INTERVAL", "5s"),
-    limit_by_ip: ConfigHelper.parse_integer_env_var("RATE_LIMITER_ON_DEMAND_LIMIT_BY_IP", 100),
+    limit_by_ip: ConfigHelper.parse_integer_env_var("RATE_LIMITER_ON_DEMAND_LIMIT_BY_IP", 50),
     exp_timeout_coeff: ConfigHelper.parse_integer_env_var("RATE_LIMITER_ON_DEMAND_EXPONENTIAL_TIMEOUT_COEFF", 100),
     max_ban_interval: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_MAX_BAN_INTERVAL", "1h"),
     limitation_period: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_LIMITATION_PERIOD", "1h")
-  ]
+  ],
+  hammer_backend_module:
+    if(rate_limiter_redis_url, do: Explorer.Utility.Hammer.Redis, else: Explorer.Utility.Hammer.ETS)
 
 config :explorer, Explorer.ThirdPartyIntegrations.UniversalProxy,
   config_url:
