@@ -485,4 +485,27 @@ defmodule Explorer.Helper do
     |> DateTime.from_unix!(unit)
     |> DateTime.to_date()
   end
+
+  @doc """
+  Adds `inserted_at` and `updated_at` timestamps to a list of maps.
+
+  This function takes a list of maps (`params`) and adds the current UTC
+  timestamp (`DateTime.utc_now/0`) as the values for the `:inserted_at` and
+  `:updated_at` keys in each map.
+
+  ## Parameters
+
+    - `params` - A list of maps to which the timestamps will be added.
+
+  ## Returns
+
+    - A list of maps, each containing the original keys and values along with
+      the `:inserted_at` and `:updated_at` keys set to the current UTC timestamp.
+  """
+  @spec add_timestamps([map()]) :: [map()]
+  def add_timestamps(params) do
+    now = DateTime.utc_now()
+
+    Enum.map(params, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
+  end
 end
