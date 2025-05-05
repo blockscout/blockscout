@@ -1,29 +1,39 @@
 defmodule Explorer.Chain.Celo.Epoch do
   @moduledoc """
-  TODO
+  Schema for Celo blockchain epochs.
   """
 
   use Explorer.Schema
 
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+  import Ecto.Query, only: [from: 2, where: 2]
 
-  alias Explorer.Chain
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
+    only: [proxy_implementations_association: 0]
+
+  alias Explorer.{Chain, Repo, SortingHelper}
 
   alias Explorer.Chain.{
     Block,
-    Hash,
     Celo.ElectionReward,
     Celo.EpochReward,
+    Hash,
     TokenTransfer
   }
-
-  alias Explorer.Repo
 
   @required_attrs ~w(number)a
   @optional_attrs ~w(fetched? start_block_number end_block_number start_processing_block_hash end_processing_block_hash)a
 
+  @default_paging_options Chain.default_paging_options()
+
   @typedoc """
-  TODO
+  * `number` - The epoch number.
+  * `fetched?` - Indicates whether the epoch has been fetched.
+  * `start_block_number` - The starting block number of the epoch.
+  * `end_block_number` - The ending block number of the epoch.
+  * `start_processing_block_hash` - The hash of the block where the epoch
+    processing starts.
+  * `end_processing_block_hash` - The hash of the block where the epoch
+    processing ends.
   """
   @primary_key false
   typed_schema "celo_epochs" do
@@ -98,9 +108,45 @@ defmodule Explorer.Chain.Celo.Epoch do
     |> Repo.stream_reduce(initial, reducer)
   end
 
+  @doc """
+  Retrieves all epochs that have been marked as fetched.
+
+  ## Parameters
+    - `options` (`Keyword.t()`): Options for filtering and ordering the epochs.
+      - `:paging_options` - pagination parameters
+      - `:necessity_by_association` - associations that need to be loaded
+      - `:sorting` - sorting parameters
+
+  ## Returns
+    - `list(__MODULE__.t())`: A list of fetched epochs.
+
+  ## Examples
+
+      iex> Explorer.Chain.Celo.Epoch.fetched_epochs()
+      [%Explorer.Chain.Celo.Epoch{number: 42, fetched?: true, ...}, ...]
+
+      iex> Explorer.Chain.Celo.Epoch.fetched_epochs(sorting: [asc: :number], paging_options: %{page_size: 10})
+      [%Explorer.Chain.Celo.Epoch{number: 1, fetched?: true, ...}, ...]
+  """
+  @spec fetched_epochs(Keyword.t()) :: [__MODULE__.t()]
+  def fetched_epochs(options) do
+    default_sorting = [desc: :number]
+
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    sorting_options = Keyword.get(options, :sorting, [])
+
+    __MODULE__
+    |> where(fetched?: true)
+    |> SortingHelper.apply_sorting(sorting_options, default_sorting)
+    |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
+  end
+
   @spec from_number(integer(), Keyword.t()) ::
           {:ok, __MODULE__.t()} | {:error, :not_found}
-  def from_number(number, options \\ []) when is_integer(number) and is_list(options) do
+  def from_number(number, options) when is_integer(number) and is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     __MODULE__
@@ -142,7 +188,8 @@ defmodule Explorer.Chain.Celo.Epoch do
   #       reserve_bolster_transfer: %Explorer.Chain.TokenTransfer{log_index: 1, ...}
   #     }
   #
-  @spec with_loaded_distribution_token_transfers(__MODULE__.t(), api?: boolean()) :: __MODULE__.t()
+  @spec with_loaded_distribution_token_transfers(__MODULE__.t() | nil, api?: boolean()) ::
+          __MODULE__.t() | nil
   defp with_loaded_distribution_token_transfers(
          %__MODULE__{
            end_processing_block_hash: block_hash,
@@ -193,4 +240,30 @@ defmodule Explorer.Chain.Celo.Epoch do
   end
 
   defp with_loaded_distribution_token_transfers(epoch, _options), do: epoch
+
+  @doc """
+  Returns a query to find an epoch containing the given block number.
+
+  ## Parameters
+    - `block_number` (`non_neg_integer()`): The block number to search for.
+
+  ## Returns
+    - `Ecto.Query.t()`: The query to find the epoch.
+
+  ## Examples
+
+      iex> Repo.one(block_number_to_epoch_query(123456))
+      %Epoch{number: 42, start_block_number: 123400, end_block_number: 123799}
+
+      iex> Repo.one(block_number_to_epoch_query(999999))
+      nil
+  """
+  @spec block_number_to_epoch_query(non_neg_integer()) :: Ecto.Query.t()
+  def block_number_to_epoch_query(block_number) do
+    from(e in __MODULE__,
+      where:
+        e.start_block_number <= ^block_number and
+          ^block_number <= e.end_block_number
+    )
+  end
 end

@@ -63,10 +63,10 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Transform.Blocks, as: TransformBlocks
   alias Indexer.Transform.PolygonZkevm.Bridge, as: PolygonZkevmBridge
 
-  alias Indexer.Transform.Celo.TransactionGasTokens, as: CeloTransactionGasTokens
-  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
   alias Indexer.Transform.Celo.L1Epochs, as: CeloL1Epochs
   alias Indexer.Transform.Celo.L2Epochs, as: CeloL2Epochs
+  alias Indexer.Transform.Celo.TransactionGasTokens, as: CeloTransactionGasTokens
+  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
@@ -349,10 +349,6 @@ defmodule Indexer.Block.Fetcher do
       basic_import_options
       |> Map.get(:tokens, %{})
       |> Map.get(:params, [])
-
-    if not Enum.empty?(celo_epochs) do
-      dbg(celo_epochs)
-    end
 
     basic_import_options
     |> Map.put_new(:celo_epochs, %{params: celo_epochs})

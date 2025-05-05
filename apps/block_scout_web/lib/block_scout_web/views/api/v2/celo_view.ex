@@ -9,13 +9,11 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   import Explorer.Chain.SmartContract, only: [dead_address_hash_string: 0]
 
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
-  alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.Cache.{CeloCoreContracts, CeloEpochs}
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
-  alias Explorer.Chain.Celo.{ElectionReward, EpochReward}
-  alias Explorer.Chain.Hash
-  alias Explorer.Chain.{Block, Token, Transaction, Wei, Celo.Epoch}
+  alias Explorer.Chain.Celo.{Epoch, EpochReward}
+  alias Explorer.Chain.{Block, Token, Transaction, Wei}
 
   @address_params [
     necessity_by_association: %{
@@ -26,34 +24,15 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     api?: true
   ]
 
-  @spec prepare_distribution(EpochReward.t() | nil) ::
-          %{
-            optional(:reserve_bolster_transfer) => nil | %{optional(String.t()) => any()},
-            optional(:community_transfer) => nil | %{optional(String.t()) => any()},
-            optional(:carbon_offsetting_transfer) => nil | %{optional(String.t()) => any()}
-          }
-          | nil
-  defp prepare_distribution(%EpochReward{} = distribution) do
-    Map.new(
-      [
-        reserve_bolster_transfer: distribution.reserve_bolster_transfer,
-        community_transfer: distribution.community_transfer,
-        carbon_offsetting_transfer: distribution.carbon_offsetting_transfer
-      ],
-      fn {field, token_transfer} ->
-        token_transfer_json =
-          token_transfer &&
-            TransactionView.render(
-              "token_transfer.json",
-              %{token_transfer: token_transfer, conn: nil}
-            )
-
-        {field, token_transfer_json}
-      end
-    )
+  def render("celo_epochs.json", %{
+        epochs: epochs,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items: Enum.map(epochs, &prepare_epoch/1),
+      next_page_params: next_page_params
+    }
   end
-
-  defp prepare_distribution(_), do: nil
 
   def render("celo_epoch.json", %{
         epoch: epoch,
@@ -64,21 +43,19 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       |> prepare_distribution()
 
     aggregated_election_rewards_json =
-      Map.new(
-        aggregated_election_rewards,
-        fn {type, %{total: total, count: count, token: token}} ->
-          {type,
-           %{
-             total: total,
-             count: count,
-             token:
-               TokenView.render("token.json", %{
-                 token: token,
-                 contract_address_hash: token && token.contract_address_hash
-               })
-           }}
-        end
-      )
+      aggregated_election_rewards
+      |> Map.new(fn {type, %{total: total, count: count, token: token}} ->
+        {type,
+         %{
+           total: total,
+           count: count,
+           token:
+             TokenView.render("token.json", %{
+               token: token,
+               contract_address_hash: token && token.contract_address_hash
+             })
+         }}
+      end)
       # For L2, delegated payments are implemented differently. They're
       # distributed on-demand via direct payments rather than through epoch
       # processing, so we need to handle them separately.
@@ -89,15 +66,10 @@ defmodule BlockScoutWeb.API.V2.CeloView do
               |> Map.put(:delegated_payment, nil)
             end)).()
 
-    %{
-      number: epoch.number,
-      start_block_number: epoch.start_block_number,
-      end_block_number: epoch.end_block_number,
-      start_processing_block_hash: epoch.start_processing_block_hash,
-      end_processing_block_hash: epoch.end_processing_block_hash,
-      distribution: distribution_json,
-      aggregated_election_rewards: aggregated_election_rewards_json
-    }
+    epoch
+    |> prepare_epoch()
+    |> Map.put(:distribution, distribution_json)
+    |> Map.put(:aggregated_election_rewards, aggregated_election_rewards_json)
   end
 
   def render("celo_base_fee.json", %Block{} = block) do
@@ -146,8 +118,8 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       end)
 
     %{
-      "items" => rewards_json,
-      "next_page_params" => next_page_params
+      items: rewards_json,
+      next_page_params: next_page_params
     }
   end
 
@@ -206,17 +178,17 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       %{
         # todo: keep `is_epoch_block` for compatibility with frontend and remove
         # when new frontend is bound to `is_l1_era_epoch_block` property
-        "is_epoch_block" =>
+        is_epoch_block:
           CeloHelper.pre_migration_block_number?(block.number) and
             CeloHelper.epoch_block_number?(block.number),
-        "is_l1_era_epoch_block" =>
+        is_l1_era_epoch_block:
           CeloHelper.pre_migration_block_number?(block.number) and
             CeloHelper.epoch_block_number?(block.number),
-        "epoch_number" => epoch_number
+        epoch_number: epoch_number
       }
       |> maybe_add_base_fee_info(block, single_block?)
 
-    Map.put(out_json, "celo", celo_json)
+    Map.put(out_json, :celo, celo_json)
   end
 
   @doc """
@@ -261,6 +233,46 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
     Map.put(out_json, "celo", %{"gas_token" => token_json})
   end
+
+  @spec prepare_epoch(Epoch.t()) :: map()
+  defp prepare_epoch(%Epoch{} = epoch) do
+    %{
+      number: epoch.number,
+      start_block_number: epoch.start_block_number,
+      end_block_number: epoch.end_block_number,
+      start_processing_block_hash: epoch.start_processing_block_hash,
+      end_processing_block_hash: epoch.end_processing_block_hash
+    }
+  end
+
+  @spec prepare_distribution(EpochReward.t() | nil) ::
+          %{
+            optional(:reserve_bolster_transfer) => nil | %{optional(String.t()) => any()},
+            optional(:community_transfer) => nil | %{optional(String.t()) => any()},
+            optional(:carbon_offsetting_transfer) => nil | %{optional(String.t()) => any()}
+          }
+          | nil
+  defp prepare_distribution(%EpochReward{} = distribution) do
+    Map.new(
+      [
+        reserve_bolster_transfer: distribution.reserve_bolster_transfer,
+        community_transfer: distribution.community_transfer,
+        carbon_offsetting_transfer: distribution.carbon_offsetting_transfer
+      ],
+      fn {field, token_transfer} ->
+        token_transfer_json =
+          token_transfer &&
+            TransactionView.render(
+              "token_transfer.json",
+              %{token_transfer: token_transfer, conn: nil}
+            )
+
+        {field, token_transfer_json}
+      end
+    )
+  end
+
+  defp prepare_distribution(_), do: nil
 
   # Get the breakdown of the base fee for the case when FeeHandler is a contract
   # that receives the base fee.

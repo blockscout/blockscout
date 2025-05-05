@@ -26,16 +26,16 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     Transaction
   }
 
-  alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
-  alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
-  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
-
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Utility.MissingRangesManipulator
+
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
+  alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
+  alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
 
   @behaviour Runner
 

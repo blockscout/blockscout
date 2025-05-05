@@ -24,10 +24,9 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPos
   import Ecto.Query, only: [from: 2]
   import Indexer.Fetcher.Celo.Helper, only: [abi_to_method_id: 1]
 
-  alias Explorer.Chain.Cache.CeloCoreContracts
-  alias Explorer.Chain.{Block, Celo.Epoch, Log}
+  alias Explorer.Chain.{Block, Log}
+  alias Explorer.Chain.Celo.Epoch
   alias Explorer.Repo
-  alias Explorer.Helper, as: ExplorerHelper
 
   @repeated_request_max_retries 3
   @requests_chunk_size 100
@@ -95,13 +94,13 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPos
   def fetch(%Epoch{number: epoch_number, start_processing_block: %Block{number: block_number, hash: block_hash}}) do
     with false <-
            check_if_validator_payment_distributed_events_exist(block_hash),
-         {:ok, length} = number_of_elected_in_current_set(block_number),
+         {:ok, length} <- number_of_elected_in_current_set(block_number),
          {:ok, account_address_hashes} <- get_elected_accounts(block_number, length),
          {:ok, payments_before} <- get_allocated_payments(account_address_hashes, block_number - 1),
          {:ok, payments_after} <- get_allocated_payments(account_address_hashes, block_number),
          {:ok, group_address_hashes} <- get_validator_groups(account_address_hashes, block_number),
          unique_group_address_hashes = Enum.uniq(group_address_hashes),
-         {:ok, group_commissions} = get_validator_group_commissions(unique_group_address_hashes, block_number) do
+         {:ok, group_commissions} <- get_validator_group_commissions(unique_group_address_hashes, block_number) do
       account_address_hash_to_group_address_hash =
         account_address_hashes
         |> Enum.zip(group_address_hashes)

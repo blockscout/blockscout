@@ -12,7 +12,6 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.EpochNumberByBlockNumber do
     json_rpc_named_arguments: [:indexer, :json_rpc_named_arguments]
 
   alias Explorer.Chain.Celo.Epoch
-  alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Fetcher.Celo.Helper, as: CeloHelper
   alias Indexer.Helper, as: IndexerHelper
 
@@ -42,7 +41,6 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.EpochNumberByBlockNumber do
       json_rpc_named_arguments(),
       @repeated_request_max_retries
     )
-    |> dbg()
     |> case do
       {[ok: [number]], []} ->
         {:ok, number}

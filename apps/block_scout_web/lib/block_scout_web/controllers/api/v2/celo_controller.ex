@@ -9,15 +9,46 @@ defmodule BlockScoutWeb.API.V2.CeloController do
       split_list_by_page: 1
     ]
 
+  import Explorer.PagingOptions, only: [default_paging_options: 0]
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
 
-  alias Explorer.Chain.Celo.{Epoch, ElectionReward}
-
-  @api_true [api?: true]
+  alias Explorer.Chain.Celo.{ElectionReward, Epoch}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
-  def epochs(conn, _params) do
+  @spec epochs(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def epochs(conn, params) do
+    paging_options =
+      with {:ok, number_string} <- Map.fetch(params, "number"),
+           {:ok, number} <- parse_epoch_number(number_string) do
+        %{default_paging_options() | key: %{number: number}}
+      else
+        _ -> default_paging_options()
+      end
+
+    options = [
+      paging_options: paging_options,
+      api?: true
+    ]
+
+    {epochs, next_page} =
+      options
+      |> Epoch.fetched_epochs()
+      |> split_list_by_page()
+
+    next_page_params =
+      next_page_params(
+        next_page,
+        epochs,
+        delete_parameters_from_next_page_params(params),
+        &%{number: &1.number}
+      )
+
+    conn
+    |> render(:celo_epochs, %{
+      epochs: epochs,
+      next_page_params: next_page_params
+    })
   end
 
   def epoch(conn, %{"number" => number_string}) do
@@ -50,10 +81,10 @@ defmodule BlockScoutWeb.API.V2.CeloController do
           necessity_by_association: %{
             [account_address: address_associations] => :optional,
             [associated_account_address: address_associations] => :optional
-          }
+          },
+          api?: true
         ]
         |> Keyword.merge(ElectionReward.epoch_paging_options(params))
-        |> Keyword.merge(@api_true)
 
       rewards_plus_one =
         ElectionReward.epoch_number_and_type_to_rewards(

@@ -9,10 +9,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPri
   alias Explorer.Repo
   alias Indexer.Transform.Celo.ValidatorEpochPaymentDistributions
 
-  @spec fetch(%{
-          :block_hash => EthereumJSONRPC.hash(),
-          :block_number => EthereumJSONRPC.block_number()
-        }) :: {:ok, list()}
+  @spec fetch(Epoch.t()) :: {:ok, list()}
   def fetch(%Epoch{start_processing_block: %Block{number: block_number, hash: block_hash}} = epoch) do
     epoch_payment_distributions_signature = ValidatorEpochPaymentDistributions.signature()
     {:ok, validators_contract_address} = CeloCoreContracts.get_address(:validators, block_number)

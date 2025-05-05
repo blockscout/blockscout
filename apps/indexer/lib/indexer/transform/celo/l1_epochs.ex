@@ -1,4 +1,16 @@
 defmodule Indexer.Transform.Celo.L1Epochs do
+  @moduledoc """
+  Transformer for Celo L1 epoch data from blockchain blocks.
+
+  This module processes blocks from the Celo blockchain to extract epoch
+  information for pre-migration blocks (L1 epochs). It identifies epoch blocks
+  based on the mathematical formula that governed Celo's epoch structure before
+  the L2 migration.
+
+  This information is essential for tracking Celo's epoch structure during the
+  L1 era, which followed a deterministic mathematical formula.
+  """
+
   use Utils.RuntimeEnvHelper,
     chain_type: [:explorer, :chain_type]
 

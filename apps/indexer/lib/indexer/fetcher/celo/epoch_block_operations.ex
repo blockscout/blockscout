@@ -11,25 +11,16 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.Multi
-  alias Ecto.Changeset
-  alias Explorer.Chain
-  alias Explorer.Chain.Block
-  alias Explorer.Chain.Import
-  alias Explorer.Repo
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Block, Import}
+  alias Explorer.Chain.Celo.Epoch
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Transform.Addresses
-  alias Explorer.Chain.Import.Stage
-
-  alias Explorer.Chain.Celo.{
-    Epoch,
-    EpochReward,
-    ElectionReward
-  }
 
   alias Explorer.Chain.Import.Runner.Celo.{
-    Epochs,
     ElectionRewards,
-    EpochRewards
+    EpochRewards,
+    Epochs
   }
 
   alias Indexer.Fetcher.Celo.EpochBlockOperations.{
@@ -142,7 +133,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
         celo_election_rewards: election_rewards_params
       })
 
-    {:ok, imported_addresses} = Chain.import(%{addresses: %{params: addresses_params}})
+    {:ok, _imported_addresses} = Chain.import(%{addresses: %{params: addresses_params}})
 
     {:ok, import_multi} =
       Import.all_single_multi(

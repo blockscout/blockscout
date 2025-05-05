@@ -13,8 +13,6 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.Distributions do
   import Explorer.Chain.Celo.Helper, only: [pre_migration_block_number?: 1]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
-  alias Explorer.Repo
-
   alias Explorer.Chain.{
     Block,
     Cache.CeloCoreContracts,
@@ -22,10 +20,10 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.Distributions do
     TokenTransfer
   }
 
-  @spec fetch(%{
-          :block_hash => EthereumJSONRPC.hash(),
-          :block_number => EthereumJSONRPC.block_number()
-        }) ::
+  alias Explorer.Chain.Celo.Epoch
+  alias Explorer.Repo
+
+  @spec fetch(Epoch.t()) ::
           {:ok, map()}
           | {:error, :multiple_transfers_to_same_address}
   def fetch(%{end_processing_block: %Block{number: block_number, hash: block_hash}} = epoch) do

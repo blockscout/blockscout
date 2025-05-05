@@ -33,9 +33,8 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
   alias Explorer.Chain.Cache.CeloCoreContracts
-  alias Explorer.Chain
+  alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, Celo.Epoch, Hash, Token, Wei}
-  alias Explorer.SortingHelper
 
   @default_paging_options Chain.default_paging_options()
 

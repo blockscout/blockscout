@@ -52,13 +52,8 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
   @get_active_votes_for_group_by_account_method_id @get_active_votes_for_group_by_account_abi
                                                    |> abi_to_method_id()
 
-  @spec fetch(
-          %{
-            :block_hash => EthereumJSONRPC.hash(),
-            :block_number => EthereumJSONRPC.block_number()
-          },
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: {:error, list()} | {:ok, list()}
+  @spec fetch(Epoch.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {:error, list()} | {:ok, list()}
   def fetch(
         %Epoch{start_processing_block: start_block, end_processing_block: end_block} = epoch,
         json_rpc_named_arguments

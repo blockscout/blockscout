@@ -5,7 +5,6 @@ defmodule Explorer.Migrator.CeloL2EpochsTest do
     chain_type: [:explorer, :chain_type]
 
   if @chain_type == :celo do
-
     alias Explorer.Migrator.{CeloL2Epochs, MigrationStatus}
     alias Explorer.Chain.Celo.Epoch
     alias Explorer.Repo

@@ -13,8 +13,6 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.EpochPeriod do
 
   import Indexer.Fetcher.Celo.Helper, only: [abi_to_method_id: 1]
 
-  alias Explorer.Chain.Celo.Epoch
-  alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Helper, as: IndexerHelper
 
   @repeated_request_max_retries 3

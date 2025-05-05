@@ -312,12 +312,11 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     scope "/celo" do
       chain_scope :celo do
-        get("/epochs/:number", V2.CeloController, :epoch)
-        get("/epochs/:number/election-rewards/:type", V2.CeloController, :election_rewards)
-        # get("/transactions/count", V2.CeloController, :transactions_count)
-        # get("/blocks", V2.CeloController, :blocks)
-        # get("/blocks/count", V2.CeloController, :blocks_count)
-        # get("/epoch/:number", V2.CeloController, :epoch)
+        scope "/epochs" do
+          get("/", V2.CeloController, :epochs)
+          get("/:number", V2.CeloController, :epoch)
+          get("/:number/election-rewards/:type", V2.CeloController, :election_rewards)
+        end
       end
     end
 

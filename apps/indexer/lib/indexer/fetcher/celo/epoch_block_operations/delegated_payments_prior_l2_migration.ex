@@ -12,11 +12,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPaymentsPriorL2Migr
       read_contracts_with_retries: 4
     ]
 
+  alias Explorer.Chain.{Block, Hash, TokenTransfer}
   alias Explorer.Chain.Cache.CeloCoreContracts
-  alias Explorer.Chain.{Block, Celo.Epoch, Hash, TokenTransfer}
+  alias Explorer.Chain.Celo.Epoch
+  alias Explorer.Chain.Wei
   alias Explorer.Repo
   alias Indexer.Fetcher.Celo.EpochBlockOperations.CoreContractVersion
-  alias Explorer.Chain.Wei
 
   require Logger
 
@@ -50,10 +51,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPaymentsPriorL2Migr
 
   @spec fetch(
           [EthereumJSONRPC.address()],
-          %{
-            :block_hash => EthereumJSONRPC.hash(),
-            :block_number => EthereumJSONRPC.block_number()
-          },
+          Epoch.t(),
           EthereumJSONRPC.json_rpc_named_arguments()
         ) ::
           {:ok, list()}

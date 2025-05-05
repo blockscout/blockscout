@@ -1,4 +1,16 @@
 defmodule Indexer.Transform.Celo.L2Epochs do
+  @moduledoc """
+  Transformer for Celo L2 epoch data from blockchain logs.
+
+  This module processes logs from the Celo EpochManager contract to extract
+  epoch information for post-migration blocks (L2 epochs). It identifies epoch
+  processing start and end events by filtering logs based on their topics and
+  the contract address.
+
+  This information is essential for tracking Celo's epoch structure after the L2
+  migration, which no longer follows a simple deterministic formula.
+  """
+
   use Utils.RuntimeEnvHelper,
     chain_type: [:explorer, :chain_type],
     epoch_manager_contract_address: [
@@ -8,10 +20,8 @@ defmodule Indexer.Transform.Celo.L2Epochs do
 
   import Explorer.Helper, only: [decode_data: 2]
 
-  alias Explorer.Chain.{Log, Celo.Epoch}
-  alias Explorer.Chain.Celo.Helper
-
-  alias Indexer.Fetcher.Celo.Contracts.EpochManager
+  alias Explorer.Chain.Celo.{Epoch, Helper}
+  alias Explorer.Chain.Log
 
   # Events from the EpochManager contract
   @epoch_processing_started_topic "0xae58a33f8b8d696bcbaca9fa29d9fdc336c140e982196c2580db3d46f3e6d4b6"
