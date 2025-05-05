@@ -1621,10 +1621,7 @@ defmodule Explorer.Chain do
     query =
       case PendingOperationsHelper.pending_operations_type() do
         "blocks" ->
-          from(
-            pbo in PendingBlockOperation,
-            where: pbo.block_hash in ^block_hashes
-          )
+          PendingOperationsHelper.block_hash_in_query(block_hashes)
 
         "transactions" ->
           from(
