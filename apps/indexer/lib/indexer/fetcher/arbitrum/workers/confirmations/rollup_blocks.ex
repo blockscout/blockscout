@@ -555,7 +555,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   end
 
   # Finds the first block number from the sorted list that falls within the specified range.
-  @spec find_first_block_in_range([non_neg_integer()], {non_neg_integer(), non_neg_integer()}) :: non_neg_integer() | nil
+  @spec find_first_block_in_range([non_neg_integer()], {non_neg_integer(), non_neg_integer()}) ::
+          non_neg_integer() | nil
   defp find_first_block_in_range(sorted_block_numbers, {start_block, end_block}) do
     Enum.find_value(sorted_block_numbers, nil, fn block_num ->
       if block_num >= start_block and block_num <= end_block do

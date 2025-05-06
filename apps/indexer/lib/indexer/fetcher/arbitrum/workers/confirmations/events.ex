@@ -125,7 +125,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Events do
             optional(any()) => any()
           },
           cached_logs()
-        ) :: {:ok, [non_neg_integer()], cached_logs(), non_neg_integer()} | {:error, nil, cached_logs(), non_neg_integer()}
+        ) ::
+          {:ok, [non_neg_integer()], cached_logs(), non_neg_integer()} | {:error, nil, cached_logs(), non_neg_integer()}
   def fetch_and_sort_confirmations_logs(log_start, log_end, l1_outbox_config, cache) do
     {logs, new_cache} =
       get_logs_for_confirmations(
