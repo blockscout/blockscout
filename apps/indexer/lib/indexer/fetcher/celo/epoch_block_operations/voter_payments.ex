@@ -4,8 +4,11 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
   """
   import Ecto.Query, only: [from: 2, select: 3]
 
-  import Explorer.Helper, only: [decode_data: 2]
-  import Indexer.Fetcher.Celo.Helper, only: [abi_to_method_id: 1]
+  import Explorer.Helper,
+    only: [
+      decode_data: 2,
+      abi_to_method_id: 1
+    ]
 
   import Indexer.Helper,
     only: [

@@ -15,6 +15,8 @@ defmodule Explorer.Chain.Cache.CeloEpochs do
 
   use Explorer.Chain.OrderedCache,
     name: :celo_epochs_cache,
+    ttl_check_interval: :timer.minutes(1),
+    global_ttl: :timer.minutes(5),
     # Adjust based on expected number of post-migration epochs
     max_size: 10000
 
@@ -26,17 +28,12 @@ defmodule Explorer.Chain.Cache.CeloEpochs do
 
   @type id :: non_neg_integer()
 
+  import Ecto.Query, only: [select: 3]
+
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.Blocks
   alias Explorer.Chain.Celo.{Epoch, Helper}
-
-  alias Indexer.Fetcher.Celo.EpochBlockOperations.{
-    EpochNumberByBlockNumber,
-    EpochPeriod
-  }
-
-  import Ecto.Query, only: [select: 3]
 
   @impl Explorer.Chain.OrderedCache
   def element_to_id(epoch) when is_map(epoch), do: epoch.number
@@ -53,7 +50,7 @@ defmodule Explorer.Chain.Cache.CeloEpochs do
       Helper.block_number_to_epoch_number(block_number)
     else
       # For post-migration blocks, use the ordered cache
-      find_post_migration_epoch(block_number)
+      fetch_post_migration_epoch_number(block_number)
     end
   end
 
@@ -77,35 +74,35 @@ defmodule Explorer.Chain.Cache.CeloEpochs do
     block_number && block_number_to_epoch_number(block_number)
   end
 
-  @spec find_post_migration_epoch(non_neg_integer()) :: non_neg_integer() | nil
-  defp find_post_migration_epoch(block_number) do
-    with {:cached, nil} <- {:cached, fetch_epoch_from_cache(block_number)},
+  @spec fetch_post_migration_epoch_number(non_neg_integer()) :: non_neg_integer() | nil
+  defp fetch_post_migration_epoch_number(block_number) do
+    with {:cache, nil} <- {:cache, fetch_epoch_from_cache(block_number)},
          {:db, nil} <- {:db, fetch_epoch_from_db(block_number)} do
-      #  {:rpc, nil} <- {:rpc, fetch_epoch_from_rpc(block_number)},
       nil
     else
-      {method, epoch} ->
+      {source, epoch} ->
         # If the epoch is found in the database, update the cache
-        # if method in [:db, :rpc] do
-        if method in [:db] do
-          update(%{
-            number: epoch.number,
-            start_block_number: epoch.start_block_number,
-            end_block_number: epoch.end_block_number
-          })
+        if source == :db do
+          update(epoch)
         end
 
         epoch.number
     end
   end
 
+  @spec fetch_epoch_from_cache(non_neg_integer()) :: element() | nil
   defp fetch_epoch_from_cache(block_number) do
-    Enum.find(all(), fn epoch ->
-      epoch.start_block_number <= block_number and
-        block_number <= epoch.end_block_number
+    Enum.find(all(), fn
+      %{end_block_number: nil} = epoch ->
+        epoch.start_block_number <= block_number
+
+      epoch ->
+        epoch.start_block_number <= block_number and
+          block_number <= epoch.end_block_number
     end)
   end
 
+  @spec fetch_epoch_from_db(non_neg_integer()) :: element() | nil
   defp fetch_epoch_from_db(block_number) do
     block_number
     |> Epoch.block_number_to_epoch_query()
@@ -116,17 +113,4 @@ defmodule Explorer.Chain.Cache.CeloEpochs do
     })
     |> Repo.one()
   end
-
-  # defp fetch_epoch_from_rpc(block_number) do
-  #   with {:ok, epoch_number} <- EpochNumberByBlockNumber.fetch(block_number),
-  #        {:ok, {start_block_number, end_block_number}} <- EpochPeriod.fetch(epoch_number) do
-  #     %{
-  #       number: epoch_number,
-  #       start_block_number: start_block_number,
-  #       end_block_number: end_block_number
-  #     }
-  #   else
-  #     _ -> nil
-  #   end
-  # end
 end

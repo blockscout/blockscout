@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Import}
   alias Explorer.Chain.Celo.Epoch
+  alias Explorer.Chain.Celo.Reader.EpochManager
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Transform.Addresses
 
@@ -26,7 +27,6 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   alias Indexer.Fetcher.Celo.EpochBlockOperations.{
     DelegatedPaymentsPriorL2Migration,
     Distributions,
-    EpochPeriod,
     ValidatorAndGroupPaymentsPostL2Migration,
     ValidatorAndGroupPaymentsPriorL2Migration,
     VoterPayments
@@ -128,6 +128,11 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
     epoch_params = fetch_epoch_params(epoch)
     {:ok, distributions_params} = Distributions.fetch(epoch)
 
+    next_epoch_params = %{
+      number: epoch.number + 1,
+      start_block_number: epoch.end_block_number + 1
+    }
+
     addresses_params =
       Addresses.extract_addresses(%{
         celo_election_rewards: election_rewards_params
@@ -145,7 +150,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
         %{
           celo_epoch_rewards: %{params: [distributions_params]},
           celo_election_rewards: %{params: election_rewards_params},
-          celo_epochs: %{params: [epoch_params]}
+          celo_epochs: %{params: [epoch_params, next_epoch_params]}
         }
       )
 
@@ -214,19 +219,19 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
 
   defp acquire_processing_blocks(repo, epoch) do
     # First verify start block consensus and lock it to prevent changes during our operation
-    processing_block_hashes = [
-      epoch.start_processing_block_hash,
-      epoch.end_processing_block_hash
-    ]
-
-    premigration? = pre_migration_block_number?(epoch.start_processing_block.number)
 
     query =
       from(b in Block.consensus_blocks_query(),
-        where: b.hash in ^processing_block_hashes,
+        where:
+          b.hash in ^[
+            epoch.start_processing_block_hash,
+            epoch.end_processing_block_hash
+          ],
         order_by: [asc: b.hash],
         lock: "FOR SHARE"
       )
+
+    premigration? = pre_migration_block_number?(epoch.start_processing_block.number)
 
     query
     |> repo.all()
@@ -248,7 +253,11 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
     if pre_migration_block_number?(epoch.start_processing_block.number) do
       params
     else
-      {:ok, {start_block_number, end_block_number}} = EpochPeriod.fetch(epoch.number)
+      {:ok, start_block_number} =
+        EpochManager.fetch_first_block_at_epoch(epoch.number)
+
+      {:ok, end_block_number} =
+        EpochManager.fetch_last_block_at_epoch(epoch.number)
 
       params
       |> Map.put(:start_block_number, start_block_number)

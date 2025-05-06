@@ -144,13 +144,57 @@ defmodule Explorer.Chain.Celo.Epoch do
     |> Chain.select_repo(options).all()
   end
 
+  @doc """
+  Returns a query to find an epoch by its number.
+
+  ## Parameters
+    - `number` (`integer()`): The epoch number to search for.
+
+  ## Returns
+    - `Ecto.Query.t()`: The query to find the epoch.
+
+  ## Examples
+
+      iex> Repo.one(epoch_by_number_query(42))
+      %Epoch{number: 42, start_block_number: 123400, end_block_number: 123799}
+
+      iex> Repo.one(epoch_by_number_query(999999))
+      nil
+  """
+  @spec epoch_by_number_query(integer()) :: Ecto.Query.t()
+  def epoch_by_number_query(number) do
+    __MODULE__
+    |> where(number: ^number)
+  end
+
+  @doc """
+  Retrieves an epoch by its number. This function fetches the epoch from the
+  database and preloads its associated data based on the provided options. It
+  always preloads distribution token transfers.
+
+  ## Parameters
+    - `number` (`integer()`): The epoch number to search for.
+    - `options` (`Keyword.t()`): Options for filtering and ordering the epochs.
+      - `:necessity_by_association` - associations that need to be loaded
+      - `:sorting` - sorting parameters
+  ## Returns
+    - `{:ok, __MODULE__.t()}`: The epoch struct if found.
+    - `{:error, :not_found}`: If the epoch is not found.
+
+  ## Examples
+      iex> Explorer.Chain.Celo.Epoch.from_number(42, [])
+      {:ok, %Epoch{number: 42, start_block_number: 123400, end_block_number: 123799}}
+
+      iex> Explorer.Chain.Celo.Epoch.from_number(999999, [])
+      {:error, :not_found}
+  """
   @spec from_number(integer(), Keyword.t()) ::
           {:ok, __MODULE__.t()} | {:error, :not_found}
   def from_number(number, options) when is_integer(number) and is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    __MODULE__
-    |> where(number: ^number)
+    number
+    |> epoch_by_number_query()
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).one()
     |> with_loaded_distribution_token_transfers(options)
@@ -255,15 +299,21 @@ defmodule Explorer.Chain.Celo.Epoch do
       iex> Repo.one(block_number_to_epoch_query(123456))
       %Epoch{number: 42, start_block_number: 123400, end_block_number: 123799}
 
+      iex> Repo.one(block_number_to_epoch_query(123800))
+      %Epoch{number: 43, start_block_number: 123800, end_block_number: nil}
+
       iex> Repo.one(block_number_to_epoch_query(999999))
       nil
   """
   @spec block_number_to_epoch_query(non_neg_integer()) :: Ecto.Query.t()
   def block_number_to_epoch_query(block_number) do
     from(e in __MODULE__,
+      # If the epoch has no end block number, it is considered to be open-ended
+      # and includes all blocks after the start block number.
       where:
         e.start_block_number <= ^block_number and
-          ^block_number <= e.end_block_number
+          (is_nil(e.end_block_number) or
+             e.end_block_number >= ^block_number)
     )
   end
 end
