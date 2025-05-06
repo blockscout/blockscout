@@ -277,28 +277,28 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   # Fetches dispute game info from DB by game's contract address or game's unique index.
   #
   # ## Parameters
-  # - `game_address`: Game's contract address. Must be `nil` if unknown.
+  # - `game_address_hash`: Game's contract address. Must be `nil` if unknown.
   # - `game_index`: Game unique index. Must be `nil` if unknown.
   #
   # ## Returns
   # - A map with necessary info about the dispute game.
   # - `nil` if the dispute game not found in DB or both input parameters are `nil`.
-  @spec game_by_address_or_index(Hash.t() | nil, non_neg_integer() | nil) ::
+  @spec game_by_address_hash_or_index(Hash.t() | nil, non_neg_integer() | nil) ::
           %{:created_at => DateTime.t(), :resolved_at => DateTime.t(), :status => non_neg_integer()} | nil
-  defp game_by_address_or_index(nil, nil), do: nil
+  defp game_by_address_hash_or_index(nil, nil), do: nil
 
-  defp game_by_address_or_index(game_address, nil) do
+  defp game_by_address_hash_or_index(game_address_hash, nil) do
     Repo.replica().one(
       from(
         g in DisputeGame,
         select: %{created_at: g.created_at, resolved_at: g.resolved_at, status: g.status},
-        where: g.address == ^game_address,
+        where: g.address_hash == ^game_address_hash,
         limit: 1
       )
     )
   end
 
-  defp game_by_address_or_index(nil, game_index) do
+  defp game_by_address_hash_or_index(nil, game_index) do
     Repo.replica().one(
       from(
         g in DisputeGame,
@@ -308,14 +308,14 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     )
   end
 
-  defp game_by_address_or_index(_game_address, game_index) do
-    game_by_address_or_index(nil, game_index)
+  defp game_by_address_hash_or_index(_game_address_hash, game_index) do
+    game_by_address_hash_or_index(nil, game_index)
   end
 
   # Determines the current withdrawal status by the list of the bound WithdrawalProven events.
   #
   # ## Parameters
-  # - `proven_events`: A list of WithdrawalProven events. Each item is `{l1_timestamp, game_address, game_index}` tuple.
+  # - `proven_events`: A list of WithdrawalProven events. Each item is `{l1_timestamp, game_address_hash, game_index}` tuple.
   # - `respected_games`: A list of games returned by the `respected_games()` function.
   #
   # ## Returns
@@ -326,8 +326,8 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   defp handle_proven_status(proven_events, respected_games) do
     statuses =
       proven_events
-      |> Enum.reduce_while([], fn {l1_timestamp, game_address, game_index}, acc ->
-        game = game_by_address_or_index(game_address, game_index)
+      |> Enum.reduce_while([], fn {l1_timestamp, game_address_hash, game_index}, acc ->
+        game = game_by_address_hash_or_index(game_address_hash, game_index)
 
         # credo:disable-for-lines:16 Credo.Check.Refactor.PipeChainStart
         cond do
@@ -375,15 +375,15 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   # - `withdrawal_hash`: The withdrawal hash for which the function should return the events.
   #
   # ## Returns
-  # - A list of `{l1_timestamp, game_address, game_index}` tuples where `l1_timestamp` is the L1 block timestamp
-  #   when the event appeared, `game_address` is the bound dispute game contract address (can be `nil`),
+  # - A list of `{l1_timestamp, game_address_hash, game_index}` tuples where `l1_timestamp` is the L1 block timestamp
+  #   when the event appeared, `game_address_hash` is the bound dispute game contract address (can be `nil`),
   #   `game_index` is the bound dispute game index (can be `nil`).
   @spec proven_events_by_hash(Hash.t()) :: [{DateTime.t(), Hash.t() | nil, non_neg_integer() | nil}]
   defp proven_events_by_hash(withdrawal_hash) do
     Repo.replica().all(
       from(
         we in WithdrawalEvent,
-        select: {we.l1_timestamp, we.game_address, we.game_index},
+        select: {we.l1_timestamp, we.game_address_hash, we.game_index},
         where: we.withdrawal_hash == ^withdrawal_hash and we.l1_event_type == :WithdrawalProven,
         order_by: [asc: we.l1_block_number]
       ),

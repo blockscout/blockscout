@@ -127,8 +127,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "index" => g.index,
             "game_type" => g.game_type,
             # todo: It should be removed in favour `contract_address_hash` property with the next release after 8.0.0
-            "contract_address" => g.address,
-            "contract_address_hash" => g.address,
+            "contract_address" => g.address_hash,
+            "contract_address_hash" => g.address_hash,
             "l2_block_number" => l2_block_number,
             "created_at" => g.created_at,
             "status" => status,

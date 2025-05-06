@@ -229,14 +229,14 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     |> Enum.map(fn event ->
       transaction_hash = event["transactionHash"]
 
-      {l1_event_type, game_index, game_address} =
+      {l1_event_type, game_index, game_address_hash} =
         if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
-          {game_index, game_address} =
+          {game_index, game_address_hash} =
             input_by_hash
             |> Map.get(transaction_hash)
-            |> input_to_game_index_or_address()
+            |> input_to_game_index_or_address_hash()
 
-          {:WithdrawalProven, game_index, game_address}
+          {:WithdrawalProven, game_index, game_address_hash}
         else
           {:WithdrawalFinalized, nil, nil}
         end
@@ -250,7 +250,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         l1_transaction_hash: transaction_hash,
         l1_block_number: l1_block_number,
         game_index: game_index,
-        game_address: game_address
+        game_address_hash: game_address_hash
       }
     end)
   end
@@ -329,10 +329,10 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   # - `input`: The L1 transaction input in form of `0x` string.
   #
   # ## Returns
-  # - `{game_index, game_address}` tuple where one of the elements is not `nil`, but another one is `nil` (and vice versa).
+  # - `{game_index, game_address_hash}` tuple where one of the elements is not `nil`, but another one is `nil` (and vice versa).
   #   Both elements can be `nil` if the input cannot be parsed (or has unsupported format).
-  @spec input_to_game_index_or_address(String.t()) :: {non_neg_integer() | nil, String.t() | nil}
-  defp input_to_game_index_or_address(input) do
+  @spec input_to_game_index_or_address_hash(String.t()) :: {non_neg_integer() | nil, String.t() | nil}
+  defp input_to_game_index_or_address_hash(input) do
     method_signature = String.slice(input, 0..9)
 
     case method_signature do
@@ -365,13 +365,13 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         game_address_range_start = game_address_offset
         game_address_range_end = game_address_range_start + game_address_length - 1
 
-        game_address =
+        game_address_hash =
           input
           |> String.slice(game_address_range_start..game_address_range_end)
           |> String.trim_leading("000000000000000000000000")
           |> String.pad_leading(42, "0x")
 
-        {nil, game_address}
+        {nil, game_address_hash}
 
       _ ->
         {nil, nil}
