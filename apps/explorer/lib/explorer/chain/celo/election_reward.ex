@@ -30,13 +30,12 @@ defmodule Explorer.Chain.Celo.ElectionReward do
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
   import Ecto.Query, only: [from: 2, where: 3, group_by: 3, select: 3]
-  import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, Celo.Epoch, Hash, Token, Wei}
 
-  @default_paging_options Chain.default_paging_options()
+  @default_paging_options default_paging_options()
 
   @type type :: :voter | :validator | :group | :delegated_payment
   @types_enum ~w(voter validator group delegated_payment)a
@@ -147,6 +146,28 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   @spec type_from_url_string(String.t()) :: {:ok, type} | :error
   def type_from_url_string(type_string) do
     Map.fetch(@reward_type_url_string_to_atom, type_string)
+  end
+
+  @doc """
+  Converts a reward type string to its corresponding atom.
+
+  ## Parameters
+  - `type_string` (`String.t()`): The string representation of the reward type.
+
+  ## Returns
+  - `{:ok, type}` if the string is valid, `:error` otherwise.
+
+  ## Examples
+
+      iex> ElectionReward.type_from_string("voter")
+      {:ok, :voter}
+
+      iex> ElectionReward.type_from_string("invalid")
+      :error
+  """
+  @spec type_from_string(String.t()) :: {:ok, type} | :error
+  def type_from_string(type_string) do
+    Map.fetch(@reward_type_string_to_atom, type_string)
   end
 
   @doc """
@@ -385,121 +406,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
           ),
       select_merge: %{token: t}
     )
-  end
-
-  @doc """
-  Makes Explorer.PagingOptions map for election rewards.
-  """
-  @spec epoch_paging_options(map()) :: [Chain.paging_options()]
-  def epoch_paging_options(params) do
-    with %{
-           "amount" => amount_string,
-           "account_address_hash" => account_address_hash_string,
-           "associated_account_address_hash" => associated_account_address_hash_string
-         }
-         when is_binary(amount_string) and
-                is_binary(account_address_hash_string) and
-                is_binary(associated_account_address_hash_string) <- params,
-         {amount, ""} <- Decimal.parse(amount_string),
-         {:ok, account_address_hash} <- Hash.Address.cast(account_address_hash_string),
-         {:ok, associated_account_address_hash} <-
-           Hash.Address.cast(associated_account_address_hash_string) do
-      [
-        paging_options: %{
-          default_paging_options()
-          | key: {amount, account_address_hash, associated_account_address_hash}
-        }
-      ]
-    else
-      _ ->
-        [paging_options: default_paging_options()]
-    end
-  end
-
-  @doc """
-  Makes Explorer.PagingOptions map for election rewards.
-  """
-  @spec address_paging_options(map()) :: [Chain.paging_options()]
-  def address_paging_options(params) do
-    with %{
-           "block_number" => block_number_string,
-           "amount" => amount_string,
-           "associated_account_address_hash" => associated_account_address_hash_string,
-           "type" => type_string
-         }
-         when is_binary(block_number_string) and
-                is_binary(amount_string) and
-                is_binary(associated_account_address_hash_string) and
-                is_binary(type_string) <- params,
-         {:ok, block_number} <- safe_parse_non_negative_integer(block_number_string),
-         {amount, ""} <- Decimal.parse(amount_string),
-         {:ok, associated_account_address_hash} <-
-           Hash.Address.cast(associated_account_address_hash_string),
-         {:ok, type} <- Map.fetch(@reward_type_string_to_atom, type_string) do
-      [
-        paging_options: %{
-          default_paging_options()
-          | key: {block_number, amount, associated_account_address_hash, type}
-        }
-      ]
-    else
-      _ ->
-        [paging_options: default_paging_options()]
-    end
-  end
-
-  @doc """
-  Converts an `ElectionReward` struct to paging parameters on the block view.
-
-  ## Parameters
-  - `reward` (`%__MODULE__{}`): The election reward struct.
-
-  ## Returns
-  - A map representing the block paging parameters.
-
-  ## Examples
-
-      iex> ElectionReward.to_block_paging_params(%ElectionReward{amount: 1000, account_address_hash: "0x123", associated_account_address_hash: "0x456"})
-      %{"amount" => 1000, "account_address_hash" => "0x123", "associated_account_address_hash" => "0x456"}
-  """
-  def to_epoch_paging_params(%__MODULE__{
-        amount: amount,
-        account_address_hash: account_address_hash,
-        associated_account_address_hash: associated_account_address_hash
-      }) do
-    %{
-      "amount" => amount,
-      "account_address_hash" => account_address_hash,
-      "associated_account_address_hash" => associated_account_address_hash
-    }
-  end
-
-  @doc """
-  Converts an `ElectionReward` struct to paging parameters on the address view.
-
-  ## Parameters
-  - `reward` (`%__MODULE__{}`): The election reward struct.
-
-  ## Returns
-  - A map representing the address paging parameters.
-
-  ## Examples
-
-      iex> ElectionReward.to_address_paging_params(%ElectionReward{block_number: 1, amount: 1000, associated_account_address_hash: "0x456", type: :voter})
-      %{"block_number" => 1, "amount" => 1000, "associated_account_address_hash" => "0x456", "type" => :voter}
-  """
-  def to_address_paging_params(%__MODULE__{
-        epoch_number: epoch_number,
-        amount: amount,
-        associated_account_address_hash: associated_account_address_hash,
-        type: type
-      }) do
-    %{
-      "epoch_number" => epoch_number,
-      "amount" => amount,
-      "associated_account_address_hash" => associated_account_address_hash,
-      "type" => type
-    }
   end
 
   @doc """

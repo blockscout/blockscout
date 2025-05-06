@@ -133,6 +133,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
         %{
           amount: reward.amount,
           epoch_number: reward.epoch_number,
+          block_timestamp: reward.epoch.end_processing_block.timestamp,
           account:
             Helper.address_with_info(
               reward.account_address,

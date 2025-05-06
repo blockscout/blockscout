@@ -245,8 +245,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:address_hash_param/nft/collections", V2.AddressController, :nft_collections)
 
       chain_scope :celo do
-        get("/:address_hash_param/celo-election-rewards", V2.AddressController, :celo_election_rewards)
-        get("/:address_hash_param/celo-election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
+        get("/:address_hash_param/celo/election-rewards", V2.AddressController, :celo_election_rewards)
+        get("/:address_hash_param/celo/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
       end
     end
 

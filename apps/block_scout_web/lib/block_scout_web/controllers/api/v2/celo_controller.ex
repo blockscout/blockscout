@@ -12,7 +12,9 @@ defmodule BlockScoutWeb.API.V2.CeloController do
   import Explorer.PagingOptions, only: [default_paging_options: 0]
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
 
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.Celo.{ElectionReward, Epoch}
+  alias Explorer.PagingOptions
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -76,15 +78,14 @@ defmodule BlockScoutWeb.API.V2.CeloController do
          {:ok, reward_type_atom} <- parse_celo_reward_type(reward_type) do
       address_associations = [:names, :smart_contract, proxy_implementations_association()]
 
-      full_options =
-        [
-          necessity_by_association: %{
-            [account_address: address_associations] => :optional,
-            [associated_account_address: address_associations] => :optional
-          },
-          api?: true
-        ]
-        |> Keyword.merge(ElectionReward.epoch_paging_options(params))
+      full_options = [
+        necessity_by_association: %{
+          [account_address: address_associations] => :optional,
+          [associated_account_address: address_associations] => :optional
+        },
+        paging_options: election_rewards_paging_options(params),
+        api?: true
+      ]
 
       rewards_plus_one =
         ElectionReward.epoch_number_and_type_to_rewards(
@@ -95,14 +96,26 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
       {rewards, next_page} = split_list_by_page(rewards_plus_one)
 
-      filtered_params = params |> Map.drop(["number", "type"])
+      filtered_params =
+        params
+        |> Map.drop([
+          "number",
+          "type",
+          "amount",
+          "account_address_hash",
+          "associated_account_address_hash"
+        ])
 
       next_page_params =
         next_page_params(
           next_page,
           rewards,
           filtered_params,
-          &ElectionReward.to_epoch_paging_params/1
+          &%{
+            amount: &1.amount,
+            account_address_hash: &1.account_address_hash,
+            associated_account_address_hash: &1.associated_account_address_hash
+          }
         )
 
       conn
@@ -110,6 +123,33 @@ defmodule BlockScoutWeb.API.V2.CeloController do
         rewards: rewards,
         next_page_params: next_page_params
       })
+    end
+  end
+
+  @spec election_rewards_paging_options(map()) :: PagingOptions.t()
+  defp election_rewards_paging_options(params) do
+    with %{
+           "amount" => amount_string,
+           "account_address_hash" => account_address_hash_string,
+           "associated_account_address_hash" => associated_account_address_hash_string
+         }
+         when is_binary(amount_string) and
+                is_binary(account_address_hash_string) and
+                is_binary(associated_account_address_hash_string) <- params,
+         {amount, ""} <- Decimal.parse(amount_string),
+         {:ok, account_address_hash} <- Hash.Address.cast(account_address_hash_string),
+         {:ok, associated_account_address_hash} <-
+           Hash.Address.cast(associated_account_address_hash_string) do
+      %{
+        default_paging_options()
+        | key: %{
+            amount: amount,
+            account_address_hash: account_address_hash,
+            associated_account_address_hash: associated_account_address_hash
+          }
+      }
+    else
+      _ -> default_paging_options()
     end
   end
 
