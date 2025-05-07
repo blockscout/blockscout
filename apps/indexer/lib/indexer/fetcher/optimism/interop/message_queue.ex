@@ -40,6 +40,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
   @counter_type "optimism_interop_messages_queue_iteration"
   @fetcher_name :optimism_interop_messages_queue
   @api_endpoint_import "/api/v2/import/optimism/interop/"
+  @chunk_size 1000
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -58,8 +59,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
 
   @impl GenServer
   def init(args) do
-    json_rpc_named_arguments = args[:json_rpc_named_arguments]
-    {:ok, %{}, {:continue, json_rpc_named_arguments}}
+    {:ok, %{}, {:continue, args[:json_rpc_named_arguments]}}
   end
 
   # Initialization function which is used instead of `init` to avoid Supervisor's stop in case of any critical issues
@@ -169,9 +169,6 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
-    {:ok, latest_block_number} =
-      Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
-
     private_key = hash_to_binary(Application.get_all_env(:indexer)[__MODULE__][:private_key])
 
     LastFetchedCounter.upsert(%{
@@ -181,54 +178,72 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
 
     # the first three iterations scan all incomplete messages,
     # but subsequent scans are limited by INDEXER_OPTIMISM_INTEROP_EXPORT_EXPIRATION_DAYS env
-    export_expiration_blocks =
+    start_block_number =
       if iterations_done < 3 do
-        latest_block_number
+        0
       else
-        export_expiration_blocks
+        {:ok, latest_block_number} =
+          Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+
+        max(latest_block_number - export_expiration_blocks, 0)
       end
 
+    {min_block_number, max_block_number, message_count} =
+      InteropMessage.get_incomplete_messages_stats(current_chain_id, start_block_number)
+
+    chunks_number = ceil(message_count / @chunk_size)
+    chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
+
     updated_chainscout_map =
-      current_chain_id
-      |> InteropMessage.get_incomplete_messages(max(latest_block_number - export_expiration_blocks, 0))
-      |> Enum.reduce(chainscout_map, fn message, chainscout_map_acc ->
-        {instance_chain_id, post_data_signed} = prepare_post_data(message, private_key)
+      chunk_range
+      |> Enum.reduce(chainscout_map, fn current_chunk, chainscout_map_acc ->
+        current_chain_id
+        |> InteropMessage.get_incomplete_messages(
+          min_block_number,
+          max_block_number,
+          @chunk_size,
+          current_chunk * @chunk_size
+        )
+        |> Enum.reduce(chainscout_map_acc, fn message, chainscout_map_acc_internal ->
+          {instance_chain_id, post_data_signed} = prepare_post_data(message, private_key)
 
-        url_from_map = Map.get(chainscout_map_acc, instance_chain_id)
+          url_from_map = Map.get(chainscout_map_acc_internal, instance_chain_id)
 
-        instance_url =
-          with {:url_from_map_is_nil, true, _} <- {:url_from_map_is_nil, is_nil(url_from_map), url_from_map},
-               info = InteropMessage.get_instance_info_by_chain_id(instance_chain_id, chainscout_api_url),
-               {:url_from_chainscout_avail, true} <- {:url_from_chainscout_avail, not is_nil(info)} do
-            info.instance_url
-          else
-            {:url_from_map_is_nil, false, url_from_map} ->
-              url_from_map
+          instance_url =
+            with {:url_from_map_is_nil, true, _} <- {:url_from_map_is_nil, is_nil(url_from_map), url_from_map},
+                 info = InteropMessage.get_instance_info_by_chain_id(instance_chain_id, chainscout_api_url),
+                 {:url_from_chainscout_avail, true} <- {:url_from_chainscout_avail, not is_nil(info)} do
+              info.instance_url
+            else
+              {:url_from_map_is_nil, false, url_from_map} ->
+                url_from_map
 
-            {:url_from_chainscout_avail, false} ->
-              nil
+              {:url_from_chainscout_avail, false} ->
+                nil
+            end
+
+          with false <- is_nil(instance_url),
+               endpoint_url = instance_url <> @api_endpoint_import,
+               response = post_json_request(endpoint_url, post_data_signed, timeout, recv_timeout),
+               false <- is_nil(response) do
+            {:ok, _} =
+              Chain.import(%{
+                optimism_interop_messages: %{params: [prepare_import(message, response)]},
+                timeout: :infinity
+              })
+
+            Logger.info(
+              "Message details successfully sent to #{endpoint_url}. Request body: #{inspect(post_data_signed)}. Response body: #{inspect(response)}"
+            )
           end
 
-        with false <- is_nil(instance_url),
-             endpoint_url = instance_url <> @api_endpoint_import,
-             response = post_json_request(endpoint_url, post_data_signed, timeout, recv_timeout),
-             false <- is_nil(response) do
-          {:ok, _} =
-            Chain.import(%{
-              optimism_interop_messages: %{params: [prepare_import(message, response)]},
-              timeout: :infinity
-            })
-
-          Logger.info(
-            "Message details successfully sent to #{endpoint_url}. Request body: #{inspect(post_data_signed)}. Response body: #{inspect(response)}"
-          )
-        end
-
-        if is_nil(instance_url) do
-          chainscout_map_acc
-        else
-          Map.put(chainscout_map_acc, instance_chain_id, instance_url)
-        end
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if is_nil(instance_url) do
+            chainscout_map_acc_internal
+          else
+            Map.put(chainscout_map_acc_internal, instance_chain_id, instance_url)
+          end
+        end)
       end)
 
     Process.send_after(self(), :continue, :timer.seconds(3))

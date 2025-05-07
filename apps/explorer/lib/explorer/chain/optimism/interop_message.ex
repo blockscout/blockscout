@@ -134,25 +134,63 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   end
 
   @doc """
+    Retrieves some statistics for the list of the last incomplete messages: min block number, max block number, and message count.
+    An incomplete message is the message for which an init transaction or relay transaction is unknown.
+    The selection is limited by a minimum block number (set to zero when the stats is needed for all messages).
+
+    ## Parameters
+    - `current_chain_id`: The current chain ID to make correct query to the database.
+    - `start_block_number`: The block number starting from which the messages should be considered.
+
+    ## Returns
+    - `{min_block_number, max_block_number, message_count}` tuple.
+    - `{nil, nil, 0}` tuple if there are no messages.
+  """
+  @spec get_incomplete_messages_stats(non_neg_integer(), non_neg_integer()) ::
+          {non_neg_integer() | nil, non_neg_integer() | nil, non_neg_integer()}
+  def get_incomplete_messages_stats(current_chain_id, start_block_number) do
+    {:ok, %{rows: [[min_block_number, max_block_number, message_count]]}} =
+      Repo.query("""
+        SELECT MIN(block_number), MAX(block_number), COUNT(*) FROM #{__MODULE__.__schema__(:source)} WHERE ((relay_transaction_hash IS NULL AND init_chain_id = #{current_chain_id}) OR (init_transaction_hash IS NULL AND relay_chain_id = #{current_chain_id})) AND block_number >= #{start_block_number};
+      """)
+
+    {min_block_number, max_block_number, message_count}
+  end
+
+  @doc """
     Returns a list of incomplete messages from the `op_interop_messages` table.
     An incomplete message is the message for which an init transaction or relay transaction is unknown.
-    The selection is limited by a min block number.
+    The selection is limited by a block range.
 
     ## Parameters
     - `current_chain_id`: The current chain ID to make correct query to the database.
     - `min_block_number`: The block number starting from which the messages should be considered.
+    - `max_block_number`: The max block number before which (including) the messages should be considered.
+    - `limit`: Max number of retrieved items.
+    - `offset`: An offset within SQL query to retrieve items from.
 
     ## Returns
     - A list of the incomplete messages. Returns an empty list if they are not found.
   """
-  @spec get_incomplete_messages(non_neg_integer(), non_neg_integer()) :: list()
-  def get_incomplete_messages(current_chain_id, min_block_number) do
+  @spec get_incomplete_messages(
+          non_neg_integer(),
+          non_neg_integer() | nil,
+          non_neg_integer() | nil,
+          non_neg_integer(),
+          non_neg_integer()
+        ) :: list()
+  def get_incomplete_messages(_current_chain_id, nil, nil, _limit, _offset), do: []
+
+  def get_incomplete_messages(current_chain_id, min_block_number, max_block_number, limit, offset) do
     Repo.all(
       from(m in __MODULE__,
         where:
           ((is_nil(m.relay_transaction_hash) and m.init_chain_id == ^current_chain_id) or
              (is_nil(m.init_transaction_hash) and m.relay_chain_id == ^current_chain_id)) and
-            m.block_number >= ^min_block_number
+            m.block_number >= ^min_block_number and m.block_number <= ^max_block_number,
+        order_by: [asc: m.nonce, asc: m.init_chain_id],
+        limit: ^limit,
+        offset: ^offset
       )
     )
   end
