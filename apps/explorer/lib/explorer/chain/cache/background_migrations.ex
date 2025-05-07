@@ -30,6 +30,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :arbitrum_da_records_normalization_finished,
     key: :sanitize_verified_addresses_finished,
     key: :smart_contract_language_finished,
+    key: :transaction_has_token_transfers_finished,
     key: :heavy_indexes_create_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
     key: :heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished,
@@ -55,7 +56,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_transactions_to_address_hash_with_pending_index_finished,
     key: :heavy_indexes_create_logs_deposits_withdrawals_index_finished,
     key: :heavy_indexes_create_addresses_transactions_count_desc_partial_index_finished,
-    key: :heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished
+    key: :heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished,
+    key: :heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished
 
   @dialyzer :no_match
 
@@ -67,6 +69,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     SanitizeDuplicatedLogIndexLogs,
     SmartContractLanguage,
     TokenTransferTokenType,
+    TransactionHasTokenTransfers,
     TransactionsDenormalization
   }
 
@@ -83,6 +86,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateLogsBlockHashIndex,
     CreateLogsDepositsWithdrawalsIndex,
     CreateSmartContractsLanguageIndex,
+    CreateTransactionsTokenTransferMethodIdOrderedIndex,
     DropInternalTransactionsFromAddressHashIndex,
     DropLogsAddressHashIndex,
     DropLogsAddressHashTransactionHashIndex,
@@ -137,6 +141,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     start_migration_status_task(
       BackfillMultichainSearchDB,
       &set_backfill_multichain_search_db_finished/1
+    )
+  end
+
+  defp handle_fallback(:transaction_has_token_transfers_finished) do
+    start_migration_status_task(
+      TransactionHasTokenTransfers,
+      &set_transaction_has_token_transfers_finished/1
     )
   end
 
@@ -330,6 +341,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     start_migration_status_task(
       CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex,
       &set_heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished) do
+    start_migration_status_task(
+      CreateTransactionsTokenTransferMethodIdOrderedIndex,
+      &set_heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished/1
     )
   end
 

@@ -229,7 +229,7 @@ defmodule Explorer.Chain.Transaction.Schema do
         field(:max_fee_per_gas, Wei)
         field(:type, :integer)
         field(:has_error_in_internal_transactions, :boolean)
-        field(:has_token_transfers, :boolean, virtual: true)
+        field(:has_token_transfers, :boolean)
 
         # stability virtual fields
         field(:transaction_fee_log, :any, virtual: true)
