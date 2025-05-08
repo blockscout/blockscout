@@ -14,6 +14,12 @@ defmodule BlockScoutWeb.Application do
     if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
       Supervisor.start_link([Supervisor.child_spec(HealthEndpoint, [])], opts)
     else
+      # Endpoint must be the last child in the supervision tree
+      # since it must be started after all of the other processes
+      # (to be sure that application is ready to handle traffic)
+      # and stopped before them for the same reason.
+      # However, some processes may depend on Endpoint
+      # so they need to be started after.
       base_children = [Supervisor.child_spec(Endpoint, [])]
       {first_api_children, last_api_children} = setup_and_define_children()
       all_children = first_api_children ++ base_children ++ last_api_children
