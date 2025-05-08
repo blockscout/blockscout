@@ -25,7 +25,7 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.Beacon.{Blob, BlobTransaction}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
-  alias Explorer.Chain.Celo.PendingEpochBlockOperation, as: CeloPendingEpochBlockOperation
+  # alias Explorer.Chain.Celo.Epoch, as: Epoch
 
   alias Explorer.Chain.{
     Address,
@@ -1345,10 +1345,6 @@ defmodule Explorer.Factory do
       |> BLSPublicKey.cast()
 
     to_string(bls_public_key)
-  end
-
-  def celo_pending_epoch_block_operation_factory do
-    %CeloPendingEpochBlockOperation{}
   end
 
   def withdrawal_log_factory(params) do

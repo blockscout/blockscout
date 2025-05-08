@@ -43,10 +43,13 @@ defmodule Explorer.Chain.Celo.Helper do
       {:error, :not_found}
   """
   @spec validate_epoch_block_number(Block.block_number()) :: :ok | {:error, :not_found}
-  def validate_epoch_block_number(block_number) when is_epoch_block_number(block_number),
-    do: :ok
-
-  def validate_epoch_block_number(_block_number), do: {:error, :not_found}
+  def validate_epoch_block_number(block_number) do
+    if pre_migration_block_number?(block_number) and epoch_block_number?(block_number) do
+      :ok
+    else
+      {:error, :not_found}
+    end
+  end
 
   @doc """
   Checks if a block number belongs to a block that finalized an epoch.
@@ -93,6 +96,34 @@ defmodule Explorer.Chain.Celo.Helper do
   end
 
   @doc """
+  Converts an epoch number to a block range.
+
+  ## Parameters
+  - `epoch_number` (`non_neg_integer()`): The epoch number to convert.
+
+  ## Returns
+  - `{Block.block_number(), Block.block_number()}`: A tuple containing the start
+    and end block numbers of the epoch.
+
+  ## Examples
+
+      iex> Explorer.Chain.Celo.Helper.epoch_number_to_block_range(1)
+      {0, 17279}
+
+      iex> Explorer.Chain.Celo.Helper.epoch_number_to_block_range(2)
+      {17280, 34559}
+  """
+  @spec epoch_number_to_block_range(epoch_number :: non_neg_integer()) ::
+          {Block.block_number(), Block.block_number()}
+  def epoch_number_to_block_range(epoch_number)
+      when is_integer(epoch_number) and epoch_number > 0 do
+    start_block = (epoch_number - 1) * @blocks_per_epoch
+    end_block = epoch_number * @blocks_per_epoch - 1
+
+    {start_block, end_block}
+  end
+
+  @doc """
   Convert the burn fraction from FixidityLib value to decimal.
 
   ## Examples
@@ -111,12 +142,27 @@ defmodule Explorer.Chain.Celo.Helper do
   @doc """
   Checks if a block with given number appeared prior to Celo L2 migration.
   """
-  @spec premigration_block_number?(Block.block_number()) :: boolean()
-  def premigration_block_number?(block_number) do
+  @spec pre_migration_block_number?(Block.block_number()) :: boolean()
+  def pre_migration_block_number?(block_number) do
     l2_migration_block_number = Application.get_env(:explorer, :celo)[:l2_migration_block]
 
     if l2_migration_block_number do
-      block_number <= l2_migration_block_number
+      # TODO: should we use <= or < for the block number?
+      block_number < l2_migration_block_number
+    else
+      true
+    end
+  end
+
+  @doc """
+  Checks if an epoch number is prior to Celo L2 migration.
+  """
+  @spec premigration_epoch_number?(non_neg_integer()) :: boolean()
+  def premigration_epoch_number?(epoch_number) do
+    l2_migration_block_number = Application.get_env(:explorer, :celo)[:l2_migration_block]
+
+    if l2_migration_block_number do
+      epoch_number < block_number_to_epoch_number(l2_migration_block_number)
     else
       true
     end
