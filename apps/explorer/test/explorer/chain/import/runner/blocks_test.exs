@@ -667,8 +667,9 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
           )
 
         start_processing_block_hash = start_processing_block.hash
-        end_processing_block_hash = end_processing_block.hash
         start_processing_block_number = start_processing_block.number
+        end_processing_block_hash = end_processing_block.hash
+        end_processing_block_number = end_processing_block.number
 
         assert {:ok,
                 %{
@@ -681,7 +682,8 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
                     }
                   ],
                   lose_consensus: [
-                    {^start_processing_block_number, ^start_processing_block_hash}
+                    {^start_processing_block_number, ^start_processing_block_hash},
+                    {^end_processing_block_number, ^end_processing_block_hash}
                   ]
                 }} = insert_block(block_params, options)
 

@@ -989,7 +989,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       {rewards, next_page} = split_list_by_page(results_plus_one)
 
       filtered_params =
-        delete_parameters_from_next_page_params(params)
+        params
+        |> delete_parameters_from_next_page_params()
         |> Map.drop([
           "epoch_number",
           "amount",

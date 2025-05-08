@@ -812,6 +812,7 @@ defmodule Indexer.Block.FetcherTest do
         Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         ReplacedTransaction.Supervisor.Case.start_supervised!()
+        {:ok, _pid} = ContractCreatorOnDemand.start_link([[], []])
 
         UncleBlock.Supervisor.Case.start_supervised!(
           block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
