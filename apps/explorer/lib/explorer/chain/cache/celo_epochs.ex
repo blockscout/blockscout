@@ -30,10 +30,10 @@ defmodule Explorer.Chain.Cache.CeloEpochs do
 
   import Ecto.Query, only: [select: 3]
 
-  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block
-  alias Explorer.Chain.Cache.Blocks
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Celo.{Epoch, Helper}
+  alias Explorer.Repo
 
   @impl Explorer.Chain.OrderedCache
   def element_to_id(epoch) when is_map(epoch), do: epoch.number
@@ -57,21 +57,9 @@ defmodule Explorer.Chain.Cache.CeloEpochs do
   @doc """
   Retrieves the epoch number of the last fetched block.
   """
-  @spec last_block_epoch_number(Keyword.t()) :: Block.block_number() | nil
-  def last_block_epoch_number(options \\ []) do
-    block_number =
-      1
-      |> Blocks.atomic_take_enough()
-      |> case do
-        [%Block{number: number}] -> {:ok, number}
-        nil -> Chain.max_consensus_block_number(options)
-      end
-      |> case do
-        {:ok, number} -> number
-        _ -> nil
-      end
-
-    block_number && block_number_to_epoch_number(block_number)
+  @spec last_block_epoch_number() :: Block.block_number()
+  def last_block_epoch_number do
+    BlockNumber.get_max() |> block_number_to_epoch_number()
   end
 
   @spec fetch_post_migration_epoch_number(non_neg_integer()) :: non_neg_integer() | nil
