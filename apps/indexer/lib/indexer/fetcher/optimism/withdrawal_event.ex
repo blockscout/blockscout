@@ -322,7 +322,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     end
   end
 
-  # Parses input of the prove L1 transaction and retrieves dispute game index or contract address
+  # Parses input of the prove L1 transaction and retrieves dispute game index or contract address hash
   # (depending on whether Super Roots are active) from that.
   #
   # ## Parameters
@@ -338,36 +338,18 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     case method_signature do
       "0x4870496f" ->
         # the signature of `proveWithdrawalTransaction(tuple _transaction, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
-
-        # to get (slice) `_disputeGameIndex` from the transaction input, we need to know its offset in the input string (represented as 0x...):
-        # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_transaction` tuple offset, totally is 74
-        game_index_offset = String.length(method_signature) + 32 * 2
-        game_index_length = 32 * 2
-
-        game_index_range_start = game_index_offset
-        game_index_range_end = game_index_range_start + game_index_length - 1
-
         {game_index, ""} =
-          input
-          |> String.slice(game_index_range_start..game_index_range_end)
+          method_signature
+          |> slice_game_index_or_address_hash(input)
           |> Integer.parse(16)
 
         {game_index, nil}
 
       "0x8c90dd65" ->
-        # the signature of `proveWithdrawalTransaction(tuple _tx, address _disputeGameProxy, uint256 _outputRootIndex, tuple _superRootProof, tuple _outputRootProof, bytes[] _withdrawalProof)` method
-
-        # to get (slice) `_disputeGameIndex` from the transaction input, we need to know its offset in the input string (represented as 0x...):
-        # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_transaction` tuple offset, totally is 74
-        game_address_offset = String.length(method_signature) + 32 * 2
-        game_address_length = 32 * 2
-
-        game_address_range_start = game_address_offset
-        game_address_range_end = game_address_range_start + game_address_length - 1
-
+        # the signature of `proveWithdrawalTransaction(tuple _transaction, address _disputeGameProxy, uint256 _outputRootIndex, tuple _superRootProof, tuple _outputRootProof, bytes[] _withdrawalProof)` method
         game_address_hash =
-          input
-          |> String.slice(game_address_range_start..game_address_range_end)
+          method_signature
+          |> slice_game_index_or_address_hash(input)
           |> String.trim_leading("000000000000000000000000")
           |> String.pad_leading(42, "0x")
 
@@ -376,5 +358,32 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
       _ ->
         {nil, nil}
     end
+  end
+
+  # Gets (slices) the dispute game index or its address hash from the transaction input represented as `0x` string.
+  #
+  # The input is calldata for either
+  #   `proveWithdrawalTransaction(tuple _transaction, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)`
+  #   or
+  #   `proveWithdrawalTransaction(tuple _transaction, address _disputeGameProxy, uint256 _outputRootIndex, tuple _superRootProof, tuple _outputRootProof, bytes[] _withdrawalProof)`
+  #   method.
+  #
+  # ## Parameters
+  # - `method_signature`: The method signature string (including `0x` prefix).
+  # - `input`: The input string (including `0x` prefix).
+  #
+  # ## Returns
+  # - The slice of the input containing dispute game index or address hash.
+  @spec slice_game_index_or_address_hash(String.t(), String.t()) :: String.t()
+  defp slice_game_index_or_address_hash(method_signature, input) do
+    # to get (slice) the index or address from the transaction input, we need to know its offset in the input string (represented as 0x...):
+    # offset = signature_length (10 symbols including `0x`) + 64 symbols (representing 32 bytes) of the `_transaction` tuple offset, totally is 74
+    offset = String.length(method_signature) + 32 * 2
+    length = 32 * 2
+
+    range_start = offset
+    range_end = range_start + length - 1
+
+    String.slice(input, range_start..range_end)
   end
 end

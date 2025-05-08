@@ -25,6 +25,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   @proof_maturity_delay_seconds "optimism_proof_maturity_delay_seconds"
 
   @required_attrs ~w(msg_nonce hash l2_transaction_hash l2_block_number)a
+  @game_fields ~w(created_at, resolved_at, status)a
 
   @typedoc """
     * `msg_nonce` - A nonce of the withdrawal message.
@@ -274,10 +275,10 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     withdrawal_l2_block_number <= last_root_l2_block_number
   end
 
-  # Fetches dispute game info from DB by game's contract address or game's unique index.
+  # Fetches dispute game info from DB by game's contract address hash or game's unique index.
   #
   # ## Parameters
-  # - `game_address_hash`: Game's contract address. Must be `nil` if unknown.
+  # - `game_address_hash`: Game's contract address hash. Must be `nil` if unknown.
   # - `game_index`: Game unique index. Must be `nil` if unknown.
   #
   # ## Returns
@@ -291,25 +292,21 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     Repo.replica().one(
       from(
         g in DisputeGame,
-        select: %{created_at: g.created_at, resolved_at: g.resolved_at, status: g.status},
+        select: map(g, ^@game_fields),
         where: g.address_hash == ^game_address_hash,
         limit: 1
       )
     )
   end
 
-  defp game_by_address_hash_or_index(nil, game_index) do
+  defp game_by_address_hash_or_index(_game_address_hash, game_index) when not is_nil(game_index) do
     Repo.replica().one(
       from(
         g in DisputeGame,
-        select: %{created_at: g.created_at, resolved_at: g.resolved_at, status: g.status},
+        select: map(g, ^@game_fields),
         where: g.index == ^game_index
       )
     )
-  end
-
-  defp game_by_address_hash_or_index(_game_address_hash, game_index) do
-    game_by_address_hash_or_index(nil, game_index)
   end
 
   # Determines the current withdrawal status by the list of the bound WithdrawalProven events.
@@ -376,7 +373,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   #
   # ## Returns
   # - A list of `{l1_timestamp, game_address_hash, game_index}` tuples where `l1_timestamp` is the L1 block timestamp
-  #   when the event appeared, `game_address_hash` is the bound dispute game contract address (can be `nil`),
+  #   when the event appeared, `game_address_hash` is the bound dispute game contract address hash (can be `nil`),
   #   `game_index` is the bound dispute game index (can be `nil`).
   @spec proven_events_by_hash(Hash.t()) :: [{DateTime.t(), Hash.t() | nil, non_neg_integer() | nil}]
   defp proven_events_by_hash(withdrawal_hash) do
