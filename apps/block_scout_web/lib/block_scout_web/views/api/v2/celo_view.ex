@@ -177,11 +177,9 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
     celo_json =
       %{
-        # todo: keep `is_epoch_block` for compatibility with frontend and remove
+        # todo: keep `is_epoch_block = false` for compatibility with frontend and remove
         # when new frontend is bound to `is_l1_era_epoch_block` property
-        is_epoch_block:
-          CeloHelper.pre_migration_block_number?(block.number) and
-            CeloHelper.epoch_block_number?(block.number),
+        is_epoch_block: false,
         is_l1_era_epoch_block:
           CeloHelper.pre_migration_block_number?(block.number) and
             CeloHelper.epoch_block_number?(block.number),
