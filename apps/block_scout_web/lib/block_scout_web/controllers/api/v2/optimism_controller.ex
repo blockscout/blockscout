@@ -492,6 +492,11 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   # - Resulting map with the `op_interop_messages` table's fields.
   @spec interop_prepare_import(map()) :: map()
   defp interop_prepare_import(%{"init_transaction_hash" => init_transaction_hash} = params) do
+    payload = hash_to_binary(params["payload"])
+
+    [transfer_token_address_hash, transfer_from_address_hash, transfer_to_address_hash, transfer_amount] =
+      InteropMessage.decode_payload(payload)
+
     %{
       sender_address_hash: params["sender_address_hash"],
       target_address_hash: params["target_address_hash"],
@@ -500,7 +505,11 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       init_transaction_hash: init_transaction_hash,
       timestamp: DateTime.from_unix!(params["timestamp"]),
       relay_chain_id: params["relay_chain_id"],
-      payload: hash_to_binary(params["payload"])
+      payload: payload,
+      transfer_token_address_hash: transfer_token_address_hash,
+      transfer_from_address_hash: transfer_from_address_hash,
+      transfer_to_address_hash: transfer_to_address_hash,
+      transfer_amount: transfer_amount
     }
   end
 
