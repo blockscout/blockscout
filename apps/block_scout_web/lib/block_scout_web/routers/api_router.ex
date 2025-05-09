@@ -497,7 +497,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
 
-    # todo: remove these old CSV export related endpoints in 7.2.0 or higher since they are moved to /api/v2/** path
+    # todo: remove these old CSV export related endpoints in 7.2.0 or higher since they are moved to /api/v2/** path.
+    # Related frontend task https://github.com/blockscout/frontend/issues/2718.
     get("/transactions-csv", V2.CsvExportController, :transactions_csv)
     get("/token-transfers-csv", V2.CsvExportController, :token_transfers_csv)
     get("/internal-transactions-csv", V2.CsvExportController, :internal_transactions_csv)
