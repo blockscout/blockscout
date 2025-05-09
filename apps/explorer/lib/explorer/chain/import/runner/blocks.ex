@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     run_func = fn repo ->
-      {:ok, nonconsensus_items} = lose_consensus(repo, changes_list, insert_options)
+      {:ok, nonconsensus_items} = process_blocks_consensus(changes_list, repo, insert_options)
 
       {:ok,
        RangesHelper.filter_by_height_range(nonconsensus_items, fn {number, _hash} ->
@@ -398,10 +398,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     |> Enum.map(& &1.number)
   end
 
-  def lose_consensus(repo, changes_list, %{
-        timeout: timeout,
-        timestamps: %{updated_at: updated_at}
-      }) do
+  defp lose_consensus(repo, changes_list, %{
+         timeout: timeout,
+         timestamps: %{updated_at: updated_at}
+       }) do
     hashes = Enum.map(changes_list, & &1.hash)
     consensus_block_numbers = consensus_block_numbers(changes_list)
 
@@ -417,7 +417,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         lock: "FOR NO KEY UPDATE"
       )
 
-    {_, removed_consensus_block_hashes} =
+    {_, removed_consensus_blocks} =
       repo.update_all(
         from(
           block in Block,
@@ -455,12 +455,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       timeout: timeout
     )
 
-    removed_consensus_block_hashes
+    removed_consensus_blocks
     |> Enum.map(fn {number, _hash} -> number end)
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
     |> MissingRangesManipulator.add_ranges_by_block_numbers()
 
-    {:ok, removed_consensus_block_hashes}
+    {:ok, removed_consensus_blocks}
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error}}
@@ -476,17 +476,20 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     - `blocks_changes`: List of block changes to process
 
     ## Returns
-    - `{:ok, removed_consensus_block_hashes}`: List of hashes for blocks that lost consensus
+    - `{:ok, removed_consensus_blocks}`: List of tuples {number, hash} for blocks that lost consensus
     - `{:error, reason}`: The error encountered during processing
   """
-  @spec process_blocks_consensus([map()]) :: {:ok, [{non_neg_integer(), binary()}]} | {:error, map()}
-  def process_blocks_consensus(blocks_changes) do
-    opts = %{
-      timeout: @timeout,
-      timestamps: %{updated_at: DateTime.utc_now()}
-    }
+  @spec process_blocks_consensus([map()], module(), map() | nil) ::
+          {:ok, [{non_neg_integer(), binary()}]} | {:error, map()}
+  def process_blocks_consensus(blocks_changes, repo \\ ExplorerRepo, insert_options \\ nil) do
+    opts =
+      insert_options ||
+        %{
+          timeout: @timeout,
+          timestamps: %{updated_at: DateTime.utc_now()}
+        }
 
-    lose_consensus(ExplorerRepo, blocks_changes, opts)
+    lose_consensus(repo, blocks_changes, opts)
   end
 
   defp new_pending_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
