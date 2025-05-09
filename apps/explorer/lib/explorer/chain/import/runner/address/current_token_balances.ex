@@ -262,6 +262,9 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       ids
       |> Enum.with_index(1)
       |> Enum.map_join(",", fn {_, i} ->
+        # The value 3 corresponds to the number of parameters in each group within the WHERE clause.
+        # If this number changes, make sure to update it accordingly. For example, placeholders for
+        # an array of ids [[1, 2, 3], [4, 5, 6]] would be formatted as: ($1, $2, $3),($4, $5, $6)".
         "($#{3 * i - 2}, $#{3 * i - 1}, $#{3 * i})"
       end)
 
