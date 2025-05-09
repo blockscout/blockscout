@@ -9,13 +9,13 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
   alias Explorer.Chain.{Data, Hash}
   alias Explorer.{PagingOptions, Repo}
 
-  @required_attrs ~w(index game_type address created_at)a
+  @required_attrs ~w(index game_type address_hash created_at)a
   @optional_attrs ~w(extra_data resolved_at status)a
 
   @typedoc """
     * `index` - A unique index of the dispute game.
     * `game_type` - A number encoding a type of the dispute game.
-    * `address` - The dispute game contract address.
+    * `address_hash` - The dispute game contract address.
     * `extra_data` - An extra data of the dispute game (contains L2 block number).
       Equals to `nil` when the game is written to database but the rest data is not known yet.
     * `created_at` - UTC timestamp of when the dispute game was created.
@@ -28,7 +28,7 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
   typed_schema "op_dispute_games" do
     field(:index, :integer, primary_key: true)
     field(:game_type, :integer)
-    field(:address, Hash.Address)
+    field(:address_hash, Hash.Address)
     field(:extra_data, Data)
     field(:created_at, :utc_datetime_usec)
     field(:resolved_at, :utc_datetime_usec)
