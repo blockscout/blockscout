@@ -1,8 +1,12 @@
 defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
   use Explorer.DataCase, async: false
 
+  import Mox
+
   alias Explorer.Utility.MissingBlockRange
   alias Indexer.Block.Catchup.MissingRangesCollector
+
+  setup :set_mox_global
 
   describe "default_init" do
     setup do
@@ -11,6 +15,11 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
     end
 
     test "empty envs" do
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}],
+                                              _options ->
+        block_response(id, 1_000_000)
+      end)
+
       insert(:block, number: 1_000_000)
       insert(:block, number: 500_123)
       MissingRangesCollector.start_link([])
@@ -22,6 +31,11 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
       MissingBlockRange.clear_batch(batch)
       assert [999_799..999_700//-1] = batch = MissingBlockRange.get_latest_batch(100)
       MissingBlockRange.clear_batch(batch)
+
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}],
+                                              _options ->
+        block_response(id, 1_000_200)
+      end)
 
       insert(:block, number: 1_000_200)
       Process.sleep(1000)
@@ -41,6 +55,11 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
     end
 
     test "infinite range" do
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}],
+                                              _options ->
+        block_response(id, 200)
+      end)
+
       Application.put_env(:indexer, :block_ranges, "1..5,3..5,2qw1..12,10..11a,,asd..qwe,10..latest")
 
       insert(:block, number: 200)
@@ -95,5 +114,34 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
 
     assert MissingRangesCollector.parse_block_ranges("10..20,5..15,18..25,35..40,30..50,150..200") ==
              {:finite_ranges, [5..25, 30..50, 150..200]}
+  end
+
+  defp block_response(id, block_number) do
+    {:ok,
+     [
+       %{
+         id: id,
+         result: %{
+           "difficulty" => "0x0",
+           "gasLimit" => "0x0",
+           "gasUsed" => "0x0",
+           "hash" => "0x29c850324e357f3c0c836d79860c5af55f7b651e5d7ee253c1af1b14908af49c",
+           "extraData" => "0x0",
+           "logsBloom" => "0x0",
+           "miner" => "0x0",
+           "number" => block_number,
+           "parentHash" => "0x0",
+           "receiptsRoot" => "0x0",
+           "size" => "0x0",
+           "sha3Uncles" => "0x0",
+           "stateRoot" => "0x0",
+           "timestamp" => "0x0",
+           "totalDifficulty" => "0x0",
+           "transactions" => [],
+           "transactionsRoot" => "0x0",
+           "uncles" => []
+         }
+       }
+     ]}
   end
 end
