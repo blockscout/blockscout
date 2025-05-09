@@ -210,11 +210,14 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
   end
 
   @doc """
-    Retrieves rollup blocks within a specified block range that have not yet been confirmed.
+    Retrieves rollup blocks within the specified range from `first_block` to `last_block`, inclusive,
+    that either:
+    - Have not been confirmed yet, or
+    - May need re-confirmation due to potentially incorrect confirmation assignments
 
     ## Parameters
-    - `first_block`: The starting block number of the range to search for unconfirmed rollup blocks.
-    - `last_block`: The ending block number of the range.
+    - `first_block`: The rollup block number starting the lookup range.
+    - `last_block`: The rollup block number ending the lookup range.
 
     ## Returns
     - A list of maps, each representing an unconfirmed rollup block within the specified range,
@@ -227,8 +230,32 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
   def unconfirmed_rollup_blocks(first_block, last_block)
       when is_integer(first_block) and first_block >= 0 and
              is_integer(last_block) and first_block <= last_block do
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.unconfirmed_rollup_blocks(first_block, last_block)
+    # Get truly unconfirmed blocks first
+    unconfirmed_blocks = Reader.unconfirmed_rollup_blocks(first_block, last_block)
+
+    # If there are unconfirmed blocks, check if we need to add more blocks for re-confirmation
+    blocks_to_transform =
+      case unconfirmed_blocks do
+        [] ->
+          []
+
+        blocks ->
+          # Since blocks are in descending order, the first one is the highest unconfirmed
+          highest_unconfirmed = hd(blocks)
+
+          # If the highest unconfirmed block is not the last_block, it means last_block is already confirmed
+          # but potentially with wrong transaction. Get all blocks from highest_unconfirmed + 1 to last_block
+          if highest_unconfirmed.block_number < last_block do
+            # Get blocks eligible for re-confirmation and combine with truly unconfirmed blocks
+            reconfirmation_blocks = Reader.rollup_blocks_by_range(highest_unconfirmed.block_number + 1, last_block)
+            reconfirmation_blocks ++ blocks
+          else
+            blocks
+          end
+      end
+
+    # Transform blocks to the expected format and maintain ascending order
+    blocks_to_transform
     |> Enum.reverse()
     |> Enum.map(&rollup_block_to_map/1)
   end
