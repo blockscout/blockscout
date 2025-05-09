@@ -1,4 +1,4 @@
-defmodule Explorer.Migrator.SanitizeTokenBalancesWithoutTokenIds do
+defmodule Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds do
   @moduledoc """
   Deletes token balances of ERC-1155 tokens with empty token_id.
   """
@@ -11,7 +11,7 @@ defmodule Explorer.Migrator.SanitizeTokenBalancesWithoutTokenIds do
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Repo
 
-  @migration_name "sanitize_token_balances_without_token_ids"
+  @migration_name "sanitize_erc_1155_token_balances_without_token_ids"
 
   @impl FillingMigration
   def migration_name, do: @migration_name

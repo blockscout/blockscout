@@ -67,7 +67,7 @@ for migrator <- [
       Explorer.Migrator.SmartContractLanguage,
       Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
       Explorer.Migrator.BackfillMetadataURL,
-      Explorer.Migrator.SanitizeTokenBalancesWithoutTokenIds,
+      Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
