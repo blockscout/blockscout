@@ -692,7 +692,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
         timestamps: %{updated_at: DateTime.utc_now()}
       }
 
-      assert {:ok, [{0, _}, {1, _}]} = Blocks.lose_consensus(Repo, [], [1], [new_block1_changes], opts)
+      assert {:ok, [{0, _}, {1, _}]} = Blocks.process_blocks_consensus([new_block1_changes], Repo, opts)
     end
   end
 
