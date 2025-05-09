@@ -154,6 +154,7 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.RestoreOmittedWETHTransfers),
         configure(Explorer.Migrator.FilecoinPendingAddressOperations),
         configure(Explorer.Migrator.SmartContractLanguage),
+        configure(Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds),
         Explorer.Migrator.BackfillMultichainSearchDB
         |> configure_mode_dependent_process(:indexer)
         |> configure_multichain_search_microservice(),

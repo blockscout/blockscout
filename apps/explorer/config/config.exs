@@ -131,7 +131,8 @@ for migrator <- [
       Explorer.Migrator.SanitizeVerifiedAddresses,
       Explorer.Migrator.SmartContractLanguage,
       Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
-      Explorer.Migrator.BackfillMetadataURL
+      Explorer.Migrator.BackfillMetadataURL,
+      Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds
     ] do
   config :explorer, migrator, enabled: true
 end
