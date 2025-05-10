@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   alias BlockScoutWeb.BlockView
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
   alias Explorer.Chain.Block
-  alias Explorer.Chain.Cache.Counters.BlockPriorityFeeCount
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -29,15 +28,17 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   end
 
   def prepare_block(block, _conn, single_block? \\ false) do
-    burnt_fees = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
-    priority_fee = block.base_fee_per_gas && BlockPriorityFeeCount.fetch(block.hash)
+    block = Block.aggregate_transactions(block)
 
-    transaction_fees = Block.transaction_fees(block.transactions)
+    # burnt_fees = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
+    # priority_fee = block.base_fee_per_gas && BlockPriorityFeeCount.fetch(block.hash)
+
+    # transaction_fees = Block.transaction_fees(block.transactions)
 
     %{
       "height" => block.number,
       "timestamp" => block.timestamp,
-      "transactions_count" => count_transactions(block),
+      "transactions_count" => block.transactions_count,
       # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
       "transaction_count" => count_transactions(block),
       "internal_transactions_count" => count_internal_transactions(block),
@@ -51,17 +52,17 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "gas_limit" => block.gas_limit,
       "nonce" => block.nonce,
       "base_fee_per_gas" => block.base_fee_per_gas,
-      "burnt_fees" => burnt_fees,
-      "priority_fee" => priority_fee,
+      "burnt_fees" => block.burnt_fees,
+      "priority_fee" => block.priority_fees,
       # "extra_data" => "TODO",
       "uncles_hashes" => prepare_uncles(block.uncle_relations),
       # "state_root" => "TODO",
       "rewards" => prepare_rewards(block.rewards, block, single_block?),
       "gas_target_percentage" => Block.gas_target(block),
       "gas_used_percentage" => Block.gas_used_percentage(block),
-      "burnt_fees_percentage" => burnt_fees_percentage(burnt_fees, transaction_fees),
+      "burnt_fees_percentage" => burnt_fees_percentage(block.burnt_fees, block.transactions_fees),
       "type" => block |> BlockView.block_type() |> String.downcase(),
-      "transaction_fees" => transaction_fees,
+      "transaction_fees" => block.transactions_fees,
       "withdrawals_count" => count_withdrawals(block)
     }
     |> chain_type_fields(block, single_block?)

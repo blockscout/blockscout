@@ -118,6 +118,14 @@ defmodule Explorer.Chain.OrderedCache do
   @callback atomic_take_enough(integer()) :: [element] | nil
 
   @doc """
+  Processes the elements before updating the cache.
+  This function is called before the `update/1` function and can be used to
+  modify the elements to be inserted. Can be used to optimize memory usage along
+  with fetching time.
+  """
+  @callback sanitize_before_update(element) :: element
+
+  @doc """
   Adds an element, or a list of elements, to the cache.
   When the cache is full, only the most prevailing elements will be stored, based
   on `c:prevails?/2`.
@@ -168,6 +176,9 @@ defmodule Explorer.Chain.OrderedCache do
 
       @impl OrderedCache
       def element_to_id(element), do: element
+
+      @impl OrderedCache
+      def sanitize_before_update(element), do: element
 
       ### Straightforward fetching functions
 
@@ -250,7 +261,7 @@ defmodule Explorer.Chain.OrderedCache do
             |> Enum.sort_by(&element_to_id(&1), &prevails?(&1, &2))
             |> Enum.take(max_size())
             |> do_preloads()
-            |> Enum.map(&{element_to_id(&1), &1})
+            |> Enum.map(&{element_to_id(&1), sanitize_before_update(&1)})
             |> merge_and_update(ids || [], max_size())
 
           # ids_list is set to never expire
@@ -372,7 +383,8 @@ defmodule Explorer.Chain.OrderedCache do
                      max_size: 0,
                      preloads: 0,
                      prevails?: 2,
-                     element_to_id: 1
+                     element_to_id: 1,
+                     sanitize_before_update: 1
     end
   end
 end
