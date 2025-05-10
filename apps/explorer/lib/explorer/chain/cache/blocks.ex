@@ -38,4 +38,10 @@ defmodule Explorer.Chain.Cache.Blocks do
   end
 
   def drop_nonconsensus(number) when not is_nil(number), do: drop_nonconsensus([number])
+
+  def sanitize_before_update(block) do
+    block = Block.aggregate_transactions(block)
+
+    %{block | transactions: []}
+  end
 end
