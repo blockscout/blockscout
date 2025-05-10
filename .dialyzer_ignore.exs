@@ -11,6 +11,6 @@
     {"lib/explorer/smart_contract/stylus/publisher_worker.ex", :pattern_match, 14},
     ~r/lib\/phoenix\/router.ex/,
     {"lib/explorer/chain/search.ex", :pattern_match, 80},
-    {"lib/explorer/chain/search.ex", :pattern_match, 227},
-    {"lib/explorer/chain/search.ex", :pattern_match, 322}
+    {"lib/explorer/chain/search.ex", :pattern_match, 232},
+    {"lib/explorer/chain/search.ex", :pattern_match, 327}
 ]

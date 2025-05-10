@@ -29,7 +29,7 @@ defmodule Explorer.Chain.Search do
     UserOperation
   }
 
-  alias Explorer.MicroserviceInterfaces.Metadata
+  alias Explorer.MicroserviceInterfaces.{Metadata, TACOperationLifecycle}
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
@@ -83,6 +83,8 @@ defmodule Explorer.Chain.Search do
            |> select_repo(options).all(), nil}
 
         {:full_hash, full_hash} ->
+          tac_operation_task = Task.async(fn -> search_tac_operation(query_string) end)
+
           transaction_block_query =
             full_hash
             |> search_transaction_query()
@@ -108,8 +110,11 @@ defmodule Explorer.Chain.Search do
               transaction_block_op_query
             end
 
-          {result_query
-           |> select_repo(options).all(), nil}
+          results = select_repo(options).all(result_query)
+
+          tac_operation_results = await_task(tac_operation_task)
+
+          {results ++ tac_operation_results, nil}
 
         {:number, block_number} ->
           {block_number
@@ -142,7 +147,7 @@ defmodule Explorer.Chain.Search do
             |> order_and_page_text_search_result(paging_options)
             |> select_repo(options).all()
 
-          ens_result = (ens_task && await_ens_task(ens_task)) || []
+          ens_result = (ens_task && await_task(ens_task)) || []
 
           (ens_result ++ items)
           |> trim_list_and_prepare_next_page_params(
@@ -327,6 +332,8 @@ defmodule Explorer.Chain.Search do
           ]
 
         {:full_hash, full_hash} ->
+          tac_operation_task = Task.async(fn -> search_tac_operation(query_string) end)
+
           transaction_block_query =
             full_hash
             |> search_transaction_query()
@@ -352,10 +359,10 @@ defmodule Explorer.Chain.Search do
               transaction_block_op_query
             end
 
-          [
-            result_query
-            |> select_repo(options).all()
-          ]
+          results = select_repo(options).all(result_query)
+          tac_operation_results = await_task(tac_operation_task)
+
+          [results ++ tac_operation_results]
 
         {:number, block_number} ->
           [
@@ -374,7 +381,7 @@ defmodule Explorer.Chain.Search do
           search_by_string_balanced(prepared_term, paging_options, options, query_string)
       end
 
-    ens_result = await_ens_task(ens_task)
+    ens_result = await_task(ens_task)
 
     non_empty_lists =
       [
@@ -430,8 +437,8 @@ defmodule Explorer.Chain.Search do
     [tokens_results, contracts_results, labels_results, metadata_tags_addresses]
   end
 
-  defp await_ens_task(ens_task) do
-    case Task.yield(ens_task, 5000) || Task.shutdown(ens_task) do
+  defp await_task(task) do
+    case Task.yield(task, 5000) || Task.shutdown(task) do
       {:ok, result} ->
         result
 
@@ -896,6 +903,24 @@ defmodule Explorer.Chain.Search do
           |> search_address_by_address_hash_query()
           |> select_repo(options).all()
           |> merge_address_search_result_with_ens_info(ens_result)
+        ]
+
+      _ ->
+        []
+    end
+  end
+
+  defp search_tac_operation(search_query) do
+    case TACOperationLifecycle.get_operation_by_id(search_query) do
+      {:ok, operation} ->
+        [
+          search_fields()
+          |> Map.merge(%{
+            type: "tac_operation",
+            tac_operation: operation,
+            address_hash: nil,
+            timestamp: nil
+          })
         ]
 
       _ ->

@@ -1117,6 +1117,303 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert ens["address"] == to_string(ens_address)
       assert ens["ens_info"]["name"] == name
     end
+
+    test "finds a TAC operation", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
+
+      tac_response = """
+      {
+          "operation_id": "#{operation_id}",
+          "sender": null,
+          "status_history": [
+              {
+                  "is_exist": true,
+                  "is_success": true,
+                  "note": null,
+                  "timestamp": "1746444308",
+                  "transactions": [
+                      {
+                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                          "type": "TON"
+                      }
+                  ],
+                  "type": "COLLECTED_IN_TAC"
+              }
+          ],
+          "timestamp": "1746444308",
+          "type": "PENDING"
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations/#{operation_id}",
+        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{operation_id}")
+
+      assert %{
+               "items" => [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => operation_id,
+                     "sender" => nil,
+                     "status_history" => [
+                       %{
+                         "is_exist" => true,
+                         "is_success" => true,
+                         "note" => nil,
+                         "timestamp" => "1746444308",
+                         "transactions" => [
+                           %{
+                             "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                             "type" => "TON"
+                           }
+                         ],
+                         "type" => "COLLECTED_IN_TAC"
+                       }
+                     ],
+                     "timestamp" => "1746444308",
+                     "type" => "PENDING"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ],
+               "next_page_params" => nil
+             } == json_response(request, 200)
+    end
+
+    test "handles 404 from TAC microservice", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
+
+      tac_response = """
+      {
+          "code": 5,
+          "message": "cannot find operation id"
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations/#{operation_id}",
+        fn conn -> Plug.Conn.resp(conn, 404, tac_response) end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{operation_id}")
+
+      assert %{
+               "items" => [],
+               "next_page_params" => nil
+             } == json_response(request, 200)
+    end
+
+    test "finds a TAC operation with transaction", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      transaction = insert(:transaction) |> with_block()
+
+      operation_id = "#{transaction.hash}"
+
+      tac_response = """
+      {
+          "operation_id": "#{operation_id}",
+          "sender": null,
+          "status_history": [
+              {
+                  "is_exist": true,
+                  "is_success": true,
+                  "note": null,
+                  "timestamp": "1746444308",
+                  "transactions": [
+                      {
+                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                          "type": "TON"
+                      }
+                  ],
+                  "type": "COLLECTED_IN_TAC"
+              }
+          ],
+          "timestamp": "1746444308",
+          "type": "PENDING"
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations/#{operation_id}",
+        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{operation_id}")
+      assert response = json_response(request, 200)
+
+      # tl to check order
+      assert %{
+               "priority" => 0,
+               "tac_operation" => %{
+                 "operation_id" => operation_id,
+                 "sender" => nil,
+                 "status_history" => [
+                   %{
+                     "is_exist" => true,
+                     "is_success" => true,
+                     "note" => nil,
+                     "timestamp" => "1746444308",
+                     "transactions" => [
+                       %{
+                         "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                         "type" => "TON"
+                       }
+                     ],
+                     "type" => "COLLECTED_IN_TAC"
+                   }
+                 ],
+                 "timestamp" => "1746444308",
+                 "type" => "PENDING"
+               },
+               "type" => "tac_operation"
+             } in tl(response["items"])
+
+      assert %{
+               "priority" => 0,
+               "transaction_hash" => "#{transaction.hash}",
+               "type" => "transaction",
+               "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+               "url" => "/tx/#{transaction.hash}"
+             } in response["items"]
+    end
+
+    test "finds a TAC operation with block", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      transaction = insert(:transaction) |> with_block()
+
+      operation_id = "#{transaction.block_hash}"
+
+      tac_response = """
+      {
+          "operation_id": "#{operation_id}",
+          "sender": null,
+          "status_history": [
+              {
+                  "is_exist": true,
+                  "is_success": true,
+                  "note": null,
+                  "timestamp": "1746444308",
+                  "transactions": [
+                      {
+                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                          "type": "TON"
+                      }
+                  ],
+                  "type": "COLLECTED_IN_TAC"
+              }
+          ],
+          "timestamp": "1746444308",
+          "type": "PENDING"
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations/#{operation_id}",
+        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{operation_id}")
+      assert response = json_response(request, 200)
+
+      # tl to check order
+      assert %{
+               "priority" => 0,
+               "tac_operation" => %{
+                 "operation_id" => operation_id,
+                 "sender" => nil,
+                 "status_history" => [
+                   %{
+                     "is_exist" => true,
+                     "is_success" => true,
+                     "note" => nil,
+                     "timestamp" => "1746444308",
+                     "transactions" => [
+                       %{
+                         "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                         "type" => "TON"
+                       }
+                     ],
+                     "type" => "COLLECTED_IN_TAC"
+                   }
+                 ],
+                 "timestamp" => "1746444308",
+                 "type" => "PENDING"
+               },
+               "type" => "tac_operation"
+             } in tl(response["items"])
+
+      assert %{
+               "block_hash" => "#{transaction.block_hash}",
+               "block_number" => transaction.block_number,
+               "block_type" => "block",
+               "priority" => 3,
+               "type" => "block",
+               "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+               "url" => "/block/#{transaction.block_hash}"
+             } in response["items"]
+    end
   end
 
   describe "/search/check-redirect" do
@@ -1408,6 +1705,262 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.all?(fn {x, index} ->
                x["address"] == to_string(address_1) && x["metadata"]["name"] == "#{name} #{index}"
              end)
+    end
+
+    test "finds a TAC operation", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
+
+      tac_response = """
+      {
+          "operation_id": "#{operation_id}",
+          "sender": null,
+          "status_history": [
+              {
+                  "is_exist": true,
+                  "is_success": true,
+                  "note": null,
+                  "timestamp": "1746444308",
+                  "transactions": [
+                      {
+                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                          "type": "TON"
+                      }
+                  ],
+                  "type": "COLLECTED_IN_TAC"
+              }
+          ],
+          "timestamp": "1746444308",
+          "type": "PENDING"
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations/#{operation_id}",
+        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+      )
+
+      request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => operation_id,
+                   "sender" => nil,
+                   "status_history" => [
+                     %{
+                       "is_exist" => true,
+                       "is_success" => true,
+                       "note" => nil,
+                       "timestamp" => "1746444308",
+                       "transactions" => [
+                         %{
+                           "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                           "type" => "TON"
+                         }
+                       ],
+                       "type" => "COLLECTED_IN_TAC"
+                     }
+                   ],
+                   "timestamp" => "1746444308",
+                   "type" => "PENDING"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == json_response(request, 200)
+    end
+
+    test "finds a TAC operation with transaction", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      transaction = insert(:transaction) |> with_block()
+
+      operation_id = "#{transaction.hash}"
+
+      tac_response = """
+      {
+          "operation_id": "#{operation_id}",
+          "sender": null,
+          "status_history": [
+              {
+                  "is_exist": true,
+                  "is_success": true,
+                  "note": null,
+                  "timestamp": "1746444308",
+                  "transactions": [
+                      {
+                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                          "type": "TON"
+                      }
+                  ],
+                  "type": "COLLECTED_IN_TAC"
+              }
+          ],
+          "timestamp": "1746444308",
+          "type": "PENDING"
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations/#{operation_id}",
+        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+      )
+
+      request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+      assert response = json_response(request, 200)
+
+      # tl to check order
+      assert %{
+               "priority" => 0,
+               "tac_operation" => %{
+                 "operation_id" => operation_id,
+                 "sender" => nil,
+                 "status_history" => [
+                   %{
+                     "is_exist" => true,
+                     "is_success" => true,
+                     "note" => nil,
+                     "timestamp" => "1746444308",
+                     "transactions" => [
+                       %{
+                         "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                         "type" => "TON"
+                       }
+                     ],
+                     "type" => "COLLECTED_IN_TAC"
+                   }
+                 ],
+                 "timestamp" => "1746444308",
+                 "type" => "PENDING"
+               },
+               "type" => "tac_operation"
+             } in tl(response)
+
+      assert %{
+               "priority" => 0,
+               "transaction_hash" => "#{transaction.hash}",
+               "type" => "transaction",
+               "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+               "url" => "/tx/#{transaction.hash}"
+             } in response
+    end
+
+    test "finds a TAC operation with block", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      transaction = insert(:transaction) |> with_block()
+
+      operation_id = "#{transaction.block_hash}"
+
+      tac_response = """
+      {
+          "operation_id": "#{operation_id}",
+          "sender": null,
+          "status_history": [
+              {
+                  "is_exist": true,
+                  "is_success": true,
+                  "note": null,
+                  "timestamp": "1746444308",
+                  "transactions": [
+                      {
+                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                          "type": "TON"
+                      }
+                  ],
+                  "type": "COLLECTED_IN_TAC"
+              }
+          ],
+          "timestamp": "1746444308",
+          "type": "PENDING"
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations/#{operation_id}",
+        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+      )
+
+      request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+      assert response = json_response(request, 200)
+
+      # tl to check order
+      assert %{
+               "priority" => 0,
+               "tac_operation" => %{
+                 "operation_id" => operation_id,
+                 "sender" => nil,
+                 "status_history" => [
+                   %{
+                     "is_exist" => true,
+                     "is_success" => true,
+                     "note" => nil,
+                     "timestamp" => "1746444308",
+                     "transactions" => [
+                       %{
+                         "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
+                         "type" => "TON"
+                       }
+                     ],
+                     "type" => "COLLECTED_IN_TAC"
+                   }
+                 ],
+                 "timestamp" => "1746444308",
+                 "type" => "PENDING"
+               },
+               "type" => "tac_operation"
+             } in tl(response)
+
+      assert %{
+               "block_hash" => "#{transaction.block_hash}",
+               "block_number" => transaction.block_number,
+               "block_type" => "block",
+               "priority" => 3,
+               "type" => "block",
+               "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+               "url" => "/block/#{transaction.block_hash}"
+             } in response
     end
 
     test "returns empty list and don't crash", %{conn: conn} do
