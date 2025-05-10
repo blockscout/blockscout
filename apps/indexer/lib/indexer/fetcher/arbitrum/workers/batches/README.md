@@ -24,9 +24,11 @@ For each batch, the indexer:
 3. Builds comprehensive batch information including:
    - Batch boundaries
    - Included L2 transactions
-   - Message data
    - Data availability information
-4. Updates the status of L2-to-L1 messages included in the batch transactions to mark them as committed
+4. Updates a cached checkpoint of the highest committed block, which the independent status reconciliation
+   process uses to determine when L2-to-L1 messages should transition to the committed state. This
+   separation of discovery and status management prevents race conditions and ensures consistent message
+   state transitions.
 
 ## Entity Linkage
 

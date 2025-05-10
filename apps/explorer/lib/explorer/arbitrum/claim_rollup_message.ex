@@ -24,7 +24,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias Explorer.Chain.Arbitrum.Reader.API.General, as: GeneralReader
   alias Explorer.Chain.Arbitrum.Reader.API.Messages, as: MessagesReader
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: SettlementReader
-  alias Explorer.Chain.Arbitrum.Reader.Indexer.Messages, as: MessagesIndexerReader
   alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Hash.Address
   alias Explorer.Helper, as: ExplorerHelper
@@ -287,9 +286,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
     # try to find indexed L1 execution for the message
     execution_transaction_hash =
-      case MessagesIndexerReader.l1_executions([message_id]) do
-        [execution] -> execution.execution_transaction.hash
-        _ -> nil
+      case MessagesReader.l2_to_l1_message_by_id(message_id) do
+        nil -> nil
+        message -> message.completion_transaction_hash
       end
 
     %Explorer.Arbitrum.Withdraw{

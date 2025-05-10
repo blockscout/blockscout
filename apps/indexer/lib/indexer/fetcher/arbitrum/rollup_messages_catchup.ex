@@ -33,9 +33,11 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
 
   `historical_msg_from_l2` discovers L2-to-L1 messages by analyzing logs from
   already indexed rollup transactions. Logs representing the `L2ToL1Tx` event are
-  utilized to construct messages. The current rollup state, including information
-  about committed batches and confirmed blocks, is used to assign the appropriate
-  status to the messages before importing them into the database.
+  utilized to construct messages. Messages are initially created with `:initiated`
+  status and scheduled for asynchronous status reconciliation, which may update
+  their status to `:sent` or `:confirmed` based on the current rollup state. The
+  `:relayed` status is handled separately by the L1 executions discovery process
+  when a corresponding execution transaction is found on L1.
 
   `historical_msg_to_l2` discovers in the database transactions that could be
   responsible for L1-to-L2 messages and then re-requests these transactions
@@ -222,8 +224,9 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   # requests rollup logs within the specified range to explore `L2ToL1Tx` events
   # that have no matching records in the cross-level messages table.
   # Discovered events are used to compose messages to be stored in the database.
-  # Before being stored in the database, each message is assigned the appropriate
-  # status based on the current state of the rollup.
+  # Messages are initially created with `:initiated` status and scheduled for
+  # asynchronous status reconciliation, which may update their status to `:sent`
+  # or `:confirmed` based on the current rollup state.
   #
   # After importing the messages, the function immediately switches to the process
   # of L1-to-L2 message discovery for the next range of blocks by sending

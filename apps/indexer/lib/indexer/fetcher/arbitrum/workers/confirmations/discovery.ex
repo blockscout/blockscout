@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
     1. Fetches `SendRootUpdated` event logs from the parent chain within the specified block range
     2. For each event, identifies the top confirmed rollup block and all unconfirmed blocks
        below it up to the previous confirmation or the chain's initial block
-    3. Updates the status of the identified blocks and their associated L2-to-L1 messages
+    3. Updates the status of the identified blocks
     4. Imports the confirmation data
 
     For example, if there are two confirmations where the earlier one points to block N and
@@ -27,8 +27,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
+  alias Explorer.Chain.Cache.ArbitrumSettlement, as: ArbitrumSettlementCache
 
-  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
@@ -42,10 +42,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
     block range.
 
     Fetches logs from the parent chain to identify new confirmations of rollup blocks, processes
-    these confirmations to update block statuses, and marks relevant L2-to-L1 messages as
-    confirmed. As the transaction on the parent chain containing the confirmation is considered
-    a lifecycle transaction, the function imports it along with updated rollup blocks and
-    cross-chain messages into the database in a single transaction.
+    these confirmations to update block statuses. As the transaction on the parent chain containing
+    the confirmation is considered a lifecycle transaction, the function imports it along with
+    updated rollup blocks into the database in a single transaction.
 
     ## Parameters
     - `outbox_address`: The address of the Arbitrum outbox contract on parent chain
@@ -90,7 +89,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
         l1_rpc_config.json_rpc_named_arguments
       )
 
-    {retcode, {lifecycle_transactions, rollup_blocks, confirmed_transactions}} =
+    {retcode, {lifecycle_transactions, rollup_blocks}} =
       handle_confirmations_from_logs(
         logs,
         l1_rpc_config,
@@ -102,9 +101,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
       Chain.import(%{
         arbitrum_lifecycle_transactions: %{params: lifecycle_transactions},
         arbitrum_batch_blocks: %{params: rollup_blocks},
-        arbitrum_messages: %{params: confirmed_transactions},
         timeout: :infinity
       })
+
+    # Update the highest confirmed block in the cache
+    if highest_block = ArbitrumHelper.highest_block_number(rollup_blocks) do
+      ArbitrumSettlementCache.update_highest_confirmed_block(highest_block)
+    end
 
     retcode
   end
@@ -115,12 +118,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
   # about the confirmations up to a specific point in time, avoiding the reprocessing
   # of confirmations already known in the database. It identifies the ranges of
   # rollup blocks covered by the confirmations and constructs lifecycle transactions
-  # linked to these confirmed blocks. Considering the highest confirmed rollup block
-  # number, it discovers L2-to-L1 messages that have been committed and updates their
-  # status to confirmed. The confirmations already processed are also updated to
-  # ensure the correct L1 block number and timestamp, which may have changed due to
-  # re-orgs. Lists of confirmed rollup blocks, lifecycle transactions, and confirmed
-  # messages are prepared for database import.
+  # linked to these confirmed blocks. The confirmations already processed are also
+  # updated to ensure the correct L1 block number and timestamp, which may have changed
+  # due to re-orgs. Lists of confirmed rollup blocks and lifecycle transactions are prepared
+  # for database import.
   #
   # ## Parameters
   # - `logs`: Log entries representing `SendRootUpdated` events.
@@ -130,15 +131,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
   #   the chain.
   #
   # ## Returns
-  # - `{retcode, {lifecycle_transactions, rollup_blocks, confirmed_transactions}}` where
+  # - `{retcode, {lifecycle_transactions, rollup_blocks}}` where
   #   - `retcode` is either `:ok` or `:confirmation_missed`
   #   - `lifecycle_transactions` is a list of lifecycle transactions confirming blocks in the
   #     rollup
   #   - `rollup_blocks` is a list of rollup blocks associated with the corresponding
   #     lifecycle transactions
-  #   - `confirmed_messages` is a list of L2-to-L1 messages identified up to the
-  #     highest confirmed block number, to be imported with the new status
-  #     `:confirmed`
   @spec handle_confirmations_from_logs(
           [%{String.t() => any()}],
           %{
@@ -151,13 +149,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
           binary(),
           non_neg_integer()
         ) ::
-          {:ok | :confirmation_missed,
-           {[Arbitrum.LifecycleTransaction.to_import()], [Arbitrum.BatchBlock.to_import()],
-            [Arbitrum.Message.to_import()]}}
+          {:ok | :confirmation_missed, {[Arbitrum.LifecycleTransaction.to_import()], [Arbitrum.BatchBlock.to_import()]}}
   defp handle_confirmations_from_logs(logs, l1_rpc_config, outbox_address, rollup_first_block)
 
   defp handle_confirmations_from_logs([], _, _, _) do
-    {:ok, {[], [], []}}
+    {:ok, {[], []}}
   end
 
   defp handle_confirmations_from_logs(
@@ -211,7 +207,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
 
     if Enum.empty?(applicable_lifecycle_transactions) and existing_lifecycle_transactions == [] do
       # Only if both new confirmations and already existing confirmations are empty
-      {retcode, {[], [], []}}
+      {retcode, {[], []}}
     else
       l1_blocks_to_ts =
         Rpc.execute_blocks_requests_and_get_ts(
@@ -221,7 +217,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
         )
 
       # The lifecycle transactions for the new confirmations are finalized here.
-      {lifecycle_transactions_for_new_confirmations, rollup_blocks, highest_confirmed_block_number} =
+      {lifecycle_transactions_for_new_confirmations, rollup_blocks} =
         finalize_lifecycle_transactions_and_confirmed_blocks(
           applicable_lifecycle_transactions,
           rollup_blocks,
@@ -239,12 +235,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
             l1_blocks_to_ts
           )
 
-      # Drawback of marking messages as confirmed during a new confirmation handling
-      # is that the status change could become stuck if confirmations are not handled.
-      # For example, due to DB inconsistency: some blocks/batches are missed.
-      confirmed_messages = get_confirmed_l2_to_l1_messages(highest_confirmed_block_number)
-
-      {retcode, {lifecycle_transactions, rollup_blocks, confirmed_messages}}
+      {retcode, {lifecycle_transactions, rollup_blocks}}
     end
   end
 
@@ -377,7 +368,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
   # - A tuple containing:
   #   - The map of lifecycle transactions where each transaction is ready for import.
   #   - The list of confirmed rollup blocks, ready for import.
-  #   - The highest confirmed block number processed during this run.
   @spec finalize_lifecycle_transactions_and_confirmed_blocks(
           %{binary() => %{hash: binary(), block_number: non_neg_integer()}},
           [Arbitrum.BatchBlock.to_import()],
@@ -385,8 +375,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
           boolean()
         ) :: {
           [Arbitrum.LifecycleTransaction.to_import()],
-          [Arbitrum.BatchBlock.to_import()],
-          integer()
+          [Arbitrum.BatchBlock.to_import()]
         }
   defp finalize_lifecycle_transactions_and_confirmed_blocks(
          basic_lifecycle_transactions,
@@ -397,7 +386,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
 
   defp finalize_lifecycle_transactions_and_confirmed_blocks(basic_lifecycle_transactions, _, _, _)
        when map_size(basic_lifecycle_transactions) == 0 do
-    {[], [], -1}
+    {[], []}
   end
 
   defp finalize_lifecycle_transactions_and_confirmed_blocks(
@@ -411,20 +400,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
       |> ArbitrumHelper.extend_lifecycle_transactions_with_ts_and_status(l1_blocks_to_ts, track_finalization?)
       |> DbParentChainTransactions.get_indices_for_l1_transactions()
 
-    {updated_rollup_blocks, highest_confirmed_block_number} =
+    updated_rollup_blocks =
       confirmed_rollup_blocks
-      |> Enum.reduce({[], -1}, fn block, {updated_list, highest_confirmed} ->
-        chosen_highest_confirmed = max(highest_confirmed, block.block_number)
-
-        updated_block =
-          block
-          |> Map.put(:confirmation_id, lifecycle_transactions[block.confirmation_transaction].id)
-          |> Map.drop([:confirmation_transaction])
-
-        {[updated_block | updated_list], chosen_highest_confirmed}
+      |> Enum.map(fn block ->
+        block
+        |> Map.put(:confirmation_id, lifecycle_transactions[block.confirmation_transaction].id)
+        |> Map.drop([:confirmation_transaction])
       end)
 
-    {Map.values(lifecycle_transactions), updated_rollup_blocks, highest_confirmed_block_number}
+    {Map.values(lifecycle_transactions), updated_rollup_blocks}
   end
 
   # Updates lifecycle transactions with new L1 block numbers and timestamps which could appear due to re-orgs.
@@ -458,22 +442,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
         _ ->
           updated_transactions
       end
-    end)
-  end
-
-  # Retrieves committed L2-to-L1 messages up to specified block number and marks them as 'confirmed'.
-  @spec get_confirmed_l2_to_l1_messages(integer()) :: [Arbitrum.Message.to_import()]
-  defp get_confirmed_l2_to_l1_messages(block_number)
-
-  defp get_confirmed_l2_to_l1_messages(-1) do
-    []
-  end
-
-  defp get_confirmed_l2_to_l1_messages(block_number) do
-    block_number
-    |> DbMessages.sent_l2_to_l1_messages()
-    |> Enum.map(fn transaction ->
-      Map.put(transaction, :status, :confirmed)
     end)
   end
 end

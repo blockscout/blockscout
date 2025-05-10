@@ -6,7 +6,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
     * Processing `SequencerBatchDelivered` event logs to extract batch information
     * Building comprehensive data structures for batches and associated entities
     * Handling Data Availability information for AnyTrust and Celestia solutions
-    * Managing L2-to-L1 message status updates for committed messages
     * Importing discovered data into the database
     * Broadcasting new batch notifications for websocket clients
   """
@@ -19,11 +18,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
+  alias Explorer.Chain.Cache.ArbitrumSettlement, as: ArbitrumSettlementCache
   alias Explorer.Chain.Events.Publisher
 
   alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
   alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
-  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
@@ -110,8 +109,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
     logs
     |> Enum.chunk_every(new_batches_limit)
     |> Enum.each(fn chunked_logs ->
-      {batches, lifecycle_transactions, rollup_blocks, rollup_transactions, committed_transactions, da_records,
-       batch_to_data_blobs} =
+      {batches, lifecycle_transactions, rollup_blocks, rollup_transactions, da_records, batch_to_data_blobs} =
         handle_batches_from_logs(
           chunked_logs,
           messages_to_blocks_shift,
@@ -127,11 +125,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
           arbitrum_l1_batches: %{params: batches},
           arbitrum_batch_blocks: %{params: rollup_blocks},
           arbitrum_batch_transactions: %{params: rollup_transactions},
-          arbitrum_messages: %{params: committed_transactions},
           arbitrum_da_multi_purpose_records: %{params: da_records},
           arbitrum_batches_to_da_blobs: %{params: batch_to_data_blobs},
           timeout: :infinity
         })
+
+      # Update the highest committed block in the cache
+      if highest_block = ArbitrumHelper.highest_block_number(rollup_blocks) do
+        ArbitrumSettlementCache.update_highest_committed_block(highest_block)
+      end
 
       if not Enum.empty?(batches) and new_batches_discovery? do
         extended_batches = extend_batches_with_commitment_transactions(batches, lifecycle_transactions)
@@ -177,9 +179,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
   #
   # ## Returns
   # - A tuple containing lists of batches, lifecycle transactions, rollup blocks,
-  #   rollup transactions, committed messages (with the status `:sent`), records
-  #   with DA-related information if applicable, and batch-to-DA-blob associations,
-  #   all ready for database import.
+  #   rollup transactions, records with DA-related information if applicable,
+  #   and batch-to-DA-blob associations, all ready for database import.
   @spec handle_batches_from_logs(
           [%{String.t() => any()}],
           non_neg_integer(),
@@ -200,7 +201,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
           [Arbitrum.LifecycleTransaction.to_import()],
           [Arbitrum.BatchBlock.to_import()],
           [Arbitrum.BatchTransaction.to_import()],
-          [Arbitrum.Message.to_import()],
           [Arbitrum.DaMultiPurposeRecord.to_import()],
           [Arbitrum.BatchToDaBlob.to_import()]
         }
@@ -213,7 +213,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
          rollup_rpc_config
        )
 
-  defp handle_batches_from_logs([], _, _, _, _, _), do: {[], [], [], [], [], [], []}
+  defp handle_batches_from_logs([], _, _, _, _, _), do: {[], [], [], [], [], []}
 
   defp handle_batches_from_logs(
          logs,
@@ -289,20 +289,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
         json_rpc_named_arguments: l1_rpc_config.json_rpc_named_arguments
       })
 
-    # It is safe to not re-mark messages as committed for the batches that are already in the database
-    committed_messages =
-      if Enum.empty?(blocks_to_import) do
-        []
-      else
-        # Without check on the empty list of keys `Enum.max()` will raise an error
-        blocks_to_import
-        |> Map.keys()
-        |> Enum.max()
-        |> get_committed_l2_to_l1_messages()
-      end
-
     {batches_list_to_import, Map.values(lifecycle_transactions), Map.values(blocks_to_import),
-     rollup_transactions_to_import, committed_messages, da_records, batch_to_data_blobs}
+     rollup_transactions_to_import, da_records, batch_to_data_blobs}
   end
 
   # Parses logs representing SequencerBatchDelivered events to identify new batches.
@@ -653,16 +641,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
     |> Map.get(hash)
     |> Kernel.||(%{id: nil})
     |> Map.get(:id)
-  end
-
-  # Retrieves initiated L2-to-L1 messages up to specified block number and marks them as 'sent'.
-  @spec get_committed_l2_to_l1_messages(non_neg_integer()) :: [Arbitrum.Message.to_import()]
-  defp get_committed_l2_to_l1_messages(block_number) do
-    block_number
-    |> DbMessages.initiated_l2_to_l1_messages()
-    |> Enum.map(fn transaction ->
-      Map.put(transaction, :status, :sent)
-    end)
   end
 
   # Extends the provided list of batches with their corresponding commitment transactions.

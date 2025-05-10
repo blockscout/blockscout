@@ -49,6 +49,7 @@ defmodule Indexer.Supervisor do
   }
 
   alias Indexer.Fetcher.Arbitrum.DataBackfill, as: ArbitrumDataBackfill
+  alias Indexer.Fetcher.Arbitrum.L2ToL1StatusReconciler, as: ArbitrumL2ToL1StatusReconciler
   alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Arbitrum.RollupMessagesCatchup, as: ArbitrumRollupMessagesCatchup
   alias Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses, as: ArbitrumTrackingBatchesStatuses
@@ -229,6 +230,7 @@ defmodule Indexer.Supervisor do
         {ArbitrumMessagesToL2Matcher.Supervisor, [[memory_monitor: memory_monitor]]},
         {ArbitrumDataBackfill.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {ArbitrumL2ToL1StatusReconciler.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),

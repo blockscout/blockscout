@@ -48,7 +48,6 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
     arbitrum: [
       Runner.Arbitrum.Messages,
       Runner.Arbitrum.LifecycleTransactions,
-      Runner.Arbitrum.L1Executions,
       Runner.Arbitrum.L1Batches,
       Runner.Arbitrum.BatchBlocks,
       Runner.Arbitrum.BatchTransactions,

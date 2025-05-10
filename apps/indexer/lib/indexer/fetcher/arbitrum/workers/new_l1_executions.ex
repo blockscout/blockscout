@@ -1,25 +1,32 @@
 defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   @moduledoc """
-    Coordinates the discovery and processing of new and historical L2-to-L1 message executions for an Arbitrum rollup.
+  Coordinates the discovery and processing of new and historical L2-to-L1 message executions for an Arbitrum rollup.
 
-    This module is responsible for identifying and importing executions of messages
-    that were initiated from Arbitrum's Layer 2 (L2) and are to be relayed to
-    Layer 1 (L1). It handles both new executions that are currently occurring on L1
-    and historical executions that occurred in the past but have not yet been
-    processed.
+  This module is responsible for identifying and importing executions of messages
+  that were initiated from Arbitrum's Layer 2 (L2) and are to be relayed to
+  Layer 1 (L1). It handles both new executions that are currently occurring on L1
+  and historical executions that occurred in the past but have not yet been
+  processed.
 
-    Discovery of these message executions involves parsing logs for
-    `OutBoxTransactionExecuted` events emitted by the Arbitrum outbox contract. As
-    the logs do not provide comprehensive data for constructing the related
-    lifecycle transactions, the module executes batched RPC calls to
-    `eth_getBlockByNumber`, using the responses to obtain transaction timestamps,
-    thereby enriching the lifecycle transaction data.
+  Discovery of these message executions involves parsing logs for
+  `OutBoxTransactionExecuted` events emitted by the Arbitrum outbox contract. As
+  the logs do not provide comprehensive data for constructing the related
+  lifecycle transactions, the module executes batched RPC calls to
+  `eth_getBlockByNumber`, using the responses to obtain transaction timestamps,
+  thereby enriching the lifecycle transaction data.
+
+  For each discovered execution, the module also identifies the corresponding L2-to-L1
+  message in the database and updates its status to `:relayed`, setting its
+  `completion_transaction_hash` to link it with the execution transaction. If a
+  message is not found in the database, a placeholder message is created with minimal
+  required fields that will be merged with the full message data when it is discovered
+  later.
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1, log_warning: 1]
 
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
 
@@ -66,6 +73,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
            optional(any()) => any()
          }
 
+  @non_ready_message "Skipping executions discovery since the L1 executions migration is not completed yet"
+
   @doc """
     Discovers and processes new executions of L2-to-L1 messages within the current L1 block range.
 
@@ -76,19 +85,38 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     L2-to-L1 messages to match them with any newly recorded executions and updates
     their status to `:relayed`.
 
+    Before processing executions, the function checks if the L1 executions migration
+    is completed (when `check_for_readiness` is true). If the migration is not completed,
+    it returns a `:not_ready` status without performing the discovery.
+
     ## Parameters
     - A map containing:
       - `config`: Configuration settings including the Arbitrum outbox contract
                   address, JSON RPC arguments, and the block range for fetching
                   logs.
       - `data`: Contains the starting block number for new execution discovery.
+    - `check_for_readiness`: When true, checks if the L1 executions migration is completed
+      before proceeding with the discovery (defaults to true).
 
     ## Returns
     - `{:ok, state}`: On successful discovery and processing, where `state` includes
       an updated `start_block` for the next iteration if new blocks were processed,
       or remains unchanged if no new blocks were found on L1.
+    - `{:not_ready, state}`: If the L1 executions migration is not completed yet.
   """
-  @spec discover_new_l1_messages_executions(executions_related_state()) :: {:ok, executions_related_state()}
+  @spec discover_new_l1_messages_executions(executions_related_state(), boolean()) ::
+          {:ok | :not_ready, executions_related_state()}
+  def discover_new_l1_messages_executions(state, check_for_readiness \\ true)
+
+  def discover_new_l1_messages_executions(state, true) do
+    if ArbitrumHelper.l1_executions_migration_completed?() do
+      discover_new_l1_messages_executions(state, false)
+    else
+      log_warning(@non_ready_message)
+      {:not_ready, state}
+    end
+  end
+
   def discover_new_l1_messages_executions(
         %{
           config: %{
@@ -96,7 +124,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
             l1_outbox_address: outbox_address
           },
           task_data: %{new_executions: %{start_block: start_block}}
-        } = state
+        } = state,
+        false
       ) do
     # Requesting the "latest" block instead of "safe" allows to catch executions
     # without latency.
@@ -133,12 +162,18 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     executions recorded in the database up to this moment, and updates the messages'
     status to `:relayed`.
 
+    Before processing executions, the function checks if the L1 executions migration
+    is completed (when `check_for_readiness` is true). If the migration is not completed,
+    it returns a `:not_ready` status without performing the discovery.
+
     ## Parameters
     - A map containing:
       - `config`: Configuration settings including the Arbitrum outbox contract
         address, the initialization block for the rollup, and JSON RPC arguments.
       - `data`: Contains the ending block number for the historical execution
                 discovery.
+    - `check_for_readiness`: When true, checks if the L1 executions migration is completed
+      before proceeding with the discovery (defaults to true).
 
     ## Returns
     - `{:ok, state}`: On successful discovery and processing, where `state` includes
@@ -146,8 +181,21 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       `end_block` is set to the block before the last processed block. If the
       historical discovery process has reached the lowest L1 block that needs to
       be checked, `end_block` is set to one block before that lowest block.
+    - `{:not_ready, state}`: If the L1 executions migration is not completed yet.
   """
-  @spec discover_historical_l1_messages_executions(executions_related_state()) :: {:ok, executions_related_state()}
+  @spec discover_historical_l1_messages_executions(executions_related_state(), boolean()) ::
+          {:ok | :not_ready, executions_related_state()}
+  def discover_historical_l1_messages_executions(state, check_for_readiness \\ true)
+
+  def discover_historical_l1_messages_executions(state, true) do
+    if ArbitrumHelper.l1_executions_migration_completed?() do
+      discover_historical_l1_messages_executions(state, false)
+    else
+      log_warning(@non_ready_message)
+      {:not_ready, state}
+    end
+  end
+
   def discover_historical_l1_messages_executions(
         %{
           config: %{
@@ -155,7 +203,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
             l1_outbox_address: outbox_address
           },
           task_data: %{historical_executions: %{end_block: end_block}}
-        } = state
+        } = state,
+        false
       ) do
     # This is used to optimize historical discovery processes by avoiding scanning
     # blocks before the first possible confirmation. Since cross-chain message
@@ -219,10 +268,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   # these logs to extract execution details and associated lifecycle transactions,
   # which are then imported into the database. For lifecycle timestamps not
   # available in the logs, RPC calls to `eth_getBlockByNumber` are made to fetch
-  # the necessary data. Furthermore, the function checks unexecuted L2-to-L1
-  # messages to match them with any recorded executions, updating their status to
-  # `:relayed` and establishing links with the corresponding lifecycle
-  # transactions. These updated messages are also imported into the database.
+  # the necessary data. Furthermore, the function updates the status of L2-to-L1
+  # messages to `:relayed` when their executions are discovered and establishes
+  # links with the corresponding lifecycle transactions.
   #
   # ## Parameters
   # - `outbox_address`: The address of the Arbitrum outbox contract to filter the
@@ -243,31 +291,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
         l1_rpc_config.json_rpc_named_arguments
       )
 
-    {lifecycle_transactions, executions} = get_executions_from_logs(logs, l1_rpc_config)
+    {lifecycle_transactions, messages} = process_execution_logs(logs, l1_rpc_config)
 
-    unless executions == [] do
-      log_info("Executions for #{length(executions)} L2 messages will be imported")
+    unless lifecycle_transactions == [] do
+      log_info("Executions for #{length(lifecycle_transactions)} L2 messages will be imported")
 
       {:ok, _} =
         Chain.import(%{
           arbitrum_lifecycle_transactions: %{params: lifecycle_transactions},
-          arbitrum_l1_executions: %{params: executions},
-          timeout: :infinity
-        })
-    end
-
-    # Inspects all unexecuted messages to potentially mark them as completed,
-    # addressing the scenario where found executions may correspond to messages
-    # that have not yet been indexed. This ensures that as soon as a new unexecuted
-    # message is added to the database, it can be marked as relayed, considering
-    # the execution transactions that have already been indexed.
-    messages = get_relayed_messages()
-
-    unless messages == [] do
-      log_info("Marking #{length(messages)} l2-to-l1 messages as completed")
-
-      {:ok, _} =
-        Chain.import(%{
           arbitrum_messages: %{params: messages},
           timeout: :infinity
         })
@@ -299,8 +330,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   # extract basic execution details. It then requests block timestamps and
   # associates them with the extracted executions, forming lifecycle transactions
   # enriched with timestamps and finalization statuses. Subsequently, unique
-  # identifiers for the lifecycle transactions are determined, and the connection
-  # between execution records and lifecycle transactions is established.
+  # identifiers for the lifecycle transactions are determined.
+  #
+  # For each discovered execution, the function:
+  # 1. Attempts to find a corresponding L2-to-L1 message in the database
+  # 2. If found, updates the message's status to `:relayed` and sets its
+  #    `completion_transaction_hash` to link it with the execution transaction
+  # 3. If not found, creates a placeholder message with minimal required fields
+  #    (direction, message_id, completion_transaction_hash, and status) that will
+  #    be merged with the full message data when it is discovered later
   #
   # ## Parameters
   # - `logs`: A collection of log entries to be processed.
@@ -312,9 +350,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   # - A tuple containing:
   #   - A list of lifecycle transactions with updated timestamps, finalization
   #     statuses, and unique identifiers.
-  #   - A list of detailed execution information for L2-to-L1 messages.
-  # Both lists are prepared for database importation.
-  @spec get_executions_from_logs(
+  #   - A list of updated and placeholder L2-to-L1 messages with their status
+  #     set to `:relayed`.
+  # All lists are prepared for database importation.
+  @spec process_execution_logs(
           [%{String.t() => any()}],
           %{
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
@@ -322,12 +361,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
             :track_finalization => boolean(),
             optional(any()) => any()
           }
-        ) :: {[Arbitrum.LifecycleTransaction.to_import()], [Arbitrum.L1Execution.to_import()]}
-  defp get_executions_from_logs(logs, l1_rpc_config)
+        ) ::
+          {[Arbitrum.LifecycleTransaction.to_import()], [Arbitrum.Message.to_import()]}
+  defp process_execution_logs(logs, l1_rpc_config)
 
-  defp get_executions_from_logs([], _), do: {[], []}
+  defp process_execution_logs([], _), do: {[], []}
 
-  defp get_executions_from_logs(
+  defp process_execution_logs(
          logs,
          %{
            json_rpc_named_arguments: json_rpc_named_arguments,
@@ -335,7 +375,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
            track_finalization: track_finalization?
          } = _l1_rpc_config
        ) do
-    {basics_executions, basic_lifecycle_transactions, blocks_requests} = parse_logs_for_new_executions(logs)
+    {executions_by_msg_id, basic_lifecycle_transactions, blocks_requests} = parse_logs_for_new_executions(logs)
 
     blocks_to_ts = Rpc.execute_blocks_requests_and_get_ts(blocks_requests, json_rpc_named_arguments, chunk_size)
 
@@ -344,57 +384,106 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       |> ArbitrumHelper.extend_lifecycle_transactions_with_ts_and_status(blocks_to_ts, track_finalization?)
       |> DbParentChainTransactions.get_indices_for_l1_transactions()
 
-    executions =
-      basics_executions
-      |> Enum.reduce([], fn execution, updated_executions ->
-        updated =
-          execution
-          |> Map.put(:execution_id, lifecycle_transactions[execution.execution_transaction_hash].id)
-          |> Map.drop([:execution_transaction_hash])
+    # Get existing messages for the discovered executions
+    existing_messages =
+      executions_by_msg_id
+      |> Map.keys()
+      |> DbMessages.l2_to_l1_messages_by_ids()
 
-        [updated | updated_executions]
+    # Update existing messages with execution info
+    updated_messages =
+      existing_messages
+      |> Enum.map(fn message ->
+        execution = executions_by_msg_id[message.message_id]
+        %{message | status: :relayed, completion_transaction_hash: execution.execution_transaction_hash}
       end)
 
-    {Map.values(lifecycle_transactions), executions}
+    # Create placeholder messages for missing message IDs
+    placeholder_messages = prepare_placeholder_messages(executions_by_msg_id, existing_messages)
+
+    # Combine updated and placeholder messages
+    messages = updated_messages ++ placeholder_messages
+
+    {Map.values(lifecycle_transactions), messages}
+  end
+
+  # Creates placeholder messages for executions that don't have corresponding messages in the database.
+  #
+  # This function identifies message IDs that exist in the executions map but don't have
+  # corresponding messages in the database. For each such ID, it creates a placeholder
+  # message with minimal required fields (direction, message_id, completion_transaction_hash,
+  # and status) that will be merged with the actual message data when it is discovered.
+  #
+  # ## Parameters
+  # - `executions_by_msg_id`: A map where keys are message IDs and values contain execution details
+  # - `existing_messages`: A list of messages that already exist in the database
+  #
+  # ## Returns
+  # - A list of placeholder messages for executions without corresponding messages
+  @spec prepare_placeholder_messages(
+          %{non_neg_integer() => %{message_id: non_neg_integer(), execution_transaction_hash: binary()}},
+          [Explorer.Chain.Arbitrum.Message.to_import()]
+        ) :: [Arbitrum.Message.to_import()]
+  defp prepare_placeholder_messages(executions_by_msg_id, existing_messages) do
+    # Create a set of existing message IDs for efficient lookup
+    existing_message_ids = MapSet.new(existing_messages, & &1.message_id)
+
+    # Find message IDs that exist in executions but not in messages
+    executions_by_msg_id
+    |> Enum.reject(fn {msg_id, _} -> MapSet.member?(existing_message_ids, msg_id) end)
+    |> Enum.map(fn {_msg_id, execution} ->
+      %{
+        direction: :from_l2,
+        message_id: execution.message_id,
+        completion_transaction_hash: execution.execution_transaction_hash,
+        status: :relayed
+      }
+    end)
   end
 
   # Parses logs to extract new execution transactions for L2-to-L1 messages.
   #
   # This function processes log entries to identify `OutBoxTransactionExecuted`
   # events, extracting the message ID, transaction hash, and block number for
-  # each. It accumulates this data into execution details, lifecycle
-  # transaction descriptions, and RPC requests for block information. These
-  # are then used in  subsequent steps to finalize the execution status of the
-  # messages.
+  # each. It accumulates this data into execution details (as a map keyed by
+  # message ID), lifecycle transaction descriptions, and RPC requests for block
+  # information. These are then used in subsequent steps to finalize the
+  # execution status of the messages.
   #
   # ## Parameters
   # - `logs`: A collection of log entries to be processed.
   #
   # ## Returns
   # - A tuple containing:
-  #   - `executions`: A list of details for execution transactions related to
-  #     L2-to-L1 messages.
+  #   - `executions`: A map of execution details keyed by message ID.
   #   - `lifecycle_transactions`: A map of lifecycle transaction details, keyed by L1
   #     transaction hash.
   #   - `blocks_requests`: A list of RPC requests for fetching block data where
   #     the executions occurred.
+  @spec parse_logs_for_new_executions([%{String.t() => any()}]) :: {
+          %{non_neg_integer() => %{message_id: non_neg_integer(), execution_transaction_hash: binary()}},
+          %{binary() => %{hash: binary(), block_number: non_neg_integer()}},
+          [EthereumJSONRPC.Transport.request()]
+        }
   defp parse_logs_for_new_executions(logs) do
     {executions, lifecycle_transactions, blocks_requests} =
       logs
-      |> Enum.reduce({[], %{}, %{}}, fn event, {executions, lifecycle_transactions, blocks_requests} ->
+      |> Enum.reduce({%{}, %{}, %{}}, fn event, {executions, lifecycle_transactions, blocks_requests} ->
         msg_id = outbox_transaction_executed_event_parse(event)
 
         l1_transaction_hash_raw = event["transactionHash"]
         l1_transaction_hash = Rpc.string_hash_to_bytes_hash(l1_transaction_hash_raw)
         l1_blk_num = quantity_to_integer(event["blockNumber"])
 
-        updated_executions = [
-          %{
-            message_id: msg_id,
-            execution_transaction_hash: l1_transaction_hash
-          }
-          | executions
-        ]
+        updated_executions =
+          Map.put(
+            executions,
+            msg_id,
+            %{
+              message_id: msg_id,
+              execution_transaction_hash: l1_transaction_hash
+            }
+          )
 
         updated_lifecycle_transactions =
           Map.put(
@@ -423,45 +512,5 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     [transaction_index] = decode_data(event["data"], ArbitrumEvents.outbox_transaction_executed_unindexed_params())
 
     transaction_index
-  end
-
-  # Retrieves unexecuted messages from L2 to L1, marking them as completed if their
-  # corresponding execution transactions are identified.
-  #
-  # This function fetches messages confirmed on L1 and matches these messages with
-  # their corresponding execution transactions. For matched pairs, it updates the
-  # message status to `:relayed` and links them with the execution transactions.
-  #
-  # ## Returns
-  # - A list of messages marked as completed, ready for database import.
-  @spec get_relayed_messages() :: [Arbitrum.Message.to_import()]
-  defp get_relayed_messages do
-    # Assuming that both catchup block fetcher and historical messages catchup fetcher
-    # will check all discovered historical messages to be marked as executed it is not
-    # needed to handle :initiated and :sent of historical messages here, only for
-    # new messages discovered and changed their status from `:sent` to `:confirmed`
-    confirmed_messages = DbMessages.confirmed_l2_to_l1_messages()
-
-    if Enum.empty?(confirmed_messages) do
-      []
-    else
-      log_debug("Identified #{length(confirmed_messages)} l2-to-l1 messages already confirmed but not completed")
-
-      messages_map =
-        confirmed_messages
-        |> Enum.reduce(%{}, fn msg, acc ->
-          Map.put(acc, msg.message_id, msg)
-        end)
-
-      messages_map
-      |> Map.keys()
-      |> DbMessages.l1_executions()
-      |> Enum.map(fn execution ->
-        messages_map
-        |> Map.get(execution.message_id)
-        |> Map.put(:completion_transaction_hash, execution.execution_transaction.hash.bytes)
-        |> Map.put(:status, :relayed)
-      end)
-    end
   end
 end

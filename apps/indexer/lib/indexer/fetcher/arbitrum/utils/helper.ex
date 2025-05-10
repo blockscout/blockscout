@@ -1,6 +1,7 @@
 defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
-  alias Explorer.Chain.Arbitrum.LifecycleTransaction
+  alias Explorer.Chain.Arbitrum.{BatchBlock, LifecycleTransaction, Message}
   alias Explorer.Chain.Cache.BackgroundMigrations
+  alias Indexer.Fetcher.Arbitrum.{L2ToL1StatusReconciler, MessagesToL2Matcher}
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1]
@@ -306,5 +307,70 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
 
   defp hash_for_message_id(message_id) when is_binary(message_id) and byte_size(message_id) == 66 do
     hash_for_message_id(quantity_to_integer(message_id))
+  end
+
+  @doc """
+    Extracts the highest block number from a list of batch blocks.
+
+    ## Parameters
+    - `batch_blocks`: A list of batch blocks, each containing a block_number field.
+
+    ## Returns
+    - The highest block number found in the list, or nil if the list is empty.
+  """
+  @spec highest_block_number([BatchBlock.to_import()]) :: non_neg_integer() | nil
+  def highest_block_number([]), do: nil
+
+  def highest_block_number(batch_blocks) when is_list(batch_blocks) do
+    batch_blocks
+    |> Enum.max_by(& &1.block_number, fn -> nil end)
+    |> case do
+      nil -> nil
+      block -> block.block_number
+    end
+  end
+
+  @doc """
+    Handles cross-chain messages by scheduling them for appropriate processing.
+
+    The function schedules messages for status reconciliation and rollup
+    transactions for message ID matching.
+
+    ## Parameters
+    - `{messages, rollup_transactions}`: A tuple where:
+      - `messages`: List of cross-chain messages to be status reconciled
+      - `rollup_transactions`: List of rollup transactions needing message ID matching
+
+    ## Returns
+    - `:ok`
+  """
+  @spec schedule_messages_for_processing([Message.to_import()], [map()]) :: :ok
+  def schedule_messages_for_processing(messages, rollup_transactions) do
+    # Schedule rollup transactions for message ID matching if any exist
+    unless rollup_transactions == [] do
+      MessagesToL2Matcher.async_discover_match(rollup_transactions)
+    end
+
+    # Schedule cross-chain messages for status reconciliation if any exist
+    unless messages == [] do
+      L2ToL1StatusReconciler.async_status_reconcile(messages)
+    end
+
+    :ok
+  end
+
+  @doc """
+    Checks if the migration of L1 executions to crosslevel messages is completed.
+
+    This function checks the cache to determine if the migration that moves data from
+    arbitrum_l1_executions to arbitrum_crosslevel_messages has finished.
+
+    ## Returns
+    - `true` if the migration is completed
+    - `false` if the migration is still in progress or not started
+  """
+  @spec l1_executions_migration_completed?() :: boolean()
+  def l1_executions_migration_completed? do
+    BackgroundMigrations.get_arbitrum_migrate_from_l1_executions_finished()
   end
 end
