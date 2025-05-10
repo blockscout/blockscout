@@ -577,4 +577,21 @@ defmodule Explorer.Chain.Block do
   end
 
   def set_refetch_needed(block_number), do: set_refetch_needed([block_number])
+
+  @doc """
+  Generates a query to fetch blocks by their hashes.
+
+  ## Parameters
+
+    - `hashes`: A list of block hashes to filter by.
+
+  ## Returns
+
+    - An Ecto query that can be used to retrieve blocks matching the given hashes.
+  """
+  @spec by_hashes_query([binary()]) :: Ecto.Query.t()
+  def by_hashes_query(hashes) do
+    __MODULE__
+    |> where([block], block.hash in ^hashes)
+  end
 end

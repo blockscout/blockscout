@@ -1363,8 +1363,8 @@ defmodule Explorer.Chain.Transaction do
   @doc """
   Builds an `Ecto.Query` to fetch transactions by hashes
   """
-  @spec transactions_by_hashes([Hash.t()]) :: Ecto.Query.t()
-  def transactions_by_hashes(hashes) do
+  @spec by_hashes_query([Hash.t()]) :: Ecto.Query.t()
+  def by_hashes_query(hashes) do
     from(
       t in Transaction,
       where: t.hash in ^hashes

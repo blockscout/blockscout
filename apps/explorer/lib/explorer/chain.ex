@@ -1502,7 +1502,7 @@ defmodule Explorer.Chain do
   @spec get_transactions_by_hashes([Hash.t()]) :: [Transaction.t()]
   def get_transactions_by_hashes(transaction_hashes) do
     transaction_hashes
-    |> Transaction.transactions_by_hashes()
+    |> Transaction.by_hashes_query()
     |> Repo.all()
   end
 

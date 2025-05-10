@@ -6,7 +6,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Address, Block, Hash, Transaction}
-  alias Explorer.Repo
+  alias Explorer.Chain.MultichainSearchDbExportRetryQueue
+  alias Explorer.{Helper, Repo}
   alias Explorer.Utility.Microservice
   alias HTTPoison.Response
 
@@ -15,7 +16,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   @addresses_chunk_size 7_000
   @max_concurrency 5
   @post_timeout :timer.minutes(5)
-  @request_error_msg "Error while sending request to Multichain Search Service"
+  @request_error_msg "Error while sending request to Multichain Search DB Service"
+  @unspecified "UNSPECIFIED"
 
   @doc """
     Performs a batch import of addresses, blocks, and transactions to the Multichain Search microservice.
@@ -31,32 +33,76 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     - `{:ok, result}`: If the import was successful.
     - `{:error, reason}`: If an error occurred.
   """
-  @spec batch_import(%{
-          addresses: [Address.t()],
-          blocks: [Block.t()],
-          transactions: [Transaction.t()]
-        }) :: {:error, :disabled | String.t() | Jason.DecodeError.t()} | {:ok, any()}
-  def batch_import(params) do
+  @spec batch_import(
+          %{
+            addresses: [Address.t()],
+            blocks: [Block.t()],
+            transactions: [Transaction.t()]
+          },
+          boolean()
+        ) :: {:error, :disabled | String.t() | Jason.DecodeError.t()} | {:ok, any()}
+  def batch_import(params, retry? \\ false) do
     if enabled?() do
       params_chunks = extract_batch_import_params_into_chunks(params)
 
       params_chunks
       |> Task.async_stream(
-        fn body -> http_post_request(batch_import_url(), body) end,
+        fn export_body -> {http_post_request(batch_import_url(), export_body, retry?), export_body} end,
         max_concurrency: @max_concurrency,
         timeout: @post_timeout
       )
-      |> Enum.reduce_while({:ok, :chunks_processed}, fn
-        {:ok, _result}, acc -> {:cont, acc}
-        {:exit, _reason}, _acc -> {:halt, {:error, @request_error_msg}}
-        {:error, _reason}, _acc -> {:halt, {:error, @request_error_msg}}
+      |> Enum.reduce_while({:ok, {:chunks_processed, params_chunks}}, fn
+        {:ok, {{:ok, _result}, _export_body}}, acc ->
+          {:cont, acc}
+
+        {:ok, {{:error, _reason}, export_body}}, _acc ->
+          on_error(export_body, retry?)
+          {:halt, {:error, @request_error_msg}}
+
+        {:exit, {_, export_body}}, _acc ->
+          on_error(export_body, retry?)
+          {:halt, {:error, @request_error_msg}}
       end)
     else
       {:ok, :service_disabled}
     end
   end
 
-  defp http_post_request(url, body) do
+  @spec on_error(
+          %{
+            addresses: [Address.t()],
+            hashes: [Block.t() | Transaction.t()]
+          },
+          boolean()
+        ) :: {non_neg_integer(), nil | [term()]} | :ok
+  defp on_error(%{addresses: addresses, hashes: hashes}, retry?) do
+    hashes_to_retry =
+      hashes
+      |> Enum.map(
+        &%{
+          hash: Helper.hash_to_binary(&1.hash),
+          hash_type: &1.hash_type |> String.downcase() |> String.to_existing_atom()
+        }
+      )
+
+    addresses_to_retry =
+      addresses
+      |> Enum.map(fn %{hash: address_hash_string} ->
+        %{
+          hash: Helper.hash_to_binary(address_hash_string),
+          hash_type: :address
+        }
+      end)
+
+    prepared_data = hashes_to_retry ++ addresses_to_retry
+
+    unless retry?,
+      do:
+        Repo.insert_all(MultichainSearchDbExportRetryQueue, Helper.add_timestamps(prepared_data), on_conflict: :nothing)
+  end
+
+  @spec http_post_request(String.t(), map(), boolean()) :: {:ok, any()} | {:error, String.t()}
+  defp http_post_request(url, body, retry?) do
     headers = [{"Content-Type", "application/json"}]
 
     case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
@@ -77,6 +123,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         end)
 
         Logger.configure(truncate: old_truncate)
+
+        on_error(body, retry?)
+
         {:error, @request_error_msg}
 
       error ->
@@ -91,10 +140,26 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         end)
 
         Logger.configure(truncate: old_truncate)
+
+        on_error(body, retry?)
+
         {:error, @request_error_msg}
     end
   end
 
+  @spec extract_batch_import_params_into_chunks(%{
+          addresses: [Address.t()],
+          blocks: [Block.t()],
+          transactions: [Transaction.t()]
+        }) :: [
+          %{
+            api_key: String.t(),
+            chain_id: String.t(),
+            addresses: [String.t()],
+            block_ranges: [%{min_block_number: String.t(), max_block_number: String.t()}],
+            hashes: [%{hash: String.t(), hash_type: String.t()}]
+          }
+        ]
   defp extract_batch_import_params_into_chunks(%{
          addresses: raw_addresses,
          blocks: blocks,
@@ -105,38 +170,13 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     addresses =
       raw_addresses
-      |> Repo.preload([:token, :smart_contract])
-      |> Enum.map(fn address ->
-        %{
-          hash: Hash.to_string(address.hash),
-          is_contract: !is_nil(address.contract_code),
-          is_verified_contract: address.verified,
-          is_token: token?(address.token),
-          ens_name: address.ens_domain_name,
-          token_name: get_token_name(address.token),
-          token_type: get_token_type(address.token),
-          contract_name: get_smart_contract_name(address.smart_contract)
-        }
-      end)
       |> Enum.uniq()
+      |> Repo.preload([:token, :smart_contract])
+      |> Enum.map(&format_address(&1))
 
-    block_hashes =
-      blocks
-      |> Enum.map(
-        &%{
-          hash: Hash.to_string(&1.hash),
-          hash_type: "BLOCK"
-        }
-      )
+    block_hashes = format_blocks(blocks)
 
-    transaction_hashes =
-      transactions
-      |> Enum.map(
-        &%{
-          hash: Hash.to_string(&1.hash),
-          hash_type: "TRANSACTION"
-        }
-      )
+    transaction_hashes = format_transactions(transactions)
 
     block_transaction_hashes = block_hashes ++ transaction_hashes
 
@@ -145,17 +185,82 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       |> Enum.chunk_every(@addresses_chunk_size)
       |> Enum.with_index()
 
-    Enum.map(indexed_addresses_chunks, fn {addresses_chunk, index} ->
-      hashes = if index == 0, do: block_transaction_hashes, else: []
+    api_key = api_key()
+    chain_id_string = to_string(chain_id)
 
-      %{
-        api_key: api_key(),
-        chain_id: to_string(chain_id),
-        addresses: addresses_chunk,
-        block_ranges: block_ranges,
-        hashes: hashes
-      }
-    end)
+    base_data_chunk = %{
+      api_key: api_key,
+      chain_id: chain_id_string,
+      addresses: [],
+      block_ranges: block_ranges
+    }
+
+    if Enum.empty?(indexed_addresses_chunks) do
+      [
+        base_data_chunk
+        |> Map.put(:hashes, block_transaction_hashes)
+      ]
+    else
+      Enum.map(indexed_addresses_chunks, fn {addresses_chunk, index} ->
+        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+        hashes = if index == 0, do: block_transaction_hashes, else: []
+
+        base_data_chunk
+        |> Map.put(:addresses, addresses_chunk)
+        |> Map.put(:hashes, hashes)
+      end)
+    end
+  end
+
+  defp format_address(address) do
+    %{
+      hash: Hash.to_string(address.hash),
+      is_contract: !is_nil(address.contract_code),
+      is_verified_contract: address.verified,
+      is_token: token?(address.token),
+      ens_name: address.ens_domain_name,
+      token_name: get_token_name(address.token),
+      token_type: get_token_type(address.token),
+      contract_name: get_smart_contract_name(address.smart_contract)
+    }
+  end
+
+  @spec format_blocks([Block.t() | %{hash: String.t(), hash_type: String.t()}]) :: [
+          %{hash: String.t(), hash_type: String.t()}
+        ]
+  defp format_blocks(blocks) do
+    blocks
+    |> Enum.map(&format_block(to_string(&1.hash)))
+  end
+
+  @spec format_transactions([Transaction.t() | %{hash: String.t(), hash_type: String.t()}]) :: [
+          %{hash: String.t(), hash_type: String.t()}
+        ]
+  defp format_transactions(transactions) do
+    transactions
+    |> Enum.map(&format_transaction(to_string(&1.hash)))
+  end
+
+  @spec format_block(String.t()) :: %{
+          hash: String.t(),
+          hash_type: String.t()
+        }
+  defp format_block(block_hash_string) do
+    %{
+      hash: block_hash_string,
+      hash_type: "BLOCK"
+    }
+  end
+
+  @spec format_transaction(String.t()) :: %{
+          hash: String.t(),
+          hash_type: String.t()
+        }
+  defp format_transaction(transaction_hash_string) do
+    %{
+      hash: transaction_hash_string,
+      hash_type: "TRANSACTION"
+    }
   end
 
   defp token?(nil), do: false
@@ -176,9 +281,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp get_smart_contract_name(smart_contract), do: smart_contract.name
 
-  defp get_token_type(nil), do: "UNSPECIFIED"
+  defp get_token_type(nil), do: @unspecified
 
-  defp get_token_type(%NotLoaded{}), do: "UNSPECIFIED"
+  defp get_token_type(%NotLoaded{}), do: @unspecified
 
   defp get_token_type(token), do: token.type
 
