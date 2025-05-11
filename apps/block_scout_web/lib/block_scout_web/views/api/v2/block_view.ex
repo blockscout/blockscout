@@ -30,17 +30,12 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   def prepare_block(block, _conn, single_block? \\ false) do
     block = Block.aggregate_transactions(block)
 
-    # burnt_fees = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
-    # priority_fee = block.base_fee_per_gas && BlockPriorityFeeCount.fetch(block.hash)
-
-    # transaction_fees = Block.transaction_fees(block.transactions)
-
     %{
       "height" => block.number,
       "timestamp" => block.timestamp,
       "transactions_count" => block.transactions_count,
       # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
-      "transaction_count" => count_transactions(block),
+      "transaction_count" => block.transactions_count,
       "internal_transactions_count" => count_internal_transactions(block),
       "miner" => Helper.address_with_info(nil, block.miner, block.miner_hash, false),
       "size" => block.size,
@@ -97,9 +92,6 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   end
 
   def burnt_fees_percentage(_, _), do: nil
-
-  defp count_transactions(%Block{transactions: transactions}) when is_list(transactions), do: Enum.count(transactions)
-  defp count_transactions(_), do: nil
 
   defp count_internal_transactions(%Block{internal_transactions: internal_transactions})
        when is_list(internal_transactions),

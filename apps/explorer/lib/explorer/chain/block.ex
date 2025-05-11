@@ -623,6 +623,28 @@ defmodule Explorer.Chain.Block do
     |> where([block], block.hash in ^hashes)
   end
 
+  @doc """
+  Calculates and aggregates transaction-related metrics for a block if not already aggregated.
+
+  This function processes all transactions in a block to compute aggregate
+  statistics including transaction counts, fees, burnt fees, and priority fees.
+  The aggregation only occurs if the block has not been previously aggregated
+  (when `aggregated?` is `nil` or `false`) and contains a list of transactions.
+
+  For each transaction, the function calculates:
+  - Total transaction fees (gas_used * gas_price)
+  - Burnt fees (gas_used * base_fee_per_gas)
+  - Priority fees paid to miners (min of priority fee and effective fee)
+  - Blob transaction detection (type 3 transactions)
+
+  ## Parameters
+  - `block`: A Block struct containing transactions to be aggregated
+
+  ## Returns
+  - Block struct with aggregated transaction metrics and `aggregated?` set to `true`
+  - Original block unchanged if already aggregated or transactions is not a list
+  """
+  @spec aggregate_transactions(t()) :: t()
   def aggregate_transactions(%__MODULE__{transactions: transactions, aggregated?: aggregated?} = block)
       when is_list(transactions) and aggregated? in [nil, false] do
     aggregate_results =

@@ -487,7 +487,6 @@ defmodule Explorer.Helper do
   end
 
   @doc """
-  <<<<<<< HEAD
   Extracts the method ID from an ABI specification.
 
   ## Parameters
