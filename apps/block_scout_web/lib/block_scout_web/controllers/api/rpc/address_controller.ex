@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.AddressController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.RPC.Helper
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, Wei}
@@ -20,7 +21,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       |> Map.put_new(:page_number, 0)
       |> Map.put_new(:page_size, 10)
 
-    accounts = list_accounts(options)
+    accounts = list_accounts(options, AccessHelper.conn_to_ip_string(conn))
 
     conn
     |> put_status(200)
@@ -59,7 +60,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   def balance(conn, params, template \\ :balance) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hashes}} <- to_address_hashes(address_param) do
-      addresses = hashes_to_addresses(address_hashes)
+      addresses = hashes_to_addresses(address_hashes, AccessHelper.conn_to_ip_string(conn))
       render(conn, template, %{addresses: addresses})
     else
       {:address_param, :error} ->
@@ -128,23 +129,37 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   def txlistinternal(conn, params) do
     case {Map.fetch(params, "txhash"), Map.fetch(params, "address")} do
       {:error, :error} ->
-        render(conn, :error, error: "Query parameter txhash or address is required")
+        txlistinternal(conn, params, :no_param)
 
-      {{:ok, txhash_param}, :error} ->
-        txlistinternal(conn, txhash_param, :txhash)
+      {{:ok, transaction_param}, :error} ->
+        txlistinternal(conn, transaction_param, :transaction)
 
       {:error, {:ok, address_param}} ->
         txlistinternal(conn, params, address_param, :address)
     end
   end
 
-  def txlistinternal(conn, txhash_param, :txhash) do
-    with {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
+  def txlistinternal(conn, transaction_param, :transaction) do
+    with {:format, {:ok, transaction_hash}} <- to_transaction_hash(transaction_param),
          {:ok, internal_transactions} <- list_internal_transactions(transaction_hash) do
       render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
     else
       {:format, :error} ->
         render(conn, :error, error: "Invalid txhash format")
+
+      {:error, :not_found} ->
+        render(conn, :error, error: "No internal transactions found", data: [])
+    end
+  end
+
+  def txlistinternal(conn, params, :no_param) do
+    options =
+      params
+      |> optional_params()
+
+    case list_internal_transactions(:all, options) do
+      {:ok, internal_transactions} ->
+        render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
 
       {:error, :not_found} ->
         render(conn, :error, error: "No internal transactions found", data: [])
@@ -380,20 +395,20 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     Enum.any?(address_hashes, &(&1 == :error))
   end
 
-  defp list_accounts(%{page_number: page_number, page_size: page_size}) do
+  defp list_accounts(%{page_number: page_number, page_size: page_size}, ip) do
     offset = (max(page_number, 1) - 1) * page_size
 
     # limit is just page_size
     offset
     |> Addresses.list_ordered_addresses(page_size)
-    |> trigger_balances_and_add_status()
+    |> trigger_balances_and_add_status(ip)
   end
 
-  defp hashes_to_addresses(address_hashes) do
+  defp hashes_to_addresses(address_hashes, ip) do
     address_hashes
     |> Chain.hashes_to_addresses()
-    |> trigger_balances_and_add_status()
     |> add_not_found_addresses(address_hashes)
+    |> trigger_balances_and_add_status(ip)
   end
 
   defp add_not_found_addresses(addresses, hashes) do
@@ -402,22 +417,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     hashes
     |> MapSet.new()
     |> MapSet.difference(found_hashes)
-    |> hashes_to_addresses(:not_found)
+    |> Enum.map(fn hash -> %Address{hash: hash, fetched_coin_balance: %Wei{value: 0}} end)
     |> Enum.concat(addresses)
   end
 
-  defp hashes_to_addresses(hashes, :not_found) do
-    Enum.map(hashes, fn hash ->
-      %Address{
-        hash: hash,
-        fetched_coin_balance: %Wei{value: 0}
-      }
-    end)
-  end
-
-  defp trigger_balances_and_add_status(addresses) do
+  defp trigger_balances_and_add_status(addresses, ip) do
     Enum.map(addresses, fn address ->
-      case CoinBalanceOnDemand.trigger_fetch(address) do
+      case CoinBalanceOnDemand.trigger_fetch(ip, address) do
         :current ->
           %{address | stale?: false}
 
@@ -512,6 +518,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
   defp list_internal_transactions(transaction_hash) do
     case Etherscan.list_internal_transactions(transaction_hash) do
+      [] -> {:error, :not_found}
+      internal_transactions -> {:ok, internal_transactions}
+    end
+  end
+
+  defp list_internal_transactions(:all, options) do
+    case Etherscan.list_internal_transactions(:all, options) do
       [] -> {:error, :not_found}
       internal_transactions -> {:ok, internal_transactions}
     end

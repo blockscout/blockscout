@@ -5,10 +5,10 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [dynamic: 2, from: 2, limit: 2, where: 3, subquery: 1, order_by: 3, union: 2]
+  import Ecto.Query, only: [from: 2, limit: 2, where: 3, subquery: 1, order_by: 3]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, DenormalizationHelper, InternalTransaction, Log, Transaction}
+  alias Explorer.Chain.{DenormalizationHelper, Log, Transaction}
 
   @base_filter %{
     from_block: nil,
@@ -75,16 +75,16 @@ defmodule Explorer.Etherscan.Logs do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
 
-    if DenormalizationHelper.transactions_denormalization_finished?() do
-      logs_query =
-        Log
-        |> where_topic_match(prepared_filter)
-        |> where([log], log.address_hash == ^address_hash)
-        |> where([log], log.block_number >= ^prepared_filter.from_block)
-        |> where([log], log.block_number <= ^prepared_filter.to_block)
-        |> limit(1000)
-        |> page_logs(paging_options)
+    logs_query =
+      Log
+      |> where_topic_match(prepared_filter)
+      |> where([log], log.address_hash == ^address_hash)
+      |> where([log], log.block_number >= ^prepared_filter.from_block)
+      |> where([log], log.block_number <= ^prepared_filter.to_block)
+      |> limit(1000)
+      |> page_logs(paging_options)
 
+    if DenormalizationHelper.transactions_denormalization_finished?() do
       all_transaction_logs_query =
         from(log in subquery(logs_query),
           join: transaction in Transaction,
@@ -107,75 +107,27 @@ defmodule Explorer.Etherscan.Logs do
       |> order_by([log], asc: log.block_number, asc: log.index)
       |> Repo.replica().all()
     else
-      logs_query = where_topic_match(Log, prepared_filter)
-
-      query_to_address_hash_wrapped =
-        logs_query
-        |> internal_transaction_query(:to_address_hash, prepared_filter, address_hash)
-        |> Chain.wrapped_union_subquery()
-
-      query_from_address_hash_wrapped =
-        logs_query
-        |> internal_transaction_query(:from_address_hash, prepared_filter, address_hash)
-        |> Chain.wrapped_union_subquery()
-
-      query_created_contract_address_hash_wrapped =
-        logs_query
-        |> internal_transaction_query(:created_contract_address_hash, prepared_filter, address_hash)
-        |> Chain.wrapped_union_subquery()
-
-      internal_transaction_log_query =
-        query_to_address_hash_wrapped
-        |> union(^query_from_address_hash_wrapped)
-        |> union(^query_created_contract_address_hash_wrapped)
-
-      all_transaction_logs_query_base =
-        from(transaction in Transaction,
-          join: log in ^logs_query,
-          on: log.transaction_hash == transaction.hash,
-          where: transaction.block_number >= ^prepared_filter.from_block,
-          where: transaction.block_number <= ^prepared_filter.to_block,
+      all_transaction_logs_query =
+        from(log in subquery(logs_query),
+          join: transaction in Transaction,
+          on: log.transaction_hash == transaction.hash and log.block_hash == transaction.block_hash,
+          inner_join: block in assoc(transaction, :block),
+          where: block.consensus == true,
           select: map(log, ^@log_fields),
           select_merge: %{
             gas_price: transaction.gas_price,
             gas_used: transaction.gas_used,
             transaction_index: transaction.index,
-            block_number: transaction.block_number
-          },
-          union: ^internal_transaction_log_query
-        )
-
-      dynamic =
-        dynamic(
-          [transaction],
-          ^Transaction.where_transactions_to_from(address_hash) or
-            transaction.created_contract_address_hash == ^address_hash
-        )
-
-      all_transaction_logs_query =
-        all_transaction_logs_query_base
-        |> where([transaction], ^dynamic)
-
-      query_with_blocks =
-        from(log_transaction_data in subquery(all_transaction_logs_query),
-          join: block in Block,
-          on: block.number == log_transaction_data.block_number,
-          where: log_transaction_data.address_hash == ^address_hash,
-          where: block.consensus == true,
-          order_by: block.number,
-          limit: 1000,
-          select_merge: %{
-            transaction_index: log_transaction_data.transaction_index,
-            block_hash: block.hash,
-            block_number: block.number,
+            block_hash: transaction.block_hash,
+            block_number: transaction.block_number,
             block_timestamp: block.timestamp,
             block_consensus: block.consensus
           }
         )
 
-      query_with_blocks
-      |> order_by([log], asc: log.index)
-      |> page_logs(paging_options)
+      all_transaction_logs_query
+      |> Chain.wrapped_union_subquery()
+      |> order_by([log], asc: log.block_number, asc: log.index)
       |> Repo.replica().all()
     end
   end
@@ -357,26 +309,5 @@ defmodule Explorer.Etherscan.Logs do
       data in query,
       where: {data.block_number, data.index} > {^block_number, ^log_index}
     )
-  end
-
-  defp internal_transaction_query(logs_query, direction, prepared_filter, address_hash) do
-    query =
-      from(internal_transaction in InternalTransaction.where_nonpending_block(),
-        join: transaction in assoc(internal_transaction, :transaction),
-        join: log in ^logs_query,
-        on: log.transaction_hash == internal_transaction.transaction_hash,
-        where: internal_transaction.block_number >= ^prepared_filter.from_block,
-        where: internal_transaction.block_number <= ^prepared_filter.to_block,
-        select:
-          merge(map(log, ^@log_fields), %{
-            gas_price: transaction.gas_price,
-            gas_used: transaction.gas_used,
-            transaction_index: transaction.index,
-            block_number: internal_transaction.block_number
-          })
-      )
-
-    query
-    |> InternalTransaction.where_address_fields_match(address_hash, direction)
   end
 end

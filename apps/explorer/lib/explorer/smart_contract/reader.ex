@@ -241,7 +241,7 @@ defmodule Explorer.SmartContract.Reader do
   def read_only_functions(nil, _, _, _), do: []
 
   def read_only_functions_proxy(contract_address_hash, implementation_address_hash_string, from, options \\ []) do
-    implementation_abi = SmartContract.get_smart_contract_abi(implementation_address_hash_string, options)
+    implementation_abi = SmartContract.get_abi(implementation_address_hash_string, options)
 
     case implementation_abi do
       nil ->
@@ -253,11 +253,11 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   @doc """
-    Returns abi for not queriable functions of proxy's implementation which can be considered as read-only
+    Returns abi for not queryable functions of proxy's implementation which can be considered as read-only
   """
   @spec read_functions_required_wallet_proxy(String.t()) :: [%{}]
   def read_functions_required_wallet_proxy(implementation_address_hash_string) do
-    implementation_abi = SmartContract.get_smart_contract_abi(implementation_address_hash_string)
+    implementation_abi = SmartContract.get_abi(implementation_address_hash_string)
 
     case implementation_abi do
       nil ->
@@ -269,7 +269,7 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   @doc """
-    Returns abi for not queriable functions of the smart contract which can be considered as read-only
+    Returns abi for not queryable functions of the smart contract which can be considered as read-only
   """
   @spec read_functions_required_wallet(SmartContract.t()) :: [%{}]
   def read_functions_required_wallet(%SmartContract{abi: abi}) do
@@ -290,7 +290,7 @@ defmodule Explorer.SmartContract.Reader do
     abi_with_method_id = get_abi_with_method_id(abi)
 
     abi_with_method_id
-    |> Enum.filter(&Helper.queriable_method?(&1))
+    |> Enum.filter(&Helper.queryable_method?(&1))
     |> fetch_current_values_from_blockchain(abi_with_method_id, contract_address_hash, false, options, from)
   end
 
@@ -300,7 +300,7 @@ defmodule Explorer.SmartContract.Reader do
     abi_with_method_id = get_abi_with_method_id(abi)
 
     abi_with_method_id
-    |> Enum.reject(&Helper.queriable_method?(&1))
+    |> Enum.reject(&Helper.queryable_method?(&1))
     |> Enum.filter(&Helper.read_with_wallet_method?(&1))
   end
 

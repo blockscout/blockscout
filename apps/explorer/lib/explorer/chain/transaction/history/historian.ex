@@ -5,11 +5,12 @@ defmodule Explorer.Chain.Transaction.History.Historian do
   require Logger
   use Explorer.History.Historian
 
-  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, DenormalizationHelper, Transaction}
+  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.History.Process, as: HistoryProcess
+  alias Explorer.Repo
 
   import Ecto.Query, only: [from: 2, subquery: 1]
 
@@ -79,8 +80,8 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       from_api = false
 
       # Try to identify block range for the given day
-      with {:ok, min_block} <- Chain.timestamp_to_block_number(earliest, :after, from_api),
-           {:ok, max_block} <- Chain.timestamp_to_block_number(latest, :before, from_api) do
+      with {:ok, min_block} <- BlockGeneralReader.timestamp_to_block_number(earliest, :after, from_api),
+           {:ok, max_block} <- BlockGeneralReader.timestamp_to_block_number(latest, :before, from_api) do
         # Collects stats for the block range determining the given day and add
         # the date determining the day to the record.
         record =

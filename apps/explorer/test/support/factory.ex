@@ -36,11 +36,11 @@ defmodule Explorer.Factory do
     Block,
     ContractMethod,
     Data,
-    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     Log,
     PendingBlockOperation,
+    PendingTransactionOperation,
     SmartContract,
     SmartContractAdditionalSource,
     Token,
@@ -52,6 +52,10 @@ defmodule Explorer.Factory do
 
   alias Explorer.Chain.Optimism.OutputRoot
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
+  alias Explorer.Chain.Zilliqa.Staker, as: ZilliqaStaker
+
+  alias Explorer.Migrator.MigrationStatus
 
   alias Explorer.SmartContract.Helper
   alias Explorer.Tags.{AddressTag, AddressToTag}
@@ -164,7 +168,7 @@ defmodule Explorer.Factory do
   end
 
   def watchlist_address_db_factory(%{wl_id: id}) do
-    hash = build(:address).hash
+    hash = insert(:address).hash
 
     %WatchlistAddress{
       name: sequence("test"),
@@ -736,6 +740,10 @@ defmodule Explorer.Factory do
     %PendingBlockOperation{}
   end
 
+  def pending_transaction_operation_factory do
+    %PendingTransactionOperation{}
+  end
+
   def internal_transaction_factory() do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
@@ -1013,7 +1021,7 @@ defmodule Explorer.Factory do
       abi: contract_code_info.abi,
       contract_code_md5: bytecode_md5,
       verified_via_sourcify: Enum.random([true, false]),
-      is_vyper_contract: Enum.random([true, false]),
+      language: Enum.random([:solidity, :vyper]),
       verified_via_eth_bytecode_db: Enum.random([true, false]),
       verified_via_verifier_alliance: Enum.random([true, false])
     }
@@ -1025,16 +1033,6 @@ defmodule Explorer.Factory do
 
   def unique_smart_contract_factory do
     Map.replace(smart_contract_factory(), :name, sequence("SimpleStorage"))
-  end
-
-  def decompiled_smart_contract_factory do
-    contract_code_info = contract_code_info()
-
-    %DecompiledSmartContract{
-      address_hash: insert(:address, contract_code: contract_code_info.bytecode, decompiled: true).hash,
-      decompiler_version: "test_decompiler",
-      decompiled_source_code: contract_code_info.source_code
-    }
   end
 
   def proxy_implementation_factory do
@@ -1285,6 +1283,14 @@ defmodule Explorer.Factory do
     }
   end
 
+  def db_migration_status_factory do
+    %MigrationStatus{
+      migration_name: nil,
+      status: "started",
+      meta: nil
+    }
+  end
+
   defp op_output_root_l2_output_index do
     sequence("op_output_root_l2_output_index", & &1)
   end
@@ -1313,7 +1319,67 @@ defmodule Explorer.Factory do
     }
   end
 
+  def zilliqa_staker_factory do
+    control_address = insert(:address)
+    reward_address = insert(:address)
+    signing_address = insert(:address)
+
+    block = insert(:block)
+
+    %ZilliqaStaker{
+      bls_public_key: zilliqa_bls_public_key(),
+      index: sequence(:zilliqa_staker_index, & &1),
+      control_address_hash: control_address.hash,
+      reward_address_hash: reward_address.hash,
+      signing_address_hash: signing_address.hash,
+      added_at_block_number: block.number,
+      stake_updated_at_block_number: block.number,
+      balance: Decimal.new(1_000_000)
+    }
+  end
+
+  def zilliqa_bls_public_key do
+    {:ok, bls_public_key} =
+      :zilliqa_bls_public_key
+      |> sequence(& &1)
+      |> BLSPublicKey.cast()
+
+    to_string(bls_public_key)
+  end
+
   def celo_pending_epoch_block_operation_factory do
     %CeloPendingEpochBlockOperation{}
+  end
+
+  def withdrawal_log_factory(params) do
+    weth_log(TokenTransfer.weth_withdrawal_signature(), params)
+  end
+
+  def deposit_log_factory(params) do
+    weth_log(TokenTransfer.weth_deposit_signature(), params)
+  end
+
+  defp weth_log(first_topic, %{
+         from_address: from_address,
+         token_contract_address: token_contract_address,
+         amount: amount,
+         transaction: transaction,
+         block: block
+       }) do
+    data = "0x" <> (Integer.to_string(amount, 16) |> String.downcase() |> String.pad_leading(64, "0"))
+
+    %Log{
+      address: token_contract_address,
+      address_hash: token_contract_address.hash,
+      block: block,
+      block_number: block.number,
+      data: data,
+      first_topic: first_topic,
+      second_topic: zero_padded_address_hash_string(from_address.hash),
+      third_topic: nil,
+      fourth_topic: nil,
+      index: sequence("log_index", & &1),
+      transaction: transaction
+    }
   end
 end

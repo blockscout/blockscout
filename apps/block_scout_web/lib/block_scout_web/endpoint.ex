@@ -13,10 +13,11 @@ defmodule BlockScoutWeb.Endpoint do
   end
 
   if @disable_api? do
+    plug(BlockScoutWeb.Prometheus.Exporter)
     plug(BlockScoutWeb.HealthRouter)
   else
     socket("/socket", BlockScoutWeb.UserSocket, websocket: [timeout: 45_000])
-    socket("/socket/v2", BlockScoutWeb.UserSocketV2, websocket: [timeout: 45_000])
+    socket("/socket/v2", BlockScoutWeb.V2.UserSocket, websocket: [timeout: 45_000])
 
     # Serve at "/" the static files from "priv/static" directory.
     #

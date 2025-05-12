@@ -7,10 +7,10 @@ on:
       - production-xdai
 jobs:
   push_to_registry:
-    name: Push Docker image to Docker Hub
+    name: Push Docker image to GitHub Container Registry
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 6.10.1
+      RELEASE_VERSION: 8.0.2
       DOCKER_CHAIN_NAME: xdai
     steps:
       - uses: actions/checkout@v4
@@ -18,8 +18,7 @@ jobs:
         uses: ./.github/actions/setup-repo
         id: setup
         with:
-          docker-username: ${{ secrets.DOCKER_USERNAME }}
-          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           docker-remote-multi-platform: true
           docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
@@ -30,7 +29,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
+          tags: ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -47,30 +46,14 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-indexer
+          tags: ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
+            BRIDGED_TOKENS_ENABLED=true
             DISABLE_API=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=ethereum
-
-      - name: Build and push Docker image (API)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-api
-          labels: ${{ steps.setup.outputs.docker-labels }}
-          platforms: |
-            linux/amd64
-            linux/arm64/v8
-          build-args: |
-            DISABLE_INDEXER=true
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=ethereum

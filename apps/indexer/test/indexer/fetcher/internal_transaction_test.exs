@@ -7,7 +7,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
   alias Ecto.Multi
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, PendingBlockOperation}
+  alias Explorer.Chain.{Block, PendingBlockOperation, PendingTransactionOperation}
   alias Explorer.Chain.Import.Runner.Blocks
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.{InternalTransaction, PendingTransaction, TokenBalance}
@@ -17,6 +17,13 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   setup :set_mox_global
 
   setup :verify_on_exit!
+
+  setup do
+    config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+    on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+  end
 
   @moduletag [capture_log: true, no_geth: true]
 
@@ -515,6 +522,9 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     test "fetches internal transactions from Arbitrum", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, false))
+
       json_rpc_named_arguments =
         json_rpc_named_arguments
         |> Enum.reject(fn {key, _value} -> key == :variant || key == :transport_options end)

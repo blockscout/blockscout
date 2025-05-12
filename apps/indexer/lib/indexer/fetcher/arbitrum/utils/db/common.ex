@@ -12,9 +12,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Common do
     namespace may be misleading.
   """
 
-  alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.Indexer.General, as: ArbitrumReader
   alias Explorer.Chain.Block, as: FullBlock
+  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Utility.MissingBlockRange
 
   @doc """
@@ -48,7 +48,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Common do
   """
   @spec closest_block_after_timestamp(DateTime.t()) :: {:error, :not_found} | {:ok, FullBlock.block_number()}
   def closest_block_after_timestamp(timestamp) do
-    Chain.timestamp_to_block_number(timestamp, :after, false)
+    BlockGeneralReader.timestamp_to_block_number(timestamp, :after, false, true)
   end
 
   @doc """
@@ -63,4 +63,22 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Common do
   """
   @spec rollup_blocks([FullBlock.block_number()]) :: [FullBlock.t()]
   def rollup_blocks(list_of_block_numbers), do: ArbitrumReader.rollup_blocks(list_of_block_numbers)
+
+  @doc """
+    Retrieves block numbers within a range that are missing Arbitrum-specific fields.
+
+    Identifies rollup blocks that lack one or more of the following fields:
+    `send_count`, `send_root`, or `l1_block_number`.
+
+    ## Parameters
+    - `start_block_number`: The lower bound of the block range to check.
+    - `end_block_number`: The upper bound of the block range to check.
+
+    ## Returns
+    - A list of block numbers that are missing one or more required fields.
+  """
+  @spec blocks_with_missing_fields(FullBlock.block_number(), FullBlock.block_number()) :: [FullBlock.block_number()]
+  def blocks_with_missing_fields(start_block_number, end_block_number) do
+    ArbitrumReader.blocks_with_missing_fields(start_block_number, end_block_number)
+  end
 end

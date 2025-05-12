@@ -150,7 +150,7 @@ defmodule Explorer.Etherscan do
   end
 
   @doc """
-  Gets a list of internal transactions for a given address hash
+  Gets a list of all internal transactions (with :all option) or for a given address hash
   (`t:Explorer.Chain.Hash.Address.t/0`).
 
   Note that this function relies on `Explorer.Chain` to exclude/include
@@ -162,10 +162,12 @@ defmodule Explorer.Etherscan do
       even when they are alone in the parent transaction
 
   """
-  @spec list_internal_transactions(Hash.Address.t(), map()) :: [map()]
+  @spec list_internal_transactions(Hash.Address.t() | :all, map()) :: [map()]
+  def list_internal_transactions(address_hash_param_or_no_param, raw_options \\ %{})
+
   def list_internal_transactions(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
-        raw_options \\ %{}
+        raw_options
       ) do
     options = Map.merge(@default_options, raw_options)
 
@@ -176,31 +178,19 @@ defmodule Explorer.Etherscan do
         _ -> nil
       end
 
-    consensus_blocks =
-      from(
-        block in Block,
-        where: block.consensus == true
-      )
-
-    if direction == nil do
-      query =
-        from(
-          it in InternalTransaction,
-          inner_join: block in subquery(consensus_blocks),
-          on: it.block_number == block.number,
-          order_by: [
-            {^options.order_by_direction, it.block_number},
-            {:desc, it.transaction_index},
-            {:desc, it.index}
-          ],
-          limit: ^options.page_size,
-          offset: ^offset(options),
-          select:
-            merge(map(it, ^@internal_transaction_fields), %{
-              block_timestamp: block.timestamp,
-              block_number: block.number
-            })
-        )
+    if direction do
+      options
+      |> internal_transactions_with_transactions_and_blocks_query()
+      |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
+      |> InternalTransaction.where_address_fields_match(address_hash, direction)
+      |> InternalTransaction.where_is_different_from_parent_transaction()
+      |> where_start_block_match(options)
+      |> where_end_block_match(options)
+      |> InternalTransaction.where_nonpending_block()
+      |> Repo.replica().all()
+    else
+      consensus_blocks = Block.consensus_blocks_query()
+      query = internal_transactions_query(options, consensus_blocks)
 
       query_to_address_hash_wrapped =
         query
@@ -238,47 +228,75 @@ defmodule Explorer.Etherscan do
         ]
       )
       |> Repo.replica().all()
-    else
-      query =
-        if DenormalizationHelper.transactions_denormalization_finished?() do
-          from(
-            it in InternalTransaction,
-            inner_join: transaction in assoc(it, :transaction),
-            where: not is_nil(transaction.block_hash),
-            order_by: [{^options.order_by_direction, transaction.block_number}],
-            limit: ^options.page_size,
-            offset: ^offset(options),
-            select:
-              merge(map(it, ^@internal_transaction_fields), %{
-                block_timestamp: transaction.block_timestamp,
-                block_number: transaction.block_number
-              })
-          )
-        else
-          from(
-            it in InternalTransaction,
-            inner_join: t in assoc(it, :transaction),
-            inner_join: b in assoc(t, :block),
-            order_by: [{^options.order_by_direction, t.block_number}],
-            limit: ^options.page_size,
-            offset: ^offset(options),
-            select:
-              merge(map(it, ^@internal_transaction_fields), %{
-                block_timestamp: b.timestamp,
-                block_number: b.number
-              })
-          )
-        end
-
-      query
-      |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
-      |> InternalTransaction.where_address_fields_match(address_hash, direction)
-      |> InternalTransaction.where_is_different_from_parent_transaction()
-      |> where_start_block_match(options)
-      |> where_end_block_match(options)
-      |> InternalTransaction.where_nonpending_block()
-      |> Repo.replica().all()
     end
+  end
+
+  def list_internal_transactions(
+        :all,
+        raw_options
+      ) do
+    options = Map.merge(@default_options, raw_options)
+
+    consensus_blocks = Block.consensus_blocks_query()
+
+    options
+    |> internal_transactions_query(consensus_blocks)
+    |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> where_start_block_match(options)
+    |> where_end_block_match(options)
+    |> Repo.replica().all()
+  end
+
+  defp internal_transactions_with_transactions_and_blocks_query(options) do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      from(
+        it in InternalTransaction,
+        inner_join: transaction in assoc(it, :transaction),
+        where: not is_nil(transaction.block_hash),
+        order_by: [{^options.order_by_direction, transaction.block_number}],
+        limit: ^options.page_size,
+        offset: ^offset(options),
+        select:
+          merge(map(it, ^@internal_transaction_fields), %{
+            block_timestamp: transaction.block_timestamp,
+            block_number: transaction.block_number
+          })
+      )
+    else
+      from(
+        it in InternalTransaction,
+        inner_join: t in assoc(it, :transaction),
+        inner_join: b in assoc(t, :block),
+        order_by: [{^options.order_by_direction, t.block_number}],
+        limit: ^options.page_size,
+        offset: ^offset(options),
+        select:
+          merge(map(it, ^@internal_transaction_fields), %{
+            block_timestamp: b.timestamp,
+            block_number: b.number
+          })
+      )
+    end
+  end
+
+  defp internal_transactions_query(options, consensus_blocks) do
+    from(
+      it in InternalTransaction,
+      inner_join: block in subquery(consensus_blocks),
+      on: it.block_number == block.number,
+      order_by: [
+        {^options.order_by_direction, it.block_number},
+        {:desc, it.transaction_index},
+        {:desc, it.index}
+      ],
+      limit: ^options.page_size,
+      offset: ^offset(options),
+      select:
+        merge(map(it, ^@internal_transaction_fields), %{
+          block_timestamp: block.timestamp,
+          block_number: block.number
+        })
+    )
   end
 
   @doc """

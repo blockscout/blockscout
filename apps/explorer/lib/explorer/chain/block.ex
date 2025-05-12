@@ -11,6 +11,7 @@ defmodule Explorer.Chain.Block.Schema do
     Address,
     Block,
     Hash,
+    InternalTransaction,
     PendingBlockOperation,
     Transaction,
     Wei,
@@ -165,6 +166,8 @@ defmodule Explorer.Chain.Block.Schema do
         has_many(:transactions, Transaction, references: :hash)
         has_many(:transaction_forks, Transaction.Fork, foreign_key: :uncle_hash, references: :hash)
 
+        has_many(:internal_transactions, InternalTransaction, foreign_key: :block_hash, references: :hash)
+
         has_many(:rewards, Reward, foreign_key: :block_hash, references: :hash)
 
         has_many(:withdrawals, Withdrawal, foreign_key: :block_hash, references: :hash)
@@ -283,12 +286,6 @@ defmodule Explorer.Chain.Block do
   end
 
   def blocks_without_reward_query do
-    consensus_blocks_query =
-      from(
-        block in __MODULE__,
-        where: block.consensus == true
-      )
-
     validator_rewards =
       from(
         r in Reward,
@@ -296,10 +293,24 @@ defmodule Explorer.Chain.Block do
       )
 
     from(
-      b in subquery(consensus_blocks_query),
+      b in subquery(consensus_blocks_query()),
       left_join: r in subquery(validator_rewards),
       on: [block_hash: b.hash],
       where: is_nil(r.block_hash)
+    )
+  end
+
+  @doc """
+    Returns a query that filters blocks where consensus is true.
+
+    ## Returns
+    - An `Ecto.Query.t()` that can be used to fetch consensus blocks.
+  """
+  @spec consensus_blocks_query() :: Ecto.Query.t()
+  def consensus_blocks_query do
+    from(
+      block in __MODULE__,
+      where: block.consensus == true
     )
   end
 

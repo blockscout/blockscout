@@ -11,13 +11,11 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   require Logger
 
+  alias Explorer.Chain.SmartContract
   alias Explorer.ChainSpec.Geth.Importer, as: GethImporter
   alias Explorer.ChainSpec.Parity.Importer
   alias Explorer.Helper
-  alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
   alias HTTPoison.Response
-
-  @interval :timer.minutes(2)
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -25,7 +23,7 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   @impl GenServer
   def init(_) do
-    Process.send_after(self(), :import, @interval)
+    Process.send_after(self(), :import, Application.get_env(:explorer, __MODULE__)[:genesis_processing_delay])
 
     {:ok, %{}}
   end
@@ -86,6 +84,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   @spec fetch_genesis_data() :: Task.t() | :ok
   def fetch_genesis_data do
     chain_spec_path = get_path(:chain_spec_path)
+    Logger.info(fn -> "Fetching chain spec path: #{inspect(chain_spec_path)}." end)
     precompiled_config_path = get_path(:precompiled_config_path)
     Logger.info(fn -> "Fetching precompiled config path: #{inspect(precompiled_config_path)}." end)
 
@@ -310,14 +309,12 @@ defmodule Explorer.ChainSpec.GenesisData do
         verified_via_eth_bytecode_db: false,
         verified_via_verifier_alliance: false,
         partially_verified: false,
-        is_vyper_contract: false,
         autodetect_constructor_args: nil,
-        is_yul: false,
         compiler_settings: nil,
         license_type: :none
       }
 
-      SolidityPublisher.create_or_update_smart_contract(contract["address"], attrs)
+      SmartContract.create_or_update_smart_contract(contract["address"], attrs, false)
     end)
   end
 end

@@ -29,12 +29,42 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
+  alias Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks, as: ConfirmationsTasks
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
 
   require Logger
+
+  @type new_executions_data_map :: %{
+          :start_block => non_neg_integer()
+        }
+
+  @type historical_executions_data_map :: %{
+          :end_block => non_neg_integer()
+        }
+
+  @typep executions_related_state :: %{
+           :config => %{
+             :l1_outbox_address => binary(),
+             :l1_rollup_init_block => non_neg_integer(),
+             :l1_rpc => %{
+               :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+               :logs_block_range => non_neg_integer(),
+               optional(any()) => any()
+             },
+             :rollup_first_block => non_neg_integer(),
+             optional(any()) => any()
+           },
+           :task_data => %{
+             :new_executions => new_executions_data_map(),
+             :historical_executions => historical_executions_data_map(),
+             :historical_confirmations => ConfirmationsTasks.historical_confirmations_data_map(),
+             optional(any()) => any()
+           },
+           optional(any()) => any()
+         }
 
   @doc """
     Discovers and processes new executions of L2-to-L1 messages within the current L1 block range.
@@ -54,33 +84,19 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       - `data`: Contains the starting block number for new execution discovery.
 
     ## Returns
-    - `{:ok, end_block}`: On successful discovery and processing, where `end_block`
-                          indicates the necessity to consider next block range in the
-                          following iteration of new executions discovery.
-    - `{:ok, start_block - 1}`: when no new blocks on L1 produced from the last
-                                iteration of the new executions discovery.
+    - `{:ok, state}`: On successful discovery and processing, where `state` includes
+      an updated `start_block` for the next iteration if new blocks were processed,
+      or remains unchanged if no new blocks were found on L1.
   """
-  @spec discover_new_l1_messages_executions(%{
-          :config => %{
-            :l1_outbox_address => binary(),
-            :l1_rpc => %{
-              :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
-              :logs_block_range => non_neg_integer(),
-              optional(any()) => any()
-            },
-            optional(any()) => any()
-          },
-          :data => %{:new_executions_start_block => non_neg_integer(), optional(any()) => any()},
-          optional(any()) => any()
-        }) :: {:ok, non_neg_integer()}
+  @spec discover_new_l1_messages_executions(executions_related_state()) :: {:ok, executions_related_state()}
   def discover_new_l1_messages_executions(
         %{
           config: %{
             l1_rpc: l1_rpc_config,
             l1_outbox_address: outbox_address
           },
-          data: %{new_executions_start_block: start_block}
-        } = _state
+          task_data: %{new_executions: %{start_block: start_block}}
+        } = state
       ) do
     # Requesting the "latest" block instead of "safe" allows to catch executions
     # without latency.
@@ -98,9 +114,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
       discover(outbox_address, start_block, end_block, l1_rpc_config)
 
-      {:ok, end_block}
+      # The next iteration will start from the next block after the last processed block
+      {:ok, ArbitrumHelper.update_fetcher_task_data(state, :new_executions, %{start_block: end_block + 1})}
     else
-      {:ok, start_block - 1}
+      # No new blocks on L1 produced from the last iteration of the new executions discovery
+      {:ok, state}
     end
   end
 
@@ -118,53 +136,80 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     ## Parameters
     - A map containing:
       - `config`: Configuration settings including the Arbitrum outbox contract
-                  address, the initialization block for the rollup, and JSON RPC
-                  arguments.
+        address, the initialization block for the rollup, and JSON RPC arguments.
       - `data`: Contains the ending block number for the historical execution
                 discovery.
 
     ## Returns
-    - `{:ok, start_block}`: On successful discovery and processing, where
-      `start_block` indicates the necessity to consider another block range in the
-      next iteration of historical executions discovery.
-    - `{:ok, l1_rollup_init_block}`: If the historical discovery process has reached
-      the rollup initialization block, indicating that no further action is needed.
+    - `{:ok, state}`: On successful discovery and processing, where `state` includes
+      an updated `end_block` for the next iteration. If executions were found,
+      `end_block` is set to the block before the last processed block. If the
+      historical discovery process has reached the lowest L1 block that needs to
+      be checked, `end_block` is set to one block before that lowest block.
   """
-  @spec discover_historical_l1_messages_executions(%{
-          :config => %{
-            :l1_outbox_address => binary(),
-            :l1_rollup_init_block => non_neg_integer(),
-            :l1_rpc => %{
-              :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
-              :logs_block_range => non_neg_integer(),
-              optional(any()) => any()
-            },
-            optional(any()) => any()
-          },
-          :data => %{:historical_executions_end_block => non_neg_integer(), optional(any()) => any()},
-          optional(any()) => any()
-        }) :: {:ok, non_neg_integer()}
+  @spec discover_historical_l1_messages_executions(executions_related_state()) :: {:ok, executions_related_state()}
   def discover_historical_l1_messages_executions(
         %{
           config: %{
             l1_rpc: l1_rpc_config,
-            l1_outbox_address: outbox_address,
-            l1_rollup_init_block: l1_rollup_init_block
+            l1_outbox_address: outbox_address
           },
-          data: %{historical_executions_end_block: end_block}
-        } = _state
+          task_data: %{historical_executions: %{end_block: end_block}}
+        } = state
       ) do
-    if end_block >= l1_rollup_init_block do
-      start_block = max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
+    # This is used to optimize historical discovery processes by avoiding scanning
+    # blocks before the first possible confirmation. Since cross-chain message
+    # executions on the parent chain cannot occur before their corresponding L2
+    # blocks are confirmed, this provides a safe lower bound for message execution
+    # discovery.
+    {lowest_l1_block, new_state} = ConfirmationsTasks.get_lowest_l1_block_for_confirmations(state)
 
-      log_info("Block range for historical l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
+    data_for_next_iteration =
+      if end_block >= lowest_l1_block do
+        start_block = max(lowest_l1_block, end_block - l1_rpc_config.logs_block_range + 1)
 
-      discover(outbox_address, start_block, end_block, l1_rpc_config)
+        log_info("Block range for historical l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
 
-      {:ok, start_block}
-    else
-      {:ok, l1_rollup_init_block}
-    end
+        discover(outbox_address, start_block, end_block, l1_rpc_config)
+
+        # The next iteration will consider the block range which ends by the block
+        # before the last processed block
+        %{end_block: start_block - 1}
+      else
+        # The historical discovery process has reached the lowest L1 block that
+        # needs to be checked for executions
+        %{end_block: lowest_l1_block - 1}
+      end
+
+    {:ok, ArbitrumHelper.update_fetcher_task_data(new_state, :historical_executions, data_for_next_iteration)}
+  end
+
+  @doc """
+    Determines whether the historical executions discovery process has completed.
+
+    This function checks if the end block of historical executions discovery has
+    reached below the lowest L1 block that needs to be checked for executions.
+    When this happens, it means we have searched back far enough in history and can
+    stop the historical discovery process.
+
+    ## Parameters
+    - A map containing:
+      - `task_data`: Contains historical executions data with an end block
+      - Other configuration needed to determine the lowest L1 block
+
+    ## Returns
+    - `true` if the end block is less than the lowest L1 block that needs checking
+    - `false` otherwise
+  """
+  @spec historical_executions_discovery_completed?(executions_related_state()) :: boolean()
+  def historical_executions_discovery_completed?(
+        %{
+          task_data: %{historical_executions: %{end_block: end_block}}
+        } = state
+      ) do
+    {lowest_l1_block, _} = ConfirmationsTasks.get_lowest_l1_block_for_confirmations(state)
+
+    end_block < lowest_l1_block
   end
 
   # Discovers and imports execution transactions for L2-to-L1 messages within a specified L1 block range.

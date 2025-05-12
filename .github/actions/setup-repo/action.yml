@@ -1,11 +1,8 @@
 name: 'Setup repo'
 description: 'Setup repo: checkout/login/extract metadata, Set up Docker Buildx'
 inputs:
-  docker-username:
-    description: 'Docker username'
-    required: true
-  docker-password:
-    description: 'Docker password'
+  github-token:
+    description: 'GitHub token for ghcr.io authentication'
     required: true
   docker-remote-multi-platform:
     description: 'Docker remote multi-platform builder'
@@ -20,7 +17,7 @@ inputs:
   docker-image:
     description: 'Docker image'
     required: true
-    default: blockscout/blockscout
+    default: ghcr.io/blockscout/blockscout
 outputs:
   docker-builder:
     description: 'Docker builder'
@@ -71,11 +68,12 @@ runs:
           - endpoint: ssh://root@${{ env.BUILDER_IP }}
             platforms: linux/arm64/v8
 
-    - name: Log in to Docker Hub
+    - name: Log in to GitHub Container Registry
       uses: docker/login-action@v3
       with:
-        username: ${{ inputs.docker-username }}
-        password: ${{ inputs.docker-password }}
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ inputs.github-token }}
 
     - name: Extract metadata (tags, labels) for Docker
       id: meta
