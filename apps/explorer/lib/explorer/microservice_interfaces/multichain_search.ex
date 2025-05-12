@@ -225,22 +225,25 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       api_key: api_key,
       chain_id: chain_id_string,
       addresses: [],
-      block_ranges: block_ranges
+      block_ranges: []
     }
 
     if Enum.empty?(indexed_addresses_chunks) do
       [
         base_data_chunk
         |> Map.put(:hashes, block_transaction_hashes)
+        |> Map.put(:block_ranges, block_ranges)
       ]
     else
       Enum.map(indexed_addresses_chunks, fn {addresses_chunk, index} ->
-        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-        hashes = if index == 0, do: block_transaction_hashes, else: []
+        # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+        hashes_in_chunk = if index == 0, do: block_transaction_hashes, else: []
+        block_ranges_in_chunk = if index == 0, do: block_ranges, else: []
 
         base_data_chunk
         |> Map.put(:addresses, addresses_chunk)
-        |> Map.put(:hashes, hashes)
+        |> Map.put(:hashes, hashes_in_chunk)
+        |> Map.put(:block_ranges, block_ranges_in_chunk)
       end)
     end
   end

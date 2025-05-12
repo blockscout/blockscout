@@ -1,5 +1,5 @@
 defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
   use Explorer.DataCase
   import Mox
 
@@ -76,7 +76,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       Application.put_env(:explorer, MultichainSearch, service_url: "http://localhost:#{bypass.port}", api_key: "12345")
 
       on_exit(fn ->
-        Repo.delete_all(MultichainSearchDbExportRetryQueue)
         Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil)
         Bypass.down(bypass)
       end)
@@ -211,7 +210,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
 
-      assert length(chunks) == 1
       assert Enum.count(chunks) == 1
 
       chunk = List.first(chunks)
@@ -251,6 +249,81 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
              ]
     end
 
+    test "returns multiple chunks with the correct structure when all types of data is provided" do
+      addresses =
+        for _ <- 0..7001 do
+          insert(:address)
+        end
+
+      block_1 = insert(:block)
+      block_2 = insert(:block)
+      transaction_1 = insert(:transaction)
+      transaction_2 = insert(:transaction)
+
+      params = %{
+        addresses: addresses,
+        blocks: [block_1, block_2],
+        transactions: [transaction_1, transaction_2]
+      }
+
+      chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
+
+      assert Enum.count(chunks) == 2
+
+      first_chunk = List.first(chunks)
+      second_chunk = List.last(chunks)
+
+      assert first_chunk[:api_key] == "12345"
+      assert first_chunk[:chain_id] == "1"
+
+      assert Enum.count(first_chunk[:addresses]) == 7000
+      assert Enum.count(second_chunk[:addresses]) == 2
+
+      random_index_in_first_chunk = Enum.random(0..6999)
+
+      assert Enum.any?(first_chunk[:addresses], fn item ->
+               item.hash ==
+                 "0x" <> Base.encode16(Enum.at(addresses, random_index_in_first_chunk).hash.bytes, case: :lower)
+             end)
+
+      assert first_chunk[:block_ranges] == [
+               %{
+                 max_block_number: to_string(max(block_1.number, block_2.number)),
+                 min_block_number: to_string(min(block_1.number, block_2.number))
+               }
+             ]
+
+      assert first_chunk[:hashes] == [
+               %{
+                 hash: "0x" <> Base.encode16(block_1.hash.bytes, case: :lower),
+                 hash_type: "BLOCK"
+               },
+               %{
+                 hash: "0x" <> Base.encode16(block_2.hash.bytes, case: :lower),
+                 hash_type: "BLOCK"
+               },
+               %{
+                 hash: "0x" <> Base.encode16(transaction_1.hash.bytes, case: :lower),
+                 hash_type: "TRANSACTION"
+               },
+               %{
+                 hash: "0x" <> Base.encode16(transaction_2.hash.bytes, case: :lower),
+                 hash_type: "TRANSACTION"
+               }
+             ]
+
+      assert second_chunk[:api_key] == "12345"
+      assert second_chunk[:chain_id] == "1"
+
+      assert second_chunk[:block_ranges] == []
+      assert second_chunk[:hashes] == []
+
+      assert Enum.all?(second_chunk[:addresses], fn item ->
+               item.hash == "0x" <> Base.encode16(Enum.at(addresses, -2).hash.bytes, case: :lower) ||
+                 item.hash == "0x" <> Base.encode16(List.last(addresses).hash.bytes, case: :lower)
+             end)
+    end
+
     test "returns chunks with the correct structure when only addresses are provided" do
       address_1 = insert(:address)
       address_2 = insert(:address)
@@ -263,7 +336,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
 
-      assert length(chunks) == 1
       assert Enum.count(chunks) == 1
 
       chunk = List.first(chunks)
@@ -297,7 +369,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
 
-      assert length(chunks) == 1
       assert Enum.count(chunks) == 1
 
       chunk = List.first(chunks)
