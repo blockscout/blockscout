@@ -89,7 +89,12 @@ defmodule Explorer.Application do
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       {Redix, redix_opts()},
       {Explorer.Utility.MissingRangesManipulator, []},
-      {Explorer.Utility.ReplicaAccessibilityManager, []}
+      {Explorer.Utility.ReplicaAccessibilityManager, []},
+      :hackney_pool.child_spec(:default,
+        recv_timeout: 60_000,
+        timeout: 60_000,
+        max_connections: Application.get_env(:explorer, :hackney_default_pool_size)
+      )
     ]
 
     children = base_children ++ configurable_children()
