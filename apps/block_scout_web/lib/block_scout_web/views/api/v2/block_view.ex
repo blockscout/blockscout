@@ -40,6 +40,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "transactions_count" => count_transactions(block),
       # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
       "transaction_count" => count_transactions(block),
+      "internal_transactions_count" => count_internal_transactions(block),
       "miner" => Helper.address_with_info(nil, block.miner, block.miner_hash, false),
       "size" => block.size,
       "hash" => block.hash,
@@ -96,11 +97,17 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
   def burnt_fees_percentage(_, _), do: nil
 
-  def count_transactions(%Block{transactions: transactions}) when is_list(transactions), do: Enum.count(transactions)
-  def count_transactions(_), do: nil
+  defp count_transactions(%Block{transactions: transactions}) when is_list(transactions), do: Enum.count(transactions)
+  defp count_transactions(_), do: nil
 
-  def count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
-  def count_withdrawals(_), do: nil
+  defp count_internal_transactions(%Block{internal_transactions: internal_transactions})
+       when is_list(internal_transactions),
+       do: Enum.count(internal_transactions)
+
+  defp count_internal_transactions(_), do: nil
+
+  defp count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
+  defp count_withdrawals(_), do: nil
 
   case @chain_type do
     :rsk ->
