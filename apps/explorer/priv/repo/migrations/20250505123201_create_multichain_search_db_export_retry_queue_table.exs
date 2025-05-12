@@ -9,7 +9,7 @@ defmodule Explorer.Repo.Migrations.CreateMultichainSearchDbExportRetryQueueTable
 
     create table(:multichain_search_db_export_retry_queue, primary_key: false) do
       add(:hash, :bytea, null: false, primary_key: true)
-      add(:hash_type, :multichain_search_hash_type, null: false)
+      add(:hash_type, :multichain_search_hash_type, null: false, primary_key: true)
 
       timestamps(null: false, type: :utc_datetime_usec)
     end

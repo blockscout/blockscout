@@ -1,0 +1,356 @@
+defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
+  use ExUnit.Case, async: true
+  use Explorer.DataCase
+  import Mox
+
+  alias Explorer.Chain.Cache.ChainId
+  alias Explorer.Chain.MultichainSearchDbExportRetryQueue
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
+  alias Explorer.Repo
+  alias Plug.Conn
+
+  setup :verify_on_exit!
+
+  @error_msg "Error while sending request to Multichain Search DB Service"
+
+  describe "batch_import/2" do
+    setup do
+      Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
+
+      :ok
+    end
+
+    test "returns {:ok, :service_disabled} when the service is disabled" do
+      params = %{
+        addresses: [],
+        blocks: [],
+        transactions: []
+      }
+
+      assert MultichainSearch.batch_import(params) == {:ok, :service_disabled}
+    end
+
+    test "processes chunks and returns {:ok, result} when the service is enabled" do
+      bypass = Bypass.open()
+      Application.put_env(:explorer, MultichainSearch, service_url: "http://localhost:#{bypass.port}", api_key: "12345")
+
+      on_exit(fn ->
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil)
+        Bypass.down(bypass)
+      end)
+
+      get_chain_id_mock()
+
+      Bypass.expect_once(bypass, "POST", "/api/v1/import:batch", fn conn ->
+        Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{"status" => "ok"})
+        )
+      end)
+
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+
+      block_1 = insert(:block)
+      block_2 = insert(:block)
+
+      transaction_1 = insert(:transaction)
+      transaction_2 = insert(:transaction)
+
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+
+      params = %{
+        addresses: [address_1, address_2],
+        blocks: [block_1, block_2],
+        transactions: [transaction_1, transaction_2]
+      }
+
+      assert {:ok, {:chunks_processed, _}} = MultichainSearch.batch_import(params)
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+    end
+
+    test "returns {:error, reason} when an error occurs during processing and 'multichain_search_db_export_retry_queue' table is populated" do
+      bypass = Bypass.open()
+      Application.put_env(:explorer, MultichainSearch, service_url: "http://localhost:#{bypass.port}", api_key: "12345")
+
+      on_exit(fn ->
+        Repo.delete_all(MultichainSearchDbExportRetryQueue)
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil)
+        Bypass.down(bypass)
+      end)
+
+      get_chain_id_mock()
+
+      Bypass.expect_once(bypass, "POST", "/api/v1/import:batch", fn conn ->
+        Conn.resp(
+          conn,
+          500,
+          Jason.encode!(%{"code" => 0, "message" => "Error"})
+        )
+      end)
+
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+      block_1 = insert(:block)
+      block_2 = insert(:block)
+      transaction_1 = insert(:transaction) |> with_block(block_1)
+      transaction_2 = insert(:transaction) |> with_block(block_2)
+
+      params = %{
+        addresses: [address_1, address_2],
+        blocks: [block_1, block_2],
+        transactions: [transaction_1, transaction_2]
+      }
+
+      assert {:error, @error_msg} = MultichainSearch.batch_import(params)
+
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 6
+      records = Repo.all(MultichainSearchDbExportRetryQueue)
+
+      assert Enum.all?(records, fn record ->
+               (record.hash == address_1.hash.bytes && record.hash_type == :address) ||
+                 (record.hash == address_2.hash.bytes && record.hash_type == :address) ||
+                 (record.hash == block_1.hash.bytes && record.hash_type == :block) ||
+                 (record.hash == block_2.hash.bytes && record.hash_type == :block) ||
+                 (record.hash == transaction_1.hash.bytes && record.hash_type == :transaction) ||
+                 (record.hash == transaction_2.hash.bytes && record.hash_type == :transaction)
+             end)
+    end
+  end
+
+  describe "extract_batch_import_params_into_chunks/1" do
+    setup do
+      get_chain_id_mock()
+      Application.put_env(:explorer, MultichainSearch, api_key: "12345")
+      Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
+
+      on_exit(fn ->
+        Application.put_env(:explorer, MultichainSearch, api_key: nil)
+      end)
+
+      :ok
+    end
+
+    test "returns empty chunks when no data is provided" do
+      ChainId.get_id()
+
+      assert MultichainSearch.extract_batch_import_params_into_chunks(%{
+               addresses: [],
+               blocks: [],
+               transactions: []
+             }) == [%{api_key: "12345", addresses: [], block_ranges: [], chain_id: "1", hashes: []}]
+    end
+
+    test "returns chunks with transactions and blocks when no addresses provided" do
+      block_1 = insert(:block)
+      block_2 = insert(:block)
+      transaction_1 = insert(:transaction)
+      transaction_2 = insert(:transaction)
+
+      params = %{
+        addresses: [],
+        blocks: [block_1, block_2],
+        transactions: [transaction_1, transaction_2]
+      }
+
+      chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
+
+      assert Enum.count(chunks) == 1
+
+      chunk = List.first(chunks)
+
+      assert chunk[:api_key] == "12345"
+      assert chunk[:chain_id] == "1"
+      assert length(chunk[:addresses]) == 0
+
+      assert chunk[:block_ranges] == [
+               %{
+                 max_block_number: to_string(max(block_1.number, block_2.number)),
+                 min_block_number: to_string(min(block_1.number, block_2.number))
+               }
+             ]
+
+      assert chunk[:hashes] == [
+               %{
+                 hash: "0x" <> Base.encode16(block_1.hash.bytes, case: :lower),
+                 hash_type: "BLOCK"
+               },
+               %{
+                 hash: "0x" <> Base.encode16(block_2.hash.bytes, case: :lower),
+                 hash_type: "BLOCK"
+               },
+               %{
+                 hash: "0x" <> Base.encode16(transaction_1.hash.bytes, case: :lower),
+                 hash_type: "TRANSACTION"
+               },
+               %{
+                 hash: "0x" <> Base.encode16(transaction_2.hash.bytes, case: :lower),
+                 hash_type: "TRANSACTION"
+               }
+             ]
+    end
+
+    test "returns chunks with the correct structure when all types of data is provided" do
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+      block_1 = insert(:block)
+      block_2 = insert(:block)
+      transaction_1 = insert(:transaction)
+      transaction_2 = insert(:transaction)
+
+      params = %{
+        addresses: [address_1, address_2],
+        blocks: [block_1, block_2],
+        transactions: [transaction_1, transaction_2]
+      }
+
+      chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
+
+      assert length(chunks) == 1
+      assert Enum.count(chunks) == 1
+
+      chunk = List.first(chunks)
+
+      assert chunk[:api_key] == "12345"
+      assert chunk[:chain_id] == "1"
+
+      assert Enum.all?(chunk[:addresses], fn item ->
+               item.hash == "0x" <> Base.encode16(address_1.hash.bytes, case: :lower) ||
+                 item.hash == "0x" <> Base.encode16(address_2.hash.bytes, case: :lower)
+             end)
+
+      assert chunk[:block_ranges] == [
+               %{
+                 max_block_number: to_string(max(block_1.number, block_2.number)),
+                 min_block_number: to_string(min(block_1.number, block_2.number))
+               }
+             ]
+
+      assert chunk[:hashes] == [
+               %{
+                 hash: "0x" <> Base.encode16(block_1.hash.bytes, case: :lower),
+                 hash_type: "BLOCK"
+               },
+               %{
+                 hash: "0x" <> Base.encode16(block_2.hash.bytes, case: :lower),
+                 hash_type: "BLOCK"
+               },
+               %{
+                 hash: "0x" <> Base.encode16(transaction_1.hash.bytes, case: :lower),
+                 hash_type: "TRANSACTION"
+               },
+               %{
+                 hash: "0x" <> Base.encode16(transaction_2.hash.bytes, case: :lower),
+                 hash_type: "TRANSACTION"
+               }
+             ]
+    end
+
+    test "returns chunks with the correct structure when only addresses are provided" do
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+
+      params = %{
+        addresses: [address_1, address_2],
+        blocks: [],
+        transactions: []
+      }
+
+      chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
+
+      assert length(chunks) == 1
+      assert Enum.count(chunks) == 1
+
+      chunk = List.first(chunks)
+
+      assert chunk[:api_key] == "12345"
+      assert chunk[:chain_id] == "1"
+
+      assert Enum.all?(chunk[:addresses], fn item ->
+               item.hash == "0x" <> Base.encode16(address_1.hash.bytes, case: :lower) ||
+                 item.hash == "0x" <> Base.encode16(address_2.hash.bytes, case: :lower)
+             end)
+
+      assert chunk[:block_ranges] == []
+      assert chunk[:hashes] == []
+    end
+
+    test "returns chunks with the correct structure of addresses" do
+      address_1 = insert(:address, ens_domain_name: "te.eth")
+      address_2 = insert(:address, contract_code: "0x1234")
+      address_3 = insert(:address, contract_code: "0x1234", verified: true)
+      insert(:smart_contract, address_hash: address_3.hash, contract_code_md5: "123")
+      insert(:token, %{contract_address: address_3, name: "Main Token", type: "ERC-721"})
+
+      address_3_with_preloads = address_3 |> Repo.preload([:smart_contract, :token])
+
+      params = %{
+        addresses: [address_1, address_2, address_3_with_preloads],
+        blocks: [],
+        transactions: []
+      }
+
+      chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
+
+      assert length(chunks) == 1
+      assert Enum.count(chunks) == 1
+
+      chunk = List.first(chunks)
+
+      assert chunk[:api_key] == "12345"
+      assert chunk[:chain_id] == "1"
+
+      assert chunk[:addresses] == [
+               %{
+                 hash: "0x" <> Base.encode16(address_1.hash.bytes, case: :lower),
+                 is_contract: false,
+                 is_verified_contract: false,
+                 contract_name: nil,
+                 token_name: nil,
+                 token_type: "UNSPECIFIED",
+                 is_token: false,
+                 ens_name: "te.eth"
+               },
+               %{
+                 hash: "0x" <> Base.encode16(address_2.hash.bytes, case: :lower),
+                 is_contract: true,
+                 is_verified_contract: false,
+                 contract_name: nil,
+                 token_name: nil,
+                 token_type: "UNSPECIFIED",
+                 is_token: false,
+                 ens_name: nil
+               },
+               %{
+                hash: "0x" <> Base.encode16(address_3.hash.bytes, case: :lower),
+                is_contract: true,
+                is_verified_contract: true,
+                contract_name: "SimpleStorage",
+                token_name: "Main Token",
+                token_type: "ERC-721",
+                is_token: true,
+                ens_name: nil
+              }
+             ]
+
+      assert chunk[:block_ranges] == []
+      assert chunk[:hashes] == []
+    end
+  end
+
+  defp get_chain_id_mock() do
+    expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn %{
+                                                   id: _id,
+                                                   method: "eth_chainId",
+                                                   params: []
+                                                 },
+                                                 _options ->
+      {:ok, "0x1"}
+    end)
+  end
+end

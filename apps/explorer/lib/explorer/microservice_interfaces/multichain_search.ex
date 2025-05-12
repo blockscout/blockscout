@@ -147,6 +147,39 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
+  @doc """
+  Extracts batch import parameters into chunks for processing.
+
+  This function takes a map containing `addresses`, `blocks`, and `transactions`,
+  and processes them into chunks suitable for batch import. It performs the following steps:
+
+  - Retrieves the chain ID.
+  - Computes block ranges from the given blocks.
+  - Preloads associated `:token` and `:smart_contract` data for the addresses, removes duplicates, and formats them.
+  - Formats the blocks and transactions into hashes.
+  - Combines block hashes and transaction hashes into a single list of `block_transaction_hashes`.
+  - Splits the formatted addresses into chunks of size `@addresses_chunk_size` and indexes them.
+  - Constructs a base data chunk containing the API key, chain ID, and block ranges.
+
+  The function returns a list of data chunks. If there are no addresses, it returns a single chunk with only the `block_transaction_hashes`. Otherwise, it creates a chunk for each group of addresses, including the `block_transaction_hashes` only in the first chunk.
+
+  ## Parameters
+
+  - `%{addresses: raw_addresses, blocks: blocks, transactions: transactions}`: A map containing:
+    - `addresses`: A list of raw address data.
+    - `blocks`: A list of block data.
+    - `transactions`: A list of transaction data.
+
+  ## Returns
+
+  - A list of maps, where each map represents a chunk of data for batch import. Each chunk contains:
+    - `:api_key`: The API key for the request.
+    - `:chain_id`: The chain ID as a string.
+    - `:addresses`: A chunk of formatted addresses.
+    - `:block_ranges`: The computed block ranges.
+    - `:hashes`: A list of block and transaction hashes (only included in the first chunk).
+
+  """
   @spec extract_batch_import_params_into_chunks(%{
           addresses: [Address.t()],
           blocks: [Block.t()],
@@ -160,11 +193,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
             hashes: [%{hash: String.t(), hash_type: String.t()}]
           }
         ]
-  defp extract_batch_import_params_into_chunks(%{
-         addresses: raw_addresses,
-         blocks: blocks,
-         transactions: transactions
-       }) do
+  def extract_batch_import_params_into_chunks(%{
+        addresses: raw_addresses,
+        blocks: blocks,
+        transactions: transactions
+      }) do
     chain_id = ChainId.get_id()
     block_ranges = get_block_ranges(blocks)
 
