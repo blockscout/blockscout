@@ -6,7 +6,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.MultichainSearchDbExportRetryQueue
   alias Explorer.MicroserviceInterfaces.MultichainSearch
-  alias Explorer.Repo
+  alias Explorer.{Repo, TestHelper}
   alias Plug.Conn
 
   setup :verify_on_exit!
@@ -40,7 +40,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Bypass.down(bypass)
       end)
 
-      get_chain_id_mock()
+      TestHelper.get_chain_id_mock()
 
       Bypass.expect_once(bypass, "POST", "/api/v1/import:batch", fn conn ->
         Conn.resp(
@@ -80,7 +80,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Bypass.down(bypass)
       end)
 
-      get_chain_id_mock()
+      TestHelper.get_chain_id_mock()
 
       Bypass.expect_once(bypass, "POST", "/api/v1/import:batch", fn conn ->
         Conn.resp(
@@ -123,7 +123,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
   describe "extract_batch_import_params_into_chunks/1" do
     setup do
-      get_chain_id_mock()
+      TestHelper.get_chain_id_mock()
       Application.put_env(:explorer, MultichainSearch, api_key: "12345")
       Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
       Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
@@ -136,6 +136,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
     end
 
     test "returns empty chunks when no data is provided" do
+      # filling chain_id cache
       ChainId.get_id()
 
       assert MultichainSearch.extract_batch_import_params_into_chunks(%{
@@ -412,16 +413,5 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert chunk[:block_ranges] == []
       assert chunk[:hashes] == []
     end
-  end
-
-  defp get_chain_id_mock() do
-    expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn %{
-                                                   id: _id,
-                                                   method: "eth_chainId",
-                                                   params: []
-                                                 },
-                                                 _options ->
-      {:ok, "0x1"}
-    end)
   end
 end

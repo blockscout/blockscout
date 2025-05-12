@@ -97,19 +97,23 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.Retry do
       |> Map.drop([:block_hashes])
 
     case MultichainSearch.batch_import(prepared_export_data, true) do
-      {:ok, _} ->
-        export_data
-        |> Enum.map(&Map.get(&1, :hash))
-        |> MultichainSearchDbExportRetryQueue.by_hashes_query()
-        |> Repo.delete_all()
+      {:ok, result} ->
+        unless result == :service_disabled do
+          export_data
+          |> Enum.map(&Map.get(&1, :hash))
+          |> MultichainSearchDbExportRetryQueue.by_hashes_query()
+          |> Repo.delete_all()
+        end
+
+        :ok
 
       {:error, _} ->
         Logger.error(fn ->
           ["#{@failed_to_re_export_data_error}", "#{inspect(prepared_export_data)}"]
         end)
-    end
 
-    :ok
+        {:retry, export_data}
+    end
   end
 
   defp defaults do
