@@ -25,7 +25,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   @proof_maturity_delay_seconds "optimism_proof_maturity_delay_seconds"
 
   @required_attrs ~w(msg_nonce hash l2_transaction_hash l2_block_number)a
-  @game_fields ~w(created_at, resolved_at, status)a
+  @game_fields ~w(created_at resolved_at status)a
 
   @typedoc """
     * `msg_nonce` - A nonce of the withdrawal message.
