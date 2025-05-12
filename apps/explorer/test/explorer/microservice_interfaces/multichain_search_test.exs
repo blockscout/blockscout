@@ -327,15 +327,15 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                  ens_name: nil
                },
                %{
-                hash: "0x" <> Base.encode16(address_3.hash.bytes, case: :lower),
-                is_contract: true,
-                is_verified_contract: true,
-                contract_name: "SimpleStorage",
-                token_name: "Main Token",
-                token_type: "ERC-721",
-                is_token: true,
-                ens_name: nil
-              }
+                 hash: "0x" <> Base.encode16(address_3.hash.bytes, case: :lower),
+                 is_contract: true,
+                 is_verified_contract: true,
+                 contract_name: "SimpleStorage",
+                 token_name: "Main Token",
+                 token_type: "ERC-721",
+                 is_token: true,
+                 ens_name: nil
+               }
              ]
 
       assert chunk[:block_ranges] == []
