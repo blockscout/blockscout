@@ -47,20 +47,18 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
       params_chunks
       |> Task.async_stream(
-        fn export_body -> {http_post_request(batch_import_url(), export_body, retry?), export_body} end,
+        fn export_body -> http_post_request(batch_import_url(), export_body, retry?) end,
         max_concurrency: @max_concurrency,
         timeout: @post_timeout
       )
       |> Enum.reduce_while({:ok, {:chunks_processed, params_chunks}}, fn
-        {:ok, {{:ok, _result}, _export_body}}, acc ->
+        {:ok, {:ok, _result}}, acc ->
           {:cont, acc}
 
-        {:ok, {{:error, _reason}, export_body}}, _acc ->
-          on_error(export_body, retry?)
+        {:ok, {:error, _reason}}, _acc ->
           {:halt, {:error, @request_error_msg}}
 
-        {:exit, {_, export_body}}, _acc ->
-          on_error(export_body, retry?)
+        {:exit, _}, _acc ->
           {:halt, {:error, @request_error_msg}}
       end)
     else
@@ -75,13 +73,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           },
           boolean()
         ) :: {non_neg_integer(), nil | [term()]} | :ok
+  # sobelow_skip ["DOS.StringToAtom"]
   defp on_error(%{addresses: addresses, hashes: hashes}, retry?) do
     hashes_to_retry =
       hashes
       |> Enum.map(
         &%{
           hash: Helper.hash_to_binary(&1.hash),
-          hash_type: &1.hash_type |> String.downcase() |> String.to_existing_atom()
+          hash_type: &1.hash_type |> String.downcase() |> String.to_atom()
         }
       )
 
@@ -105,7 +104,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   defp http_post_request(url, body, retry?) do
     headers = [{"Content-Type", "application/json"}]
 
-    case Application.get_env(:explorer, :http_adapter).post(url, Jason.encode!(body), headers,
+    case (Application.get_env(:explorer, :http_adapter) || HTTPoison).post(url, Jason.encode!(body), headers,
            recv_timeout: @post_timeout,
            hackney: [pool: false]
          ) do

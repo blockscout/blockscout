@@ -7,7 +7,7 @@ defmodule Explorer.Chain.MultichainSearchDbExportRetryQueue do
   import Ecto.Query
   alias Explorer.{Chain, Repo}
 
-  @required_attrs ~w(id min_block_number max_block_number hash hash_type)a
+  @required_attrs ~w(hash hash_type)a
 
   @primary_key false
   typed_schema "multichain_search_db_export_retry_queue" do
