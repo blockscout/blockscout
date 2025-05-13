@@ -1124,7 +1124,9 @@ defmodule Explorer.Chain.Transaction do
   Produces a list of queries starting from the given one and adding filters for
   transactions that are linked to the given address_hash through a direction.
   """
-  def matching_address_queries_list(query, :from, address_hashes) when is_list(address_hashes) do
+  def matching_address_queries_list(query, direction, address_hashes, custom_sorting \\ [])
+
+  def matching_address_queries_list(query, :from, address_hashes, _custom_sorting) when is_list(address_hashes) do
     [
       from(
         a in fragment("SELECT unnest(?) as from_address_hash", type(^address_hashes, {:array, Hash.Address})),
@@ -1140,7 +1142,7 @@ defmodule Explorer.Chain.Transaction do
     ]
   end
 
-  def matching_address_queries_list(query, :to, address_hashes) when is_list(address_hashes) do
+  def matching_address_queries_list(query, :to, address_hashes, _custom_sorting) when is_list(address_hashes) do
     [
       from(
         a in fragment("SELECT unnest(?) as to_address_hash", type(^address_hashes, {:array, Hash.Address})),
@@ -1173,28 +1175,49 @@ defmodule Explorer.Chain.Transaction do
     ]
   end
 
-  def matching_address_queries_list(query, _direction, address_hashes) when is_list(address_hashes) do
+  def matching_address_queries_list(query, _direction, address_hashes, _custom_sorting) when is_list(address_hashes) do
     matching_address_queries_list(query, :from, address_hashes) ++
       matching_address_queries_list(query, :to, address_hashes)
   end
 
-  def matching_address_queries_list(query, :from, address_hash) do
-    [where(query, [t], t.from_address_hash == ^address_hash)]
-  end
+  # in ^[address_hash] addresses this issue: https://github.com/blockscout/blockscout/issues/12393
+  def matching_address_queries_list(query, :from, address_hash, custom_sorting) do
+    order =
+      for {key, :block_number = value} <- custom_sorting do
+        {value, key}
+      end
+      |> Keyword.get(:block_number, :desc)
 
-  def matching_address_queries_list(query, :to, address_hash) do
     [
-      where(query, [t], t.to_address_hash == ^address_hash),
-      where(query, [t], t.created_contract_address_hash == ^address_hash)
+      query
+      |> where([t], t.from_address_hash in ^[address_hash])
+      |> prepend_order_by([t], [{^order, t.from_address_hash}])
     ]
   end
 
-  def matching_address_queries_list(query, _direction, address_hash) do
+  def matching_address_queries_list(query, :to, address_hash, custom_sorting) do
+    order =
+      for {key, :block_number = value} <- custom_sorting do
+        {value, key}
+      end
+      |> Keyword.get(:block_number, :desc)
+
     [
-      where(query, [t], t.from_address_hash == ^address_hash),
-      where(query, [t], t.to_address_hash == ^address_hash),
-      where(query, [t], t.created_contract_address_hash == ^address_hash)
+      query
+      |> where([t], t.to_address_hash in ^[address_hash])
+      |> prepend_order_by([t], [{^order, t.to_address_hash}]),
+      query
+      |> where(
+        [t],
+        t.created_contract_address_hash in ^[address_hash]
+      )
+      |> prepend_order_by([t], [{^order, t.created_contract_address_hash}])
     ]
+  end
+
+  def matching_address_queries_list(query, _direction, address_hash, custom_sorting) do
+    matching_address_queries_list(query, :from, address_hash, custom_sorting) ++
+      matching_address_queries_list(query, :to, address_hash, custom_sorting)
   end
 
   def not_pending_transactions(query) do
@@ -1577,13 +1600,14 @@ defmodule Explorer.Chain.Transaction do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     old_ui? = old_ui? || is_tuple(Keyword.get(options, :paging_options, Chain.default_paging_options()).key)
+    sorting_options = Keyword.get(options, :sorting, [])
 
     options
     |> address_to_transactions_tasks_query(false, old_ui?)
     |> not_dropped_or_replaced_transactions()
     |> Chain.join_associations(necessity_by_association)
     |> put_has_token_transfers_to_transaction(old_ui?)
-    |> matching_address_queries_list(direction, address_hash)
+    |> matching_address_queries_list(direction, address_hash, sorting_options)
     |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query) end) end)
   end
 
@@ -1650,17 +1674,11 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  defp compare_custom_sorting([{block_order, :block_number}, {index_order, :index}]) do
-    fn a, b ->
-      case {Helper.compare(a.block_number, b.block_number), Helper.compare(a.index, b.index)} do
-        {:eq, :eq} -> compare_default_sorting(a, b)
-        {:eq, :gt} -> index_order == :desc
-        {:eq, :lt} -> index_order == :asc
-        {:gt, _} -> block_order == :desc
-        {:lt, _} -> block_order == :asc
-      end
-    end
-  end
+  defp compare_custom_sorting([{:desc, :block_number}, {:desc, :index}, {:desc, :inserted_at}, {:asc, :hash}]),
+    do: &compare_default_sorting/2
+
+  defp compare_custom_sorting([{:asc, :block_number}, {:asc, :index}, {:asc, :inserted_at}, {:desc, :hash}]),
+    do: &(!compare_default_sorting(&1, &2))
 
   defp compare_custom_sorting([{:dynamic, :fee, order, _dynamic_fee}]) do
     fn a, b ->
