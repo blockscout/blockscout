@@ -105,7 +105,10 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   defp http_post_request(url, body, retry?) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout, hackney: [pool: false]) do
+    case Application.get_env(:explorer, :http_adapter).post(url, Jason.encode!(body), headers,
+           recv_timeout: @post_timeout,
+           hackney: [pool: false]
+         ) do
       {:ok, %Response{body: response_body, status_code: 200}} ->
         response_body |> Jason.decode()
 

@@ -119,6 +119,55 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                  (record.hash == transaction_2.hash.bytes && record.hash_type == :transaction)
              end)
     end
+
+    test "returns {:error, reason} when at least one chunk is failed" do
+      Application.put_env(:explorer, MultichainSearch, service_url: "http://localhost:1234", api_key: "12345")
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil)
+        Application.put_env(:explorer, :http_adapter, HTTPoison)
+      end)
+
+      TestHelper.get_chain_id_mock()
+
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+
+      block_1 = insert(:block)
+      block_2 = insert(:block)
+
+      transaction_1 = insert(:transaction)
+      transaction_2 = insert(:transaction)
+
+      # 7002 addresses (7000 in the first chunk and 2 in the second)
+      addresses =
+        for _ <- 0..7001 do
+          insert(:address)
+        end
+
+      Explorer.Mox.HTTPoison
+      |> expect(:post, fn "http://localhost:1234/api/v1/import:batch", _expected_body, _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"status" => "ok"})}}
+      end)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:post, fn "http://localhost:1234/api/v1/import:batch",
+                          _expected_body,
+                          [{"Content-Type", "application/json"}],
+                          _options ->
+        {:ok, %HTTPoison.Response{status_code: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
+      end)
+
+      params = %{
+        addresses: addresses,
+        blocks: [block_1, block_2],
+        transactions: [transaction_1, transaction_2]
+      }
+
+      assert {:error, @error_msg} = MultichainSearch.batch_import(params)
+      # 7000 addresses + 2 blocks + 2 transactions
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 7004
+    end
   end
 
   describe "extract_batch_import_params_into_chunks/1" do
