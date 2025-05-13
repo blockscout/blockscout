@@ -166,11 +166,11 @@ defmodule Explorer.Chain.Log do
   @doc """
   Decode transaction log data.
   """
-  @spec decode(Log.t(), Transaction.t(), any(), boolean(), boolean(), map(), map()) ::
+  @spec decode(Log.t(), Transaction.t(), any(), boolean(), boolean(), list(), map()) ::
           {{:ok, String.t(), String.t(), map()}
            | {:error, :could_not_decode}
            | {:error, atom(), list()}
-           | {{:error, :contract_not_verified | :try_with_sig_provider, [any()]}, any()}, map(), map()}
+           | {{:error, :contract_not_verified | :try_with_sig_provider, [any()]}, any()}, map()}
   def decode(
         log,
         transaction,

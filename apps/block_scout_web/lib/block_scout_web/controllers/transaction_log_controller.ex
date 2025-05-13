@@ -22,9 +22,7 @@ defmodule BlockScoutWeb.TransactionLogController do
         Keyword.merge(
           [
             necessity_by_association: %{
-              [address: [:names, :smart_contract, proxy_implementation_association_for_logs()]] => :optional,
-              [address: :smart_contract] => :optional,
-              address: :optional
+              [address: [:names, :smart_contract, proxy_implementation_association_for_logs()]] => :optional
             }
           ],
           paging_options(params)
