@@ -443,72 +443,20 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
-  @doc """
-  Handles GET requests to `/api/v2/addresses/:address_hash_param/logs` endpoint (retrieves logs for a given address)
-
-  ## Parameters
-
-    - conn: The connection struct.
-    - params: A map containing the parameters for the request.
-
-  ## Returns
-
-    - `{:format, :error}` if provided address_hash is invalid.
-    - `{:restricted_access, true}` if access is restricted.
-    - `Plug.Conn.t()` if the request is successful.
-  """
-  @spec logs(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def logs(conn, %{"address_hash_param" => address_hash_string, "topic" => topic} = params) do
+  def logs(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
-      case Chain.hash_to_address(address_hash, @address_options) do
+      case Chain.hash_to_address(address_hash, @api_true) do
         {:ok, _address} ->
-          prepared_topic = String.trim(topic)
-
-          formatted_topic =
-            if String.starts_with?(prepared_topic, "0x"), do: prepared_topic, else: "0x" <> prepared_topic
-
           options =
             params
             |> paging_options()
-            |> Keyword.merge(topic: formatted_topic)
             |> Keyword.merge(
               necessity_by_association: %{
-                [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+                [address: [:names, :smart_contract, proxy_implementation_association_for_logs()]] => :optional
               }
             )
             |> Keyword.merge(@api_true)
-
-          results_plus_one = Chain.address_to_logs(address_hash, false, options)
-
-          {logs, next_page} = split_list_by_page(results_plus_one)
-
-          next_page_params = next_page |> next_page_params(logs, delete_parameters_from_next_page_params(params))
-
-          conn
-          |> put_status(200)
-          |> put_view(TransactionView)
-          |> render(:logs, %{
-            logs: logs |> maybe_preload_ens() |> maybe_preload_metadata(),
-            next_page_params: next_page_params
-          })
-
-        _ ->
-          conn
-          |> put_status(200)
-          |> put_view(TransactionView)
-          |> render(:logs, %{
-            logs: [],
-            next_page_params: nil
-          })
-      end
-    end
-  end
-
-  def logs(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
-      case Chain.hash_to_address(address_hash, @address_options) do
-        {:ok, _address} ->
-          options = params |> paging_options() |> Keyword.merge(@api_true)
+            |> process_topic(params)
 
           results_plus_one = Chain.address_to_logs(address_hash, false, options)
 
@@ -1042,5 +990,17 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       _ ->
         validate_address_hash(address_hash_string, params)
     end
+  end
+
+  defp process_topic(options, %{"topic" => topic}) do
+    topic = String.trim(topic)
+
+    formatted_topic = if String.starts_with?(topic, "0x"), do: topic, else: "0x" <> topic
+
+    Keyword.put(options, :topic, formatted_topic)
+  end
+
+  defp process_topic(options, _) do
+    options
   end
 end

@@ -221,35 +221,49 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> Enum.map(&prepare_signed_authorization/1)
   end
 
+  defp try_to_get_abi(smart_contract) do
+    (smart_contract && smart_contract.abi) || []
+  end
+
+  defp extract_implementations_abi(nil) do
+    []
+  end
+
+  defp extract_implementations_abi(proxy_implementations) do
+    proxy_implementations.smart_contracts
+    |> Enum.flat_map(fn smart_contract ->
+      try_to_get_abi(smart_contract)
+    end)
+  end
+
   @doc """
     Decodes list of logs
   """
   @spec decode_logs([Log.t()], boolean) :: [tuple]
   def decode_logs(logs, skip_sig_provider?) do
-    unique_log_address_hashes =
-      logs
-      |> Enum.map(fn log -> log.address_hash end)
-      |> Enum.uniq()
-
     full_abi_per_address_hash =
-      Log.accumulate_abi_by_address_hashes(%{}, unique_log_address_hashes, @api_true)
+      Enum.reduce(logs, %{}, fn log, acc ->
+        full_abi =
+          extract_implementations_abi(log.address.proxy_implementations) ++
+            try_to_get_abi(log.address.smart_contract)
 
-    {all_logs, _, _} =
-      Enum.reduce(logs, {[], full_abi_per_address_hash, %{}}, fn log,
-                                                                 {results, full_abi_per_address_hash_acc, events_acc} ->
-        {result, full_abi_per_address_hash_acc, events_acc} =
+        Map.put(acc, log.address_hash, full_abi)
+      end)
+
+    {all_logs, _} =
+      Enum.reduce(logs, {[], %{}}, fn log, {results, events_acc} ->
+        {result, events_acc} =
           Log.decode(
             log,
             %Transaction{hash: log.transaction_hash},
             @api_true,
             skip_sig_provider?,
             true,
-            full_abi_per_address_hash_acc[log.address_hash],
-            full_abi_per_address_hash_acc,
+            full_abi_per_address_hash[log.address_hash],
             events_acc
           )
 
-        {[result | results], full_abi_per_address_hash_acc, events_acc}
+        {[result | results], events_acc}
       end)
 
     all_logs_with_index =
