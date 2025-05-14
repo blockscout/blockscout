@@ -658,7 +658,8 @@ defmodule Explorer.Chain.Token.Instance do
   Sets metadata for the given Explorer.Chain.Token.Instance
   """
   @spec set_metadata(t(), map()) :: {non_neg_integer(), nil}
-  def set_metadata(token_instance, metadata) when is_map(metadata) do
+  def set_metadata(token_instance, %{metadata: metadata, skip_metadata_url: skip_metadata_url} = result)
+      when is_map(metadata) do
     now = DateTime.utc_now()
 
     Repo.update_all(
@@ -666,7 +667,18 @@ defmodule Explorer.Chain.Token.Instance do
         where: instance.token_contract_address_hash == ^token_instance.token_contract_address_hash,
         where: instance.token_id == ^token_instance.token_id
       ),
-      [set: [metadata: metadata, error: nil, updated_at: now, thumbnails: nil, media_type: nil, cdn_upload_error: nil]],
+      [
+        set: [
+          metadata: metadata,
+          error: nil,
+          updated_at: now,
+          thumbnails: nil,
+          media_type: nil,
+          cdn_upload_error: nil,
+          skip_metadata_url: skip_metadata_url,
+          metadata_url: result[:metadata_url]
+        ]
+      ],
       timeout: @timeout
     )
   end

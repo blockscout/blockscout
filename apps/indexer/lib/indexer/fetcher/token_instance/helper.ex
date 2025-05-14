@@ -13,8 +13,15 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
 
   @cryptokitties_address_hash "0x06012c8cf97bead5deae237070f9587f8e7a266d"
 
-  @spec batch_fetch_instances([%{}]) :: list()
+  @spec batch_fetch_instances([map()]) :: list()
   def batch_fetch_instances(token_instances) do
+    token_instances
+    |> batch_prepare_instances_insert_params()
+    |> upsert_with_rescue()
+  end
+
+  @spec batch_prepare_instances_insert_params([map()]) :: list()
+  def batch_prepare_instances_insert_params(token_instances) do
     token_instances =
       Enum.map(token_instances, fn
         %{contract_address_hash: hash, token_id: token_id} -> {hash, token_id}
@@ -57,7 +64,6 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
           )
       end
     end)
-    |> upsert_with_rescue()
   end
 
   defp batch_fetch_instances_inner(token_instances, token_types_map, cryptokitties) do
