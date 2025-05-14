@@ -472,17 +472,40 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   def names(_, _), do: []
 
-  def smart_contract_association_for_implementations(nested_ids) do
-    query = from(smart_contract in SmartContract, where: smart_contract.address_hash in ^List.flatten(nested_ids))
+  @doc """
+  Fetches and associates smart contracts for a nested list of address hashes.
+
+  This function takes a nested list of address hashes (`nested_address_hashes`), queries the database
+  for smart contracts matching the flattened list of address hashes, and then maps the results back
+  to the original nested structure. Each address hash is associated with its corresponding smart
+  contract, if found.
+
+  ## Parameters
+
+    - `nested_address_hashes`: A nested list of address hashes (e.g., `[[hash1, hash2], [hash3]]`).
+
+  ## Returns
+
+    - A list of tuples where each tuple contains:
+      - The original list of address hashes.
+      - A list of smart contracts corresponding to the address hashes.
+
+  """
+  @spec smart_contract_association_for_implementations([Hash.Address.t()]) :: [
+          {[Hash.Address.t()], [SmartContract.t() | nil]}
+        ]
+  def smart_contract_association_for_implementations(nested_address_hashes) do
+    query =
+      from(smart_contract in SmartContract, where: smart_contract.address_hash in ^List.flatten(nested_address_hashes))
 
     smart_contracts_map =
       query
       |> Repo.replica().all()
       |> Map.new(&{&1.address_hash, &1})
 
-    for ids <- nested_ids,
-        smart_contract <- ids |> Enum.map(&smart_contracts_map[&1]) do
-      {ids, smart_contract}
+    for address_hashes <- nested_address_hashes,
+        smart_contracts <- address_hashes |> Enum.map(&smart_contracts_map[&1]) do
+      {address_hashes, smart_contracts}
     end
   end
 
