@@ -509,29 +509,20 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
     |> Enum.to_list()
   end
 
-  # Checks if any blocks within a specific range are identified as the top of confirmed blocks by scanning `SendRootUpdated` events.
-  #
-  # This function fetches logs for `SendRootUpdated` events within the specified
-  # L1 block range to determine if any rollup blocks within the given rollup block
-  # range are mentioned in the events, indicating the top of confirmed blocks up
-  # to that log. It uses caching to minimize `eth_getLogs` calls.
+  # Scans `SendRootUpdated` events in the given L1 block range to find the highest
+  # rollup block within the specified range that has been confirmed. Uses caching
+  # to minimize `eth_getLogs` calls.
   #
   # ## Parameters
-  # - A tuple `{rollup_start_block, rollup_end_block}` specifying the rollup block
-  #   range to check for confirmations
-  # - A tuple `{log_start, log_end}` specifying the L1 block range to fetch logs.
-  # - `l1_outbox_config`: Configuration for the Arbitrum Outbox contract.
-  # - `cache`: A cache of previously fetched logs to reduce `eth_getLogs` calls.
+  # - `{rollup_start_block, rollup_end_block}`: Range of rollup blocks to check
+  # - `{log_start, log_end}`: Range of L1 blocks to scan for events
+  # - `l1_outbox_config`: Arbitrum Outbox contract configuration
+  # - `cache`: Cache of previously fetched logs
   #
   # ## Returns
-  # - A tuple `{:ok, latest_block_confirmed, new_cache, logs_length}`:
-  #   - `latest_block_confirmed` is the highest rollup block number confirmed within
-  #     the specified range.
-  # - A tuple `{:ok, nil, new_cache, logs_length}` if no rollup blocks within the
-  #   specified range are confirmed.
-  # - A tuple `{:error, nil, new_cache, logs_length}` if during parsing logs a rollup
-  #    block with given hash is not being found in the database.
-  # For all three cases the `new_cache` contains the updated logs cache.
+  # - `{:ok, block_num, new_cache, logs_length}`: Found confirmed block in range
+  # - `{:ok, nil, new_cache, logs_length}`: No confirmed blocks in range
+  # - `{:error, nil, new_cache, logs_length}`: Block hash resolution failed
   @spec do_check_if_batch_confirmed(
           {non_neg_integer(), non_neg_integer()},
           {non_neg_integer(), non_neg_integer()},
@@ -545,48 +536,37 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
           {:ok, nil | non_neg_integer(), EventsUtils.cached_logs(), non_neg_integer()}
           | {:error, nil, EventsUtils.cached_logs(), non_neg_integer()}
   defp do_check_if_batch_confirmed(
-         {rollup_start_block, rollup_end_block},
+         batch_block_range,
          {log_start, log_end},
          l1_outbox_config,
          cache
        ) do
-    # The logs in the given L1 blocks range
-    {logs, new_cache} =
-      EventsUtils.get_logs_for_confirmations(
-        log_start,
-        log_end,
-        l1_outbox_config.outbox_address,
-        l1_outbox_config.json_rpc_named_arguments,
-        cache
-      )
+    case EventsUtils.fetch_and_sort_confirmations_logs(log_start, log_end, l1_outbox_config, cache) do
+      {:error, nil, new_cache, logs_length} ->
+        {:error, nil, new_cache, logs_length}
 
-    # For every discovered event check if the rollup block in the confirmation
-    # is within the specified range which usually means that the event
-    # is the confirmation of the batch described by the range.
-    {status, latest_block_confirmed} =
-      logs
-      |> Enum.reduce_while({:ok, nil}, fn event, _acc ->
-        log_debug("Examining the transaction #{event["transactionHash"]}")
+      # For every discovered event check if the rollup block in the confirmation
+      # is within the specified range which usually means that the event
+      # is the confirmation of the batch described by the range.
+      {:ok, sorted_block_numbers, new_cache, logs_length} ->
+        latest_block_confirmed = find_first_block_in_range(sorted_block_numbers, batch_block_range)
+        {:ok, latest_block_confirmed, new_cache, logs_length}
+    end
+  end
 
-        rollup_block_hash = EventsUtils.send_root_updated_event_parse(event)
-        rollup_block_num = DbSettlement.rollup_block_hash_to_num(rollup_block_hash)
-
-        case rollup_block_num do
-          nil ->
-            log_warning("The rollup block ##{rollup_block_hash} not found")
-            {:halt, {:error, nil}}
-
-          value when value >= rollup_start_block and value <= rollup_end_block ->
-            log_debug("The rollup block ##{rollup_block_num} within the range")
-            {:halt, {:ok, rollup_block_num}}
-
-          _ ->
-            log_debug("The rollup block ##{rollup_block_num} outside of the range")
-            {:cont, {:ok, nil}}
-        end
-      end)
-
-    {status, latest_block_confirmed, new_cache, length(logs)}
+  # Finds the first block number from the sorted list that falls within the specified range.
+  @spec find_first_block_in_range([non_neg_integer()], {non_neg_integer(), non_neg_integer()}) ::
+          non_neg_integer() | nil
+  defp find_first_block_in_range(sorted_block_numbers, {start_block, end_block}) do
+    Enum.find_value(sorted_block_numbers, nil, fn block_num ->
+      if block_num >= start_block and block_num <= end_block do
+        log_debug("The rollup block ##{block_num} within the range")
+        block_num
+      else
+        log_debug("The rollup block ##{block_num} outside of the range")
+        nil
+      end
+    end)
   end
 
   # Simplifies the process of updating counters for the `eth_getLogs` requests
