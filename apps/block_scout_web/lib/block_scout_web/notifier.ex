@@ -365,7 +365,8 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event(
-        {:chain_event, :not_fetched_token_instance_metadata, :on_demand, [token_contract_address_hash_string, token_id, reason]}
+        {:chain_event, :not_fetched_token_instance_metadata, :on_demand,
+         [token_contract_address_hash_string, token_id, reason]}
       ) do
     Endpoint.broadcast(
       "token_instances:#{token_contract_address_hash_string}",
