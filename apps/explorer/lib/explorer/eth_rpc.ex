@@ -954,8 +954,8 @@ defmodule Explorer.EthRPC do
     props
   end
 
-  # yParity shouldn't be added for legacy (type 0) transactions
-  defp maybe_add_y_parity(props, %Transaction{type: type, v: v}) when type > 0 do
+  # yParity shouldn't be added for legacy (type 0) and is_nil(type) transactions
+  defp maybe_add_y_parity(props, %Transaction{type: type, v: v}) when not is_nil(type) and type > 0 do
     props
     |> Map.put("yParity", encode_quantity(v))
   end
