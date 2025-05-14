@@ -33,7 +33,7 @@
     "crypto-browserify": "^3.12.1",
     "dropzone": "^5.9.3",
     "eth-net-props": "^1.0.41",
-    "highlight.js": "^11.10.0",
+    "highlight.js": "^11.11.1",
     "https-browserify": "^1.0.0",
     "humps": "^2.0.1",
     "jquery": "^3.7.1",
@@ -56,7 +56,7 @@
     "lodash.omit": "^4.5.0",
     "lodash.rangeright": "^4.2.0",
     "lodash.reduce": "^4.6.0",
-    "luxon": "^3.5.0",
+    "luxon": "^3.6.1",
     "malihu-custom-scrollbar-plugin": "3.1.5",
     "mixpanel-browser": "^2.63.0",
     "moment": "^2.30.1",
@@ -84,7 +84,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
-    "@babel/preset-env": "^7.26.0",
+    "@babel/preset-env": "^7.27.1",
     "autoprefixer": "^10.4.20",
     "babel-loader": "^9.2.1",
     "copy-webpack-plugin": "^12.0.2",
@@ -104,7 +104,7 @@
     "sass": "^1.86.1",
     "sass-loader": "^14.2.1",
     "style-loader": "^4.0.0",
-    "webpack": "^5.96.1",
+    "webpack": "^5.99.7",
     "webpack-cli": "^5.1.4"
   },
   "jest": {
