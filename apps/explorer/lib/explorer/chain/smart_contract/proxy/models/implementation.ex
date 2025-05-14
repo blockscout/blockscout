@@ -504,7 +504,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       |> Map.new(&{&1.address_hash, &1})
 
     for address_hashes <- nested_address_hashes,
-        smart_contracts <- address_hashes |> Enum.map(&smart_contracts_map[&1]) do
+        smart_contracts when not is_nil(smart_contracts) <- address_hashes |> Enum.map(&smart_contracts_map[&1]) do
       {address_hashes, smart_contracts}
     end
   end
@@ -532,7 +532,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         |> Map.new(&{&1.hash, &1})
 
       for ids <- nested_ids,
-          address <- ids |> Enum.map(&addresses_map[&1]) do
+          address when not is_nil(address) <- ids |> Enum.map(&addresses_map[&1]) do
         {ids, address}
       end
     end

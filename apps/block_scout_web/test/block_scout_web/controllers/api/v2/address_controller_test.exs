@@ -2479,6 +2479,47 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                ]
              }
     end
+
+    test "test corner case, when preload functions face absent smart contract", %{conn: conn} do
+      address = insert(:contract_address)
+
+      contract_address = insert(:contract_address)
+
+      topic1_bytes = ExKeccak.hash_256("OptionSettled(uint256,address,uint256,int256,int256)")
+      topic1 = "0x" <> Base.encode16(topic1_bytes, case: :lower)
+      topic2 = "0x0000000000000000000000000000000000000000000000000000000000005d19"
+
+      log_data =
+        "0x000000000000000000000000aeb81cbe6b19ceeb0dbe0d230cffe35bb40a13a700000000000000000000000000000000000000000000045d964b80006597b700fffffffffffffffffffffffffffffffffffffffffffffffffe55aca2c2f40000ffffffffffffffffffffffffffffffffffffffffffffffe3a8289da3d7a13ef2"
+
+      transaction = :transaction |> insert() |> with_block()
+
+      log =
+        insert(:log,
+          transaction: transaction,
+          first_topic: topic(topic1),
+          second_topic: topic(topic2),
+          third_topic: nil,
+          fourth_topic: nil,
+          data: log_data,
+          address: address
+        )
+
+      insert(:proxy_implementation,
+        proxy_address_hash: address.hash,
+        proxy_type: "eip1167",
+        address_hashes: [contract_address.hash],
+        names: ["Test"]
+      )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+      log_from_api = Enum.at(response["items"], 0)
+      compare_item(log, log_from_api)
+    end
   end
 
   describe "/addresses/{address_hash}/tokens" do
