@@ -35,7 +35,6 @@ defmodule BlockScout.Mixfile do
   end
 
   ## Private Functions
-
   defp copy_prod_runtime_config(%Mix.Release{path: path} = release) do
     File.mkdir_p!(Path.join([path, "config", "runtime"]))
     File.cp!(Path.join(["config", "runtime", "prod.exs"]), Path.join([path, "config", "runtime", "prod.exs"]))
@@ -96,9 +95,9 @@ defmodule BlockScout.Mixfile do
     [
       {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.8", override: true},
-      {:tesla, "~> 1.13.0"},
+      {:tesla, "~> 1.14.0"},
       # Documentation
-      {:ex_doc, "~> 0.35.1", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.38.1", only: :dev, runtime: false},
       {:number, "~> 1.0.3"}
     ]
   end
