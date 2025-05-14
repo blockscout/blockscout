@@ -950,9 +950,7 @@ defmodule Explorer.EthRPC do
     |> Map.put("maxPriorityFeePerGas", max_priority_fee_per_gas |> Wei.to(:wei) |> encode_quantity())
   end
 
-  defp maybe_add_eip_1559_fields(props, _) do
-    props
-  end
+  defp maybe_add_eip_1559_fields(props, _), do: props
 
   # yParity shouldn't be added for legacy (type 0) and is_nil(type) transactions
   defp maybe_add_y_parity(props, %Transaction{type: type, v: v}) when not is_nil(type) and type > 0 do
@@ -960,9 +958,7 @@ defmodule Explorer.EthRPC do
     |> Map.put("yParity", encode_quantity(v))
   end
 
-  defp maybe_add_y_parity(props, %Transaction{type: _type}) do
-    props
-  end
+  defp maybe_add_y_parity(props, %Transaction{type: _type}), do: props
 
   defp maybe_add_signed_authorizations(props, %Transaction{type: 4, signed_authorizations: signed_authorizations}) do
     prepared_signed_authorizations =
@@ -989,7 +985,7 @@ defmodule Explorer.EthRPC do
 
   defp maybe_add_signed_authorizations(props, _transaction), do: props
 
-  defp maybe_add_access_list(props, %Transaction{type: type}) when type > 0 do
+  defp maybe_add_access_list(props, %Transaction{type: type}) when not is_nil(type) and type > 0 do
     props
     |> Map.put("accessList", [])
   end
