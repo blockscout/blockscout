@@ -547,7 +547,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       [addresses: &__MODULE__.addresses_association_for_filecoin/1]
     end
 
-    def proxy_implementation_association_for_logs do
+    def proxy_implementations_smart_contracts_association do
       [
         proxy_implementations: [
           addresses: &__MODULE__.addresses_association_for_filecoin/1,
@@ -589,7 +589,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       []
     end
 
-    def proxy_implementation_association_for_logs do
+    def proxy_implementations_smart_contracts_association do
       [proxy_implementations: [smart_contracts: &__MODULE__.smart_contract_association_for_implementations/1]]
     end
   end

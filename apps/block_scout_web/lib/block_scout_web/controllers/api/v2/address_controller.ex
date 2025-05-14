@@ -443,6 +443,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/logs` endpoint (retrieves logs for a given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec logs(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def logs(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @api_true) do
@@ -452,7 +467,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> paging_options()
             |> Keyword.merge(
               necessity_by_association: %{
-                [address: [:names, :smart_contract, proxy_implementation_association_for_logs()]] => :optional
+                [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
               }
             )
             |> Keyword.merge(@api_true)

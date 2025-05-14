@@ -244,8 +244,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     full_abi_per_address_hash =
       Enum.reduce(logs, %{}, fn log, acc ->
         full_abi =
-          extract_implementations_abi(log.address.proxy_implementations) ++
-            try_to_get_abi(log.address.smart_contract)
+          (extract_implementations_abi(log.address.proxy_implementations) ++
+             try_to_get_abi(log.address.smart_contract))
+          |> Enum.uniq()
 
         Map.put(acc, log.address_hash, full_abi)
       end)

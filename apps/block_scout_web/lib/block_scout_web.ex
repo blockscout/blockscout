@@ -31,7 +31,7 @@ defmodule BlockScoutWeb do
       import Plug.Conn
 
       import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
-        only: [proxy_implementations_association: 0, proxy_implementation_association_for_logs: 0]
+        only: [proxy_implementations_association: 0, proxy_implementations_smart_contracts_association: 0]
 
       alias BlockScoutWeb.Routers.AdminRouter.Helpers, as: AdminRoutes
     end

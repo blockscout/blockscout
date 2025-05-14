@@ -58,7 +58,9 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
 
       logs =
         [log1, log2]
-        |> Repo.preload(address: [:names, :smart_contract, Implementation.proxy_implementation_association_for_logs()])
+        |> Repo.preload(
+          address: [:names, :smart_contract, Implementation.proxy_implementations_smart_contracts_association()]
+        )
 
       assert [
                {:ok, "d20a68b2",
@@ -135,7 +137,9 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
 
       logs =
         [log1, log2]
-        |> Repo.preload(address: [:names, :smart_contract, Implementation.proxy_implementation_association_for_logs()])
+        |> Repo.preload(
+          address: [:names, :smart_contract, Implementation.proxy_implementations_smart_contracts_association()]
+        )
 
       assert [
                {:ok, "d20a68b2",
