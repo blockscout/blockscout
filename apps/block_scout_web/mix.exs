@@ -117,7 +117,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:number, "~> 1.0.1"},
-      {:phoenix, "== 1.5.14"},
+      {:phoenix, "== 1.6.16"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html, "== 3.3.4"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
@@ -131,7 +131,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:poison, "~> 4.0.1"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
-      {:prometheus, "~> 4.0", override: true},
+      {:prometheus, "~> 5.0", override: true},
       # Gather methods for Phoenix requests
       {:prometheus_phoenix, "~> 1.2"},
       # Expose metrics from URL Prometheus server can scrape
