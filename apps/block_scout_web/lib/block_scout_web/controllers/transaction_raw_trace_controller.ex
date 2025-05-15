@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
 
   def index(conn, %{"transaction_id" => hash_string} = params) do
-    with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
+    with {:ok, hash} <- Chain.string_to_full_hash(hash_string),
          {:ok, transaction} <-
            Chain.hash_to_transaction(
              hash,

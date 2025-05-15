@@ -3224,7 +3224,7 @@ defmodule Explorer.ChainTest do
       {:ok, from_address_hash_bytes} = Chain.string_to_address_hash(from_address_hash)
       {:ok, created_contract_code_bytes} = Data.cast(created_contract_code)
       {:ok, init_bytes} = Data.cast(init)
-      {:ok, transaction_hash_bytes} = Chain.string_to_transaction_hash(transaction_hash)
+      {:ok, transaction_hash_bytes} = Chain.string_to_full_hash(transaction_hash)
       {:ok, type_bytes} = Type.load(type)
       value_wei = %Wei{value: Decimal.new(value)}
 

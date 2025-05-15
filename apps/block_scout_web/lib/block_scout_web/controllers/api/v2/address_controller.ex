@@ -459,7 +459,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   """
   @spec logs(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def logs(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
+    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params),
+         {:ok, topic} <- validate_optional_topic(params["topic"]) do
       case Chain.hash_to_address(address_hash, @api_true) do
         {:ok, _address} ->
           options =
@@ -471,7 +472,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               }
             )
             |> Keyword.merge(@api_true)
-            |> process_topic(params)
+            |> Keyword.put(:topic, topic)
 
           results_plus_one = Chain.address_to_logs(address_hash, false, options)
 
@@ -1007,15 +1008,24 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
-  defp process_topic(options, %{"topic" => topic}) do
-    topic = String.trim(topic)
+  @spec validate_optional_topic(nil | String.t()) :: {:ok, nil | Hash.Full.t()} | {:format, :error}
+  defp validate_optional_topic(topic) do
+    topic = if is_binary(topic), do: String.trim(topic), else: topic
 
-    formatted_topic = if String.starts_with?(topic, "0x"), do: topic, else: "0x" <> topic
+    case topic do
+      nil ->
+        {:ok, nil}
 
-    Keyword.put(options, :topic, formatted_topic)
-  end
+      "" ->
+        {:ok, nil}
 
-  defp process_topic(options, _) do
-    options
+      "null" ->
+        {:ok, nil}
+
+      _ ->
+        with {:format, {:ok, topic}} <- {:format, Chain.string_to_full_hash(topic)} do
+          {:ok, topic}
+        end
+    end
   end
 end
