@@ -631,7 +631,10 @@ config :explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
 
 config :indexer, Indexer.Fetcher.MultichainSearchDbExport.Retry,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_CONCURRENCY", 10),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_BATCH_SIZE", 10)
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_BATCH_SIZE", 10),
+  enqueue_busy_waiting_timeout:
+    ConfigHelper.parse_time_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_ENQUEUE_BUSY_WAITING_TIMEOUT", "1s"),
+  max_queue_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_MAX_QUEUE_SIZE", 1000)
 
 config :explorer, :air_table_public_tags,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),

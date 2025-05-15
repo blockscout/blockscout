@@ -885,7 +885,7 @@ defmodule Indexer.Helper do
   end
 
   @max_queue_size 5000
-  @busy_waiting_timeout 500
+  @enqueue_busy_waiting_timeout 500
   @doc """
   Reduces the given `data` into an accumulator `acc` using the provided `reducer` function,
   but only if the queue is not full. This function ensures that the processing respects
@@ -914,8 +914,13 @@ defmodule Indexer.Helper do
   def reduce_if_queue_is_not_full(data, acc, reducer, module) do
     bound_queue = GenServer.call(module, :state).bound_queue
 
-    if bound_queue.size >= @max_queue_size or (bound_queue.maximum_size && bound_queue.size >= bound_queue.maximum_size) do
-      :timer.sleep(@busy_waiting_timeout)
+    max_queue_size = Application.get_env(:indexer, module)[:max_queue_size] || @max_queue_size
+
+    enqueue_busy_waiting_timeout =
+      Application.get_env(:indexer, module)[:enqueue_busy_waiting_timeout] || @enqueue_busy_waiting_timeout
+
+    if bound_queue.size >= max_queue_size or (bound_queue.maximum_size && bound_queue.size >= bound_queue.maximum_size) do
+      :timer.sleep(enqueue_busy_waiting_timeout)
 
       reduce_if_queue_is_not_full(data, acc, reducer, module)
     else
