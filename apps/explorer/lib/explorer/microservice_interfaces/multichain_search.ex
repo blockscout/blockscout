@@ -13,7 +13,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   require Logger
 
-  @addresses_chunk_size 7_000
   @max_concurrency 5
   @post_timeout :timer.minutes(5)
   @request_error_msg "Error while sending request to Multichain Search DB Service"
@@ -160,7 +159,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   - Preloads associated `:token` and `:smart_contract` data for the addresses, removes duplicates, and formats them.
   - Formats the blocks and transactions into hashes.
   - Combines block hashes and transaction hashes into a single list of `block_transaction_hashes`.
-  - Splits the formatted addresses into chunks of size `@addresses_chunk_size` and indexes them.
+  - Splits the formatted addresses into chunks of size `addresses_chunk_size()` and indexes them.
   - Constructs a base data chunk containing the API key, chain ID, and block ranges.
 
   The function returns a list of data chunks. If there are no addresses, it returns a single chunk with only the `block_transaction_hashes`. Otherwise, it creates a chunk for each group of addresses, including the `block_transaction_hashes` only in the first chunk.
@@ -217,7 +216,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     indexed_addresses_chunks =
       addresses
-      |> Enum.chunk_every(@addresses_chunk_size)
+      |> Enum.chunk_every(addresses_chunk_size())
       |> Enum.with_index()
 
     api_key = api_key()
@@ -376,4 +375,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   @return `true` if the base URL is not nil, `false` otherwise.
   """
   def enabled?, do: !is_nil(base_url())
+
+  defp addresses_chunk_size do
+    Application.get_env(:explorer, __MODULE__)[:addresses_chunk_size]
+  end
 end

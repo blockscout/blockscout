@@ -623,7 +623,8 @@ config :explorer, Explorer.SmartContract.StylusVerifierInterface,
 
 config :explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
   api_key: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_API_KEY"),
-  service_url: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")
+  service_url: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"),
+  addresses_chunk_size: ConfigHelper.parse_integer_env_var("MICROSERVICE_MULTICHAIN_SEARCH_ADDRESSES_CHUNK_SIZE", 7000)
 
 config :explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_TAC_OPERATION_LIFECYCLE_ENABLED", "true"),
