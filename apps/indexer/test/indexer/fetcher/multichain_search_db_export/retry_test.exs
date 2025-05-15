@@ -24,10 +24,14 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
 
   describe "init/3" do
     setup do
-      Application.put_env(:explorer, MultichainSearch, service_url: "http://localhost:1234", api_key: "12345")
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:1234",
+        api_key: "12345",
+        addresses_chunk_size: 7000
+      )
 
       on_exit(fn ->
-        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil)
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
       end)
     end
 
@@ -65,10 +69,15 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
   describe "run/2" do
     setup do
       bypass = Bypass.open()
-      Application.put_env(:explorer, MultichainSearch, service_url: "http://localhost:#{bypass.port}", api_key: "12345")
+
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        api_key: "12345",
+        addresses_chunk_size: 7000
+      )
 
       on_exit(fn ->
-        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil)
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
         Bypass.down(bypass)
       end)
 

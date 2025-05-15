@@ -33,10 +33,15 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
     test "processes chunks and returns {:ok, result} when the service is enabled" do
       bypass = Bypass.open()
-      Application.put_env(:explorer, MultichainSearch, service_url: "http://localhost:#{bypass.port}", api_key: "12345")
+
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        api_key: "12345",
+        addresses_chunk_size: 7000
+      )
 
       on_exit(fn ->
-        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil)
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
         Bypass.down(bypass)
       end)
 
@@ -73,10 +78,15 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
     test "returns {:error, reason} when an error occurs during processing and 'multichain_search_db_export_retry_queue' table is populated" do
       bypass = Bypass.open()
-      Application.put_env(:explorer, MultichainSearch, service_url: "http://localhost:#{bypass.port}", api_key: "12345")
+
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        api_key: "12345",
+        addresses_chunk_size: 7000
+      )
 
       on_exit(fn ->
-        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil)
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
         Bypass.down(bypass)
       end)
 
@@ -121,11 +131,16 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
     end
 
     test "returns {:error, reason} when at least one chunk is failed" do
-      Application.put_env(:explorer, MultichainSearch, service_url: "http://localhost:1234", api_key: "12345")
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:1234",
+        api_key: "12345",
+        addresses_chunk_size: 7000
+      )
+
       Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
 
       on_exit(fn ->
-        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil)
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
         Application.put_env(:explorer, :http_adapter, HTTPoison)
       end)
 
@@ -173,12 +188,12 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
   describe "extract_batch_import_params_into_chunks/1" do
     setup do
       TestHelper.get_chain_id_mock()
-      Application.put_env(:explorer, MultichainSearch, api_key: "12345")
+      Application.put_env(:explorer, MultichainSearch, api_key: "12345", addresses_chunk_size: 7000)
       Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
       Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
 
       on_exit(fn ->
-        Application.put_env(:explorer, MultichainSearch, api_key: nil)
+        Application.put_env(:explorer, MultichainSearch, api_key: nil, addresses_chunk_size: 7000)
       end)
 
       :ok
