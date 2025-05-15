@@ -1537,6 +1537,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
       old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
       old_http_adapter = Application.get_env(:block_scout_web, :http_adapter)
+      old_explorer_http_adapter = Application.get_env(:explorer, :http_adapter)
 
       v2_secret_key = "v2_secret_key"
       v3_secret_key = "v3_secret_key"
@@ -1566,6 +1567,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       on_exit(fn ->
         Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
         Application.put_env(:block_scout_web, :http_adapter, old_http_adapter)
+        Application.put_env(:explorer, :http_adapter, old_explorer_http_adapter)
       end)
 
       {:ok, %{v2_secret_key: v2_secret_key, v3_secret_key: v3_secret_key}}
@@ -1642,8 +1644,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert(token_instance_from_db)
       assert token_instance_from_db.metadata == metadata
-
-      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
     test "don't fetch token instance metadata for non-existent token instance", %{
@@ -1752,8 +1752,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert(token_instance_from_db)
       assert token_instance_from_db.metadata == metadata
-
-      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
     test "emit not_fetched_token_instance_metadata event when fetching token instance metadata fails", %{
@@ -1829,8 +1827,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert(token_instance_from_db)
       assert is_nil(token_instance_from_db.metadata)
-
-      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
     test "fetch token instance metadata using scoped bypass api key", %{conn: conn} do
