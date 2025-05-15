@@ -50,6 +50,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
+  alias Explorer.Chain.Via.Reader, as: ViaReader
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
   alias Indexer.Fetcher.OnDemand.NeonSolanaTransactions, as: NeonSolanaTransactions
 
@@ -147,6 +148,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           |> Map.put(:zksync_commit_transaction, :optional)
           |> Map.put(:zksync_prove_transaction, :optional)
           |> Map.put(:zksync_execute_transaction, :optional)
+
+        :via ->
+          necessity_by_association_with_actions
+          |> Map.put(:via_batch, :optional)
+          |> Map.put(:via_commit_transaction, :optional)
+          |> Map.put(:via_prove_transaction, :optional)
+          |> Map.put(:via_execute_transaction, :optional)
 
         :arbitrum ->
           necessity_by_association_with_actions
@@ -250,6 +258,15 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   @spec zksync_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def zksync_batch(conn, params) do
     handle_batch_transactions(conn, params, &ZkSyncReader.batch_transactions/2)
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/transactions/via-batch/:batch_number` endpoint.
+    It renders the list of L2 transactions bound to the specified batch.
+  """
+  @spec via_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def via_batch(conn, params) do
+    handle_batch_transactions(conn, params, &ViaReader.batch_transactions/2)
   end
 
   @doc """

@@ -34,7 +34,8 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
     end
   end
 
-  if Application.compile_env(:explorer, :chain_type) !== :zksync do
+  if Application.compile_env(:explorer, :chain_type) !== :zksync &&
+       Application.compile_env(:explorer, :chain_type) !== :via do
     describe "/api/v2/smart-contracts/{address_hash}/verification/via/flattened-code" do
       test "get 200 for verified contract", %{conn: conn} do
         contract = insert(:smart_contract)

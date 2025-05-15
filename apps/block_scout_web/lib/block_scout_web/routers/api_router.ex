@@ -156,6 +156,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/zksync-batch/:batch_number", V2.TransactionController, :zksync_batch)
       end
 
+      if @chain_type == :via do
+        get("/via-batch/:batch_number", V2.TransactionController, :via_batch)
+      end
+
       if @chain_type == :arbitrum do
         get("/arbitrum-batch/:batch_number", V2.TransactionController, :arbitrum_batch)
       end
@@ -268,6 +272,11 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if @chain_type == :zksync do
         get("/zksync/batches/confirmed", V2.ZkSyncController, :batches_confirmed)
         get("/zksync/batches/latest-number", V2.ZkSyncController, :batch_latest_number)
+      end
+
+      if @chain_type == :via do
+        get("/via/batches/confirmed", V2.ViaController, :batches_confirmed)
+        get("/via/batches/latest-number", V2.ViaController, :batch_latest_number)
       end
 
       if @chain_type == :arbitrum do
@@ -433,6 +442,14 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/batches", V2.ZkSyncController, :batches)
         get("/batches/count", V2.ZkSyncController, :batches_count)
         get("/batches/:batch_number", V2.ZkSyncController, :batch)
+      end
+    end
+
+    scope "/via" do
+      if @chain_type == :via do
+        get("/batches", V2.ViaController, :batches)
+        get("/batches/count", V2.ViaController, :batches_count)
+        get("/batches/:batch_number", V2.ViaController, :batch)
       end
     end
 

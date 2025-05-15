@@ -67,6 +67,14 @@ defmodule BlockScoutWeb.GraphQL.Schema.SmartContracts do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   case @chain_type do
+    :via ->
+      @chain_type_fields quote(
+                           do: [
+                             field(:optimization_runs, :string),
+                             field(:zk_compiler_version, :string)
+                           ]
+                         )
+
     :zksync ->
       @chain_type_fields quote(
                            do: [

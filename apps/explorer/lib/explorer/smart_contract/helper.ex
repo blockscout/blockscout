@@ -130,7 +130,7 @@ defmodule Explorer.SmartContract.Helper do
   def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode)
 
   def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode) when is_nil(creation_input) do
-    if Application.get_env(:explorer, :chain_type) == :zksync do
+    if Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via do
       body
       |> Map.put("code", deployed_bytecode)
     else
@@ -193,7 +193,7 @@ defmodule Explorer.SmartContract.Helper do
       "chainId" => Application.get_env(:block_scout_web, :chain_id)
     }
 
-    if Application.get_env(:explorer, :chain_type) == :zksync do
+    if Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via do
       {nil, deployed_bytecode, metadata}
     else
       case SmartContract.creation_transaction_with_bytecode(address_hash) do

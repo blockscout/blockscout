@@ -68,7 +68,7 @@ defmodule Explorer.Factory do
   alias Ueberauth.Auth.{Extra, Info}
   alias Ueberauth.Auth
 
-  if @chain_type == :zksync do
+  if @chain_type == :zksync || @chain_type == :via do
     @optimization_runs "1"
   else
     @optimization_runs 1
@@ -275,6 +275,13 @@ defmodule Explorer.Factory do
 
   case @chain_type do
     :zksync ->
+      defp address_factory_chain_type_fields() do
+        %{
+          contract_code_refetched: true
+        }
+      end
+
+    :via ->
       defp address_factory_chain_type_fields() do
         %{
           contract_code_refetched: true

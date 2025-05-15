@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   @sc_verification_started "Smart-contract verification started"
   @zk_optimization_modes ["0", "1", "2", "3", "s", "z"]
 
-  if @chain_type == :zksync do
+  if @chain_type == :zksync || @chain_type == :via do
     @optimization_runs "0"
   else
     @optimization_runs 200
@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   end
 
   defp get_verification_options do
-    if Application.get_env(:explorer, :chain_type) == :zksync do
+    if Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via do
       ["standard-input"]
     else
       ["flattened-code", "standard-input", "vyper-code"]
@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   end
 
   defp maybe_add_zk_options(config) do
-    if Application.get_env(:explorer, :chain_type) == :zksync do
+    if Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via do
       zk_compiler_versions = CompilerVersion.fetch_version_list(:zk)
 
       config
@@ -148,7 +148,9 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", ""))
         |> Map.put("name", Map.get(params, "contract_name", ""))
         |> Map.put("license_type", Map.get(params, "license_type"))
-        |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+        |> (&if(
+              Application.get_env(:explorer, :chain_type) == :zksync ||
+                Application.get_env(:explorer, :chain_type) == :via,
               do: Map.put(&1, "zk_compiler_version", Map.get(params, "zk_compiler_version")),
               else: &1
             )).()

@@ -51,6 +51,18 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata), true)
       end
 
+      def via_verify_standard_json_input(
+            %{
+              "code" => _,
+              "solcCompiler" => _,
+              "zkCompiler" => _,
+              "input" => _
+            } = body,
+            metadata
+          ) do
+        http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata), true)
+      end
+
       def vyper_verify_multipart(
             %{
               "bytecode" => _,
@@ -208,10 +220,12 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       end
 
       defp verifier_path do
-        if Application.get_env(:explorer, :chain_type) == :zksync do
-          "/zksync-verifier"
-        else
-          "/verifier"
+        chain_type = Application.get_env(:explorer, :chain_type)
+
+        cond do
+          chain_type == :zksync -> "/zksync-verifier"
+          chain_type == :via -> "/via-verifier"
+          true -> "/verifier"
         end
       end
 

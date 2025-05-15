@@ -886,6 +886,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     BlockScoutWeb.API.V2.ZkSyncView.extend_transaction_json_response(result, transaction)
   end
 
+  defp do_with_chain_type_fields(:via, result, transaction, true = _single_transaction?, _conn, _watchlist_names) do
+    # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+    BlockScoutWeb.API.V2.ViaView.extend_transaction_json_response(result, transaction)
+  end
+
   defp do_with_chain_type_fields(:arbitrum, result, transaction, true = _single_transaction?, _conn, _watchlist_names) do
     # credo:disable-for-next-line Credo.Check.Design.AliasUsage
     BlockScoutWeb.API.V2.ArbitrumView.extend_transaction_json_response(result, transaction)

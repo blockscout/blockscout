@@ -420,6 +420,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         |> Map.put("zk_compiler_version", target_contract.zk_compiler_version)
       end
 
+    :via ->
+      defp chain_type_fields(result, %{target_contract: target_contract}, _single?) do
+        result
+        |> Map.put("zk_compiler_version", target_contract.zk_compiler_version)
+      end
+
     _ ->
       defp chain_type_fields(result, _params, _single?) do
         result

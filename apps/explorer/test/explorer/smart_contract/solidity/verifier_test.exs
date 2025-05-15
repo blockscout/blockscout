@@ -1,4 +1,5 @@
-if Application.compile_env(:explorer, :chain_type) !== :zksync do
+if Application.compile_env(:explorer, :chain_type) !== :zksync &&
+     Application.compile_env(:explorer, :chain_type) !== :via do
   defmodule Explorer.SmartContract.Solidity.VerifierTest do
     use ExUnit.Case, async: true
     use Explorer.DataCase
