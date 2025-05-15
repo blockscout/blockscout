@@ -183,6 +183,84 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       # 7000 addresses + 2 blocks + 2 transactions
       assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 7004
     end
+
+    test "returns {:error, reason} when an error occurs in all chunks during processing and 'multichain_search_db_export_retry_queue' table is populated with all the input data" do
+      bypass = Bypass.open()
+
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        api_key: "12345",
+        addresses_chunk_size: 2
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
+        Bypass.down(bypass)
+      end)
+
+      TestHelper.get_chain_id_mock()
+
+      Bypass.expect(bypass, "POST", "/api/v1/import:batch", fn conn ->
+        Conn.resp(
+          conn,
+          500,
+          Jason.encode!(%{"code" => 0, "message" => "Error"})
+        )
+      end)
+
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+
+      addresses = 10 |> insert_list(:address)
+
+      params = %{
+        addresses: addresses,
+        blocks: [],
+        transactions: []
+      }
+
+      assert {:error, @error_msg} = MultichainSearch.batch_import(params)
+
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 10
+    end
+
+    test "returns {:error, reason} when an error occurs in all chunks (and number of chunks more than @max_concurrency) during processing and 'multichain_search_db_export_retry_queue' table is populated with all the input data" do
+      bypass = Bypass.open()
+
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        api_key: "12345",
+        addresses_chunk_size: 2
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
+        Bypass.down(bypass)
+      end)
+
+      TestHelper.get_chain_id_mock()
+
+      Bypass.expect(bypass, "POST", "/api/v1/import:batch", fn conn ->
+        Conn.resp(
+          conn,
+          500,
+          Jason.encode!(%{"code" => 0, "message" => "Error"})
+        )
+      end)
+
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+
+      addresses = 15 |> insert_list(:address)
+
+      params = %{
+        addresses: addresses,
+        blocks: [],
+        transactions: []
+      }
+
+      assert {:error, @error_msg} = MultichainSearch.batch_import(params)
+
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 15
+    end
   end
 
   describe "extract_batch_import_params_into_chunks/1" do

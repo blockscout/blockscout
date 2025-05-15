@@ -1169,10 +1169,11 @@ defmodule Explorer.Chain do
           result
         else
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          case MultichainSearch.batch_import(assets_to_import) do
-            {:ok, _} -> result
-            _ -> {:error, :insert_to_multichain_search_db_failed}
-          end
+          Task.async(fn ->
+            MultichainSearch.batch_import(assets_to_import)
+          end)
+
+          result
         end
 
       other_result ->

@@ -43,37 +43,93 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   def batch_import(params, retry? \\ false) do
     if enabled?() do
       params_chunks = extract_batch_import_params_into_chunks(params)
+      url = batch_import_url()
 
       params_chunks
       |> Task.async_stream(
-        fn export_body -> http_post_request(batch_import_url(), export_body, retry?) end,
+        fn export_body -> http_post_request(url, export_body, retry?) end,
         max_concurrency: @max_concurrency,
-        timeout: @post_timeout
+        timeout: @post_timeout,
+        zip_input_on_exit: true
       )
       |> Enum.reduce_while({:ok, {:chunks_processed, params_chunks}}, fn
         {:ok, {:ok, _result}}, acc ->
           {:cont, acc}
 
-        {:ok, {:error, _reason}}, _acc ->
-          {:halt, {:error, @request_error_msg}}
+        {:ok, {:error, error}}, _acc ->
+          on_error(error, retry?)
+          {:cont, {:error, @request_error_msg}}
 
-        {:exit, _}, _acc ->
-          {:halt, {:error, @request_error_msg}}
+        {:exit, {export_body, reason}}, _acc ->
+          on_error(
+            %{
+              url: url,
+              data_to_retry: export_body,
+              reason: reason
+            },
+            retry?
+          )
+
+          {:cont, {:error, @request_error_msg}}
       end)
     else
       {:ok, :service_disabled}
     end
   end
 
+  defp log_error(%{
+         url: url,
+         data_to_retry: data_to_retry,
+         reason: reason
+       }) do
+    old_truncate = Application.get_env(:logger, :truncate)
+    Logger.configure(truncate: :infinity)
+
+    Logger.error(fn ->
+      [
+        "Error while sending request to microservice url: #{url}, ",
+        "request_body: #{inspect(data_to_retry |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}, ",
+        "error_reason: #{inspect(reason, limit: :infinity, printable_limit: :infinity)}"
+      ]
+    end)
+
+    Logger.configure(truncate: old_truncate)
+  end
+
+  defp log_error(%{
+         url: url,
+         data_to_retry: data_to_retry,
+         status_code: status_code,
+         response_body: response_body
+       }) do
+    old_truncate = Application.get_env(:logger, :truncate)
+    Logger.configure(truncate: :infinity)
+
+    Logger.error(fn ->
+      [
+        "Error while sending request to microservice url: #{url}, ",
+        "request_body: #{inspect(data_to_retry |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}, ",
+        "status_code: #{inspect(status_code)}, ",
+        "response_body: #{inspect(response_body, limit: :infinity, printable_limit: :infinity)}"
+      ]
+    end)
+
+    Logger.configure(truncate: old_truncate)
+  end
+
   @spec on_error(
-          %{
-            addresses: [Address.t()],
-            hashes: [Block.t() | Transaction.t()]
-          },
+          map(),
           boolean()
         ) :: {non_neg_integer(), nil | [term()]} | :ok
   # sobelow_skip ["DOS.StringToAtom"]
-  defp on_error(%{addresses: addresses, hashes: hashes}, false) do
+  defp on_error(
+         %{
+           data_to_retry: %{addresses: addresses, hashes: hashes}
+         } = error,
+         false
+       ) do
+    log_error(error)
+
     hashes_to_retry =
       hashes
       |> Enum.map(
@@ -111,40 +167,23 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         response_body |> Jason.decode()
 
       {:ok, %Response{body: response_body, status_code: status_code}} ->
-        old_truncate = Application.get_env(:logger, :truncate)
-        Logger.configure(truncate: :infinity)
+        {:error,
+         %{
+           url: url,
+           data_to_retry: body,
+           retry?: retry?,
+           status_code: status_code,
+           response_body: response_body
+         }}
 
-        Logger.error(fn ->
-          [
-            "Error while sending request to microservice url: #{url}, ",
-            "status_code: #{inspect(status_code)}, ",
-            "response_body: #{inspect(response_body, limit: :infinity, printable_limit: :infinity)}, ",
-            "request_body: #{inspect(body |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}"
-          ]
-        end)
-
-        Logger.configure(truncate: old_truncate)
-
-        on_error(body, retry?)
-
-        {:error, @request_error_msg}
-
-      error ->
-        old_truncate = Application.get_env(:logger, :truncate)
-        Logger.configure(truncate: :infinity)
-
-        Logger.error(fn ->
-          [
-            "Error while sending request to microservice url: #{url}, request_body: #{inspect(body |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}: ",
-            inspect(error, limit: :infinity, printable_limit: :infinity)
-          ]
-        end)
-
-        Logger.configure(truncate: old_truncate)
-
-        on_error(body, retry?)
-
-        {:error, @request_error_msg}
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error,
+         %{
+           url: url,
+           data_to_retry: body,
+           retry?: retry?,
+           reason: reason
+         }}
     end
   end
 
