@@ -74,7 +74,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           boolean()
         ) :: {non_neg_integer(), nil | [term()]} | :ok
   # sobelow_skip ["DOS.StringToAtom"]
-  defp on_error(%{addresses: addresses, hashes: hashes}, retry?) do
+  defp on_error(%{addresses: addresses, hashes: hashes}, false) do
     hashes_to_retry =
       hashes
       |> Enum.map(
@@ -95,10 +95,10 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     prepared_data = hashes_to_retry ++ addresses_to_retry
 
-    unless retry?,
-      do:
-        Repo.insert_all(MultichainSearchDbExportRetryQueue, Helper.add_timestamps(prepared_data), on_conflict: :nothing)
+    Repo.insert_all(MultichainSearchDbExportRetryQueue, Helper.add_timestamps(prepared_data), on_conflict: :nothing)
   end
+
+  defp on_error(_, _), do: :ignore
 
   @spec http_post_request(String.t(), map(), boolean()) :: {:ok, any()} | {:error, String.t()}
   defp http_post_request(url, body, retry?) do
