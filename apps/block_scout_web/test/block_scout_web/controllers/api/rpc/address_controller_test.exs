@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias Explorer.Chain
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.{Events.Subscriber, Transaction, Wei}
-  alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
+  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Explorer.Repo
 
@@ -22,12 +22,18 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
     start_supervised!(AverageBlockTime)
-    start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
-    start_supervised!(AddressesCounter)
+
+    configuration = Application.get_env(:indexer, CoinBalanceOnDemand.Supervisor)
+    Application.put_env(:indexer, CoinBalanceOnDemand.Supervisor, disabled?: false)
+
+    CoinBalanceOnDemand.Supervisor.Case.start_supervised!(json_rpc_named_arguments: mocked_json_rpc_named_arguments)
+
+    start_supervised!(AddressesCount)
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
     on_exit(fn ->
+      Application.put_env(:indexer, CoinBalanceOnDemand.Supervisor, configuration)
       Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
     end)
 
@@ -159,7 +165,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^mining_address_hash, "0x66"]
+                                                       params: [^address_hash, "0x66"]
                                                      }
                                                    ],
                                                    _options ->
@@ -183,7 +189,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^address_hash, "0x66"]
+                                                       params: [^mining_address_hash, "0x66"]
                                                      }
                                                    ],
                                                    _options ->
@@ -205,6 +211,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         conn
         |> get("/api", params)
         |> json_response(200)
+
+      Process.sleep(100)
 
       schema = listaccounts_schema()
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
@@ -1789,22 +1797,91 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
   end
 
-  describe "txlistinternal" do
-    test "with missing txhash and address", %{conn: conn} do
+  describe "txlistinternal with no address or transaction hash" do
+    setup do
       params = %{
         "module" => "account",
         "action" => "txlistinternal"
       }
 
+      {:ok, %{params: params}}
+    end
+
+    test "returns empty result, if no internal transactions", %{conn: conn, params: params} do
       response =
         conn
         |> get("/api", params)
         |> json_response(200)
 
-      assert response["message"] =~ "txhash or address is required"
+      assert response["message"] =~ "No internal transactions found"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
-      refute response["result"]
+      assert response["result"] == []
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "returns internal transaction", %{conn: conn, params: params} do
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: address_2)
+        |> with_block(block)
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 0,
+        from_address: address,
+        to_address: address_2,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        block_number: block.number
+      )
+
+      internal_transaction =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 1,
+          from_address: address,
+          to_address: address_2,
+          block_hash: transaction.block_hash,
+          block_index: 1,
+          block_number: block.number
+        )
+
+      expected_result = [
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction.from_address_hash}",
+          "to" => "#{internal_transaction.to_address_hash}",
+          "value" => "#{internal_transaction.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction.input}",
+          "type" => "#{internal_transaction.type}",
+          "callType" => "#{internal_transaction.call_type}",
+          "gas" => "#{internal_transaction.gas}",
+          "gasUsed" => "#{internal_transaction.gas_used}",
+          "index" => "#{internal_transaction.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction.error}"
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
   end

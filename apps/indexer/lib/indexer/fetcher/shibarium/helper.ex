@@ -4,8 +4,9 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
   """
 
   import Ecto.Query
+  import Explorer.Helper, only: [hash_to_binary: 1]
 
-  alias Explorer.Chain.Cache.ShibariumCounter
+  alias Explorer.Chain.Cache.Counters.Shibarium.DepositsAndWithdrawalsCount
   alias Explorer.Chain.Shibarium.{Bridge, Reader}
   alias Explorer.Repo
 
@@ -16,10 +17,7 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
   """
   @spec calc_operation_hash(binary(), non_neg_integer() | nil, list(), list(), non_neg_integer()) :: binary()
   def calc_operation_hash(user, amount_or_id, erc1155_ids, erc1155_amounts, operation_id) do
-    user_binary =
-      user
-      |> String.trim_leading("0x")
-      |> Base.decode16!(case: :mixed)
+    user_binary = hash_to_binary(user)
 
     amount_or_id =
       if is_nil(amount_or_id) and not Enum.empty?(erc1155_ids) do
@@ -72,8 +70,8 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
   """
   @spec recalculate_cached_count() :: no_return()
   def recalculate_cached_count do
-    ShibariumCounter.deposits_count_save(Reader.deposits_count())
-    ShibariumCounter.withdrawals_count_save(Reader.withdrawals_count())
+    DepositsAndWithdrawalsCount.deposits_count_save(Reader.deposits_count())
+    DepositsAndWithdrawalsCount.withdrawals_count_save(Reader.withdrawals_count())
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
@@ -104,8 +102,8 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
 
     # increment the cached count of complete rows
     case !is_nil(updated_count) && updated_count > 0 && op.operation_type do
-      :deposit -> ShibariumCounter.deposits_count_save(updated_count, true)
-      :withdrawal -> ShibariumCounter.withdrawals_count_save(updated_count, true)
+      :deposit -> DepositsAndWithdrawalsCount.deposits_count_save(updated_count, true)
+      :withdrawal -> DepositsAndWithdrawalsCount.withdrawals_count_save(updated_count, true)
       false -> nil
     end
 

@@ -21,9 +21,13 @@ defmodule Explorer.Arbitrum.Withdraw do
                otherwise the transaction will fail. Typically this field contain calldata for
                `finalizeInboundTransfer(address,address,address,uint256,bytes)` method of the
                Bridge contract and it intended to withdraw supported tokens instead of native coins.
-    * `token_address` - extracted address of the token to withdraw in case of `data` field represents Bridge transaction
-    * `token_destination` - extracted receiver address in case of `data` field represents Bridge transaction
+    * `token_address` - extracted L1 address of the token to withdraw in case of `data` field represents Bridge transaction
+    * `token_destination` - extracted L1 receiver address in case of `data` field represents Bridge transaction
     * `token_amount` - extracted token amount in case of `data` field represents Bridge transaction
+    * `token_decimals` - how many decimal places the associated L1 token has
+    * `token_name` - the name of the associated L1 token
+    * `token_symbol` - the symbol of the associated L1 token
+    * `completion_transaction_hash` - the hash of the execution transaction on L1 chain (nil if not yet relayed)
   """
 
   @type t :: %__MODULE__{
@@ -40,9 +44,13 @@ defmodule Explorer.Arbitrum.Withdraw do
             %{
               address: token_address,
               destination: token_destination,
-              amount: token_amount
+              amount: token_amount,
+              decimals: token_decimals,
+              name: token_name,
+              symbol: token_symbol
             }
-            | nil
+            | nil,
+          completion_transaction_hash: completion_transaction_hash | nil
         }
 
   @typep message_id :: non_neg_integer()
@@ -57,6 +65,10 @@ defmodule Explorer.Arbitrum.Withdraw do
   @typep token_address :: Hash.Address.t()
   @typep token_destination :: Hash.Address.t()
   @typep token_amount :: non_neg_integer()
+  @typep token_decimals :: non_neg_integer() | nil
+  @typep token_name :: binary() | nil
+  @typep token_symbol :: binary() | nil
+  @typep completion_transaction_hash :: Hash.t() | nil
 
   defstruct [
     :message_id,
@@ -68,6 +80,7 @@ defmodule Explorer.Arbitrum.Withdraw do
     :l2_timestamp,
     :callvalue,
     :data,
-    token: nil
+    token: nil,
+    completion_transaction_hash: nil
   ]
 end

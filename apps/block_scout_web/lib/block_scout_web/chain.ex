@@ -6,7 +6,6 @@ defmodule BlockScoutWeb.Chain do
 
   import Explorer.Chain,
     only: [
-      find_or_insert_address_from_hash: 1,
       hash_to_block: 1,
       hash_to_transaction: 1,
       number_to_block: 1,
@@ -21,7 +20,7 @@ defmodule BlockScoutWeb.Chain do
       page_size: 0
     ]
 
-  import Explorer.Helper, only: [parse_integer: 1]
+  import Explorer.Helper, only: [parse_boolean: 1, parse_integer: 1]
 
   alias BlockScoutWeb.PagingHelper
   alias Ecto.Association.NotLoaded
@@ -51,6 +50,7 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
+  alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.PagingOptions
@@ -167,12 +167,25 @@ defmodule BlockScoutWeb.Chain do
   """
   @spec paging_options(any) ::
           [{:paging_options, Explorer.PagingOptions.t()}, ...] | Explorer.PagingOptions.t()
-  def paging_options(%{"hash" => hash_string, "fetched_coin_balance" => fetched_coin_balance_string})
-      when is_binary(hash_string) and is_binary(fetched_coin_balance_string) do
-    with {coin_balance, ""} <- Integer.parse(fetched_coin_balance_string),
-         {:ok, address_hash} <- string_to_address_hash(hash_string) do
-      [paging_options: %{@default_paging_options | key: {%Wei{value: Decimal.new(coin_balance)}, address_hash}}]
-    else
+  def paging_options(%{
+        "hash" => hash_string,
+        "fetched_coin_balance" => fetched_coin_balance_string,
+        "transactions_count" => transactions_count_string
+      })
+      when is_binary(hash_string) do
+    case string_to_address_hash(hash_string) do
+      {:ok, address_hash} ->
+        [
+          paging_options: %{
+            @default_paging_options
+            | key: %{
+                fetched_coin_balance: decimal_parse(fetched_coin_balance_string),
+                hash: address_hash,
+                transactions_count: parse_integer(transactions_count_string)
+              }
+          }
+        ]
+
       _ ->
         [paging_options: @default_paging_options]
     end
@@ -209,6 +222,8 @@ defmodule BlockScoutWeb.Chain do
   def paging_options(
         %{
           "market_cap" => market_cap_string,
+          "holders_count" => holder_count_string,
+          # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
           "holder_count" => holder_count_string,
           "name" => name_string,
           "contract_address_hash" => contract_address_hash_string,
@@ -410,17 +425,15 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def paging_options(%{"smart_contract_id" => id_str} = params) do
-    transactions_count = parse_integer(params["transaction_count"])
-    coin_balance = parse_integer(params["coin_balance"])
-    id = parse_integer(id_str)
-
-    [
-      paging_options: %{
-        @default_paging_options
-        | key: %{id: id, transactions_count: transactions_count, fetched_coin_balance: coin_balance}
-      }
-    ]
+  def paging_options(%{"value" => value_string, "id" => id_string})
+      when is_binary(value_string) and is_binary(id_string) do
+    with {id, ""} <- Integer.parse(id_string),
+         {value, ""} <- Decimal.parse(value_string) do
+      [paging_options: %{@default_paging_options | key: {nil, value, id}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
   end
 
   def paging_options(%{"items_count" => items_count_string, "state_changes" => _}) when is_binary(items_count_string) do
@@ -452,6 +465,16 @@ defmodule BlockScoutWeb.Chain do
       {id, ""} ->
         [paging_options: %{@default_paging_options | key: {id}}]
 
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"timestamp" => timestamp, "init_transaction_hash" => init_transaction_hash}) do
+    with {ts, ""} <- Integer.parse(timestamp),
+         {:ok, transaction_hash} <- string_to_transaction_hash(init_transaction_hash) do
+      [paging_options: %{@default_paging_options | key: {ts, transaction_hash}}]
+    else
       _ ->
         [paging_options: @default_paging_options]
     end
@@ -546,8 +569,8 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def fetch_page_number(%{"items_count" => item_count_str}) do
-    {items_count, _} = Integer.parse(item_count_str)
+  def fetch_page_number(%{"items_count" => items_count_str}) do
+    {items_count, _} = Integer.parse(items_count_str)
     div(items_count, @page_size) + 1
   end
 
@@ -598,7 +621,7 @@ defmodule BlockScoutWeb.Chain do
   defp address_from_param(param) do
     case string_to_address_hash(param) do
       {:ok, hash} ->
-        find_or_insert_address_from_hash(hash)
+        {:ok, %Address{hash: hash}}
 
       :error ->
         {:error, :not_found}
@@ -622,8 +645,16 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  defp paging_params({%Address{hash: hash, fetched_coin_balance: fetched_coin_balance}, _}) do
-    %{"hash" => hash, "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)}
+  defp paging_params(%Address{
+         hash: hash,
+         fetched_coin_balance: fetched_coin_balance,
+         transactions_count: transactions_count
+       }) do
+    %{
+      "hash" => hash,
+      "fetched_coin_balance" => fetched_coin_balance && Wei.to(fetched_coin_balance, :wei),
+      "transactions_count" => transactions_count
+    }
   end
 
   defp paging_params(%Token{
@@ -635,6 +666,8 @@ defmodule BlockScoutWeb.Chain do
        }) do
     %{
       "market_cap" => circulating_market_cap,
+      "holders_count" => holder_count,
+      # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
       "holder_count" => holder_count,
       "contract_address_hash" => contract_address_hash,
       "name" => token_name,
@@ -722,9 +755,15 @@ defmodule BlockScoutWeb.Chain do
     %{"index" => index}
   end
 
+  defp paging_params(%OptimismInteropMessage{timestamp: timestamp, init_transaction_hash: init_transaction_hash}) do
+    %{"timestamp" => DateTime.to_unix(timestamp), "init_transaction_hash" => init_transaction_hash}
+  end
+
   defp paging_params(%SmartContract{} = smart_contract) do
     %{
       "smart_contract_id" => smart_contract.id,
+      "transactions_count" => smart_contract.address.transactions_count,
+      # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
       "transaction_count" => smart_contract.address.transactions_count,
       "coin_balance" =>
         smart_contract.address.fetched_coin_balance && Wei.to(smart_contract.address.fetched_coin_balance, :wei)
@@ -880,4 +919,20 @@ defmodule BlockScoutWeb.Chain do
         {:error, {:invalid, :number}}
     end
   end
+
+  @doc """
+  Fetches the scam token toggle from conn.cookies["show_scam_tokens"]. And put it to the params keyword.
+
+  ## Parameters
+
+    - params: Initial params to append scam token toggle info.
+    - conn: The connection.
+
+  ## Returns
+
+  Provided params keyword with the new field `show_scam_tokens?`.
+  """
+  @spec fetch_scam_token_toggle(Keyword.t(), Plug.Conn.t()) :: Keyword.t()
+  def fetch_scam_token_toggle(params, conn),
+    do: Keyword.put(params, :show_scam_tokens?, conn.cookies["show_scam_tokens"] |> parse_boolean())
 end

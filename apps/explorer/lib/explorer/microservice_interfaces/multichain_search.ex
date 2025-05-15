@@ -4,7 +4,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   """
 
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.Cache.NetVersion
+  alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Address, Block, Hash, Transaction}
   alias Explorer.Repo
   alias Explorer.Utility.Microservice
@@ -59,7 +59,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout, hackney: [pool: false]) do
       {:ok, %Response{body: response_body, status_code: 200}} ->
         response_body |> Jason.decode()
 
@@ -100,7 +100,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
          blocks: blocks,
          transactions: transactions
        }) do
-    chain_id = NetVersion.get_version()
+    chain_id = ChainId.get_id()
     block_ranges = get_block_ranges(blocks)
 
     addresses =

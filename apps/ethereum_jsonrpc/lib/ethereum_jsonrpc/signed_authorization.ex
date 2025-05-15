@@ -10,7 +10,7 @@ defmodule EthereumJSONRPC.SignedAuthorization do
   * `"chainId"` - specifies the chain for which the authorization was created `t:EthereumJSONRPC.quantity/0`.
   * `"address"` - `t:EthereumJSONRPC.address/0` of the delegate contract.
   * `"nonce"` - signature nonce `t:EthereumJSONRPC.quantity/0`.
-  * `"v"` - v component of the signature `t:EthereumJSONRPC.quantity/0`.
+  * `"v"` or `"yParity"` - v component of the signature `t:EthereumJSONRPC.quantity/0`.
   * `"r"` - r component of the signature `t:EthereumJSONRPC.quantity/0`.
   * `"s"` - s component of the signature `t:EthereumJSONRPC.quantity/0`.
   """
@@ -52,7 +52,7 @@ defmodule EthereumJSONRPC.SignedAuthorization do
       nonce: quantity_to_integer(raw["nonce"]),
       r: quantity_to_integer(raw["r"]),
       s: quantity_to_integer(raw["s"]),
-      v: quantity_to_integer(raw["v"])
+      v: quantity_to_integer(raw["v"] || raw["yParity"])
     }
   end
 end

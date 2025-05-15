@@ -10,17 +10,26 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
 
   import EthereumJSONRPC, only: [fetch_codes: 2]
 
-  alias Explorer.Chain.Address
+  alias Explorer.Chain
+  alias Explorer.Chain.{Address, Data}
+  alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Counters.Helper
-  alias Explorer.Utility.AddressContractCodeFetchAttempt
+  alias Explorer.Chain.SmartContract.Proxy.EIP7702
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Utility.{AddressContractCodeFetchAttempt, RateLimiter}
+  alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
 
   @max_delay :timer.hours(168)
 
-  @spec trigger_fetch(Address.t()) :: :ok
-  def trigger_fetch(address) do
-    if is_nil(address.contract_code) do
-      GenServer.cast(__MODULE__, {:fetch, address})
+  @spec trigger_fetch(String.t() | nil, Address.t()) :: :ok
+  def trigger_fetch(caller \\ nil, address) do
+    if is_nil(address.contract_code) or Address.eoa_with_code?(address) do
+      case RateLimiter.check_rate(caller, :on_demand) do
+        :allow -> GenServer.cast(__MODULE__, {:fetch, address})
+        :deny -> :ok
+      end
+    else
+      ContractCreatorOnDemand.trigger_fetch(address)
     end
   end
 
@@ -48,13 +57,13 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
            {:retry,
             Helper.current_time() - updated_at_ms >
               threshold(retries_number)} do
-      fetch_and_broadcast_bytecode(address.hash, state)
+      fetch_and_broadcast_bytecode(address, state)
     else
       {:need_to_fetch, false} ->
         :ok
 
       {:retries_number, nil} ->
-        fetch_and_broadcast_bytecode(address.hash, state)
+        fetch_and_broadcast_bytecode(address, state)
         :ok
 
       {:retry, false} ->
@@ -87,33 +96,61 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   #
   # ## Returns
   #   `:ok` (the function always returns `:ok`, actual results are handled via side effects)
-  @spec fetch_and_broadcast_bytecode(Explorer.Chain.Hash.Address.t(), %{
+  @spec fetch_and_broadcast_bytecode(Address.t(), %{
           json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments()
         }) :: :ok
-  defp fetch_and_broadcast_bytecode(address_hash, %{json_rpc_named_arguments: _} = state) do
+  defp fetch_and_broadcast_bytecode(address, %{json_rpc_named_arguments: _} = state) do
     with {:fetched_code, {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}}} <-
            {:fetched_code,
             fetch_codes(
-              [%{block_quantity: "latest", address: to_string(address_hash)}],
+              [%{block_quantity: "latest", address: to_string(address.hash)}],
               state.json_rpc_named_arguments
             )},
          contract_code_object = List.first(fetched_codes),
          false <- is_nil(contract_code_object),
-         true <- contract_code_object.code !== "0x" do
-      case Address.set_contract_code(address_hash, contract_code_object.code) do
-        {1, _} ->
-          AddressContractCodeFetchAttempt.delete(address_hash)
-          Publisher.broadcast(%{fetched_bytecode: [address_hash, contract_code_object.code]}, :on_demand)
+         {:ok, fetched_code} <-
+           (contract_code_object.code == "0x" && {:ok, nil}) || Data.cast(contract_code_object.code),
+         true <- fetched_code != address.contract_code do
+      case Chain.import(%{
+             addresses: %{
+               params: [%{hash: address.hash, contract_code: fetched_code}],
+               on_conflict: {:replace, [:contract_code, :updated_at]},
+               fields_to_update: [:contract_code]
+             }
+           }) do
+        {:ok, _} ->
+          # Update EIP7702 proxy addresses to avoid inconsistencies between addresses and proxy_implementations tables.
+          # Other proxy types are not handled here, since their bytecode doesn't change the way EIP7702 bytecode does.
+          cond do
+            Address.smart_contract?(address) and !Address.eoa_with_code?(address) ->
+              :ok
 
-        _ ->
-          Logger.error(fn -> "Error while setting address #{inspect(to_string(address_hash))} deployed bytecode" end)
+            is_nil(fetched_code) ->
+              Implementation.delete_implementations(address.hash)
+
+            # TODO: it's better to use a generic code like this, but it does unnecessary minimal proxy checks and DB lookups
+            # Address.eoa_with_code?(new_address) ->
+            #   Proxy.fetch_implementation_address_hash(address.hash, [], [])
+
+            delegate = EIP7702.get_delegate_address(fetched_code.bytes) ->
+              Implementation.save_implementation_data([delegate |> to_string()], address.hash, :eip7702, [])
+
+            true ->
+              :ok
+          end
+
+          Publisher.broadcast(%{fetched_bytecode: [address.hash, contract_code_object.code]}, :on_demand)
+
+          ContractCreatorOnDemand.trigger_fetch(address)
+
+          AddressContractCodeFetchAttempt.delete(address.hash)
       end
     else
       {:fetched_code, {:error, _}} ->
         :ok
 
       _ ->
-        AddressContractCodeFetchAttempt.insert_retries_number(address_hash)
+        AddressContractCodeFetchAttempt.insert_retries_number(address.hash)
     end
   end
 

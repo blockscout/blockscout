@@ -1,6 +1,6 @@
 defmodule Indexer.Fetcher.TokenInstance.HelperTest do
   use EthereumJSONRPC.Case
-  use Explorer.DataCase
+  use Explorer.DataCase, async: false
 
   alias Explorer.Chain.Token.Instance
   alias Explorer.Repo
@@ -32,13 +32,14 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
         {:ok, %HTTPoison.Response{status_code: 200, body: result}}
       end)
 
-      insert(:token,
-        contract_address: build(:address, hash: "0x06012c8cf97bead5deae237070f9587f8e7a266d"),
-        type: "ERC-721"
-      )
+      token =
+        insert(:token,
+          contract_address: build(:address, hash: "0x06012c8cf97bead5deae237070f9587f8e7a266d"),
+          type: "ERC-721"
+        )
 
-      [{:ok, %Instance{metadata: metadata}}] =
-        Helper.batch_fetch_instances([{"0x06012c8cf97bead5deae237070f9587f8e7a266d", 100_500}])
+      [%Instance{metadata: metadata}] =
+        Helper.batch_fetch_instances([{token.contract_address_hash, 100_500}])
 
       assert Map.get(metadata, "name") == "KittyBlue_2_Lemonade"
 
@@ -98,22 +99,24 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
         end
       )
 
-      insert(:token,
-        contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
-        type: "ERC-1155"
-      )
+      token =
+        insert(:token,
+          contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
+          type: "ERC-1155"
+        )
 
       assert [
-               {:ok,
-                %Instance{
-                  metadata: %{
-                    "name" => "Sérgio Mendonça 0000000000000000000000000000000000000000000000000000000000000309"
-                  }
-                }}
-             ] = Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 777}])
+               %Instance{
+                 metadata: %{
+                   "name" => "Sérgio Mendonça 0000000000000000000000000000000000000000000000000000000000000309"
+                 }
+               }
+             ] = Helper.batch_fetch_instances([{token.contract_address_hash, 777}])
     end
 
     test "fetch ipfs of ipfs/{id} format" do
+      address_hash_string = String.downcase("0x7e01CC81fCfdf6a71323900288A69e234C464f63")
+
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn [
                                 %{
@@ -124,7 +127,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
                                     %{
                                       data:
                                         "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000000",
-                                      to: "0x7e01CC81fCfdf6a71323900288A69e234C464f63"
+                                      to: ^address_hash_string
                                     },
                                     "latest"
                                   ]
@@ -149,19 +152,19 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
         {:ok, %HTTPoison.Response{status_code: 200, body: "123", headers: [{"Content-Type", "image/jpg"}]}}
       end)
 
-      insert(:token,
-        contract_address: build(:address, hash: "0x7e01CC81fCfdf6a71323900288A69e234C464f63"),
-        type: "ERC-721"
-      )
+      token =
+        insert(:token,
+          contract_address: build(:address, hash: "0x7e01CC81fCfdf6a71323900288A69e234C464f63"),
+          type: "ERC-721"
+        )
 
       assert [
-               {:ok,
-                %Instance{
-                  metadata: %{
-                    "image" => "https://ipfs.io/ipfs/Qmd9pvThEwgjTBbEkNmmGFbcpJKw17fnRBAT4Td4rcog22"
-                  }
-                }}
-             ] = Helper.batch_fetch_instances([{"0x7e01CC81fCfdf6a71323900288A69e234C464f63", 0}])
+               %Instance{
+                 metadata: %{
+                   "image" => "ipfs://Qmd9pvThEwgjTBbEkNmmGFbcpJKw17fnRBAT4Td4rcog22"
+                 }
+               }
+             ] = Helper.batch_fetch_instances([{token.contract_address_hash, 0}])
 
       Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
@@ -245,22 +248,22 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
         end
       )
 
-      insert(:token,
-        contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
-        type: "ERC-721"
-      )
+      token =
+        insert(:token,
+          contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
+          type: "ERC-721"
+        )
 
       Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, base_uri_retry?: true)
 
       assert [
-               {:ok,
-                %Instance{
-                  metadata: %{
-                    "name" => "123"
-                  }
-                }}
+               %Instance{
+                 metadata: %{
+                   "name" => "123"
+                 }
+               }
              ] =
-               Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 5_710_384_980_761_197_878}])
+               Helper.batch_fetch_instances([{token.contract_address_hash, 5_710_384_980_761_197_878}])
 
       Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, base_uri_retry?: false)
     end
@@ -295,23 +298,23 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
          ]}
       end)
 
-      insert(:token,
-        contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
-        type: "ERC-404"
-      )
+      token =
+        insert(:token,
+          contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
+          type: "ERC-404"
+        )
 
       assert [
-               {:ok,
-                %Instance{
-                  metadata: %{
-                    "name" => "OMNI404 #300067000000000000",
-                    "description" => "The frontier of permissionless assets.",
-                    "external_url" => "https://twitter.com/omnichain404",
-                    "image" =>
-                      "https://ipfs.io/ipfs/QmU6DGXciSZXTH1fUKkEqj74P8FeXPRKxSTjgRsVKUQa95/base/300067000000000000.JPG"
-                  }
-                }}
-             ] = Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 300_067_000_000_000_000}])
+               %Instance{
+                 metadata: %{
+                   "name" => "OMNI404 #300067000000000000",
+                   "description" => "The frontier of permissionless assets.",
+                   "external_url" => "https://twitter.com/omnichain404",
+                   "image" =>
+                     "https://ipfs.io/ipfs/QmU6DGXciSZXTH1fUKkEqj74P8FeXPRKxSTjgRsVKUQa95/base/300067000000000000.JPG"
+                 }
+               }
+             ] = Helper.batch_fetch_instances([{token.contract_address_hash, 300_067_000_000_000_000}])
     end
 
     test "check that decoding error is stored in error, not in metadata", %{bypass: bypass} do
@@ -368,17 +371,106 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
         end
       )
 
-      insert(:token,
-        contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
-        type: "ERC-1155"
-      )
+      token =
+        insert(:token,
+          contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
+          type: "ERC-1155"
+        )
 
-      Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 777}])
+      Helper.batch_fetch_instances([{token.contract_address_hash, 777}])
 
       %Instance{
         metadata: nil,
         error: "wrong metadata type"
       } = 777 |> Instance.token_instance_query("0x5caebd3b32e210e85ce3e9d51638b9c445481567") |> Repo.one()
+    end
+
+    test "check ipfs credentials not exposed to metadata", %{bypass: bypass} do
+      old_env = Application.get_env(:indexer, :ipfs)
+
+      public_ipfs_gateway = "https://ipfs.io/ipfs"
+
+      Application.put_env(
+        :indexer,
+        :ipfs,
+        Keyword.merge(old_env,
+          gateway_url_param_key: "secret_key",
+          gateway_url_param_value: "secret_value",
+          gateway_url_param_location: :query,
+          gateway_url: "http://localhost:#{bypass.port}",
+          public_gateway_url: public_ipfs_gateway
+        )
+      )
+
+      url = "/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+
+      encoded_url =
+        "0x" <>
+          (ABI.TypeEncoder.encode([url], %ABI.FunctionSelector{
+             function: nil,
+             types: [
+               :string
+             ]
+           })
+           |> Base.encode16(case: :lower))
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data:
+                                        "0x0e89341c0000000000000000000000000000000000000000000000000000000000000309",
+                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             result: encoded_url
+           }
+         ]}
+      end)
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu",
+        fn conn ->
+          assert conn.params["secret_key"] == "secret_value"
+
+          conn
+          |> Conn.put_resp_content_type("image/jpg")
+          |> Conn.resp(200, "img")
+        end
+      )
+
+      token =
+        insert(:token,
+          contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
+          type: "ERC-1155"
+        )
+
+      assert [
+               %Instance{
+                 metadata: %{
+                   "image" => img_url
+                 }
+               }
+             ] = Helper.batch_fetch_instances([{token.contract_address_hash, 777}])
+
+      refute String.contains?(img_url, "secret_key") || String.contains?(img_url, "secret_value")
+      assert img_url == "ipfs://" <> "bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+      Application.put_env(:indexer, :ipfs, old_env)
     end
   end
 
@@ -393,6 +485,10 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       erc_721_token = insert(:token, type: "ERC-721")
 
       token_instance = build(:token_instance, token_contract_address_hash: erc_721_token.contract_address_hash)
+
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, %{}}
+      end)
 
       Helper.batch_fetch_instances([
         %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
@@ -425,6 +521,10 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
           error: "error",
           metadata: nil
         )
+
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, %{}}
+      end)
 
       Helper.batch_fetch_instances([
         %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
@@ -535,6 +635,10 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
           metadata: nil,
           retries_count: 50
         )
+
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, %{}}
+      end)
 
       Helper.batch_fetch_instances([
         %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}

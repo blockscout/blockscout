@@ -4,39 +4,17 @@ defmodule BlockScoutWeb.BlockChannel do
   """
   use BlockScoutWeb, :channel
 
-  alias BlockScoutWeb.API.V2.BlockView, as: BlockViewAPI
   alias BlockScoutWeb.{BlockView, ChainView}
-  alias Explorer.Repo
   alias Phoenix.View
-  alias Timex.Duration
 
   intercept(["new_block"])
 
-  def join("blocks:new_block", _params, socket) do
+  def join("blocks_old:new_block", _params, socket) do
     {:ok, %{}, socket}
   end
 
-  def join("blocks:" <> _miner_address, _params, socket) do
+  def join("blocks_old:" <> _miner_address, _params, socket) do
     {:ok, %{}, socket}
-  end
-
-  def handle_out(
-        "new_block",
-        %{block: block, average_block_time: average_block_time},
-        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
-      ) do
-    rendered_block =
-      BlockViewAPI.render("block.json", %{
-        block: block |> Repo.preload(miner: [:names, :smart_contract, proxy_implementations_association()]),
-        socket: nil
-      })
-
-    push(socket, "new_block", %{
-      average_block_time: to_string(Duration.to_milliseconds(average_block_time)),
-      block: rendered_block
-    })
-
-    {:noreply, socket}
   end
 
   def handle_out("new_block", %{block: block, average_block_time: average_block_time}, socket) do
@@ -58,7 +36,8 @@ defmodule BlockScoutWeb.BlockChannel do
       )
 
     push(socket, "new_block", %{
-      average_block_time: Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat),
+      average_block_time:
+        Timex.format_duration(average_block_time, Explorer.Chain.Cache.Counters.Helper.AverageBlockTimeDurationFormat),
       chain_block_html: rendered_chain_block,
       block_html: rendered_block,
       block_number: block.number,

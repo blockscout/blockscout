@@ -1,8 +1,6 @@
 # NFTMediaHandler
 
-# NFT Media Handler
-
-`NFTMediaHandler` is an application for resizing and uploading images to R2/S3 storage.
+The NFT Media Handler is an Elixir component in Blockscout responsible for fetching, resizing, and uploading NFT media files. It retrieves images and videos from URLs while handling errors and enforcing a size limit. It efficiently resizes images using the vix_vips library to generate various thumbnail sizes. If the original image is smaller than a target thumbnail size, resizing is skipped. For video files, it extracts the first frame to create a thumbnail image. It uploads media data to a cloud storage service using ExAws.S3. The component manages concurrent tasks with a GenServer and Task.Supervisor to optimize processing. It supports distributed processing through a round-robin node selection via a DispatcherInterface. The application is highly configurable through environment variables for different deployment scenarios.
 
 ## Configuration
 

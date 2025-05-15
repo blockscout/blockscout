@@ -1,5 +1,6 @@
 defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
   alias Explorer.Chain.Arbitrum.LifecycleTransaction
+  alias Explorer.Chain.Cache.BackgroundMigrations
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1]
@@ -7,6 +8,52 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
   @moduledoc """
   Provides utility functions to support the handling of Arbitrum-specific data fetching and processing in the indexer.
   """
+
+  @doc """
+    Updates the data for a task of the batches fetcher.
+
+    This function takes the current state, a task tag, and a map of updates, then
+    merges the updates with the existing task data for that tag.
+
+    ## Parameters
+    - `state`: The current state map containing task_data
+    - `task_tag`: The atom key for the task (e.g. :new_executions or :historical_executions)
+    - `updates`: Map of values to merge with the current task data
+
+    ## Returns
+    - Updated state with merged task data
+
+    ## Examples
+
+        iex> state = %{task_data: %{new_executions: %{start_block: 100}}}
+        iex> update_fetcher_task_data(state, :new_executions, %{start_block: 200})
+        %{task_data: %{new_executions: %{start_block: 200}}}
+  """
+  @spec update_fetcher_task_data(
+          %{:task_data => %{optional(atom()) => map()}, optional(any()) => any()},
+          atom(),
+          map()
+        ) :: %{:task_data => %{optional(atom()) => map()}, optional(any()) => any()}
+  def update_fetcher_task_data(%{task_data: data} = state, task_tag, updates)
+      when is_atom(task_tag) and is_map(updates) do
+    %{state | task_data: %{data | task_tag => Map.merge(data[task_tag], updates)}}
+  end
+
+  @doc """
+  Checks if the unconfirmed blocks index is ready for use.
+
+  This function verifies if the heavy DB index operation for creating the unconfirmed blocks
+  index has been completed. This check is necessary to avoid running queries that depend on
+  this index before it's fully created, which could lead to performance issues.
+
+  ## Returns
+  - `true` if the index creation is complete
+  - `false` if the index is still being created or not started yet
+  """
+  @spec unconfirmed_blocks_index_ready?() :: boolean()
+  def unconfirmed_blocks_index_ready? do
+    BackgroundMigrations.get_heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished()
+  end
 
   @doc """
     Increases a base duration by an amount specified in a map, if present.

@@ -52,9 +52,9 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         total_supply: total_supply
       }) do
     %{
-      items: Enum.map(addresses, &prepare_address/1),
+      items: Enum.map(addresses, &prepare_address_for_list/1),
       next_page_params: next_page_params,
-      exchange_rate: exchange_rate.usd_value,
+      exchange_rate: exchange_rate.fiat_value,
       total_supply: total_supply && to_string(total_supply)
     }
   end
@@ -71,30 +71,38 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     %{"items" => Enum.map(nft_collections, &prepare_nft_collection(&1)), "next_page_params" => next_page_params}
   end
 
-  @spec prepare_address(
-          {atom() | %{:fetched_coin_balance => any(), :hash => any(), optional(any()) => any()}, any()}
-          | Explorer.Chain.Address.t()
-        ) :: %{
-          optional(:coin_balance) => any(),
-          optional(:transaction_count) => binary(),
-          optional(<<_::32, _::_*8>>) => any()
-        }
-  def prepare_address({address, transaction_count}) do
+  @doc """
+  Prepares an address for display in the addresses list.
+
+  ## Parameters
+    - address: Address struct containing:
+      - `:hash` - address hash
+      - `:fetched_coin_balance` - current coin balance
+      - `:transactions_count` - number of transactions
+
+  ## Returns
+    - Map containing:
+      - `:hash` - address hash
+      - `:coin_balance` - current coin balance value
+      - `:transaction_count` - number of transactions as string
+      - Additional address info fields from Helper.address_with_info/4
+  """
+  @spec prepare_address_for_list(Address.t()) :: map()
+  def prepare_address_for_list(address) do
     nil
     |> Helper.address_with_info(address, address.hash, true)
-    |> Map.put(:transaction_count, to_string(transaction_count))
+    |> Map.put(:transactions_count, to_string(address.transactions_count))
+    # todo: It should be removed in favour `transaction_count` property with the next release after 8.0.0
+    |> Map.put(:transaction_count, to_string(address.transactions_count))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
 
-  @doc """
-  Prepares address properties for rendering in /addresses and /addresses/:address_hash_param API v2 endpoints
-  """
-  @spec prepare_address(Address.t(), Plug.Conn.t() | nil) :: map()
-  def prepare_address(address, conn \\ nil) do
+  @spec prepare_address(Address.t(), Plug.Conn.t()) :: map()
+  defp prepare_address(address, conn) do
     base_info = Helper.address_with_info(conn, address, address.hash, true)
 
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
-    exchange_rate = Market.get_coin_exchange_rate().usd_value
+    exchange_rate = Market.get_coin_exchange_rate().fiat_value
 
     creation_transaction = Address.creation_transaction(address)
     creator_hash = creation_transaction && creation_transaction.from_address_hash
@@ -109,7 +117,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         "coin_balance" => balance,
         "exchange_rate" => exchange_rate,
         "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
-        "has_decompiled_code" => AddressView.has_decompiled_code?(address),
         "has_validated_blocks" => Counters.check_if_validated_blocks_at_address(address.hash, @api_true),
         "has_logs" => Counters.check_if_logs_at_address(address.hash, @api_true),
         "has_tokens" => Counters.check_if_tokens_at_address(address.hash, @api_true),
@@ -216,20 +223,26 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         ) :: map()
   def fetch_and_render_token_instance(token_id, token, address_hash, token_balance) do
     token_instance =
-      case Chain.nft_instance_from_token_id_and_token_address(
+      case Instance.nft_instance_by_token_id_and_token_address(
              token_id,
              token.contract_address_hash,
              @api_true
            ) do
         # `%{hash: address_hash}` will match with `address_with_info(_, address_hash)` clause in `BlockScoutWeb.API.V2.Helper`
         {:ok, token_instance} ->
-          %Instance{token_instance | owner: %{hash: address_hash}, current_token_balance: token_balance}
+          %Instance{
+            token_instance
+            | owner: %{hash: address_hash},
+              owner_address_hash: address_hash,
+              current_token_balance: token_balance
+          }
 
         {:error, :not_found} ->
           %Instance{
             token_id: token_id,
             metadata: nil,
             owner: %Address{hash: address_hash},
+            owner_address_hash: address_hash,
             current_token_balance: token_balance,
             token_contract_address_hash: token.contract_address_hash
           }

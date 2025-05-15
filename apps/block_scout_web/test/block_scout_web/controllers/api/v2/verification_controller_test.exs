@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
   use BlockScoutWeb.ConnCase
   use BlockScoutWeb.ChannelCase, async: false
 
-  alias BlockScoutWeb.UserSocketV2
+  alias BlockScoutWeb.V2.UserSocket
   alias Explorer.Chain.Address
   alias Explorer.TestHelper
   alias Tesla.Multipart
@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
         topic = "addresses:#{contract_address.hash}"
 
         {:ok, _reply, _socket} =
-          BlockScoutWeb.UserSocketV2
+          UserSocket
           |> socket("no_id", %{})
           |> subscribe_and_join(topic)
 
@@ -117,7 +117,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
         topic = "addresses:#{contract_address.hash}"
 
         {:ok, _reply, _socket} =
-          BlockScoutWeb.UserSocketV2
+          UserSocket
           |> socket("no_id", %{})
           |> subscribe_and_join(topic)
 
@@ -162,7 +162,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
         topic = "addresses:#{String.downcase(address)}"
 
         {:ok, _reply, _socket} =
-          UserSocketV2
+          UserSocket
           |> socket("no_id", %{})
           |> subscribe_and_join(topic)
 
@@ -250,7 +250,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
         topic = "addresses:#{contract_address.hash}"
 
         {:ok, _reply, _socket} =
-          BlockScoutWeb.UserSocketV2
+          UserSocket
           |> socket("no_id", %{})
           |> subscribe_and_join(topic)
 
@@ -313,7 +313,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
         topic = "addresses:#{contract_address.hash}"
 
         {:ok, _reply, _socket} =
-          BlockScoutWeb.UserSocketV2
+          UserSocket
           |> socket("no_id", %{})
           |> subscribe_and_join(topic)
 
@@ -336,7 +336,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
                        :timer.seconds(300)
 
         # Assert that the `is_blueprint=true` is stored in the database after verification
-        TestHelper.get_eip1967_implementation_zero_addresses()
+        TestHelper.get_all_proxies_implementation_zero_addresses()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(contract_address.hash)}")
         response = json_response(request, 200)
@@ -398,7 +398,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
       topic = "addresses:#{contract_address.hash}"
 
       {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
+        UserSocket
         |> socket("no_id", %{})
         |> subscribe_and_join(topic)
 

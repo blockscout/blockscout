@@ -18,6 +18,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
     UncleBlock
   }
 
+  alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
+
   @moduletag capture_log: true
 
   # MUST use global mode because we aren't guaranteed to get `start_supervised`'s pid back fast enough to `allow` it to
@@ -45,6 +47,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
     TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     CoinBalanceRealtime.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+    {:ok, _pid} = ContractCreatorOnDemand.start_link([[], []])
 
     Application.put_env(:indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor, disabled?: true)
 
@@ -91,7 +94,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
-      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!()
+      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
+        json_rpc_named_arguments: json_rpc_named_arguments
+      )
 
       # In CELO network, there is a token duality feature where CELO can be used
       # as both a native chain currency and as an ERC-20 token (GoldToken).
@@ -598,7 +603,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
         block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
       )
 
-      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!()
+      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
+        json_rpc_named_arguments: json_rpc_named_arguments
+      )
 
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 

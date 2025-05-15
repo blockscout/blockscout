@@ -48,7 +48,8 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   @checksum_bytes_count 4
 
   @protocol_indicator_bytes_count 1
-  @max_protocol_indicator 2 ** (@protocol_indicator_bytes_count * Hash.bits_per_byte()) - 1
+  @max_actor_id 2 ** (@protocol_indicator_bytes_count * Hash.bits_per_byte()) - 1
+  @ethereum_actor_id 10
 
   @min_address_string_length 3
 
@@ -66,6 +67,8 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
     3 => 48
   }
   @standard_protocol_indicators Map.keys(@protocol_indicator_to_payload_byte_count)
+
+  @id_address_eth_prefix <<255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
 
   @type t :: %__MODULE__{
           protocol_indicator: non_neg_integer(),
@@ -139,9 +142,43 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
           checksum: <<60, 137, 107, 165>>
         }
       }
+
+  If the term is a `Hash` struct, then it is converted to `t:t/0`
+
+      iex> Explorer.Chain.Filecoin.NativeAddress.cast(
+      ...>   %Explorer.Chain.Hash{
+      ...>     byte_count: 20,
+      ...>     bytes: <<0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed :: big-integer-size(20)-unit(8)>>
+      ...>   }
+      ...> )
+      {
+        :ok,
+        %Explorer.Chain.Filecoin.NativeAddress{
+          protocol_indicator: 4,
+          actor_id: 10,
+          payload: <<90, 174, 182, 5, 63, 62, 148, 201, 185, 160, 159, 51, 102, 148, 53, 231, 239, 27, 234, 237>>,
+          checksum: <<238, 18, 207, 48>>
+        }
+      }
+
+      iex> Explorer.Chain.Filecoin.NativeAddress.cast(
+      ...>   %Explorer.Chain.Hash{
+      ...>     byte_count: 20,
+      ...>     bytes: <<0xff00000000000000000000000000000000302F7B :: big-integer-size(20)-unit(8)>>
+      ...>   }
+      ...> )
+      {
+        :ok,
+        %Explorer.Chain.Filecoin.NativeAddress{
+          protocol_indicator: 0,
+          actor_id: nil,
+          payload: <<251, 222, 192, 1>>,
+          checksum: nil
+        }
+      }
   """
   @impl Ecto.Type
-  @spec cast(t() | String.t()) :: {:ok, t()} | :error
+  @spec cast(t() | String.t() | Hash.Address.t()) :: {:ok, t()} | :error
   def cast(%__MODULE__{} = address), do: {:ok, address}
 
   def cast(address_string) when is_binary(address_string) do
@@ -156,6 +193,38 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
       _ ->
         :error
     end
+  end
+
+  def cast(%Hash{bytes: <<@id_address_eth_prefix::binary, rest::binary>>}) do
+    payload =
+      rest
+      |> :binary.decode_unsigned()
+      |> LEB128.encode()
+
+    {
+      :ok,
+      %__MODULE__{
+        protocol_indicator: 0,
+        actor_id: nil,
+        payload: payload,
+        checksum: nil
+      }
+    }
+  end
+
+  def cast(%Hash{bytes: payload}) do
+    dumped = <<4, @ethereum_actor_id, payload::binary>>
+    checksum = to_checksum(dumped)
+
+    {
+      :ok,
+      %__MODULE__{
+        protocol_indicator: 4,
+        actor_id: @ethereum_actor_id,
+        payload: payload,
+        checksum: checksum
+      }
+    }
   end
 
   defp cast_protocol_indicator_and_payload("0" <> id_string) do
@@ -251,7 +320,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
       when is_integer(actor_id) and
              is_binary(payload) and
              actor_id >= 0 and
-             actor_id <= @max_protocol_indicator do
+             actor_id <= @max_actor_id do
     {:ok, <<4, actor_id, payload::binary>>}
   end
 
@@ -259,7 +328,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
       when is_integer(protocol_indicator) and
              is_binary(payload) and
              protocol_indicator >= 0 and
-             protocol_indicator <= @max_protocol_indicator do
+             protocol_indicator <= @max_actor_id do
     {:ok, <<protocol_indicator, payload::binary>>}
   end
 

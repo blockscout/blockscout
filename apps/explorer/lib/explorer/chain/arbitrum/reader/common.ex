@@ -31,10 +31,13 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
 
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
-    DaMultiPurposeRecord
+    DaMultiPurposeRecord,
+    L1Batch
   }
 
   alias Explorer.Chain.Block, as: FullBlock
+
+  alias Explorer.Prometheus.Instrumenter
 
   @doc """
     Retrieves the number of the highest confirmed rollup block.
@@ -87,5 +90,48 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
       nil -> %{}
       keyset -> keyset.data
     end
+  end
+
+  @doc """
+    Retrieves information about the latest batches including:
+    - The latest batch number
+    - The timestamp when the latest batch was committed to the parent chain
+    - The average time between parent chain transactions for the latest 10 batches
+
+    ## Parameters
+    - `options`: A keyword list of options:
+      - `:api?` - Whether the function is being called from an API context.
+
+    ## Returns
+    - `{:ok, %{latest_batch_number: number, latest_batch_timestamp: timestamp, average_batch_time: seconds}}`
+      if batches are found
+    - `{:error, :not_found}` if no batches are found
+  """
+  @spec get_latest_batch_info(api?: boolean()) ::
+          {:ok,
+           %{
+             latest_batch_number: non_neg_integer(),
+             latest_batch_timestamp: DateTime.t(),
+             average_batch_time: non_neg_integer()
+           }}
+          | {:error, :not_found}
+  def get_latest_batch_info(options) do
+    import Ecto.Query
+
+    # Query to get the latest 10 batches with their commitment transactions
+    latest_batches_query =
+      from(batch in L1Batch,
+        join: tx in assoc(batch, :commitment_transaction),
+        order_by: [desc: batch.number],
+        limit: 10,
+        select: %{
+          number: batch.number,
+          timestamp: tx.timestamp
+        }
+      )
+
+    items = select_repo(options).all(latest_batches_query)
+
+    Instrumenter.prepare_batch_metric(items)
   end
 end

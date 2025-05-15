@@ -7,7 +7,7 @@ defmodule Explorer.Helper do
   alias Explorer.Chain
   alias Explorer.Chain.{Data, Hash}
 
-  import Ecto.Query, only: [join: 5, where: 3]
+  import Ecto.Query, only: [where: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   @max_safe_integer round(:math.pow(2, 63)) - 1
@@ -62,6 +62,24 @@ defmodule Explorer.Helper do
   def truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
     "0x#{truncated_hash}"
   end
+
+  @doc """
+    Safely parses a string or integer into an integer value.
+
+    Handles both string and integer inputs:
+    - For string input: Converts only if the entire string represents a valid integer
+    - For integer input: Returns the integer as is
+    - For any other input: Returns nil
+
+    ## Parameters
+    - `int_or_string`: A binary string containing an integer or an integer value
+
+    ## Returns
+    - The parsed integer if successful
+    - `nil` if the input is invalid or contains non-integer characters
+  """
+  @spec parse_integer(binary() | integer()) :: integer() | nil
+  def parse_integer(int_or_string)
 
   def parse_integer(integer_string) when is_binary(integer_string) do
     case Integer.parse(integer_string) do
@@ -151,25 +169,25 @@ defmodule Explorer.Helper do
   @doc """
   Decode json
   """
-  @spec decode_json(any()) :: map() | list() | nil
-  def decode_json(data, nft? \\ false)
+  @spec decode_json(any(), boolean()) :: map() | list() | {:error, any()} | nil
+  def decode_json(data, error_as_tuple? \\ false)
 
   def decode_json(nil, _), do: nil
 
-  def decode_json(data, nft?) do
+  def decode_json(data, error_as_tuple?) do
     if String.valid?(data) do
-      safe_decode_json(data, nft?)
+      safe_decode_json(data, error_as_tuple?)
     else
       data
       |> :unicode.characters_to_binary(:latin1)
-      |> safe_decode_json(nft?)
+      |> safe_decode_json(error_as_tuple?)
     end
   end
 
-  defp safe_decode_json(data, nft?) do
+  defp safe_decode_json(data, error_as_tuple?) do
     case Jason.decode(data) do
       {:ok, decoded} -> decoded
-      _ -> if nft?, do: {:error, data}, else: %{error: data}
+      {:error, reason} -> if error_as_tuple?, do: {:error, reason}, else: %{error: data}
     end
   end
 
@@ -225,24 +243,20 @@ defmodule Explorer.Helper do
 
   The modified query with scam addresses hidden, if applicable.
   """
-  @spec maybe_hide_scam_addresses(nil | Ecto.Query.t(), atom()) :: Ecto.Query.t()
-  def maybe_hide_scam_addresses(nil, _address_hash_key), do: nil
+  @spec maybe_hide_scam_addresses(nil | Ecto.Query.t(), atom(), [
+          Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
+        ]) :: Ecto.Query.t()
+  def maybe_hide_scam_addresses(nil, _address_hash_key, _options), do: nil
 
-  def maybe_hide_scam_addresses(query, address_hash_key) do
-    if Application.get_env(:block_scout_web, :hide_scam_addresses) do
+  def maybe_hide_scam_addresses(query, address_hash_key, options) do
+    if Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] do
       query
-      |> join(
-        :inner,
+      |> where(
         [q],
-        q2 in fragment("""
-        (
-          SELECT hash
-          FROM addresses a
-          WHERE NOT EXISTS
-            (SELECT 1 FROM scam_address_badge_mappings sabm WHERE sabm.address_hash=a.hash)
+        fragment(
+          "NOT EXISTS (SELECT 1 FROM scam_address_badge_mappings sabm WHERE sabm.address_hash=?)",
+          field(q, ^address_hash_key)
         )
-        """),
-        on: field(q, ^address_hash_key) == q2.hash
       )
     else
       query
@@ -309,5 +323,166 @@ defmodule Explorer.Helper do
       |> String.trim_leading("0")
 
     "\\#{s_hash}"
+  end
+
+  def parse_boolean("true"), do: true
+  def parse_boolean("false"), do: false
+
+  def parse_boolean(true), do: true
+  def parse_boolean(false), do: false
+
+  def parse_boolean(_), do: false
+
+  @doc """
+  Adds 0x at the beginning of the binary hash, if it is not already there.
+  """
+  @spec add_0x_prefix(input) :: output
+        when input: nil | :error | binary() | Hash.t() | [input],
+             output: nil | :error | binary() | [output]
+  def add_0x_prefix(nil), do: nil
+
+  def add_0x_prefix(:error), do: :error
+
+  def add_0x_prefix(binary_hashes) when is_list(binary_hashes) do
+    binary_hashes
+    |> Enum.map(fn binary_hash -> add_0x_prefix(binary_hash) end)
+  end
+
+  def add_0x_prefix(%Hash{bytes: bytes}) do
+    "0x" <> Base.encode16(bytes, case: :lower)
+  end
+
+  def add_0x_prefix(binary_hash) when is_binary(binary_hash) do
+    if String.starts_with?(binary_hash, "0x") do
+      binary_hash
+    else
+      "0x" <> Base.encode16(binary_hash, case: :lower)
+    end
+  end
+
+  @doc """
+  Converts an integer to its hexadecimal string representation prefixed with "0x".
+
+  The resulting hexadecimal string is in lowercase.
+
+  ## Parameters
+
+    - `integer` (integer): The integer to be converted to a hexadecimal string.
+
+  ## Returns
+
+    - `binary()`: A string representing the hexadecimal value of the input integer, prefixed with "0x".
+
+  ## Examples
+
+      iex> Explorer.Helper.integer_to_hex(255)
+      "0x00ff"
+
+      iex> Explorer.Helper.integer_to_hex(4096)
+      "0x1000"
+
+  """
+  @spec integer_to_hex(integer()) :: binary()
+  def integer_to_hex(integer), do: "0x" <> String.downcase(Integer.to_string(integer, 16))
+
+  @doc """
+  Converts a `Decimal` value to its hexadecimal representation.
+
+  ## Parameters
+
+    - `decimal` (`Decimal.t()`): The decimal value to be converted.
+
+  ## Returns
+
+    - `binary()`: The hexadecimal representation of the given decimal value.
+    - `nil`: If the conversion fails.
+
+  ## Examples
+
+      iex> decimal_to_hex(Decimal.new(255))
+      "0xff"
+
+      iex> decimal_to_hex(Decimal.new(0))
+      "0x0"
+
+      iex> decimal_to_hex(nil)
+      nil
+  """
+  @spec decimal_to_hex(Decimal.t()) :: binary() | nil
+  def decimal_to_hex(decimal) do
+    decimal
+    |> Decimal.to_integer()
+    |> integer_to_hex()
+  end
+
+  @doc """
+  Converts a `DateTime` struct to its hexadecimal representation.
+
+  If the input is `nil`, the function returns `nil`.
+
+  ## Parameters
+
+    - `datetime`: A `DateTime` struct or `nil`.
+
+  ## Returns
+
+    - A binary string representing the hexadecimal value of the Unix timestamp
+      of the given `DateTime`, or `nil` if the input is `nil`.
+
+  ## Examples
+
+      iex> datetime = ~U[2023-03-15 12:34:56Z]
+      iex> Explorer.Helper.datetime_to_hex(datetime)
+      "0x6411e6b0"
+
+      iex> Explorer.Helper.datetime_to_hex(nil)
+      nil
+  """
+  @spec datetime_to_hex(DateTime.t() | nil) :: binary() | nil
+  def datetime_to_hex(nil), do: nil
+
+  def datetime_to_hex(datetime) do
+    datetime
+    |> DateTime.to_unix()
+    |> integer_to_hex()
+  end
+
+  @doc """
+    Converts `0x` string to the byte sequence (binary). Throws `ArgumentError` exception if
+    the padding is incorrect or a non-alphabet character is present in the string.
+
+    ## Parameters
+    - `hash`: The 0x string of bytes.
+
+    ## Returns
+    - The binary byte sequence.
+  """
+  @spec hash_to_binary(String.t()) :: binary()
+  def hash_to_binary(hash) do
+    hash
+    |> String.trim_leading("0x")
+    |> Base.decode16!(case: :mixed)
+  end
+
+  @doc """
+  Converts a Unix timestamp to a Date struct.
+
+  Takes a non-negative integer representing seconds since Unix epoch (January 1,
+  1970, 00:00:00 UTC) and returns the corresponding date.
+
+  ## Parameters
+  - `unix_timestamp`: Non-negative integer of seconds since Unix epoch
+
+  ## Returns
+  - A Date struct representing the date part of the timestamp
+
+  ## Raises
+  - ArgumentError: If the timestamp is invalid
+  """
+  @spec unix_timestamp_to_date(non_neg_integer(), System.time_unit()) :: Date.t()
+  def unix_timestamp_to_date(unix_timestamp, unit \\ :second) do
+    unix_timestamp
+    |> DateTime.from_unix!(unit)
+    |> DateTime.to_date()
   end
 end

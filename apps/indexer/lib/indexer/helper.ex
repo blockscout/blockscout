@@ -15,15 +15,32 @@ defmodule Indexer.Helper do
       request: 1
     ]
 
+  import Explorer.Helper, only: [hash_to_binary: 1]
+
   alias EthereumJSONRPC.Block.{ByNumber, ByTag}
   alias EthereumJSONRPC.{Blocks, Transport}
+  alias Explorer.Chain.Beacon.Blob, as: BeaconBlob
+  alias Explorer.Chain.Cache.LatestL1BlockNumber
   alias Explorer.Chain.Hash
   alias Explorer.SmartContract.Reader, as: ContractReader
+  alias Indexer.Fetcher.Beacon.Blob, as: BeaconBlobFetcher
+  alias Indexer.Fetcher.Beacon.Client, as: BeaconClient
 
   @finite_retries_number 3
   @infinite_retries_number 100_000_000
   @block_check_interval_range_size 100
   @block_by_number_chunk_size 50
+
+  @beacon_blob_fetcher_reference_slot_eth 8_500_000
+  @beacon_blob_fetcher_reference_timestamp_eth 1_708_824_023
+  @beacon_blob_fetcher_reference_slot_sepolia 4_400_000
+  @beacon_blob_fetcher_reference_timestamp_sepolia 1_708_533_600
+  @beacon_blob_fetcher_reference_slot_holesky 1_000_000
+  @beacon_blob_fetcher_reference_timestamp_holesky 1_707_902_400
+  @beacon_blob_fetcher_slot_duration 12
+  @chain_id_eth 1
+  @chain_id_sepolia 11_155_111
+  @chain_id_holesky 17000
 
   @doc """
   Checks whether the given Ethereum address looks correct.
@@ -481,7 +498,9 @@ defmodule Indexer.Helper do
          retries_left,
          retries_done
        ) do
-    case json_rpc(requests, json_rpc_named_arguments) do
+    requests
+    |> json_rpc(json_rpc_named_arguments)
+    |> case do
       {:ok, responses_list} = batch_responses ->
         standardized_error =
           Enum.reduce_while(responses_list, %{}, fn one_response, acc ->
@@ -501,7 +520,6 @@ defmodule Indexer.Helper do
         {:error, message, err}
     end
     |> case do
-      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
       {:ok, responses, _} ->
         responses
 
@@ -667,8 +685,202 @@ defmodule Indexer.Helper do
     end
   end
 
-  # Pauses the process, incrementally increasing the sleep time up to a maximum of 20 minutes.
-  defp pause_before_retry(retries_done) do
+  @doc """
+  Pauses the process, incrementally increasing the sleep time up to a maximum of 20 minutes.
+
+  ## Parameters
+  - `retries_done`: How many retries have already been done.
+
+  ## Returns
+  - Nothing.
+  """
+  @spec pause_before_retry(non_neg_integer()) :: :ok
+  def pause_before_retry(retries_done) do
     :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
+  end
+
+  @doc """
+    Fetches the `latest` block number from L1. If the block number is cached in `Explorer.Chain.Cache.LatestL1BlockNumber`,
+    the cached value is used. The cached value is updated in `Indexer.Fetcher.RollupL1ReorgMonitor` module.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection on L1.
+
+    ## Returns
+    - The block number.
+  """
+  @spec fetch_latest_l1_block_number(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer()
+  def fetch_latest_l1_block_number(json_rpc_named_arguments) do
+    case LatestL1BlockNumber.get_block_number() do
+      nil ->
+        {:ok, latest} =
+          get_block_number_by_tag("latest", json_rpc_named_arguments, @infinite_retries_number)
+
+        latest
+
+      latest_from_cache ->
+        latest_from_cache
+    end
+  end
+
+  @doc """
+    Sends HTTP GET request to the given URL and returns JSON response. Makes max 10 attempts and then returns an error in case of failure.
+    There is a timeout between attempts (increasing from 3 seconds to 20 minutes max as the number of attempts increases).
+
+    ## Parameters
+    - `url`: The URL which needs to be requested.
+    - `attempts_done`: The number of attempts done. Incremented by the function itself.
+
+    ## Returns
+    - `{:ok, response}` where `response` is a map decoded from a JSON object.
+    - `{:error, reason}` in case of failure (after three unsuccessful attempts).
+  """
+  @spec http_get_request(String.t(), non_neg_integer()) :: {:ok, map()} | {:error, any()}
+  def http_get_request(url, attempts_done \\ 0) do
+    recv_timeout = 5_000
+    connect_timeout = 8_000
+    client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
+
+    case Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: connect_timeout]]]) do
+      {:ok, %{body: body, status: 200}} ->
+        Jason.decode(body)
+
+      {:ok, %{body: body, status: _}} ->
+        http_get_request_error(url, body, attempts_done)
+
+      {:error, error} ->
+        http_get_request_error(url, error, attempts_done)
+    end
+  end
+
+  # Handles HTTP GET error and tries to re-call the `http_get_request` function after sleep.
+  #
+  # ## Parameters
+  # - `url`: The URL which needs to be requested.
+  # - `error`: The error description for logging purposes.
+  # - `attempts_done`: The number of attempts done. Incremented by the function itself.
+  #
+  # ## Returns
+  # - `{:ok, response}` tuple if the re-call was successful.
+  # - `{:error, reason}` if all attempts were failed.
+  @spec http_get_request_error(String.t(), any(), non_neg_integer()) :: {:ok, map()} | {:error, any()}
+  defp http_get_request_error(url, error, attempts_done) do
+    old_truncate = Application.get_env(:logger, :truncate)
+    Logger.configure(truncate: :infinity)
+
+    Logger.error(fn ->
+      [
+        "Error while sending request to #{url}: ",
+        inspect(error, limit: :infinity, printable_limit: :infinity)
+      ]
+    end)
+
+    Logger.configure(truncate: old_truncate)
+
+    # retry to send the request
+    attempts_done = attempts_done + 1
+
+    if attempts_done < 10 do
+      # wait up to 20 minutes and then retry
+      :timer.sleep(min(3000 * Integer.pow(2, attempts_done - 1), 1_200_000))
+      Logger.info("Retry to send the request to #{url} ...")
+      http_get_request(url, attempts_done)
+    else
+      {:error, "Error while sending request to #{url}"}
+    end
+  end
+
+  @doc """
+    Sends an HTTP request to Beacon Node to get EIP-4844 blob data by blob's versioned hash.
+
+    ## Parameters
+    - `blob_hash`: The blob versioned hash in form of `0x` string.
+    - `l1_block_timestamp`: Timestamp of L1 block to convert it to beacon slot.
+    - `l1_chain_id`: ID of L1 chain to automatically define parameters for calculating beacon slot.
+      If ID is `nil` or unknown, the parameters are taken from the fallback INDEXER_BEACON_BLOB_FETCHER_REFERENCE_SLOT,
+      INDEXER_BEACON_BLOB_FETCHER_REFERENCE_TIMESTAMP, INDEXER_BEACON_BLOB_FETCHER_SLOT_DURATION env variables.
+
+    ## Returns
+    - A binary with the blob data in case of success.
+    - `nil` in case of failure.
+  """
+  @spec get_eip4844_blob_from_beacon_node(String.t(), DateTime.t(), non_neg_integer() | nil) :: binary() | nil
+  def get_eip4844_blob_from_beacon_node(blob_hash, l1_block_timestamp, l1_chain_id) do
+    beacon_config =
+      case l1_chain_id do
+        @chain_id_eth ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_eth,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_eth,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        @chain_id_sepolia ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_sepolia,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_sepolia,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        @chain_id_holesky ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_holesky,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_holesky,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        _ ->
+          :indexer
+          |> Application.get_env(BeaconBlobFetcher)
+          |> Keyword.take([:reference_slot, :reference_timestamp, :slot_duration])
+          |> Enum.into(%{})
+      end
+
+    sidecars_url =
+      l1_block_timestamp
+      |> DateTime.to_unix()
+      |> BeaconBlobFetcher.timestamp_to_slot(beacon_config)
+      |> BeaconClient.blob_sidecars_url()
+
+    {:ok, fetched_blobs} = http_get_request(sidecars_url)
+
+    blobs = Map.get(fetched_blobs, "data", [])
+
+    if Enum.empty?(blobs) do
+      raise "Empty data"
+    end
+
+    blobs
+    |> Enum.find(fn b ->
+      b
+      |> Map.get("kzg_commitment", "0x")
+      |> hash_to_binary()
+      |> BeaconBlob.hash()
+      |> Hash.to_string()
+      |> Kernel.==(blob_hash)
+    end)
+    |> Map.get("blob")
+    |> hash_to_binary()
+  rescue
+    reason ->
+      Logger.warning("Cannot get the blob #{blob_hash} from the Beacon Node. Reason: #{inspect(reason)}")
+      nil
+  end
+
+  @doc """
+    Removes leading and trailing whitespaces and trailing slash (/) from URL string to prepare it
+    for concatenation with another part of URL.
+
+    ## Parameters
+    - `url`: The source URL to be trimmed.
+
+    ## Returns
+    - Clear URL without trailing slash and leading and trailing whitespaces.
+  """
+  @spec trim_url(String.t()) :: String.t()
+  def trim_url(url) do
+    url
+    |> String.trim()
+    |> String.trim_trailing("/")
   end
 end
