@@ -874,7 +874,7 @@ defmodule Explorer.EthRPC do
         "to" => transaction.to_address_hash,
         "transactionIndex" => encode_quantity(transaction.index),
         "value" => transaction.value |> Wei.to(:wei) |> encode_quantity(),
-        "type" => encode_quantity(transaction.type),
+        "type" => encode_quantity(transaction.type) || "0x0",
         "chainId" => chain_id(),
         "v" => encode_quantity(transaction.v),
         "r" => encode_quantity(transaction.r),
