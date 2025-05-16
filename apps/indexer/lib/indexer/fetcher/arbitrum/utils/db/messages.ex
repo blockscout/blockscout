@@ -13,12 +13,10 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
 
   alias Explorer.Chain.Arbitrum.Reader.Indexer.Messages, as: Reader
 
-  alias Explorer.Chain.Arbitrum.{
-    L1Execution,
-    Message
-  }
+  alias Explorer.Chain.Arbitrum.Message
 
   alias Explorer.Chain.Block, as: FullBlock
+  alias Explorer.Chain.Cache.BlockNumber, as: BlockNumberCache
   alias Explorer.Chain.Hash
 
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Tools, as: DbTools
@@ -125,88 +123,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
   end
 
   @doc """
-    Retrieves a list of L2-to-L1 messages that have been initiated up to
-    a specified rollup block number.
-
-    ## Parameters
-    - `block_number`: The block number up to which initiated L2-to-L1 messages
-      should be retrieved.
-
-    ## Returns
-    - A list of maps, each representing an initiated L2-to-L1 message compatible with the
-      database import operation. If no initiated messages are found up to the specified
-      block number, an empty list is returned.
-  """
-  @spec initiated_l2_to_l1_messages(FullBlock.block_number()) :: [Message.to_import()]
-  def initiated_l2_to_l1_messages(block_number)
-      when is_integer(block_number) and block_number >= 0 do
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:initiated, block_number)
-    |> Enum.map(&message_to_map/1)
-  end
-
-  @doc """
-    Retrieves a list of L2-to-L1 'sent' messages that have been included up to
-    a specified rollup block number.
-
-    A message is considered 'sent' when there is a batch including the transaction
-    that initiated the message, and this batch has been successfully delivered to L1.
-
-    ## Parameters
-    - `block_number`: The block number up to which sent L2-to-L1 messages are to be retrieved.
-
-    ## Returns
-    - A list of maps, each representing a sent L2-to-L1 message compatible with the
-      database import operation. If no messages with the 'sent' status are found by
-      the specified block number, an empty list is returned.
-  """
-  @spec sent_l2_to_l1_messages(FullBlock.block_number()) :: [Message.to_import()]
-  def sent_l2_to_l1_messages(block_number)
-      when is_integer(block_number) and block_number >= 0 do
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:sent, block_number)
-    |> Enum.map(&message_to_map/1)
-  end
-
-  @doc """
-    Retrieves a list of L2-to-L1 'confirmed' messages that have been included up to
-    a specified rollup block number.
-
-    A message is considered 'confirmed' when its transaction was included in a rollup block,
-    and the confirmation of this block has been delivered to L1.
-
-    ## Parameters
-    - `block_number`: The block number up to which confirmed L2-to-L1 messages are to be retrieved.
-
-    ## Returns
-    - A list of maps, each representing a confirmed L2-to-L1 message compatible with the
-      database import operation. If no messages with the 'confirmed' status are found by
-      the specified block number, an empty list is returned.
-  """
-  @spec confirmed_l2_to_l1_messages() :: [Message.to_import()]
-  def confirmed_l2_to_l1_messages do
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:confirmed, nil)
-    |> Enum.map(&message_to_map/1)
-  end
-
-  @doc """
-    Reads a list of transactions executing L2-to-L1 messages by their IDs.
-
-    ## Parameters
-    - `message_ids`: A list of IDs to retrieve executing transactions for.
-
-    ## Returns
-    - A list of `Explorer.Chain.Arbitrum.L1Execution` corresponding to the message IDs from
-      the input list. The output list may be smaller than the input list if some IDs do not
-      correspond to any existing transactions.
-  """
-  @spec l1_executions([non_neg_integer()]) :: [L1Execution.t()]
-  def l1_executions(message_ids) when is_list(message_ids) do
-    Reader.l1_executions(message_ids)
-  end
-
-  @doc """
     Retrieves the transaction hashes as strings for missed L1-to-L2 messages within
     a specified block range.
 
@@ -277,6 +193,47 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
   @spec get_uncompleted_l1_to_l2_messages_ids() :: [non_neg_integer()]
   def get_uncompleted_l1_to_l2_messages_ids do
     Reader.get_uncompleted_l1_to_l2_messages_ids()
+  end
+
+  @doc """
+    Retrieves L2-to-L1 messages by their IDs and converts them to maps.
+
+    ## Parameters
+    - `message_ids`: A list of message IDs to retrieve.
+
+    ## Returns
+    - A list of maps representing L2-to-L1 messages compatible with the database import
+      operation. If no messages with the provided IDs are found, an empty list is returned.
+  """
+  @spec l2_to_l1_messages_by_ids([non_neg_integer()]) :: [Message.to_import()]
+  def l2_to_l1_messages_by_ids(message_ids) when is_list(message_ids) do
+    message_ids
+    |> Reader.l2_to_l1_messages_by_ids()
+    |> Enum.map(&message_to_map/1)
+  end
+
+  @doc """
+    Streams messages directed from rollup to parent chain with initiated or sent status up to the latest indexed rollup block.
+
+    For each message, it returns:
+    - `{message_id, block_number}` for messages with `:initiated` status
+    - `{message_id, block_number, :sent}` for messages with `:sent` status
+
+    ## Parameters
+    - `initial`: The initial accumulator value for the stream.
+    - `reducer`: A function that processes each entry in the stream, receiving
+      the entry and the current accumulator, and returning a new accumulator.
+
+    ## Returns
+    - `accumulator`: The final accumulator value after streaming through
+      the initiated and sent L2-to-L1 messages.
+  """
+  @spec stream_unconfirmed_messages_from_l2({0, []}, function()) ::
+          {non_neg_integer(), [{non_neg_integer(), non_neg_integer()} | {non_neg_integer(), non_neg_integer(), :sent}]}
+  def stream_unconfirmed_messages_from_l2(initial, reducer) do
+    max_block = BlockNumberCache.get_max()
+    {:ok, messages} = Reader.stream_unconfirmed_messages_from_l2(initial, reducer, max_block)
+    messages
   end
 
   @spec message_to_map(Message.t()) :: Message.to_import()

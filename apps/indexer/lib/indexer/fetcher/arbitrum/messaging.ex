@@ -16,8 +16,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Message
-  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
-  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   require Logger
 
   @zero_hex_prefix "0x" <> String.duplicate("0", 56)
@@ -157,78 +155,49 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   end
 
   @doc """
-    Processes a list of filtered logs representing L2-to-L1 messages, enriching and categorizing them based on their current state and optionally updating their execution status.
+    Processes a list of filtered logs representing L2-to-L1 messages, enriching and categorizing them.
 
     This function takes filtered log events, typically representing L2-to-L1 messages, and
-    processes each to construct a comprehensive message structure. It also determines the
-    status of each message by comparing its block number against the highest committed and
-    confirmed block numbers. If a `caller` module is provided, it further updates the
-    messages' execution status.
+    processes each to construct a comprehensive message structure. All messages are set
+    with the status `:initiated`.
 
     ## Parameters
     - `filtered_logs`: A list of log entries, each representing an L2-to-L1 message event.
-    - `caller`: An optional module that uses as a flag to determine if the discovered
-      should be checked for execution.
 
     ## Returns
-    - A list of L2-to-L1 messages with detailed information and current status, ready for
+    - A list of L2-to-L1 messages with detailed information and `:initiated` status, ready for
       database import.
   """
   @spec handle_filtered_l2_to_l1_messages([min_log]) :: [Message.to_import()]
-  @spec handle_filtered_l2_to_l1_messages([min_log], module()) :: [Message.to_import()]
-  def handle_filtered_l2_to_l1_messages(filtered_logs, caller \\ nil)
+  def handle_filtered_l2_to_l1_messages(filtered_logs)
 
-  def handle_filtered_l2_to_l1_messages([], _) do
-    []
-  end
+  def handle_filtered_l2_to_l1_messages([]), do: []
 
-  def handle_filtered_l2_to_l1_messages(filtered_logs, caller) when is_list(filtered_logs) do
-    # Get values before the loop parsing the events to reduce number of DB requests
-    highest_committed_block = DbSettlement.highest_committed_block(-1)
-    highest_confirmed_block = DbSettlement.highest_confirmed_block(-1)
-
-    messages_map =
+  def handle_filtered_l2_to_l1_messages(filtered_logs) when is_list(filtered_logs) do
+    messages =
       filtered_logs
-      |> Enum.reduce(%{}, fn event, messages_acc ->
+      |> Enum.map(fn event ->
         log_debug("L2 to L1 message #{event.transaction_hash} found")
 
         fields =
           event
           |> ArbitrumRpc.l2_to_l1_event_parse()
 
-        message =
-          %{
-            direction: :from_l2,
-            message_id: fields.message_id,
-            originator_address: fields.caller,
-            originating_transaction_hash: event.transaction_hash,
-            origination_timestamp: Timex.from_unix(fields.timestamp),
-            originating_transaction_block_number: fields.arb_block_number,
-            status: status_l2_to_l1_message(fields.arb_block_number, highest_committed_block, highest_confirmed_block)
-          }
-          |> complete_to_params()
-
-        Map.put(
-          messages_acc,
-          fields.message_id,
-          message
-        )
+        %{
+          direction: :from_l2,
+          message_id: fields.message_id,
+          originator_address: fields.caller,
+          originating_transaction_hash: event.transaction_hash,
+          origination_timestamp: Timex.from_unix(fields.timestamp),
+          originating_transaction_block_number: fields.arb_block_number,
+          status: :initiated
+        }
+        |> complete_to_params()
       end)
 
-    log_info("Origins of #{length(Map.values(messages_map))} L2-to-L1 messages will be imported")
+    log_info("Origins of #{length(messages)} L2-to-L1 messages will be imported")
 
-    # The check if messages are executed is required only for the case when l2-to-l1
-    # messages are found by block catchup fetcher
-    caller
-    |> case do
-      nil ->
-        messages_map
-
-      _ ->
-        messages_map
-        |> find_and_update_executed_messages()
-    end
-    |> Map.values()
+    messages
   end
 
   @doc """
@@ -266,46 +235,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     ]
     |> Enum.reduce(%{}, fn key, out ->
       Map.put(out, key, Map.get(incomplete, key))
-    end)
-  end
-
-  # Determines the status of an L2-to-L1 message based on its block number and the highest
-  # committed and confirmed block numbers.
-  @spec status_l2_to_l1_message(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
-          :confirmed | :sent | :initiated
-  defp status_l2_to_l1_message(msg_block, highest_committed_block, highest_confirmed_block) do
-    cond do
-      highest_confirmed_block >= msg_block -> :confirmed
-      highest_committed_block >= msg_block -> :sent
-      true -> :initiated
-    end
-  end
-
-  # Finds and updates the status of L2-to-L1 messages that have been executed on L1.
-  # This function iterates over the given messages, identifies those with corresponding L1 executions,
-  # and updates their `completion_transaction_hash` and `status` accordingly.
-  #
-  # ## Parameters
-  # - `messages`: A map where each key is a message ID, and each value is the message's details.
-  #
-  # ## Returns
-  # - The updated map of messages with the `completion_transaction_hash` and `status` fields updated
-  #   for messages that have been executed.
-  @spec find_and_update_executed_messages(%{non_neg_integer() => Message.to_import()}) :: %{
-          non_neg_integer() => Message.to_import()
-        }
-  defp find_and_update_executed_messages(messages) do
-    messages
-    |> Map.keys()
-    |> DbMessages.l1_executions()
-    |> Enum.reduce(messages, fn execution, messages_acc ->
-      message =
-        messages_acc
-        |> Map.get(execution.message_id)
-        |> Map.put(:completion_transaction_hash, execution.execution_transaction.hash.bytes)
-        |> Map.put(:status, :relayed)
-
-      Map.put(messages_acc, execution.message_id, message)
     end)
   end
 

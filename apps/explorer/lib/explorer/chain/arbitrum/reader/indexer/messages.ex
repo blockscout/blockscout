@@ -10,17 +10,16 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
     - Tracking of L2-to-L1 message executions on L1
   """
 
-  import Ecto.Query, only: [dynamic: 2, from: 2, limit: 2, order_by: 2, select: 3, where: 3]
+  import Ecto.Query, only: [from: 2, order_by: 2, select: 3, where: 3]
 
   alias Explorer.Chain.Arbitrum.{
-    L1Execution,
     LifecycleTransaction,
     Message
   }
 
   alias Explorer.Chain.Block, as: FullBlock
   alias Explorer.Chain.{Hash, Log, Transaction}
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
 
   # https://github.com/OffchainLabs/go-ethereum/blob/dff302de66598c36b964b971f72d35a95148e650/core/types/transaction.go#L44C2-L50
   @message_to_l2_eth_deposit 100
@@ -71,79 +70,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   end
 
   @doc """
-    Retrieves the rollup block number of the first missed L2-to-L1 message.
-
-    The function identifies missing messages by checking logs for the specified
-    L2-to-L1 event and verifying if there are corresponding entries in the messages
-    table. A message is considered missed if there is a log entry without a
-    matching message record.
-
-    ## Parameters
-    - `arbsys_contract`: The address of the Arbitrum system contract.
-    - `l2_to_l1_event`: The event identifier for L2-to-L1 messages.
-
-    ## Returns
-    - The block number of the first missed L2-to-L1 message, or `nil` if no missed
-      messages are found.
-  """
-  @spec rollup_block_of_first_missed_message_from_l2(binary(), binary()) :: FullBlock.block_number() | nil
-  def rollup_block_of_first_missed_message_from_l2(arbsys_contract, l2_to_l1_event) do
-    # credo:disable-for-lines:5 Credo.Check.Refactor.PipeChainStart
-    missed_messages_from_l2_query(arbsys_contract, l2_to_l1_event)
-    |> order_by(desc: :block_number)
-    |> limit(1)
-    |> select([log], log.block_number)
-    |> Repo.one(timeout: :infinity)
-  end
-
-  @doc """
-    Retrieves the rollup block number of the first missed L1-to-L2 message.
-
-    The function identifies missing messages by checking transactions of specific
-    types that are supposed to contain L1-to-L2 messages and verifying if there are
-    corresponding entries in the messages table. A message is considered missed if
-    there is a transaction without a matching message record.
-
-    ## Returns
-    - The block number of the first missed L1-to-L2 message, or `nil` if no missed
-      messages are found.
-  """
-  @spec rollup_block_of_first_missed_message_to_l2() :: FullBlock.block_number() | nil
-  def rollup_block_of_first_missed_message_to_l2 do
-    missed_messages_to_l2_query()
-    |> order_by(desc: :block_number)
-    |> limit(1)
-    |> select([rollup_transaction], rollup_transaction.block_number)
-    |> Repo.one(timeout: :infinity)
-  end
-
-  @doc """
-    Reads a list of transactions executing L2-to-L1 messages by their IDs.
-
-    ## Parameters
-    - `message_ids`: A list of IDs to retrieve executing transactions for.
-
-    ## Returns
-    - A list of `Explorer.Chain.Arbitrum.L1Execution` corresponding to the message IDs from
-      the input list. The output list may be smaller than the input list if some IDs do not
-      correspond to any existing transactions.
-  """
-  @spec l1_executions(maybe_improper_list(non_neg_integer(), [])) :: [L1Execution.t()]
-  def l1_executions(message_ids) when is_list(message_ids) do
-    query =
-      from(
-        ex in L1Execution,
-        where: ex.message_id in ^message_ids
-      )
-
-    query
-    # :required is used since execution records in the table are created only when
-    # the corresponding execution transaction is indexed
-    |> Chain.join_associations(%{:execution_transaction => :required})
-    |> Repo.all()
-  end
-
-  @doc """
     Retrieves the number of the latest L1 block where a transaction executing an L2-to-L1 message was discovered.
 
     ## Returns
@@ -152,13 +78,11 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   @spec l1_block_of_latest_execution() :: FullBlock.block_number() | nil
   def l1_block_of_latest_execution do
     query =
-      from(
-        transaction in LifecycleTransaction,
-        inner_join: ex in L1Execution,
-        on: transaction.id == ex.execution_id,
-        select: transaction.block_number,
-        order_by: [desc: transaction.block_number],
-        limit: 1
+      from(txn in LifecycleTransaction,
+        join: msg in Message,
+        on: txn.hash == msg.completion_transaction_hash,
+        where: msg.direction == :from_l2,
+        select: max(txn.block_number)
       )
 
     query
@@ -174,62 +98,15 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   @spec l1_block_of_earliest_execution() :: FullBlock.block_number() | nil
   def l1_block_of_earliest_execution do
     query =
-      from(
-        transaction in LifecycleTransaction,
-        inner_join: ex in L1Execution,
-        on: transaction.id == ex.execution_id,
-        select: transaction.block_number,
-        order_by: [asc: transaction.block_number],
-        limit: 1
+      from(txn in LifecycleTransaction,
+        join: msg in Message,
+        on: txn.hash == msg.completion_transaction_hash,
+        where: msg.direction == :from_l2,
+        select: min(txn.block_number)
       )
 
     query
     |> Repo.one(timeout: :infinity)
-  end
-
-  @doc """
-    Retrieves all L2-to-L1 messages with the specified status.
-
-    If `block_number` is not `nil`, only messages originating in rollup blocks with
-    numbers not higher than the specified block are considered. Otherwise, all
-    messages are considered.
-
-    ## Parameters
-    - `status`: The status of the messages to retrieve, such as `:initiated`,
-      `:sent`, `:confirmed`, or `:relayed`.
-    - `block_number`: The number of a rollup block that limits the messages lookup,
-      or `nil`.
-
-    ## Returns
-    - Instances of `Explorer.Chain.Arbitrum.Message` corresponding to the criteria,
-      or `[]` if no messages with the given status are found.
-  """
-  @spec l2_to_l1_messages(:confirmed | :initiated | :relayed | :sent, FullBlock.block_number() | nil) :: [
-          Message.t()
-        ]
-  def l2_to_l1_messages(status, block_number)
-      when status in [:initiated, :sent, :confirmed, :relayed] and
-             is_integer(block_number) and
-             block_number >= 0 do
-    query =
-      from(msg in Message,
-        where:
-          msg.direction == :from_l2 and msg.originating_transaction_block_number <= ^block_number and
-            msg.status == ^status,
-        order_by: [desc: msg.message_id]
-      )
-
-    Repo.all(query)
-  end
-
-  def l2_to_l1_messages(status, nil) when status in [:initiated, :sent, :confirmed, :relayed] do
-    query =
-      from(msg in Message,
-        where: msg.direction == :from_l2 and msg.status == ^status,
-        order_by: [desc: msg.message_id]
-      )
-
-    Repo.all(query)
   end
 
   @doc """
@@ -311,43 +188,31 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   #
   # The function constructs a query to identify missing messages by checking logs
   # for the specified L2-to-L1 and verifying if there are corresponding entries
-  # in the messages table within a given block range, or among all messages if no
-  # block range is provided. A message is considered missed if there is a log
-  # entry without a matching message record.
+  # in the messages table within a given block range. A message is considered missed
+  # if there is a log entry without a matching message record.
   #
   # ## Parameters
   # - `arbsys_contract`: The address hash of the Arbitrum system contract.
   # - `l2_to_l1_event`: The event identifier for L2 to L1 messages.
-  # - `start_block`: The starting block number for the search range (optional).
-  # - `end_block`: The ending block number for the search range (optional).
+  # - `start_block`: The starting block number for the search range.
+  # - `end_block`: The ending block number for the search range.
   #
   # ## Returns
   # - A query to retrieve missed L2-to-L1 messages.
-  @spec missed_messages_from_l2_query(binary(), binary(), non_neg_integer() | nil, non_neg_integer() | nil) ::
+  @spec missed_messages_from_l2_query(binary(), binary(), non_neg_integer(), non_neg_integer()) ::
           Ecto.Query.t()
-  defp missed_messages_from_l2_query(arbsys_contract, l2_to_l1_event, start_block \\ nil, end_block \\ nil) do
+  defp missed_messages_from_l2_query(arbsys_contract, l2_to_l1_event, start_block, end_block) do
     # It is assumed that all the messages from the same transaction are handled
     # atomically so there is no need to check the message_id for each log entry.
     # Otherwise, the join condition must be extended with
     # fragment("encode(l0.fourth_topic, 'hex') = LPAD(TO_HEX(a1.message_id::BIGINT), 64, '0')")
-    base_condition =
-      dynamic([log, msg], log.transaction_hash == msg.originating_transaction_hash and msg.direction == :from_l2)
-
-    join_condition =
-      if is_nil(start_block) or is_nil(end_block) do
-        base_condition
-      else
-        dynamic(
-          [_, msg],
-          ^base_condition and
-            msg.originating_transaction_block_number >= ^start_block and
-            msg.originating_transaction_block_number <= ^end_block
-        )
-      end
-
     from(log in Log,
       left_join: msg in Message,
-      on: ^join_condition,
+      on:
+        log.transaction_hash == msg.originating_transaction_hash and
+          msg.direction == :from_l2 and
+          msg.originating_transaction_block_number >= ^start_block and
+          msg.originating_transaction_block_number <= ^end_block,
       where:
         log.address_hash == ^arbsys_contract and log.first_topic == ^l2_to_l1_event and
           is_nil(msg.originating_transaction_hash)
@@ -369,5 +234,81 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+    Retrieves L2-to-L1 messages by their IDs.
+
+    ## Parameters
+    - `message_ids`: A list of message IDs to retrieve.
+
+    ## Returns
+    - A list of `Explorer.Chain.Arbitrum.Message` corresponding to the message IDs from
+      the input list. The output list may be smaller than the input list if some IDs do not
+      correspond to any existing messages.
+  """
+  @spec l2_to_l1_messages_by_ids([non_neg_integer()]) :: [Message.t()]
+  def l2_to_l1_messages_by_ids(message_ids) when is_list(message_ids) do
+    query =
+      from(msg in Message,
+        where: msg.direction == :from_l2 and msg.message_id in ^message_ids,
+        order_by: [desc: msg.message_id]
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
+    Streams messages directed from rollup to parent chain with initiated or sent status up to a specified rollup block number.
+
+    For each message, it returns:
+    - `{message_id, block_number}` for messages with `:initiated` status
+    - `{message_id, block_number, :sent}` for messages with `:sent` status
+
+    ## Parameters
+    - `initial`: The initial accumulator value for the stream.
+    - `reducer`: A function that processes each entry in the stream, receiving
+      the entry and the current accumulator, and returning a new accumulator.
+    - `max_block`: The maximum rollup block number to consider. Messages from blocks
+      higher than this will not be included in the stream. Mostly used to efficiently
+      re-use the composite index.
+
+    ## Returns
+    - `{:ok, accumulator}`: The final accumulator value after streaming through
+      the initiated and sent L2-to-L1 messages.
+  """
+  @spec stream_unconfirmed_messages_from_l2({0, []}, function(), non_neg_integer()) ::
+          {:ok,
+           {non_neg_integer(), [{non_neg_integer(), non_neg_integer()} | {non_neg_integer(), non_neg_integer(), :sent}]}}
+  def stream_unconfirmed_messages_from_l2(initial, reducer, max_block)
+      when max_block >= 0 do
+    query =
+      from(msg in Message,
+        where:
+          msg.direction == :from_l2 and
+            msg.originating_transaction_block_number <= ^max_block and
+            msg.status in [:initiated, :sent],
+        select: {msg.message_id, msg.originating_transaction_block_number, msg.status},
+        order_by: [asc: msg.originating_transaction_block_number]
+      )
+
+    # Create a custom reducer that transforms the database results into the format
+    # expected by L2ToL1StatusReconciler:
+    # - For messages with `:initiated` status: convert {id, block, status} -> {id, block}
+    # - For messages with `:sent` status: keep as {id, block, :sent}
+    # This matches the pattern matching in L2ToL1StatusReconciler.process_message
+    modified_reducer = fn {id, block, status}, acc ->
+      entry = if status == :sent, do: {id, block, :sent}, else: {id, block}
+      reducer.(entry, acc)
+    end
+
+    # This query is safe to run even with hundreds of thousands of records because:
+    # 1. Repo.stream_reduce uses database cursors under the hood, fetching records in batches (default 500)
+    # 2. Each batch is loaded into memory only when needed and released after processing
+    # 3. The query uses a composite index on (direction, originating_transaction_block_number, status)
+    #    making the filtering and ordering efficient
+    # 4. Results start flowing to the reducer function as soon as the first batch is fetched
+    #    rather than waiting for the entire result set
+    Repo.stream_reduce(query, initial, modified_reducer)
   end
 end

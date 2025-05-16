@@ -18,11 +18,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
 
   alias EthereumJSONRPC.Transaction, as: TransactionByRPC
 
+  alias Indexer.Fetcher.Arbitrum.{L2ToL1StatusReconciler, Messaging}
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
+
   alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
-  alias Indexer.Fetcher.Arbitrum.Messaging
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: DbCommon
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
-  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
 
   require Logger
 
@@ -33,8 +34,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     by analyzing the rollup logs representing the `L2ToL1Tx` event. It determines
     the starting block for the discovery process and verifies that the relevant
     rollup block range has been indexed before proceeding with the discovery and
-    data import. During the import process, each message is assigned the
-    appropriate status based on the current rollup state.
+    data import. During the import process, messages are created with an initial
+    status of `:initiated`. After import, messages are scheduled for asynchronous
+    status reconciliation, which may update their status to `:sent` or `:confirmed`
+    based on the current rollup state. The `:relayed` status is handled separately
+    by the L1 executions discovery process when a corresponding execution
+    transaction is found on L1.
 
     ## Parameters
     - `end_block`: The ending block number up to which the discovery should occur.
@@ -105,9 +110,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   #
   # This function fetches relevant rollup logs from the database representing messages sent
   # from L2 to L1 (the `L2ToL1Tx` event) between the specified `start_block` and `end_block`.
-  # If any logs are found, they are used to construct message structures, which are then
-  # imported into the database. As part of the message construction, the appropriate status
-  # of the message (initialized, sent, or confirmed) is determined based on the current rollup
+  # If any logs are found, they are used to construct message structures with an initial
+  # status of `:initiated`, which are then imported into the database.
+  #
+  # After importing the messages, they are scheduled for asynchronous status reconciliation,
+  # which will update their status (to `:sent` or `:confirmed`) based on the current rollup
   # state.
   #
   # ## Parameters
@@ -126,9 +133,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     unless logs == [] do
       messages =
         logs
-        |> Messaging.handle_filtered_l2_to_l1_messages(__MODULE__)
+        |> Messaging.handle_filtered_l2_to_l1_messages()
 
       Messaging.import_to_db(messages)
+
+      # The processing of messages is scheduled only after the completion of DB import
+      # to ensure that only indexed messages are processed.
+      L2ToL1StatusReconciler.async_status_reconcile(messages)
     end
 
     {:ok, start_block}

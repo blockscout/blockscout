@@ -33,8 +33,12 @@ The confirmation processing leverages a multi-layered design linking different r
      on the parent chain.
    - **Confirmations:** Finalize the state by matching parent chain confirmations with the updated rollup
      entities.
-   - **L2-to-L1 Messages:** As part of the confirmation process, messages that were included in
-     transactions within confirmed rollup blocks are also marked as confirmed. This ensures that the cross-chain message status accurately reflects the settlement state.
+   - **L2-to-L1 Messages:** Cross-chain message statuses are managed through a dedicated status
+     reconciliation process. When a rollup block is confirmed, a status reconciler identifies all
+     messages originating from that block and updates their statuses accordingly. Rather than
+     updating message statuses directly during confirmation discovery, the reconciliation process
+     independently tracks confirmed block heights and periodically updates message statuses. This
+     separation prevents race conditions and ensures accurate status progression.
 
    - **Confirmation Order Handling:**  
      The logic respects the order of confirmation events:
