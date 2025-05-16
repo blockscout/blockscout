@@ -52,13 +52,13 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         timeout: @post_timeout,
         zip_input_on_exit: true
       )
-      |> Enum.reduce_while({:ok, {:chunks_processed, params_chunks}}, fn
+      |> Enum.reduce({:ok, {:chunks_processed, params_chunks}}, fn
         {:ok, {:ok, _result}}, acc ->
-          {:cont, acc}
+          acc
 
         {:ok, {:error, error}}, _acc ->
           on_error(error, retry?)
-          {:cont, {:error, @request_error_msg}}
+          {:error, @request_error_msg}
 
         {:exit, {export_body, reason}}, _acc ->
           on_error(
@@ -70,7 +70,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
             retry?
           )
 
-          {:cont, {:error, @request_error_msg}}
+          {:error, @request_error_msg}
       end)
     else
       {:ok, :service_disabled}
