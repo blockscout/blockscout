@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.AddressView do
 
   alias BlockScoutWeb.{AccessHelper, LayoutView}
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
+  alias BlockScoutWeb.API.V2.TransactionView, as: APIV2TransactionView
   alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Address.Counters
@@ -476,12 +477,9 @@ defmodule BlockScoutWeb.AddressView do
           | {{:error, :contract_not_verified, list()}, any()}
   def decode(log, transaction) do
     full_abi =
-      ((log.address.proxy_implementations &&
-          log.address.proxy_implementations.smart_contracts
-          |> Enum.flat_map(fn smart_contract ->
-            (smart_contract && smart_contract.abi) || []
-          end)) || []) ++
-        ((log.address.smart_contract && log.address.smart_contract.abi) || [])
+      (APIV2TransactionView.extract_implementations_abi(log.address.proxy_implementations) ++
+         APIV2TransactionView.try_to_get_abi(log.address.smart_contract))
+      |> Enum.uniq()
 
     {result, _events_acc} = Log.decode(log, transaction, [], true, false, full_abi)
     result

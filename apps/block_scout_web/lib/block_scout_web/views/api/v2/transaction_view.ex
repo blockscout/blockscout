@@ -8,9 +8,22 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.{TransactionStateView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Block, DecodingHelper, Log, SignedAuthorization, Token, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    DecodingHelper,
+    Log,
+    SignedAuthorization,
+    SmartContract,
+    Token,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation, as: ProxyImplementation
   alias Explorer.Chain.Transaction.StateChange
   alias Timex.Duration
 
@@ -221,15 +234,23 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> Enum.map(&prepare_signed_authorization/1)
   end
 
-  defp try_to_get_abi(smart_contract) do
+  @doc """
+  Returns the ABI of a smart contract or an empty list if the smart contract is nil
+  """
+  @spec try_to_get_abi(SmartContract.t() | nil) :: [map()]
+  def try_to_get_abi(smart_contract) do
     (smart_contract && smart_contract.abi) || []
   end
 
-  defp extract_implementations_abi(nil) do
+  @doc """
+  Returns the ABI of a proxy implementations or an empty list if the proxy implementations is nil
+  """
+  @spec extract_implementations_abi(ProxyImplementation.t() | nil) :: [map()]
+  def extract_implementations_abi(nil) do
     []
   end
 
-  defp extract_implementations_abi(proxy_implementations) do
+  def extract_implementations_abi(proxy_implementations) do
     proxy_implementations.smart_contracts
     |> Enum.flat_map(fn smart_contract ->
       try_to_get_abi(smart_contract)
