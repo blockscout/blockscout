@@ -119,7 +119,7 @@ defmodule Explorer.Mixfile do
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
-      {:hammer_backend_redis, "~> 6.1"},
+      {:hammer_backend_redis, "~> 7.0"},
       {:logger_json, "~> 5.1"},
       {:typed_ecto_schema, "~> 0.4.1"},
       {:ueberauth, "~> 0.7"},
@@ -133,7 +133,7 @@ defmodule Explorer.Mixfile do
       {:utils, in_umbrella: true},
       {:dns, "~> 2.4.0"},
       {:inet_cidr, "~> 1.0.0"},
-      {:hammer, "~> 6.0"}
+      {:hammer, "~> 7.0"}
     ]
   end
 

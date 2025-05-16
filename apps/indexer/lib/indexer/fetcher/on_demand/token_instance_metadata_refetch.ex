@@ -37,7 +37,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
          {:retry, true} <-
            {:retry,
             CountersHelper.current_time() - updated_at_ms >
-              threshold(retries_number)} do
+              threshold(retries_number)}
+           |> dbg() do
       fetch_and_broadcast_metadata(token_instance)
     else
       {:retries_number, nil} ->
