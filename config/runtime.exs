@@ -182,7 +182,8 @@ config :block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpr
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
   domain: System.get_env("ACCOUNT_AUTH0_DOMAIN"),
   client_id: System.get_env("ACCOUNT_AUTH0_CLIENT_ID"),
-  client_secret: System.get_env("ACCOUNT_AUTH0_CLIENT_SECRET")
+  client_secret: System.get_env("ACCOUNT_AUTH0_CLIENT_SECRET"),
+  auth0_application_id: ConfigHelper.safe_get_env("ACCOUNT_AUTH0_APPLICATION_ID", nil) |> String.replace(".", "")
 
 # Configures Ueberauth local settings
 config :ueberauth, Ueberauth, logout_url: "https://#{System.get_env("ACCOUNT_AUTH0_DOMAIN")}/v2/logout"
