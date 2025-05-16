@@ -59,9 +59,11 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
     end
   end
 
-  defp fetch_and_broadcast_metadata(token_instance) do
+  defp fetch_and_broadcast_metadata(
+         %{token_id: token_id, token_contract_address_hash: token_contract_address_hash} = token_instance
+       ) do
     case Helper.batch_prepare_instances_insert_params([
-           %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
+           %{contract_address_hash: token_contract_address_hash, token_id: token_id}
          ]) do
       [%{error: nil, metadata: metadata} = result] ->
         TokenInstance.set_metadata(token_instance, result)
@@ -69,8 +71,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
         Publisher.broadcast(
           %{
             fetched_token_instance_metadata: [
-              to_string(token_instance.token_contract_address_hash),
-              NFT.prepare_token_id(token_instance.token_id),
+              to_string(token_contract_address_hash),
+              NFT.prepare_token_id(token_id),
               metadata
             ]
           },
@@ -81,14 +83,14 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
 
       [%{error: error}] ->
         Logger.error(fn ->
-          "Error while refetching metadata for {#{token_instance.token_contract_address_hash}, #{token_instance.token_id}}: #{inspect(error)}"
+          "Error while refetching metadata for {#{token_contract_address_hash}, #{token_id}}: #{inspect(error)}"
         end)
 
         Publisher.broadcast(
           %{
             not_fetched_token_instance_metadata: [
-              to_string(token_instance.token_contract_address_hash),
-              NFT.prepare_token_id(token_instance.token_id),
+              to_string(token_contract_address_hash),
+              NFT.prepare_token_id(token_id),
               "error"
             ]
           },
@@ -96,8 +98,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
         )
 
         TokenInstanceMetadataRefetchAttempt.insert_retries_number(
-          token_instance.token_contract_address_hash,
-          token_instance.token_id
+          token_contract_address_hash,
+          token_id
         )
     end
   end
