@@ -1,5 +1,49 @@
 # Changelog
 
+## 8.1.0
+
+### 🚀 Features
+
+- Multichain Search DB export retry queue ([#12377](https://github.com/blockscout/blockscout/issues/12377))
+- Add TAC operation search ([#12367](https://github.com/blockscout/blockscout/issues/12367))
+- Add `internal_transactions_count` prop in api/v2/blocks/:block endpoint ([#12405](https://github.com/blockscout/blockscout/issues/12405))
+
+### 🐛 Bug Fixes
+
+- Fix logs decoding issue for proxies ([#12414](https://github.com/blockscout/blockscout/issues/12414))
+- Refactor TokenInstanceMetadataRefetch on demand fetcher ([#12419](https://github.com/blockscout/blockscout/issues/12419))
+- Fix for type output in ETH RPC API transaction by hash endpoint
+- Frozen confirmations discovery on Arbitrum Nova ([#12385](https://github.com/blockscout/blockscout/issues/12385))
+- Add prague Solidity EVM version ([#12115](https://github.com/blockscout/blockscout/issues/12115))
+- Fix :checkout_timeout error ([#12406](https://github.com/blockscout/blockscout/issues/12406))
+- Force index usage on select current token balances ([#12390](https://github.com/blockscout/blockscout/issues/12390))
+- Fix retrieving max block number in MissingRangesCollector ([#12333](https://github.com/blockscout/blockscout/issues/12333))
+- Start PubSub before Endpoint ([#12274](https://github.com/blockscout/blockscout/issues/12274))
+- Fix FunctionClauseError on internal transactions indexing ([#12246](https://github.com/blockscout/blockscout/issues/12246))
+- Support updated zkSync calldata format in batch proof tracking ([#12234](https://github.com/blockscout/blockscout/issues/12234))
+- On demand bytecode fetcher for eip7702 addresses ([#12330](https://github.com/blockscout/blockscout/issues/12330))
+- Handle pending operations for empty blocks as well ([#12349](https://github.com/blockscout/blockscout/issues/12349))
+
+### 🚜 Refactor
+
+- Eliminate join with internal_transactions table to get list logs in API v1 ([#12352](https://github.com/blockscout/blockscout/issues/12352))
+- Define pending block operations by set of block hashes query ([#12375](https://github.com/blockscout/blockscout/issues/12375))
+- Move `address_to_internal_transactions/2` to `Explorer.Chain.InternalTransaction` module ([#12346](https://github.com/blockscout/blockscout/issues/12346))
+- Single definition of smart-contract internal creation transaction query ([#12335](https://github.com/blockscout/blockscout/issues/12335))
+
+### ⚡ Performance
+
+- Force index usage in `api/v2/addresses/:hash/transactions` ([#12415](https://github.com/blockscout/blockscout/issues/12415))
+
+### ⚙️ Miscellaneous Tasks
+
+- Improve logic behind emerging of custom fields in the response of `eth_getTransactionByHash` ETH RPC API endpoint ([#12416](https://github.com/blockscout/blockscout/issues/12416))
+- Internal transactions unique index ([#12394](https://github.com/blockscout/blockscout/issues/12394))
+- Update blocks consensus in case of import failure ([#12243](https://github.com/blockscout/blockscout/issues/12243))
+- Sanitize ERC-1155 token balances without token ids ([#12305](https://github.com/blockscout/blockscout/issues/12305))
+- Support Celestia Alt-DA in OP batches indexer and Super Roots in OP withdrawals indexer ([#12332](https://github.com/blockscout/blockscout/issues/12332))
+- Send DB read queries to replica in on-demand fetchers ([#12383](https://github.com/blockscout/blockscout/issues/12383))
+
 ## 8.0.2
 
 ### 🚀 Features
