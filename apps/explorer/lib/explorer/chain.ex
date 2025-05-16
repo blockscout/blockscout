@@ -1168,10 +1168,8 @@ defmodule Explorer.Chain do
            } do
           result
         else
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          Task.async(fn ->
-            MultichainSearch.batch_import(assets_to_import)
-          end)
+          # todo: consider robust async way of importing
+          MultichainSearch.batch_import(assets_to_import)
 
           result
         end
