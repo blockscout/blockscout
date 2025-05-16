@@ -1168,11 +1168,10 @@ defmodule Explorer.Chain do
            } do
           result
         else
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          case MultichainSearch.batch_import(assets_to_import) do
-            {:ok, _} -> result
-            _ -> {:error, :insert_to_multichain_search_db_failed}
-          end
+          # todo: consider robust async way of importing
+          MultichainSearch.batch_import(assets_to_import)
+
+          result
         end
 
       other_result ->
@@ -1502,7 +1501,7 @@ defmodule Explorer.Chain do
   @spec get_transactions_by_hashes([Hash.t()]) :: [Transaction.t()]
   def get_transactions_by_hashes(transaction_hashes) do
     transaction_hashes
-    |> Transaction.transactions_by_hashes()
+    |> Transaction.by_hashes_query()
     |> Repo.all()
   end
 

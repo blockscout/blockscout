@@ -286,4 +286,15 @@ defmodule Explorer.TestHelper do
        ]}
     end)
   end
+
+  def get_chain_id_mock do
+    expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn %{
+                                                   id: _id,
+                                                   method: "eth_chainId",
+                                                   params: []
+                                                 },
+                                                 _options ->
+      {:ok, "0x1"}
+    end)
+  end
 end
