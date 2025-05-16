@@ -220,7 +220,7 @@ defmodule Explorer.Chain.Search do
   defp prepare_search_query(query, {:some, prepared_term}) do
     address_hash_result = Chain.string_to_address_hash(query)
     filecoin_address_result = maybe_parse_filecoin_address(query)
-    full_hash_result = Chain.string_to_transaction_hash(query)
+    full_hash_result = Chain.string_to_full_hash(query)
     non_negative_integer_result = ExplorerHelper.safe_parse_non_negative_integer(query)
     query_length = String.length(query)
 

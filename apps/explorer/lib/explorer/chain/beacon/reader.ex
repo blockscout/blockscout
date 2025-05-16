@@ -33,7 +33,7 @@ defmodule Explorer.Chain.Beacon.Reader do
 
   Returns `{:error, :not_found}` if not found
 
-      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      iex> {:ok, hash} = Explorer.Chain.string_to_full_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       iex> Explorer.Chain.Beacon.Reader.blob(hash, true)

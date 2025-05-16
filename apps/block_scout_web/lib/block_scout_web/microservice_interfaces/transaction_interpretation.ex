@@ -394,7 +394,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   def decode_user_op_calldata(user_op_hash, call_data) do
     {:ok, input} = Data.cast(call_data)
 
-    {:ok, op_hash} = Chain.string_to_transaction_hash(user_op_hash)
+    {:ok, op_hash} = Chain.string_to_full_hash(user_op_hash)
 
     mock_transaction = %Transaction{
       to_address: %NotLoaded{},

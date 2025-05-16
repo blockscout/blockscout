@@ -954,7 +954,7 @@ defmodule Explorer.Chain do
 
   Returns `{:error, :not_found}` if not found
 
-      iex> {:ok, hash} = Explorer.Chain.string_to_block_hash(
+      iex> {:ok, hash} = Explorer.Chain.string_to_full_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       iex> Explorer.Chain.hash_to_block(hash)
@@ -1025,7 +1025,7 @@ defmodule Explorer.Chain do
 
   Returns `{:error, :not_found}` if not found
 
-      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      iex> {:ok, hash} = Explorer.Chain.string_to_full_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       iex> Explorer.Chain.hash_to_transaction(hash)
@@ -1106,7 +1106,7 @@ defmodule Explorer.Chain do
 
   Returns `[]` if not found
 
-      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      iex> {:ok, hash} = Explorer.Chain.string_to_full_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       iex> Explorer.Chain.hashes_to_transactions([hash])
@@ -2299,34 +2299,7 @@ defmodule Explorer.Chain do
   @doc """
   The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.t/0`.
 
-      iex> Explorer.Chain.string_to_block_hash(
-      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
-      ...> )
-      {
-        :ok,
-        %Explorer.Chain.Hash{
-          byte_count: 32,
-          bytes: <<0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b :: big-integer-size(32)-unit(8)>>
-        }
-      }
-
-  `String.t` format must always have 64 hexadecimal digits after the `0x` base prefix.
-
-      iex> Explorer.Chain.string_to_block_hash("0x0")
-      :error
-
-  """
-  @spec string_to_block_hash(String.t()) :: {:ok, Hash.t()} | :error
-  def string_to_block_hash(string) when is_binary(string) do
-    Hash.Full.cast(string)
-  end
-
-  def string_to_block_hash(_), do: :error
-
-  @doc """
-  The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.t/0`.
-
-      iex> Explorer.Chain.string_to_transaction_hash(
+      iex> Explorer.Chain.string_to_full_hash(
       ...>  "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       {
@@ -2339,16 +2312,16 @@ defmodule Explorer.Chain do
 
   `String.t` format must always have 64 hexadecimal digits after the `0x` base prefix.
 
-      iex> Explorer.Chain.string_to_transaction_hash("0x0")
+      iex> Explorer.Chain.string_to_full_hash("0x0")
       :error
 
   """
-  @spec string_to_transaction_hash(String.t()) :: {:ok, Hash.t()} | :error
-  def string_to_transaction_hash(string) when is_binary(string) do
+  @spec string_to_full_hash(String.t()) :: {:ok, Hash.t()} | :error
+  def string_to_full_hash(string) when is_binary(string) do
     Hash.Full.cast(string)
   end
 
-  def string_to_transaction_hash(_), do: :error
+  def string_to_full_hash(_), do: :error
 
   @doc """
   Constructs the base query `Ecto.Query.t()/0` to create requests to the transaction logs
@@ -3718,7 +3691,7 @@ defmodule Explorer.Chain do
 
   Returns `:not_found` if not found
 
-      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      iex> {:ok, hash} = Explorer.Chain.string_to_full_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       iex> Explorer.Chain.check_transaction_exists(hash)
@@ -3742,7 +3715,7 @@ defmodule Explorer.Chain do
 
   Returns `false` if not found
 
-      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      iex> {:ok, hash} = Explorer.Chain.string_to_full_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       iex> Explorer.Chain.transaction_exists?(hash)
@@ -3846,7 +3819,7 @@ defmodule Explorer.Chain do
         {:ok, nil}
       end
 
-    {:ok, transaction_hash} = Chain.string_to_transaction_hash(first_trace.transaction_hash)
+    {:ok, transaction_hash} = Chain.string_to_full_hash(first_trace.transaction_hash)
 
     {:ok, call_type} =
       if Map.has_key?(first_trace, :call_type) do

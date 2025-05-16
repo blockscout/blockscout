@@ -87,8 +87,7 @@ defmodule Explorer.Chain.Log do
 
   alias ABI.{Event, FunctionSelector}
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, ContractMethod, Hash, Log, TokenTransfer, Transaction}
-  alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.{ContractMethod, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index)a
@@ -167,36 +166,25 @@ defmodule Explorer.Chain.Log do
   @doc """
   Decode transaction log data.
   """
-  @spec decode(Log.t(), Transaction.t(), any(), boolean(), boolean(), map(), map()) ::
+  @spec decode(Log.t(), Transaction.t(), any(), boolean(), boolean(), list(), map()) ::
           {{:ok, String.t(), String.t(), map()}
            | {:error, :could_not_decode}
            | {:error, atom(), list()}
-           | {{:error, :contract_not_verified | :try_with_sig_provider, [any()]}, any()}, map(), map()}
+           | {{:error, :contract_not_verified | :try_with_sig_provider, [any()]}, any()}, map()}
   def decode(
         log,
         transaction,
         db_options,
         skip_sig_provider?,
         decoding_from_list?,
-        full_abi \\ nil,
-        full_abi_per_address_hash_acc \\ %{},
+        full_abi,
         events_acc \\ %{}
       ) do
-    {full_abi, full_abi_per_address_hash_acc} =
-      if decoding_from_list? do
-        {full_abi, full_abi_per_address_hash_acc}
-      else
-        full_abi_per_address_hash_acc =
-          accumulate_abi_by_address_hash(full_abi_per_address_hash_acc, log.address_hash, db_options)
-
-        {full_abi_per_address_hash_acc[log.address_hash], full_abi_per_address_hash_acc}
-      end
-
     with {:no_abi, false} <- {:no_abi, is_nil(full_abi)},
          {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction.hash),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping) do
-      {{:ok, identifier, text, mapping}, full_abi_per_address_hash_acc, events_acc}
+      {{:ok, identifier, text, mapping}, events_acc}
     else
       {:error, _} = error ->
         handle_method_decode_error(
@@ -206,7 +194,6 @@ defmodule Explorer.Chain.Log do
           skip_sig_provider?,
           decoding_from_list?,
           db_options,
-          full_abi_per_address_hash_acc,
           events_acc
         )
 
@@ -218,7 +205,6 @@ defmodule Explorer.Chain.Log do
           skip_sig_provider?,
           decoding_from_list?,
           db_options,
-          full_abi_per_address_hash_acc,
           events_acc
         )
     end
@@ -231,7 +217,6 @@ defmodule Explorer.Chain.Log do
          skip_sig_provider?,
          decoding_from_list?,
          db_options,
-         full_abi_per_address_hash_acc,
          events_acc
        ) do
     case error do
@@ -240,7 +225,7 @@ defmodule Explorer.Chain.Log do
                find_method_candidates(log, transaction, db_options, events_acc),
              {true, events_acc} <- {is_list(candidates), events_acc},
              {false, events_acc} <- {Enum.empty?(candidates), events_acc} do
-          {{:error, :contract_not_verified, candidates}, full_abi_per_address_hash_acc, events_acc}
+          {{:error, :contract_not_verified, candidates}, events_acc}
         else
           {_, events_acc} ->
             result =
@@ -250,102 +235,9 @@ defmodule Explorer.Chain.Log do
                 decode_event_via_sig_provider(log, transaction.hash, skip_sig_provider?)
               end
 
-            {result, full_abi_per_address_hash_acc, events_acc}
+            {result, events_acc}
         end
     end
-  end
-
-  # Accumulates the ABI (Application Binary Interface) by the given address hash.
-
-  # ## Parameters
-
-  #   - `acc` (map): The accumulator map where the ABIs are stored.
-  #   - `address_hash` (binary): The address hash for which the ABI needs to be accumulated.
-  #   - `db_options` (keyword list): Database options to be used for querying the contract address.
-
-  # ## Returns
-
-  #   - `map`: The updated accumulator map with the ABI for the given address hash.
-
-  # If the address hash is `nil` or already exists in the accumulator, it returns the accumulator as is.
-  # If the contract address is found, it combines the proxy implementation ABI and stores it in the accumulator.
-  # If the contract address is not found, it stores `nil` in the accumulator for the given address hash.
-  @spec accumulate_abi_by_address_hash(map(), Hash.t(), Keyword.t()) :: map()
-  defp accumulate_abi_by_address_hash(acc, address_hash, db_options) do
-    address_options =
-      [
-        necessity_by_association: %{
-          :smart_contract => :optional
-        }
-      ]
-      |> Keyword.merge(db_options)
-
-    if !is_nil(address_hash) && Map.has_key?(acc, address_hash) do
-      acc
-    else
-      case Chain.find_contract_address(address_hash, address_options) do
-        {:ok, %{smart_contract: smart_contract}} ->
-          full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, db_options)
-          Map.put(acc, address_hash, full_abi)
-
-        _ ->
-          Map.put(acc, address_hash, nil)
-      end
-    end
-  end
-
-  @doc """
-  Accumulates the ABI (Application Binary Interface) by the given list of address hashes.
-
-  ## Parameters
-
-    - `acc` (map): The accumulator map where the ABIs are stored.
-    - `address_hash` (binary): The address hash for which the ABI needs to be accumulated.
-    - `db_options` (keyword list): Database options to be used for querying the contract address.
-
-  ## Returns
-
-    - `map`: The updated accumulator map with the ABI for the given address hash.
-
-  If the address hash is `nil` or already exists in the accumulator, it returns the accumulator as is.
-  If the contract address is found, it combines the proxy implementation ABI and stores it in the accumulator.
-  If the contract address is not found, it stores `nil` in the accumulator for the given address hash.
-  """
-  @spec accumulate_abi_by_address_hashes(map(), [Hash.t()], Keyword.t()) :: map()
-  def accumulate_abi_by_address_hashes(address_hash_abi_map, address_hashes, db_options) do
-    address_options =
-      [
-        necessity_by_association: %{
-          :smart_contract => :optional
-        }
-      ]
-      |> Keyword.merge(db_options)
-
-    address_hashes_without_abi =
-      address_hashes
-      |> Enum.filter(fn address_hash ->
-        is_nil(address_hash_abi_map[address_hash])
-      end)
-
-    if Enum.empty?(address_hashes_without_abi) do
-      address_hash_abi_map
-    else
-      case Address.find_contract_addresses(address_hashes_without_abi, address_options) do
-        {:ok, addresses} when is_list(addresses) ->
-          update_address_hash_abi_map_with_implementations_abi(address_hash_abi_map, addresses, db_options)
-
-        _ ->
-          %{}
-      end
-    end
-  end
-
-  defp update_address_hash_abi_map_with_implementations_abi(address_hash_abi_map, addresses, db_options) do
-    addresses
-    |> Enum.reduce(address_hash_abi_map, fn %{smart_contract: smart_contract} = address, acc ->
-      full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, db_options)
-      Map.put(acc, address.hash, full_abi)
-    end)
   end
 
   defp find_method_candidates(log, transaction, options, events_acc) do

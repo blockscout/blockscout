@@ -1018,7 +1018,7 @@ defmodule Explorer.EthRPC do
 
   defp validate_and_render_transaction(transaction_hash_string, render_func, params) do
     with {:transaction_hash, {:ok, transaction_hash}} <-
-           {:transaction_hash, Chain.string_to_transaction_hash(transaction_hash_string)},
+           {:transaction_hash, Chain.string_to_full_hash(transaction_hash_string)},
          {:transaction, {:ok, transaction}} <- {:transaction, Chain.hash_to_transaction(transaction_hash, params)} do
       render_func.(transaction)
     else

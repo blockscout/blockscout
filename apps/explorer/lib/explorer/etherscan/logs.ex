@@ -273,7 +273,7 @@ defmodule Explorer.Etherscan.Logs do
   end
 
   defp sanitize_string_topic_value(topic_value) do
-    case Chain.string_to_block_hash(topic_value) do
+    case Chain.string_to_full_hash(topic_value) do
       {:ok, _} ->
         topic_value
 
