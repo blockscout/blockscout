@@ -9,6 +9,7 @@ defmodule Explorer.Repo.Optimism.Migrations.OPInteropTransferFields do
       add(:transfer_from_address_hash, :bytea, null: true, default: nil)
       add(:transfer_to_address_hash, :bytea, null: true, default: nil)
       add(:transfer_amount, :decimal, null: true, default: nil)
+      add(:sent_to_multichain, :boolean, null: false, default: false)
     end
   end
 end

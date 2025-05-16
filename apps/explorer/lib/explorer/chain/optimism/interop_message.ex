@@ -14,7 +14,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   alias Indexer.Fetcher.Optimism.Interop.MessageQueue, as: InteropMessageQueue
 
   @required_attrs ~w(nonce init_chain_id relay_chain_id)a
-  @optional_attrs ~w(sender_address_hash target_address_hash init_transaction_hash block_number timestamp relay_transaction_hash payload failed transfer_token_address_hash transfer_from_address_hash transfer_to_address_hash transfer_amount)a
+  @optional_attrs ~w(sender_address_hash target_address_hash init_transaction_hash block_number timestamp relay_transaction_hash payload failed transfer_token_address_hash transfer_from_address_hash transfer_to_address_hash transfer_amount sent_to_multichain)a
   @interop_instance_api_url_to_public_key_cache :interop_instance_api_url_to_public_key_cache
   @interop_chain_id_to_instance_info_cache :interop_chain_id_to_instance_info_cache
 
@@ -34,6 +34,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     * `transfer_from_address_hash` - The cross-chain transfer `from` address. Can be `nil` (if this is not transfer operation).
     * `transfer_to_address_hash` - The cross-chain transfer `to` address. Can be `nil` (if this is not transfer operation).
     * `transfer_amount` - The cross-chain transfer amount. Can be `nil` (if this is not transfer operation).
+    * `sent_to_multichain` - Equals to `true` if message details are sent to multichain service. Defaults to `false`.
   """
   @primary_key false
   typed_schema "op_interop_messages" do
@@ -52,6 +53,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     field(:transfer_from_address_hash, Hash.Address)
     field(:transfer_to_address_hash, Hash.Address)
     field(:transfer_amount, :decimal)
+    field(:sent_to_multichain, :boolean)
 
     timestamps()
   end
@@ -191,6 +193,26 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
         order_by: [asc: m.nonce, asc: m.init_chain_id],
         limit: ^limit,
         offset: ^offset
+      )
+    )
+  end
+
+  @doc """
+    Retrieves messages to be exported to the multichain service.
+
+    ## Parameters
+    - `current_chain_id`: The current chain ID to make correct query to the database.
+    - `limit`: The max number of retrieved items at once.
+  """
+  @spec get_messages_for_multichain_export(non_neg_integer(), non_neg_integer()) :: list()
+  def get_messages_for_multichain_export(current_chain_id, limit) do
+    Repo.all(
+      from(m in __MODULE__,
+        where:
+          ((not is_nil(m.init_transaction_hash) and m.init_chain_id == ^current_chain_id) or
+             (not is_nil(m.relay_transaction_hash) and m.relay_chain_id == ^current_chain_id)) and
+            not m.sent_to_multichain,
+        limit: ^limit
       )
     )
   end
