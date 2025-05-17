@@ -57,20 +57,24 @@ defmodule Explorer.GraphQL do
   Orders internal transactions by ascending index.
   """
   @spec transaction_to_internal_transactions_query(Transaction.t()) :: Ecto.Query.t()
-  def transaction_to_internal_transactions_query(%Transaction{
-        hash: %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash
-      }) do
+  def transaction_to_internal_transactions_query(
+        %Transaction{
+          hash: %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash
+        } = transaction
+      ) do
+    data_source = InternalTransaction.choose_between_realtime_and_archive_data_source(transaction.block_number)
+
     query =
       from(
-        it in InternalTransaction,
-        inner_join: t in assoc(it, :transaction),
+        it in data_source,
+        inner_join: transaction in assoc(it, :transaction),
         order_by: [asc: it.index],
         where: it.transaction_hash == ^hash
       )
 
     query
     |> InternalTransaction.where_nonpending_block()
-    |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
+    |> data_source.where_transaction_has_multiple_internal_transactions()
   end
 
   @doc """
