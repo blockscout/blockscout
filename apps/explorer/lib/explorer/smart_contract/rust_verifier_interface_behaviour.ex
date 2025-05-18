@@ -224,7 +224,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
 
         cond do
           chain_type == :zksync -> "/zksync-verifier"
-          chain_type == :via -> "/via-verifier"
+          chain_type == :via -> "/zksync-verifier"
           true -> "/verifier"
         end
       end
