@@ -31,7 +31,6 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   @allowed_methods [:get, :post, :put, :patch, :delete]
   @reserved_param_types ~w(address chain_id chain_id_dependent)
 
-  @config_url "https://raw.githubusercontent.com/blockscout/backend-configs/refs/heads/main/universal-proxy-config.json"
   @cache_name :universal_proxy_config
 
   @doc """
@@ -334,7 +333,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
         safe_parse_config_string(config_string)
 
       nil ->
-        case Tesla.get(@config_url) do
+        case Tesla.get(config_url()) do
           {:ok, %Tesla.Env{status: 200, body: config_string}} ->
             safe_parse_config_string(config_string, true)
 
@@ -353,5 +352,9 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
       {:error, _} ->
         %{}
     end
+  end
+
+  defp config_url do
+    Application.get_env(:explorer, __MODULE__)[:config_url]
   end
 end
