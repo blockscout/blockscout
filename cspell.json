@@ -537,6 +537,7 @@
         "returnaddress",
         "retval",
         "reuseaddr",
+        "rdparty",
         "rollup",
         "rollups",
         "RPC's",

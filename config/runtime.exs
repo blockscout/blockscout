@@ -630,13 +630,6 @@ config :explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_TAC_OPERATION_LIFECYCLE_ENABLED", "true"),
   service_url: System.get_env("MICROSERVICE_TAC_OPERATION_LIFECYCLE_URL")
 
-config :indexer, Indexer.Fetcher.MultichainSearchDbExport.Retry,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_CONCURRENCY", 10),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_BATCH_SIZE", 10),
-  enqueue_busy_waiting_timeout:
-    ConfigHelper.parse_time_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_ENQUEUE_BUSY_WAITING_TIMEOUT", "1s"),
-  max_queue_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_MAX_QUEUE_SIZE", 1000)
-
 config :explorer, :air_table_public_tags,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
   api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
@@ -785,14 +778,6 @@ config :explorer, Explorer.Migrator.BackfillMetadataURL,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_METADATA_URL_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_METADATA_URL_CONCURRENCY", 5)
 
-config :indexer, Indexer.Migrator.RecoveryWETHTokenTransfers,
-  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_CONCURRENCY", 5),
-  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_BATCH_SIZE", 50),
-  timeout: ConfigHelper.parse_time_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_TIMEOUT", "0s"),
-  blocks_batch_size:
-    ConfigHelper.parse_integer_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_BLOCKS_BATCH_SIZE", 100_000),
-  high_verbosity: ConfigHelper.parse_bool_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_HIGH_VERBOSITY", "true")
-
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
   bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
@@ -838,7 +823,23 @@ config :explorer, Explorer.Utility.RateLimiter,
     limitation_period: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_LIMITATION_PERIOD", "1h")
   ]
 
+config :explorer, Explorer.ThirdPartyIntegrations.UniversalProxy,
+  config_url:
+    System.get_env(
+      "UNIVERSAL_PROXY_CONFIG_URL",
+      "https://raw.githubusercontent.com/blockscout/backend-configs/refs/heads/main/universal-proxy-config.json"
+    )
+
 config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED")
+
+config :explorer, Explorer.Chain.Scroll.L1FeeParam,
+  curie_upgrade_block: ConfigHelper.parse_integer_env_var("SCROLL_L2_CURIE_UPGRADE_BLOCK", 0),
+  scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_SCALAR_INIT", 0),
+  overhead_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_OVERHEAD_INIT", 0),
+  commit_scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_COMMIT_SCALAR_INIT", 0),
+  blob_scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BLOB_SCALAR_INIT", 0),
+  l1_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BASE_FEE_INIT", 0),
+  l1_blob_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BLOB_BASE_FEE_INIT", 0)
 
 ###############
 ### Indexer ###
@@ -1060,6 +1061,21 @@ config :indexer, Indexer.Fetcher.CoinBalance.Catchup,
 config :indexer, Indexer.Fetcher.CoinBalance.Realtime,
   batch_size: coin_balances_batch_size,
   concurrency: coin_balances_concurrency
+
+config :indexer, Indexer.Migrator.RecoveryWETHTokenTransfers,
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_CONCURRENCY", 5),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_BATCH_SIZE", 50),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_TIMEOUT", "0s"),
+  blocks_batch_size:
+    ConfigHelper.parse_integer_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_BLOCKS_BATCH_SIZE", 100_000),
+  high_verbosity: ConfigHelper.parse_bool_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_HIGH_VERBOSITY", "true")
+
+config :indexer, Indexer.Fetcher.MultichainSearchDbExport.Retry,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_CONCURRENCY", 10),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_BATCH_SIZE", 10),
+  enqueue_busy_waiting_timeout:
+    ConfigHelper.parse_time_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_ENQUEUE_BUSY_WAITING_TIMEOUT", "1s"),
+  max_queue_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_MAX_QUEUE_SIZE", 1000)
 
 config :indexer, Indexer.Fetcher.Optimism.TransactionBatch.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
@@ -1345,15 +1361,6 @@ config :indexer, Indexer.Fetcher.Scroll,
   rpc: System.get_env("INDEXER_SCROLL_L1_RPC")
 
 config :indexer, Indexer.Fetcher.Scroll.L1FeeParam, gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT")
-
-config :explorer, Explorer.Chain.Scroll.L1FeeParam,
-  curie_upgrade_block: ConfigHelper.parse_integer_env_var("SCROLL_L2_CURIE_UPGRADE_BLOCK", 0),
-  scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_SCALAR_INIT", 0),
-  overhead_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_OVERHEAD_INIT", 0),
-  commit_scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_COMMIT_SCALAR_INIT", 0),
-  blob_scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BLOB_SCALAR_INIT", 0),
-  l1_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BASE_FEE_INIT", 0),
-  l1_blob_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BLOB_BASE_FEE_INIT", 0)
 
 config :indexer, Indexer.Fetcher.Scroll.L1FeeParam.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
 
