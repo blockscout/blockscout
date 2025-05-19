@@ -44,7 +44,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
-  alias OpenApiSpex.JsonErrorResponse
 
   case @chain_type do
     :celo ->
@@ -149,7 +148,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     responses: [
       ok: {"Address response", "application/json", Schemas.Address.Response},
       unprocessable_entity: JsonErrorResponse.response(),
-      forbidden: Schemas.ErrorResponses.ForbiddenResponse.response()
+      forbidden: ForbiddenResponse.response()
     ]
 
   @doc """

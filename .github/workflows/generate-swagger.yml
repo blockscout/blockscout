@@ -12,7 +12,7 @@ on:
       - "docker-compose/*"
   workflow_dispatch:
   release:
-      types: [published]
+    types: [published]
 
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}

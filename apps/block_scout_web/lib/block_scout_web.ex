@@ -37,6 +37,8 @@ defmodule BlockScoutWeb do
 
       alias BlockScoutWeb.Schemas.API.V2, as: Schemas
       alias OpenApiSpex.{Schema, Reference}
+      alias OpenApiSpex.JsonErrorResponse
+      alias Schemas.ErrorResponses.ForbiddenResponse
     end
   end
 
