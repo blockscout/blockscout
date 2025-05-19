@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.ApiSpec do
   def spec do
     %OpenApi{
       servers: [
-        %Server{url: to_string(Helper.instance_url())}
+        %Server{url: to_string(Helper.instance_url() |> URI.append_path("/api"))}
       ],
       info: %Info{
         title: "Blockscout",

@@ -24,17 +24,31 @@ defmodule BlockScoutWeb.Schemas.API.V2.ErrorResponses do
         "message" => "Invalid parameter(s)"
       }
     })
+
+    @spec response() :: {String.t(), String.t(), module()}
+    def response do
+      {"Unprocessable Entity", "application/json", __MODULE__}
+    end
   end
 
-  @doc """
-  Returns the response tuple for unprocessable entity errors.
+  defmodule ForbiddenResponse do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "ForbiddenResponse",
+      description: "Response returned when the user is not authorized to access the resource",
+      type: :object,
+      properties: %{
+        message: %Schema{
+          type: :string,
+          description: "Error message indicating the user is not authorized to access the resource",
+          example: "Restricted access"
+        }
+      }
+    })
 
-  ## Returns
-
-  - A tuple containing the status description, content type, and response schema.
-  """
-  @spec unprocessable_entity_response() :: {String.t(), String.t(), module()}
-  def unprocessable_entity_response do
-    {"Unprocessable Entity", "application/json", UnprocessableEntityResponse}
+    @spec response() :: {String.t(), String.t(), module()}
+    def response do
+      {"Forbidden", "application/json", __MODULE__}
+    end
   end
 end

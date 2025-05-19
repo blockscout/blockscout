@@ -148,7 +148,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     ],
     responses: [
       ok: {"Address response", "application/json", Schemas.Address.Response},
-      unprocessable_entity: JsonErrorResponse.response()
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: Schemas.ErrorResponses.ForbiddenResponse.response()
     ]
 
   @doc """
