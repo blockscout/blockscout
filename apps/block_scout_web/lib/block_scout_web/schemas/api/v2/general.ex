@@ -1,45 +1,45 @@
 defmodule BlockScoutWeb.Schemas.API.V2.General do
+  @moduledoc """
+  This module defines the schema for general types used in the API.
+  """
   require OpenApiSpex
+
   alias OpenApiSpex.Schema
 
   defmodule AddressHash do
+    @moduledoc false
     OpenApiSpex.schema(%{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{40})$", nullable: false})
   end
 
   defmodule AddressHashNullable do
+    @moduledoc false
     OpenApiSpex.schema(%{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{40})$", nullable: true})
   end
 
   defmodule TransactionHash do
+    @moduledoc false
     OpenApiSpex.schema(%{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{64})$", nullable: false})
   end
 
   defmodule TransactionHashNullable do
+    @moduledoc false
     OpenApiSpex.schema(%{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{64})$", nullable: true})
   end
 
   defmodule ProxyType do
+    @moduledoc false
+    alias Ecto.Enum
+    alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+
     OpenApiSpex.schema(%{
       type: :string,
-      enum: [
-        "eip1167",
-        "eip1967",
-        "eip1822",
-        "eip930",
-        "master_copy",
-        "basic_implementation",
-        "basic_get_implementation",
-        "comptroller",
-        "eip2535",
-        "clone_with_immutable_arguments",
-        "eip7702",
-        "unknown"
-      ],
+      enum: Enum.values(Implementation, :proxy_type),
       nullable: true
     })
   end
 
   defmodule Implementation do
+    @moduledoc false
     OpenApiSpex.schema(%{
       description: "Proxy smart contract implementation",
       type: :object,
@@ -52,6 +52,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   defmodule Tag do
+    @moduledoc false
     OpenApiSpex.schema(%{
       description: "Address tag struct",
       type: :object,
@@ -65,6 +66,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   defmodule WatchlistName do
+    @moduledoc false
     OpenApiSpex.schema(%{
       description: "Watch list name struct",
       type: :object,
@@ -77,10 +79,23 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   defmodule FloatStringNullable do
+    @moduledoc false
     OpenApiSpex.schema(%{type: :string, pattern: ~r"^([1-9][0-9]*|0)(\.[0-9]+)?$", nullable: true})
   end
 
   defmodule IntegerStringNullable do
+    @moduledoc false
     OpenApiSpex.schema(%{type: :string, pattern: ~r"^([1-9][0-9]*|0)$", nullable: true})
+  end
+
+  defmodule URLNullable do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      type: :string,
+      pattern:
+        ~r"/^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/",
+      example: "https://example.com",
+      nullable: true
+    })
   end
 end

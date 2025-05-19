@@ -1,13 +1,79 @@
-defmodule BlockScoutWeb.Schemas.API.V2.Address do
-  alias OpenApiSpex.Schema
+defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
+  @moduledoc false
   require OpenApiSpex
-  alias BlockScoutWeb.Schemas.API.V2.{ChainTypeCustomizations, General, Proxy}
+
+  alias OpenApiSpex.Schema
+
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  case @chain_type do
+    :filecoin ->
+      @filecoin_robust_address_schema %Schema{
+        type: :string,
+        example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
+        nullable: true
+      }
+
+      def address_chain_type_fields(schema) do
+        schema
+        |> put_in([:properties, :filecoin], %Schema{
+          type: :object,
+          properties: %{
+            id: %Schema{type: :string, example: "f03248220", nullable: true},
+            robust: %Schema{type: :string, example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq", nullable: true},
+            actor_type: %Schema{
+              type: :string,
+              # credo:disable-for-next-line
+              enum: Ecto.Enum.values(Explorer.Chain.Address, :filecoin_actor_type),
+              nullable: true
+            }
+          }
+        })
+      end
+
+      def address_response_chain_type_fields(schema) do
+        schema
+        |> put_in([:properties, :creator_filecoin_robust_address], @filecoin_robust_address_schema)
+        |> update_in([:required], &[:creator_filecoin_robust_address | &1])
+      end
+
+    :zilliqa ->
+      def address_chain_type_fields(schema), do: schema
+
+      def address_response_chain_type_fields(schema) do
+        schema
+        |> put_in([:properties, :is_scilla_contract], %Schema{type: :boolean, nullable: false})
+      end
+
+    _ ->
+      def address_chain_type_fields(schema), do: schema
+
+      def address_response_chain_type_fields(schema), do: schema
+  end
+end
+
+defmodule BlockScoutWeb.Schemas.API.V2.Address do
+  @moduledoc """
+  This module defines the schema for address struct, returned by BlockScoutWeb.API.V2.Helper.address_with_info/5.
+
+  Note that BlockScoutWeb.Schemas.API.V2.Address.Response is defined in __after_compile__/2 callback. This is done to reuse the Address schema in the AddressResponse schema.
+  """
+  require OpenApiSpex
+
+  alias BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations
+  alias BlockScoutWeb.Schemas.API.V2.{General, Proxy}
+  alias OpenApiSpex.Schema
 
   @after_compile __MODULE__
 
   def __after_compile__(env, bytecode) do
     defmodule Response do
-      alias BlockScoutWeb.Schemas.API.V2.{ChainTypeCustomizations, General, Token}
+      @moduledoc """
+      This module defines the schema for address response from /api/v2/addresses/:hash.
+      """
+
+      alias BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations
+      alias BlockScoutWeb.Schemas.API.V2.{General, Token}
 
       OpenApiSpex.schema(%{
         title: "AddressResponse",
@@ -17,7 +83,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
           BlockScoutWeb.Schemas.API.V2.Address,
           struct(
             Schema,
-            ChainTypeCustomizations.address_response_chain_type_fields(%{
+            %{
               type: :object,
               properties: %{
                 creator_address_hash: General.AddressHashNullable,
@@ -49,7 +115,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
                 :watchlist_address_id,
                 :has_beacon_chain_withdrawals
               ]
-            })
+            }
+            |> ChainTypeCustomizations.address_response_chain_type_fields()
           )
         ]
       })

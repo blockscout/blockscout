@@ -16,7 +16,7 @@ on:
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
-  RELEASE_VERSION: 7.0.0
+  RELEASE_VERSION: 8.1.0
 
 jobs:
   matrix-builder:
@@ -111,20 +111,6 @@ jobs:
         run: npm install
         working-directory: apps/explorer
 
-      - name: Restore Blockscout Web NPM Cache
-        uses: actions/cache@v4
-        id: blockscoutweb-npm-cache
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-${{ hashFiles('apps/block_scout_web/assets/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-
-
-      - name: Conditionally build Blockscout Web NPM Cache
-        if: steps.blockscoutweb-npm-cache.outputs.cache-hit != 'true'
-        run: npm install
-        working-directory: apps/block_scout_web/assets
-
   generate-swagger:
     strategy:
       fail-fast: false
@@ -164,15 +150,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-
 
-      - name: Restore Blockscout Web NPM Cache
-        uses: actions/cache@v4
-        id: blockscoutweb-npm-cache
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-${{ hashFiles('apps/block_scout_web/assets/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-
-
       - name: mix openapi.spec.yaml
         run: |
           mix openapi.spec.yaml --spec BlockScoutWeb.ApiSpec openapi.${{ matrix.chain-type }}.yaml --start-app=false
@@ -193,10 +170,17 @@ jobs:
     runs-on: ubuntu-latest
     name: Push all OpenAPI specs
     steps:
+      - name: Validate required secrets
+        run: |
+          if [ -z "${{ secrets.API_SPECS_PAT }}" ]; then
+            echo "Error: API_SPECS_PAT secret is not set"
+            exit 1
+          fi
+
       - name: Checkout specs repository
         uses: actions/checkout@v4
         with:
-          repository: nikitosing/test_swagger
+          repository: ${{ vars.API_SPECS_REPOSITORY }}
           token: ${{ secrets.API_SPECS_PAT }}
           path: api-specs
 
@@ -209,7 +193,7 @@ jobs:
 
       - name: Create specs directory structure
         run: |
-          VERSION=${{ github.event_name == 'release' && env.RELEASE_VERSION || 'latest' }}
+          VERSION=${{ github.event_name == 'release' && env.RELEASE_VERSION || 'master' }}
 
           for SPEC_FILE in temp-specs/*; do
             if [ -f "$SPEC_FILE" ]; then
@@ -237,11 +221,12 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "[SKIP-GH-PAGES] create OpenAPI specs for blockscout ${{ github.event_name == 'release' && env.RELEASE_VERSION || github.sha }}"
+            git commit -m "[SKIP-GH-PAGES] create OpenAPI specs for Blockscout ${{ github.event_name == 'release' && env.RELEASE_VERSION || github.sha }}"
             git push
           fi
 
       - name: Clean up
+        if: always()
         run: |
           rm -rf temp-specs
           rm -rf api-specs

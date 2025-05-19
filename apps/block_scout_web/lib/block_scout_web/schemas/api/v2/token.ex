@@ -1,10 +1,42 @@
-defmodule BlockScoutWeb.Schemas.API.V2.Token do
-  alias OpenApiSpex.Schema
+defmodule BlockScoutWeb.Schemas.API.V2.Token.ChainTypeCustomizations do
+  @moduledoc false
   require OpenApiSpex
-  alias BlockScoutWeb.Schemas.API.V2.{ChainTypeCustomizations, General}
+
+  alias OpenApiSpex.Schema
+
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  case @chain_type do
+    :filecoin ->
+      @filecoin_robust_address_schema %Schema{
+        type: :string,
+        example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
+        nullable: true
+      }
+
+      def token_chain_type_fields(schema) do
+        schema
+        |> put_in([:properties, :filecoin_robust_address], @filecoin_robust_address_schema)
+        |> update_in([:required], &[:filecoin_robust_address | &1])
+      end
+
+    _ ->
+      def token_chain_type_fields(schema), do: schema
+  end
+end
+
+defmodule BlockScoutWeb.Schemas.API.V2.Token do
+  @moduledoc """
+  This module defines the schema for the Token struct.
+  """
+  require OpenApiSpex
+
+  alias BlockScoutWeb.Schemas.API.V2.General
+  alias BlockScoutWeb.Schemas.API.V2.Token.ChainTypeCustomizations
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
-    ChainTypeCustomizations.token_chain_type_fields(%{
+    %{
       description: "Token struct",
       type: :object,
       properties: %{
@@ -26,13 +58,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         exchange_rate: General.FloatStringNullable,
         volume_24h: General.FloatStringNullable,
         total_supply: General.IntegerStringNullable,
-        icon_url: %Schema{
-          type: :string,
-          pattern:
-            ~r"/^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/",
-          example:
-            "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png"
-        },
+        icon_url: General.URLNullable,
         circulating_market_cap: General.FloatStringNullable,
         is_bridged: %Schema{type: :boolean, nullable: false}
       },
@@ -49,6 +75,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         :icon_url,
         :circulating_market_cap
       ]
-    })
+    }
+    |> ChainTypeCustomizations.token_chain_type_fields()
   )
 end

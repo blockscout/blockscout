@@ -14,9 +14,8 @@ CONFIG_FILE="$(pwd)/rel/config.exs"
 DOCKER_COMPOSE_FILE="$(pwd)/docker-compose/docker-compose.yml"
 DOCKER_COMPOSE_NO_SERVICES_FILE="$(pwd)/docker-compose/no-services.yml"
 MAKE_FILE="$(pwd)/docker/Makefile"
-WORKFLOW_FILES=($(find "$(pwd)/.github/workflows" -type f \( -name "pre-release*" -o -name "release*" -o -name "publish-regular-docker-image-on-demand*" -o -name "publish-docker-image-*" \)))
+WORKFLOW_FILES=($(find "$(pwd)/.github/workflows" -type f \( -name "pre-release*" -o -name "release*" -o -name "publish-regular-docker-image-on-demand*" -o -name "publish-docker-image-*" -o -name "generate-swagger*" \)))
 METADATA_RETRIEVER_FILE="$(pwd)/apps/explorer/lib/explorer/token/metadata_retriever.ex"
-API_SPEC_FILE="$(pwd)/apps/block_scout_web/lib/block_scout_web/api_spec.ex"
 
 # Function to bump version
 bump_version() {
@@ -76,8 +75,6 @@ bump_version() {
     done
 
     sed -i '' "s/\"blockscout-$current_version\"/\"blockscout-$new_version\"/" "$METADATA_RETRIEVER_FILE"
-
-    sed -i '' "s/\"$current_version\"/\"$new_version\"/" "$API_SPEC_FILE"
 
     echo "Version bumped from $current_version to $new_version"
 }
