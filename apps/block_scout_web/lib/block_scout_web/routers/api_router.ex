@@ -358,6 +358,27 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/proxy" do
+      scope "/3rdparty" do
+        get("/:platform_id", V2.Proxy.UniversalProxyController, :index)
+
+        scope "/noves-fi" do
+          get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
+
+          get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+
+          get("/transaction-descriptions", V2.Proxy.NovesFiController, :describe_transactions)
+        end
+
+        scope "/xname" do
+          get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
+        end
+
+        scope "/solidityscan" do
+          get("/smart-contracts/:address_hash/report", V2.SmartContractController, :solidityscan_report)
+        end
+      end
+
+      # deprecate in the next major/minor release after 9.0.0
       scope "/3dparty" do
         get("/:platform_id", V2.Proxy.UniversalProxyController, :index)
 
