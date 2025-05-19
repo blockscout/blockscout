@@ -18,6 +18,9 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  @doc """
+  Handles GET requests to `/api/v2/celo/epochs` endpoint.
+  """
   @spec epochs(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def epochs(conn, params) do
     paging_options =
@@ -53,6 +56,10 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     })
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/celo/epochs/:number` endpoint.
+  """
+  @spec epoch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def epoch(conn, %{"number" => number_string}) do
     options = [
       necessity_by_association: %{
@@ -73,6 +80,11 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/celo/epochs/:number/election-rewards/:type`
+  endpoint.
+  """
+  @spec election_rewards(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def election_rewards(conn, %{"number" => epoch_number_string, "type" => reward_type} = params) do
     with {:ok, number} <- parse_epoch_number(epoch_number_string),
          {:ok, reward_type_atom} <- parse_celo_reward_type(reward_type) do
@@ -137,6 +149,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
                 is_binary(account_address_hash_string) and
                 is_binary(associated_account_address_hash_string) <- params,
          {amount, ""} <- Decimal.parse(amount_string),
+         true <- Decimal.compare(amount, Decimal.new(0)) == :gt,
          {:ok, account_address_hash} <- Hash.Address.cast(account_address_hash_string),
          {:ok, associated_account_address_hash} <-
            Hash.Address.cast(associated_account_address_hash_string) do
@@ -153,6 +166,8 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     end
   end
 
+  @spec parse_epoch_number(String.t()) ::
+          {:ok, non_neg_integer()} | {:error, {:invalid, :number}}
   defp parse_epoch_number(number) do
     case safe_parse_non_negative_integer(number) do
       {:ok, epoch_number} -> {:ok, epoch_number}
@@ -160,6 +175,8 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     end
   end
 
+  @spec parse_celo_reward_type(String.t()) ::
+          {:ok, ElectionReward.type()} | {:error, {:invalid, :celo_election_reward_type}}
   defp parse_celo_reward_type(reward_type_string) do
     reward_type_string
     |> ElectionReward.type_from_url_string()

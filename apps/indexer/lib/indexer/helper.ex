@@ -413,7 +413,8 @@ defmodule Indexer.Helper do
              {[{:ok | :error, any()}], list()})
         ) ::
           {[{:ok | :error, any()}], list()}
-  def read_contracts_with_retries_by_chunks(requests, chunk_size, reader) do
+  def read_contracts_with_retries_by_chunks(requests, chunk_size, reader)
+      when is_list(requests) and is_integer(chunk_size) and chunk_size > 0 do
     {responses_lists, errors_lists} =
       requests
       |> Enum.chunk_every(chunk_size)

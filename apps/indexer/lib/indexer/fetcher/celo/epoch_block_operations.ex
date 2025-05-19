@@ -129,8 +129,8 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
     {:ok, distributions_params} = Distributions.fetch(epoch)
 
     next_epoch_params = %{
-      number: epoch.number + 1,
-      start_block_number: epoch.end_block_number + 1
+      number: epoch_params.number + 1,
+      start_block_number: epoch_params.end_block_number + 1
     }
 
     addresses_params =

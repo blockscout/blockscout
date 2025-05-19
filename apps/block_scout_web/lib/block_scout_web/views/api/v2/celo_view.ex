@@ -175,14 +175,20 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   def extend_block_json_response(out_json, block, single_block?) do
     epoch_number = CeloEpochs.block_number_to_epoch_number(block.number)
 
+    l1_era_finalized_epoch_number =
+      if CeloHelper.pre_migration_block_number?(block.number) and
+           CeloHelper.epoch_block_number?(block.number) do
+        epoch_number - 1
+      else
+        nil
+      end
+
     celo_json =
       %{
         # todo: keep `is_epoch_block = false` for compatibility with frontend and remove
-        # when new frontend is bound to `is_l1_era_epoch_block` property
+        # when new frontend is bound to `l1_era_finalized_epoch_number` property
         is_epoch_block: false,
-        is_l1_era_epoch_block:
-          CeloHelper.pre_migration_block_number?(block.number) and
-            CeloHelper.epoch_block_number?(block.number),
+        l1_era_finalized_epoch_number: l1_era_finalized_epoch_number,
         epoch_number: epoch_number
       }
       |> maybe_add_base_fee_info(block, single_block?)

@@ -65,7 +65,6 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
 
     {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, start_block.number)
 
-    # TODO: check consensus of range of blocks
     elected_groups_query =
       start_block.number
       |> epoch_rewards_distributed_to_voters_query(end_block.number)

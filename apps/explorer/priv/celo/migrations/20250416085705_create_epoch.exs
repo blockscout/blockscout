@@ -43,7 +43,7 @@ defmodule Explorer.Repo.Celo.Migrations.CreateEpoch do
           FLOOR(b.number / 17280) AS epoch_number
         FROM celo_pending_epoch_block_operations op
         JOIN blocks b ON op.block_hash = b.hash
-        WHERE b.consensus = true and b.number < #{l2_migration_block_number}
+        WHERE b.consensus = true AND b.number > 0 AND b.number < #{l2_migration_block_number}
       )
       INSERT INTO celo_epochs (
         number,
@@ -74,6 +74,7 @@ defmodule Explorer.Repo.Celo.Migrations.CreateEpoch do
         FROM blocks b
         WHERE
           b.consensus = true AND
+          b.number > 0 AND
           b.number < #{l2_migration_block_number} AND
           b.number % 17280 = 0 AND
           NOT EXISTS (

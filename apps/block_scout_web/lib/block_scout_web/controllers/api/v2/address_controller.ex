@@ -940,7 +940,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @spec celo_election_rewards(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def celo_election_rewards(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params),
-         {:ok, _address} <- Chain.hash_to_address(address_hash, []) do
+         {:ok, _address} <- Chain.hash_to_address(address_hash, api?: true) do
       full_options =
         @celo_election_rewards_options
         |> Keyword.put(

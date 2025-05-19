@@ -122,7 +122,7 @@ defmodule Explorer.Chain.Celo.Epoch do
 
   ## Examples
 
-      iex> Explorer.Chain.Celo.Epoch.fetched_epochs()
+      iex> Explorer.Chain.Celo.Epoch.fetched_epochs([])
       [%Explorer.Chain.Celo.Epoch{number: 42, fetched?: true, ...}, ...]
 
       iex> Explorer.Chain.Celo.Epoch.fetched_epochs(sorting: [asc: :number], paging_options: %{page_size: 10})

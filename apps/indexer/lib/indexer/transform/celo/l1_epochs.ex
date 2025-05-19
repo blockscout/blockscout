@@ -14,10 +14,10 @@ defmodule Indexer.Transform.Celo.L1Epochs do
   use Utils.RuntimeEnvHelper,
     chain_type: [:explorer, :chain_type]
 
-  alias Explorer.Chain.{Block, Celo.Epoch}
+  alias Explorer.Chain.Block
   alias Explorer.Chain.Celo.Helper
 
-  @spec parse([Block.t()]) :: [Epoch.t()]
+  @spec parse([Block.t()]) :: [map()]
   def parse(blocks) do
     if chain_type() == :celo do
       do_parse(blocks)
