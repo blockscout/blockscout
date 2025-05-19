@@ -629,7 +629,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   defp interop_prepare_transaction_hash_filter(transaction_hash) when is_binary(transaction_hash) do
     transaction_hash
     |> String.trim()
-    |> Chain.string_to_transaction_hash()
+    |> Chain.string_to_full_hash()
     |> case do
       {:ok, hash} -> hash
       _ -> nil

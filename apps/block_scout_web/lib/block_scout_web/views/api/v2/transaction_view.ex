@@ -8,9 +8,22 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.{TransactionStateView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Block, DecodingHelper, Log, SignedAuthorization, Token, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    DecodingHelper,
+    Log,
+    SignedAuthorization,
+    SmartContract,
+    Token,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation, as: ProxyImplementation
   alias Explorer.Chain.Transaction.StateChange
   alias Timex.Duration
 
@@ -222,34 +235,57 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   @doc """
+  Returns the ABI of a smart contract or an empty list if the smart contract is nil
+  """
+  @spec try_to_get_abi(SmartContract.t() | nil) :: [map()]
+  def try_to_get_abi(smart_contract) do
+    (smart_contract && smart_contract.abi) || []
+  end
+
+  @doc """
+  Returns the ABI of a proxy implementations or an empty list if the proxy implementations is nil
+  """
+  @spec extract_implementations_abi(ProxyImplementation.t() | nil) :: [map()]
+  def extract_implementations_abi(nil) do
+    []
+  end
+
+  def extract_implementations_abi(proxy_implementations) do
+    proxy_implementations.smart_contracts
+    |> Enum.flat_map(fn smart_contract ->
+      try_to_get_abi(smart_contract)
+    end)
+  end
+
+  @doc """
     Decodes list of logs
   """
   @spec decode_logs([Log.t()], boolean) :: [tuple]
   def decode_logs(logs, skip_sig_provider?) do
-    unique_log_address_hashes =
-      logs
-      |> Enum.map(fn log -> log.address_hash end)
-      |> Enum.uniq()
-
     full_abi_per_address_hash =
-      Log.accumulate_abi_by_address_hashes(%{}, unique_log_address_hashes, @api_true)
+      Enum.reduce(logs, %{}, fn log, acc ->
+        full_abi =
+          (extract_implementations_abi(log.address.proxy_implementations) ++
+             try_to_get_abi(log.address.smart_contract))
+          |> Enum.uniq()
 
-    {all_logs, _, _} =
-      Enum.reduce(logs, {[], full_abi_per_address_hash, %{}}, fn log,
-                                                                 {results, full_abi_per_address_hash_acc, events_acc} ->
-        {result, full_abi_per_address_hash_acc, events_acc} =
+        Map.put(acc, log.address_hash, full_abi)
+      end)
+
+    {all_logs, _} =
+      Enum.reduce(logs, {[], %{}}, fn log, {results, events_acc} ->
+        {result, events_acc} =
           Log.decode(
             log,
             %Transaction{hash: log.transaction_hash},
             @api_true,
             skip_sig_provider?,
             true,
-            full_abi_per_address_hash_acc[log.address_hash],
-            full_abi_per_address_hash_acc,
+            full_abi_per_address_hash[log.address_hash],
             events_acc
           )
 
-        {[result | results], full_abi_per_address_hash_acc, events_acc}
+        {[result | results], events_acc}
       end)
 
     all_logs_with_index =

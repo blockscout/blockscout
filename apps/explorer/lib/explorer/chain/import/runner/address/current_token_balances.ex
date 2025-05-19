@@ -239,35 +239,59 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
   defp select_existing_current_token_balances(_repo, [], _with_token_id?), do: []
 
-  defp select_existing_current_token_balances(repo, params, with_token_id?) do
-    params
-    |> existing_ctb_query(with_token_id?)
-    |> repo.all()
-  end
-
-  defp existing_ctb_query(params, false) do
+  defp select_existing_current_token_balances(repo, params, false) do
     ids =
       params
       |> Enum.map(&{&1.address_hash.bytes, &1.token_contract_address_hash.bytes})
       |> Enum.uniq()
 
-    from(
-      ctb in CurrentTokenBalance,
-      where: is_nil(ctb.token_id),
-      where: ^QueryHelper.tuple_in([:address_hash, :token_contract_address_hash], ids)
-    )
+    existing_ctb_query =
+      from(
+        ctb in CurrentTokenBalance,
+        where: is_nil(ctb.token_id),
+        where: ^QueryHelper.tuple_in([:address_hash, :token_contract_address_hash], ids)
+      )
+
+    repo.all(existing_ctb_query)
   end
 
-  defp existing_ctb_query(params, true) do
-    ids =
-      params
-      |> Enum.map(&{&1.address_hash.bytes, &1.token_contract_address_hash.bytes, &1.token_id})
-      |> Enum.uniq()
+  defp select_existing_current_token_balances(repo, params, true) do
+    ids = Enum.map(params, &[&1.address_hash.bytes, &1.token_contract_address_hash.bytes, &1.token_id])
 
-    from(
-      ctb in CurrentTokenBalance,
-      where: ^QueryHelper.tuple_in([:address_hash, :token_contract_address_hash, :token_id], ids)
-    )
+    placeholders =
+      ids
+      |> Enum.with_index(1)
+      |> Enum.map_join(",", fn {_, i} ->
+        # The value 3 corresponds to the number of parameters in each group within the WHERE clause.
+        # If this number changes, make sure to update it accordingly. For example, placeholders for
+        # an array of ids [[1, 2, 3], [4, 5, 6]] would be formatted as: ($1, $2, $3),($4, $5, $6)".
+        "($#{3 * i - 2}, $#{3 * i - 1}, $#{3 * i})"
+      end)
+
+    # Using raw SQL here is needed to be able to add the `COALESCE` statement
+    # which is needed to force `fetched_current_token_balances` full index usage
+    existing_ctb_query =
+      """
+      SELECT address_hash, token_contract_address_hash, token_id, block_number, value, value_fetched_at
+      FROM address_current_token_balances
+      WHERE (address_hash, token_contract_address_hash, COALESCE(token_id, -1)) IN (#{placeholders})
+      """
+
+    query_params = List.flatten(ids)
+
+    existing_ctb_query
+    |> repo.query!(query_params)
+    |> Map.get(:rows, [])
+    |> Enum.map(fn [address_hash, token_contract_address_hash, token_id, block_number, value, value_fetched_at] ->
+      %{
+        address_hash: address_hash,
+        token_contract_address_hash: token_contract_address_hash,
+        token_id: token_id,
+        block_number: block_number,
+        value: value,
+        value_fetched_at: value_fetched_at
+      }
+    end)
   end
 
   # ctb does not exist
