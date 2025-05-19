@@ -1,10 +1,10 @@
 <%= format_wei_value(@coin_balance, :ether) %>
 <%= if !empty_exchange_rate?(@exchange_rate) do %>
-  <% usd_value = to_string(@exchange_rate.usd_value) %>
+  <% usd_value = to_string(@exchange_rate.fiat_value) %>
   <span class="address-current-balance">
     (<span
       data-wei-value="<%= @coin_balance.value %>"
-      data-usd-exchange-rate="<%= @exchange_rate.usd_value %>"
+      data-usd-exchange-rate="<%= @exchange_rate.fiat_value %>"
       data-placement="top"
       data-toggle="tooltip"
       data-html="true"

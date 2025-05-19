@@ -162,10 +162,14 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
           __MODULE__.t()
           | %{:l1_timestamp => DateTime.t(), :l1_transaction_hashes => list(), optional(any()) => any()}
         ) :: %{
+          :number => non_neg_integer(),
           :internal_id => non_neg_integer(),
           :l1_timestamp => DateTime.t(),
+          :l2_start_block_number => non_neg_integer(),
           :l2_block_start => non_neg_integer(),
+          :l2_end_block_number => non_neg_integer(),
           :l2_block_end => non_neg_integer(),
+          :transactions_count => non_neg_integer(),
           :transaction_count => non_neg_integer(),
           :l1_transaction_hashes => list(),
           :batch_data_container => :in_blob4844 | :in_celestia | :in_calldata | nil
@@ -179,10 +183,18 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
         batch
       ) do
     %{
+      :number => internal_id,
+      # todo: "internal_id" should be removed in favour `number` property with the next release after 8.0.0
       :internal_id => internal_id,
       :l1_timestamp => batch.l1_timestamp,
+      :l2_start_block_number => l2_block_number_from,
+      # todo: It should be removed in favour `l2_start_block_number` property with the next release after 8.0.0
       :l2_block_start => l2_block_number_from,
+      :l2_end_block_number => l2_block_number_to,
+      # todo: It should be removed in favour `l2_end_block_number` property with the next release after 8.0.0
       :l2_block_end => l2_block_number_to,
+      :transactions_count => transaction_count,
+      # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
       :transaction_count => transaction_count,
       :l1_transaction_hashes => batch.l1_transaction_hashes,
       :batch_data_container => batch_data_container

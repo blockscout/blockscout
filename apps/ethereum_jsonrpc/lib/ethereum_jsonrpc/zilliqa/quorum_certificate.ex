@@ -8,7 +8,7 @@ defmodule EthereumJSONRPC.Zilliqa.QuorumCertificate do
     only: [bit_vector_to_signers: 1]
 
   @type elixir :: %{
-          String.t() => EthereumJSONRPC.quantity() | EthereumJSONRPC.Zilliqa.bit_vector() | EthereumJSONRPC.hash()
+          String.t() => EthereumJSONRPC.quantity() | EthereumJSONRPC.data() | EthereumJSONRPC.hash()
         }
 
   @type t :: %__MODULE__{
@@ -34,7 +34,7 @@ defmodule EthereumJSONRPC.Zilliqa.QuorumCertificate do
 
       iex> qc_json = %{
       ...>   "block_hash" => "0x4b8939a7fb0d7de4b288bafd4d5caa02f53abf3c1e348fca5038eebbf68248fa",
-      ...>   "cosigned" => "[1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+      ...>   "cosigned" => "0xd080000000000000000000000000000000000000000000000000000000000000",
       ...>   "signature" => "0xa78c7f3e07e1df963ddeda17a1e5afd97c7c8a6fc8e0616249c22a2a1cc91f8eef6073cab8ba22b50cc7b38090f1ad9109473d30f24d57858d1f28c6679b3c4deeb800e5572b5e15604596594d506d3103a44d8b707da581f1a4b82310aeecb6",
       ...>   "view" => "0x115cc7"
       ...> }

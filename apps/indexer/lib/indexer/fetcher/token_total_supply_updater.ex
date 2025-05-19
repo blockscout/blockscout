@@ -6,8 +6,8 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
   use GenServer
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.Token
-  alias Explorer.Counters.AverageBlockTime
   alias Explorer.Token.MetadataRetriever
   alias Timex.Duration
 
@@ -60,7 +60,7 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
       token_params = MetadataRetriever.get_total_supply_of(address_hash_string)
 
       if token_params !== %{} do
-        {:ok, _} = Chain.update_token(token, token_params)
+        {:ok, _} = Token.update(token, token_params)
       end
     end
 

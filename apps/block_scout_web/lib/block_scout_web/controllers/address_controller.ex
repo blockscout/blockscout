@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.AddressController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
@@ -16,10 +17,29 @@ defmodule BlockScoutWeb.AddressController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Cache.Counters.AddressesCount
   alias Explorer.Chain.{Address, Wei}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Phoenix.View
+
+  case @chain_type do
+    :filecoin ->
+      @contract_address_preloads [
+        :smart_contract,
+        [contract_creation_internal_transaction: :from_address],
+        [contract_creation_transaction: :from_address]
+      ]
+
+    _ ->
+      @contract_address_preloads [
+        :smart_contract,
+        :contract_creation_internal_transaction,
+        :contract_creation_transaction
+      ]
+  end
+
+  @api_true [api?: true]
 
   def index(conn, %{"type" => "JSON"} = params) do
     addresses =
@@ -58,7 +78,7 @@ defmodule BlockScoutWeb.AddressController do
     items =
       addresses_page
       |> Enum.with_index(1)
-      |> Enum.map(fn {{address, transaction_count}, index} ->
+      |> Enum.map(fn {address, index} ->
         View.render_to_string(
           AddressView,
           "_tile.html",
@@ -66,7 +86,7 @@ defmodule BlockScoutWeb.AddressController do
           index: items_count + index,
           exchange_rate: exchange_rate,
           total_supply: total_supply,
-          transaction_count: transaction_count
+          transaction_count: address.transactions_count
         )
       end)
 
@@ -84,7 +104,7 @@ defmodule BlockScoutWeb.AddressController do
 
     render(conn, "index.html",
       current_path: Controller.current_full_path(conn),
-      address_count: Counters.address_estimated_count(),
+      address_count: AddressesCount.fetch(),
       total_supply: total_supply
     )
   end
@@ -94,16 +114,21 @@ defmodule BlockScoutWeb.AddressController do
   end
 
   def show(conn, %{"id" => address_hash_string} = params) do
+    ip = AccessHelper.conn_to_ip_string(conn)
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
-      ContractCodeOnDemand.trigger_fetch(address)
+      fully_preloaded_address =
+        Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true)
+
+      ContractCodeOnDemand.trigger_fetch(ip, fully_preloaded_address)
 
       render(
         conn,
         "_show_address_transactions.html",
         address: address,
-        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
         exchange_rate: Market.get_coin_exchange_rate(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
@@ -129,11 +154,13 @@ defmodule BlockScoutWeb.AddressController do
 
         case Chain.Hash.Address.validate(address_hash_string) do
           {:ok, _} ->
+            ContractCodeOnDemand.trigger_fetch(ip, address)
+
             render(
               conn,
               "_show_address_transactions.html",
               address: address,
-              coin_balance_status: nil,
+              coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
               exchange_rate: Market.get_coin_exchange_rate(),
               filter: params["filter"],
               counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),

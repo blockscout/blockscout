@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Etherscan do
   @moduledoc """
   Documentation data for Etherscan-compatible API.
   """
-  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:block_scout_web, [Explorer.Chain.BridgedToken, :enabled]]
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:block_scout_web, [Explorer.Chain.BridgedToken, :enabled]]
 
   @account_balance_example_value %{
     "status" => "1",
@@ -1091,39 +1091,8 @@ defmodule BlockScoutWeb.Etherscan do
     """
   }
 
-  @contract_decompiled_source_code_type %{
-    type: "contract decompiled source code",
-    definition: "The contract's decompiled source code.",
-    example: """
-    const name() = 'CryptoKitties'
-    const GEN0_STARTING_PRICE() = 10^16
-    const GEN0_AUCTION_DURATION() = 86400
-    const GEN0_CREATION_LIMIT() = 45000
-    const symbol() = 'CK'
-    const PROMO_CREATION_LIMIT() = 5000
-    def storage:
-      ceoAddress is addr # mask(160, 0) at storage #0
-      cfoAddress is addr # mask(160, 0) at storage #1
-      stor1.768 is uint16 => uint256 # mask(256, 768) at storage #1
-      cooAddress is addr # mask(160, 0) at storage #2
-      stor2.0 is uint256 => uint256 # mask(256, 0) at storage #2
-      paused is uint8 # mask(8, 160) at storage #2
-      stor2.256 is uint256 => uint256 # mask(256, 256) at storage #2
-      stor3 is uint32 #
-    ...<continues>
-    """
-  }
-
-  @contract_decompiler_version_type %{
-    type: "decompiler version",
-    definition: "When decompiled source code is present, the decompiler version with which it was generated.",
-    example: "decompiler.version"
-  }
-
   @contract_with_sourcecode_model @contract_model
                                   |> put_in([:fields, "SourceCode"], @contract_source_code_type)
-                                  |> put_in([:fields, "DecompiledSourceCode"], @contract_decompiled_source_code_type)
-                                  |> put_in([:fields, "DecompilerVersion"], @contract_decompiler_version_type)
 
   @transaction_receipt_status_model %{
     name: "TransactionReceiptStatus",
@@ -2009,7 +1978,7 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
-  if @bridged_token_enabled do
+  if @bridged_tokens_enabled do
     @success_status_type %{
       type: "status",
       enum: ~s(["1"]),
@@ -2413,7 +2382,7 @@ defmodule BlockScoutWeb.Etherscan do
     description: """
     Get a list of contracts, sorted ascending by the time they were first seen by the explorer.
 
-    If you provide the filters `not_decompiled`(`4`) or `not_verified(4)` the results will not
+    If you provide the filter `unverified(2)` the results will not
     be sorted for performance reasons.
     """,
     required_params: [],
@@ -2433,14 +2402,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         key: "filter",
         type: "string",
-        description:
-          "verified|decompiled|unverified|not_decompiled|empty, or 1|2|3|4|5 respectively. This requests only contracts with that status."
-      },
-      %{
-        key: "not_decompiled_with_version",
-        type: "string",
-        description:
-          "Ensures that none of the returned contracts were decompiled with the provided version. Ignored unless filtering for decompiled contracts."
+        description: "verified|unverified|empty, or 1|2|3 respectively. This requests only contracts with that status."
       },
       %{
         key: "verified_at_start_timestamp",
@@ -3063,7 +3025,7 @@ defmodule BlockScoutWeb.Etherscan do
     @token_gettokenholders_action
   ]
 
-  @token_actions if @bridged_token_enabled,
+  @token_actions if @bridged_tokens_enabled,
                    do: [@token_bridgedtokenlist_action, @base_token_actions],
                    else: @base_token_actions
 

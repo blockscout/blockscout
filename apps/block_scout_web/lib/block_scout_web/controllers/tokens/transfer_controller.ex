@@ -65,6 +65,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
 
   def index(conn, %{"token_id" => address_hash_string} = params) do
     options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
+    ip = AccessHelper.conn_to_ip_string(conn)
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash, options),
@@ -75,7 +76,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
         current_path: Controller.current_full_path(conn),
         token: token,
-        token_total_supply_status: TokenTotalSupplyOnDemand.trigger_fetch(address_hash),
+        token_total_supply_status: TokenTotalSupplyOnDemand.trigger_fetch(ip, address_hash),
         tags: get_address_tags(address_hash, current_user(conn))
       )
     else

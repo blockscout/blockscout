@@ -6,6 +6,13 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatusTes
   alias Explorer.Repo
 
   describe "Migrate incorrect internal transactions" do
+    setup do
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+    end
+
     test "Adds new pbo for incorrect internal transactions" do
       incorrect_block_numbers =
         Enum.map(1..5, fn i ->

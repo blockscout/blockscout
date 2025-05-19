@@ -15,6 +15,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       prepare_bytecode_for_microservice: 3
     ]
 
+  import Explorer.Helper, only: [parse_boolean: 1]
+
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
   alias Explorer.Chain.{Data, Hash, SmartContract}
@@ -551,14 +553,6 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp has_constructor_with_params?(abi) do
     Enum.any?(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
   end
-
-  def parse_boolean("true"), do: true
-  def parse_boolean("false"), do: false
-
-  def parse_boolean(true), do: true
-  def parse_boolean(false), do: false
-
-  def parse_boolean(_), do: false
 
   @doc """
     Function tries to parse constructor args from smart contract creation input.

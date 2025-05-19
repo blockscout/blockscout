@@ -210,15 +210,19 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
   end
 
   @doc """
-    Retrieves rollup blocks within a specified block range that have not yet been confirmed.
+    Retrieves rollup blocks within the specified range from `first_block` to `last_block`, inclusive,
+    that either:
+    - Have not been confirmed yet, or
+    - May need re-confirmation due to potentially incorrect confirmation assignments
 
     ## Parameters
-    - `first_block`: The starting block number of the range to search for unconfirmed rollup blocks.
-    - `last_block`: The ending block number of the range.
+    - `first_block`: The rollup block number starting the lookup range.
+    - `last_block`: The rollup block number ending the lookup range.
 
     ## Returns
-    - A list of maps, each representing an unconfirmed rollup block within the specified range.
-      If no unconfirmed blocks are found within the range, an empty list is returned.
+    - A list of maps, each representing an unconfirmed rollup block within the specified range,
+      ordered by block_number in ascending order. If no unconfirmed blocks are found within
+      the range, an empty list is returned.
   """
   @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [
           Arbitrum.BatchBlock.to_import()
@@ -226,8 +230,33 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
   def unconfirmed_rollup_blocks(first_block, last_block)
       when is_integer(first_block) and first_block >= 0 and
              is_integer(last_block) and first_block <= last_block do
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.unconfirmed_rollup_blocks(first_block, last_block)
+    # Get truly unconfirmed blocks first
+    unconfirmed_blocks = Reader.unconfirmed_rollup_blocks(first_block, last_block)
+
+    # If there are unconfirmed blocks, check if we need to add more blocks for re-confirmation
+    blocks_to_transform =
+      case unconfirmed_blocks do
+        [] ->
+          []
+
+        blocks ->
+          # Since blocks are in descending order, the first one is the highest unconfirmed
+          highest_unconfirmed = hd(blocks)
+
+          # If the highest unconfirmed block is not the last_block, it means last_block is already confirmed
+          # but potentially with wrong transaction. Get all blocks from highest_unconfirmed + 1 to last_block
+          if highest_unconfirmed.block_number < last_block do
+            # Get blocks eligible for re-confirmation and combine with truly unconfirmed blocks
+            reconfirmation_blocks = Reader.rollup_blocks_by_range(highest_unconfirmed.block_number + 1, last_block)
+            reconfirmation_blocks ++ blocks
+          else
+            blocks
+          end
+      end
+
+    # Transform blocks to the expected format and maintain ascending order
+    blocks_to_transform
+    |> Enum.reverse()
     |> Enum.map(&rollup_block_to_map/1)
   end
 
@@ -267,8 +296,30 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
     Identifies the range of L1 blocks to investigate for missing confirmations of rollup blocks.
 
     This function determines the L1 block numbers bounding the interval where gaps in rollup block
-    confirmations might exist. It uses the earliest and latest L1 block numbers associated with
-    unconfirmed rollup blocks to define this range.
+    confirmations might exist. It uses the highest confirmed block and the highest unconfirmed block
+    below it to define this range.
+
+    The function uses a series of targeted queries instead of a single comprehensive query for
+    better performance and stability. This approach:
+    1. Avoids expensive table scans and grouping operations on large datasets
+    2. Leverages existing indexes more effectively
+    3. Reduces memory usage by fetching only necessary data
+    4. Prevents query timeouts that can occur with complex joins and window functions
+    5. Makes better use of the (confirmation_id, block_number DESC) index for unconfirmed blocks
+
+    The function handles several cases:
+    1. No confirmed blocks in DB:
+       - Returns `{nil, right_pos_value_if_nil}`
+    2. All blocks are confirmed:
+       - Returns `{nil, l1_block - 1}` where l1_block is the L1 block number where the earliest
+         batch-discovered block was confirmed
+    3. Unconfirmed blocks in the middle:
+       - Returns `{lower_l1_block + 1, upper_l1_block - 1}` where:
+         * lower_l1_block is the L1 block containing confirmation for the highest confirmed block below the gap
+         * upper_l1_block is the L1 block containing confirmation for the lowest confirmed block above the gap
+    4. All unconfirmed blocks at the bottom:
+       - Returns `{nil, upper_l1_block - 1}` where upper_l1_block is the L1 block containing
+         confirmation for the lowest confirmed block above the unconfirmed range
 
     ## Parameters
     - `right_pos_value_if_nil`: The default value to use for the upper bound of the range if no
@@ -281,18 +332,38 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
   """
   @spec l1_blocks_to_expect_rollup_blocks_confirmation(nil | FullBlock.block_number()) ::
           {nil | FullBlock.block_number(), nil | FullBlock.block_number()}
-  def l1_blocks_to_expect_rollup_blocks_confirmation(right_pos_value_if_nil)
-      when (is_integer(right_pos_value_if_nil) and right_pos_value_if_nil >= 0) or is_nil(right_pos_value_if_nil) do
-    case Reader.l1_blocks_of_confirmations_bounding_first_unconfirmed_rollup_blocks_gap() do
-      nil ->
-        log_warning("No L1 confirmations found in DB")
+  def l1_blocks_to_expect_rollup_blocks_confirmation(right_pos_value_if_nil) do
+    with {:highest_confirmed, highest_confirmed} when not is_nil(highest_confirmed) <-
+           {:highest_confirmed, Reader.highest_confirmed_block()},
+         {:highest_unconfirmed, highest_unconfirmed} when not is_nil(highest_unconfirmed) <-
+           {:highest_unconfirmed, Reader.highest_unconfirmed_block_below(highest_confirmed)} do
+      case {Reader.l1_block_of_closest_confirmed_block_above(highest_unconfirmed),
+            Reader.l1_block_of_closest_confirmed_block_below(highest_unconfirmed)} do
+        {{:ok, upper_l1_block}, {:ok, lower_l1_block}} ->
+          # Unconfirmed blocks in the middle
+          {lower_l1_block + 1, upper_l1_block - 1}
+
+        {{:ok, upper_l1_block}, {:error, :not_found}} ->
+          # All unconfirmed blocks at the bottom
+          {nil, upper_l1_block - 1}
+
+        {{:error, _}, _} ->
+          # Error case: DB is inconsistent: although there should not be any unconfirmed blocks
+          # above the highest unconfirmed block, we cannot find the the confirmations transaction
+          # for one of the block higher than the highest unconfirmed block.
+          raise "DB is inconsistent: could not get the L1 block of the closest confirmed block above the highest unconfirmed block"
+      end
+    else
+      {:highest_confirmed, nil} ->
+        # Either the database is empty or all blocks are unconfirmed.
+        log_warning("No confirmed blocks found in DB")
         {nil, right_pos_value_if_nil}
 
-      {nil, newer_confirmation_l1_block} ->
-        {nil, newer_confirmation_l1_block - 1}
-
-      {older_confirmation_l1_block, newer_confirmation_l1_block} ->
-        {older_confirmation_l1_block + 1, newer_confirmation_l1_block - 1}
+      {:highest_unconfirmed, nil} ->
+        # All blocks discovered by the batch fetcher are confirmed. But there
+        # is a chance that in the next iteration it could be found new blocks
+        # below the earliest confirmed block and they are not confirmed yet.
+        {nil, Reader.l1_block_of_earliest_block_confirmation() - 1}
     end
   end
 
@@ -463,7 +534,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
     ## Returns
     - A tuple containing the minimum and maximum batch numbers or `{nil, nil}` if no batches are found.
   """
-  @spec get_min_max_batch_numbers() :: {non_neg_integer(), non_neg_integer()} | {nil | nil}
+  @spec get_min_max_batch_numbers() :: {non_neg_integer() | nil, non_neg_integer() | nil}
   def get_min_max_batch_numbers do
     Reader.get_min_max_batch_numbers()
   end
@@ -482,9 +553,66 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
     not Enum.empty?(Reader.get_anytrust_keyset(keyset_hash))
   end
 
+  @doc """
+    Retrieves data availability records from the database for the given list of data keys.
+
+    ## Parameters
+    - `data_keys`: A list of binary data keys to search for in the database.
+
+    ## Returns
+    - A list of matching `DaMultiPurposeRecord` records in import format, or an empty list if no matches are found.
+  """
+  @spec da_records_by_keys([binary()]) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
+  def da_records_by_keys(data_keys) when is_list(data_keys) do
+    data_keys
+    |> Reader.da_records_by_keys()
+    |> Enum.map(&da_record_to_import_format/1)
+  end
+
+  # Transforms a DaMultiPurposeRecord database record to import format
+  @spec da_record_to_import_format(Arbitrum.DaMultiPurposeRecord.t()) :: Arbitrum.DaMultiPurposeRecord.to_import()
+  defp da_record_to_import_format(record) do
+    # Extract required fields
+    required_keys = [:data_type, :data_key, :batch_number]
+
+    # Create base map with required fields
+    import_format = DbTools.db_record_to_map(required_keys, record)
+
+    # Handle the data field separately to ensure it remains as a map
+    data =
+      case record.data do
+        nil -> nil
+        %{} = data_map -> data_map
+        # Convert any other format to map if needed
+        other -> other
+      end
+
+    # Add the data field to the result
+    Map.put(import_format, :data, data)
+  end
+
   @spec rollup_block_to_map(Arbitrum.BatchBlock.t()) :: Arbitrum.BatchBlock.to_import()
   defp rollup_block_to_map(block) do
     [:batch_number, :block_number, :confirmation_id]
     |> DbTools.db_record_to_map(block)
+  end
+
+  @doc """
+    Retrieves the L1 block number where the confirmation transaction for a specific rollup block was included.
+
+    ## Parameters
+    - `rollup_block_number`: The number of the rollup block for which to find the confirmation L1 block.
+
+    ## Returns
+    - The L1 block number if the rollup block is confirmed and the confirmation transaction is indexed;
+      `nil` otherwise.
+  """
+  @spec l1_block_of_confirmation_for_rollup_block(FullBlock.block_number()) :: FullBlock.block_number() | nil
+  def l1_block_of_confirmation_for_rollup_block(rollup_block_number)
+      when is_integer(rollup_block_number) and rollup_block_number >= 0 do
+    case Reader.l1_block_of_confirmation_for_rollup_block(rollup_block_number) do
+      {:ok, block_number} -> block_number
+      _ -> nil
+    end
   end
 end

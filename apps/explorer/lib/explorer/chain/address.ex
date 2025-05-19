@@ -11,7 +11,6 @@ defmodule Explorer.Chain.Address.Schema do
     Address,
     Block,
     Data,
-    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     SignedAuthorization,
@@ -22,7 +21,7 @@ defmodule Explorer.Chain.Address.Schema do
     Withdrawal
   }
 
-  alias Explorer.Chain.Cache.{Accounts, NetVersion}
+  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   @chain_type_fields (case @chain_type do
@@ -53,7 +52,8 @@ defmodule Explorer.Chain.Address.Schema do
                                     :power,
                                     :reward,
                                     :system,
-                                    :verifreg
+                                    :verifreg,
+                                    :paymentchannel
                                   ])
                               )
                             ]
@@ -82,7 +82,6 @@ defmodule Explorer.Chain.Address.Schema do
         field(:nonce, :integer)
         field(:decompiled, :boolean, default: false)
         field(:verified, :boolean, default: false)
-        field(:has_decompiled_code?, :boolean, virtual: true)
         field(:stale?, :boolean, virtual: true)
         field(:transactions_count, :integer)
         field(:token_transfers_count, :integer)
@@ -95,14 +94,14 @@ defmodule Explorer.Chain.Address.Schema do
         has_one(:proxy_implementations, Implementation, foreign_key: :proxy_address_hash, references: :hash)
 
         has_one(
-          :contracts_creation_internal_transaction,
+          :contract_creation_internal_transaction,
           InternalTransaction,
           foreign_key: :created_contract_address_hash,
           references: :hash
         )
 
         has_one(
-          :contracts_creation_transaction,
+          :contract_creation_transaction,
           Transaction,
           foreign_key: :created_contract_address_hash,
           references: :hash
@@ -110,7 +109,6 @@ defmodule Explorer.Chain.Address.Schema do
 
         has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
         has_one(:scam_badge, Address.ScamBadgeToAddress, foreign_key: :address_hash, references: :hash)
-        has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
 
         # In practice, this is a one-to-many relationship, but we only need to check if any signed authorization
@@ -138,15 +136,16 @@ defmodule Explorer.Chain.Address do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
-  alias Explorer.Helper, as: ExplorerHelper
-  alias Explorer.Chain.Cache.{Accounts, NetVersion}
+  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
-  alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, Transaction}
-  alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, SmartContract, Transaction}
+  alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
+  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce verified gas_used transactions_count token_transfers_count)a
   @chain_type_optional_attrs (case @chain_type do
                                 :filecoin ->
                                   ~w(filecoin_id filecoin_robust filecoin_actor_type)a
@@ -169,10 +168,9 @@ defmodule Explorer.Chain.Address do
            except: [
              :__meta__,
              :smart_contract,
-             :decompiled_smart_contracts,
              :token,
-             :contracts_creation_internal_transaction,
-             :contracts_creation_transaction,
+             :contract_creation_internal_transaction,
+             :contract_creation_transaction,
              :names
            ]}
 
@@ -180,14 +178,11 @@ defmodule Explorer.Chain.Address do
            except: [
              :__meta__,
              :smart_contract,
-             :decompiled_smart_contracts,
              :token,
-             :contracts_creation_internal_transaction,
-             :contracts_creation_transaction,
+             :contract_creation_internal_transaction,
+             :contract_creation_transaction,
              :names
            ]}
-
-  @timeout :timer.minutes(1)
 
   @typedoc """
    * `fetched_coin_balance` - The last fetched balance from Nethermind
@@ -292,11 +287,27 @@ defmodule Explorer.Chain.Address do
   def get(hash, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    query = from(address in Address, where: address.hash == ^hash)
+    query = address_query(hash)
 
     query
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).one()
+  end
+
+  @doc """
+  Generates an Ecto query to find an `Address` record by its hash.
+
+  ## Parameters
+
+    - `hash`: The hash of the address to search for.
+
+  ## Returns
+
+  An Ecto query that can be executed to retrieve the address with the specified hash.
+  """
+  @spec address_query(Hash.Address.t() | binary()) :: Ecto.Query.t()
+  def address_query(hash) do
+    from(address in Address, where: address.hash == ^hash)
   end
 
   def checksum(address_or_hash, iodata? \\ false)
@@ -313,11 +324,7 @@ defmodule Explorer.Chain.Address do
   end
 
   def checksum(hash, iodata?) do
-    checksum_formatted =
-      case Application.get_env(:explorer, :checksum_function) || :eth do
-        :eth -> eth_checksum(hash)
-        :rsk -> rsk_checksum(hash)
-      end
+    checksum_formatted = address_checksum(hash)
 
     if iodata? do
       ["0x" | checksum_formatted]
@@ -326,55 +333,57 @@ defmodule Explorer.Chain.Address do
     end
   end
 
-  def eth_checksum(hash) do
-    string_hash =
-      hash
-      |> to_string()
-      |> String.trim_leading("0x")
+  if @chain_type == :rsk do
+    # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
+    defp address_checksum(hash) do
+      string_hash =
+        hash
+        |> to_string()
+        |> String.trim_leading("0x")
 
-    match_byte_stream = stream_every_four_bytes_of_sha256(string_hash)
+      chain_id = Application.get_env(:block_scout_web, :chain_id)
 
-    string_hash
-    |> stream_binary()
-    |> Stream.zip(match_byte_stream)
-    |> Enum.map(fn
-      {digit, _} when digit in ~c"0123456789" ->
-        digit
+      prefix = "#{chain_id}0x"
 
-      {alpha, 1} ->
-        alpha - 32
+      match_byte_stream = stream_every_four_bytes_of_sha256("#{prefix}#{string_hash}")
 
-      {alpha, _} ->
-        alpha
-    end)
-  end
+      string_hash
+      |> stream_binary()
+      |> Stream.zip(match_byte_stream)
+      |> Enum.map(fn
+        {digit, _} when digit in ~c"0123456789" ->
+          digit
 
-  # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
-  def rsk_checksum(hash) do
-    chain_id = NetVersion.get_version()
+        {alpha, 1} ->
+          alpha - 32
 
-    string_hash =
-      hash
-      |> to_string()
-      |> String.trim_leading("0x")
+        {alpha, _} ->
+          alpha
+      end)
+    end
+  else
+    defp address_checksum(hash) do
+      string_hash =
+        hash
+        |> to_string()
+        |> String.trim_leading("0x")
 
-    prefix = "#{chain_id}0x"
+      match_byte_stream = stream_every_four_bytes_of_sha256(string_hash)
 
-    match_byte_stream = stream_every_four_bytes_of_sha256("#{prefix}#{string_hash}")
+      string_hash
+      |> stream_binary()
+      |> Stream.zip(match_byte_stream)
+      |> Enum.map(fn
+        {digit, _} when digit in ~c"0123456789" ->
+          digit
 
-    string_hash
-    |> stream_binary()
-    |> Stream.zip(match_byte_stream)
-    |> Enum.map(fn
-      {digit, _} when digit in ~c"0123456789" ->
-        digit
+        {alpha, 1} ->
+          alpha - 32
 
-      {alpha, 1} ->
-        alpha - 32
-
-      {alpha, _} ->
-        alpha
-    end)
+        {alpha, _} ->
+          alpha
+      end)
+    end
   end
 
   defp stream_every_four_bytes_of_sha256(value) do
@@ -436,13 +445,16 @@ defmodule Explorer.Chain.Address do
   end
 
   defimpl String.Chars do
+    use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
     @doc """
     Uses `hash` as string representation, formatting it according to the eip-55 specification
 
     For more information: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-55.md#specification
 
     To bypass the checksum formatting, use `to_string/1` on the hash itself.
-
+    #{unless @chain_type == :rsk do
+      """
         iex> address = %Explorer.Chain.Address{
         ...>   hash: %Explorer.Chain.Hash{
         ...>     byte_count: 20,
@@ -454,6 +466,8 @@ defmodule Explorer.Chain.Address do
         "0x8Bf38d4764929064f2d4d3a56520A76AB3df415b"
         iex> to_string(address.hash)
         "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+      """
+    end}
     """
     def to_string(%@for{} = address) do
       @for.checksum(address)
@@ -468,8 +482,9 @@ defmodule Explorer.Chain.Address do
   @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
   def list_top_addresses(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    sorting_options = Keyword.get(options, :sorting, [])
 
-    if is_nil(paging_options.key) do
+    if is_nil(paging_options.key) and sorting_options == [] do
       paging_options.page_size
       |> Accounts.atomic_take_enough()
       |> case do
@@ -477,13 +492,58 @@ defmodule Explorer.Chain.Address do
           get_addresses(options)
 
         accounts ->
-          Enum.map(
-            accounts,
-            &{&1, &1.transactions_count || 0}
-          )
+          accounts
       end
     else
       fetch_top_addresses(options)
+    end
+  end
+
+  @doc """
+  Fetches addresses based on the provided list of address hashes.
+
+  ## Parameters
+
+    - `address_hashes`: A list of address hashes to fetch the corresponding addresses.
+
+  ## Returns
+
+    - A list of addresses corresponding to the provided address hashes.
+
+  This function utilizes the `Chain.hashes_to_addresses_query/1` to convert the hashes to addresses,
+  joins necessary associations with `Chain.join_associations/2`, and finally selects the repository
+  with `Chain.select_repo/1` to fetch all the addresses.
+  """
+  @spec get_addresses_by_hashes([Hash.Address.t()]) :: [Chain.Address.t()]
+  def get_addresses_by_hashes(address_hashes) do
+    necessity_by_association = %{:smart_contract => :optional, proxy_implementations_association() => :optional}
+
+    address_hashes
+    |> Chain.hashes_to_addresses_query()
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(api?: true).all()
+  end
+
+  @doc """
+  Fetches an address by its hash.
+
+  ## Parameters
+
+    - `address_hash`: The hash of the address to be fetched.
+
+  ## Returns
+
+    - `address`: The address if found.
+    - `nil`: If the address is not found.
+  """
+  @spec get_by_hash(Hash.Address.t()) :: Chain.Address.t() | nil
+  def get_by_hash(address_hash) do
+    case Chain.hash_to_address(
+           address_hash,
+           necessity_by_association: %{:smart_contract => :optional, proxy_implementations_association() => :optional}
+         ) do
+      {:ok, address} -> address
+      _ -> nil
     end
   end
 
@@ -506,6 +566,34 @@ defmodule Explorer.Chain.Address do
   def smart_contract?(%__MODULE__{contract_code: _}), do: true
   def smart_contract?(%NotLoaded{}), do: nil
   def smart_contract?(_), do: false
+
+  @doc """
+    Determines if an address is a smart contract with non-empty bytecode.
+
+    This function verifies that an address:
+
+    1. Is a smart contract (has contract_code)
+    2. Has actual bytecode content (not just "0x")
+
+    This distinction is important because addresses can exist in several states:
+    - Regular EOA - not contracts
+    - Contracts with functioning bytecode - operational smart contracts
+    - Contracts with empty bytecode - may have been self-destructed or
+      deployment failed
+
+    ## Parameters
+      - `address`: The address to check. Can be an `Address` struct or any other
+        value.
+
+    ## Returns
+      - `true` if the address is a smart contract with actual bytecode
+      - `false` otherwise
+  """
+  @spec smart_contract_with_nonempty_code?(any()) :: boolean()
+  def smart_contract_with_nonempty_code?(%__MODULE__{contract_code: %Data{} = contract_code}),
+    do: not Data.empty?(contract_code)
+
+  def smart_contract_with_nonempty_code?(_), do: false
 
   @doc """
     Checks if the given address is an Externally Owned Account (EOA) with code,
@@ -533,17 +621,19 @@ defmodule Explorer.Chain.Address do
   def eoa_with_code?(_), do: false
 
   defp get_addresses(options) do
-    accounts_with_n = fetch_top_addresses(options)
+    addresses = fetch_top_addresses(options)
 
-    accounts_with_n
-    |> Enum.map(fn {address, _n} -> address end)
+    addresses
     |> Accounts.update()
 
-    accounts_with_n
+    addresses
   end
+
+  @default_sorting [desc: :fetched_coin_balance, asc: :hash]
 
   defp fetch_top_addresses(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    sorting_options = Keyword.get(options, :sorting, [])
 
     necessity_by_association =
       Keyword.get(options, :necessity_by_association, %{
@@ -559,28 +649,15 @@ defmodule Explorer.Chain.Address do
       _ ->
         base_query =
           from(a in Address,
-            where: a.fetched_coin_balance > ^0,
-            order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-            select: {a, a.transactions_count}
+            where: a.fetched_coin_balance > ^0
           )
 
         base_query
         |> Chain.join_associations(necessity_by_association)
-        |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
-        |> page_addresses(paging_options)
-        |> limit(^paging_options.page_size)
+        |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
+        |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
         |> Chain.select_repo(options).all()
     end
-  end
-
-  defp page_addresses(query, %PagingOptions{key: nil}), do: query
-
-  defp page_addresses(query, %PagingOptions{key: {coin_balance, hash}}) do
-    from(address in query,
-      where:
-        (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
-          address.fetched_coin_balance < ^coin_balance
-    )
   end
 
   @doc """
@@ -628,38 +705,9 @@ defmodule Explorer.Chain.Address do
   """
   @spec address_exists?(Hash.Address.t(), [Chain.api?()]) :: boolean()
   def address_exists?(address_hash, options \\ []) do
-    query =
-      from(
-        address in Address,
-        where: address.hash == ^address_hash
-      )
+    query = Address.address_query(address_hash)
 
     Chain.select_repo(options).exists?(query)
-  end
-
-  @doc """
-   Sets the contract code for the given address.
-
-   This function updates the contract code and the `updated_at` timestamp for an
-   address in the database.
-
-   ## Parameters
-   - `address_hash`: The hash of the address to update.
-   - `contract_code`: The new contract code to set.
-
-   ## Returns
-   A tuple `{count, nil}`, where `count` is the number of rows updated
-   (typically 1 if the address exists, 0 otherwise).
-  """
-  @spec set_contract_code(Hash.Address.t(), binary()) :: {non_neg_integer(), nil}
-  def set_contract_code(address_hash, contract_code) when not is_nil(address_hash) and is_binary(contract_code) do
-    now = DateTime.utc_now()
-
-    Repo.update_all(
-      from(address in __MODULE__, where: address.hash == ^address_hash),
-      [set: [contract_code: contract_code, updated_at: now]],
-      timeout: @timeout
-    )
   end
 
   @doc """
@@ -674,13 +722,312 @@ defmodule Explorer.Chain.Address do
   - `%Transaction{}` if the creation transaction is a regular transaction.
   """
   @spec creation_transaction(any()) :: nil | InternalTransaction.t() | Transaction.t()
-  def creation_transaction(%__MODULE__{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction
+  def creation_transaction(%__MODULE__{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contract_creation_internal_transaction
   end
 
-  def creation_transaction(%__MODULE__{contracts_creation_transaction: %Transaction{}} = address) do
-    address.contracts_creation_transaction
+  def creation_transaction(%__MODULE__{contract_creation_transaction: %Transaction{}} = address) do
+    address.contract_creation_transaction
   end
 
   def creation_transaction(_address), do: nil
+
+  @doc """
+  Creates a query for preloading contract creation transactions.
+
+  This query sorts transactions by:
+
+  1. status (descending with nulls last)
+  2. block number (descending with nulls last)
+  3. index (descending with nulls last),
+
+  and limits to one result.
+
+  ## Returns
+
+  A `Ecto.Query` that can be used to preload the contract creation transaction.
+  """
+  @spec contract_creation_transaction_preload_query() :: Ecto.Query.t()
+  def contract_creation_transaction_preload_query do
+    from(
+      t in Transaction,
+      order_by: [
+        desc_nulls_last: t.status,
+        desc_nulls_last: t.block_number,
+        desc_nulls_last: t.index
+      ],
+      limit: 1
+    )
+  end
+
+  @doc """
+  Generates a query to fetch an address with associated bytecode.
+
+  This function constructs an Ecto query that retrieves an address
+  from the database where the `hash` matches the given `address_hash`
+  and the `contract_code` is not `nil`.
+
+  ## Parameters
+
+    - `address_hash`: The hash of the address to query for.
+
+  ## Returns
+
+  An Ecto query that can be executed to fetch the desired address.
+
+  """
+  @spec address_with_bytecode_query(Hash.Address.t()) :: Ecto.Query.t()
+  def address_with_bytecode_query(address_hash) do
+    from(
+      address in __MODULE__,
+      where: address.hash == ^address_hash and not is_nil(address.contract_code)
+    )
+  end
+
+  @doc """
+  Creates a query for preloading contract creation internal transactions.
+
+  This query sorts internal transactions by:
+
+  1. error (ascending with nulls first)
+  2. block number (descending)
+  3. block index (descending)
+
+  and limits to one result.
+
+  ## Returns
+
+  A `Ecto.Query` that can be used to preload the contract creation internal transaction.
+  """
+  @spec contract_creation_internal_transaction_preload_query() :: Ecto.Query.t()
+  def contract_creation_internal_transaction_preload_query do
+    from(
+      it in InternalTransaction,
+      order_by: [
+        asc_nulls_first: it.error,
+        desc: it.block_number
+      ],
+      limit: 1
+    )
+  end
+
+  @doc """
+  Generates a query to retrieve addresses that have associated bytecode.
+
+  ## Parameters
+
+    - `hashes`: A list of address hashes to filter by.
+
+  ## Returns
+
+    - An Ecto query that selects addresses from the database where the `hash` is in the provided list
+      and the `contract_code` field is not `nil`.
+
+  """
+  @spec addresses_with_bytecode_query([Hash.Address.t()]) :: Ecto.Query.t()
+  def addresses_with_bytecode_query(hashes) do
+    from(
+      address in __MODULE__,
+      where: address.hash in ^hashes and not is_nil(address.contract_code)
+    )
+  end
+
+  @doc """
+  Returns contract creation transaction association specification.
+
+  ## Note
+  IMPORTANT: This association function should be used ONLY for single address
+  operations. Using it with multiple addresses may produce unexpected results.
+
+  As noted in [Ecto documentation](https://hexdocs.pm/ecto/Ecto.Query.html#preload/3-preload-queries),
+  operations like `limit` and `offset` in preload queries affect the entire
+  result set, not each individual association. When working with collections of
+  addresses, consider using window functions instead of these helpers.
+
+  ## Returns
+  A keyword list with the contract creation transaction association.
+  """
+  @spec contract_creation_transaction_association() :: keyword()
+  def contract_creation_transaction_association do
+    [
+      contract_creation_transaction: Address.contract_creation_transaction_preload_query()
+    ]
+  end
+
+  @doc """
+  Same as `contract_creation_transaction_association/0`, but preloads a nested
+  association for the `from_address` field. Used for Filecoin chain type.
+  """
+  @spec contract_creation_transaction_with_from_address_association() :: keyword()
+  def contract_creation_transaction_with_from_address_association do
+    [
+      contract_creation_transaction: {
+        Address.contract_creation_transaction_preload_query(),
+        :from_address
+      }
+    ]
+  end
+
+  @doc """
+  Returns contract creation internal transaction association specification.
+
+  ## Note
+  IMPORTANT: This association function should be used ONLY for single address
+  operations. Using it with multiple addresses may produce unexpected results.
+
+  As noted in [Ecto documentation](https://hexdocs.pm/ecto/Ecto.Query.html#preload/3-preload-queries),
+  operations like `limit` and `offset` in preload queries affect the entire
+  result set, not each individual association. When working with collections of
+  addresses, consider using window functions instead of these helpers.
+
+  ## Returns
+  A keyword list with the contract creation internal transaction association.
+  """
+  @spec contract_creation_internal_transaction_association() :: keyword()
+  def contract_creation_internal_transaction_association do
+    [
+      contract_creation_internal_transaction: Address.contract_creation_internal_transaction_preload_query()
+    ]
+  end
+
+  @doc """
+  Same as `contract_creation_internal_transaction_association/0`, but
+  preloads a nested association for the `from_address` field. Used for Filecoin
+  chain type.
+  """
+  @spec contract_creation_internal_transaction_with_from_address_association() :: keyword()
+  def contract_creation_internal_transaction_with_from_address_association do
+    [
+      contract_creation_internal_transaction: {
+        Address.contract_creation_internal_transaction_preload_query(),
+        :from_address
+      }
+    ]
+  end
+
+  @doc """
+  Returns both contract creation transaction and internal transaction
+  associations.
+
+  This is a convenience function that combines both types of contract creation
+  associations.
+
+  ## Returns
+
+  A list containing both contract creation transaction and internal transaction
+  associations.
+  """
+  @spec contract_creation_transaction_associations() :: [keyword()]
+  def contract_creation_transaction_associations do
+    [
+      contract_creation_transaction_association(),
+      contract_creation_internal_transaction_association()
+    ]
+  end
+
+  @doc """
+  Same as `contract_creation_transaction_associations/0`, but preloads a nested
+  association for the `from_address` field. Used for Filecoin chain type.
+  """
+  @spec contract_creation_transaction_with_from_address_associations() :: [keyword()]
+  def contract_creation_transaction_with_from_address_associations do
+    [
+      contract_creation_transaction_with_from_address_association(),
+      contract_creation_internal_transaction_with_from_address_association()
+    ]
+  end
+
+  @doc """
+  Finds contract addresses from a list of hashes.
+
+  ## Parameters
+
+    - `hashes`: A list of hashes to search for contract addresses.
+    - `options`: An optional keyword list of options.
+
+  ## Options
+
+    - `:necessity_by_association`: A map of associations with their necessity (default: `%{}`).
+
+  ## Returns
+
+    - `{:ok, addresses}`: A tuple with `:ok` and a list of found addresses.
+    - `{:error, :not_found}`: A tuple with `:error` and `:not_found` if no addresses are found.
+
+  """
+  @spec find_contract_addresses([Hash.Address.t()], [Chain.necessity_by_association_option() | Chain.api?()]) ::
+          {:ok, [Address.t()]} | {:error, :not_found}
+  def find_contract_addresses(
+        hashes,
+        options \\ []
+      ) do
+    necessity_by_association =
+      options
+      |> Keyword.get(:necessity_by_association, %{})
+      |> Map.merge(%{
+        Implementation.proxy_implementations_association() => :optional
+      })
+
+    hashes
+    |> addresses_with_bytecode_query()
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
+    |> Enum.map(fn address_result ->
+      update_address_result(address_result, options, true)
+    end)
+    |> case do
+      [] -> {:error, :not_found}
+      addresses -> {:ok, addresses}
+    end
+  end
+
+  @spec update_address_result(
+          map() | nil,
+          [Chain.necessity_by_association_option() | Chain.api?() | Chain.ip()],
+          boolean()
+        ) ::
+          map() | nil
+  def update_address_result(address_result, options, decoding_from_list?) do
+    LookUpSmartContractSourcesOnDemand.trigger_fetch(options[:ip], address_result)
+
+    case address_result do
+      %{smart_contract: nil} ->
+        if decoding_from_list? do
+          address_result
+        else
+          SmartContract.compose_address_for_unverified_smart_contract(address_result, options)
+        end
+
+      %{smart_contract: smart_contract} ->
+        CheckBytecodeMatchingOnDemand.trigger_check(options[:ip], address_result, smart_contract)
+
+        SmartContract.check_and_update_constructor_args(address_result)
+
+      _ ->
+        address_result
+    end
+  end
+
+  @doc """
+  Constructs a query to retrieve the most recent internal transaction that created
+  a smart contract at the specified `address_hash`.
+
+  The query joins the `InternalTransaction` with its associated `Transaction`,
+  filters for internal transactions where the `created_contract_address_hash` matches
+  the given `address_hash`, and ensures that the transaction status is successful (`status == 1`).
+
+  The results are ordered by `block_number` in descending order, and the query is limited
+  to return only the most recent matching internal transaction.
+  """
+  @spec creation_internal_transaction_query(binary() | Hash.t()) :: Ecto.Query.t()
+  def creation_internal_transaction_query(address_hash) do
+    from(
+      it in InternalTransaction,
+      inner_join: t in assoc(it, :transaction),
+      where: it.created_contract_address_hash == ^address_hash,
+      where: t.status == ^1,
+      order_by: [desc: it.block_number],
+      limit: 1
+    )
+  end
 end
