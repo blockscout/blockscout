@@ -12,6 +12,7 @@ defmodule Explorer.Chain.ImportTest do
     Log,
     Hash,
     Import,
+    InternalTransaction,
     PendingBlockOperation,
     Token,
     TokenTransfer,
@@ -19,6 +20,7 @@ defmodule Explorer.Chain.ImportTest do
   }
 
   alias Explorer.Chain.Events.Subscriber
+  alias Explorer.Utility.MissingBlockRange
 
   @moduletag :capturelog
 
@@ -379,6 +381,18 @@ defmodule Explorer.Chain.ImportTest do
           [params |> Enum.at(0) |> Map.put(:block_hash, not_existing_block_hash)]
         end)
 
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+      on_exit(fn ->
+        Repo.delete_all(Address)
+        Repo.delete_all(Transaction)
+        Repo.delete_all(InternalTransaction)
+        Repo.delete_all(TokenTransfer)
+        Repo.delete_all(Token)
+        Repo.delete_all(MissingBlockRange)
+        Repo.delete_all(Block)
+      end)
+
       assert_raise(Postgrex.Error, fn -> Import.all(incorrect_data) end)
       assert [] = Repo.all(Log)
       assert %{consensus: true, refetch_needed: true} = Repo.one(Block)
@@ -680,6 +694,11 @@ defmodule Explorer.Chain.ImportTest do
         }
       }
 
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+
       assert {:ok, _} = Import.all(options)
 
       {:ok, block_hash_casted} = Explorer.Chain.Hash.Full.cast(block_hash)
@@ -769,6 +788,11 @@ defmodule Explorer.Chain.ImportTest do
           with: :blockless_changeset
         }
       }
+
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
 
       assert {:ok, _} = Import.all(options)
 

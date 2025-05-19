@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
   import Mox
 
   alias Explorer.Chain.Address
-  alias Explorer.Counters.{AddressesCounter}
+  alias Explorer.Chain.Cache.Counters.AddressesCount
 
   describe "GET index/2" do
     setup :set_mox_global
@@ -29,8 +29,8 @@ defmodule BlockScoutWeb.AddressControllerTest do
         |> Enum.map(&insert(:address, fetched_coin_balance: &1))
         |> Enum.map(& &1.hash)
 
-      start_supervised!(AddressesCounter)
-      AddressesCounter.consolidate()
+      start_supervised!(AddressesCount)
+      AddressesCount.consolidate()
 
       conn = get(conn, address_path(conn, :index, %{type: "JSON"}))
       {:ok, %{"items" => items}} = Poison.decode(conn.resp_body)
@@ -42,8 +42,8 @@ defmodule BlockScoutWeb.AddressControllerTest do
       address = insert(:address, fetched_coin_balance: 1)
       insert(:address_name, address: address, primary: true, name: "POA Wallet")
 
-      start_supervised!(AddressesCounter)
-      AddressesCounter.consolidate()
+      start_supervised!(AddressesCount)
+      AddressesCount.consolidate()
 
       conn = get(conn, address_path(conn, :index, %{type: "JSON"}))
 
@@ -56,21 +56,10 @@ defmodule BlockScoutWeb.AddressControllerTest do
   describe "GET show/3" do
     setup :set_mox_global
 
-    setup do
-      configuration = Application.get_env(:explorer, :checksum_function)
-      Application.put_env(:explorer, :checksum_function, :eth)
-
-      :ok
-
-      on_exit(fn ->
-        Application.put_env(:explorer, :checksum_function, configuration)
-      end)
-    end
-
     test "redirects to address/:address_id/transactions", %{conn: conn} do
       insert(:address, hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
 
-      conn = get(conn, "/address/0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
+      conn = get(conn, "/address/#{Address.checksum("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")}")
 
       assert html_response(conn, 200)
     end

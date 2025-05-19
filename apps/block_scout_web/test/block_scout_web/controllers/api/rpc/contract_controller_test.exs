@@ -88,7 +88,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         |> json_response(400)
 
       assert response["message"] ==
-               "invalid is not a valid value for `filter`. Please use one of: verified, decompiled, unverified, not_decompiled, 1, 2, 3, 4."
+               "invalid is not a valid value for `filter`. Please use one of: verified, unverified, 1, 2."
 
       assert response["status"] == "0"
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
@@ -289,100 +289,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
-
-    test "filtering for only decompiled contracts shows only decompiled contracts", %{params: params, conn: conn} do
-      insert(:contract_address)
-      decompiled_smart_contract = insert(:decompiled_smart_contract)
-
-      response =
-        conn
-        |> get("/api", Map.put(params, "filter", "decompiled"))
-        |> json_response(200)
-
-      assert response["message"] == "OK"
-      assert response["status"] == "1"
-
-      assert response["result"] == [result_not_verified(decompiled_smart_contract.address_hash)]
-
-      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
-    end
-
-    test "filtering for only decompiled contracts, with a decompiled with version filter", %{params: params, conn: conn} do
-      insert(:decompiled_smart_contract, decompiler_version: "foobar")
-      smart_contract = insert(:decompiled_smart_contract, decompiler_version: "bizbuz")
-
-      response =
-        conn
-        |> get("/api", Map.merge(params, %{"filter" => "decompiled", "not_decompiled_with_version" => "foobar"}))
-        |> json_response(200)
-
-      assert response["message"] == "OK"
-      assert response["status"] == "1"
-
-      assert response["result"] == [result_not_verified(smart_contract.address_hash)]
-
-      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
-    end
-
-    test "filtering for only decompiled contracts, with a decompiled with version filter, where another decompiled version exists",
-         %{params: params, conn: conn} do
-      non_match = insert(:decompiled_smart_contract, decompiler_version: "foobar")
-      insert(:decompiled_smart_contract, decompiler_version: "bizbuz", address_hash: non_match.address_hash)
-      smart_contract = insert(:decompiled_smart_contract, decompiler_version: "bizbuz")
-
-      response =
-        conn
-        |> get("/api", Map.merge(params, %{"filter" => "decompiled", "not_decompiled_with_version" => "foobar"}))
-        |> json_response(200)
-
-      assert response["message"] == "OK"
-      assert response["status"] == "1"
-
-      assert result_not_verified(smart_contract.address_hash) in response["result"]
-
-      refute to_string(non_match.address_hash) in Enum.map(response["result"], &Map.get(&1, "Address"))
-      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
-    end
-
-    test "filtering for only not_decompiled (and by extension not verified contracts)", %{params: params, conn: conn} do
-      insert(:decompiled_smart_contract)
-      insert(:smart_contract, contract_code_md5: "123")
-      contract_address = insert(:contract_address)
-
-      response =
-        conn
-        |> get("/api", Map.put(params, "filter", "not_decompiled"))
-        |> json_response(200)
-
-      assert response["message"] == "OK"
-      assert response["status"] == "1"
-
-      assert response["result"] == [result_not_verified(contract_address.hash)]
-
-      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
-    end
-
-    test "filtering for only not_decompiled (and by extension not verified contracts) does not show empty contracts", %{
-      params: params,
-      conn: conn
-    } do
-      insert(:decompiled_smart_contract)
-      insert(:smart_contract, contract_code_md5: "123")
-      insert(:contract_address, contract_code: "0x")
-      contract_address = insert(:contract_address)
-
-      response =
-        conn
-        |> get("/api", Map.put(params, "filter", "not_decompiled"))
-        |> json_response(200)
-
-      assert response["message"] == "OK"
-      assert response["status"] == "1"
-
-      assert response["result"] == [result_not_verified(contract_address.hash)]
-
-      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
-    end
   end
 
   describe "getabi" do
@@ -557,7 +463,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         }
       ]
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       assert response =
                conn
@@ -822,7 +728,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         }
       ]
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       assert response =
                conn
@@ -931,7 +837,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         }
       ]
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       assert response =
                conn
@@ -1002,7 +908,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         "addressHash" => "0xf26594F585De4EB0Ae9De865d9053FEe02ac6eF1"
       }
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       conn
       |> get("/api", params)
@@ -1113,8 +1019,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     #              contract_source_code
 
     #   assert result["ContractName"] == name
-    #   assert result["DecompiledSourceCode"] == nil
-    #   assert result["DecompilerVersion"] == nil
     #   assert result["OptimizationUsed"] == "true"
     #   assert :ok = ExJsonSchema.Validator.validate(verify_schema(), response)
     # end
@@ -1317,7 +1221,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       expect(
         EthereumJSONRPC.Mox,
@@ -1402,9 +1306,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "ABI" => %{"type" => "string"},
           "ContractName" => %{"type" => "string"},
           "CompilerVersion" => %{"type" => "string"},
-          "OptimizationUsed" => %{"type" => "string"},
-          "DecompiledSourceCode" => %{"type" => "string"},
-          "DecompilerVersion" => %{"type" => "string"}
+          "OptimizationUsed" => %{"type" => "string"}
         }
       }
     })
@@ -1419,8 +1321,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   #       "ABI" => %{"type" => "string"},
   #       "ContractName" => %{"type" => "string"},
   #       "CompilerVersion" => %{"type" => "string"},
-  #       "DecompiledSourceCode" => %{"type" => "string"},
-  #       "DecompilerVersion" => %{"type" => "string"},
   #       "OptimizationUsed" => %{"type" => "string"}
   #     }
   #   })

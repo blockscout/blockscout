@@ -52,6 +52,7 @@ jobs:
 
             const chainTypes = [
               "arbitrum",
+              "berachain",
               "blackfort",
               "celo",
               "ethereum",
@@ -64,7 +65,8 @@ jobs:
               "stability",
               "zetachain",
               "zilliqa",
-              "zksync"
+              "zksync",
+              "neon"
             ];
 
             const extraChainTypes = ["suave", "polygon_edge"];

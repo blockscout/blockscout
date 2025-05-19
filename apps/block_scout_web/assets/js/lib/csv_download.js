@@ -26,13 +26,13 @@ function generateDatePicker (classSelector, defaultDate) {
 
 $button.on('click', () => {
   // @ts-ignore
-  // eslint-disable-next-line
+   
   const reCaptchaV2ClientKey = document.getElementById('js-re-captcha-client-key').value
   // @ts-ignore
-  // eslint-disable-next-line
+   
   const reCaptchaV3ClientKey = document.getElementById('js-re-captcha-v3-client-key').value
   // @ts-ignore
-  // eslint-disable-next-line
+   
   const reCaptchaDisabledRaw = document.getElementById('js-re-captcha-disabled').value
   const reCaptchaDisabled = reCaptchaDisabledRaw && reCaptchaDisabledRaw.toLowerCase() === 'true'
   const addressHash = $button.data('address-hash')
@@ -133,7 +133,7 @@ $button.on('click', () => {
 
 const onloadCallback = function () {
   // @ts-ignore
-  // eslint-disable-next-line
+   
   const reCaptchaClientKey = document.getElementById('js-re-captcha-client-key').value
   // @ts-ignore
   // eslint-disable-next-line

@@ -20,8 +20,8 @@ defmodule Explorer.Account.Notifier.Notify do
     Enum.map(transactions, fn transaction -> process(transaction) end)
   end
 
-  defp process(%Transaction{} = transaction) do
-    if DateTime.after?(transaction.block_timestamp, DateTime.add(DateTime.utc_now(), -1, :day)) do
+  defp process(%Transaction{block_timestamp: block_timestamp} = transaction) when not is_nil(block_timestamp) do
+    if DateTime.after?(block_timestamp, DateTime.add(DateTime.utc_now(), -1, :day)) do
       Logger.debug(transaction, fetcher: :account)
 
       transaction

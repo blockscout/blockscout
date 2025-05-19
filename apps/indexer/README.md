@@ -1,6 +1,6 @@
 # Indexer
 
-**TODO: Add description**
+The Indexer component of Blockscout is a backend process built in Elixir using supervised `GenServers`. It fetches blockchain data from Ethereum-based networks using an ETL pipeline that supports both real-time and catch-up indexing. The component buffers and batches incoming data to effectively manage concurrency and memory usage. It transforms raw data such as blocks, transactions, receipts, and logs into structured formats, orchestrating both synchronous and asynchronous processing. The Indexer does not directly interact with the PostgreSQL database via `Ecto`; instead, it passes prepared data to the Explorer component using the Chain.import function. Its design includes specialized fetchers and transformers that support multi-chain environments, handling data from networks like Optimism, Arbitrum, Polygon Edge, zkSync, and others. The component integrates robust error handling and retry mechanisms to ensure data integrity during processing. Multi-chain support is further emphasized through dedicated modules that process chain-specific data and transform it into database-ready structures.
 
 ## Structure
 

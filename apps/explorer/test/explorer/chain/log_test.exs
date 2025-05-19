@@ -5,7 +5,7 @@ defmodule Explorer.Chain.LogTest do
 
   alias Ecto.Changeset
   alias Explorer.Chain.{Log, SmartContract}
-  alias Explorer.{Repo, TestHelper}
+  alias Explorer.TestHelper
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
 
@@ -70,25 +70,27 @@ defmodule Explorer.Chain.LogTest do
 
       log = insert(:log, transaction: transaction)
 
-      assert {{:error, :could_not_decode}, _, _} = Log.decode(log, transaction, [], false)
+      assert {{:error, :could_not_decode}, _} = Log.decode(log, transaction, [], false, false, [])
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
       to_address = insert(:address, contract_code: "0x")
 
+      abi = [
+        %{
+          "anonymous" => false,
+          "inputs" => [
+            %{"indexed" => true, "name" => "_from_human", "type" => "string"},
+            %{"indexed" => false, "name" => "_number", "type" => "uint256"},
+            %{"indexed" => true, "name" => "_belly", "type" => "bool"}
+          ],
+          "name" => "WantsPets",
+          "type" => "event"
+        }
+      ]
+
       insert(:smart_contract,
-        abi: [
-          %{
-            "anonymous" => false,
-            "inputs" => [
-              %{"indexed" => true, "name" => "_from_human", "type" => "string"},
-              %{"indexed" => false, "name" => "_number", "type" => "uint256"},
-              %{"indexed" => true, "name" => "_belly", "type" => "bool"}
-            ],
-            "name" => "WantsPets",
-            "type" => "event"
-          }
-        ],
+        abi: abi,
         address_hash: to_address.hash,
         contract_code_md5: "123"
       )
@@ -115,8 +117,6 @@ defmodule Explorer.Chain.LogTest do
           fourth_topic: nil,
           data: data
         )
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
 
       assert {{:ok, "eb9b3c4c", "WantsPets(string indexed _from_human, uint256 _number, bool indexed _belly)",
                [
@@ -126,25 +126,27 @@ defmodule Explorer.Chain.LogTest do
                      152, 206, 227, 92, 181, 213, 23, 242, 210, 150, 162>>}},
                  {"_number", "uint256", false, 0},
                  {"_belly", "bool", true, true}
-               ]}, _, _} = Log.decode(log, transaction, [], false)
+               ]}, _} = Log.decode(log, transaction, [], false, false, abi)
     end
 
     test "replace arg names with argN if it's empty string" do
       to_address = insert(:address, contract_code: "0x")
 
+      abi = [
+        %{
+          "anonymous" => false,
+          "inputs" => [
+            %{"indexed" => true, "name" => "", "type" => "string"},
+            %{"indexed" => false, "name" => "", "type" => "uint256"},
+            %{"indexed" => true, "name" => "", "type" => "bool"}
+          ],
+          "name" => "WantsPets",
+          "type" => "event"
+        }
+      ]
+
       insert(:smart_contract,
-        abi: [
-          %{
-            "anonymous" => false,
-            "inputs" => [
-              %{"indexed" => true, "name" => "", "type" => "string"},
-              %{"indexed" => false, "name" => "", "type" => "uint256"},
-              %{"indexed" => true, "name" => "", "type" => "bool"}
-            ],
-            "name" => "WantsPets",
-            "type" => "event"
-          }
-        ],
+        abi: abi,
         address_hash: to_address.hash,
         contract_code_md5: "123"
       )
@@ -172,8 +174,6 @@ defmodule Explorer.Chain.LogTest do
           data: data
         )
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
-
       assert {{:ok, "eb9b3c4c", "WantsPets(string indexed arg0, uint256 arg1, bool indexed arg2)",
                [
                  {"arg0", "string", true,
@@ -182,24 +182,26 @@ defmodule Explorer.Chain.LogTest do
                      152, 206, 227, 92, 181, 213, 23, 242, 210, 150, 162>>}},
                  {"arg1", "uint256", false, 0},
                  {"arg2", "bool", true, true}
-               ]}, _, _} = Log.decode(log, transaction, [], false)
+               ]}, _} = Log.decode(log, transaction, [], false, false, abi)
     end
 
     test "finds decoding candidates" do
+      abi = [
+        %{
+          "anonymous" => false,
+          "inputs" => [
+            %{"indexed" => true, "name" => "_from_human", "type" => "string"},
+            %{"indexed" => false, "name" => "_number", "type" => "uint256"},
+            %{"indexed" => true, "name" => "_belly", "type" => "bool"}
+          ],
+          "name" => "WantsPets",
+          "type" => "event"
+        }
+      ]
+
       params =
         params_for(:smart_contract, %{
-          abi: [
-            %{
-              "anonymous" => false,
-              "inputs" => [
-                %{"indexed" => true, "name" => "_from_human", "type" => "string"},
-                %{"indexed" => false, "name" => "_number", "type" => "uint256"},
-                %{"indexed" => true, "name" => "_belly", "type" => "bool"}
-              ],
-              "name" => "WantsPets",
-              "type" => "event"
-            }
-          ]
+          abi: abi
         })
 
       # changeset has a callback to insert contract methods
@@ -226,18 +228,15 @@ defmodule Explorer.Chain.LogTest do
           data: data
         )
 
-      assert {{:error, :contract_not_verified,
+      assert {{:ok, "eb9b3c4c", "WantsPets(string indexed _from_human, uint256 _number, bool indexed _belly)",
                [
-                 {:ok, "eb9b3c4c", "WantsPets(string indexed _from_human, uint256 _number, bool indexed _belly)",
-                  [
-                    {"_from_human", "string", true,
-                     {:dynamic,
-                      <<56, 228, 122, 123, 113, 157, 206, 99, 102, 42, 234, 244, 52, 64, 50, 111, 85, 27, 138, 126, 225,
-                        152, 206, 227, 92, 181, 213, 23, 242, 210, 150, 162>>}},
-                    {"_number", "uint256", false, 0},
-                    {"_belly", "bool", true, true}
-                  ]}
-               ]}, _, _} = Log.decode(log, transaction, [], false)
+                 {"_from_human", "string", true,
+                  {:dynamic,
+                   <<56, 228, 122, 123, 113, 157, 206, 99, 102, 42, 234, 244, 52, 64, 50, 111, 85, 27, 138, 126, 225,
+                     152, 206, 227, 92, 181, 213, 23, 242, 210, 150, 162>>}},
+                 {"_number", "uint256", false, 0},
+                 {"_belly", "bool", true, true}
+               ]}, _} = Log.decode(log, transaction, [], false, false, abi)
     end
   end
 end

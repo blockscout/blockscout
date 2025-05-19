@@ -269,7 +269,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @address_is_not_smart_contract})
   end
 
-  def call(conn, {:is_vyper_contract, result}) when result == true do
+  def call(conn, {:language, :vyper}) do
     conn
     |> put_status(:not_found)
     |> put_view(ApiView)

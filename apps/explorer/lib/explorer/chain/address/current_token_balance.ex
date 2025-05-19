@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  alias Explorer.{Chain, Helper, PagingOptions, Repo}
+  alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Token}
   alias Explorer.Chain.Address.TokenBalance
 
@@ -171,14 +171,14 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   end
 
   @doc """
-  Builds an `t:Ecto.Query.t/0` to fetch the current token balances of the given address (include unfetched).
+  Builds an `t:Ecto.Query.t/0` to fetch the current token balances of the given addresses (include unfetched).
   """
-  def last_token_balances_include_unfetched(address_hash) do
+  def last_token_balances_include_unfetched(address_hashes) do
     fiat_balance = fiat_value_query()
 
     from(
       ctb in __MODULE__,
-      where: ctb.address_hash == ^address_hash,
+      where: ctb.address_hash in ^address_hashes,
       left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: [token: t],
@@ -334,7 +334,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   end
 
   @doc """
-  Converts CurrentTokenBalances to CSV format. Used in `BlockScoutWeb.API.V2.CSVExportController.export_token_holders/2`
+  Converts CurrentTokenBalances to CSV format. Used in `BlockScoutWeb.API.V2.CsvExportController.export_token_holders/2`
   """
   @spec to_csv_format([t()], Token.t()) :: (any(), any() -> {:halted, any()} | {:suspended, any(), (any() -> any())})
   def to_csv_format(holders, token) do
@@ -353,26 +353,5 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       end)
 
     Stream.concat([row_names], holders_list)
-  end
-
-  @doc """
-  Encode `address_hash`, `token_contract_address_hash` and `token_id` into a string that can be used in
-  `(address_hash, token_contract_address_hash, token_id) IN (...)` WHERE clause
-  """
-  @spec encode_ids([{Hash.t(), Hash.t(), non_neg_integer()}] | [{Hash.t(), Hash.t()}]) :: binary()
-  def encode_ids(ids) do
-    encoded_values =
-      ids
-      |> Enum.reduce("", fn
-        {address_hash, token_hash, token_id}, acc ->
-          acc <>
-            "('#{Helper.hash_to_query_string(address_hash)}', '#{Helper.hash_to_query_string(token_hash)}', #{token_id}),"
-
-        {address_hash, token_hash}, acc ->
-          acc <> "('#{Helper.hash_to_query_string(address_hash)}', '#{Helper.hash_to_query_string(token_hash)}'),"
-      end)
-      |> String.trim_trailing(",")
-
-    "(#{encoded_values})"
   end
 end

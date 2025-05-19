@@ -1,3 +1,11 @@
+# Contribution Guidelines: What We Are Looking For
+
+We welcome contributions that enhance the project and improve the overall quality of our codebase. While we appreciate the effort that goes into making contributions, we kindly ask that contributors focus on the following types of changes:
+- Feature Enhancements: Substantial improvements or new features that add significant value to the project.
+- Bug Fixes: Fixes for known bugs or issues that impact functionality.
+- Documentation Improvements: Comprehensive updates to documentation that clarify usage, installation, or project structure.
+- Performance Improvements: Changes that enhance the performance or efficiency of the application.
+
 # Contributing
 
 1. Fork it ( <https://github.com/blockscout/blockscout/fork> )
@@ -68,6 +76,7 @@ When contributing to the codebase, please adhere to the following naming convent
   - Instead of "tx" or "txn", use "transaction".
   - Instead of "txs", use "transactions".
   - Instead of "tx_hash" or "txn_hash", use "transaction_hash".
+  - Instead of "address", use "address_hash".
   - Instead of "block_num", use "block_number".
 - Ensure that variable names are descriptive and convey the purpose or content clearly.
 - Consistent naming helps in maintaining readability and understanding of the code, especially for new contributors.
@@ -78,15 +87,162 @@ By following these conventions, we can maintain a clean and understandable codeb
 
 When contributing to the API v2, please adhere to the following naming conventions for response fields to ensure clarity and consistency:
 
-- The block number should be returned as a number in the `block_number` property.
-- The transaction hash should be returned as a hex string in the `transaction_hash` property.
+- The block number should be returned as a number in the property with the name which ends with `block_number`.
+- All hashes (transaction, block address etc.) should be returned as a hex string in the property which ends with `_hash`.
+- Property name for aggregations like counts and sums should contain plural form of entity and `_count`, `_sum` suffix respecively, e.g. `transactions_count`, `blocks_count`, `withdrawals_sum`.
 - All fields that contain the "index" suffix should be returned as numbers.
 
-## Compile time Environment Variables
+## Environment Configuration Best Practices
 
-When working with compile time environment variables in the codebase, follow these guidelines:
+### Runtime vs. Compile-time Configuration
 
-- Always use the `Utils.CompileTimeEnvHelper` module instead of direct `Application.compile_env/2` calls:
+We strongly favor **runtime configuration** over compile-time configuration
+whenever possible. This approach:
+
+- Reduces the number of Docker images needed
+- Increases deployment flexibility
+- Simplifies maintenance and testing
+
+When **adding** new configuration options, chain types, or **refactoring**
+existing ones, please follow the decision tree below to determine the
+appropriate approach:
+
+```mermaid
+flowchart TD
+    A[Add/Modify Configuration Option or Chain Type] --> B{Is it feature-specific behavior of a function?}
+    B -->|Yes| C[Use RuntimeEnvHelper or Application.get_env/3 and pattern matching]
+    B -->|No| D{Does it need new database tables?}
+    D -->|Yes| E[Create new Ecto.Repo and handle it at runtime in config_helper.ex]
+    D -->|No| F{Is it an API endpoint?}
+    F -->|Yes| G[Use chain_scope macro or CheckFeature plug]
+    F -->|No| H{Does it modify existing database schema?}
+    H -->|Yes| I[Use Compile-time configuration]
+    H -->|No| J[Contact us to discuss this case further]
+    I -->|Future Work| O[Refactor toward Runtime configuration]
+```
+
+#### Use runtime configuration and pattern matching
+
+Anti-pattern:
+
+```elixir
+# AVOID THIS
+use Utils.CompileTimeEnvHelper,
+  chain_type: [:explorer, :chain_type]
+
+if @chain_type == :optimism do
+  def foo, do: :bar
+else
+  def foo, do: :baz
+end
+```
+
+Better approach:
+
+```elixir
+# DO THIS INSTEAD
+use Utils.RuntimeEnvHelper,
+  chain_type: [:explorer, :chain_type]
+
+def foo, do: chain_type() |> do_foo()
+
+defp do_foo(:optimism), do: :bar
+defp do_foo(_), do: :baz
+```
+
+#### New database tables
+
+If your feature or chain-specific functionality requires new database tables:
+
+1. Define a new repository module in `apps/explorer/lib/explorer/repo.ex`.
+2. Add the repository to `config/config_helper.exs` in the `repos/0` function.
+3. Include a runtime check to load this repo conditionally:
+
+```elixir
+# In config_helper.ex
+ext_repos = [
+  {parse_bool_env_var("MY_FEATURE_ENABLED"), Explorer.Repo.MyFeature},
+  # other feature repos...
+]
+|> Enum.filter(&elem(&1, 0))
+|> Enum.map(&elem(&1, 1))
+```
+
+This approach ensures migrations are automatically detected and applied at
+runtime without requiring recompilation.
+
+#### API endpoints
+
+For feature-specific or chain-specific API endpoints, use one of the following
+runtime approaches:
+
+1. **For chain-specific routes**, use the `chain_scope` macro in your router:
+
+```elixir
+scope "/v2", as: :api_v2 do
+  chain_scope :polygon_zkevm do
+    get("/zkevm-batch/:batch_number", V2.TransactionController, :polygon_zkevm_batch)
+  end
+end
+```
+
+2. **For feature-toggle endpoints**, use `CheckFeature` plug in pipelines:
+
+```elixir
+pipeline :my_feature do
+  plug(BlockScoutWeb.Plug.CheckFeature, feature_check: &my_feature_enabled?/0)
+end
+
+scope "/my-feature" do
+  pipe_through(:my_feature)
+  
+  get "/data", MyFeatureController, :index
+end
+```
+
+Both approaches return appropriate 404 responses when the feature is disabled or
+chain type doesn't match.
+
+#### Modifying existing database schema
+
+If your functionality requires modifying existing database schema structures
+(adding columns to shared tables, changing constraints, etc.), you currently
+must use compile-time configuration. This is the **only case** where
+compile-time configuration is still recommended.
+
+```elixir
+# Current approach for schema modifications
+use Utils.CompileTimeEnvHelper,
+  chain_type: [:explorer, :chain_type]
+
+if @chain_type == :optimism do
+  # Schema modifications specific to Optimism
+end
+```
+
+To prepare for future runtime refactoring, isolate these schema-specific changes
+as much as possible.
+
+This limitation stems from Ecto schemas being defined at compile-time. When
+different chain types need variations in shared tables (additional fields,
+different constraints), these schema differences cannot be modified at runtime.
+We're currently researching approaches for dynamic schema adjustment based on
+runtime configuration.
+
+For reference on which chain types still require compile-time configuration, see
+the [Chain-Specific Environment
+Variables](https://docs.blockscout.com/setup/env-variables/backend-envs-chain-specific)
+documentation.
+
+### Compile time Environment Variables
+
+Before using compile-time configuration, ensure you've exhausted all runtime
+alternatives by following the decision tree above. If after careful
+consideration you still need to work with compile-time environment variables,
+follow these guidelines:
+
+- Always use the `Utils.CompileTimeEnvHelper` module instead of direct
+  `Application.compile_env/2` calls:
 
 ```elixir
 # DO use this approach
@@ -100,5 +256,5 @@ use Utils.CompileTimeEnvHelper,
 Application.compile_env(:app, :test)  # avoid direct compile_env calls
 ```
 
-This approach provides faster compilation time and simplifies development and maintenance.
-
+This approach provides faster compilation time and simplifies development and
+maintenance.

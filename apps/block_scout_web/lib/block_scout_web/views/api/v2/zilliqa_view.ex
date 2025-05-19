@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
       is_scilla_contract =
         case address do
           %Address{
-            contracts_creation_transaction: transaction
+            contract_creation_transaction: transaction
           } ->
             scilla_transaction?(transaction)
 
@@ -137,5 +137,11 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
     end
 
     defp add_aggregate_quorum_certificate(zilliqa_json, _block), do: zilliqa_json
+  else
+    def extend_block_json_response(out_json, _, _),
+      do: out_json
+
+    def extend_transaction_json_response(out_json, _),
+      do: out_json
   end
 end

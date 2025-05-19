@@ -20,6 +20,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
   alias Indexer.Helper
 
   @fetcher_name :optimism_withdrawals
+  @counter_type "optimism_withdrawals_fetcher_last_l2_block_hash"
 
   # 32-byte signature of the event MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
   @message_passed_event "0x02a52367d10742d8032712c1bb8e0144ff1ec5ffda1ed7d70bb05a2744955054"
@@ -234,12 +235,13 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
         end)
       else
         {:ok, result} =
-          Optimism.get_logs(
+          Helper.get_logs(
             block_start,
             block_end,
             message_passer,
-            @message_passed_event,
+            [@message_passed_event],
             json_rpc_named_arguments,
+            0,
             3
           )
 
@@ -327,6 +329,8 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
         eth_get_logs_range_size,
         false
       )
+
+      Optimism.set_last_block_hash_by_number(end_block, @counter_type, json_rpc_named_arguments)
     end
   end
 
@@ -396,7 +400,8 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
       :L2,
       &OptimismWithdrawal.last_withdrawal_l2_block_number_query/0,
       &OptimismWithdrawal.remove_withdrawals_query/1,
-      json_rpc_named_arguments
+      json_rpc_named_arguments,
+      @counter_type
     )
   end
 

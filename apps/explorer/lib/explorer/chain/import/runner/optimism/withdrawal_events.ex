@@ -90,16 +90,18 @@ defmodule Explorer.Chain.Import.Runner.Optimism.WithdrawalEvents do
           l1_timestamp: fragment("EXCLUDED.l1_timestamp"),
           l1_block_number: fragment("EXCLUDED.l1_block_number"),
           game_index: fragment("EXCLUDED.game_index"),
+          game_address_hash: fragment("EXCLUDED.game_address_hash"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", we.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", we.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.l1_timestamp, EXCLUDED.l1_block_number, EXCLUDED.game_index) IS DISTINCT FROM (?, ?, ?)",
+          "(EXCLUDED.l1_timestamp, EXCLUDED.l1_block_number, EXCLUDED.game_index, EXCLUDED.game_address_hash) IS DISTINCT FROM (?, ?, ?, ?)",
           we.l1_timestamp,
           we.l1_block_number,
-          we.game_index
+          we.game_index,
+          we.game_address_hash
         )
     )
   end

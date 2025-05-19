@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.{Chain, Repo}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Block, Transaction}
-  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob, Withdrawal}
+  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
 
   @doc """
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
@@ -35,6 +35,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
           %{
             "l2_block_number" => batch.l2_block_number,
+            "transactions_count" => transaction_count,
+            # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
             "transaction_count" => transaction_count,
             "l1_transaction_hashes" => batch.frame_sequence.l1_transaction_hashes,
             "l1_timestamp" => batch.frame_sequence.l1_timestamp
@@ -62,7 +64,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       |> Enum.map(fn batch ->
         from..to//_ = batch.l2_block_range
 
-        render_base_info_for_batch(batch.id, from, to, batch.transaction_count, batch)
+        render_base_info_for_batch(batch.id, from, to, batch.transactions_count, batch)
       end)
 
     %{
@@ -73,7 +75,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   @doc """
     Function to render GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment`
-    and `/api/v2/optimism/batches/:internal_id` endpoints.
+    and `/api/v2/optimism/batches/:number` endpoints.
   """
   def render("optimism_batch.json", %{batch: batch}) do
     batch
@@ -124,7 +126,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           %{
             "index" => g.index,
             "game_type" => g.game_type,
-            "contract_address" => g.address,
+            # todo: It should be removed in favour `contract_address_hash` property with the next release after 8.0.0
+            "contract_address" => g.address_hash,
+            "contract_address_hash" => g.address_hash,
             "l2_block_number" => l2_block_number,
             "created_at" => g.created_at,
             "status" => status,
@@ -198,15 +202,12 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
                  {:ok, address} <-
                    Chain.hash_to_address(
                      w.from,
-                     [
-                       necessity_by_association: %{
-                         :names => :optional,
-                         :smart_contract => :optional,
-                         proxy_implementations_association() => :optional
-                       },
-                       api?: true
-                     ],
-                     false
+                     necessity_by_association: %{
+                       :names => :optional,
+                       :smart_contract => :optional,
+                       proxy_implementations_association() => :optional
+                     },
+                     api?: true
                    ) do
               {address, address.hash}
             else
@@ -238,6 +239,77 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     count
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/interop/messages` endpoint.
+  """
+  def render("optimism_interop_messages.json", %{
+        messages: messages,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(messages, fn message ->
+          msg =
+            %{
+              "nonce" => message.nonce,
+              "timestamp" => message.timestamp,
+              "status" => message.status,
+              "init_transaction_hash" => message.init_transaction_hash,
+              "relay_transaction_hash" => message.relay_transaction_hash,
+              "sender_address_hash" => message.sender_address_hash,
+              # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `sender_address_hash` property
+              "sender" => message.sender_address_hash,
+              "target_address_hash" => message.target_address_hash,
+              # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `target_address_hash` property
+              "target" => message.target_address_hash,
+              "payload" => ExplorerHelper.add_0x_prefix(message.payload)
+            }
+
+          # add chain info depending on whether this is incoming or outgoing message
+          msg
+          |> maybe_add_chain(:init_chain, message)
+          |> maybe_add_chain(:relay_chain, message)
+        end),
+      next_page_params: next_page_params
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/interop/public-key` endpoint.
+  """
+  def render("optimism_interop_public_key.json", %{public_key: public_key}) do
+    %{"public_key" => public_key}
+  end
+
+  @doc """
+    Function to render `relay` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
+  """
+  def render("optimism_interop_response.json", %{relay_transaction_hash: relay_transaction_hash, failed: failed}) do
+    %{
+      "relay_transaction_hash" => relay_transaction_hash,
+      "failed" => failed
+    }
+  end
+
+  @doc """
+    Function to render `init` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
+  """
+  def render("optimism_interop_response.json", %{
+        sender_address_hash: sender_address_hash,
+        target_address_hash: target_address_hash,
+        init_transaction_hash: init_transaction_hash,
+        timestamp: timestamp,
+        payload: payload
+      }) do
+    %{
+      "sender_address_hash" => sender_address_hash,
+      "target_address_hash" => target_address_hash,
+      "init_transaction_hash" => init_transaction_hash,
+      "timestamp" => if(not is_nil(timestamp), do: DateTime.to_unix(timestamp)),
+      "payload" => ExplorerHelper.add_0x_prefix(payload)
+    }
+  end
+
   # Transforms an L1 batch into a map format for HTTP response.
   #
   # This function processes an Optimism L1 batch and converts it into a map that
@@ -261,10 +333,14 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           FrameSequence.t()
           | %{:l1_timestamp => DateTime.t(), :l1_transaction_hashes => list(), optional(any()) => any()}
         ) :: %{
+          :number => non_neg_integer(),
           :internal_id => non_neg_integer(),
           :l1_timestamp => DateTime.t(),
+          :l2_start_block_number => non_neg_integer(),
           :l2_block_start => non_neg_integer(),
+          :l2_end_block_number => non_neg_integer(),
           :l2_block_end => non_neg_integer(),
+          :transactions_count => non_neg_integer(),
           :transaction_count => non_neg_integer(),
           :l1_transaction_hashes => list(),
           :batch_data_container => :in_blob4844 | :in_celestia | :in_calldata | nil
@@ -307,6 +383,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
       batch_info =
         %{
+          "number" => frame_sequence.id,
+          # todo: It should be removed in favour `number` property with the next release after 8.0.0
           "internal_id" => frame_sequence.id,
           "l1_timestamp" => frame_sequence.l1_timestamp,
           "l1_transaction_hashes" => frame_sequence.l1_transaction_hashes,
@@ -368,6 +446,23 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         }
       end)
 
-    Map.put(out_json, "op_withdrawals", withdrawals)
+    interop_message =
+      transaction_hash
+      |> InteropMessage.message_by_transaction()
+
+    out_json = Map.put(out_json, "op_withdrawals", withdrawals)
+
+    if is_nil(interop_message) do
+      out_json
+    else
+      Map.put(out_json, "op_interop", interop_message)
+    end
+  end
+
+  defp maybe_add_chain(msg, chain_key, message) do
+    case Map.fetch(message, chain_key) do
+      {:ok, chain} -> Map.put(msg, Atom.to_string(chain_key), chain)
+      _ -> msg
+    end
   end
 end

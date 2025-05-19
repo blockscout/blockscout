@@ -98,7 +98,8 @@ for repo <- [
       Explorer.Repo.Shibarium,
       Explorer.Repo.Stability,
       Explorer.Repo.Zilliqa,
-      Explorer.Repo.ZkSync
+      Explorer.Repo.ZkSync,
+      Explorer.Repo.Neon
     ] do
   config :explorer, repo,
     url: System.get_env("DATABASE_URL"),

@@ -46,4 +46,9 @@ defmodule Indexer.Fetcher.Blackfort.Validator do
 
     {:noreply, state}
   end
+
+  @spec trigger_update_validators_list() :: :ok
+  def trigger_update_validators_list do
+    GenServer.cast(__MODULE__, :update_validators_list)
+  end
 end

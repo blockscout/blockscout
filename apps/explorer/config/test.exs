@@ -71,7 +71,8 @@ for repo <- [
       Explorer.Repo.Stability,
       Explorer.Repo.Suave,
       Explorer.Repo.Zilliqa,
-      Explorer.Repo.ZkSync
+      Explorer.Repo.ZkSync,
+      Explorer.Repo.Neon
     ] do
   config :explorer, repo,
     database: database,
@@ -100,8 +101,7 @@ config :logger, :explorer,
   level: :warn,
   path: Path.absname("logs/test/explorer.log")
 
-config :explorer, Explorer.ExchangeRates.Source.TransactionAndLog,
-  secondary_source: Explorer.ExchangeRates.Source.OneCoinSource
-
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: false
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: false
+
+config :tesla, adapter: Explorer.Mock.TeslaAdapter

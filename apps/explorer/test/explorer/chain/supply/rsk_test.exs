@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Supply.RSKTest do
   import Mox
 
   alias Explorer.Chain.Supply.RSK
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Market.Token
 
   @coin_address "0x0000000000000000000000000000000001000006"
   @mult 1_000_000_000_000_000_000
@@ -24,7 +24,7 @@ defmodule Explorer.Chain.Supply.RSKTest do
         {:ok, [%{id: id, result: "20999999999900000000000000"}]}
       end)
 
-      exchange_rate = %{Token.null() | usd_value: Decimal.new(1_000_000)}
+      exchange_rate = %{Token.null() | fiat_value: Decimal.new(1_000_000)}
 
       assert Decimal.equal?(RSK.market_cap(exchange_rate), Decimal.from_float(100.0000))
     end
@@ -34,7 +34,7 @@ defmodule Explorer.Chain.Supply.RSKTest do
     end
 
     test "returns zero when usd_value is nil" do
-      exchange_rate = %{Token.null() | usd_value: nil}
+      exchange_rate = %{Token.null() | fiat_value: nil}
 
       assert RSK.market_cap(exchange_rate) == Decimal.new(0)
     end

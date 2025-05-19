@@ -11,6 +11,7 @@ defmodule Indexer.Block.FetcherTest do
   alias Indexer.Block.Fetcher
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
+  alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
 
   alias Indexer.Fetcher.{
     ContractCode,
@@ -66,6 +67,7 @@ defmodule Indexer.Block.FetcherTest do
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
+      {:ok, _pid} = ContractCreatorOnDemand.start_link([[], []])
 
       UncleBlock.Supervisor.Case.start_supervised!(
         block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
@@ -286,7 +288,9 @@ defmodule Indexer.Block.FetcherTest do
     } do
       block_number = @first_full_block_number
 
-      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!()
+      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
+        json_rpc_named_arguments: json_rpc_named_arguments
+      )
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
@@ -504,6 +508,11 @@ defmodule Indexer.Block.FetcherTest do
         end
       end
 
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+
       case Keyword.fetch!(json_rpc_named_arguments, :variant) do
         EthereumJSONRPC.Geth ->
           block_number = 48230
@@ -671,7 +680,7 @@ defmodule Indexer.Block.FetcherTest do
 
           assert Repo.aggregate(Chain.Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 2
-          assert Chain.log_count() == 1
+          assert Repo.aggregate(Log, :count) == 1
           assert Repo.aggregate(Transaction, :count, :hash) == 1
 
           first_address = Repo.get!(Address, first_address_hash)
@@ -695,7 +704,9 @@ defmodule Indexer.Block.FetcherTest do
     } do
       block_number = 7_374_455
 
-      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!()
+      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
+        json_rpc_named_arguments: json_rpc_named_arguments
+      )
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
@@ -1159,7 +1170,7 @@ defmodule Indexer.Block.FetcherTest do
 
             assert Repo.aggregate(Chain.Block, :count, :hash) == 1
             assert Repo.aggregate(Address, :count, :hash) == 2
-            assert Chain.log_count() == 1
+            assert Repo.aggregate(Log, :count) == 1
             assert Repo.aggregate(Transaction, :count, :hash) == 1
 
             first_address = Repo.get!(Address, first_address_hash)

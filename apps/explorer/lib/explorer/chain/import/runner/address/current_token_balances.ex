@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   alias Explorer.Chain.{Hash, Import}
   alias Explorer.Chain.Import.Runner.{Address.TokenBalances, Tokens}
   alias Explorer.Prometheus.Instrumenter
+  alias Explorer.QueryHelper
 
   @behaviour Import.Runner
 
@@ -222,9 +223,9 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     existing_ctb_map =
       existing_ctb_without_token_id
       |> Enum.concat(existing_ctb_with_token_id)
-      |> Map.new(fn [address_hash, token_contract_address_hash, token_id, block_number, value, value_fetched_at] ->
-        {{address_hash, token_contract_address_hash, token_id},
-         %{block_number: block_number, value: value, value_fetched_at: value_fetched_at}}
+      |> Map.new(fn ctb ->
+        {{ctb.address_hash, ctb.token_contract_address_hash, ctb.token_id},
+         %{block_number: ctb.block_number, value: ctb.value, value_fetched_at: ctb.value_fetched_at}}
       end)
 
     filtered_ctbs =
@@ -238,37 +239,59 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
   defp select_existing_current_token_balances(_repo, [], _with_token_id?), do: []
 
-  defp select_existing_current_token_balances(repo, params, with_token_id?) do
-    params
-    |> existing_ctb_query(with_token_id?)
-    |> repo.query!()
-    |> Map.get(:rows)
+  defp select_existing_current_token_balances(repo, params, false) do
+    ids =
+      params
+      |> Enum.map(&{&1.address_hash.bytes, &1.token_contract_address_hash.bytes})
+      |> Enum.uniq()
+
+    existing_ctb_query =
+      from(
+        ctb in CurrentTokenBalance,
+        where: is_nil(ctb.token_id),
+        where: ^QueryHelper.tuple_in([:address_hash, :token_contract_address_hash], ids)
+      )
+
+    repo.all(existing_ctb_query)
   end
 
-  defp existing_ctb_query(params, false) do
-    encoded_ids =
-      params
-      |> Enum.map(&{&1.address_hash, &1.token_contract_address_hash})
-      |> CurrentTokenBalance.encode_ids()
+  defp select_existing_current_token_balances(repo, params, true) do
+    ids = Enum.map(params, &[&1.address_hash.bytes, &1.token_contract_address_hash.bytes, &1.token_id])
 
-    """
-    SELECT ctb.address_hash, ctb.token_contract_address_hash, ctb.token_id, ctb.block_number, ctb.value, ctb.value_fetched_at
-    FROM address_current_token_balances ctb
-    WHERE (ctb.address_hash, ctb.token_contract_address_hash) IN #{encoded_ids} AND ctb.token_id IS NULL
-    """
-  end
+    placeholders =
+      ids
+      |> Enum.with_index(1)
+      |> Enum.map_join(",", fn {_, i} ->
+        # The value 3 corresponds to the number of parameters in each group within the WHERE clause.
+        # If this number changes, make sure to update it accordingly. For example, placeholders for
+        # an array of ids [[1, 2, 3], [4, 5, 6]] would be formatted as: ($1, $2, $3),($4, $5, $6)".
+        "($#{3 * i - 2}, $#{3 * i - 1}, $#{3 * i})"
+      end)
 
-  defp existing_ctb_query(params, true) do
-    encoded_ids =
-      params
-      |> Enum.map(&{&1.address_hash, &1.token_contract_address_hash, &1.token_id})
-      |> CurrentTokenBalance.encode_ids()
+    # Using raw SQL here is needed to be able to add the `COALESCE` statement
+    # which is needed to force `fetched_current_token_balances` full index usage
+    existing_ctb_query =
+      """
+      SELECT address_hash, token_contract_address_hash, token_id, block_number, value, value_fetched_at
+      FROM address_current_token_balances
+      WHERE (address_hash, token_contract_address_hash, COALESCE(token_id, -1)) IN (#{placeholders})
+      """
 
-    """
-    SELECT ctb.address_hash, ctb.token_contract_address_hash, ctb.token_id, ctb.block_number, ctb.value, ctb.value_fetched_at
-    FROM address_current_token_balances ctb
-    WHERE (ctb.address_hash, ctb.token_contract_address_hash, ctb.token_id) IN #{encoded_ids}
-    """
+    query_params = List.flatten(ids)
+
+    existing_ctb_query
+    |> repo.query!(query_params)
+    |> Map.get(:rows, [])
+    |> Enum.map(fn [address_hash, token_contract_address_hash, token_id, block_number, value, value_fetched_at] ->
+      %{
+        address_hash: address_hash,
+        token_contract_address_hash: token_contract_address_hash,
+        token_id: token_id,
+        block_number: block_number,
+        value: value,
+        value_fetched_at: value_fetched_at
+      }
+    end)
   end
 
   # ctb does not exist
@@ -284,7 +307,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
   # new ctb is the same height or older
   defp should_update?(new_ctb, existing_ctb) do
-    existing_ctb.block_number == new_ctb.block_number and not is_nil(new_ctb.value) and
+    existing_ctb.block_number == new_ctb.block_number and not is_nil(Map.get(new_ctb, :value)) and
       (is_nil(existing_ctb.value_fetched_at) or existing_ctb.value_fetched_at < new_ctb.value_fetched_at)
   end
 

@@ -86,7 +86,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         contract_code_md5: "123"
       )
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       path =
         smart_contract_path(BlockScoutWeb.Endpoint, :index,

@@ -939,9 +939,9 @@ defmodule EthereumJSONRPCTest do
     end
   end
 
-  describe "fetch_net_version/1" do
-    test "fetches net version", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      expected_version =
+  describe "fetch_chain_id/1" do
+    test "fetches chain id", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      expected_id =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Nethermind -> 77
           _variant -> 1
@@ -949,11 +949,11 @@ defmodule EthereumJSONRPCTest do
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, "#{expected_version}"}
+          {:ok, "#{expected_id}"}
         end)
       end
 
-      assert {:ok, ^expected_version} = EthereumJSONRPC.fetch_net_version(json_rpc_named_arguments)
+      assert {:ok, ^expected_id} = EthereumJSONRPC.fetch_chain_id(json_rpc_named_arguments)
     end
   end
 

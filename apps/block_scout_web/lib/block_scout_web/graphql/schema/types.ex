@@ -63,9 +63,9 @@ defmodule BlockScoutWeb.GraphQL.Schema.Transaction do
 end
 
 defmodule BlockScoutWeb.GraphQL.Schema.SmartContracts do
+  @moduledoc false
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  @moduledoc false
   case @chain_type do
     :zksync ->
       @chain_type_fields quote(
@@ -94,10 +94,10 @@ defmodule BlockScoutWeb.GraphQL.Schema.SmartContracts do
         field(:verified_via_sourcify, :boolean)
         field(:partially_verified, :boolean)
         field(:file_path, :string)
-        field(:is_vyper_contract, :boolean)
         field(:is_changed_bytecode, :boolean)
         field(:compiler_settings, :json)
         field(:verified_via_eth_bytecode_db, :boolean)
+        field(:language, :language)
 
         unquote_splicing(@chain_type_fields)
       end
@@ -107,6 +107,7 @@ end
 
 defmodule BlockScoutWeb.GraphQL.Schema.Types do
   @moduledoc false
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require BlockScoutWeb.GraphQL.Schema.{Transaction, SmartContracts}
 
@@ -123,6 +124,23 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
 
   alias BlockScoutWeb.GraphQL.Schema.SmartContracts, as: SmartContractsSchema
   alias BlockScoutWeb.GraphQL.Schema.Transaction, as: TransactionSchema
+
+  # TODO: leverage `Ecto.Enum.values(SmartContract, :language)` to deduplicate
+  # language definitions
+  @default_languages ~w(solidity vyper yul)a
+
+  case @chain_type do
+    :arbitrum ->
+      @chain_type_languages ~w(stylus_rust)a
+
+    :zilliqa ->
+      @chain_type_languages ~w(scilla)a
+
+    _ ->
+      @chain_type_languages ~w()a
+  end
+
+  enum(:language, values: @default_languages ++ @chain_type_languages)
 
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.GraphQL.Schema.Scalars)

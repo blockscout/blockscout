@@ -61,6 +61,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
 
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: DbCommon
   alias Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2
 
@@ -88,7 +89,8 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   def init(args) do
     Logger.metadata(fetcher: :arbitrum_bridge_l2_catchup)
 
-    indexer_first_block = Application.get_all_env(:indexer)[:first_block]
+    indexer_first_block =
+      RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
     rollup_chunk_size = config_common[:rollup_chunk_size]
