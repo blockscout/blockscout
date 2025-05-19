@@ -75,3 +75,6 @@ tasks_in_progress
 /dets
 
 /temp
+
+docker-compose/services/blockscout-web-data
+docker-compose/services/data
