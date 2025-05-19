@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - np-integrate-open-api-spex
     paths-ignore:
       - "CHANGELOG.md"
       - "**/README.md"
