@@ -212,70 +212,38 @@ defmodule Explorer.Helper do
 
 
   defp preprocess_json_string(data) when is_binary(data) do
-    data
-    |> try_fix_or_remove_schema("inputSchema")
-    |> try_fix_or_remove_schema("outputSchema")
-  end
-
-  defp try_fix_or_remove_schema(data, field_name) do
-    fixed = fix_schema_field(data, field_name)
+    # First fix both schema fields without trying to decode after each fix
+    fixed_input = fix_schema_field(data, "inputSchema")
+    fixed_both = fix_schema_field(fixed_input, "outputSchema")
 
     Logger.debug(
-      ["[JSON] Fixed schema field: #{field_name}, result sample: #{String.slice(fixed || "", 0, 100)}..."],
+      ["[JSON] Fixed both schema fields, result sample: #{String.slice(fixed_both || "", 0, 100)}..."],
       fetcher: :token_instances
     )
 
-    # Check if fixed result is still parseable
-    case Jason.decode(fixed) do
+    # After fixing both fields, check if JSON is now parseable
+    case Jason.decode(fixed_both) do
       {:ok, decoded} ->
         Logger.debug(
-          ["[JSON] Successfully decoded JSON after fixing #{field_name}"],
+          ["[JSON] Successfully decoded JSON after fixing both schema fields"],
           fetcher: :token_instances
         )
-        fixed
+        fixed_both
       {:error, error} ->
         Logger.warn(
-          ["[JSON] #{field_name} still malformed after fixing, error: #{inspect(error)}, removing field"],
+          ["[JSON] JSON still malformed after fixing both schema fields, error: #{inspect(error)}, removing fields"],
           fetcher: :token_instances
         )
-        remove_schema_field(data, field_name)
+        # Remove both schema fields if still not parseable
+        data
+        |> remove_schema_field("inputSchema")
+        |> remove_schema_field("outputSchema")
     end
   end
 
-  defp fix_schema_field(json_string, field_name) do
-    pattern = ~r/(\"#{field_name}\":\")(\{.*?\})(\")/s
+  # Removed try_fix_or_remove_schema since we now fix both fields first before attempting to decode
 
-    Logger.debug(
-      ["[JSON] Fixing schema field: #{field_name}, pattern: #{inspect(pattern)}, json sample: #{String.slice(json_string, 0, 100)}..."],
-      fetcher: :token_instances
-    )
-
-    result = Regex.replace(pattern, json_string, fn _, prefix, schema_content, suffix ->
-      Logger.debug(
-        ["[JSON] Match found for #{field_name}. Prefix: #{prefix}, Content sample: #{String.slice(schema_content, 0, 50)}..., Suffix: #{suffix}"],
-        fetcher: :token_instances
-      )
-
-      escaped_content =
-        schema_content
-        |> String.replace("\\", "\\\\")
-        |> String.replace("\"", "\\\"")
-
-      Logger.debug(
-        ["[JSON] After escaping for #{field_name}. Original length: #{String.length(schema_content)}, Escaped length: #{String.length(escaped_content)}"],
-        fetcher: :token_instances
-      )
-
-      "#{prefix}#{escaped_content}#{suffix}"
-    end)
-
-    Logger.debug(
-      ["[JSON] Regex replacement completed for #{field_name}. Original length: #{String.length(json_string)}, Result length: #{String.length(result)}"],
-      fetcher: :token_instances
-    )
-
-    result
-  end
+  # fix_schema_field is defined below with a more specific guard clause
 
   defp remove_schema_field(json_string, field_name) do
     # Match the entire key-value pair, including trailing comma if present
