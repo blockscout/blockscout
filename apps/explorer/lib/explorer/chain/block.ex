@@ -559,22 +559,25 @@ defmodule Explorer.Chain.Block do
         gas_used_delta = Decimal.sub(block.gas_used, gas_target)
 
         base_fee_per_gas_decimal
-        |> Decimal.mult(gas_used_delta)
-        |> Decimal.div_int(gas_target)
-        |> Decimal.div_int(base_fee_max_change_denominator)
+        |> get_base_fee_per_gas_delta(gas_used_delta, gas_target, base_fee_max_change_denominator)
         |> Decimal.max(Decimal.new(1))
         |> Decimal.add(base_fee_per_gas_decimal)
       else
         gas_used_delta = Decimal.sub(gas_target, block.gas_used)
 
         base_fee_per_gas_decimal
-        |> Decimal.mult(gas_used_delta)
-        |> Decimal.div_int(gas_target)
-        |> Decimal.div_int(base_fee_max_change_denominator)
+        |> get_base_fee_per_gas_delta(gas_used_delta, gas_target, base_fee_max_change_denominator)
         |> Decimal.negate()
         |> Decimal.add(base_fee_per_gas_decimal)
       end
       |> Decimal.max(lower_bound)
+  end
+
+  defp get_base_fee_per_gas_delta(base_fee_per_gas_decimal, gas_used_delta, gas_target, base_fee_max_change_denominator) do
+    base_fee_per_gas_decimal
+    |> Decimal.mult(gas_used_delta)
+    |> Decimal.div_int(gas_target)
+    |> Decimal.div_int(base_fee_max_change_denominator)
   end
 
   @spec set_refetch_needed(integer | [integer]) :: :ok
