@@ -11,6 +11,7 @@
 
 ### 🐛 Bug Fixes
 
+- Handle mismatched 0x prefixed bytes ([#12453](https://github.com/blockscout/blockscout/pull/12453))
 - Fix logs decoding issue for proxies ([#12414](https://github.com/blockscout/blockscout/issues/12414))
 - Refactor TokenInstanceMetadataRefetch on demand fetcher ([#12419](https://github.com/blockscout/blockscout/issues/12419))
 - Fix for type output in ETH RPC API transaction by hash endpoint
