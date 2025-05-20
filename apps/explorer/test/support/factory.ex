@@ -25,7 +25,6 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.Beacon.{Blob, BlobTransaction}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
-  # alias Explorer.Chain.Celo.Epoch, as: Epoch
 
   alias Explorer.Chain.{
     Address,
