@@ -82,14 +82,16 @@ defmodule Explorer.Chain.SignedAuthorization do
   end
 
   @doc """
-    Converts a `SignedAuthorization.t()` to the address changeset setting EIP-7702 contract code and nonce.
+  Converts a `SignedAuthorization.t()` into a map of import params that can be
+  fed into `Chain.import/1`. It sets synthetic contract code for EIP-7702 proxies
+  and updates the nonce.
   """
-  @spec to_address_changeset(Ecto.Schema.t()) :: %{
+  @spec to_address_params(Ecto.Schema.t()) :: %{
           hash: Hash.Address.t(),
-          contract_code: binary(),
+          contract_code: Date.t() | nil,
           nonce: non_neg_integer()
         }
-  def to_address_changeset(%__MODULE__{} = struct) do
+  def to_address_params(%__MODULE__{} = struct) do
     code =
       if struct.address.bytes == <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>> do
         nil

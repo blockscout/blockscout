@@ -105,7 +105,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
   #
   # Any transaction change the nonce of the transaction sender.
   #
-  # Additionally, EIP7702 transactions may change the nonce of successfull EIP7702 tuple authorities.
+  # Additionally, EIP7702 transactions may change the nonce of successful EIP7702 tuple authorities.
   @spec transaction_to_inner_entries(Transaction.t()) :: [inner_entry()]
   defp transaction_to_inner_entries(transaction) do
     [
@@ -270,7 +270,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
     |> elem(0)
   end
 
-  # Compute authorization statuses by iteratvely going through all transactions and authorizations in the block,
+  # Compute authorization statuses by iteratively going through all transactions and authorizations in the block,
   # while keeping track of expected nonces.
   @spec compute_statuses(entry(), %{Hash.Address.t() => Decimal.t()}) :: {entry(), [SignedAuthorization.t()]}
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
@@ -384,7 +384,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
       signed_authorizations
       |> Enum.filter(&(&1.status == :ok))
       # keeps only the latest record for each authority address
-      |> Enum.into(%{}, &{&1.authority, SignedAuthorization.to_address_changeset(&1)})
+      |> Enum.into(%{}, &{&1.authority, SignedAuthorization.to_address_params(&1)})
       |> Map.values()
 
     case Chain.import(%{
