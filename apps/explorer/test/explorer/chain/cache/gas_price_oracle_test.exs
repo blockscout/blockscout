@@ -640,5 +640,25 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
 
       assert {{:ok, %{average: nil, fast: nil, slow: nil}}, _} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
     end
+
+    test "does take into account EIP_1559_BASE_FEE_LOWER_BOUND_WEI env" do
+      old_config = Application.get_env(:explorer, :base_fee_lower_bound)
+
+      Application.put_env(:explorer, :base_fee_lower_bound, 1_000_000_000)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :base_fee_lower_bound, old_config)
+      end)
+
+      insert(:block,
+        number: 1,
+        base_fee_per_gas: Wei.from(Decimal.new(1), :gwei),
+        gas_used: Decimal.new(0),
+        gas_limit: Decimal.new(1000)
+      )
+
+      assert {{:ok, %{average: %{price: 1.0}, fast: %{base_fee: 1.0}, slow: %{base_fee: 1.0}}}, _} =
+               GasPriceOracle.get_average_gas_price(1, 35, 60, 90)
+    end
   end
 end
