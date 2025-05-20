@@ -19,6 +19,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.EIP7702
   alias Timex.Duration
 
   @burn_address_hash_string "0x0000000000000000000000000000000000000000"
@@ -169,7 +170,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     {updated_smart_contract, implementation_address_fetched?} =
       if check_implementation_refetch_necessity(implementation_updated_at) do
         {smart_contract_with_bytecode_twin, implementation_address_fetched?} =
-          SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options)
+          SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options, false)
 
         if smart_contract_with_bytecode_twin do
           {smart_contract_with_bytecode_twin, implementation_address_fetched?}
@@ -347,7 +348,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         with {:ok, implementation_address_hash} <- Chain.string_to_address_hash(implementation_address_hash_string),
              {:implementation, {%SmartContract{name: name}, _}} <- {
                :implementation,
-               SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options)
+               SmartContract.address_hash_to_smart_contract_with_bytecode_twin(
+                 implementation_address_hash,
+                 options,
+                 false
+               )
              } do
           {implementation_address_hash_string, name}
         else
@@ -426,11 +431,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   end
 
   @doc """
-  Deletes all proxy implementations associated with the given proxy address hash.
+  Deletes all proxy implementations associated with the given proxy address hashes.
 
   ## Parameters
 
-    - `address_hash` (binary): The hash of the proxy address whose implementations
+    - `address_hashes` (binary): The list of proxy address hashes whose implementations
       should be deleted.
 
   ## Returns
@@ -438,13 +443,70 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     - `{count, nil}`: A tuple where `count` is the number of records deleted.
 
   This function uses a query to find all proxy implementations matching the
-  provided `address_hash` and deletes them from the database.
+  provided `address_hashes` and deletes them from the database.
   """
-  @spec delete_implementations(Hash.Address.t()) :: {non_neg_integer(), nil}
-  def delete_implementations(address_hash) do
+  @spec delete_implementations([Hash.Address.t()]) :: {non_neg_integer(), nil}
+  def delete_implementations(address_hashes) do
     __MODULE__
-    |> where([proxy_implementations], proxy_implementations.proxy_address_hash == ^address_hash)
+    |> where([proxy_implementations], proxy_implementations.proxy_address_hash in ^address_hashes)
     |> Repo.delete_all()
+  end
+
+  @spec upsert_eip7702_implementations([Address.t()]) :: {non_neg_integer(), nil | []}
+  def upsert_eip7702_implementations(addresses) do
+    now = DateTime.utc_now()
+
+    records =
+      addresses
+      |> Repo.preload(:smart_contract)
+      |> Enum.flat_map(fn address ->
+        with true <- Address.smart_contract?(address),
+             delegate_string when not is_nil(delegate_string) <-
+               EIP7702.get_delegate_address(address.contract_code.bytes),
+             {:ok, delegate_address_hash} <- Hash.Address.cast(delegate_string) do
+          name =
+            case address do
+              %{smart_contract: %{name: name}} -> name
+              _ -> nil
+            end
+
+          [
+            %{
+              proxy_address_hash: address.hash,
+              proxy_type: :eip7702,
+              address_hashes: [delegate_address_hash],
+              names: [name],
+              inserted_at: now,
+              updated_at: now
+            }
+          ]
+        else
+          _ -> []
+        end
+      end)
+
+    Repo.insert_all(__MODULE__, records,
+      on_conflict: eip7702_on_conflict(),
+      conflict_target: [:proxy_address_hash]
+    )
+  end
+
+  defp eip7702_on_conflict do
+    from(
+      proxy_implementations in __MODULE__,
+      update: [
+        set: [
+          address_hashes: fragment("EXCLUDED.address_hashes"),
+          names: fragment("EXCLUDED.names"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", proxy_implementations.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", proxy_implementations.updated_at)
+        ]
+      ],
+      where:
+        fragment("EXCLUDED.proxy_type = ?", proxy_implementations.proxy_type) and
+          (fragment("EXCLUDED.address_hashes <> ?", proxy_implementations.address_hashes) or
+             fragment("EXCLUDED.names <> ?", proxy_implementations.names))
+    )
   end
 
   # Cut off implementations per proxy up to @max_implementations_number_per_proxy number

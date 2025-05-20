@@ -3,9 +3,9 @@ defmodule Explorer.Chain.SignedAuthorization do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, Transaction}
+  alias Explorer.Chain.{Data, Hash, Transaction}
 
-  @optional_attrs ~w(authority)a
+  @optional_attrs ~w(authority status)a
   @required_attrs ~w(transaction_hash index chain_id address nonce r s v)a
 
   @typedoc """
@@ -19,6 +19,7 @@ defmodule Explorer.Chain.SignedAuthorization do
     * `r` - the 'r' component of the signature.
     * `s` - the 's' component of the signature.
     * `authority` - the signer of the authorization.
+    * `status` - the status of the authorization.
   """
   @type to_import :: %__MODULE__{
           transaction_hash: binary(),
@@ -29,7 +30,8 @@ defmodule Explorer.Chain.SignedAuthorization do
           r: non_neg_integer(),
           s: non_neg_integer(),
           v: non_neg_integer(),
-          authority: binary() | nil
+          authority: binary() | nil,
+          status: :ok | :invalid_chain_id | :invalid_signature | :invalid_nonce | nil
         }
 
   @typedoc """
@@ -56,6 +58,7 @@ defmodule Explorer.Chain.SignedAuthorization do
     field(:s, :decimal, null: false)
     field(:v, :integer, null: false)
     field(:authority, Hash.Address, null: true)
+    field(:status, Ecto.Enum, values: [:ok, :invalid_chain_id, :invalid_signature, :invalid_nonce], null: true)
 
     belongs_to(:transaction, Transaction,
       foreign_key: :transaction_hash,
@@ -76,5 +79,24 @@ defmodule Explorer.Chain.SignedAuthorization do
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:transaction_hash)
+  end
+
+  @doc """
+    Converts a `SignedAuthorization.t()` to the address changeset setting EIP-7702 contract code and nonce.
+  """
+  @spec to_address_changeset(Ecto.Schema.t()) :: %{
+          hash: Hash.Address.t(),
+          contract_code: binary(),
+          nonce: non_neg_integer()
+        }
+  def to_address_changeset(%__MODULE__{} = struct) do
+    code =
+      if struct.address.bytes == <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>> do
+        nil
+      else
+        %Data{bytes: <<239, 1, 0>> <> struct.address.bytes}
+      end
+
+    %{hash: struct.authority, contract_code: code, nonce: struct.nonce |> Decimal.to_integer()}
   end
 end

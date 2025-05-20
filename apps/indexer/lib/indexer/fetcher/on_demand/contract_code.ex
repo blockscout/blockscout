@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data}
+  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
@@ -118,7 +119,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
                fields_to_update: [:contract_code]
              }
            }) do
-        {:ok, _} ->
+        {:ok, %{addresses: addresses}} ->
+          Accounts.drop(addresses)
+
           # Update EIP7702 proxy addresses to avoid inconsistencies between addresses and proxy_implementations tables.
           # Other proxy types are not handled here, since their bytecode doesn't change the way EIP7702 bytecode does.
           cond do
@@ -126,14 +129,14 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
               :ok
 
             is_nil(fetched_code) ->
-              Implementation.delete_implementations(address.hash)
+              Implementation.delete_implementations([address.hash])
 
             # TODO: it's better to use a generic code like this, but it does unnecessary minimal proxy checks and DB lookups
             # Address.eoa_with_code?(new_address) ->
             #   Proxy.fetch_implementation_address_hash(address.hash, [], [])
 
             delegate = EIP7702.get_delegate_address(fetched_code.bytes) ->
-              Implementation.save_implementation_data([delegate |> to_string()], address.hash, :eip7702, [])
+              Implementation.save_implementation_data([delegate], address.hash, :eip7702, [])
 
             true ->
               :ok
