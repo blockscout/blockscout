@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Add lower bound for base fee ([#12370](https://github.com/blockscout/blockscout/pull/12370))
 - Multichain Search DB export retry queue ([#12377](https://github.com/blockscout/blockscout/issues/12377))
 - Add TAC operation search ([#12367](https://github.com/blockscout/blockscout/issues/12367))
 - Add `internal_transactions_count` prop in api/v2/blocks/:block endpoint ([#12405](https://github.com/blockscout/blockscout/issues/12405))
