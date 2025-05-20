@@ -67,7 +67,7 @@ dump.rdb
 *.env.example
 *.env.local
 *.env.staging
-.devcontainer/.blockscout_config
+.devcontainer/.blockscout_config*
 
 # dets tables
 queue_storage
@@ -75,3 +75,6 @@ tasks_in_progress
 /dets
 
 /temp
+
+docker-compose/services/blockscout-web-data
+docker-compose/services/data

@@ -87,6 +87,12 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     }
   end
 
+  if @bridged_tokens_enabled do
+    @default_fields_to_replace [:name, :symbol, :total_supply, :decimals, :type, :cataloged, :bridged, :skip_metadata]
+  else
+    @default_fields_to_replace [:name, :symbol, :total_supply, :decimals, :type, :cataloged, :skip_metadata]
+  end
+
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
     insert_options =
@@ -99,7 +105,13 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     multi
     |> Multi.run(:filter_token_params, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
-        fn -> filter_token_params(repo, changes_list) end,
+        fn ->
+          filter_token_params(
+            repo,
+            changes_list,
+            options[option_key()][:fields_to_update] || @default_fields_to_replace
+          )
+        end,
         :block_referencing,
         :tokens,
         :filter_token_params
@@ -117,6 +129,9 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
 
   @impl Import.Runner
   def timeout, do: @timeout
+
+  @impl Import.Runner
+  def runner_specific_options, do: [:fields_to_update]
 
   @spec insert(Repo.t(), [map()], %{
           required(:on_conflict) => Import.Runner.on_conflict(),
@@ -149,7 +164,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       )
   end
 
-  defp filter_token_params(repo, changes_list) do
+  defp filter_token_params(repo, changes_list, fields_to_replace) do
     existing_token_map =
       changes_list
       |> Enum.map(& &1[:contract_address_hash])
@@ -161,15 +176,13 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     filtered_tokens =
       Enum.filter(changes_list, fn token ->
         existing_token = existing_token_map[token[:contract_address_hash]]
-        should_update?(token, existing_token)
+        should_update?(token, existing_token, fields_to_replace)
       end)
 
     {:ok, filtered_tokens}
   end
 
   if @bridged_tokens_enabled do
-    @fields_to_replace [:name, :symbol, :total_supply, :decimals, :type, :cataloged, :bridged, :skip_metadata]
-
     def default_on_conflict do
       from(
         token in Token,
@@ -205,8 +218,6 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       )
     end
   else
-    @fields_to_replace [:name, :symbol, :total_supply, :decimals, :type, :cataloged, :skip_metadata]
-
     def default_on_conflict do
       from(
         token in Token,
@@ -241,10 +252,59 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     end
   end
 
-  defp should_update?(_new_token, nil), do: true
+  def market_data_on_conflict do
+    from(
+      token in Token,
+      update: [
+        set: [
+          name: fragment("COALESCE(?, EXCLUDED.name)", token.name),
+          symbol: fragment("COALESCE(?, EXCLUDED.symbol)", token.symbol),
+          type: token.type,
+          fiat_value: fragment("COALESCE(EXCLUDED.fiat_value, ?)", token.fiat_value),
+          circulating_market_cap:
+            fragment("COALESCE(EXCLUDED.circulating_market_cap, ?)", token.circulating_market_cap),
+          volume_24h: fragment("COALESCE(EXCLUDED.volume_24h, ?)", token.volume_24h),
+          icon_url: fragment("COALESCE(?, EXCLUDED.icon_url)", token.icon_url),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at)
+        ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.type, EXCLUDED.fiat_value, EXCLUDED.circulating_market_cap, EXCLUDED.volume_24h, EXCLUDED.icon_url) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+          token.name,
+          token.symbol,
+          token.type,
+          token.fiat_value,
+          token.circulating_market_cap,
+          token.volume_24h,
+          token.icon_url
+        )
+    )
+  end
 
-  defp should_update?(new_token, existing_token) do
-    new_token_params = Map.take(new_token, @fields_to_replace)
+  @doc """
+  Returns a list of market data fields that should be updated.
+
+  This function provides the standard set of fields that require updates when
+  processing market data operations.
+
+  ## Returns
+  - List of atoms representing the market data fields to update: `:name`,
+    `:symbol`, `:type`, `:fiat_value`, `:circulating_market_cap`, and
+    `:volume_24h`
+  """
+  @spec market_data_fields_to_update() :: [
+          :name | :symbol | :type | :fiat_value | :circulating_market_cap | :volume_24h
+        ]
+  def market_data_fields_to_update do
+    [:name, :symbol, :type, :fiat_value, :circulating_market_cap, :volume_24h]
+  end
+
+  defp should_update?(_new_token, nil, _fields_to_replace), do: true
+
+  defp should_update?(new_token, existing_token, fields_to_replace) do
+    new_token_params = Map.take(new_token, fields_to_replace)
 
     Enum.reduce_while(new_token_params, false, fn {key, value}, _acc ->
       if Map.get(existing_token, key) == value do

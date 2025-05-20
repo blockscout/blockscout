@@ -278,7 +278,7 @@ defmodule EthereumJSONRPC.Geth do
       responses
       |> Enum.map(fn
         %{result: %{"structLogs" => nil}} ->
-          []
+          {:ok, []}
 
         %{id: id, result: %{"structLogs" => _} = result} ->
           debug_trace_transaction_response_to_internal_transactions_params(
@@ -448,6 +448,11 @@ defmodule EthereumJSONRPC.Geth do
         log_unknown_type(call)
         acc
     end
+  end
+
+  defp parse_call_tracer_calls({%{} = call, _}, acc, _trace_address, _inner?) do
+    unless allow_empty_traces?(), do: log_unknown_type(call)
+    acc
   end
 
   defp parse_call_tracer_calls(calls, acc, trace_address, _inner) when is_list(calls) do

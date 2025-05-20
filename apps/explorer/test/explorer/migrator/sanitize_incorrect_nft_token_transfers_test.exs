@@ -15,20 +15,27 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfersTest do
         block: block,
         block_number: block.number,
         token_contract_address: token_address,
-        token_ids: nil
+        token_ids: nil,
+        token_type: "ERC-721"
       )
 
-      deposit_log = insert(:log, first_topic: TokenTransfer.weth_deposit_signature())
+      deposit_log = insert(:log, first_topic: TokenTransfer.weth_deposit_signature(), address: token_address)
 
-      insert(:token_transfer,
-        from_address: insert(:address),
-        token_contract_address: token_address,
-        block: deposit_log.block,
-        transaction: deposit_log.transaction,
-        log_index: deposit_log.index
-      )
+      tt =
+        insert(:token_transfer,
+          from_address: insert(:address),
+          token_contract_address: token_address,
+          block: deposit_log.block,
+          transaction: deposit_log.transaction,
+          log_index: deposit_log.index
+        )
 
-      withdrawal_log = insert(:log, first_topic: TokenTransfer.weth_withdrawal_signature())
+      assert deposit_log.block_hash == tt.block_hash and deposit_log.transaction_hash == tt.transaction_hash and
+               deposit_log.index == tt.log_index
+
+      assert tt.token_contract_address_hash == deposit_log.address_hash
+
+      withdrawal_log = insert(:log, first_topic: TokenTransfer.weth_withdrawal_signature(), address: token_address)
 
       insert(:token_transfer,
         from_address: insert(:address),
@@ -45,7 +52,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfersTest do
         token_contract_address: erc1155_token.contract_address,
         amount: nil,
         amounts: nil,
-        token_ids: nil
+        token_ids: nil,
+        token_type: "ERC-1155"
       )
 
       assert MigrationStatus.get_status("sanitize_incorrect_nft") == nil

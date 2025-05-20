@@ -434,6 +434,10 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       insert(:block, number: 0)
       insert(:block, number: 1)
 
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:ok, []}
+      end)
+
       MissingRangesCollector.start_link([])
       start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)

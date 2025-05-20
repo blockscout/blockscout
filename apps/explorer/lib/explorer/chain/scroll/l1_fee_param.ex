@@ -11,8 +11,7 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
 
   use Explorer.Schema
 
-  import Explorer.Chain, only: [get_last_fetched_counter: 1, upsert_last_fetched_counter: 1]
-
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Transaction
 
   @counter_type "scroll_l1_fee_params_fetcher_last_block_number"
@@ -111,7 +110,7 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
   @spec last_l2_block_number() :: non_neg_integer()
   def last_l2_block_number do
     @counter_type
-    |> get_last_fetched_counter()
+    |> LastFetchedCounter.get()
     |> Decimal.to_integer()
   end
 
@@ -127,7 +126,7 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
   """
   @spec set_last_l2_block_number(non_neg_integer()) :: any()
   def set_last_l2_block_number(block_number) do
-    upsert_last_fetched_counter(%{
+    LastFetchedCounter.upsert(%{
       counter_type: @counter_type,
       value: block_number
     })

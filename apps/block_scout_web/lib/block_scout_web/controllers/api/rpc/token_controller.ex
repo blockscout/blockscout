@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.API.RPC.TokenController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias BlockScoutWeb.API.RPC.Helper
   alias Explorer.{Chain, PagingOptions}
@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
     end
   end
 
-  if @bridged_token_enabled do
+  if @bridged_tokens_enabled do
     @api_true [api?: true]
     def bridgedtokenlist(conn, params) do
       import BlockScoutWeb.PagingHelper,

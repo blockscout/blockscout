@@ -23,8 +23,8 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.Blackfort.Validator, as: ValidatorBlackfort
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
+  alias Indexer.Fetcher.MultichainSearchDbExport.Retry, as: MultichainSearchDbExportRetry
   alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
-  alias Indexer.Fetcher.TokenInstance.LegacySanitize, as: TokenInstanceLegacySanitize
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
@@ -56,6 +56,8 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1, as: ArbitrumTrackingMessagesOnL1
   alias Indexer.Fetcher.ZkSync.BatchesStatusTracker, as: ZkSyncBatchesStatusTracker
   alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
+
+  alias Indexer.Migrator.RecoveryWETHTokenTransfers
 
   alias Indexer.Temporary.{
     UncatalogedTokenTransfers,
@@ -135,7 +137,6 @@ defmodule Indexer.Supervisor do
         {TokenInstanceRealtime.Supervisor, [[memory_monitor: memory_monitor]]},
         {TokenInstanceRetry.Supervisor, [[memory_monitor: memory_monitor]]},
         {TokenInstanceSanitize.Supervisor, [[memory_monitor: memory_monitor]]},
-        configure(TokenInstanceLegacySanitize, [[memory_monitor: memory_monitor]]),
         configure(TokenInstanceSanitizeERC721, [[memory_monitor: memory_monitor]]),
         configure(TokenInstanceSanitizeERC1155, [[memory_monitor: memory_monitor]]),
         configure(TransactionAction.Supervisor, [[memory_monitor: memory_monitor]]),
@@ -146,6 +147,7 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
+        {MultichainSearchDbExportRetry.Supervisor, [[memory_monitor: memory_monitor]]},
         {Indexer.Fetcher.RollupL1ReorgMonitor.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(
           Indexer.Fetcher.Optimism.TransactionBatch.Supervisor,
@@ -161,6 +163,18 @@ defmodule Indexer.Supervisor do
         configure(Indexer.Fetcher.Optimism.WithdrawalEvent.Supervisor, [[memory_monitor: memory_monitor]]),
         {
           Indexer.Fetcher.Optimism.EIP1559ConfigUpdate.Supervisor,
+          [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
+        },
+        {
+          Indexer.Fetcher.Optimism.Interop.Message.Supervisor,
+          [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
+        },
+        {
+          Indexer.Fetcher.Optimism.Interop.MessageFailed.Supervisor,
+          [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
+        },
+        {
+          Indexer.Fetcher.Optimism.Interop.MessageQueue.Supervisor,
           [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
         },
         configure(Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
@@ -223,9 +237,13 @@ defmodule Indexer.Supervisor do
         configure(Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
-        configure(Indexer.Fetcher.Filecoin.AddressInfo.Supervisor, [
-          [memory_monitor: memory_monitor]
-        ]),
+        {Indexer.Fetcher.Filecoin.AddressInfo.Supervisor,
+         [
+           [
+             json_rpc_named_arguments: json_rpc_named_arguments,
+             memory_monitor: memory_monitor
+           ]
+         ]},
         {Indexer.Fetcher.Zilliqa.ScillaSmartContracts.Supervisor, [[memory_monitor: memory_monitor]]},
         {Indexer.Fetcher.Beacon.Blob.Supervisor, [[memory_monitor: memory_monitor]]},
 
@@ -241,6 +259,7 @@ defmodule Indexer.Supervisor do
         {PendingOpsCleaner, [[], []]},
         {PendingBlockOperationsSanitizer, [[]]},
         {RootstockData.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+        configure(RecoveryWETHTokenTransfers, [[memory_monitor: memory_monitor]]),
 
         # Block fetchers
         configure(BlockRealtime.Supervisor, [

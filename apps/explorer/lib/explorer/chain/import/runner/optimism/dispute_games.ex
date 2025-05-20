@@ -86,7 +86,7 @@ defmodule Explorer.Chain.Import.Runner.Optimism.DisputeGames do
         set: [
           # don't update `index` as it is a primary key and used for the conflict target
           game_type: fragment("EXCLUDED.game_type"),
-          address: fragment("EXCLUDED.address"),
+          address_hash: fragment("EXCLUDED.address_hash"),
           extra_data: fragment("EXCLUDED.extra_data"),
           created_at: fragment("EXCLUDED.created_at"),
           resolved_at: fragment("EXCLUDED.resolved_at"),
@@ -97,9 +97,9 @@ defmodule Explorer.Chain.Import.Runner.Optimism.DisputeGames do
       ],
       where:
         fragment(
-          "(EXCLUDED.game_type, EXCLUDED.address, EXCLUDED.extra_data, EXCLUDED.created_at, EXCLUDED.resolved_at, EXCLUDED.status) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.game_type, EXCLUDED.address_hash, EXCLUDED.extra_data, EXCLUDED.created_at, EXCLUDED.resolved_at, EXCLUDED.status) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
           game.game_type,
-          game.address,
+          game.address_hash,
           game.extra_data,
           game.created_at,
           game.resolved_at,

@@ -17,6 +17,7 @@ defmodule Explorer.Chain.Transaction.Schema do
     Hash,
     InternalTransaction,
     Log,
+    PendingTransactionOperation,
     SignedAuthorization,
     TokenTransfer,
     TransactionAction,
@@ -286,6 +287,8 @@ defmodule Explorer.Chain.Transaction.Schema do
           references: :hash
         )
 
+        has_one(:pending_operation, PendingTransactionOperation, foreign_key: :transaction_hash, references: :hash)
+
         unquote_splicing(@chain_type_fields)
       end
     end
@@ -323,7 +326,11 @@ defmodule Explorer.Chain.Transaction do
     Wei
   }
 
+  alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
+
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+
+  alias Explorer.Helper, as: ExplorerHelper
 
   alias Explorer.SmartContract.SigProviderInterface
 
@@ -1033,7 +1040,7 @@ defmodule Explorer.Chain.Transaction do
           parse_method_name(decoded_func)
 
         {:error, :contract_not_verified, []} ->
-          "0x" <> Base.encode16(method_id, case: :lower)
+          ExplorerHelper.add_0x_prefix(method_id)
 
         _ ->
           "Transfer"
@@ -1117,42 +1124,100 @@ defmodule Explorer.Chain.Transaction do
   Produces a list of queries starting from the given one and adding filters for
   transactions that are linked to the given address_hash through a direction.
   """
-  def matching_address_queries_list(query, :from, address_hashes) when is_list(address_hashes) do
-    [where(query, [t], t.from_address_hash in ^address_hashes)]
-  end
+  def matching_address_queries_list(query, direction, address_hashes, custom_sorting \\ [])
 
-  def matching_address_queries_list(query, :to, address_hashes) when is_list(address_hashes) do
+  def matching_address_queries_list(query, :from, address_hashes, _custom_sorting) when is_list(address_hashes) do
     [
-      where(query, [t], t.to_address_hash in ^address_hashes),
-      where(query, [t], t.created_contract_address_hash in ^address_hashes)
+      from(
+        a in fragment("SELECT unnest(?) as from_address_hash", type(^address_hashes, {:array, Hash.Address})),
+        as: :address_hashes,
+        cross_lateral_join:
+          transaction in subquery(
+            query
+            |> where([transaction], transaction.from_address_hash == parent_as(:address_hashes).from_address_hash)
+          ),
+        as: :transaction,
+        select: transaction
+      )
     ]
   end
 
-  def matching_address_queries_list(query, _direction, address_hashes) when is_list(address_hashes) do
+  def matching_address_queries_list(query, :to, address_hashes, _custom_sorting) when is_list(address_hashes) do
     [
-      where(query, [t], t.from_address_hash in ^address_hashes),
-      where(query, [t], t.to_address_hash in ^address_hashes),
-      where(query, [t], t.created_contract_address_hash in ^address_hashes)
+      from(
+        a in fragment("SELECT unnest(?) as to_address_hash", type(^address_hashes, {:array, Hash.Address})),
+        as: :address_hashes,
+        cross_lateral_join:
+          transaction in subquery(
+            query
+            |> where([transaction], transaction.to_address_hash == parent_as(:address_hashes).to_address_hash)
+          ),
+        as: :transaction,
+        select: transaction
+      ),
+      from(
+        a in fragment(
+          "SELECT unnest(?) as created_contract_address_hash",
+          type(^address_hashes, {:array, Hash.Address})
+        ),
+        as: :address_hashes,
+        cross_lateral_join:
+          transaction in subquery(
+            query
+            |> where(
+              [transaction],
+              transaction.created_contract_address_hash == parent_as(:address_hashes).created_contract_address_hash
+            )
+          ),
+        as: :transaction,
+        select: transaction
+      )
     ]
   end
 
-  def matching_address_queries_list(query, :from, address_hash) do
-    [where(query, [t], t.from_address_hash == ^address_hash)]
+  def matching_address_queries_list(query, _direction, address_hashes, _custom_sorting) when is_list(address_hashes) do
+    matching_address_queries_list(query, :from, address_hashes) ++
+      matching_address_queries_list(query, :to, address_hashes)
   end
 
-  def matching_address_queries_list(query, :to, address_hash) do
+  # in ^[address_hash] addresses this issue: https://github.com/blockscout/blockscout/issues/12393
+  def matching_address_queries_list(query, :from, address_hash, custom_sorting) do
+    order =
+      for {key, :block_number = value} <- custom_sorting do
+        {value, key}
+      end
+      |> Keyword.get(:block_number, :desc)
+
     [
-      where(query, [t], t.to_address_hash == ^address_hash),
-      where(query, [t], t.created_contract_address_hash == ^address_hash)
+      query
+      |> where([t], t.from_address_hash in ^[address_hash])
+      |> prepend_order_by([t], [{^order, t.from_address_hash}])
     ]
   end
 
-  def matching_address_queries_list(query, _direction, address_hash) do
+  def matching_address_queries_list(query, :to, address_hash, custom_sorting) do
+    order =
+      for {key, :block_number = value} <- custom_sorting do
+        {value, key}
+      end
+      |> Keyword.get(:block_number, :desc)
+
     [
-      where(query, [t], t.from_address_hash == ^address_hash),
-      where(query, [t], t.to_address_hash == ^address_hash),
-      where(query, [t], t.created_contract_address_hash == ^address_hash)
+      query
+      |> where([t], t.to_address_hash in ^[address_hash])
+      |> prepend_order_by([t], [{^order, t.to_address_hash}]),
+      query
+      |> where(
+        [t],
+        t.created_contract_address_hash in ^[address_hash]
+      )
+      |> prepend_order_by([t], [{^order, t.created_contract_address_hash}])
     ]
+  end
+
+  def matching_address_queries_list(query, _direction, address_hash, custom_sorting) do
+    matching_address_queries_list(query, :from, address_hash, custom_sorting) ++
+      matching_address_queries_list(query, :to, address_hash, custom_sorting)
   end
 
   def not_pending_transactions(query) do
@@ -1304,6 +1369,28 @@ defmodule Explorer.Chain.Transaction do
     from(
       t in Transaction,
       where: t.block_number == ^block_number
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transactions for the specified block_numbers
+  """
+  @spec transactions_for_block_numbers([non_neg_integer()]) :: Ecto.Query.t()
+  def transactions_for_block_numbers(block_numbers) do
+    from(
+      t in Transaction,
+      where: t.block_number in ^block_numbers
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transactions by hashes
+  """
+  @spec by_hashes_query([Hash.t()]) :: Ecto.Query.t()
+  def by_hashes_query(hashes) do
+    from(
+      t in Transaction,
+      where: t.hash in ^hashes
     )
   end
 
@@ -1513,13 +1600,14 @@ defmodule Explorer.Chain.Transaction do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     old_ui? = old_ui? || is_tuple(Keyword.get(options, :paging_options, Chain.default_paging_options()).key)
+    sorting_options = Keyword.get(options, :sorting, [])
 
     options
     |> address_to_transactions_tasks_query(false, old_ui?)
     |> not_dropped_or_replaced_transactions()
     |> Chain.join_associations(necessity_by_association)
     |> put_has_token_transfers_to_transaction(old_ui?)
-    |> matching_address_queries_list(direction, address_hash)
+    |> matching_address_queries_list(direction, address_hash, sorting_options)
     |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query) end) end)
   end
 
@@ -1586,17 +1674,11 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  defp compare_custom_sorting([{block_order, :block_number}, {index_order, :index}]) do
-    fn a, b ->
-      case {Helper.compare(a.block_number, b.block_number), Helper.compare(a.index, b.index)} do
-        {:eq, :eq} -> compare_default_sorting(a, b)
-        {:eq, :gt} -> index_order == :desc
-        {:eq, :lt} -> index_order == :asc
-        {:gt, _} -> block_order == :desc
-        {:lt, _} -> block_order == :asc
-      end
-    end
-  end
+  defp compare_custom_sorting([{:desc, :block_number}, {:desc, :index}, {:desc, :inserted_at}, {:asc, :hash}]),
+    do: &compare_default_sorting/2
+
+  defp compare_custom_sorting([{:asc, :block_number}, {:asc, :index}, {:asc, :inserted_at}, {:desc, :hash}]),
+    do: &(!compare_default_sorting(&1, &2))
 
   defp compare_custom_sorting([{:dynamic, :fee, order, _dynamic_fee}]) do
     fn a, b ->
@@ -1644,7 +1726,7 @@ defmodule Explorer.Chain.Transaction do
   def fetch_transactions(paging_options \\ nil, from_block \\ nil, to_block \\ nil, with_pending? \\ false) do
     __MODULE__
     |> order_for_transactions(with_pending?)
-    |> Chain.where_block_number_in_period(from_block, to_block)
+    |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
     |> handle_paging_options(paging_options)
   end
 
@@ -1669,7 +1751,7 @@ defmodule Explorer.Chain.Transaction do
     query = from(transaction in __MODULE__)
 
     query
-    |> Chain.where_block_number_in_period(from_block, to_block)
+    |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
     |> SortingHelper.apply_sorting(sorting, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
   end
@@ -1776,22 +1858,53 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Adds a `has_token_transfers` field to the query via `select_merge` if second argument is `false` and returns
-  the query untouched otherwise.
-  """
-  @spec put_has_token_transfers_to_transaction(Ecto.Query.t() | atom, boolean) :: Ecto.Query.t()
-  def put_has_token_transfers_to_transaction(query, true), do: query
+  Adds a `has_token_transfers` field to the query when second argument is `false`.
 
-  def put_has_token_transfers_to_transaction(query, false) do
-    from(transaction in query,
-      select_merge: %{
-        has_token_transfers:
-          fragment(
-            "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
-            transaction.hash
-          )
-      }
-    )
+  When the second argument is `true`, returns the query untouched. When `false`,
+  adds a field indicating whether the transaction has any token transfers by using
+  a subquery to check if token_transfers table contains the transaction hash.
+
+  ## Parameters
+  - `query`: The Ecto query to be modified
+  - `false_or_true`: Boolean indicating whether to add the field (when `false`) or
+    leave the query untouched (when `true`)
+  - `options`: Additional options for query construction
+    - `:aliased?`: When `true`, uses the aliased transaction reference in the query
+
+  ## Returns
+  - The modified Ecto query with the `has_token_transfers` field added via
+    `select_merge` (when second parameter is `false`)
+  - The original query unchanged (when second parameter is `true`)
+  """
+  @spec put_has_token_transfers_to_transaction(Ecto.Query.t() | atom, boolean, keyword) :: Ecto.Query.t()
+  def put_has_token_transfers_to_transaction(query, old_ui?, options \\ [])
+
+  def put_has_token_transfers_to_transaction(query, true, _options), do: query
+
+  def put_has_token_transfers_to_transaction(query, false, options) do
+    aliased? = Keyword.get(options, :aliased?, false)
+
+    if aliased? do
+      from(transaction in query,
+        select_merge: %{
+          has_token_transfers:
+            fragment(
+              "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
+              as(:transaction).hash
+            )
+        }
+      )
+    else
+      from(transaction in query,
+        select_merge: %{
+          has_token_transfers:
+            fragment(
+              "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
+              transaction.hash
+            )
+        }
+      )
+    end
   end
 
   @doc """
@@ -1983,9 +2096,7 @@ defmodule Explorer.Chain.Transaction do
     Repo.replica().aggregate(
       from(
         t in Transaction,
-        inner_join: b in Block,
-        on: b.number == t.block_number and b.consensus == true,
-        where: t.block_number >= ^from and t.block_number <= ^to
+        where: t.block_number >= ^from and t.block_number <= ^to and t.block_consensus == true
       ),
       :count,
       timeout: :infinity
@@ -2114,7 +2225,7 @@ defmodule Explorer.Chain.Transaction do
         skip_sc_check?
       ) do
     if skip_sc_check? || Address.smart_contract?(to_address) do
-      "0x" <> Base.encode16(method_id, case: :lower)
+      ExplorerHelper.add_0x_prefix(method_id)
     else
       nil
     end

@@ -7,9 +7,13 @@ defmodule Indexer.Application do
 
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
+  alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
+  alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
+  alias Indexer.Fetcher.TokenInstance.Refetch, as: TokenInstanceRefetch
 
   alias Indexer.Memory
 
@@ -32,7 +36,10 @@ defmodule Indexer.Application do
           Indexer.Fetcher.TokenInstance.Sanitize,
           Indexer.Fetcher.TokenInstance.Sanitize.Supervisor
         ) +
-        token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.LegacySanitize, nil) +
+        token_instance_fetcher_pool_size(
+          Indexer.Fetcher.TokenInstance.Refetch,
+          Indexer.Fetcher.TokenInstance.Refetch.Supervisor
+        ) +
         token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC1155, nil) +
         token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC721, nil) + 1
 
@@ -41,9 +48,13 @@ defmodule Indexer.Application do
     base_children = [
       :hackney_pool.child_spec(:token_instance_fetcher, max_connections: pool_size),
       {Memory.Monitor, [%{}, [name: memory_monitor_name]]},
-      {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {CoinBalanceOnDemand.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+      {TokenBalanceOnDemand.Supervisor, []},
       {ContractCodeOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {ContractCreatorOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {NFTCollectionMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenInstanceMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {TokenInstanceRefetch.Supervisor, []},
       {TokenTotalSupplyOnDemand.Supervisor, []},
       {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]}
     ]

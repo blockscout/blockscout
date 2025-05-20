@@ -23,14 +23,20 @@ defmodule BlockScoutWeb.TransactionStateController do
   @burn_address_hash burn_address_hash
 
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do
-    with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
+    with {:ok, transaction_hash} <- Chain.string_to_full_hash(transaction_hash_string),
          {:ok, transaction} <-
            Chain.hash_to_transaction(transaction_hash),
          {:ok, false} <-
            AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <-
            AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
-      state_changes_plus_next_page = transaction |> TransactionStateHelper.state_changes(paging_options(params))
+      state_changes_plus_next_page =
+        transaction
+        |> TransactionStateHelper.state_changes(
+          params
+          |> paging_options()
+          |> Keyword.put(:ip, AccessHelper.conn_to_ip_string(conn))
+        )
 
       {state_changes, next_page} = split_list_by_page(state_changes_plus_next_page)
 
@@ -77,7 +83,7 @@ defmodule BlockScoutWeb.TransactionStateController do
   end
 
   def index(conn, %{"transaction_id" => transaction_hash_string} = params) do
-    with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
+    with {:ok, transaction_hash} <- Chain.string_to_full_hash(transaction_hash_string),
          {:ok, transaction} <-
            Chain.hash_to_transaction(
              transaction_hash,

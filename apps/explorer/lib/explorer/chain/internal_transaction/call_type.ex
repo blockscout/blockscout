@@ -136,4 +136,15 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   @impl Ecto.Type
   @spec type() :: :string
   def type, do: :string
+
+  @doc """
+  Returns the list of `t:t/0` values as `String.t` list
+
+  ## Examples
+
+    > Explorer.Chain.InternalTransaction.CallType.values()
+    ["call", "callcode", "delegatecall", "staticcall"]
+  """
+  @spec values :: [String.t()]
+  def values, do: @call_types |> Enum.map(&to_string/1)
 end

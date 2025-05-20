@@ -13,46 +13,51 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
   require Logger
 
+  alias Explorer.Chain.Cache.LatestL1BlockNumber
   alias Explorer.Chain.RollupReorgMonitorQueue
   alias Indexer.Helper
 
   @fetcher_name :rollup_l1_reorg_monitor
   @start_recheck_period_seconds 3
 
-  @modules_can_use_reorg_monitor (case @chain_type do
-                                    :optimism ->
-                                      [
-                                        Indexer.Fetcher.Optimism.Deposit,
-                                        Indexer.Fetcher.Optimism.OutputRoot,
-                                        Indexer.Fetcher.Optimism.TransactionBatch,
-                                        Indexer.Fetcher.Optimism.WithdrawalEvent
-                                      ]
+  defp modules_can_use_reorg_monitor do
+    chain_type = Application.get_env(:explorer, :chain_type)
 
-                                    :polygon_edge ->
-                                      [
-                                        Indexer.Fetcher.PolygonEdge.Deposit,
-                                        Indexer.Fetcher.PolygonEdge.WithdrawalExit
-                                      ]
+    case chain_type do
+      :optimism ->
+        [
+          Indexer.Fetcher.Optimism.Deposit,
+          Indexer.Fetcher.Optimism.OutputRoot,
+          Indexer.Fetcher.Optimism.TransactionBatch,
+          Indexer.Fetcher.Optimism.WithdrawalEvent
+        ]
 
-                                    :polygon_zkevm ->
-                                      [
-                                        Indexer.Fetcher.PolygonZkevm.BridgeL1
-                                      ]
+      :polygon_edge ->
+        [
+          Indexer.Fetcher.PolygonEdge.Deposit,
+          Indexer.Fetcher.PolygonEdge.WithdrawalExit
+        ]
 
-                                    :scroll ->
-                                      [
-                                        Indexer.Fetcher.Scroll.Batch,
-                                        Indexer.Fetcher.Scroll.BridgeL1
-                                      ]
+      :polygon_zkevm ->
+        [
+          Indexer.Fetcher.PolygonZkevm.BridgeL1
+        ]
 
-                                    :shibarium ->
-                                      [
-                                        Indexer.Fetcher.Shibarium.L1
-                                      ]
+      :scroll ->
+        [
+          Indexer.Fetcher.Scroll.Batch,
+          Indexer.Fetcher.Scroll.BridgeL1
+        ]
 
-                                    _ ->
-                                      []
-                                  end)
+      :shibarium ->
+        [
+          Indexer.Fetcher.Shibarium.L1
+        ]
+
+      _ ->
+        []
+    end
+  end
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -76,21 +81,25 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
   @doc """
     This function initializes L1 blocks reorg monitor for the current rollup
-    defined by CHAIN_TYPE. If the current chain is not a rollup, the module just doesn't start.
+    defined by CHAIN_TYPE. If the current chain is not a rollup, the module just
+    doesn't start.
 
-    The monitor is launched for certain modules of the rollup defined in @modules_can_use_reorg_monitor attribute
-    if a module starts (it can be switched off by configuration parameters). Whether each module starts or not
+    The monitor is launched for certain modules of the rollup defined in
+    `modules_can_use_reorg_monitor/0` function if a module starts (it can be
+    switched off by configuration parameters). Whether each module starts or not
     is defined by the `requires_l1_reorg_monitor?` function of that module.
 
-    The monitor starts an infinite loop of `eth_getBlockByNumber` requests sending them every
-    `block_check_interval` milliseconds to retrieve the latest block number. To read the latest
-    block number, RPC node of Layer 1 is used, which URL is defined by `l1_rpc_url` function of the rollup module.
-    The `block_check_interval` is determined by the `get_block_check_interval` helper function.
-    After the `block_check_interval` is defined, the function sends `:reorg_monitor` message to the GenServer
-    to start the monitor loop.
+    The monitor starts an infinite loop of `eth_getBlockByNumber` requests
+    sending them every `block_check_interval` milliseconds to retrieve the
+    latest block number. To read the latest block number, RPC node of Layer 1 is
+    used, which URL is defined by `l1_rpc_url` function of the rollup module.
+    The `block_check_interval` is determined by the `get_block_check_interval`
+    helper function. After the `block_check_interval` is defined, the function
+    sends `:reorg_monitor` message to the GenServer to start the monitor loop.
 
     ## Returns
-    - `{:ok, state}` with the determined parameters for the monitor loop if at least one rollup module is launched.
+    - `{:ok, state}` with the determined parameters for the monitor loop if at
+      least one rollup module is launched.
     - `{:stop, :normal, %{}}` if the monitor is not needed.
   """
   @impl GenServer
@@ -98,7 +107,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     Logger.metadata(fetcher: @fetcher_name)
 
     modules_using_reorg_monitor =
-      @modules_can_use_reorg_monitor
+      modules_can_use_reorg_monitor()
       |> Enum.filter(& &1.requires_l1_reorg_monitor?())
 
     if Enum.empty?(modules_using_reorg_monitor) do
@@ -152,6 +161,8 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
         } = state
       ) do
     {:ok, latest} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+
+    LatestL1BlockNumber.set_block_number(latest)
 
     if latest < prev_latest do
       Logger.warning("Reorg detected: previous latest block ##{prev_latest}, current latest block ##{latest}.")

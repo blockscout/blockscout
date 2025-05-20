@@ -7,8 +7,8 @@ defmodule BlockScoutWeb.TransactionView do
   alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
-  alias Explorer.Counters.AverageBlockTime
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
+  alias Explorer.Market.Token
   alias Timex.Duration
 
   use Gettext, backend: BlockScoutWeb.Gettext
@@ -277,7 +277,7 @@ defmodule BlockScoutWeb.TransactionView do
     left
     |> Timex.diff(right, :milliseconds)
     |> Duration.from_milliseconds()
-    |> Timex.format_duration(Explorer.Counters.AverageBlockTimeDurationFormat)
+    |> Timex.format_duration(Explorer.Chain.Cache.Counters.Helper.AverageBlockTimeDurationFormat)
     |> case do
       {:error, _} = error -> error
       duration -> {:ok, duration}
