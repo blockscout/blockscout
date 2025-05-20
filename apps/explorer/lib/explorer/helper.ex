@@ -10,6 +10,8 @@ defmodule Explorer.Helper do
   import Ecto.Query, only: [where: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
+  require Logger
+
   @max_safe_integer round(:math.pow(2, 63)) - 1
 
   @spec decode_data(binary() | map(), list()) :: list() | nil
@@ -175,19 +177,200 @@ defmodule Explorer.Helper do
   def decode_json(nil, _), do: nil
 
   def decode_json(data, error_as_tuple?) do
-    if String.valid?(data) do
-      safe_decode_json(data, error_as_tuple?)
+
+    Logger.debug(
+      ["decode_json called with data type: #{inspect(type_of(data))}, sample data: #{inspect(String.slice(to_string(data), 0, 100))}..."],
+      fetcher: :token_instances
+    )
+
+    # Pre-process the data to handle malformed schema fields
+    processed_data = preprocess_json_string(data)
+
+    result = if String.valid?(processed_data) do
+      Logger.debug(
+        ["String is valid UTF-8, decoding directly"],
+        fetcher: :token_instances
+      )
+      safe_decode_json(processed_data, error_as_tuple?)
     else
-      data
+      Logger.debug(
+        ["String is not valid UTF-8, converting from latin1"],
+        fetcher: :token_instances
+      )
+      processed_data
       |> :unicode.characters_to_binary(:latin1)
       |> safe_decode_json(error_as_tuple?)
     end
+
+    Logger.debug(
+      ["decode_json result type: #{inspect(type_of(result))}"],
+      fetcher: :token_instances
+    )
+
+    result
   end
 
+
+  defp preprocess_json_string(data) when is_binary(data) do
+    data
+    |> try_fix_or_remove_schema("inputSchema")
+    |> try_fix_or_remove_schema("outputSchema")
+  end
+
+  defp try_fix_or_remove_schema(data, field_name) do
+    fixed = fix_schema_field(data, field_name)
+
+    Logger.debug(
+      ["[JSON] Fixed schema field: #{field_name}, result sample: #{String.slice(fixed || "", 0, 100)}..."],
+      fetcher: :token_instances
+    )
+
+    # Check if fixed result is still parseable
+    case Jason.decode(fixed) do
+      {:ok, decoded} ->
+        Logger.debug(
+          ["[JSON] Successfully decoded JSON after fixing #{field_name}"],
+          fetcher: :token_instances
+        )
+        fixed
+      {:error, error} ->
+        Logger.warn(
+          ["[JSON] #{field_name} still malformed after fixing, error: #{inspect(error)}, removing field"],
+          fetcher: :token_instances
+        )
+        remove_schema_field(data, field_name)
+    end
+  end
+
+  defp fix_schema_field(json_string, field_name) do
+    pattern = ~r/(\"#{field_name}\":\")(\{.*?\})(\")/s
+
+    Logger.debug(
+      ["[JSON] Fixing schema field: #{field_name}, pattern: #{inspect(pattern)}, json sample: #{String.slice(json_string, 0, 100)}..."],
+      fetcher: :token_instances
+    )
+
+    result = Regex.replace(pattern, json_string, fn _, prefix, schema_content, suffix ->
+      Logger.debug(
+        ["[JSON] Match found for #{field_name}. Prefix: #{prefix}, Content sample: #{String.slice(schema_content, 0, 50)}..., Suffix: #{suffix}"],
+        fetcher: :token_instances
+      )
+
+      escaped_content =
+        schema_content
+        |> String.replace("\\", "\\\\")
+        |> String.replace("\"", "\\\"")
+
+      Logger.debug(
+        ["[JSON] After escaping for #{field_name}. Original length: #{String.length(schema_content)}, Escaped length: #{String.length(escaped_content)}"],
+        fetcher: :token_instances
+      )
+
+      "#{prefix}#{escaped_content}#{suffix}"
+    end)
+
+    Logger.debug(
+      ["[JSON] Regex replacement completed for #{field_name}. Original length: #{String.length(json_string)}, Result length: #{String.length(result)}"],
+      fetcher: :token_instances
+    )
+
+    result
+  end
+
+  defp remove_schema_field(json_string, field_name) do
+    # Match the entire key-value pair, including trailing comma if present
+    pattern = ~r/\"#{field_name}\":\".*?\"(,)?/s
+
+    Logger.debug(
+      ["[JSON] Removing schema field: #{field_name}, pattern: #{inspect(pattern)}, json sample: #{String.slice(json_string || "", 0, 100)}..."],
+      fetcher: :token_instances
+    )
+
+    result = Regex.replace(pattern, json_string, "")
+
+    Logger.debug(
+      ["[JSON] After removing #{field_name}. Original length: #{String.length(json_string || "")}, Result length: #{String.length(result || "")}"],
+      fetcher: :token_instances
+    )
+
+    result
+  end
+
+
+  defp preprocess_json_string(data), do: data
+
+  # Handle schema fields with embedded JSON that needs proper escaping
+  defp fix_schema_field(json_string, field_name) when is_binary(json_string) do
+    # Match the schema field: "fieldName":"{...}"
+    # We look for the field name followed by a JSON object, capturing the start and end markers
+    pattern = ~r/(\"#{field_name}\":\")(\{.*?\})(\")/
+
+    Logger.debug(
+      ["[JSON] Using second fix_schema_field implementation for #{field_name}, pattern: #{inspect(pattern)}, json sample: #{String.slice(json_string, 0, 100)}..."],
+      fetcher: :token_instances
+    )
+
+    result = Regex.replace(pattern, json_string, fn _, prefix, schema_content, suffix ->
+      Logger.debug(
+        ["[JSON] Second impl: Match found for #{field_name}. Content sample: #{String.slice(schema_content, 0, 50)}..."],
+        fetcher: :token_instances
+      )
+
+      # Double-escape the backslashes and quotes in the schema content
+      escaped_content =
+        schema_content
+        |> String.replace("\\", "\\\\")  # First escape backslashes
+        |> String.replace("\"", "\\\"")  # Then escape quotes
+
+      Logger.debug(
+        ["[JSON] Second impl: After escaping for #{field_name}. Original length: #{String.length(schema_content)}, Escaped length: #{String.length(escaped_content)}"],
+        fetcher: :token_instances
+      )
+
+      # Reconstruct the field with properly escaped content
+      "#{prefix}#{escaped_content}#{suffix}"
+    end)
+
+    Logger.debug(
+      ["[JSON] Second impl: Regex replacement completed for #{field_name}. Original length: #{String.length(json_string)}, Result length: #{String.length(result)}"],
+      fetcher: :token_instances
+    )
+
+    result
+  end
+
+  defp fix_schema_field(data, _), do: data
+
   defp safe_decode_json(data, error_as_tuple?) do
+    require Logger
     case Jason.decode(data) do
-      {:ok, decoded} -> decoded
-      {:error, reason} -> if error_as_tuple?, do: {:error, reason}, else: %{error: data}
+      {:ok, decoded} ->
+        Logger.debug(
+          ["JSON successfully decoded"],
+          fetcher: :token_instances
+        )
+        decoded
+      {:error, reason} ->
+        Logger.debug(
+          ["JSON decode error: #{inspect(reason)}"],
+          fetcher: :token_instances
+        )
+        if error_as_tuple?, do: {:error, reason}, else: %{error: data}
+    end
+  end
+
+  defp type_of(value) do
+    cond do
+      is_nil(value) -> "nil"
+      is_binary(value) -> "binary"
+      is_boolean(value) -> "boolean"
+      is_atom(value) -> "atom"
+      is_list(value) -> "list"
+      is_map(value) -> "map"
+      is_tuple(value) -> "tuple"
+      is_integer(value) -> "integer"
+      is_float(value) -> "float"
+      true -> "unknown"
     end
   end
 
