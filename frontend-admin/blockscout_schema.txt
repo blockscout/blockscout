@@ -1,0 +1,608 @@
+                            ?column?                            
+----------------------------------------------------------------
+ TABLE: account_api_keys                                       +
+   identity_id bigint                                          +
+   name character varying                                      +
+   value uuid                                                  +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: account_api_plans                                      +
+   id integer                                                  +
+   max_req_per_second smallint                                 +
+   name character varying                                      +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: account_custom_abis                                    +
+   id integer                                                  +
+   identity_id bigint                                          +
+   abi jsonb                                                   +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   address_hash_hash bytea                                     +
+   address_hash bytea                                          +
+   name bytea                                                  +
+   user_created boolean
+ TABLE: account_identities                                     +
+   id bigint                                                   +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   plan_id bigint                                              +
+   uid bytea                                                   +
+   uid_hash bytea                                              +
+   email bytea                                                 +
+   avatar bytea                                                +
+   verification_email_sent_at timestamp without time zone      +
+   otp_sent_at timestamp without time zone
+ TABLE: account_public_tags_requests                           +
+   id bigint                                                   +
+   identity_id bigint                                          +
+   company character varying                                   +
+   website character varying                                   +
+   tags character varying                                      +
+   description text                                            +
+   additional_comment character varying                        +
+   request_type character varying                              +
+   is_owner boolean                                            +
+   remove_reason text                                          +
+   request_id character varying                                +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   addresses ARRAY                                             +
+   email bytea                                                 +
+   full_name bytea
+ TABLE: account_tag_addresses                                  +
+   id bigint                                                   +
+   identity_id bigint                                          +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   address_hash_hash bytea                                     +
+   name bytea                                                  +
+   address_hash bytea                                          +
+   user_created boolean
+ TABLE: account_tag_transactions                               +
+   id bigint                                                   +
+   identity_id bigint                                          +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   transaction_hash_hash bytea                                 +
+   name bytea                                                  +
+   transaction_hash bytea                                      +
+   user_created boolean
+ TABLE: account_watchlist_addresses                            +
+   id bigint                                                   +
+   watchlist_id bigint                                         +
+   watch_coin_input boolean                                    +
+   watch_coin_output boolean                                   +
+   watch_erc_20_input boolean                                  +
+   watch_erc_20_output boolean                                 +
+   watch_erc_721_input boolean                                 +
+   watch_erc_721_output boolean                                +
+   watch_erc_1155_input boolean                                +
+   watch_erc_1155_output boolean                               +
+   notify_email boolean                                        +
+   notify_epns boolean                                         +
+   notify_feed boolean                                         +
+   notify_inapp boolean                                        +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   address_hash_hash bytea                                     +
+   name bytea                                                  +
+   address_hash bytea                                          +
+   watch_erc_404_input boolean                                 +
+   watch_erc_404_output boolean                                +
+   user_created boolean
+ TABLE: account_watchlist_notifications                        +
+   id bigint                                                   +
+   watchlist_address_id bigint                                 +
+   direction character varying                                 +
+   type character varying                                      +
+   method character varying                                    +
+   block_number integer                                        +
+   amount numeric                                              +
+   transaction_fee numeric                                     +
+   viewed_at timestamp without time zone                       +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   name bytea                                                  +
+   subject bytea                                               +
+   from_address_hash bytea                                     +
+   to_address_hash bytea                                       +
+   transaction_hash bytea                                      +
+   subject_hash bytea                                          +
+   from_address_hash_hash bytea                                +
+   to_address_hash_hash bytea                                  +
+   transaction_hash_hash bytea                                 +
+   watchlist_id bigint
+ TABLE: account_watchlists                                     +
+   id bigint                                                   +
+   name character varying                                      +
+   identity_id bigint                                          +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: address_coin_balances                                  +
+   address_hash bytea                                          +
+   block_number bigint                                         +
+   value numeric                                               +
+   value_fetched_at timestamp without time zone                +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: address_coin_balances_daily                            +
+   address_hash bytea                                          +
+   day date                                                    +
+   value numeric                                               +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: address_contract_code_fetch_attempts                   +
+   address_hash bytea                                          +
+   retries_number smallint                                     +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: address_current_token_balances                         +
+   id bigint                                                   +
+   address_hash bytea                                          +
+   block_number bigint                                         +
+   token_contract_address_hash bytea                           +
+   value numeric                                               +
+   value_fetched_at timestamp without time zone                +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   old_value numeric                                           +
+   token_id numeric                                            +
+   token_type character varying
+ TABLE: address_names                                          +
+   address_hash bytea                                          +
+   name character varying                                      +
+   primary boolean                                             +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   metadata jsonb                                              +
+   id integer
+ TABLE: address_tags                                           +
+   id integer                                                  +
+   label character varying                                     +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   display_name character varying
+ TABLE: address_to_tags                                        +
+   id bigint                                                   +
+   address_hash bytea                                          +
+   tag_id integer                                              +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: address_token_balances                                 +
+   id bigint                                                   +
+   address_hash bytea                                          +
+   block_number bigint                                         +
+   token_contract_address_hash bytea                           +
+   value numeric                                               +
+   value_fetched_at timestamp without time zone                +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   token_id numeric                                            +
+   token_type character varying                                +
+   refetch_after timestamp without time zone                   +
+   retries_count smallint
+ TABLE: addresses                                              +
+   fetched_coin_balance numeric                                +
+   fetched_coin_balance_block_number bigint                    +
+   hash bytea                                                  +
+   contract_code bytea                                         +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   nonce integer                                               +
+   decompiled boolean                                          +
+   verified boolean                                            +
+   gas_used bigint                                             +
+   transactions_count integer                                  +
+   token_transfers_count integer
+ TABLE: administrators                                         +
+   id bigint                                                   +
+   role character varying                                      +
+   user_id bigint                                              +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: block_rewards                                          +
+   address_hash bytea                                          +
+   address_type character varying                              +
+   block_hash bytea                                            +
+   reward numeric                                              +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: block_second_degree_relations                          +
+   nephew_hash bytea                                           +
+   uncle_hash bytea                                            +
+   uncle_fetched_at timestamp without time zone                +
+   index integer
+ TABLE: blocks                                                 +
+   consensus boolean                                           +
+   difficulty numeric                                          +
+   gas_limit numeric                                           +
+   gas_used numeric                                            +
+   hash bytea                                                  +
+   miner_hash bytea                                            +
+   nonce bytea                                                 +
+   number bigint                                               +
+   parent_hash bytea                                           +
+   size integer                                                +
+   timestamp timestamp without time zone                       +
+   total_difficulty numeric                                    +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   refetch_needed boolean                                      +
+   base_fee_per_gas numeric                                    +
+   is_empty boolean
+ TABLE: constants                                              +
+   key character varying                                       +
+   value character varying                                     +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: contract_methods                                       +
+   id bigint                                                   +
+   identifier integer                                          +
+   abi jsonb                                                   +
+   type character varying                                      +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: contract_verification_status                           +
+   uid character varying                                       +
+   status smallint                                             +
+   address_hash bytea                                          +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: emission_rewards                                       +
+   block_range int8range                                       +
+   reward numeric
+ TABLE: event_notifications                                    +
+   id bigint                                                   +
+   data text
+ TABLE: internal_transactions                                  +
+   call_type character varying                                 +
+   created_contract_code bytea                                 +
+   error character varying                                     +
+   gas numeric                                                 +
+   gas_used numeric                                            +
+   index integer                                               +
+   init bytea                                                  +
+   input bytea                                                 +
+   output bytea                                                +
+   trace_address ARRAY                                         +
+   type character varying                                      +
+   value numeric                                               +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   created_contract_address_hash bytea                         +
+   from_address_hash bytea                                     +
+   to_address_hash bytea                                       +
+   transaction_hash bytea                                      +
+   block_number integer                                        +
+   transaction_index integer                                   +
+   block_hash bytea                                            +
+   block_index integer
+ TABLE: last_fetched_counters                                  +
+   counter_type character varying                              +
+   value numeric                                               +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: logs                                                   +
+   data bytea                                                  +
+   index integer                                               +
+   first_topic bytea                                           +
+   second_topic bytea                                          +
+   third_topic bytea                                           +
+   fourth_topic bytea                                          +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   address_hash bytea                                          +
+   transaction_hash bytea                                      +
+   block_hash bytea                                            +
+   block_number integer
+ TABLE: market_history                                         +
+   id bigint                                                   +
+   date date                                                   +
+   closing_price numeric                                       +
+   opening_price numeric                                       +
+   market_cap numeric                                          +
+   tvl numeric                                                 +
+   secondary_coin boolean
+ TABLE: massive_blocks                                         +
+   number bigint                                               +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: migrations_status                                      +
+   migration_name character varying                            +
+   status character varying                                    +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   meta jsonb
+ TABLE: missing_balance_of_tokens                              +
+   token_contract_address_hash bytea                           +
+   block_number bigint                                         +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   currently_implemented boolean
+ TABLE: missing_block_ranges                                   +
+   id bigint                                                   +
+   from_number integer                                         +
+   to_number integer                                           +
+   priority smallint
+ TABLE: multichain_search_db_export_retry_queue                +
+   hash bytea                                                  +
+   hash_type USER-DEFINED                                      +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: pending_block_operations                               +
+   block_hash bytea                                            +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   block_number integer
+ TABLE: pending_transaction_operations                         +
+   transaction_hash bytea                                      +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: proxy_implementations                                  +
+   proxy_address_hash bytea                                    +
+   address_hashes ARRAY                                        +
+   names ARRAY                                                 +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   proxy_type USER-DEFINED
+ TABLE: proxy_smart_contract_verification_statuses             +
+   uid character varying                                       +
+   status smallint                                             +
+   contract_address_hash bytea                                 +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: scam_address_badge_mappings                            +
+   address_hash bytea                                          +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: schema_migrations                                      +
+   version bigint                                              +
+   inserted_at timestamp without time zone
+ TABLE: signed_authorizations                                  +
+   transaction_hash bytea                                      +
+   index integer                                               +
+   chain_id bigint                                             +
+   address bytea                                               +
+   nonce numeric                                               +
+   v integer                                                   +
+   r numeric                                                   +
+   s numeric                                                   +
+   authority bytea                                             +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: smart_contract_audit_reports                           +
+   id bigint                                                   +
+   address_hash bytea                                          +
+   is_approved boolean                                         +
+   submitter_name character varying                            +
+   submitter_email character varying                           +
+   is_project_owner boolean                                    +
+   project_name character varying                              +
+   project_url character varying                               +
+   audit_company_name character varying                        +
+   audit_report_url character varying                          +
+   audit_publish_date date                                     +
+   request_id character varying                                +
+   comment text                                                +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: smart_contracts                                        +
+   id bigint                                                   +
+   name character varying                                      +
+   compiler_version character varying                          +
+   optimization boolean                                        +
+   contract_source_code text                                   +
+   abi jsonb                                                   +
+   address_hash bytea                                          +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   constructor_arguments text                                  +
+   optimization_runs bigint                                    +
+   evm_version character varying                               +
+   external_libraries ARRAY                                    +
+   verified_via_sourcify boolean                               +
+   is_vyper_contract boolean                                   +
+   partially_verified boolean                                  +
+   file_path text                                              +
+   is_changed_bytecode boolean                                 +
+   bytecode_checked_at timestamp without time zone             +
+   contract_code_md5 character varying                         +
+   compiler_settings jsonb                                     +
+   verified_via_eth_bytecode_db boolean                        +
+   license_type smallint                                       +
+   verified_via_verifier_alliance boolean                      +
+   certified boolean                                           +
+   is_blueprint boolean                                        +
+   language smallint
+ TABLE: smart_contracts_additional_sources                     +
+   id bigint                                                   +
+   file_name character varying                                 +
+   contract_source_code text                                   +
+   address_hash bytea                                          +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: token_instance_metadata_refetch_attempts               +
+   token_contract_address_hash bytea                           +
+   token_id numeric                                            +
+   retries_number smallint                                     +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: token_instances                                        +
+   token_id numeric                                            +
+   token_contract_address_hash bytea                           +
+   metadata jsonb                                              +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   error character varying                                     +
+   owner_address_hash bytea                                    +
+   owner_updated_at_block bigint                               +
+   owner_updated_at_log_index integer                          +
+   refetch_after timestamp without time zone                   +
+   retries_count smallint                                      +
+   thumbnails jsonb                                            +
+   media_type character varying                                +
+   cdn_upload_error character varying                          +
+   is_banned boolean                                           +
+   metadata_url character varying                              +
+   skip_metadata_url boolean
+ TABLE: token_transfer_token_id_migrator_progress              +
+   id bigint                                                   +
+   last_processed_block_number integer                         +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: token_transfers                                        +
+   transaction_hash bytea                                      +
+   log_index integer                                           +
+   from_address_hash bytea                                     +
+   to_address_hash bytea                                       +
+   amount numeric                                              +
+   token_contract_address_hash bytea                           +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   block_number integer                                        +
+   block_hash bytea                                            +
+   amounts ARRAY                                               +
+   token_ids ARRAY                                             +
+   token_type character varying                                +
+   block_consensus boolean
+ TABLE: tokens                                                 +
+   name text                                                   +
+   symbol text                                                 +
+   total_supply numeric                                        +
+   decimals numeric                                            +
+   type character varying                                      +
+   cataloged boolean                                           +
+   contract_address_hash bytea                                 +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   holder_count integer                                        +
+   skip_metadata boolean                                       +
+   fiat_value numeric                                          +
+   circulating_market_cap numeric                              +
+   total_supply_updated_at_block bigint                        +
+   icon_url text                                               +
+   is_verified_via_admin_panel boolean                         +
+   volume_24h numeric                                          +
+   metadata_updated_at timestamp without time zone
+ TABLE: transaction_actions                                    +
+   hash bytea                                                  +
+   protocol USER-DEFINED                                       +
+   data jsonb                                                  +
+   type USER-DEFINED                                           +
+   log_index integer                                           +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: transaction_forks                                      +
+   hash bytea                                                  +
+   index integer                                               +
+   uncle_hash bytea                                            +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: transaction_stats                                      +
+   id bigint                                                   +
+   date date                                                   +
+   number_of_transactions integer                              +
+   gas_used numeric                                            +
+   total_fee numeric
+ TABLE: transactions                                           +
+   cumulative_gas_used numeric                                 +
+   error character varying                                     +
+   gas numeric                                                 +
+   gas_price numeric                                           +
+   gas_used numeric                                            +
+   hash bytea                                                  +
+   index integer                                               +
+   input bytea                                                 +
+   nonce integer                                               +
+   r numeric                                                   +
+   s numeric                                                   +
+   status integer                                              +
+   v numeric                                                   +
+   value numeric                                               +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   block_hash bytea                                            +
+   block_number integer                                        +
+   from_address_hash bytea                                     +
+   to_address_hash bytea                                       +
+   created_contract_address_hash bytea                         +
+   created_contract_code_indexed_at timestamp without time zone+
+   earliest_processing_start timestamp without time zone       +
+   old_block_hash bytea                                        +
+   revert_reason text                                          +
+   max_priority_fee_per_gas numeric                            +
+   max_fee_per_gas numeric                                     +
+   type integer                                                +
+   has_error_in_internal_transactions boolean                  +
+   block_timestamp timestamp without time zone                 +
+   block_consensus boolean
+ TABLE: user_contacts                                          +
+   id bigint                                                   +
+   email USER-DEFINED                                          +
+   user_id bigint                                              +
+   primary boolean                                             +
+   verified boolean                                            +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: user_operations                                        +
+   hash bytea                                                  +
+   sender bytea                                                +
+   nonce bytea                                                 +
+   init_code bytea                                             +
+   call_data bytea                                             +
+   call_gas_limit numeric                                      +
+   verification_gas_limit numeric                              +
+   pre_verification_gas numeric                                +
+   max_fee_per_gas numeric                                     +
+   max_priority_fee_per_gas numeric                            +
+   paymaster_and_data bytea                                    +
+   signature bytea                                             +
+   aggregator bytea                                            +
+   aggregator_signature bytea                                  +
+   entry_point bytea                                           +
+   transaction_hash bytea                                      +
+   block_number integer                                        +
+   block_hash bytea                                            +
+   bundle_index integer                                        +
+   index integer                                               +
+   user_logs_start_index integer                               +
+   user_logs_count integer                                     +
+   bundler bytea                                               +
+   factory bytea                                               +
+   paymaster bytea                                             +
+   status boolean                                              +
+   revert_reason bytea                                         +
+   gas numeric                                                 +
+   gas_price numeric                                           +
+   gas_used numeric                                            +
+   sponsor_type USER-DEFINED                                   +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   entry_point_version USER-DEFINED
+ TABLE: user_ops_indexer_migrations                            +
+   version character varying                                   +
+   applied_at bigint
+ TABLE: users                                                  +
+   id bigint                                                   +
+   username USER-DEFINED                                       +
+   password_hash character varying                             +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: validators                                             +
+   address_hash bytea                                          +
+   is_validator boolean                                        +
+   payout_key_hash bytea                                       +
+   info_updated_at_block bigint                                +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone
+ TABLE: withdrawals                                            +
+   index integer                                               +
+   validator_index integer                                     +
+   amount numeric                                              +
+   inserted_at timestamp without time zone                     +
+   updated_at timestamp without time zone                      +
+   address_hash bytea                                          +
+   block_hash bytea
+(62 rows)
+

@@ -10,6 +10,8 @@ defmodule Explorer.Helper do
   import Ecto.Query, only: [where: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
+  require Logger
+
   @max_safe_integer round(:math.pow(2, 63)) - 1
 
   @spec decode_data(binary() | map(), list()) :: list() | nil
@@ -175,19 +177,166 @@ defmodule Explorer.Helper do
   def decode_json(nil, _), do: nil
 
   def decode_json(data, error_as_tuple?) do
-    if String.valid?(data) do
-      safe_decode_json(data, error_as_tuple?)
+
+    Logger.debug(
+      ["decode_json called with data type: #{inspect(type_of(data))}, sample data: #{inspect(String.slice(to_string(data), 0, 1000))}..."],
+      fetcher: :token_instances
+    )
+
+    # Pre-process the data to handle malformed schema fields
+    processed_data = preprocess_json_string(data)
+
+    result = if String.valid?(processed_data) do
+      Logger.debug(
+        ["String is valid UTF-8, decoding directly"],
+        fetcher: :token_instances
+      )
+      safe_decode_json(processed_data, error_as_tuple?)
     else
-      data
+      Logger.debug(
+        ["String is not valid UTF-8, converting from latin1"],
+        fetcher: :token_instances
+      )
+      processed_data
       |> :unicode.characters_to_binary(:latin1)
       |> safe_decode_json(error_as_tuple?)
     end
+
+    Logger.debug(
+      ["decode_json result type: #{inspect(type_of(result))}"],
+      fetcher: :token_instances
+    )
+
+    result
   end
 
+
+  defp preprocess_json_string(data) when is_binary(data) do
+    # First fix both schema fields without trying to decode after each fix
+    fixed_input = fix_schema_field(data, "inputSchema")
+    fixed_both = fix_schema_field(fixed_input, "outputSchema")
+
+    Logger.debug(
+      ["[JSON] Fixed both schema fields, result sample: #{String.slice(fixed_both || "", 0, 1000)}..."],
+      fetcher: :token_instances
+    )
+
+    # After fixing both fields, check if JSON is now parseable
+    case Jason.decode(fixed_both) do
+      {:ok, decoded} ->
+        Logger.debug(
+          ["[JSON] Successfully decoded JSON after fixing both schema fields"],
+          fetcher: :token_instances
+        )
+        fixed_both
+      {:error, error} ->
+        Logger.warn(
+          ["[JSON] JSON still malformed after fixing both schema fields, error: #{inspect(error)}, removing fields"],
+          fetcher: :token_instances
+        )
+        # Remove both schema fields if still not parseable
+        data
+        |> remove_schema_field("inputSchema")
+        |> remove_schema_field("outputSchema")
+    end
+  end
+
+  # Removed try_fix_or_remove_schema since we now fix both fields first before attempting to decode
+
+  # fix_schema_field is defined below with a more specific guard clause
+
+  defp remove_schema_field(json_string, field_name) do
+    # Match the entire key-value pair, including trailing comma if present
+    pattern = ~r/\"#{field_name}\":\".*?\"(,)?/s
+
+    Logger.debug(
+      ["[JSON] Removing schema field: #{field_name}, pattern: #{inspect(pattern)}, json sample: #{String.slice(json_string || "", 0, 1000)}..."],
+      fetcher: :token_instances
+    )
+
+    result = Regex.replace(pattern, json_string, "")
+
+    Logger.debug(
+      ["[JSON] After removing #{field_name}. Original length: #{String.length(json_string || "")}, Result length: #{String.length(result || "")}"],
+      fetcher: :token_instances
+    )
+
+    result
+  end
+
+
+  defp preprocess_json_string(data), do: data
+
+
+  defp fix_schema_field(json_string, field_name) when is_binary(json_string) do
+    # Remove problematic newline characters
+    sanitized = json_string
+    |> String.replace(~r/\r\n/, "") # Remove escaped newlines (\r\n)
+    |> String.replace(~r/\n/, "")   # Remove actual newlines
+
+    # Use field_name as a parameter in the regex
+    opening_pattern = ~r/("#{field_name}":)"(?=\{)/
+    step1 = String.replace(sanitized, opening_pattern, "\\1")
+
+    closing_pattern = ~r/(\})(")(?=(,|\}|\s|$))/
+    result = String.replace(step1, closing_pattern, "\\1")
+  end
+
+  defp extract_json_like_string(<<h::utf8, rest::binary>>) when h == ?{ do
+    extract_balanced(rest, 1, "{", "")
+  end
+
+  defp extract_balanced(<<>>, _, _, acc), do: {acc, ""}
+  defp extract_balanced(<<h::utf8, rest::binary>>, depth, acc_prefix, acc) do
+    case h do
+      ?{ -> extract_balanced(rest, depth + 1, acc_prefix, acc <> <<h>>)
+      ?} ->
+        new_acc = acc <> <<h>>
+
+        if depth == 1 do
+          {acc_prefix <> new_acc, rest}
+        else
+          extract_balanced(rest, depth - 1, acc_prefix, new_acc)
+        end
+
+      _ ->
+        extract_balanced(rest, depth, acc_prefix, acc <> <<h>>)
+    end
+  end
+
+
+  defp fix_schema_field(data, _), do: data
+
   defp safe_decode_json(data, error_as_tuple?) do
+    require Logger
     case Jason.decode(data) do
-      {:ok, decoded} -> decoded
-      {:error, reason} -> if error_as_tuple?, do: {:error, reason}, else: %{error: data}
+      {:ok, decoded} ->
+        Logger.debug(
+          ["JSON successfully decoded"],
+          fetcher: :token_instances
+        )
+        decoded
+      {:error, reason} ->
+        Logger.debug(
+          ["JSON decode error: #{inspect(reason)}"],
+          fetcher: :token_instances
+        )
+        if error_as_tuple?, do: {:error, reason}, else: %{error: data}
+    end
+  end
+
+  defp type_of(value) do
+    cond do
+      is_nil(value) -> "nil"
+      is_binary(value) -> "binary"
+      is_boolean(value) -> "boolean"
+      is_atom(value) -> "atom"
+      is_list(value) -> "list"
+      is_map(value) -> "map"
+      is_tuple(value) -> "tuple"
+      is_integer(value) -> "integer"
+      is_float(value) -> "float"
+      true -> "unknown"
     end
   end
 

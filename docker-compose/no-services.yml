@@ -33,7 +33,7 @@ services:
         API_V1_READ_METHODS_DISABLED: "false"
         DISABLE_WEBAPP: "false"
         API_V1_WRITE_METHODS_DISABLED: "false"
-        ADMIN_PANEL_ENABLED: ""
+        ADMIN_PANEL_ENABLED: "true"
         RELEASE_VERSION: 8.1.0
     links:
       - db:database

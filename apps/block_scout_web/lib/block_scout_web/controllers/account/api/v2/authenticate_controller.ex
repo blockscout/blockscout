@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   use BlockScoutWeb, :controller
 
+  require IO
+
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
@@ -258,6 +260,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   def put_auth_to_session(conn, auth) do
     with {:ok, %{id: uid} = session} <- Identity.find_or_create(auth),
          {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)} do
+      IO.inspect(session, label: ":rocket: AUTH0 Auth struct")
       conn
       |> Conn.fetch_session()
       |> configure_session(renew: true)

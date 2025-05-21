@@ -37,6 +37,7 @@ services:
         ETHEREUM_JSONRPC_HTTP_URL: https://finney.uomi.ai/
         ETHEREUM_JSONRPC_TRACE_URL: https://finney.uomi.ai/
         ETHEREUM_JSONRPC_WS_URL: wss://finney.uomi.ai/
+        ADMIN_PANEL_ENABLED: "true"
         CHAIN_ID: '4386'
 
   nft_media_handler:
