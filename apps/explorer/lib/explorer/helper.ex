@@ -179,7 +179,7 @@ defmodule Explorer.Helper do
   def decode_json(data, error_as_tuple?) do
 
     Logger.debug(
-      ["decode_json called with data type: #{inspect(type_of(data))}, sample data: #{inspect(String.slice(to_string(data), 0, 100))}..."],
+      ["decode_json called with data type: #{inspect(type_of(data))}, sample data: #{inspect(String.slice(to_string(data), 0, 1000))}..."],
       fetcher: :token_instances
     )
 
@@ -217,7 +217,7 @@ defmodule Explorer.Helper do
     fixed_both = fix_schema_field(fixed_input, "outputSchema")
 
     Logger.debug(
-      ["[JSON] Fixed both schema fields, result sample: #{String.slice(fixed_both || "", 0, 100)}..."],
+      ["[JSON] Fixed both schema fields, result sample: #{String.slice(fixed_both || "", 0, 1000)}..."],
       fetcher: :token_instances
     )
 
@@ -250,7 +250,7 @@ defmodule Explorer.Helper do
     pattern = ~r/\"#{field_name}\":\".*?\"(,)?/s
 
     Logger.debug(
-      ["[JSON] Removing schema field: #{field_name}, pattern: #{inspect(pattern)}, json sample: #{String.slice(json_string || "", 0, 100)}..."],
+      ["[JSON] Removing schema field: #{field_name}, pattern: #{inspect(pattern)}, json sample: #{String.slice(json_string || "", 0, 1000)}..."],
       fetcher: :token_instances
     )
 
@@ -274,7 +274,7 @@ defmodule Explorer.Helper do
     pattern = ~r/(\"#{field_name}\":\")(\{.*?\})(\")/
 
     Logger.debug(
-      ["[JSON] Using second fix_schema_field implementation for #{field_name}, pattern: #{inspect(pattern)}, json sample: #{String.slice(json_string, 0, 100)}..."],
+      ["[JSON] Using second fix_schema_field implementation for #{field_name}, pattern: #{inspect(pattern)}, json sample: #{String.slice(json_string, 0, 1000)}..."],
       fetcher: :token_instances
     )
 
