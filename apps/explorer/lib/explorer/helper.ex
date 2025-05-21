@@ -269,24 +269,17 @@ defmodule Explorer.Helper do
 
 
   defp fix_schema_field(json_string, field_name) when is_binary(json_string) do
-    # Completely remove problematic newline characters from the string
+    # Remove problematic newline characters
     sanitized = json_string
     |> String.replace(~r/\\n/, "")  # Remove escaped newlines (\n)
     |> String.replace(~r/\n/, "")   # Remove actual newlines
-    
-    # Pattern to match: "fieldName":"{ - remove the quote after :
-    opening_pattern = ~s("#{field_name}":")
-    replacement = ~s("#{field_name}":)
-    
-    # First replace the opening quote
-    step1 = String.replace(sanitized, opening_pattern, replacement)
-    
-    # Now find and remove the closing quote that occurs before a comma or closing brace
-    # We need to look for the pattern: }" or }",
-    closing_pattern = ~r/\}"(,|\}|\s|$)/
-    replacement_pattern = ~s(}\1)
-    
-    String.replace(step1, closing_pattern, replacement_pattern)
+
+    # Use field_name as a parameter in the regex
+    opening_pattern = ~r/("#{field_name}":)"(?=\{)/
+    step1 = String.replace(sanitized, opening_pattern, "\\1")
+
+    closing_pattern = ~r/(\})(")(?=(,|\}|\s|$))/
+    result = String.replace(step1, closing_pattern, "\\1")
   end
 
   defp extract_json_like_string(<<h::utf8, rest::binary>>) when h == ?{ do
