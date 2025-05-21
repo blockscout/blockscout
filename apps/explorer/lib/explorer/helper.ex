@@ -212,6 +212,9 @@ defmodule Explorer.Helper do
 
 
   defp preprocess_json_string(data) when is_binary(data) do
+    # Escape newlines in string values before fixing schema fields
+    data = escape_newlines_in_json_strings(data)
+
     # First fix both schema fields without trying to decode after each fix
     fixed_input = fix_schema_field(data, "inputSchema")
     fixed_both = fix_schema_field(fixed_input, "outputSchema")
@@ -670,4 +673,33 @@ defmodule Explorer.Helper do
 
     Enum.map(params, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
   end
+
+  defp escape_newlines_in_json_strings(json) when is_binary(json) do
+    # This function escapes unescaped newlines inside quoted JSON string values
+    chars = String.graphemes(json)
+    escape_newlines_in_json_strings(chars, false, false, [])
+  end
+
+  defp escape_newlines_in_json_strings([], _in_string, _escaped, acc), do: Enum.reverse(acc) |> Enum.join("")
+
+  defp escape_newlines_in_json_strings(["\\""" | rest], false, _escaped, acc), do:
+    escape_newlines_in_json_strings(rest, true, false, ["\""] ++ acc)
+
+  defp escape_newlines_in_json_strings(["\\""" | rest], true, _escaped, acc), do:
+    escape_newlines_in_json_strings(rest, false, false, ["\""] ++ acc)
+
+  defp escape_newlines_in_json_strings(["\\""" | rest], in_string, _escaped, acc), do:
+    escape_newlines_in_json_strings(rest, in_string, true, ["\""] ++ acc)
+
+  defp escape_newlines_in_json_strings(["\\" | rest], in_string, _escaped, acc), do:
+    escape_newlines_in_json_strings(rest, in_string, true, ["\\"] ++ acc)
+
+  defp escape_newlines_in_json_strings(["\n" | rest], true, false, acc), do:
+    escape_newlines_in_json_strings(rest, true, false, ["\\n"] ++ acc)
+
+  defp escape_newlines_in_json_strings([c | rest], in_string, true, acc), do:
+    escape_newlines_in_json_strings(rest, in_string, false, [c] ++ acc)
+
+  defp escape_newlines_in_json_strings([c | rest], in_string, false, acc), do:
+    escape_newlines_in_json_strings(rest, in_string, false, [c] ++ acc)
 end
