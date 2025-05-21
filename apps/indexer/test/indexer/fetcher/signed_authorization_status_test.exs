@@ -6,7 +6,9 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
 
   import Mox
 
+  alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Data, SignedAuthorization, SmartContract.Proxy.Models.Implementation}
+  alias Explorer.TestHelper
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.SignedAuthorizationStatus
 
@@ -20,6 +22,9 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
 
   setup do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
+    Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
 
     :ok
   end
@@ -181,35 +186,33 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
         address4_string = to_string(address4.hash)
 
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, 2, fn
-          %{id: _, method: "eth_chainId", params: []}, _options ->
-            {:ok, "0x1"}
-
-          [
-            %{
-              id: id2,
-              method: "eth_getTransactionCount",
-              params: [^address4_string, ^block1_quantity]
-            },
-            %{
-              id: id1,
-              method: "eth_getTransactionCount",
-              params: [^address3_string, ^block1_quantity]
-            },
-            %{
-              id: id3,
-              method: "eth_getTransactionCount",
-              params: [^address1_string, ^block2_quantity]
-            }
-          ],
-          _options ->
-            {:ok,
-             [
-               %{id: id1, result: integer_to_quantity(300)},
-               %{id: id2, result: integer_to_quantity(400)},
-               %{id: id3, result: integer_to_quantity(104)}
-             ]}
+        |> expect(:json_rpc, fn [
+                                  %{
+                                    id: id2,
+                                    method: "eth_getTransactionCount",
+                                    params: [^address4_string, ^block1_quantity]
+                                  },
+                                  %{
+                                    id: id1,
+                                    method: "eth_getTransactionCount",
+                                    params: [^address3_string, ^block1_quantity]
+                                  },
+                                  %{
+                                    id: id3,
+                                    method: "eth_getTransactionCount",
+                                    params: [^address1_string, ^block2_quantity]
+                                  }
+                                ],
+                                _options ->
+          {:ok,
+           [
+             %{id: id1, result: integer_to_quantity(300)},
+             %{id: id2, result: integer_to_quantity(400)},
+             %{id: id3, result: integer_to_quantity(104)}
+           ]}
         end)
+
+        TestHelper.get_chain_id_mock()
       end
 
       addresses = [address1, address2, address3, address4, address5]
