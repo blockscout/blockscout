@@ -269,128 +269,56 @@ defmodule Explorer.Helper do
 
   # Handle schema fields with embedded JSON that needs proper escaping
   defp fix_schema_field(json_string, field_name) when is_binary(json_string) do
-    field_pattern = "\"#{field_name}\":"
-    
-    Logger.debug(
-      ["[JSON] Using character-by-character parsing for #{field_name}, looking for pattern: #{field_pattern}, json sample: #{String.slice(json_string, 0, 1000)}..."],
-      fetcher: :token_instances
-    )
-    
-    # Find the field in the JSON string
-    case :binary.match(json_string, field_pattern) do
-      :nomatch -> 
-        # Field not found, return original string
-        json_string
-        
-      {start_pos, pattern_len} ->
-        # Position right after the field name and colon
-        pos_after_field = start_pos + pattern_len
-        
-        # Check if we have a string that starts with a quote after the field name
-        case Enum.drop(String.graphemes(json_string), pos_after_field) do
-          ["\"" | rest] ->
-            # Find the opening bracket position
-            case Enum.find_index(rest, fn c -> c == "{" end) do
-              nil -> 
-                # No opening bracket found after the quotes, return original
-                json_string
-                
-              open_bracket_pos ->
-                # Position right after the opening quote
-                content_start = pos_after_field + 1
-                # Position of the opening bracket (relative to content_start)
-                bracket_pos = content_start + open_bracket_pos
-                
-                # Extract the content between quotes, but we need to find the end quote
-                # by tracking nested brackets
-                {json_obj, remaining} = extract_balanced_json(Enum.drop(String.graphemes(json_string), bracket_pos))
-                
-                if json_obj != nil do
-                  # Get the prefix (everything before the JSON object)
-                  prefix = String.slice(json_string, 0, bracket_pos)
-                  
-                  # Convert json_obj back to string
-                  json_obj_str = Enum.join(json_obj, "")
-                  
-                  # Find the position of the closing quote after the JSON object
-                  close_quote_pos = Enum.find_index(remaining, fn c -> c == "\"" end)
-                  
-                  if close_quote_pos != nil do
-                    # Suffix is everything after the closing quote
-                    suffix_start = bracket_pos + String.length(json_obj_str) + close_quote_pos + 1
-                    suffix = String.slice(json_string, suffix_start, String.length(json_string) - suffix_start)
-                    
-                    # Double-escape the backslashes and quotes in the JSON object
-                    escaped_content =
-                      json_obj_str
-                      |> String.replace("\\", "\\\\")  # First escape backslashes
-                      |> String.replace("\"", "\\\"")  # Then escape quotes
-                    
-                    Logger.debug(
-                      ["[JSON] Found and escaped JSON object for #{field_name}. Original length: #{String.length(json_obj_str)}, Escaped length: #{String.length(escaped_content)}"],
-                      fetcher: :token_instances
-                    )
-                    
-                    # Reconstruct with properly escaped content
-                    result = "#{prefix}#{escaped_content}\"#{suffix}"
-                    
-                    Logger.debug(
-                      ["[JSON] Character parsing completed for #{field_name}. Original length: #{String.length(json_string)}, Result length: #{String.length(result)}"],
-                      fetcher: :token_instances
-                    )
-                    
-                    result
-                  else
-                    # No closing quote found, return original
-                    json_string
-                  end
-                else
-                  # Couldn't parse the JSON object, return original
-                  json_string
-                end
-            end
-            
-          _ -> 
-            # No quote after field name, return original
-            json_string
+    # Look for the pattern: "fieldName":"{...}"
+    search = "\"#{field_name}\":\"{"
+    case :binary.match(json_string, search) do
+      {start_pos, _len} ->
+        obj_start = start_pos + byte_size(search) - 1
+        {obj_end, _} = find_matching_brace(json_string, obj_start)
+        if obj_end do
+          # Extract the object string
+          object_str = binary_part(json_string, obj_start, obj_end - obj_start + 1)
+          # Escape the object string
+          escaped_content =
+            object_str
+            |> String.replace("\\", "\\\\")
+            |> String.replace("\"", "\\\"")
+          # Reconstruct the string
+          prefix = binary_part(json_string, 0, obj_start)
+          suffix = binary_part(json_string, obj_end + 1, byte_size(json_string) - obj_end - 1)
+          prefix <> escaped_content <> suffix
+        else
+          json_string
         end
-    end
-  end
-  
-  # Extract a balanced JSON object, handling nested brackets
-  # Returns {json_object_chars, remaining_chars} where json_object_chars includes the opening bracket
-  defp extract_balanced_json(chars) do
-    case chars do
-      ["{" | rest] -> do_extract_balanced_json(rest, ["{"], 1)
-      _ -> {nil, chars}
-    end
-  end
-  
-  defp do_extract_balanced_json(chars, acc, open_count) do
-    case {chars, open_count} do
-      {_, 0} -> {Enum.reverse(acc), chars}
-      {[], _} -> {nil, []}  # Unbalanced JSON
-      
-      # Tracking nested structures
-      {["\\", next | rest], count} -> 
-        # Handle escaped characters (like \", \\, etc.)
-        do_extract_balanced_json(rest, [next, "\\" | acc], count)
-        
-      {["{" | rest], count} -> 
-        # Found an opening bracket, increment counter
-        do_extract_balanced_json(rest, ["{" | acc], count + 1)
-        
-      {["}" | rest], count} -> 
-        # Found a closing bracket, decrement counter
-        do_extract_balanced_json(rest, ["}" | acc], count - 1)
-        
-      {[char | rest], count} -> 
-        # Any other character
-        do_extract_balanced_json(rest, [char | acc], count)
+      :nomatch ->
+        json_string
     end
   end
 
-  defp fix_schema_field(data, _), do: data
+  defp find_matching_brace(str, start_pos) do
+    do_find_matching_brace(str, start_pos, 0, 0)
+  end
+
+  defp do_find_matching_brace(str, pos, depth, count) do
+    if pos >= byte_size(str), do: {nil, count}
+    <<_::binary-size(pos), c, _rest::binary>> = str
+    cond do
+      c == ?{ ->
+        if depth == 0 do
+          do_find_matching_brace(str, pos + 1, 1, count + 1)
+        else
+          do_find_matching_brace(str, pos + 1, depth + 1, count + 1)
+        end
+      c == ?} ->
+        if depth == 1 do
+          {pos, count + 1}
+        else
+          do_find_matching_brace(str, pos + 1, depth - 1, count + 1)
+        end
+      true ->
+        do_find_matching_brace(str, pos + 1, depth, count + 1)
+    end
+  end
 
   defp safe_decode_json(data, error_as_tuple?) do
     require Logger
