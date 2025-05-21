@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.ApiSpec do
   This module defines the API specification for the BlockScoutWeb application.
   """
   alias BlockScoutWeb.{Routers.ApiRouter}
-  alias OpenApiSpex.{Info, OpenApi, Paths, Server}
+  alias OpenApiSpex.{Contact, Info, OpenApi, Paths, Server}
   alias Utils.Helper
 
   @behaviour OpenApi
@@ -16,7 +16,10 @@ defmodule BlockScoutWeb.ApiSpec do
       ],
       info: %Info{
         title: "Blockscout",
-        version: to_string(Application.spec(:block_scout_web, :vsn))
+        version: to_string(Application.spec(:block_scout_web, :vsn)),
+        contact: %Contact{
+          email: "info@blockscout.com"
+        }
       },
       paths: Paths.from_router(ApiRouter)
     }

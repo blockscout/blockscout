@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
           type: :object,
           properties: %{
             id: %Schema{type: :string, example: "f03248220", nullable: true},
-            robust: %Schema{type: :string, example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq", nullable: true},
+            robust: @filecoin_robust_address_schema,
             actor_type: %Schema{
               type: :string,
               # credo:disable-for-next-line
@@ -87,7 +87,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
               type: :object,
               properties: %{
                 creator_address_hash: General.AddressHashNullable,
-                creation_transaction_hash: General.TransactionHashNullable,
+                creation_transaction_hash: General.FullHashNullable,
                 token: %Schema{allOf: [Token], nullable: true},
                 coin_balance: General.IntegerStringNullable,
                 exchange_rate: General.FloatStringNullable,

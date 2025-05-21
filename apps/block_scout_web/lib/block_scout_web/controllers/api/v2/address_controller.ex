@@ -136,17 +136,12 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   tags ["addresses"]
 
   operation :address,
-    summary: "Get address details",
-    description: "Returns detailed information about address",
-    parameters: [
-      address_hash_param: [
-        in: :path,
-        type: Schemas.General.AddressHash,
-        required: true
-      ]
-    ],
+    summary: "Retrieve detailed information about a specific address or contract",
+    description:
+      "Retrieves detailed information for a specific address, including balance, transaction count, and metadata.",
+    parameters: [address_hash_param()],
     responses: [
-      ok: {"Address response", "application/json", Schemas.Address.Response},
+      ok: {"Detailed information about the specified address.", "application/json", Schemas.Address.Response},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
     ]
@@ -200,6 +195,17 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :counters,
+    summary: "Get activity count stats for a specific address",
+    description:
+      "Retrieves count statistics for an address, including transactions, token transfers, gas usage, and validations.",
+    parameters: [address_hash_param()],
+    responses: [
+      ok: {"Count statistics for the specified address", "application/json", Schemas.Address.Counters},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/counters` endpoint.
 
@@ -241,6 +247,19 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :token_balances,
+    summary: "List all token balances held by a specific address",
+    description:
+      "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, and ERC-1155 tokens.",
+    parameters: [address_hash_param()],
+    responses: [
+      ok:
+        {"All token balances for the specified address.", "application/json",
+         %Schema{type: :array, items: Schemas.Address.TokenBalance}},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/token-balances` endpoint (retrieves the token balances for a given address)
 
@@ -279,6 +298,31 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       end
     end
   end
+
+  operation :transactions,
+    summary: "List transactions involving a specific address with to-from filtering",
+    description:
+      "Retrieves transactions involving a specific address, with optional filtering for transactions sent from or to the address.",
+    parameters: [
+      address_hash_param(),
+      direction_filter_param(),
+      sorting_params(),
+      order_params()
+    ],
+    responses: [
+      ok:
+        {"All transactions for the specified address.", "application/json",
+         paginated_response(
+           items: Schemas.Transaction,
+           next_page_params_example: %{
+             "block_number" => 12_345_678,
+             "index" => 0,
+             "items_count" => 50
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
 
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/transactions` endpoint (retrieves transactions for a given address)
@@ -335,6 +379,26 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       end
     end
   end
+
+  operation :token_transfers,
+    summary: "List token transfers involving a specific address with filtering options",
+    description:
+      "Retrieves token transfers involving a specific address, with optional filtering by token type, direction, and specific token.",
+    parameters: [address_hash_param(), direction_filter_param(), token_transfer_type_param()],
+    responses: [
+      ok:
+        {"All token transfers for the specified address.", "application/json",
+         paginated_response(
+           items: Schemas.TokenTransfer,
+           next_page_params_example: %{
+             "block_number" => 12_345_678,
+             "index" => 0,
+             "items_count" => 50
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
 
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/token-transfers` endpoint (retrieves token transfers for a given address)
@@ -404,6 +468,27 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       end
     end
   end
+
+  operation :internal_transactions,
+    summary: "List all internal transactions involving a specific address",
+    description:
+      "Retrieves all internal transactions involving a specific address, with optional filtering for internal transactions sent from or to the address.",
+    parameters: [address_hash_param(), direction_filter_param()],
+    responses: [
+      ok:
+        {"All internal transactions for the specified address.", "application/json",
+         Schemas.General.paginated_response(
+           items: Schemas.InternalTransaction,
+           next_page_params_example: %{
+             "block_number" => 22_530_770,
+             "index" => 8,
+             "items_count" => 50,
+             "transaction_index" => 8
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
 
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/internal-transactions` endpoint (retrieves internal transactions for a given address)
