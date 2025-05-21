@@ -271,7 +271,7 @@ defmodule Explorer.Helper do
   defp fix_schema_field(json_string, field_name) when is_binary(json_string) do
     # Remove problematic newline characters
     sanitized = json_string
-    |> String.replace(~r/\\n/, "")  # Remove escaped newlines (\n)
+    |> String.replace(~r/\r\n/, "") # Remove escaped newlines (\r\n)
     |> String.replace(~r/\n/, "")   # Remove actual newlines
 
     # Use field_name as a parameter in the regex
