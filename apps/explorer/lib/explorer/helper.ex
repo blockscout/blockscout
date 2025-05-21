@@ -212,9 +212,6 @@ defmodule Explorer.Helper do
 
 
   defp preprocess_json_string(data) when is_binary(data) do
-    # Escape newlines in string values before fixing schema fields
-    data = escape_newlines_in_json_strings(data)
-
     # First fix both schema fields without trying to decode after each fix
     fixed_input = fix_schema_field(data, "inputSchema")
     fixed_both = fix_schema_field(fixed_input, "outputSchema")
@@ -272,56 +269,45 @@ defmodule Explorer.Helper do
 
   # Handle schema fields with embedded JSON that needs proper escaping
   defp fix_schema_field(json_string, field_name) when is_binary(json_string) do
-    # Look for the pattern: "fieldName":"{...}"
-    search = "\"#{field_name}\":\"{"
-    case :binary.match(json_string, search) do
-      {start_pos, _len} ->
-        obj_start = start_pos + byte_size(search) - 1
-        {obj_end, _} = find_matching_brace(json_string, obj_start)
-        if obj_end do
-          # Extract the object string
-          object_str = binary_part(json_string, obj_start, obj_end - obj_start + 1)
-          # Escape the object string
-          escaped_content =
-            object_str
-            |> String.replace("\\", "\\\\")
-            |> String.replace("\"", "\\\"")
-          # Reconstruct the string
-          prefix = binary_part(json_string, 0, obj_start)
-          suffix = binary_part(json_string, obj_end + 1, byte_size(json_string) - obj_end - 1)
-          prefix <> escaped_content <> suffix
-        else
-          json_string
-        end
-      :nomatch ->
-        json_string
-    end
+    # Match the schema field: "fieldName":"{...}"
+    # We look for the field name followed by a JSON object, capturing the start and end markers
+    pattern = ~r/(\"#{field_name}\":\")(\{.*?\})(\")/
+
+    Logger.debug(
+      ["[JSON] Using second fix_schema_field implementation for #{field_name}, pattern: #{inspect(pattern)}, json sample: #{String.slice(json_string, 0, 1000)}..."],
+      fetcher: :token_instances
+    )
+
+    result = Regex.replace(pattern, json_string, fn _, prefix, schema_content, suffix ->
+      Logger.debug(
+        ["[JSON] Second impl: Match found for #{field_name}. Content sample: #{String.slice(schema_content, 0, 50)}..."],
+        fetcher: :token_instances
+      )
+
+      # Double-escape the backslashes and quotes in the schema content
+      escaped_content =
+        schema_content
+        |> String.replace("\\", "\\\\")  # First escape backslashes
+        |> String.replace("\"", "\\\"")  # Then escape quotes
+
+      Logger.debug(
+        ["[JSON] Second impl: After escaping for #{field_name}. Original length: #{String.length(schema_content)}, Escaped length: #{String.length(escaped_content)}"],
+        fetcher: :token_instances
+      )
+
+      # Reconstruct the field with properly escaped content
+      "#{prefix}#{escaped_content}#{suffix}"
+    end)
+
+    Logger.debug(
+      ["[JSON] Second impl: Regex replacement completed for #{field_name}. Original length: #{String.length(json_string)}, Result length: #{String.length(result)}"],
+      fetcher: :token_instances
+    )
+
+    result
   end
 
-  defp find_matching_brace(str, start_pos) do
-    do_find_matching_brace(str, start_pos, 0, 0)
-  end
-
-  defp do_find_matching_brace(str, pos, depth, count) do
-    if pos >= byte_size(str), do: {nil, count}
-    <<_::binary-size(pos), c, _rest::binary>> = str
-    cond do
-      c == ?{ ->
-        if depth == 0 do
-          do_find_matching_brace(str, pos + 1, 1, count + 1)
-        else
-          do_find_matching_brace(str, pos + 1, depth + 1, count + 1)
-        end
-      c == ?} ->
-        if depth == 1 do
-          {pos, count + 1}
-        else
-          do_find_matching_brace(str, pos + 1, depth - 1, count + 1)
-        end
-      true ->
-        do_find_matching_brace(str, pos + 1, depth, count + 1)
-    end
-  end
+  defp fix_schema_field(data, _), do: data
 
   defp safe_decode_json(data, error_as_tuple?) do
     require Logger
@@ -673,33 +659,4 @@ defmodule Explorer.Helper do
 
     Enum.map(params, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
   end
-
-  defp escape_newlines_in_json_strings(json) when is_binary(json) do
-    # This function escapes unescaped newlines inside quoted JSON string values
-    chars = String.graphemes(json)
-    escape_newlines_in_json_strings(chars, false, false, [])
-  end
-
-  defp escape_newlines_in_json_strings([], _in_string, _escaped, acc), do: Enum.reverse(acc) |> Enum.join("")
-
-  defp escape_newlines_in_json_strings(["\"" | rest], false, _escaped, acc), do:
-    escape_newlines_in_json_strings(rest, true, false, ["\""] ++ acc)
-
-  defp escape_newlines_in_json_strings(["\"" | rest], true, _escaped, acc), do:
-    escape_newlines_in_json_strings(rest, false, false, ["\""] ++ acc)
-
-  defp escape_newlines_in_json_strings(["\"" | rest], in_string, _escaped, acc), do:
-    escape_newlines_in_json_strings(rest, in_string, true, ["\""] ++ acc)
-
-  defp escape_newlines_in_json_strings(["\\" | rest], in_string, _escaped, acc), do:
-    escape_newlines_in_json_strings(rest, in_string, true, ["\\"] ++ acc)
-
-  defp escape_newlines_in_json_strings(["\n" | rest], true, false, acc), do:
-    escape_newlines_in_json_strings(rest, true, false, ["\\n"] ++ acc)
-
-  defp escape_newlines_in_json_strings([c | rest], in_string, true, acc), do:
-    escape_newlines_in_json_strings(rest, in_string, false, [c] ++ acc)
-
-  defp escape_newlines_in_json_strings([c | rest], in_string, false, acc), do:
-    escape_newlines_in_json_strings(rest, in_string, false, [c] ++ acc)
 end
