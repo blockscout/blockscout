@@ -269,27 +269,22 @@ defmodule Explorer.Helper do
 
 
   defp fix_schema_field(json_string, field_name) when is_binary(json_string) do
-    case :binary.split(json_string, ~s("#{field_name}": "), [:global]) do
-      [before, rest] ->
-        {raw_embedded, remaining} = extract_json_like_string(rest)
-
-        case Jason.decode(raw_embedded) do
-          {:ok, embedded_json} ->
-            # Reconstruct a proper JSON with embedded object
-            reconstructed =
-              before <>
-              ~s("#{field_name}": ) <>
-              Jason.encode!(embedded_json) <>
-              remaining
-
-            reconstructed
-
-          _ ->
-            json_string  # If we can't decode, return original
-        end
-
-      _ ->
-        json_string
+    # First replace the opening pattern - convert "fieldName":" to "fieldName":
+    # This removes the opening quote after the colon
+    step1 = String.replace(json_string, ~s("#{field_name}":"), ~s("#{field_name}":))
+    
+    # Now find where that field value ends and remove the closing quote
+    # We need to find the position right after the field value
+    case Regex.run(~r/"#{field_name}":\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/, step1) do
+      [match] ->
+        # Found the complete object pattern - nothing to do, quotes already removed
+        step1
+        
+      nil ->
+        # No match means we might need to find and remove a trailing quote
+        # Find the pattern where the quoted object ends with a quote and
+        # is followed by comma or closing brace
+        String.replace(step1, ~r/"#{field_name}":\{((?:.|\n)*?)\}"(,|\})/, ~s("#{field_name}":{\\1}}\\2))
     end
   end
 
