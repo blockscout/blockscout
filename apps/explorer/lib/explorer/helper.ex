@@ -267,38 +267,54 @@ defmodule Explorer.Helper do
 
   defp preprocess_json_string(data), do: data
 
-  # Handle schema fields with embedded JSON that needs proper escaping
+
   defp fix_schema_field(json_string, field_name) when is_binary(json_string) do
-    # Match the schema field: "fieldName":"{...}"
-    # We look for the field name followed by a JSON object, capturing the start and end markers
-    pattern = ~r/(\"#{field_name}\":\")(\{.*?\})(\")/
+    case :binary.split(json_string, ~s("#{field_name}": "), [:global]) do
+      [before, rest] ->
+        {raw_embedded, remaining} = extract_json_like_string(rest)
 
-    Logger.debug(
-      ["[JSON] Using second fix_schema_field implementation for #{field_name}, pattern: #{inspect(pattern)}, json sample: #{String.slice(json_string, 0, 1000)}..."],
-      fetcher: :token_instances
-    )
+        case Jason.decode(raw_embedded) do
+          {:ok, embedded_json} ->
+            # Reconstruct a proper JSON with embedded object
+            reconstructed =
+              before <>
+              ~s("#{field_name}": ) <>
+              Jason.encode!(embedded_json) <>
+              remaining
 
-    result = Regex.replace(pattern, json_string, fn _, prefix, schema_content, suffix ->
-      Logger.debug(
-        ["[JSON] Second impl: Match found for #{field_name}. Content sample: #{String.slice(schema_content, 0, 50)}..."],
-        fetcher: :token_instances
-      )
+            reconstructed
 
-       # Remove the outer quotes from prefix and suffix
-      prefix = String.trim_trailing(prefix, "\"")
-      suffix = String.trim_leading(suffix, "\"")
+          _ ->
+            json_string  # If we can't decode, return original
+        end
 
-      # Reconstruct the field with properly escaped content
-      "#{prefix}:#{schema_content}#{suffix}"
-    end)
-
-    Logger.debug(
-      ["[JSON] Second impl: Regex replacement completed for #{field_name}. Original length: #{String.length(json_string)}, Result length: #{String.length(result)}"],
-      fetcher: :token_instances
-    )
-
-    result
+      _ ->
+        json_string
+    end
   end
+
+  defp extract_json_like_string(<<h::utf8, rest::binary>>) when h == ?{ do
+    extract_balanced(rest, 1, "{", "")
+  end
+
+  defp extract_balanced(<<>>, _, _, acc), do: {acc, ""}
+  defp extract_balanced(<<h::utf8, rest::binary>>, depth, acc_prefix, acc) do
+    case h do
+      ?{ -> extract_balanced(rest, depth + 1, acc_prefix, acc <> <<h>>)
+      ?} ->
+        new_acc = acc <> <<h>>
+
+        if depth == 1 do
+          {acc_prefix <> new_acc, rest}
+        else
+          extract_balanced(rest, depth - 1, acc_prefix, new_acc)
+        end
+
+      _ ->
+        extract_balanced(rest, depth, acc_prefix, acc <> <<h>>)
+    end
+  end
+
 
   defp fix_schema_field(data, _), do: data
 
