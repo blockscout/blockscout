@@ -816,6 +816,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     case error do
       nil ->
         Logger.error("Failed to get M2M JWT")
+        # log error_msg
+        Logger.error("Error: #{error_msg}")
         {:error, @misconfiguration_detected}
 
       {:error, %OAuth2.Response{status_code: 403, body: %{"errorCode" => "insufficient_scope"} = body}} ->
