@@ -269,23 +269,19 @@ defmodule Explorer.Helper do
 
 
   defp fix_schema_field(json_string, field_name) when is_binary(json_string) do
-    # First replace the opening pattern - convert "fieldName":" to "fieldName":
-    # This removes the opening quote after the colon
-    step1 = String.replace(json_string, ~s("#{field_name}":"), ~s("#{field_name}":))
+    # Pattern to match: "fieldName":"{ - remove the quote after :
+    opening_pattern = ~s("#{field_name}":")
+    replacement = ~s("#{field_name}":)
     
-    # Now find where that field value ends and remove the closing quote
-    # We need to find the position right after the field value
-    case Regex.run(~r/"#{field_name}":\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/, step1) do
-      [match] ->
-        # Found the complete object pattern - nothing to do, quotes already removed
-        step1
-        
-      nil ->
-        # No match means we might need to find and remove a trailing quote
-        # Find the pattern where the quoted object ends with a quote and
-        # is followed by comma or closing brace
-        String.replace(step1, ~r/"#{field_name}":\{((?:.|\n)*?)\}"(,|\})/, ~s("#{field_name}":{\\1}}\\2))
-    end
+    # First replace the opening quote
+    step1 = String.replace(json_string, opening_pattern, replacement)
+    
+    # Now find and remove the closing quote that occurs before a comma or closing brace
+    # We need to look for the pattern: }" or }",
+    closing_pattern = ~r/\}"(,|\}|\s|$)/
+    replacement_pattern = ~s(}\1)
+    
+    String.replace(step1, closing_pattern, replacement_pattern)
   end
 
   defp extract_json_like_string(<<h::utf8, rest::binary>>) when h == ?{ do
