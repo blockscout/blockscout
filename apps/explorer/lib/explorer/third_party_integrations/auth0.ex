@@ -48,6 +48,9 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       "grant_type" => "client_credentials"
     }
 
+    # log the body
+    Logger.debug("Requesting M2M JWT with body: #{inspect(body)}")
+
     case HTTPoison.post("https://#{config[:domain]}/oauth/token", Jason.encode!(body), @json_content_type, []) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         case Jason.decode!(body) do
