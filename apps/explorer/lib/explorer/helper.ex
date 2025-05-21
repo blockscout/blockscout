@@ -682,13 +682,13 @@ defmodule Explorer.Helper do
 
   defp escape_newlines_in_json_strings([], _in_string, _escaped, acc), do: Enum.reverse(acc) |> Enum.join("")
 
-  defp escape_newlines_in_json_strings(["\\""" | rest], false, _escaped, acc), do:
+  defp escape_newlines_in_json_strings(["\"" | rest], false, _escaped, acc), do:
     escape_newlines_in_json_strings(rest, true, false, ["\""] ++ acc)
 
-  defp escape_newlines_in_json_strings(["\\""" | rest], true, _escaped, acc), do:
+  defp escape_newlines_in_json_strings(["\"" | rest], true, _escaped, acc), do:
     escape_newlines_in_json_strings(rest, false, false, ["\""] ++ acc)
 
-  defp escape_newlines_in_json_strings(["\\""" | rest], in_string, _escaped, acc), do:
+  defp escape_newlines_in_json_strings(["\"" | rest], in_string, _escaped, acc), do:
     escape_newlines_in_json_strings(rest, in_string, true, ["\""] ++ acc)
 
   defp escape_newlines_in_json_strings(["\\" | rest], in_string, _escaped, acc), do:
