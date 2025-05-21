@@ -284,19 +284,12 @@ defmodule Explorer.Helper do
         fetcher: :token_instances
       )
 
-      # Double-escape the backslashes and quotes in the schema content
-      escaped_content =
-        schema_content
-        |> String.replace("\\", "\\\\")  # First escape backslashes
-        |> String.replace("\"", "\\\"")  # Then escape quotes
-
-      Logger.debug(
-        ["[JSON] Second impl: After escaping for #{field_name}. Original length: #{String.length(schema_content)}, Escaped length: #{String.length(escaped_content)}"],
-        fetcher: :token_instances
-      )
+       # Remove the outer quotes from prefix and suffix
+      prefix = String.trim_trailing(prefix, "\"")
+      suffix = String.trim_leading(suffix, "\"")
 
       # Reconstruct the field with properly escaped content
-      "#{prefix}#{escaped_content}#{suffix}"
+      "#{prefix}:#{schema_content}#{suffix}"
     end)
 
     Logger.debug(
