@@ -313,13 +313,13 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
               {entry, {updated_authorizations, known_nonces |> Map.delete(authorization.authority)}}
 
             Map.has_key?(known_nonces, authorization.authority) and
-                authorization.nonce != Map.get(known_nonces, authorization.authority) ->
+                not Decimal.eq?(authorization.nonce, Map.get(known_nonces, authorization.authority)) ->
               new_authorization = %{authorization | status: :invalid_nonce}
 
               {{:authorization, new_authorization}, {[new_authorization | updated_authorizations], known_nonces}}
 
             Map.has_key?(known_nonces, authorization.authority) and
-                authorization.nonce == Map.get(known_nonces, authorization.authority) ->
+                Decimal.eq?(authorization.nonce, Map.get(known_nonces, authorization.authority)) ->
               new_authorization = %{authorization | status: :ok}
 
               {
