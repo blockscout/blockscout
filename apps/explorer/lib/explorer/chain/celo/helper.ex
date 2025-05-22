@@ -117,7 +117,6 @@ defmodule Explorer.Chain.Celo.Helper do
     l2_migration_block_number = Application.get_env(:explorer, :celo)[:l2_migration_block]
 
     if l2_migration_block_number do
-      # TODO: should we use <= or < for the block number?
       block_number < l2_migration_block_number
     else
       true
