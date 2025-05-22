@@ -101,7 +101,7 @@ defmodule Explorer.Chain.SignedAuthorization do
   """
   @spec to_address_params(Ecto.Schema.t()) :: %{
           hash: Hash.Address.t(),
-          contract_code: Date.t() | nil,
+          contract_code: Data.t() | nil,
           nonce: non_neg_integer()
         }
   def to_address_params(%__MODULE__{} = struct) do
