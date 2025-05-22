@@ -17,13 +17,15 @@ defmodule Explorer.Migrator.CeloL2EpochsTest do
 
         old_env = Application.get_env(:explorer, :celo)
 
-        Application.put_env(:explorer, :celo, [
-          {
+        Application.put_env(
+          :explorer,
+          :celo,
+          Keyword.put(
+            old_env,
             :epoch_manager_contract_address,
             to_string(epoch_manager_address.hash)
-          }
-          | old_env
-        ])
+          )
+        )
 
         on_exit(fn ->
           Application.put_env(:explorer, :celo, old_env)

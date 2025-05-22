@@ -8,7 +8,10 @@ defmodule Explorer.Chain.Celo.Helper do
   @blocks_per_epoch 17_280
 
   @doc """
-  Checks if a block number belongs to a block that finalized an epoch.
+  Checks if a block number belongs to a block that finalized an L1-era epoch.
+
+  This function should only be used for pre-L2 migration blocks, as the concept
+  of epoch blocks no longer exists after L2 migration.
 
   ## Parameters
   - `block_number` (`Block.block_number()`): The block number to check.
@@ -60,7 +63,10 @@ defmodule Explorer.Chain.Celo.Helper do
   end
 
   @doc """
-  Converts an epoch number to a block range.
+  Converts an epoch number to a block range for L1-era epochs.
+
+  This function should only be used for pre-L2 migration epochs, as epoch block
+  ranges are deterministic only in L1 era.
 
   ## Parameters
   - `epoch_number` (`non_neg_integer()`): The epoch number to convert.

@@ -4,7 +4,7 @@ defmodule Explorer.Repo.Celo.Migrations.CreateEpoch do
   def change do
     create table(:celo_epochs, primary_key: false) do
       add(:number, :smallint, null: false, primary_key: true)
-      add(:is_fetched, :boolean, default: false)
+      add(:is_fetched, :boolean, null: false, default: false)
 
       add(:start_block_number, :integer)
       add(:end_block_number, :integer)

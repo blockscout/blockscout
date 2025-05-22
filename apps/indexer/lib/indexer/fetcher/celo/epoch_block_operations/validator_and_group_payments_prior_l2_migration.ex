@@ -29,12 +29,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPri
       query
       |> Repo.all()
       |> ValidatorEpochPaymentDistributions.parse()
-      |> Enum.map(fn %{
-                       validator_address: validator_address,
-                       validator_payment: validator_payment,
-                       group_address: group_address,
-                       group_payment: group_payment
-                     } ->
+      |> Enum.flat_map(fn %{
+                            validator_address: validator_address,
+                            validator_payment: validator_payment,
+                            group_address: group_address,
+                            group_payment: group_payment
+                          } ->
         [
           %{
             epoch_number: epoch.number,
@@ -52,7 +52,6 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPri
           }
         ]
       end)
-      |> Enum.concat()
 
     {:ok, payments}
   end

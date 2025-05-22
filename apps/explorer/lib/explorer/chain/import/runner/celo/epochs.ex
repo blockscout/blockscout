@@ -89,9 +89,16 @@ defmodule Explorer.Chain.Import.Runner.Celo.Epochs do
           end_processing_block_hash:
             fragment("COALESCE(EXCLUDED.end_processing_block_hash, ?)", epoch.end_processing_block_hash),
           fetched?: fragment("EXCLUDED.is_fetched"),
+          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", epoch.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", epoch.updated_at)
         ]
-      ]
+      ],
+      where:
+        fragment("EXCLUDED.start_block_number IS DISTINCT FROM ?", epoch.start_block_number) or
+          fragment("EXCLUDED.end_block_number IS DISTINCT FROM ?", epoch.end_block_number) or
+          fragment("EXCLUDED.start_processing_block_hash IS DISTINCT FROM ?", epoch.start_processing_block_hash) or
+          fragment("EXCLUDED.end_processing_block_hash IS DISTINCT FROM ?", epoch.end_processing_block_hash) or
+          fragment("EXCLUDED.is_fetched IS DISTINCT FROM ?", epoch.fetched?)
     )
   end
 end

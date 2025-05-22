@@ -3,17 +3,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   Tracks epoch blocks awaiting processing by the epoch fetcher.
   """
 
-  import Explorer.Chain.Celo.Helper,
-    only: [
-      pre_migration_block_number?: 1
-    ]
-
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.Multi
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Import}
-  alias Explorer.Chain.Celo.Epoch
+  alias Explorer.Chain.Celo.{Epoch, Helper}
   alias Explorer.Chain.Celo.Reader.EpochManager
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Transform.Addresses
@@ -108,17 +103,15 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
               tracer: Tracer
             )
   def run(epochs, json_rpc_named_arguments) do
-    Enum.each(
-      epochs,
-      fn epoch ->
-        epoch
-        |> Repo.preload([
-          :start_processing_block,
-          :end_processing_block
-        ])
-        |> fetch(json_rpc_named_arguments)
-      end
-    )
+    epochs
+    |> Repo.preload([
+      :start_processing_block,
+      :end_processing_block
+    ])
+    |> Enum.each(fn epoch ->
+      epoch
+      |> fetch(json_rpc_named_arguments)
+    end)
 
     :ok
   end
@@ -128,10 +121,20 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
     epoch_params = fetch_epoch_params(epoch)
     {:ok, distributions_params} = Distributions.fetch(epoch)
 
-    next_epoch_params = %{
-      number: epoch_params.number + 1,
-      start_block_number: epoch_params.end_block_number + 1
-    }
+    epochs_params =
+      (epoch.number + 1)
+      |> Epoch.epoch_by_number_query()
+      |> Repo.exists?()
+      |> if do
+        [epoch_params]
+      else
+        next_epoch_params = %{
+          number: epoch_params.number + 1,
+          start_block_number: epoch_params.end_block_number + 1
+        }
+
+        [epoch_params, next_epoch_params]
+      end
 
     addresses_params =
       Addresses.extract_addresses(%{
@@ -150,7 +153,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
         %{
           celo_epoch_rewards: %{params: [distributions_params]},
           celo_election_rewards: %{params: election_rewards_params},
-          celo_epochs: %{params: [epoch_params, next_epoch_params]}
+          celo_epochs: %{params: epochs_params}
         }
       )
 
@@ -189,14 +192,14 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
       )
 
     {:ok, validator_and_group_payments} =
-      if pre_migration_block_number?(epoch.start_processing_block.number) do
+      if Helper.pre_migration_block_number?(epoch.start_processing_block.number) do
         ValidatorAndGroupPaymentsPriorL2Migration.fetch(epoch)
       else
         ValidatorAndGroupPaymentsPostL2Migration.fetch(epoch)
       end
 
     {:ok, delegated_payments_prior_l2_migration} =
-      if pre_migration_block_number?(epoch.start_processing_block.number) do
+      if Helper.pre_migration_block_number?(epoch.start_processing_block.number) do
         validator_and_group_payments
         |> Enum.filter(&(&1.type == :validator))
         |> Enum.map(& &1.account_address_hash)
@@ -231,7 +234,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
         lock: "FOR SHARE"
       )
 
-    premigration? = pre_migration_block_number?(epoch.start_processing_block.number)
+    premigration? = Helper.pre_migration_block_number?(epoch.start_processing_block.number)
 
     query
     |> repo.all()
@@ -250,8 +253,15 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   defp fetch_epoch_params(epoch) do
     params = %{number: epoch.number, fetched?: true}
 
-    if pre_migration_block_number?(epoch.start_processing_block.number) do
+    if Helper.pre_migration_block_number?(epoch.start_processing_block.number) do
+      {
+        start_block_number,
+        end_block_number
+      } = Helper.epoch_number_to_block_range(epoch.number)
+
       params
+      |> Map.put(:start_block_number, start_block_number)
+      |> Map.put(:end_block_number, end_block_number)
     else
       {:ok, start_block_number} =
         EpochManager.fetch_first_block_at_epoch(epoch.number)

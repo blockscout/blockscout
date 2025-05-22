@@ -7,12 +7,6 @@ defmodule Explorer.Chain.Cache.CeloEpochs do
   2. An ordered cache of post-migration epochs for efficient lookups
   """
 
-  use Utils.RuntimeEnvHelper,
-    l2_migration_block_number: [
-      :explorer,
-      [:celo, :l2_migration_block]
-    ]
-
   use Explorer.Chain.OrderedCache,
     name: :celo_epochs_cache,
     ttl_check_interval: :timer.minutes(1),
@@ -30,10 +24,10 @@ defmodule Explorer.Chain.Cache.CeloEpochs do
 
   import Ecto.Query, only: [select: 3]
 
+  alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Celo.{Epoch, Helper}
-  alias Explorer.Repo
 
   @impl Explorer.Chain.OrderedCache
   def element_to_id(epoch) when is_map(epoch), do: epoch.number
@@ -99,6 +93,6 @@ defmodule Explorer.Chain.Cache.CeloEpochs do
       start_block_number: e.start_block_number,
       end_block_number: e.end_block_number
     })
-    |> Repo.one()
+    |> Chain.select_repo(api?: true).one()
   end
 end

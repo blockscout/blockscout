@@ -116,7 +116,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPos
       params =
         account_address_hashes
         |> Enum.zip(payments)
-        |> Enum.map(fn {account_address_hash, payment} ->
+        |> Enum.flat_map(fn {account_address_hash, payment} ->
           group_address_hash = Map.get(account_address_hash_to_group_address_hash, account_address_hash)
 
           base = Decimal.new(1, 1, 24)
@@ -148,7 +148,6 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPos
             }
           ]
         end)
-        |> Enum.concat()
 
       {:ok, params}
     else

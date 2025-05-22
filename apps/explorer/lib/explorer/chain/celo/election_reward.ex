@@ -35,8 +35,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, Celo.Epoch, Hash, Token, Wei}
 
-  @default_paging_options default_paging_options()
-
   @type type :: :voter | :validator | :group | :delegated_payment
   @types_enum ~w(voter validator group delegated_payment)a
 
@@ -269,7 +267,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       asc: :associated_account_address_hash
     ]
 
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    paging_options = Keyword.get(options, :paging_options, default_paging_options())
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     sorting_options = Keyword.get(options, :sorting, [])
 
@@ -318,7 +316,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     ]
 
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    paging_options = Keyword.get(options, :paging_options, default_paging_options())
     sorting_options = Keyword.get(options, :sorting, [])
 
     address_hash
@@ -331,38 +329,26 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   end
 
   defp reward_type_to_token_address_hash do
-    # This match should never fail
-    %{
-      voter: [voter_token_address_hash],
-      validator: [validator_token_address_hash],
-      group: [group_token_address_hash],
-      delegated_payment: [delegated_payment_token_address_hash]
-    } =
-      Map.new(
-        @reward_type_atom_to_token_atom,
-        fn {type, token_atom} ->
-          addresses =
-            token_atom
-            |> CeloCoreContracts.get_address_updates()
-            |> case do
-              {:ok, addresses} -> addresses
-              _ -> []
-            end
-            |> Enum.map(fn %{"address" => address_hash_string} ->
-              {:ok, address_hash} = Hash.Address.cast(address_hash_string)
-              address_hash
-            end)
+    Map.new(
+      @reward_type_atom_to_token_atom,
+      fn {type, token_atom} ->
+        addresses =
+          token_atom
+          |> CeloCoreContracts.get_address_updates()
+          |> case do
+            {:ok, addresses} -> addresses
+            _ -> []
+          end
+          |> Enum.map(fn %{"address" => address_hash_string} ->
+            {:ok, address_hash} = Hash.Address.cast(address_hash_string)
+            address_hash
+          end)
 
-          {type, addresses}
-        end
-      )
-
-    %{
-      voter: voter_token_address_hash,
-      validator: validator_token_address_hash,
-      group: group_token_address_hash,
-      delegated_payment: delegated_payment_token_address_hash
-    }
+        # This match should never fail
+        [address] = addresses
+        {type, address}
+      end
+    )
   end
 
   @doc """
@@ -376,7 +362,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   """
   @spec join_token(Ecto.Query.t()) :: Ecto.Query.t()
   def join_token(query) do
-    # This match should never fail
     reward_type_to_token_address_hash = reward_type_to_token_address_hash()
 
     from(

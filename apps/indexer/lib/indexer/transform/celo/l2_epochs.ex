@@ -21,13 +21,12 @@ defmodule Indexer.Transform.Celo.L2Epochs do
   import Explorer.Helper, only: [decode_data: 2]
 
   alias Explorer.Chain.Celo.Helper
-  alias Explorer.Chain.Log
 
   # Events from the EpochManager contract
   @epoch_processing_started_topic "0xae58a33f8b8d696bcbaca9fa29d9fdc336c140e982196c2580db3d46f3e6d4b6"
   @epoch_processing_ended_topic "0xc8e58d8e6979dd5e68bad79d4a4368a1091f6feb2323e612539b1b84e0663a8f"
 
-  @spec parse([Log.t()]) :: [map()]
+  @spec parse([map()]) :: [map()]
   def parse(logs) do
     if chain_type() == :celo do
       do_parse(logs)

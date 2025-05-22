@@ -47,7 +47,7 @@ defmodule Explorer.Migrator.CeloL2Epochs do
     epochs_start_processing_block_hashes =
       from(epoch in Epoch, select: epoch.start_processing_block_hash)
 
-    epochs_end_processing_block_hash =
+    epochs_end_processing_block_hashes =
       from(epoch in Epoch, select: epoch.end_processing_block_hash)
 
     from(
@@ -57,7 +57,7 @@ defmodule Explorer.Migrator.CeloL2Epochs do
           ((log.first_topic == ^@epoch_processing_started_topic and
               log.block_hash not in subquery(epochs_start_processing_block_hashes)) or
              (log.first_topic == ^@epoch_processing_ended_topic and
-                log.block_hash not in subquery(epochs_end_processing_block_hash))),
+                log.block_hash not in subquery(epochs_end_processing_block_hashes))),
       order_by: [asc: log.block_number]
     )
   end

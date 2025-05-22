@@ -38,7 +38,12 @@ defmodule Explorer.Chain.Celo.Epoch do
   @primary_key false
   typed_schema "celo_epochs" do
     field(:number, :integer, primary_key: true)
-    field(:fetched?, :boolean, source: :is_fetched, default: false)
+
+    field(:fetched?, :boolean,
+      source: :is_fetched,
+      default: false,
+      null: false
+    )
 
     field(:start_block_number, :integer)
     field(:end_block_number, :integer)
@@ -288,6 +293,9 @@ defmodule Explorer.Chain.Celo.Epoch do
   @doc """
   Returns a query to find an epoch containing the given block number.
 
+  When multiple epochs with nil end_block_number match the block number, the one
+  with the maximum start_block_number is selected.
+
   ## Parameters
     - `block_number` (`non_neg_integer()`): The block number to search for.
 
@@ -308,12 +316,17 @@ defmodule Explorer.Chain.Celo.Epoch do
   @spec block_number_to_epoch_query(non_neg_integer()) :: Ecto.Query.t()
   def block_number_to_epoch_query(block_number) do
     from(e in __MODULE__,
-      # If the epoch has no end block number, it is considered to be open-ended
-      # and includes all blocks after the start block number.
+      # First, find epochs where the block_number falls within a defined range
+      # OR it's an open-ended epoch with start_block_number <= block_number
       where:
         e.start_block_number <= ^block_number and
           (is_nil(e.end_block_number) or
-             e.end_block_number >= ^block_number)
+             e.end_block_number >= ^block_number),
+      # Order by end_block_number nulls last (closed epochs first)
+      # Then by start_block_number descending (most recent open epoch)
+      order_by: [asc_nulls_last: e.end_block_number, desc: e.start_block_number],
+      # Limit to just one result
+      limit: 1
     )
   end
 end
