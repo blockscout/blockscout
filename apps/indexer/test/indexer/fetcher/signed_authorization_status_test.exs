@@ -35,8 +35,8 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
     } do
       SignedAuthorizationStatus.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      block1 = insert(:block)
-      block2 = insert(:block)
+      block1 = insert(:block, number: 1010)
+      block2 = insert(:block, number: 1020)
 
       delegate1 = insert(:address)
       delegate2 = insert(:address)
@@ -179,8 +179,8 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
         )
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        block1_quantity = integer_to_quantity(block1.number)
-        block2_quantity = integer_to_quantity(block2.number)
+        block1_quantity = integer_to_quantity(block1.number - 1)
+        block2_quantity = integer_to_quantity(block2.number - 1)
         address1_string = to_string(address1.hash)
         address3_string = to_string(address3.hash)
         address4_string = to_string(address4.hash)
