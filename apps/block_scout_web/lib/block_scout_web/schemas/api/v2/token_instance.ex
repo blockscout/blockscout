@@ -34,6 +34,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
       },
       media_type: %Schema{type: :string, example: "image/png", description: "Mime type of the media in media_url"},
       media_url: General.URLWithIPFSNullable
-    }
+    },
+    required: [
+      :id,
+      :metadata,
+      :owner,
+      :token,
+      :external_app_url,
+      :animation_url,
+      :image_url,
+      :is_unique,
+      :thumbnails,
+      :media_type,
+      :media_url
+    ]
   })
 end

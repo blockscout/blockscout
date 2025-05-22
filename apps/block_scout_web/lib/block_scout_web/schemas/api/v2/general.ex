@@ -52,17 +52,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     @moduledoc false
     alias OpenApiSpex.Schema
 
-    use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
-
     def chain_type_fields(schema) do
-      case @chain_type do
+      case Application.get_env(:explorer, :chain_type) do
         :filecoin ->
           schema
-          |> put_in([:properties, :filecoin_robust_address], %Schema{
-            type: :string,
-            example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-            nullable: true
-          })
+          |> put_in(
+            [:properties, :filecoin_robust_address],
+            %Schema{
+              type: :string,
+              example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
+              nullable: true
+            }
+            |> update_in([:required], &[:filecoin_robust_address | &1])
+          )
 
         _ ->
           schema
@@ -76,17 +78,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
 
     alias Implementation.ChainTypeCustomizations
 
-    OpenApiSpex.schema(%{
-      description: "Proxy smart contract implementation",
-      type: :object,
-      properties:
-        %{
+    OpenApiSpex.schema(
+      %{
+        description: "Proxy smart contract implementation",
+        type: :object,
+        properties: %{
           address_hash: AddressHash,
           name: %Schema{type: :string, nullable: true}
-        }
-        |> ChainTypeCustomizations.chain_type_fields(),
-      required: [:address_hash, :name]
-    })
+        },
+        required: [:address_hash, :name]
+      }
+      |> ChainTypeCustomizations.chain_type_fields()
+    )
   end
 
   defmodule Tag do

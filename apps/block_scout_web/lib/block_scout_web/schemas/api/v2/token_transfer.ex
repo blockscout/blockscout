@@ -29,7 +29,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       block_hash: General.FullHash,
       block_number: %Schema{type: :integer, nullable: false},
       log_index: %Schema{type: :integer, nullable: false}
-    }
+    },
+    required: [
+      :transaction_hash,
+      :from,
+      :to,
+      :total,
+      :token,
+      :type,
+      :timestamp,
+      :method,
+      :block_hash,
+      :block_number,
+      :log_index
+    ]
   })
 end
 
