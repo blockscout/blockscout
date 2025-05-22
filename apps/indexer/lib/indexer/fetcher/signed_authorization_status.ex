@@ -395,7 +395,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
              fields_to_update: [:contract_code, :nonce]
            },
            signed_authorizations: %{
-             params: signed_authorizations |> Enum.map(&Map.from_struct/1),
+             params: signed_authorizations |> Enum.map(&SignedAuthorization.to_map/1),
              on_conflict: {:replace, [:status, :updated_at]}
            }
          }) do

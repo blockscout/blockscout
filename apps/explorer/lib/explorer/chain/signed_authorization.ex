@@ -70,6 +70,19 @@ defmodule Explorer.Chain.SignedAuthorization do
     timestamps()
   end
 
+  @local_fields [:__meta__, :inserted_at, :updated_at]
+
+  @doc """
+    Returns a map representation of the signed authorization.
+  """
+  @spec to_map(__MODULE__.t()) :: map()
+  def to_map(%__MODULE__{} = struct) do
+    association_fields = struct.__struct__.__schema__(:associations)
+    waste_fields = association_fields ++ @local_fields
+
+    struct |> Map.from_struct() |> Map.drop(waste_fields)
+  end
+
   @doc """
     Validates that the `attrs` are valid.
   """
