@@ -147,6 +147,7 @@ defmodule Explorer.Application do
         configure_sc_microservice(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
         configure(Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount),
         configure(Explorer.Chain.Cache.OptimismFinalizationPeriod),
+        configure(Explorer.Chain.Cache.CeloEpochs),
         configure(Explorer.Migrator.TransactionsDenormalization),
         configure(Explorer.Migrator.AddressCurrentTokenBalanceTokenType),
         configure(Explorer.Migrator.AddressTokenBalanceTokenType),
@@ -159,6 +160,7 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.RestoreOmittedWETHTransfers),
         configure(Explorer.Migrator.FilecoinPendingAddressOperations),
         configure(Explorer.Migrator.SmartContractLanguage),
+        configure(Explorer.Migrator.CeloL2Epochs),
         configure(Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds),
         Explorer.Migrator.BackfillMultichainSearchDB
         |> configure_mode_dependent_process(:indexer)

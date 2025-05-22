@@ -381,6 +381,53 @@ defmodule Indexer.Helper do
   end
 
   @doc """
+  Processes a large batch of contract calls by splitting them into smaller
+  chunks for efficiency and resiliency.
+
+  This function takes a potentially large list of contract call requests,
+  divides them into manageable chunks, applies the provided reader function to
+  each chunk, and then consolidates the results.
+
+  The chunking approach helps prevent timeouts that can occur when making too
+  many simultaneous RPC calls.
+
+  ## Parameters
+  - `requests`: A list of `EthereumJSONRPC.Contract.call()` instances
+    representing contract calls to execute.
+  - `chunk_size`: The maximum number of contract calls to include in each chunk.
+  - `reader`: A function that takes a chunk of contract call requests and
+           returns `{responses, errors}` tuple.
+
+  ## Returns
+  - A tuple `{responses, errors}` where:
+  - `responses`: A concatenated list of all response tuples `{:ok, result}` or
+                `{:error, reason}` from all chunks, maintaining the original
+                order.
+  - `errors`: A deduplicated list of all error messages encountered across all
+    chunks.
+  """
+  @spec read_contracts_with_retries_by_chunks(
+          [EthereumJSONRPC.Contract.call()],
+          integer(),
+          ([EthereumJSONRPC.Contract.call()] ->
+             {[{:ok | :error, any()}], list()})
+        ) ::
+          {[{:ok | :error, any()}], list()}
+  def read_contracts_with_retries_by_chunks(requests, chunk_size, reader)
+      when is_list(requests) and is_integer(chunk_size) and chunk_size > 0 do
+    {responses_lists, errors_lists} =
+      requests
+      |> Enum.chunk_every(chunk_size)
+      |> Enum.map(reader)
+      |> Enum.unzip()
+
+    {
+      Enum.concat(responses_lists),
+      errors_lists |> Enum.concat() |> Enum.uniq()
+    }
+  end
+
+  @doc """
     Retrieves decoded results of `eth_call` requests to contracts, with retry
     logic for handling errors.
 
@@ -415,7 +462,8 @@ defmodule Indexer.Helper do
           [EthereumJSONRPC.Contract.call()],
           [map()],
           EthereumJSONRPC.json_rpc_named_arguments(),
-          integer()
+          integer(),
+          boolean()
         ) :: {[{:ok | :error, any()}], list()}
   def read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, log_error? \\ true)
       when is_list(requests) and is_list(abi) and is_integer(retries_left) do

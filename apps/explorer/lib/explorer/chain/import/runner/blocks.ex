@@ -26,9 +26,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     Transaction
   }
 
-  alias Explorer.Chain.Celo.Helper, as: CeloHelper
-  alias Explorer.Chain.Celo.PendingEpochBlockOperation, as: CeloPendingEpochBlockOperation
-
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
@@ -36,6 +33,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
+
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
+  alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
+  alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
 
   @behaviour Runner
 
@@ -232,16 +233,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
     |> chain_type_dependent_import(
       :celo,
-      &Multi.run(&1, :celo_pending_epoch_block_operations, fn repo, %{blocks: blocks} ->
-        Instrumenter.block_import_stage_runner(
-          fn ->
-            celo_pending_epoch_block_operations(repo, blocks, insert_options)
-          end,
-          :address_referencing,
-          :blocks,
-          :celo_pending_epoch_block_operations
-        )
-      end)
+      &Multi.run(
+        &1,
+        :celo_delete_epoch_rewards,
+        fn repo, %{lose_consensus: non_consensus_blocks} ->
+          Instrumenter.block_import_stage_runner(
+            fn -> celo_delete_epoch_rewards(repo, non_consensus_blocks, insert_options) end,
+            :address_referencing,
+            :blocks,
+            :celo_delete_epoch_rewards
+          )
+        end
+      )
     )
   end
 
@@ -1068,23 +1071,49 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     where(invalid_neighbors_query, [block], block.consensus)
   end
 
-  defp celo_pending_epoch_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
-    ordered_epoch_blocks =
-      inserted_blocks
-      |> Enum.filter(fn block -> CeloHelper.epoch_block_number?(block.number) && block.consensus end)
-      |> Enum.map(&%{block_hash: &1.hash})
-      |> Enum.sort_by(& &1.block_hash)
-      |> Enum.dedup_by(& &1.block_hash)
+  defp celo_delete_epoch_rewards(_repo, [], _options), do: {:ok, []}
 
-    Import.insert_changes_list(
-      repo,
-      ordered_epoch_blocks,
-      conflict_target: :block_hash,
-      on_conflict: :nothing,
-      for: CeloPendingEpochBlockOperation,
-      returning: true,
-      timeout: timeout,
-      timestamps: timestamps
-    )
+  defp celo_delete_epoch_rewards(repo, non_consensus_blocks, %{timeout: timeout}) do
+    non_consensus_block_hashes = Enum.map(non_consensus_blocks, fn {_number, hash} -> hash end)
+
+    ordered_query =
+      from(epoch in CeloEpoch,
+        where:
+          epoch.start_processing_block_hash in ^non_consensus_block_hashes or
+            epoch.end_processing_block_hash in ^non_consensus_block_hashes,
+        # Enforce Epoch ShareLocks order (see docs: sharelocks.md)
+        order_by: epoch.number,
+        lock: "FOR UPDATE"
+      )
+
+    repo.all(ordered_query, timeout: timeout)
+
+    epoch_rewards_query =
+      from(reward in CeloEpochReward,
+        join: epoch in subquery(ordered_query),
+        on: reward.epoch_number == epoch.number
+      )
+
+    election_rewards_query =
+      from(reward in CeloElectionReward,
+        join: epoch in subquery(ordered_query),
+        on: reward.epoch_number == epoch.number
+      )
+
+    repo.delete_all(epoch_rewards_query, timeout: timeout)
+    repo.delete_all(election_rewards_query, timeout: timeout)
+
+    {_count, updated_epochs} =
+      repo.update_all(
+        from(epoch in CeloEpoch,
+          join: ordered_epoch in subquery(ordered_query),
+          on: epoch.number == ordered_epoch.number,
+          select: epoch
+        ),
+        [set: [fetched?: false]],
+        timeout: timeout
+      )
+
+    {:ok, updated_epochs}
   end
 end
