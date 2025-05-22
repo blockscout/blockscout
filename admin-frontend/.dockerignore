@@ -1,0 +1,34 @@
+# Exclude node modules
+node_modules
+.next
+npm-debug.log
+
+# Exclude environment files
+.env
+.env.local
+.env.*
+
+# Exclude git and version control
+.git
+.gitignore
+
+# Exclude development artifacts
+coverage
+.vscode
+.idea
+
+# Exclude log files
+logs
+*.log
+
+# Exclude test files
+test
+__tests__
+
+# Keep necessary files
+!package.json
+!package-lock.json
+!src
+!public
+!next.config.js
+!tsconfig.json

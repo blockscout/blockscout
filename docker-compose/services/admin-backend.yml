@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  admin-backend:
+    build:
+      context: ../../admin-backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    container_name: 'admin-backend'
+    ports:
+      - target: 4010
+        published: 4010
+    environment:
+      - NODE_ENV=development
+      - PORT=4010
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-postgres}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - JWT_SECRET=${JWT_SECRET:-devSecret}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    mem_limit: 1g
+    cpus: 1.0

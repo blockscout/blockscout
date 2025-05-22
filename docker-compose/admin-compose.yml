@@ -1,0 +1,69 @@
+version: '3.9'
+
+services:
+  admin-backend:
+    build:
+      context: ../admin-backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    container_name: 'admin-backend'
+    ports:
+      - "4010:4010"
+    environment:
+      - NODE_ENV=development
+      - PORT=4010
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-postgres}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - JWT_SECRET=${JWT_SECRET:-devSecret}
+    networks:
+      - admin-network
+      - blockscout-network
+    depends_on:
+      - db
+
+  admin-frontend:
+    build:
+      context: ../admin-frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    container_name: 'admin-frontend'
+    ports:
+      - "3010:3010"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://admin-backend:4010
+    networks:
+      - admin-network
+    depends_on:
+      - admin-backend
+
+  # This is just a reference to the existing database service
+  # You would actually use the real database service from the main docker-compose
+  db:
+    image: postgres:14-alpine
+    restart: unless-stopped
+    container_name: 'admin-test-db'
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - blockscout-network
+      - admin-network
+    command: postgres -c 'max_connections=200'
+
+networks:
+  admin-network:
+    driver: bridge
+  blockscout-network:
+    external: true
+
+volumes:
+  postgres-data:

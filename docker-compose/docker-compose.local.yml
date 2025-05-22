@@ -99,6 +99,21 @@ services:
     extends:
       file: ./services/user-ops-indexer.yml
       service: user-ops-indexer
+  admin-backend:
+    depends_on:
+      - db
+    extends:
+      file: ./services/admin-backend.yml
+      service: admin-backend
+
+  admin-frontend:
+    depends_on:
+      - admin-backend
+    extends:
+      file: ./services/admin-frontend.yml
+      service: admin-frontend
+
+  # proxy:
 
   # proxy:
   #   depends_on:

@@ -1,0 +1,8 @@
+{
+  "AUTH0_DOMAIN": "your-auth0-domain.auth0.com",
+  "AUTH0_CLIENT_ID": "your-auth0-client-id",
+  "AUTH0_AUDIENCE": "https://api.uomi-explorer.com",
+  "AUTH0_REDIRECT_URI": "http://localhost:3010/callback",
+  "AUTH0_SCOPE": "openid profile email",
+  "API_URL": "http://localhost:4000/api"
+}

@@ -78,3 +78,8 @@ tasks_in_progress
 
 docker-compose/services/blockscout-web-data
 docker-compose/services/data
+
+node_modules
+admin-frontend/node_modules
+.next
+.env

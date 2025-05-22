@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  admin-frontend:
+    build:
+      context: ../../admin-frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    container_name: 'admin-frontend'
+    ports:
+      - target: 3010
+        published: 3010
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://admin-backend:4010
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3010"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    mem_limit: 1g
+    cpus: 1.0

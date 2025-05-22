@@ -1,0 +1,39 @@
+{
+  "name": "admin-backend",
+  "version": "1.0.0",
+  "description": "Admin backend for Uomi Explorer",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "nodemon src/index.js",
+    "start:prod": "node src/index.js",
+    "test": "jest",
+    "lint": "eslint .",
+    "validate-auth0": "./scripts/validate-auth0-config.sh"
+  },
+  "dependencies": {
+    "auth0": "^4.23.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.18.2",
+    "express-oauth2-jwt-bearer": "^1.6.1",
+    "express-rate-limit": "^7.0.0",
+    "helmet": "^7.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.33.0",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
