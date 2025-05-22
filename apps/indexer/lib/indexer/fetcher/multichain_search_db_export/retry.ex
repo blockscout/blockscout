@@ -9,7 +9,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.Retry do
   use Spandex.Decorators
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, Hash, MultichainSearchDbExportRetryQueue}
+  alias Explorer.Chain.{Address, Block, Hash, MultichainSearchDbExportRetryQueue, Transaction}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
 
   alias Indexer.BufferedTask
@@ -38,14 +38,79 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.Retry do
         initial_acc,
         fn data, acc ->
           IndexerHelper.reduce_if_queue_is_not_full(data, acc, reducer, __MODULE__)
-        end
+        end,
+        true
       )
 
     acc
   end
 
   @impl BufferedTask
-  def run(export_data, _json_rpc_named_arguments) when is_list(export_data) do
+  def run(data, _json_rpc_named_arguments) when is_list(data) do
+    prepared_export_data = prepare_export_data(data)
+
+    case MultichainSearch.batch_import(prepared_export_data) do
+      {:ok, result} ->
+        unless result == :service_disabled do
+          transaction_hashes =
+            prepared_export_data[:transactions] |> Enum.map(&Map.get(&1, :hash))
+
+          block_hashes = prepared_export_data[:blocks] |> Enum.map(&to_string(Map.get(&1, :hash)))
+
+          address_hashes = prepared_export_data[:addresses] |> Enum.map(&to_string(Map.get(&1, :hash)))
+          hashes = transaction_hashes ++ block_hashes ++ address_hashes
+
+          hashes
+          |> MultichainSearchDbExportRetryQueue.by_hashes_query()
+          |> Repo.delete_all()
+        end
+
+        :ok
+
+      {:error, retry} ->
+        Logger.error(fn ->
+          ["#{@failed_to_re_export_data_error}", "#{inspect(prepared_export_data)}"]
+        end)
+
+        {:retry, [retry]}
+    end
+  end
+
+  @doc """
+  Prepares export data by categorizing input hashes into addresses, blocks, and transactions,
+  then enriches the result with resolved address and block data.
+
+  ## Parameters
+
+    - `export_data`: A list of maps, each containing a `:hash` (binary) and a `:hash_type` (`:address`, `:block`, or `:transaction`).
+
+  ## Returns
+
+    - A map containing:
+      - `:addresses` - a list of resolved address structs from the given address hashes.
+      - `:blocks` - a list of block structs fetched from the database using the block hashes or list of hash and hash_type maps.
+      - `:transactions` - a list Transaction.t() objects or list of hash and hash_type maps.
+
+  ## Example
+
+      iex> prepare_export_data([
+      ...>   %{hash: <<1,2,3>>, hash_type: :address},
+      ...>   %{hash: <<4,5,6>>, hash_type: :block},
+      ...>   %{hash: <<7,8,9>>, hash_type: :transaction}
+      ...> ])
+      %{
+        addresses: [...],
+        blocks: [...],
+        transactions: [...]
+      }
+
+  """
+  @spec prepare_export_data([%{hash: binary, hash_type: atom}]) :: %{
+          addresses: [Address.t()],
+          blocks: [Block.t() | %{hash: String.t(), hash_type: String.t()}],
+          transactions: [Transaction.t() | %{hash: String.t(), hash_type: String.t()}]
+        }
+  def prepare_export_data(export_data) do
     pre_prepared_export_data =
       export_data
       |> Enum.reduce(%{address_hashes: [], block_hashes: [], transactions: []}, fn %{
@@ -89,31 +154,11 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.Retry do
       |> Block.by_hashes_query()
       |> Repo.all()
 
-    prepared_export_data =
-      pre_prepared_export_data
-      |> Map.put(:addresses, addresses)
-      |> Map.put(:blocks, blocks)
-      |> Map.drop([:address_hashes])
-      |> Map.drop([:block_hashes])
-
-    case MultichainSearch.batch_import(prepared_export_data, true) do
-      {:ok, result} ->
-        unless result == :service_disabled do
-          export_data
-          |> Enum.map(&Map.get(&1, :hash))
-          |> MultichainSearchDbExportRetryQueue.by_hashes_query()
-          |> Repo.delete_all()
-        end
-
-        :ok
-
-      {:error, _} ->
-        Logger.error(fn ->
-          ["#{@failed_to_re_export_data_error}", "#{inspect(prepared_export_data)}"]
-        end)
-
-        {:retry, export_data}
-    end
+    pre_prepared_export_data
+    |> Map.put(:addresses, addresses)
+    |> Map.put(:blocks, blocks)
+    |> Map.drop([:address_hashes])
+    |> Map.drop([:block_hashes])
   end
 
   defp defaults do
