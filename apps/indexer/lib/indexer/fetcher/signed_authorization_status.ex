@@ -18,7 +18,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
 
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Block, Hash, SignedAuthorization, Transaction}
+  alias Explorer.Chain.{Address, Block, BlockNumberHelper, Hash, SignedAuthorization, Transaction}
   alias Explorer.Chain.Cache.{Accounts, ChainId}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Indexer.{BufferedTask, Tracer}
@@ -343,10 +343,11 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
     do: {:ok, %{}}
 
   defp fetch_nonces(entries, json_rpc_named_arguments) do
+    # fetch nonces for at the end of the previous block, to know starting nonces for the current block
     entries
     |> Enum.map(
       &%{
-        block_quantity: integer_to_quantity(&1.block_number),
+        block_quantity: integer_to_quantity(BlockNumberHelper.previous_block_number(&1.block_number)),
         address: to_string(&1.address_hash)
       }
     )
@@ -366,7 +367,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
         {:ok, address_hash} ->
           acc
           |> Map.update(
-            block_number,
+            BlockNumberHelper.next_block_number(block_number),
             %{address_hash => Decimal.new(nonce)},
             &Map.put(&1, address_hash, Decimal.new(nonce))
           )
@@ -415,6 +416,9 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
           |> Implementation.upsert_eip7702_implementations()
         end
 
+        :ok
+
+      {:ok, %{}} ->
         :ok
 
       {:error, step, reason, _changes_so_far} ->
