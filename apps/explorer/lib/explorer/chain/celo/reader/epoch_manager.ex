@@ -9,16 +9,6 @@ defmodule Explorer.Chain.Celo.Reader.EpochManager do
       [:celo, :epoch_manager_contract_address]
     ]
 
-  @get_epoch_by_block_number_abi [
-    %{
-      "name" => "getEpochNumberOfBlock",
-      "type" => "function",
-      "stateMutability" => "view",
-      "inputs" => [%{"type" => "uint256"}],
-      "outputs" => [%{"type" => "uint256"}]
-    }
-  ]
-
   @get_first_block_at_epoch_abi [
     %{
       "inputs" => [%{"type" => "uint256"}],
@@ -41,35 +31,6 @@ defmodule Explorer.Chain.Celo.Reader.EpochManager do
 
   alias Explorer.Helper
   alias Explorer.SmartContract.Reader
-
-  @doc """
-  Retrieves the epoch number for a given block number.
-
-  ## Parameters
-
-    * `block_number` - The block number to retrieve epoch for.
-
-  ## Returns
-
-    * `{:ok, number}` - The epoch number.
-    * `:error` - If the request fails.
-  """
-  @spec fetch_epoch_number_by_block_number(non_neg_integer()) ::
-          {:ok, non_neg_integer()} | :error
-  def fetch_epoch_number_by_block_number(block_number) do
-    method_id = Helper.abi_to_method_id(@get_epoch_by_block_number_abi)
-
-    epoch_manager_contract_address_hash()
-    |> Reader.query_contract(
-      @get_epoch_by_block_number_abi,
-      %{method_id => [block_number]},
-      false
-    )
-    |> case do
-      %{^method_id => {:ok, [number]}} -> {:ok, number}
-      _ -> :error
-    end
-  end
 
   @doc """
   Retrieves the first block number in a given epoch.

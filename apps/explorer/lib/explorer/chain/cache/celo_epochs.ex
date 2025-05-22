@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Cache.CeloEpochs do
     ttl_check_interval: :timer.minutes(1),
     global_ttl: :timer.minutes(5),
     # Adjust based on expected number of post-migration epochs
-    max_size: 10000
+    max_size: 256
 
   @type element :: %{
           number: non_neg_integer(),

@@ -189,7 +189,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       %{voter_reward: %{total: %Decimal{}, count: 2}, ...}
   """
   @spec epoch_number_to_rewards_aggregated_by_type(integer(), Keyword.t()) ::
-          %{atom() => Wei.t() | nil}
+          %{atom() => %{total: Decimal.t(), count: integer(), token: map() | nil}}
   def epoch_number_to_rewards_aggregated_by_type(epoch_number, options \\ []) do
     reward_type_to_aggregated_rewards =
       __MODULE__
