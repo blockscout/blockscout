@@ -100,6 +100,12 @@ defmodule Explorer.ChainSpec.GenesisData do
         chain_spec = fetch_chain_spec(chain_spec_path)
         precompiles_config = fetch_precompiles_config(precompiled_config_path)
 
+        # If the variant is Besu, treat it as Geth for import purposes
+        variant =
+          case variant do
+            EthereumJSONRPC.Besu -> EthereumJSONRPC.Geth
+            _ -> variant
+          end
         extended_chain_spec = extend_chain_spec(chain_spec, precompiles_config, variant)
         import_genesis_accounts(extended_chain_spec, variant)
 
