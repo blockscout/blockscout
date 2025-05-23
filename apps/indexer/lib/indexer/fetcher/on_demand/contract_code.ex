@@ -131,15 +131,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
             is_nil(fetched_code) ->
               Implementation.delete_implementations([address.hash])
 
-            # TODO: it's better to use a generic code like this, but it does unnecessary minimal proxy checks and DB lookups
-            # Address.eoa_with_code?(new_address) ->
-            #   Proxy.fetch_implementation_address_hash(address.hash, [], [])
-
-            delegate = EIP7702.get_delegate_address(fetched_code.bytes) ->
-              Implementation.save_implementation_data([delegate], address.hash, :eip7702, [])
-
             true ->
-              :ok
+              Implementation.upsert_eip7702_implementations(addresses)
           end
 
           Publisher.broadcast(%{fetched_bytecode: [address.hash, contract_code_object.code]}, :on_demand)

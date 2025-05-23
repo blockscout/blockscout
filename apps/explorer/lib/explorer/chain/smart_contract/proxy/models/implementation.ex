@@ -170,7 +170,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     {updated_smart_contract, implementation_address_fetched?} =
       if check_implementation_refetch_necessity(implementation_updated_at) do
         {smart_contract_with_bytecode_twin, implementation_address_fetched?} =
-          SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options, false)
+          SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options)
 
         if smart_contract_with_bytecode_twin do
           {smart_contract_with_bytecode_twin, implementation_address_fetched?}
@@ -452,6 +452,17 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     |> Repo.delete_all()
   end
 
+  @doc """
+  Upserts multiple EIP-7702 proxy records for given addresses.
+
+  ## Parameters
+
+    - `addresses`: The list of addresses to upsert EIP-7702 proxy records for.
+
+  ## Returns
+
+    - `{count, nil}`: A tuple where `count` is the number of records updated.
+  """
   @spec upsert_eip7702_implementations([Address.t()]) :: {non_neg_integer(), nil | []}
   def upsert_eip7702_implementations(addresses) do
     now = DateTime.utc_now()
