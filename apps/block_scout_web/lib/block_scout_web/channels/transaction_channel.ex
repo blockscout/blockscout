@@ -93,17 +93,19 @@ defmodule BlockScoutWeb.TransactionChannel do
         %{raw_trace_origin: transaction_hash},
         socket
       ) do
-    internal_transactions = InternalTransaction.all_transaction_to_internal_transactions(transaction_hash)
+    with {:ok, transaction} <- Chain.hash_to_transaction(transaction_hash, []) do
+      internal_transactions = InternalTransaction.all_transaction_to_internal_transactions(transaction)
 
-    push(socket, "raw_trace", %{
-      raw_trace:
-        View.render_to_string(
-          TransactionRawTraceView,
-          "_card_body.html",
-          internal_transactions: internal_transactions,
-          conn: socket
-        )
-    })
+      push(socket, "raw_trace", %{
+        raw_trace:
+          View.render_to_string(
+            TransactionRawTraceView,
+            "_card_body.html",
+            internal_transactions: internal_transactions,
+            conn: socket
+          )
+      })
+    end
 
     {:noreply, socket}
   end
