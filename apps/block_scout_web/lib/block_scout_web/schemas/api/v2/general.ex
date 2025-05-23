@@ -214,6 +214,37 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     })
   end
 
+  defmodule DecodedLogInput do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      type: :object,
+      properties: %{
+        method_id: %Schema{type: :string, nullable: true},
+        method_call: %Schema{type: :string, nullable: true},
+        parameters: %Schema{
+          type: :array,
+          items: %Schema{
+            type: :object,
+            properties: %{
+              name: %Schema{type: :string, nullable: false},
+              type: %Schema{type: :string, nullable: false},
+              indexed: %Schema{type: :boolean, nullable: false},
+              value: %Schema{
+                oneOf: [%Schema{type: :object}, %Schema{type: :array}, %Schema{type: :string}],
+                nullable: false
+              }
+            },
+            required: [:name, :type, :indexed, :value],
+            nullable: false
+          },
+          nullable: false
+        }
+      },
+      required: [:method_id, :method_call, :parameters],
+      nullable: false
+    })
+  end
+
   def address_hash_param do
     {:address_hash_param,
      [
@@ -238,13 +269,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
      ]}
   end
 
-  def sorting_params do
+  def sorting_params(sort_fields) do
     {:sort,
      [
        in: :query,
        schema: %Schema{
          type: :string,
-         enum: ["block_number", "value", "fee"]
+         enum: sort_fields
        },
        required: false,
        description: """
@@ -275,7 +306,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
      ]}
   end
 
-  def token_transfer_type_param do
+  def token_type_param do
     {:type,
      [
        in: :query,
@@ -289,10 +320,40 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
        * ERC-20 - Fungible tokens
        * ERC-721 - Non-fungible tokens
        * ERC-1155 - Multi-token standard
-       * ERC-404 - ERC-404 tokens
+       * ERC-404 - Hybrid fungible/non-fungible tokens
 
        Example: `ERC-20,ERC-721` to show both fungible and NFT transfers
        """
+     ]}
+  end
+
+  def nft_token_type_param do
+    {:type,
+     [
+       in: :query,
+       schema: %Schema{
+         type: :string,
+         pattern: ~r"^(ERC-721|ERC-1155|ERC-404)(,(ERC-721|ERC-1155|ERC-404))*$"
+       },
+       required: false,
+       description: """
+       Filter by token type. Comma-separated list of:
+       * ERC-721 - Non-fungible tokens
+       * ERC-1155 - Multi-token standard
+       * ERC-404 - Hybrid fungible/non-fungible tokens
+
+       Example: `ERC-721,ERC-1155` to show both NFT and multi-token transfers
+       """
+     ]}
+  end
+
+  def topic_param do
+    {:topic,
+     [
+       in: :query,
+       schema: HexString,
+       required: false,
+       description: "Filter logs by topic"
      ]}
   end
 
