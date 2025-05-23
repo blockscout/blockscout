@@ -10,7 +10,7 @@ interface PaginationProps {
   maxDisplayedPages?: number;
 }
 
-export const Pagination: React.FC<PaginationProps> = ({
+const Pagination: React.FC<PaginationProps> = ({
   currentPage,
   totalPages,
   onPageChange,
@@ -108,3 +108,5 @@ export const Pagination: React.FC<PaginationProps> = ({
     </Flex>
   );
 };
+
+export default Pagination;

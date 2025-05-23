@@ -89,7 +89,7 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
             console.log('Token non trovato o scaduto, richiedo un nuovo token...');
             
             token = await getAccessTokenSilently({
-              cacheMode: 'remote_only', // Usa solo il token remoto, evitando la cache del browser
+              cacheMode: 'cache-only', // Usa solo il token remoto, evitando la cache del browser
               authorizationParams: {
                 audience: 'https://uomi.us.auth0.com/api/v2/',
                 scope: 'openid profile email'
