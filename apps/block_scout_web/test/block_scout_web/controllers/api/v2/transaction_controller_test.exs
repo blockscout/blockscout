@@ -282,6 +282,42 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert is_map(Enum.at(response["token_transfers"], 0)["total"])
       assert compare_item(%TokenTransfer{tt | amount: 2}, Enum.at(response["token_transfers"], 0))
     end
+
+    test "return transaction with input starting with 0x", %{conn: conn} do
+      contract =
+        insert(:smart_contract,
+          contract_code_md5: "123",
+          abi: [
+            %{
+              "constant" => false,
+              "inputs" => [%{"name" => "", "type" => "bytes"}],
+              "name" => "set",
+              "outputs" => [],
+              "payable" => false,
+              "stateMutability" => "nonpayable",
+              "type" => "function"
+            }
+          ]
+        )
+        |> Repo.preload(:address)
+
+      input_data =
+        "set(bytes)"
+        |> ABI.encode([
+          <<48, 120, 253, 69, 39, 88, 49, 136, 89, 142, 21, 123, 116, 129, 248, 32, 77, 29, 224, 121, 49, 137, 216, 8,
+            212, 195, 239, 11, 174, 75, 56, 126>>
+        ])
+        |> Base.encode16(case: :lower)
+
+      transaction =
+        :transaction
+        |> insert(to_address: contract.address, input: "0x" <> input_data)
+        |> Repo.preload(to_address: :smart_contract)
+
+      request = get(conn, "/api/v2/transactions/" <> to_string(transaction.hash))
+
+      assert response = json_response(request, 200)
+    end
   end
 
   describe "/transactions/{transaction_hash}/internal-transactions" do
