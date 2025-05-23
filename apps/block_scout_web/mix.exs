@@ -107,7 +107,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:floki, "~> 0.31"},
       {:flow, "~> 1.2"},
       {:gettext, "~> 0.26.1"},
-      {:hammer, "~> 6.0"},
+      {:hammer, "~> 7.0"},
+      {:hammer_backend_redis, "~> 7.0"},
       {:httpoison, "~> 2.0"},
       {:indexer, in_umbrella: true, runtime: false},
       # JSON parser and generator

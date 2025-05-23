@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.API.V2
-  alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
+  alias BlockScoutWeb.Plug.CheckApiV2
 
   @max_query_string_length 5_000
 
@@ -25,7 +25,6 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
-    plug(RateLimit)
   end
 
   pipeline :api_v2_no_forgery_protect do
@@ -41,7 +40,6 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)
-    plug(RateLimit)
     plug(:fetch_session)
   end
 
