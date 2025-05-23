@@ -5,7 +5,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPayments do
   import Ecto.Query, only: [from: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Indexer.Fetcher.Celo.Helper, only: [abi_to_method_id: 1]
-  import Indexer.Helper, only: [read_contracts_with_retries: 4]
+
+  import Indexer.Helper,
+    only: [
+      read_contracts_with_retries_by_chunks: 3,
+      read_contracts_with_retries: 4
+    ]
 
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.Chain.{Hash, TokenTransfer}
@@ -17,6 +22,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPayments do
   @mint_address_hash_string burn_address_hash_string()
 
   @repeated_request_max_retries 3
+  @requests_chunk_size 100
 
   # The method `getPaymentDelegation` was introduced in the following. Thus, we
   # set version hardcoded in `getVersionNumber` method.
@@ -157,10 +163,16 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPayments do
         block_number: block_number
       }
     )
-    |> read_contracts_with_retries(
-      @get_payment_delegation_abi,
-      json_rpc_named_arguments,
-      @repeated_request_max_retries
+    |> read_contracts_with_retries_by_chunks(
+      @requests_chunk_size,
+      fn requests ->
+        read_contracts_with_retries(
+          requests,
+          @get_payment_delegation_abi,
+          json_rpc_named_arguments,
+          @repeated_request_max_retries
+        )
+      end
     )
   end
 end
