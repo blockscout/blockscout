@@ -19,14 +19,15 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Block, BlockNumberHelper, Hash, SignedAuthorization, Transaction}
-  alias Explorer.Chain.Cache.{Accounts, ChainId}
+  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Indexer.{BufferedTask, Tracer}
 
   @failed_to_import "failed to import signed_authorization status for transactions: "
 
   @type inner_entry ::
-          {:transaction, %{authority: Hash.Address.t(), nonce: Decimal.t()}} | {:authorization, SignedAuthorization.t()}
+          {:transaction, %{authority: Hash.Address.t(), nonce: non_neg_integer()}}
+          | {:authorization, SignedAuthorization.t()}
 
   @typedoc """
   Each entry is a list of all transactions and signed authorizations from the same block.
@@ -109,7 +110,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
   @spec transaction_to_inner_entries(Transaction.t()) :: [inner_entry()]
   defp transaction_to_inner_entries(transaction) do
     [
-      {:transaction, %{authority: transaction.from_address_hash, nonce: transaction.nonce |> Decimal.new()}}
+      {:transaction, %{authority: transaction.from_address_hash, nonce: transaction.nonce}}
       | transaction
         |> Map.get(:signed_authorizations, [])
         |> Enum.sort_by(& &1.index)
@@ -272,25 +273,23 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
 
   # Compute authorization statuses by iteratively going through all transactions and authorizations in the block,
   # while keeping track of expected nonces.
-  @spec compute_statuses(entry(), %{Hash.Address.t() => Decimal.t()}) :: {entry(), [SignedAuthorization.t()]}
+  @spec compute_statuses(entry(), %{Hash.Address.t() => non_neg_integer()}) :: {entry(), [SignedAuthorization.t()]}
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp compute_statuses(entry, known_nonces) do
-    chain_id = ChainId.get_id()
-
     {new_entries, {updated_authorizations, _}} =
       entry.entries
       |> Enum.map_reduce({[], known_nonces}, fn
         {:transaction, transaction} = entry, {updated_authorizations, known_nonces} ->
-          {entry,
-           {updated_authorizations, known_nonces |> Map.put(transaction.authority, transaction.nonce |> Decimal.add(1))}}
+          {entry, {updated_authorizations, known_nonces |> Map.put(transaction.authority, transaction.nonce + 1)}}
 
         {:authorization, authorization} = entry, {updated_authorizations, known_nonces} ->
+          nonce = Decimal.to_integer(authorization.nonce)
+          status = SignedAuthorization.basic_validate(authorization)
+
           cond do
             # if authorization is valid, update known nonce and proceed
             authorization.status == :ok ->
-              {entry,
-               {updated_authorizations,
-                known_nonces |> Map.put(authorization.authority, authorization.nonce |> Decimal.add(1))}}
+              {entry, {updated_authorizations, known_nonces |> Map.put(authorization.authority, nonce + 1)}}
 
             # if authorization is invalid, nonce is not incremented
             authorization.status in [:invalid_signature, :invalid_chain_id, :invalid_nonce] ->
@@ -298,34 +297,29 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
 
             # remaining cases handle authorization.status == nil
 
-            is_nil(authorization.authority) ->
-              new_authorization = %{authorization | status: :invalid_signature}
+            status in [:invalid_signature, :invalid_chain_id, :invalid_nonce] ->
+              new_authorization = %{authorization | status: status}
 
               {{:authorization, new_authorization}, {[new_authorization | updated_authorizations], known_nonces}}
 
-            authorization.chain_id != 0 and !is_nil(chain_id) and authorization.chain_id != chain_id ->
-              new_authorization = %{authorization | status: :invalid_chain_id}
-
-              {{:authorization, new_authorization}, {[new_authorization | updated_authorizations], known_nonces}}
-
-            authorization.chain_id != 0 and is_nil(chain_id) ->
-              # we still can't get chain_id from the json rpc, so we can't validate authorization and don't know up-to-date nonce anymore
+            # we still can't get chain_id from the json rpc, so we can't validate authorization and don't know up-to-date nonce anymore
+            is_nil(status) ->
               {entry, {updated_authorizations, known_nonces |> Map.delete(authorization.authority)}}
 
             Map.has_key?(known_nonces, authorization.authority) and
-                not Decimal.eq?(authorization.nonce, Map.get(known_nonces, authorization.authority)) ->
+                nonce != Map.get(known_nonces, authorization.authority) ->
               new_authorization = %{authorization | status: :invalid_nonce}
 
               {{:authorization, new_authorization}, {[new_authorization | updated_authorizations], known_nonces}}
 
             Map.has_key?(known_nonces, authorization.authority) and
-                Decimal.eq?(authorization.nonce, Map.get(known_nonces, authorization.authority)) ->
+                nonce == Map.get(known_nonces, authorization.authority) ->
               new_authorization = %{authorization | status: :ok}
 
               {
                 {:authorization, new_authorization},
                 {[new_authorization | updated_authorizations],
-                 known_nonces |> Map.put(authorization.authority, authorization.nonce |> Decimal.add(1))}
+                 known_nonces |> Map.put(authorization.authority, nonce + 1)}
               }
 
             true ->
@@ -338,9 +332,8 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
   end
 
   @spec fetch_nonces([%{block_number: Block.block_number(), address_hash: Hash.Address.t()}], keyword()) ::
-          {:ok, %{Block.block_number() => %{Hash.Address.t() => Decimal.t()}}} | {:error, any()}
-  defp fetch_nonces([], _json_rpc_named_arguments),
-    do: {:ok, %{}}
+          {:ok, %{Block.block_number() => %{Hash.Address.t() => non_neg_integer()}}} | {:error, any()}
+  defp fetch_nonces([], _json_rpc_named_arguments), do: {:ok, %{}}
 
   defp fetch_nonces(entries, json_rpc_named_arguments) do
     # fetch nonces for at the end of the previous block, to know starting nonces for the current block
@@ -368,8 +361,8 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
           acc
           |> Map.update(
             BlockNumberHelper.next_block_number(block_number),
-            %{address_hash => Decimal.new(nonce)},
-            &Map.put(&1, address_hash, Decimal.new(nonce))
+            %{address_hash => nonce},
+            &Map.put(&1, address_hash, nonce)
           )
 
         _ ->

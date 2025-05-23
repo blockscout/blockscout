@@ -15,7 +15,6 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Chain.SmartContract.Proxy.EIP7702
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Utility.{AddressContractCodeFetchAttempt, RateLimiter}
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand

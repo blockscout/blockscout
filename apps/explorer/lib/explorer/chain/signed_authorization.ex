@@ -3,7 +3,7 @@ defmodule Explorer.Chain.SignedAuthorization do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Data, Hash, Transaction}
+  alias Explorer.Chain.{Cache.ChainId, Data, Hash, Transaction}
 
   @optional_attrs ~w(authority status)a
   @required_attrs ~w(transaction_hash index chain_id address nonce r s v)a
@@ -21,7 +21,7 @@ defmodule Explorer.Chain.SignedAuthorization do
     * `authority` - the signer of the authorization.
     * `status` - the status of the authorization.
   """
-  @type to_import :: %__MODULE__{
+  @type to_import :: %{
           transaction_hash: binary(),
           index: non_neg_integer(),
           chain_id: non_neg_integer(),
@@ -113,5 +113,42 @@ defmodule Explorer.Chain.SignedAuthorization do
       end
 
     %{hash: struct.authority, contract_code: code, nonce: struct.nonce |> Decimal.to_integer()}
+  end
+
+  @doc """
+  Does basic validation on a `SignedAuthorization.t()` according to EIP-7702, with
+  the exception of verifying current authority nonce, which requires calling
+  `eth_getTransactionCount` JSON-RPC method.
+
+  Authority nonce validity is verified in async `Indexer.Fetcher.SignedAuthorizationStatus` fetcher.
+
+  ## Returns
+  - `:ok` if the signed authorization is valid and we should proceed with nonce validation.
+  - `:invalid_chain_id` if the signed authorization is for another chain ID.
+  - `:invalid_signature` if the signed authorization has an invalid signature.
+  - `:invalid_nonce` if the signed authorization has an invalid nonce.
+  - `nil` if the signed authorization status is unknown due to unknown chain ID.
+  """
+  @spec basic_validate(Ecto.Schema.t() | to_import()) ::
+          :ok | :invalid_chain_id | :invalid_signature | :invalid_nonce | nil
+  def basic_validate(%{} = struct) do
+    chain_id = ChainId.get_id()
+
+    cond do
+      struct.chain_id != 0 and !is_nil(chain_id) and struct.chain_id != chain_id ->
+        :invalid_chain_id
+
+      struct.chain_id != 0 and is_nil(chain_id) ->
+        nil
+
+      struct.nonce |> Decimal.gte?(2 ** 64 - 1) ->
+        :invalid_nonce
+
+      is_nil(struct.authority) ->
+        :invalid_signature
+
+      true ->
+        :ok
+    end
   end
 end

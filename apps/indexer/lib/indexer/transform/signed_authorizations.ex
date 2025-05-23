@@ -3,7 +3,7 @@ defmodule Indexer.Transform.SignedAuthorizations do
     Helper functions for extracting signed authorizations from EIP-7702 transactions.
   """
 
-  alias Explorer.Chain.{Cache.ChainId, Hash, SignedAuthorization}
+  alias Explorer.Chain.{Hash, SignedAuthorization}
 
   # The magic number used in EIP-7702 to prefix the message to be signed.
   @eip7702_magic 0x5
@@ -30,30 +30,18 @@ defmodule Indexer.Transform.SignedAuthorizations do
       &(&1.authorization_list
         |> Enum.with_index()
         |> Enum.map(fn {authorization, index} ->
-          authority = recover_authority(authorization)
-          chain_id = ChainId.get_id()
+          new_authorization =
+            authorization
+            |> Map.merge(%{
+              transaction_hash: &1.hash,
+              index: index,
+              authority: recover_authority(authorization)
+            })
 
-          # we can immediately validate for :invalid_signature and :invalid_chain_id
-          # validation for :invalid_nonce is deferred to async fetcher
-          status =
-            cond do
-              is_nil(authority) ->
-                :invalid_signature
-
-              authorization.chain_id != 0 and !is_nil(chain_id) and authorization.chain_id != chain_id ->
-                :invalid_chain_id
-
-              true ->
-                nil
-            end
-
-          authorization
-          |> Map.merge(%{
-            transaction_hash: &1.hash,
-            index: index,
-            authority: authority,
-            status: status
-          })
+          # we can immediately do some basic validation that doesn't require any extra JSON-RPC requests
+          # full validation for :invalid_nonce is deferred to async fetcher
+          new_authorization
+          |> Map.put(:status, SignedAuthorization.basic_validate(new_authorization))
         end))
     )
   end
