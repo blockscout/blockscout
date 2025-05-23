@@ -8,6 +8,7 @@ defmodule Explorer.Account.Notifier.Email do
   alias Explorer.Account.{Identity, Watchlist, WatchlistAddress, WatchlistNotification}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Repo
+  alias Utils.Helper
 
   import Bamboo.{Email, SendGridHelper}
 
@@ -117,45 +118,15 @@ defmodule Explorer.Account.Notifier.Email do
   end
 
   defp address_url(address_hash) do
-    uri() |> URI.append_path("/address/#{address_hash}") |> to_string()
+    Helper.instance_url() |> URI.append_path("/address/#{address_hash}") |> to_string()
   end
 
   defp block_url(notification) do
-    uri() |> URI.append_path("/block/#{notification.block_number}") |> to_string()
+    Helper.instance_url() |> URI.append_path("/block/#{notification.block_number}") |> to_string()
   end
 
   defp transaction_url(notification) do
-    uri() |> URI.append_path("/tx/#{notification.transaction_hash}") |> to_string()
-  end
-
-  defp url_params do
-    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
-  end
-
-  defp uri do
-    %URI{scheme: scheme(), host: host(), port: port(), path: path()}
-  end
-
-  defp scheme do
-    Keyword.get(url_params(), :scheme, "http")
-  end
-
-  defp host do
-    url_params()[:host]
-  end
-
-  defp port do
-    url_params()[:http][:port]
-  end
-
-  defp path do
-    raw_path = url_params()[:path]
-
-    if raw_path |> String.ends_with?("/") do
-      raw_path |> String.slice(0..-2//1)
-    else
-      raw_path
-    end
+    Helper.instance_url() |> URI.append_path("/tx/#{notification.transaction_hash}") |> to_string()
   end
 
   defp sender do

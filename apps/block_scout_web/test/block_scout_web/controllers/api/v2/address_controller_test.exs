@@ -29,6 +29,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
+  import OpenApiSpex.TestAssertions
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
   @instances_amount_in_collection 9
@@ -88,13 +89,27 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       end)
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
-      check_response(correct_response, json_response(request, 200))
+      json_response = json_response(request, 200)
+      check_response(correct_response, json_response)
+      assert_schema(json_response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/addresses/0x")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      json_response = json_response(request, 422)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response
+
+      assert_schema(json_response, "AddressResponse", OpenApiSpex.JsonErrorResponse.response())
     end
 
     test "get address & get the same response for checksummed and downcased parameter", %{conn: conn} do
@@ -130,10 +145,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       end)
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
-      check_response(correct_response, json_response(request, 200))
+      json_response = json_response(request, 200)
+      check_response(correct_response, json_response)
+      assert_schema(json_response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
 
       request = get(conn, "/api/v2/addresses/#{String.downcase(to_string(address.hash))}")
-      check_response(correct_response, json_response(request, 200))
+      json_response = json_response(request, 200)
+      check_response(correct_response, json_response)
+      assert_schema(json_response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "returns successful creation transaction for a contract when both failed and successful transactions exist",
@@ -269,6 +288,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(proxy_address.hash)}")
 
+      json_response = json_response(request, 200)
+
       assert %{
                "hash" => ^address_hash,
                "is_contract" => true,
@@ -286,7 +307,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                    "name" => ^name
                  }
                ]
-             } = json_response(request, 200)
+             } = json_response
+
+      assert_schema(json_response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get EIP-1967 proxy contract info", %{conn: conn} do
@@ -318,6 +341,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(smart_contract.address_hash)}")
 
+      json_response = json_response(request, 200)
+
       assert %{
                "hash" => ^address_hash,
                "is_contract" => true,
@@ -336,7 +361,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                    "name" => nil
                  }
                ]
-             } = json_response(request, 200)
+             } = json_response
+
+      assert_schema(json_response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get Resolved Delegate Proxy contract info", %{conn: conn} do
@@ -444,6 +471,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
 
       assert response["watchlist_address_id"] == watchlist_address.id
+
+      assert_schema(response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "broadcasts fetched_bytecode event", %{conn: conn} do

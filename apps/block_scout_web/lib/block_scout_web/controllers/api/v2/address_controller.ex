@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
   use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
@@ -130,12 +131,27 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags ["addresses"]
+
+  operation :address,
+    summary: "Retrieve detailed information about a specific address or contract",
+    description:
+      "Retrieves detailed information for a specific address, including balance, transaction count, and metadata.",
+    parameters: [address_hash_param()],
+    responses: [
+      ok: {"Detailed information about the specified address.", "application/json", Schemas.Address.Response},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/addresses/:address_hash_param` endpoint.
   Returns 200 on any valid address_hash, even if the address is not found in the database.
   """
   @spec address(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def address(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def address(conn, %{address_hash_param: address_hash_string} = params) do
     ip = AccessHelper.conn_to_ip_string(conn)
 
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
@@ -179,6 +195,17 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :counters,
+    summary: "Get activity count stats for a specific address",
+    description:
+      "Retrieves count statistics for an address, including transactions, token transfers, gas usage, and validations.",
+    parameters: [address_hash_param()],
+    responses: [
+      ok: {"Count statistics for the specified address", "application/json", Schemas.Address.Counters},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/counters` endpoint.
 
@@ -220,6 +247,19 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :token_balances,
+    summary: "List all token balances held by a specific address",
+    description:
+      "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155 and ERC-404 tokens.",
+    parameters: [address_hash_param()],
+    responses: [
+      ok:
+        {"All token balances for the specified address.", "application/json",
+         %Schema{type: :array, items: Schemas.Address.TokenBalance}},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/token-balances` endpoint (retrieves the token balances for a given address)
 
@@ -258,6 +298,31 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       end
     end
   end
+
+  operation :transactions,
+    summary: "List transactions involving a specific address with to-from filtering",
+    description:
+      "Retrieves transactions involving a specific address, with optional filtering for transactions sent from or to the address.",
+    parameters: [
+      address_hash_param(),
+      direction_filter_param(),
+      sorting_params(["block_number", "value", "fee"]),
+      order_params()
+    ],
+    responses: [
+      ok:
+        {"All transactions for the specified address.", "application/json",
+         paginated_response(
+           items: Schemas.Transaction,
+           next_page_params_example: %{
+             "block_number" => 12_345_678,
+             "index" => 0,
+             "items_count" => 50
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
 
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/transactions` endpoint (retrieves transactions for a given address)
@@ -314,6 +379,26 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       end
     end
   end
+
+  operation :token_transfers,
+    summary: "List token transfers involving a specific address with filtering options",
+    description:
+      "Retrieves token transfers involving a specific address, with optional filtering by token type, direction, and specific token.",
+    parameters: [address_hash_param(), direction_filter_param(), token_type_param()],
+    responses: [
+      ok:
+        {"All token transfers for the specified address.", "application/json",
+         paginated_response(
+           items: Schemas.TokenTransfer,
+           next_page_params_example: %{
+             "block_number" => 12_345_678,
+             "index" => 0,
+             "items_count" => 50
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
 
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/token-transfers` endpoint (retrieves token transfers for a given address)
@@ -384,6 +469,27 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :internal_transactions,
+    summary: "List all internal transactions involving a specific address",
+    description:
+      "Retrieves all internal transactions involving a specific address, with optional filtering for internal transactions sent from or to the address.",
+    parameters: [address_hash_param(), direction_filter_param()],
+    responses: [
+      ok:
+        {"All internal transactions for the specified address.", "application/json",
+         Schemas.General.paginated_response(
+           items: Schemas.InternalTransaction,
+           next_page_params_example: %{
+             "block_number" => 22_530_770,
+             "index" => 8,
+             "items_count" => 50,
+             "transaction_index" => 8
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/internal-transactions` endpoint (retrieves internal transactions for a given address)
 
@@ -443,6 +549,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :logs,
+    summary: "List event logs emitted by or involving a specific address",
+    description: "Retrieves event logs emitted by or involving a specific address.",
+    parameters: [address_hash_param(), topic_param()],
+    responses: [
+      ok:
+        {"Event logs for the specified address, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Log,
+           next_page_params_example: %{"block_number" => 22_546_398, "index" => 268, "items_count" => 50}
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/logs` endpoint (retrieves logs for a given address)
 
@@ -500,6 +621,22 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :blocks_validated,
+    summary: "List blocks validated (mined) by a specific validator/miner address",
+    description:
+      "Retrieves blocks that were validated (mined) by a specific address. Useful for tracking validator/miner performance.",
+    parameters: [address_hash_param()],
+    responses: [
+      ok:
+        {"Blocks validated by the specified address, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Block,
+           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50}
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/blocks-validated` endpoint (retrieves validated by a given address blocks)
 
@@ -551,6 +688,22 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :coin_balance_history,
+    summary: "Get native coin balance history for an address showing all balance changes",
+    description:
+      "Retrieves historical native coin balance changes for a specific address, tracking how an address's balance has changed over time.",
+    parameters: [address_hash_param()],
+    responses: [
+      ok:
+        {"Historical coin balance changes for the specified address, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.CoinBalance,
+           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50}
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/coin-balance-history` endpoint (retrieves coin balance history for given address)
 
@@ -591,6 +744,26 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :coin_balance_history_by_day,
+    summary: "Get daily native coin balance snapshots for an address from previous 10 days",
+    description:
+      "Retrieves daily snapshots of native coin balance for a specific address. Useful for generating balance-over-time charts.",
+    parameters: [address_hash_param()],
+    responses: [
+      ok:
+        {"Daily coin balance history for the specified address.", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             days: %Schema{type: :integer, nullable: false},
+             items: %Schema{type: :array, items: Schemas.CoinBalanceByDay}
+           },
+           nullable: false
+         }},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/coin-balance-history-by-day` endpoint (retrieves coin balance history by day for given address)
 
@@ -626,6 +799,27 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       end
     end
   end
+
+  operation :tokens,
+    summary: "List token balances for an address with pagination and type filtering",
+    description:
+      "Retrieves token balances for a specific address with pagination and filtering by token type. Useful for displaying large token portfolios.",
+    parameters: [address_hash_param(), token_type_param()],
+    responses: [
+      ok:
+        {"Token balances for the specified address with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Token,
+           next_page_params_example: %{
+             "fiat_value" => nil,
+             "id" => 12_519_063_346,
+             "items_count" => 50,
+             "value" => "3750000000000000000000"
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
 
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/tokens` endpoint (retrieves token balances for given address)
@@ -682,6 +876,23 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :withdrawals,
+    summary: "List validator withdrawals involving a specific address",
+    description:
+      "Retrieves withdrawals involving a specific address, typically for proof-of-stake networks supporting validator withdrawals.",
+    parameters: [address_hash_param()],
+    responses: [
+      ok:
+        {"Withdrawals for the specified address, with pagination. Note that receiver field is not included in this endpoint.",
+         "application/json",
+         paginated_response(
+           items: Schemas.Withdrawal,
+           next_page_params_example: %{"index" => 88_192_653, "items_count" => 50}
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/withdrawals` endpoint (retrieves withdrawals for given address)
 
@@ -727,6 +938,36 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :addresses_list,
+    summary: "List addresses holding native coins sorted by balance - top accounts",
+    description: "Retrieves a paginated list of addresses holding the native coin, sorted by balance.",
+    parameters: [sorting_params(["balance", "transactions_count"]), order_params()],
+    responses: [
+      ok:
+        {"List of native coin holders with their balances, with pagination.", "application/json",
+         %Schema{
+           allOf: [
+             paginated_response(
+               items: Schemas.Address,
+               next_page_params_example: %{
+                 "fetched_coin_balance" => "124355417998347240251800",
+                 "hash" => "0x59708733fbbf64378d9293ec56b977c011a08fd2",
+                 "items_count" => 50,
+                 "transactions_count" => nil
+               }
+             ),
+             %Schema{
+               properties: %{
+                 exchange_rate: Schemas.General.FloatStringNullable,
+                 total_supply: Schemas.General.FloatStringNullable
+               },
+               required: [:exchange_rate, :total_supply]
+             }
+           ]
+         }},
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses` endpoint (retrieves addresses list)
 
@@ -763,6 +1004,16 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       total_supply: total_supply
     })
   end
+
+  operation :tabs_counters,
+    summary: "Get counters for address tabs",
+    description: "Retrieves counters for various address-related entities (max counter value is 51).",
+    parameters: [address_hash_param()],
+    responses: [
+      ok: {"Counters for address tabs.", "application/json", Schemas.Address.TabsCounters},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
 
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/tabs-counters` endpoint (retrieves counter for each entity (max counter value is 51) for given address)
@@ -828,8 +1079,29 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :nft_list,
+    summary: "List NFTs owned by a specific address with optional type filtering",
+    description:
+      "Retrieves a list of NFTs (non-fungible tokens) owned by a specific address, with optional filtering by token type.",
+    parameters: [address_hash_param(), nft_token_type_param()],
+    responses: [
+      ok:
+        {"NFTs owned by the specified address, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.TokenInstanceInList,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
+             "token_id" => "24950",
+             "token_type" => "ERC-721"
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
-  Handles GET requests to `/api/v2/addresses/:address_hash_param/nft-list` endpoint (retrieves NFTs for given address)
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/nft` endpoint (retrieves NFTs for given address)
 
   ## Parameters
 
@@ -880,8 +1152,28 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :nft_collections,
+    summary: "List NFTs owned by an address grouped by collection/project",
+    description:
+      "Retrieves NFTs owned by a specific address, organized by collection. Useful for displaying an address's NFT portfolio grouped by project.",
+    parameters: [address_hash_param(), nft_token_type_param()],
+    responses: [
+      ok:
+        {"NFTs owned by the specified address, grouped by collection, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.NFTCollection,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
+             "token_type" => "ERC-721"
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
-  Handles GET requests to `/api/v2/addresses/:address_hash_param/nft-collections` endpoint (retrieves NFTs grouped by collections for given address)
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/nft/collections` endpoint (retrieves NFTs grouped by collections for given address)
 
   ## Parameters
 
@@ -932,8 +1224,28 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :celo_election_rewards,
+    summary: "List Celo election rewards for a specific address",
+    description: "Retrieves Celo election rewards for a specific address.",
+    parameters: [address_hash_param()],
+    responses: [
+      ok:
+        {"Celo election rewards for the specified address.", "application/json",
+         paginated_response(
+           items: Schemas.CeloElectionReward,
+           next_page_params_example: %{
+             "block_number" => 100,
+             "amount" => "1000000000000000000",
+             "associated_account_address_hash" => "0x1234567890123456789012345678901234567890",
+             "type" => "validator"
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
-  Function to handle GET requests to `/api/v2/addresses/:address_hash_param/election-rewards` endpoint.
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/election-rewards` endpoint.
   """
   @spec celo_election_rewards(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def celo_election_rewards(conn, %{"address_hash_param" => address_hash_string} = params) do
