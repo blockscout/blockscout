@@ -109,9 +109,24 @@ services:
   admin-frontend:
     depends_on:
       - admin-backend
-    extends:
-      file: ./services/admin-frontend.yml
-      service: admin-frontend
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ../admin-frontend:/app
+    command: sh -c "npm install && npm run dev"
+    container_name: 'admin-frontend'
+    ports:
+      - "3010:3010"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:4010
+      - WATCHPACK_POLLING=true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3010"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # proxy:
 

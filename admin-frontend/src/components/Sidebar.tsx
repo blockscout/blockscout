@@ -1,7 +1,7 @@
 import { Box, VStack, Link, Flex, Icon, Text } from '@chakra-ui/react';
 import NextLink from 'next/link';
 import { useRouter } from 'next/router';
-import { FiHome, FiActivity, FiUsers, FiSettings, FiBarChart2, FiDatabase } from 'react-icons/fi';
+import { FiHome, FiActivity, FiUsers, FiSettings, FiBarChart2, FiDatabase, FiTag, FiBookmark } from 'react-icons/fi';
 
 interface SidebarProps {
   onClose?: () => void;
@@ -70,50 +70,25 @@ export default function Sidebar({ onClose }: SidebarProps) {
           Dashboard
         </NavItem>
         
+        
         <NavItem 
-          icon={FiActivity} 
-          href="/transactions" 
-          isActive={isActive('/transactions')}
+          icon={FiTag}
+          href="/tokens" 
+          isActive={isActive('/tokens')}
           onClick={onClose}
         >
-          Transactions
+          Tokens
         </NavItem>
         
         <NavItem 
-          icon={FiDatabase} 
-          href="/blocks" 
-          isActive={isActive('/blocks')}
+          icon={FiBookmark}
+          href="/address-tags" 
+          isActive={isActive('/address-tags')}
           onClick={onClose}
         >
-          Blocks
+          Address Tags
         </NavItem>
         
-        <NavItem 
-          icon={FiUsers} 
-          href="/users" 
-          isActive={isActive('/users')}
-          onClick={onClose}
-        >
-          Users
-        </NavItem>
-        
-        <NavItem 
-          icon={FiBarChart2} 
-          href="/statistics" 
-          isActive={isActive('/statistics')}
-          onClick={onClose}
-        >
-          Statistics
-        </NavItem>
-        
-        <NavItem 
-          icon={FiSettings} 
-          href="/settings" 
-          isActive={isActive('/settings')}
-          onClick={onClose}
-        >
-          Settings
-        </NavItem>
       </VStack>
     </Box>
   );

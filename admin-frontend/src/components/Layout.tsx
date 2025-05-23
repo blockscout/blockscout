@@ -28,14 +28,15 @@ export default function Layout({ children }: LayoutProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
+  // if (isLoading) {
+  //   return <LoadingScreen />;
+  // }
 
-  if (!isAuthenticated) {
-    // Redirect handled by AuthGuard
-    return <LoadingScreen />;
-  }
+  // if (!isAuthenticated) {
+  //   console.log('User not authenticated, redirecting to login...');
+  //   // Redirect handled by AuthGuard
+  //   return <LoadingScreen />;
+  // }
 
   return (
     <Box minH="100vh" bg="gray.50">

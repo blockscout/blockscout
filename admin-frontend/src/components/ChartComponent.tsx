@@ -72,9 +72,23 @@ interface ChartComponentProps {
   type: 'line' | 'bar' | 'pie' | 'doughnut';
   data: any[];
   height?: number;
+  xKey?: string; // chiave per i valori dell'asse x
+  yKey?: string; // chiave per i valori dell'asse y
+  xLabel?: string; // etichetta per l'asse x
+  yLabel?: string; // etichetta per l'asse y
+  title?: string; // titolo del grafico
 }
 
-export default function ChartComponent({ type, data = [], height = 300 }: ChartComponentProps) {
+export default function ChartComponent({ 
+  type, 
+  data = [], 
+  height = 300,
+  xKey = 'date',
+  yKey = 'value',
+  xLabel = '',
+  yLabel = '',
+  title = ''
+}: ChartComponentProps) {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<Chart | null>(null);
 
@@ -87,7 +101,7 @@ export default function ChartComponent({ type, data = [], height = 300 }: ChartC
     }
 
     // Process data based on chart type
-    const chartData = processData(data, type);
+    const chartData = processData(data, type, xKey, yKey);
     
     // Create new chart
     const ctx = chartRef.current.getContext('2d');
@@ -106,18 +120,39 @@ export default function ChartComponent({ type, data = [], height = 300 }: ChartC
               mode: 'index',
               intersect: false,
             },
+            title: title ? {
+              display: true,
+              text: title,
+              font: {
+                size: 16
+              }
+            } : undefined,
           },
           scales: type === 'pie' || type === 'doughnut' ? undefined : {
             x: {
               grid: {
                 display: false,
               },
+              title: xLabel ? {
+                display: true,
+                text: xLabel,
+                font: {
+                  size: 14
+                }
+              } : undefined,
             },
             y: {
               beginAtZero: true,
               grid: {
                 color: 'rgba(0, 0, 0, 0.05)',
               },
+              title: yLabel ? {
+                display: true,
+                text: yLabel,
+                font: {
+                  size: 14
+                }
+              } : undefined,
             },
           },
         },
@@ -133,19 +168,15 @@ export default function ChartComponent({ type, data = [], height = 300 }: ChartC
   }, [data, type]);
 
   // Format data for Chart.js
-  function processData(data: any[], chartType: string): ChartData {
-    // This is a simplified example - in a real app you'd adapt this to your actual data structure
-    
-    // For demo purposes, let's assume data is either:
-    // 1. For line/bar: [{date: '2023-01-01', value: 123}, ...]
-    // 2. For pie/doughnut: [{label: 'Category A', value: 123}, ...]
+  function processData(data: any[], chartType: string, xKey: string = 'date', yKey: string = 'value'): ChartData {
+    // Gestisce diversi formati di dati in base al tipo di grafico
     
     if (chartType === 'pie' || chartType === 'doughnut') {
       return {
-        labels: data.map(item => item.label || ''),
+        labels: data.map(item => item.label || item[xKey] || ''),
         datasets: [{
-          label: 'Dataset 1', // Adding the required label property
-          data: data.map(item => item.value || 0),
+          label: 'Dataset 1',
+          data: data.map(item => item[yKey] || item.value || 0),
           backgroundColor: [
             'rgba(54, 162, 235, 0.7)',
             'rgba(255, 99, 132, 0.7)',
@@ -158,22 +189,26 @@ export default function ChartComponent({ type, data = [], height = 300 }: ChartC
       };
     }
     
-    // For line and bar charts
+    // Per grafici a linee e barre
     return {
       labels: data.map(item => {
-        // Format date if it exists
-        if (item.date) {
-          return new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        // Gestisce date nei vari formati
+        if (item[xKey] && (typeof item[xKey] === 'string' && item[xKey].includes('-'))) {
+          try {
+            return new Date(item[xKey]).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+          } catch (e) {
+            return item[xKey];
+          }
         }
-        return item.label || '';
+        return item[xKey] || item.label || '';
       }),
       datasets: [{
-        label: 'Value',
-        data: data.map(item => item.value || 0),
-        backgroundColor: 'rgba(54, 162, 235, 0.3)',
-        borderColor: 'rgba(54, 162, 235, 1)',
+        label: yLabel || 'Valore',
+        data: data.map(item => item[yKey] || item.value || 0),
+        backgroundColor: chartType === 'line' ? 'rgba(75, 192, 192, 0.3)' : 'rgba(54, 162, 235, 0.7)',
+        borderColor: chartType === 'line' ? 'rgba(75, 192, 192, 1)' : 'rgba(54, 162, 235, 1)',
         borderWidth: 2,
-        tension: 0.4,
+        tension: chartType === 'line' ? 0.4 : 0,
         fill: chartType === 'line',
       }],
     };

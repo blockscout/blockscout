@@ -64,11 +64,15 @@ Before using passwordless authentication, ensure the following are configured pr
 
 ## Testing Passwordless Authentication
 
-You can use the test script to verify if passwordless authentication is working:
+You can use the test scripts to verify if passwordless authentication is working:
 
 ```bash
-cd /Users/lucasimonetti/uomi-explorer/admin-backend
+# Test only sending the passwordless code
+cd /Users/jacopomosconi/UOMI-Project/uomi-explorer/admin-backend
 node src/test-passwordless.js
+
+# Test the full flow including code verification
+node src/test-passwordless-full.js
 ```
 
 You can also use the validation script which includes a basic API check:
@@ -76,6 +80,25 @@ You can also use the validation script which includes a basic API check:
 ```bash
 ./scripts/validate-auth0-config.sh
 ```
+
+## OTP Code vs Magic Link
+
+The system now supports two modes of passwordless authentication:
+
+1. **OTP Code Flow** (Primary method):
+   - A numeric code is sent to the user's email
+   - The user inputs this code in the application
+   - The code is exchanged for authentication tokens
+   - This method is more reliable and provides better user experience on mobile devices
+
+2. **Magic Link Flow** (Alternative):
+   - A link is sent to the user's email
+   - Clicking the link completes authentication
+   - This method requires proper redirect URI configuration
+
+To change between methods, adjust the `send` parameter in the authentication call:
+- For OTP codes: set `send: 'code'`
+- For magic links: set `send: 'link'`
 
 ## Common Issues and Solutions
 

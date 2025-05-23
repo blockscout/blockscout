@@ -87,4 +87,9 @@ logger.authError = (message, user, action, ip, error, metadata = {}) => {
   logger.error(message, { user, action, ip, error: error.message, stack: error.stack, ...metadata });
 };
 
+// Aggiunta la funzione authAttempt che mancava
+logger.authAttempt = (message, user, action, ip, metadata = {}) => {
+  logger.info(message, { user, action, ip, ...metadata });
+};
+
 module.exports = logger;

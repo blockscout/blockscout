@@ -37,11 +37,11 @@ export default function Transactions() {
 
   useEffect(() => {
     // Check if user is authenticated
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
+    // const token = localStorage.getItem('token');
+    // if (!token) {
+    //   router.push('/login');
+    //   return;
+    // }
 
     fetchTransactions();
   }, [router, pagination.page, filter]);
@@ -49,7 +49,7 @@ export default function Transactions() {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${process.env.API_URL}/transactions`, {
+      const response = await axios.get(`api/recent`, {
         params: {
           page: pagination.page,
           limit: pagination.limit,

@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const { sequelize } = require('./models');
 const logger = require('./utils/logger');
+const tokenCache = require('./utils/tokenCache');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -14,6 +15,8 @@ const transactionRoutes = require('./routes/transactions');
 const blockRoutes = require('./routes/blocks');
 const userRoutes = require('./routes/users');
 const settingsRoutes = require('./routes/settings');
+const tokensRoutes = require('./routes/tokensRoutes');
+const addressTagsRoutes = require('./routes/addressTagsRoutes');
 
 // Middleware imports
 const { errorHandler } = require('./middleware/errorHandler');
@@ -36,6 +39,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
+app.use('/uploads', express.static('uploads'));
 
 // Rate limiting
 const apiLimiter = rateLimit({
@@ -59,12 +63,21 @@ app.use('/api/auth', authRoutes);
 
 // Protected routes using Auth0 JWT validation
 // First try Auth0 authentication, then fall back to local JWT if needed
-const authMiddleware = [checkJwt, loadUserProfile, localAuthMiddleware];
+// Aggiungiamo middleware di debug per ogni richiesta
+const debugMiddleware = (req, res, next) => {
+  console.log(`[DEBUG] Richiesta API: ${req.method} ${req.originalUrl}`);
+  console.log(`[DEBUG] Auth header: ${req.headers.authorization ? 'Presente' : 'Assente'}`);
+  next();
+};
+
+const authMiddleware = [debugMiddleware, checkJwt, loadUserProfile, localAuthMiddleware];
 app.use('/api/dashboard', authMiddleware, dashboardRoutes);
 app.use('/api/transactions', authMiddleware, transactionRoutes);
 app.use('/api/blocks', authMiddleware, blockRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
 app.use('/api/settings', authMiddleware, settingsRoutes);
+app.use('/api/tokens', authMiddleware, tokensRoutes);
+app.use('/api/address-tags', authMiddleware, addressTagsRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -84,6 +97,7 @@ const server = app.listen(PORT, async () => {
   try {
     await sequelize.authenticate();
     logger.info('Database connection has been established successfully.');
+    logger.info('Token cache inizializzata - riduce le chiamate ad Auth0');
   } catch (error) {
     logger.error('Unable to connect to the database:', error);
   }

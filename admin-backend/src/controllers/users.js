@@ -65,12 +65,14 @@ exports.createUser = async (req, res, next) => {
       return res.status(409).json({ message: 'User with this email already exists' });
     }
     
+    // Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    
     // Create new user
     const user = await User.create({
-      email,
-      username,
-      password,
-      role: role || 'viewer'
+      username: email,
+      password_hash: hashedPassword
     });
     
     // Return user without password

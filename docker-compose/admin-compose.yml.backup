@@ -12,7 +12,11 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=4010
-      #QUI
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-postgres}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - JWT_SECRET=${JWT_SECRET:-devSecret}
     networks:
       - admin-network

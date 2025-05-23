@@ -22,18 +22,38 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   const isPublicPath = publicPaths.includes(router.pathname);
 
   useEffect(() => {
-    // Display Auth0 errors
+    // Display and handle Auth0 errors
     if (error) {
       console.error('Auth0 error:', error);
+      
+      // Controlla tipi specifici di errori Auth0
+      const errorMessage = error.message || 'There was a problem with authentication';
+      
+      // Se è scaduta la sessione o il token non è valido, pulisci lo storage e fai logout
+      if (
+        errorMessage.includes('expired') || 
+        errorMessage.includes('invalid') || 
+        errorMessage.includes('expired token')
+      ) {
+        console.log('Token scaduto o non valido, pulizia della sessione...');
+        localStorage.removeItem('auth0_token');
+        localStorage.removeItem('auth_token');
+        sessionStorage.removeItem('isAuthenticated');
+        
+        // Ricarica la pagina per forzare un nuovo login
+        window.location.href = '/login';
+        return;
+      }
+      
       toast({
         title: 'Authentication Error',
-        description: error.message || 'There was a problem with authentication',
+        description: errorMessage,
         status: 'error',
         duration: 5000,
         isClosable: true,
       });
     }
-  }, [error, toast]);
+  }, [error, toast, logout]);
 
   useEffect(() => {
     // Don't check auth for public paths
@@ -43,11 +63,46 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     }
 
     const verifyAuth = async () => {
+      // Check for local authentication first
+      const localAuthToken = localStorage.getItem('auth_token');
+      const sessionAuth = sessionStorage.getItem('isAuthenticated');
+      
+      if (localAuthToken || sessionAuth) {
+        console.log('Local authentication found');
+        setVerifying(false);
+        return;
+      }
+      
       if (!isLoading && isAuthenticated) {
         try {
-          // Get token and store it for API calls
-          const token = await getAccessTokenSilently();
-          localStorage.setItem('auth0_token', token);
+          // Prima cerca di usare il token dalla cache locale
+          let token = localStorage.getItem('auth0_token');
+          const tokenTimestamp = localStorage.getItem('auth0_token_timestamp');
+          const tokenExpiry = 12 * 60 * 60 * 1000; // 12 ore in millisecondi
+          
+          // Verifica se il token è ancora valido (non più vecchio di 12 ore)
+          const isTokenValid = token && tokenTimestamp && 
+            (Date.now() - parseInt(tokenTimestamp, 10) < tokenExpiry);
+          
+          // Se il token non è valido o non esiste, richiedi un nuovo token
+          if (!isTokenValid) {
+            console.log('Token non trovato o scaduto, richiedo un nuovo token...');
+            
+            token = await getAccessTokenSilently({
+              cacheMode: 'remote_only', // Usa solo il token remoto, evitando la cache del browser
+              authorizationParams: {
+                audience: 'https://uomi.us.auth0.com/api/v2/',
+                scope: 'openid profile email'
+              }
+            });
+            
+            // Salva il nuovo token con un timestamp per tracciare quando è stato ottenuto
+            localStorage.setItem('auth0_token', token);
+            localStorage.setItem('auth0_token_timestamp', Date.now().toString());
+            localStorage.setItem('auth_token', token); // Store also as auth_token for compatibility
+          } else {
+            console.log('Usando token dalla cache locale (valido)');
+          }
 
           // Verify with backend
           await axios.get('/api/auth/status', {
@@ -60,6 +115,8 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
           setVerifying(false);
           // Reset retry count on success
           setRetryCount(0);
+          // Set session auth flag
+          sessionStorage.setItem('isAuthenticated', 'true');
         } catch (error) {
           console.error('Token verification failed:', error);
           
@@ -114,9 +171,9 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     verifyAuth();
   }, [isLoading, isAuthenticated, router, getAccessTokenSilently, logout, isPublicPath, retryCount, toast]);
 
-  if ((isLoading || verifying) && !isPublicPath) {
-    return <LoadingScreen />;
-  }
+  // if ((isLoading || verifying) && !isPublicPath) {
+  //   return <LoadingScreen />;
+  // }
 
   return <>{children}</>;
 };

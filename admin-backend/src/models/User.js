@@ -15,15 +15,28 @@ module.exports = (sequelize) => {
     },
     password_hash: {
       type: DataTypes.STRING,
-      allowNull: true // Can be null for Auth0 users
+      allowNull: false, // Richiesto da Blockscout
+      defaultValue: '!passwordless_auth!' // Valore di default per autenticazione passwordless/oauth
     },
-    auth0_id: {
-      type: DataTypes.STRING,
-      allowNull: true
+    // Campi virtuali che non vengono salvati nel DB
+    email: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return this.username;
+      },
+      set(value) {
+        this.setDataValue('username', value);
+      }
     },
-    last_login: {
-      type: DataTypes.DATE,
-      allowNull: true
+    // Campo virtuale per tenere traccia del login in memoria
+    last_login_virtual: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return this._last_login_virtual;
+      },
+      set(value) {
+        this._last_login_virtual = value;
+      }
     }
   }, {
     tableName: 'users',
