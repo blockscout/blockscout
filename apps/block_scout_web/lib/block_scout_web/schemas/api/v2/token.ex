@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.General
-  alias BlockScoutWeb.Schemas.API.V2.Token.ChainTypeCustomizations
+  alias BlockScoutWeb.Schemas.API.V2.Token.{ChainTypeCustomizations, Type}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -45,13 +45,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         name: %Schema{type: :string, nullable: false},
         decimals: General.IntegerStringNullable,
         type: %Schema{
-          type: :string,
-          enum: [
-            "ERC-20",
-            "ERC-721",
-            "ERC-1155",
-            "ERC-404"
-          ],
+          oneOf: [Type],
           nullable: true
         },
         holders: General.IntegerStringNullable,
@@ -78,4 +72,21 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
     }
     |> ChainTypeCustomizations.token_chain_type_fields()
   )
+end
+
+defmodule BlockScoutWeb.Schemas.API.V2.Token.Type do
+  @moduledoc """
+  This module defines the schema for the Token type.
+  """
+  require OpenApiSpex
+
+  OpenApiSpex.schema(%{
+    type: :string,
+    enum: [
+      "ERC-20",
+      "ERC-721",
+      "ERC-1155",
+      "ERC-404"
+    ]
+  })
 end

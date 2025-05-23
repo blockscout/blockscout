@@ -219,7 +219,52 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
 
       :stability ->
         schema
-        # TODO: add stability fields
+        |> put_in([:properties, :stability_fee], %Schema{
+          type: :object,
+          nullable: false,
+          properties: %{
+            token: Token,
+            validator_address: Address,
+            dapp_address: Address,
+            total_fee: General.IntegerString,
+            dapp_fee: General.IntegerString,
+            validator_fee: General.IntegerString
+          },
+          required: [:token, :validator_address, :dapp_address, :total_fee, :dapp_fee, :validator_fee]
+        })
+
+      :ethereum ->
+        schema
+        |> put_in([:properties, :max_fee_per_blob_gas], General.IntegerString)
+        |> put_in([:properties, :blob_versioned_hashes], %Schema{type: :array, items: General.FullHash, nullable: false})
+        |> put_in([:properties, :blob_gas_used], General.IntegerString)
+        |> put_in([:properties, :blob_gas_price], General.IntegerString)
+        |> put_in([:properties, :burnt_blob_fee], General.IntegerString)
+
+      :celo ->
+        schema
+        |> put_in([:properties, :celo], %Schema{
+          type: :object,
+          nullable: false,
+          properties: %{gas_token: %Schema{oneOf: [Token], nullable: true}},
+          required: [:gas_token]
+        })
+        |> update_in([:required], &[:celo | &1])
+
+      :zilliqa ->
+        schema
+        |> put_in([:properties, :zilliqa], %Schema{
+          type: :object,
+          nullable: false,
+          properties: %{
+            is_scilla: %Schema{type: :boolean, nullable: false}
+          },
+          required: [:is_scilla]
+        })
+        |> update_in([:required], &[:zilliqa | &1])
+
+      _ ->
+        schema
     end
   end
 end
@@ -230,10 +275,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.General
-  alias BlockScoutWeb.Schemas.API.V2.{Address, SignedAuthorization, TokenTransfer}
-  alias OpenApiSpex.Schema
+  alias BlockScoutWeb.Schemas.API.V2.{Address, General, SignedAuthorization, TokenTransfer}
   alias BlockScoutWeb.Schemas.API.V2.Transaction.{ChainTypeCustomizations, Fee}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -440,23 +484,4 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
     }
     |> ChainTypeCustomizations.chain_type_fields()
   )
-end
-
-defmodule BlockScoutWeb.Schemas.API.V2.Transaction.Fee do
-  @moduledoc """
-  This module defines the schema for the Transaction fee.
-  """
-  require OpenApiSpex
-
-  OpenApiSpex.schema(%{
-    type: :object,
-    required: [:type, :value],
-    properties: %{
-      type: %Schema{
-        type: :string,
-        enum: ["maximum", "actual"]
-      },
-      value: General.IntegerStringNullable
-    }
-  })
 end
