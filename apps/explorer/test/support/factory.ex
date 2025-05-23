@@ -42,6 +42,7 @@ defmodule Explorer.Factory do
     MultichainSearchDbExportRetryQueue,
     PendingBlockOperation,
     PendingTransactionOperation,
+    SignedAuthorization,
     SmartContract,
     SmartContractAdditionalSource,
     Token,
@@ -1008,6 +1009,21 @@ defmodule Explorer.Factory do
       hash: transaction_hash(),
       index: 0,
       uncle_hash: block_hash()
+    }
+  end
+
+  def signed_authorization_factory do
+    %SignedAuthorization{
+      transaction: build(:transaction),
+      index: 0,
+      chain_id: 0,
+      address: address_hash(),
+      nonce: 0,
+      r: 0,
+      s: 0,
+      v: 0,
+      authority: address_hash(),
+      status: nil
     }
   end
 
