@@ -1,4 +1,4 @@
-{
+{0x643e8237b1c9a27711dbb39708b7bf1cd136b32e
 	"name": "Blockscout Elixir",
 	"dockerComposeFile": "docker-compose.yml",
 	"service": "elixir",
