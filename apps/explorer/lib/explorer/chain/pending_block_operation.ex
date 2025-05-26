@@ -55,7 +55,7 @@ defmodule Explorer.Chain.PendingBlockOperation do
     |> where([pbo], pbo.block_number >= ^from_block_number)
     |> where([pbo], pbo.block_number <= ^to_block_number)
     |> select([pbo], count(pbo.block_number))
-    |> Repo.one()
+    |> Repo.one(timeout: :infinity)
   end
 
   @doc """

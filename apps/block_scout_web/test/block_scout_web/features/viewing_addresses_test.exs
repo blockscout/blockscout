@@ -91,12 +91,12 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       internal_transaction =
         insert(
           :internal_transaction_create,
+          transaction_index: transaction.index,
           index: 1,
           transaction: transaction,
           from_address: address,
           created_contract_address: contract,
-          block_hash: transaction.block_hash,
-          block_index: 1
+          block_hash: transaction.block_hash
         )
 
       address_hash = AddressView.trimmed_hash(address.hash)
@@ -115,25 +115,25 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       insert(
         :internal_transaction,
+        transaction_index: transaction.index,
         index: 1,
         transaction: transaction,
         from_address: lincoln,
         to_address: contract,
         created_contract_address: contract,
         type: :call,
-        block_hash: transaction.block_hash,
-        block_index: 1
+        block_hash: transaction.block_hash
       )
 
       internal_transaction =
         insert(
           :internal_transaction_create,
+          transaction_index: transaction.index,
           index: 2,
           transaction: transaction,
           from_address: contract,
           created_contract_address: another_contract,
-          block_hash: transaction.block_hash,
-          block_index: 2
+          block_hash: transaction.block_hash
         )
 
       contract_hash = AddressView.trimmed_hash(contract.hash)
@@ -218,21 +218,21 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         insert(:internal_transaction,
           transaction: transaction,
           to_address: address,
+          transaction_index: transaction.index,
           index: 1,
           block_number: 7000,
           transaction_index: 1,
-          block_hash: transaction.block_hash,
-          block_index: 1
+          block_hash: transaction.block_hash
         )
 
       insert(:internal_transaction,
         transaction: transaction,
         from_address: address,
+        transaction_index: transaction.index,
         index: 2,
         block_number: 8000,
         transaction_index: 2,
-        block_hash: transaction.block_hash,
-        block_index: 2
+        block_hash: transaction.block_hash
       )
 
       {:ok, %{internal_transaction_lincoln_to_address: internal_transaction_lincoln_to_address}}
@@ -268,8 +268,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           from_address: addresses.lincoln,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: 2
+          block_hash: transaction.block_hash
         )
 
       Notifier.handle_event({:chain_event, :internal_transactions, :realtime, [internal_transaction]})
@@ -301,8 +300,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: addresses.lincoln,
         block_number: from_lincoln.block_number,
         transaction_index: from_lincoln.index,
-        block_hash: from_lincoln.block_hash,
-        block_index: 2
+        block_hash: from_lincoln.block_hash
       )
 
       session
@@ -334,8 +332,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: addresses.lincoln,
         block_number: from_lincoln.block_number,
         transaction_index: from_lincoln.index,
-        block_hash: from_lincoln.block_hash,
-        block_index: 2
+        block_hash: from_lincoln.block_hash
       )
 
       session

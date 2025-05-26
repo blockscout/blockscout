@@ -2232,7 +2232,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: 1,
           from_address: address
         )
 
@@ -2243,7 +2242,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: 2,
           to_address: address
         )
 
@@ -2317,7 +2315,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             block_hash: transaction.block_hash,
-            block_index: i,
             from_address: address
           )
         end
@@ -2340,7 +2337,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             block_hash: transaction.block_hash,
-            block_index: i,
             to_address: address
           )
         end
@@ -2625,8 +2621,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         to_address: address,
         value: 123,
         block_number: transaction.block_number,
-        index: 1,
-        block_index: 1
+        index: 1
       )
 
       insert(:address_coin_balance)
@@ -3888,7 +3883,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: x,
           to_address: address
         )
       end
@@ -3932,7 +3926,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: x,
           from_address: address
         )
       end
@@ -3986,7 +3979,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: x,
           from_address: address
         )
       end
@@ -4034,7 +4026,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: x,
           from_address: address
         )
       end

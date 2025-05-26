@@ -21,7 +21,6 @@ defmodule Explorer.RepoTest do
           index: 0,
           block_number: 35,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: 0
         )
 
@@ -35,7 +34,7 @@ defmodule Explorer.RepoTest do
             Repo.safe_insert_all(
               InternalTransaction,
               [timestamped_changes, timestamped_changes],
-              conflict_target: [:block_hash, :block_index],
+              conflict_target: [:block_hash, :transaction_index, :index],
               on_conflict: :replace_all
             )
           end
@@ -44,7 +43,8 @@ defmodule Explorer.RepoTest do
       assert log =~ "Chunk:\n"
       assert log =~ "index: 0"
 
-      assert log =~ "Options:\n\n[conflict_target: [:block_hash, :block_index], on_conflict: :replace_all]\n\n"
+      assert log =~
+               "Options:\n\n[conflict_target: [:block_hash, :transaction_index, :index], on_conflict: :replace_all]\n\n"
 
       assert log =~
                "Exception:\n\n** (Postgrex.Error) ERROR 21000 (cardinality_violation) ON CONFLICT DO UPDATE command cannot affect row a second time\n"

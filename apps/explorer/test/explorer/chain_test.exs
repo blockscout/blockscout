@@ -649,7 +649,6 @@ defmodule Explorer.ChainTest do
         index: 0,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -659,7 +658,6 @@ defmodule Explorer.ChainTest do
           index: index,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: index,
           transaction_index: transaction.index
         )
       end)
@@ -1025,6 +1023,7 @@ defmodule Explorer.ChainTest do
           %{
             block_number: 37,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 1,
             # transaction with index 0 is ignored in Nethermind JSON RPC Variant and not ignored in case of Geth
             index: 1,
             trace_address: [],
@@ -1227,8 +1226,7 @@ defmodule Explorer.ChainTest do
                     trace_address: [],
                     type: :call,
                     block_number: 37,
-                    transaction_index: nil,
-                    block_index: 0,
+                    transaction_index: 1,
                     created_contract_address_hash: nil,
                     from_address_hash: %Explorer.Chain.Hash{
                       byte_count: 20,
@@ -2073,7 +2071,6 @@ defmodule Explorer.ChainTest do
         created_contract_code: smart_contract_bytecode,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 

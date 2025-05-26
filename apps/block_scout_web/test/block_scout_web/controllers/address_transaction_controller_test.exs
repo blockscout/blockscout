@@ -137,8 +137,8 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         created_contract_address: address,
         to_address: nil,
         transaction: transaction,
-        block_hash: block.hash,
-        block_index: 0
+        transaction_index: transaction.index,
+        block_hash: block.hash
       )
 
       conn = get(conn, address_transaction_path(conn, :index, Address.checksum(address)), %{"type" => "JSON"})

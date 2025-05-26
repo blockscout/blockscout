@@ -28,6 +28,7 @@ defmodule Explorer.Application do
     BlocksCount,
     GasUsageSum,
     PendingBlockOperationCount,
+    PendingTransactionOperationCount,
     TransactionsCount
   }
 
@@ -85,6 +86,7 @@ defmodule Explorer.Application do
       GasPriceOracle,
       GasUsageSum,
       PendingBlockOperationCount,
+      PendingTransactionOperationCount,
       TransactionsCount,
       StateChanges,
       Transactions,
