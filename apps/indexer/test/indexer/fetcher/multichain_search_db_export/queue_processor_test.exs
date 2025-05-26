@@ -1,23 +1,24 @@
-defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
+defmodule Indexer.Fetcher.MultichainSearchDbExport.QueueProcessorTest do
   use ExUnit.Case
   use Explorer.DataCase
 
   import ExUnit.CaptureLog, only: [capture_log: 1]
   import Mox
 
+  alias Explorer.Chain.Block.Range
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.TestHelper
-  alias Indexer.Fetcher.MultichainSearchDbExport.Retry, as: MultichainSearchDbExportRetry
+  alias Indexer.Fetcher.MultichainSearchDbExport.QueueProcessor, as: MultichainSearchDbExportQueueProcessor
   alias Plug.Conn
 
   @moduletag :capture_log
 
   setup do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-    Application.put_env(:indexer, MultichainSearchDbExportRetry.Supervisor, disabled?: false)
+    Application.put_env(:indexer, MultichainSearchDbExportQueueProcessor.Supervisor, disabled?: false)
 
     on_exit(fn ->
-      Application.put_env(:indexer, MultichainSearchDbExportRetry.Supervisor, disabled?: true)
+      Application.put_env(:indexer, MultichainSearchDbExportQueueProcessor.Supervisor, disabled?: true)
     end)
 
     :ok
@@ -45,23 +46,23 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
       transaction_hash_bytes =
         "aba197aa8a13871bdd53861f7b5108394000fc0f72893661ae39610e9cd94019" |> Base.decode16!(case: :mixed)
 
-      insert(:multichain_search_db_export_retry_queue, %{hash: address_hash_bytes, hash_type: :address})
-      insert(:multichain_search_db_export_retry_queue, %{hash: block_hash_bytes, hash_type: :block})
-      insert(:multichain_search_db_export_retry_queue, %{hash: transaction_hash_bytes, hash_type: :transaction})
+      insert(:multichain_search_db_export_queue, %{hash: address_hash_bytes, hash_type: :address})
+      insert(:multichain_search_db_export_queue, %{hash: block_hash_bytes, hash_type: :block})
+      insert(:multichain_search_db_export_queue, %{hash: transaction_hash_bytes, hash_type: :transaction})
 
       reducer = fn data, acc -> [data | acc] end
 
       pid =
         []
-        |> MultichainSearchDbExportRetry.Supervisor.child_spec()
+        |> MultichainSearchDbExportQueueProcessor.Supervisor.child_spec()
         |> ExUnit.Callbacks.start_supervised!()
 
-      results = MultichainSearchDbExportRetry.init([], reducer, nil)
+      results = MultichainSearchDbExportQueueProcessor.init([], reducer, nil)
 
       assert Enum.count(results) == 3
-      assert Enum.member?(results, %{hash: address_hash_bytes, hash_type: :address})
-      assert Enum.member?(results, %{hash: block_hash_bytes, hash_type: :block})
-      assert Enum.member?(results, %{hash: transaction_hash_bytes, hash_type: :transaction})
+      assert Enum.member?(results, %{hash: address_hash_bytes, hash_type: :address, block_range: nil})
+      assert Enum.member?(results, %{hash: block_hash_bytes, hash_type: :block, block_range: nil})
+      assert Enum.member?(results, %{hash: transaction_hash_bytes, hash_type: :transaction, block_range: nil})
       :timer.sleep(10)
       GenServer.stop(pid)
     end
@@ -95,9 +96,9 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
         "aba197aa8a13871bdd53861f7b5108394000fc0f72893661ae39610e9cd94019" |> Base.decode16!(case: :mixed)
 
       export_data = [
-        %{hash: address_hash_bytes, hash_type: :address},
-        %{hash: block_hash_bytes, hash_type: :block},
-        %{hash: transaction_hash_bytes, hash_type: :transaction}
+        %{hash: address_hash_bytes, hash_type: :address, block_range: nil},
+        %{hash: block_hash_bytes, hash_type: :block, block_range: nil},
+        %{hash: transaction_hash_bytes, hash_type: :transaction, block_range: nil}
       ]
 
       TestHelper.get_chain_id_mock()
@@ -110,7 +111,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
         )
       end)
 
-      assert :ok = MultichainSearchDbExportRetry.run(export_data, nil)
+      assert :ok = MultichainSearchDbExportQueueProcessor.run(export_data, nil)
     end
 
     test "returns {:retry, failed_data} on error where failed_data is only chunks that failed to export", %{
@@ -133,18 +134,22 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
       address_2 = insert(:address)
       address_3 = insert(:address)
       address_3_hash_string = to_string(address_3) |> String.downcase()
-      block = insert(:block)
+      block = insert(:block, number: 1)
+      block_number_string = to_string(block.number)
       block_hash_string = to_string(block.hash)
-      block_number = to_string(block.number)
       transaction = insert(:transaction) |> with_block(block)
       transaction_hash_string = to_string(transaction.hash)
 
       export_data = [
-        %{hash: address_1.hash.bytes, hash_type: :address},
-        %{hash: address_2.hash.bytes, hash_type: :address},
-        %{hash: address_3.hash.bytes, hash_type: :address},
-        %{hash: block.hash.bytes, hash_type: :block},
-        %{hash: transaction.hash.bytes, hash_type: :transaction}
+        %{hash: address_1.hash.bytes, hash_type: :address, block_range: %Range{from: block.number, to: block.number}},
+        %{hash: address_2.hash.bytes, hash_type: :address, block_range: %Range{from: block.number, to: block.number}},
+        %{hash: address_3.hash.bytes, hash_type: :address, block_range: %Range{from: block.number, to: block.number}},
+        %{hash: block.hash.bytes, hash_type: :block, block_range: %Range{from: block.number, to: block.number}},
+        %{
+          hash: transaction.hash.bytes,
+          hash_type: :transaction,
+          block_range: %Range{from: block.number, to: block.number}
+        }
       ]
 
       TestHelper.get_chain_id_mock()
@@ -168,30 +173,28 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
       log =
         capture_log(fn ->
           assert {:retry,
-                  [
-                    %{
-                      addresses: [
-                        %{
-                          hash: ^address_3_hash_string,
-                          token_type: "UNSPECIFIED",
-                          is_contract: false,
-                          token_name: nil,
-                          contract_name: nil,
-                          ens_name: nil,
-                          is_token: false,
-                          is_verified_contract: false
-                        }
-                      ],
-                      block_ranges: [%{max_block_number: ^block_number, min_block_number: ^block_number}],
-                      hashes: [
-                        %{hash: ^block_hash_string, hash_type: "BLOCK"},
-                        %{
-                          hash: ^transaction_hash_string,
-                          hash_type: "TRANSACTION"
-                        }
-                      ]
-                    }
-                  ]} = MultichainSearchDbExportRetry.run(export_data, nil)
+                  %{
+                    addresses: [
+                      %{
+                        hash: ^address_3_hash_string,
+                        token_type: "UNSPECIFIED",
+                        is_contract: false,
+                        token_name: nil,
+                        contract_name: nil,
+                        ens_name: nil,
+                        is_token: false,
+                        is_verified_contract: false
+                      }
+                    ],
+                    block_ranges: [%{max_block_number: ^block_number_string, min_block_number: ^block_number_string}],
+                    hashes: [
+                      %{hash: ^block_hash_string, hash_type: "BLOCK"},
+                      %{
+                        hash: ^transaction_hash_string,
+                        hash_type: "TRANSACTION"
+                      }
+                    ]
+                  }} = MultichainSearchDbExportQueueProcessor.run(export_data, nil)
         end)
 
       assert log =~ "Batch export retry to the Multichain Search DB failed"
