@@ -39,6 +39,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add updated-gas-oracle to Access-Control-Allow-Headers ([#12473](https://github.com/blockscout/blockscout/pull/12473))
 - Add additional test for Universal proxy, duplicate all proxy endpoints at /3rdparty ([#12442](https://github.com/blockscout/blockscout/pull/12442))
 - Improve logic behind emerging of custom fields in the response of `eth_getTransactionByHash` ETH RPC API endpoint ([#12416](https://github.com/blockscout/blockscout/issues/12416))
 - Internal transactions unique index ([#12394](https://github.com/blockscout/blockscout/issues/12394))
