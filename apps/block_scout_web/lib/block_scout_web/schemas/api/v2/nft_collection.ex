@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.NFTCollection do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.{General, Token, TokenInstance, Token.Type}
+  alias BlockScoutWeb.Schemas.API.V2.{General, Token, Token.Type, TokenInstance}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
