@@ -2,11 +2,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   @moduledoc """
   Module to interact with Multichain search microservice
   """
-
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.{Address, Block, Hash, Transaction}
-  alias Explorer.Chain.MultichainSearchDbExportRetryQueue
+  alias Explorer.Chain.{Block, Hash, Transaction}
+  alias Explorer.Chain.Block.Range
+  alias Explorer.Chain.MultichainSearchDb.MainExportQueue
   alias Explorer.{Helper, Repo}
   alias Explorer.Utility.Microservice
   alias HTTPoison.Response
@@ -18,35 +18,35 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   @unspecified "UNSPECIFIED"
 
   @doc """
-    Performs a batch import of addresses, blocks, and transactions to the Multichain Search microservice.
+  Processes a batch import of data by splitting the input parameters into chunks and sending each chunk as an HTTP POST request to a configured microservice endpoint.
 
-    ## Parameters
-    - `params`: A map containing:
-      - `addresses`: List of address structs.
-      - `blocks`: List of block structs.
-      - `transactions`: List of transaction structs.
+  If the microservice is enabled, the function:
+    - Splits the input `params` into manageable chunks.
+    - Sends each chunk concurrently using `Task.async_stream/3` with a maximum concurrency and timeout.
+    - Collects the results, merging any errors and accumulating data that needs to be retried.
+    - Returns `{:ok, {:chunks_processed, params_chunks}}` if all chunks are processed successfully.
+    - Returns `{:error, data_to_retry}` if any chunk fails, where `data_to_retry` contains the addresses, block ranges, and hashes that need to be retried.
 
-    ## Returns
-    - `{:ok, :service_disabled}`: If the integration with Multichain Search Service is disabled.
-    - `{:ok, result}`: If the import was successful.
-    - `{:error, reason}`: If an error occurred.
+  If the microservice is disabled, returns `{:ok, :service_disabled}`.
+
+  ## Parameters
+
+    - `params` (`map()`): The parameters to be imported, which will be split into chunks for processing.
+
+  ## Returns
+
+    - `{:ok, any()}`: If all chunks are processed successfully or the service is disabled.
+    - `{:error, map()}`: If one or more chunks fail, with details about the data that needs to be retried.
   """
-  @spec batch_import(
-          %{
-            addresses: [Address.t()],
-            blocks: [Block.t() | %{hash: String.t(), hash_type: String.t()}],
-            transactions: [Transaction.t() | %{hash: String.t(), hash_type: String.t()}]
-          },
-          boolean()
-        ) :: {:error, map()} | {:ok, any()}
-  def batch_import(params, retry? \\ false) do
+  @spec batch_import(map()) :: {:error, map()} | {:ok, any()}
+  def batch_import(params) do
     if enabled?() do
       params_chunks = extract_batch_import_params_into_chunks(params)
       url = batch_import_url()
 
       params_chunks
       |> Task.async_stream(
-        fn export_body -> http_post_request(url, export_body, retry?) end,
+        fn export_body -> http_post_request(url, export_body) end,
         max_concurrency: @max_concurrency,
         timeout: @post_timeout,
         zip_input_on_exit: true
@@ -56,7 +56,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           acc
 
         {:ok, {:error, error}}, acc ->
-          on_error(error, retry?)
+          on_error(error)
 
           case acc do
             {:ok, {:chunks_processed, _}} ->
@@ -78,14 +78,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           end
 
         {:exit, {export_body, reason}}, acc ->
-          on_error(
-            %{
-              url: url,
-              data_to_retry: export_body,
-              reason: reason
-            },
-            retry?
-          )
+          on_error(%{
+            url: url,
+            data_to_retry: export_body,
+            reason: reason
+          })
 
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           case acc do
@@ -141,46 +138,107 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     Logger.configure(truncate: old_truncate)
   end
 
-  @spec on_error(
-          map(),
-          boolean()
-        ) :: {non_neg_integer(), nil | [term()]} | :ok
-  # sobelow_skip ["DOS.StringToAtom"]
+  @spec on_error(map()) :: {non_neg_integer(), nil | [term()]} | :ok
   defp on_error(
          %{
-           data_to_retry: %{addresses: addresses, hashes: hashes}
-         } = error,
-         false
+           data_to_retry: data_to_retry
+         } = error
        ) do
     log_error(error)
 
-    hashes_to_retry =
+    prepared_data = prepare_export_data_for_queue(data_to_retry)
+
+    Repo.insert_all(
+      MainExportQueue,
+      Helper.add_timestamps(prepared_data),
+      on_conflict: MainExportQueue.default_on_conflict(),
+      conflict_target: [:hash, :hash_type]
+    )
+  end
+
+  defp on_error(_), do: :ignore
+
+  @doc """
+  Sends the provided data to the export queue if the feature is enabled.
+
+  Accepts a map with `:addresses`, `:blocks`, and `:transactions` keys, each containing a list.
+  If all lists are empty, returns `:ignore`.
+
+  Otherwise, splits the data into chunks, prepares each chunk for export, and inserts them into the `MainExportQueue` table.
+  If the feature is not enabled, returns `:ignore`.
+
+  ## Parameters
+
+    - data: a map with the following keys:
+      - `:addresses` - list of addresses
+      - `:blocks` - list of blocks
+      - `:transactions` - list of transactions
+
+  ## Returns
+
+    - `:ok` on successful insertion
+    - `:ignore` if the feature is disabled or the data is empty
+  """
+  @spec send_data_to_queue(%{addresses: list(), blocks: list(), transactions: list()}) :: :ignore | :ok
+  def send_data_to_queue(%{addresses: [], blocks: [], transactions: []}), do: :ignore
+
+  def send_data_to_queue(data) do
+    if enabled?() do
+      data
+      |> extract_batch_import_params_into_chunks()
+      |> Enum.each(fn data_chunk ->
+        prepared_data = prepare_export_data_for_queue(data_chunk)
+
+        Repo.insert_all(MainExportQueue, Helper.add_timestamps(prepared_data), on_conflict: :nothing)
+      end)
+
+      :ok
+    else
+      :ignore
+    end
+  end
+
+  # sobelow_skip ["DOS.StringToAtom"]
+  defp prepare_export_data_for_queue(%{addresses: addresses, hashes: hashes, block_ranges: block_ranges}) do
+    block_range =
+      case block_ranges do
+        [%{min_block_number: min_str, max_block_number: max_str} | _] ->
+          with {min_num, ""} <- Integer.parse(min_str),
+               {max_num, ""} <- Integer.parse(max_str) do
+            %Range{from: min_num, to: max_num}
+          else
+            _ -> nil
+          end
+
+        _ ->
+          nil
+      end
+
+    hashes_to_queue =
       hashes
       |> Enum.map(
         &%{
           hash: Helper.hash_to_binary(&1.hash),
-          hash_type: &1.hash_type |> String.downcase() |> String.to_atom()
+          hash_type: &1.hash_type |> String.downcase() |> String.to_atom(),
+          block_range: block_range
         }
       )
 
-    addresses_to_retry =
+    addresses_to_queue =
       addresses
       |> Enum.map(fn %{hash: address_hash_string} ->
         %{
           hash: Helper.hash_to_binary(address_hash_string),
-          hash_type: :address
+          hash_type: :address,
+          block_range: block_range
         }
       end)
 
-    prepared_data = hashes_to_retry ++ addresses_to_retry
-
-    Repo.insert_all(MultichainSearchDbExportRetryQueue, Helper.add_timestamps(prepared_data), on_conflict: :nothing)
+    hashes_to_queue ++ addresses_to_queue
   end
 
-  defp on_error(_, _), do: :ignore
-
-  @spec http_post_request(String.t(), map(), boolean()) :: {:ok, any()} | {:error, String.t()}
-  defp http_post_request(url, body, retry?) do
+  @spec http_post_request(String.t(), map()) :: {:ok, any()} | {:error, String.t()}
+  defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
     case Application.get_env(:explorer, :http_adapter).post(url, Jason.encode!(body), headers,
@@ -195,7 +253,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
          %{
            url: url,
            data_to_retry: body,
-           retry?: retry?,
            status_code: status_code,
            response_body: response_body
          }}
@@ -205,7 +262,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
          %{
            url: url,
            data_to_retry: body,
-           retry?: retry?,
            reason: reason
          }}
     end
@@ -244,11 +300,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     - `:hashes`: A list of block and transaction hashes (only included in the first chunk).
 
   """
-  @spec extract_batch_import_params_into_chunks(%{
-          addresses: [Address.t()],
-          blocks: [Block.t() | %{hash: String.t(), hash_type: String.t()}],
-          transactions: [Transaction.t() | %{hash: String.t(), hash_type: String.t()}]
-        }) :: [
+  @spec extract_batch_import_params_into_chunks(map()) :: [
           %{
             api_key: String.t(),
             chain_id: String.t(),
@@ -257,13 +309,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
             hashes: [%{hash: String.t(), hash_type: String.t()}]
           }
         ]
-  def extract_batch_import_params_into_chunks(%{
-        addresses: raw_addresses,
-        blocks: blocks,
-        transactions: transactions
-      }) do
-    chain_id = ChainId.get_id()
-    block_ranges = get_block_ranges(blocks)
+  def extract_batch_import_params_into_chunks(
+        %{
+          addresses: raw_addresses,
+          transactions: transactions
+        } = params
+      ) do
+    block_ranges =
+      if Map.has_key?(params, :block_ranges), do: params.block_ranges, else: get_block_ranges(params.blocks)
 
     addresses =
       raw_addresses
@@ -271,7 +324,10 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       |> Repo.preload([:token, :smart_contract])
       |> Enum.map(&format_address(&1))
 
-    block_hashes = format_blocks(blocks)
+    block_hashes =
+      if Map.has_key?(params, :block_hashes),
+        do: format_block_hashes(params.block_hashes),
+        else: format_blocks(params.blocks)
 
     transaction_hashes = format_transactions(transactions)
 
@@ -283,6 +339,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       |> Enum.with_index()
 
     api_key = api_key()
+    chain_id = ChainId.get_id()
     chain_id_string = to_string(chain_id)
 
     base_data_chunk = %{
@@ -330,7 +387,15 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         ]
   defp format_blocks(blocks) do
     blocks
-    |> Enum.map(&format_block(to_string(&1.hash)))
+    |> Enum.map(&format_block_hash(to_string(&1.hash)))
+  end
+
+  @spec format_block_hashes([Hash.t()]) :: [
+          %{hash: String.t(), hash_type: String.t()}
+        ]
+  defp format_block_hashes(block_hashes) do
+    block_hashes
+    |> Enum.map(&format_block_hash(to_string(&1)))
   end
 
   @spec format_transactions([Transaction.t() | %{hash: String.t(), hash_type: String.t()}]) :: [
@@ -341,11 +406,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     |> Enum.map(&format_transaction(to_string(&1.hash)))
   end
 
-  @spec format_block(String.t()) :: %{
+  @spec format_block_hash(String.t()) :: %{
           hash: String.t(),
           hash_type: String.t()
         }
-  defp format_block(block_hash_string) do
+  defp format_block_hash(block_hash_string) do
     %{
       hash: block_hash_string,
       hash_type: "BLOCK"
