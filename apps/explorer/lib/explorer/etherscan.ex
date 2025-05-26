@@ -145,7 +145,7 @@ defmodule Explorer.Etherscan do
     query
     |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
     |> InternalTransaction.where_is_different_from_parent_transaction()
-    |> InternalTransaction.where_nonpending_block()
+    |> InternalTransaction.where_nonpending_operation()
     |> Repo.replica().all()
   end
 
@@ -186,7 +186,7 @@ defmodule Explorer.Etherscan do
       |> InternalTransaction.where_is_different_from_parent_transaction()
       |> where_start_block_match(options)
       |> where_end_block_match(options)
-      |> InternalTransaction.where_nonpending_block()
+      |> InternalTransaction.where_nonpending_operation()
       |> Repo.replica().all()
     else
       consensus_blocks = Block.consensus_blocks_query()

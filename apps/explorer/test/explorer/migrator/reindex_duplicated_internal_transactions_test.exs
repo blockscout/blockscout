@@ -18,8 +18,7 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactionsTest do
         index: index,
         block_number: transaction_from_invalid_block.block_number,
         transaction_index: transaction_from_invalid_block.index,
-        block_hash: transaction_from_invalid_block.block_hash,
-        block_index: index
+        block_hash: transaction_from_invalid_block.block_hash
       )
     end)
 
@@ -30,8 +29,7 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactionsTest do
         index: index - 10,
         block_number: transaction_from_invalid_block.block_number,
         transaction_index: transaction_from_invalid_block.index,
-        block_hash: transaction_from_invalid_block.block_hash,
-        block_index: index
+        block_hash: transaction_from_invalid_block.block_hash
       )
     end)
 
@@ -47,8 +45,7 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactionsTest do
         index: index,
         block_number: transaction_from_valid_block.block_number,
         transaction_index: transaction_from_valid_block.index,
-        block_hash: transaction_from_valid_block.block_hash,
-        block_index: index
+        block_hash: transaction_from_valid_block.block_hash
       )
     end)
 

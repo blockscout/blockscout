@@ -24,7 +24,7 @@ defmodule Explorer.Chain do
       where: 3
     ]
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   require Logger
 
@@ -79,6 +79,8 @@ defmodule Explorer.Chain do
     LastFetchedCounter,
     NewContractsCount,
     NewVerifiedContractsCount,
+    PendingBlockOperationCount,
+    PendingTransactionOperationCount,
     TokenHoldersCount,
     TokenTransfersCount,
     VerifiedContractsCount,
@@ -674,11 +676,21 @@ defmodule Explorer.Chain do
         |> Decimal.to_integer()
 
       query =
-        from(
-          block in Block,
-          join: pending_ops in assoc(block, :pending_operations),
-          where: block.consensus and block.number == ^min_block_number
-        )
+        case PendingOperationsHelper.pending_operations_type() do
+          "blocks" ->
+            from(
+              block in Block,
+              join: pending_ops in assoc(block, :pending_operations),
+              where: block.consensus and block.number == ^min_block_number
+            )
+
+          "transactions" ->
+            from(
+              pto in PendingTransactionOperation,
+              join: t in assoc(pto, :transaction),
+              where: t.block_consensus and t.block_number == ^min_block_number
+            )
+        end
 
       if select_repo(options).exists?(query) do
         false
@@ -692,14 +704,13 @@ defmodule Explorer.Chain do
   end
 
   defp check_indexing_internal_transactions_threshold do
-    min_blockchain_trace_block_number =
-      RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :trace_block_ranges))
+    pending_ops_count =
+      case PendingOperationsHelper.pending_operations_type() do
+        "blocks" -> PendingBlockOperationCount.get()
+        "transactions" -> PendingTransactionOperationCount.get()
+      end
 
-    %{max: max_saved_block_number} = BlockNumber.get_all()
-    pending_ops_entity = PendingOperationsHelper.actual_entity()
-    pbo_count = pending_ops_entity.blocks_count_in_range(min_blockchain_trace_block_number, max_saved_block_number)
-
-    if pbo_count <
+    if pending_ops_count <
          Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction)[:indexing_finished_threshold] do
       true
     else
@@ -1224,6 +1235,12 @@ defmodule Explorer.Chain do
     if indexer_running?() and internal_transactions_fetcher_running?() do
       %{max: max_saved_block_number} = BlockNumber.get_all()
 
+      pending_ops_count =
+        case PendingOperationsHelper.pending_operations_type() do
+          "blocks" -> PendingBlockOperationCount.get()
+          "transactions" -> PendingTransactionOperationCount.get()
+        end
+
       min_blockchain_trace_block_number = Application.get_env(:indexer, :trace_first_block)
 
       case max_saved_block_number do
@@ -1234,12 +1251,7 @@ defmodule Explorer.Chain do
           full_blocks_range =
             max_saved_block_number - min_blockchain_trace_block_number - BlockNumberHelper.null_rounds_count() + 1
 
-          pending_ops_entity = PendingOperationsHelper.actual_entity()
-
-          pbo_count =
-            pending_ops_entity.blocks_count_in_range(min_blockchain_trace_block_number, max_saved_block_number)
-
-          processed_int_transactions_for_blocks_count = max(0, full_blocks_range - pbo_count)
+          processed_int_transactions_for_blocks_count = max(0, full_blocks_range - pending_ops_count)
 
           ratio = get_ratio(processed_int_transactions_for_blocks_count, full_blocks_range)
 
@@ -3790,8 +3802,8 @@ defmodule Explorer.Chain do
   """
   def fetch_first_trace(transactions_params, json_rpc_named_arguments) do
     case EthereumJSONRPC.fetch_first_trace(transactions_params, json_rpc_named_arguments) do
-      {:ok, [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]} ->
-        format_transaction_first_trace(first_trace, block_hash, json_rpc_named_arguments)
+      {:ok, [%{first_trace: first_trace, block_hash: block_hash}]} ->
+        format_transaction_first_trace(first_trace, block_hash)
 
       {:error, error} ->
         {:error, error}
@@ -3801,7 +3813,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp format_transaction_first_trace(first_trace, block_hash, json_rpc_named_arguments) do
+  defp format_transaction_first_trace(first_trace, block_hash) do
     {:ok, to_address_hash} =
       if Map.has_key?(first_trace, :to_address_hash) do
         Chain.string_to_address_hash(first_trace.to_address_hash)
@@ -3857,20 +3869,11 @@ defmodule Explorer.Chain do
         {:ok, nil}
       end
 
-    block_index =
-      get_block_index(%{
-        transaction_index: first_trace.transaction_index,
-        transaction_hash: first_trace.transaction_hash,
-        block_number: first_trace.block_number,
-        json_rpc_named_arguments: json_rpc_named_arguments
-      })
-
     value = %Wei{value: Decimal.new(first_trace.value)}
 
     first_trace_formatted =
       first_trace
       |> Map.merge(%{
-        block_index: block_index,
         block_hash: block_hash,
         call_type: call_type,
         to_address_hash: to_address_hash,
@@ -3886,34 +3889,6 @@ defmodule Explorer.Chain do
       })
 
     {:ok, [first_trace_formatted]}
-  end
-
-  defp get_block_index(%{
-         transaction_index: transaction_index,
-         transaction_hash: transaction_hash,
-         block_number: block_number,
-         json_rpc_named_arguments: json_rpc_named_arguments
-       }) do
-    if transaction_index == 0 do
-      0
-    else
-      filtered_block_numbers = RangesHelper.filter_traceable_block_numbers([block_number])
-      {:ok, traces} = fetch_block_internal_transactions(filtered_block_numbers, json_rpc_named_arguments)
-
-      sorted_traces =
-        traces
-        |> Enum.sort_by(&{&1.transaction_index, &1.index})
-        |> Enum.with_index()
-
-      {_, block_index} =
-        sorted_traces
-        |> Enum.find({nil, -1}, fn {trace, _} ->
-          trace.transaction_index == transaction_index &&
-            trace.transaction_hash == transaction_hash
-        end)
-
-      block_index
-    end
   end
 
   defp find_block_timestamp(number, options) do

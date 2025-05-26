@@ -227,7 +227,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
     field(:block_number, :integer)
     field(:transaction_index, :integer)
     field(:block_hash, :full_hash)
-    field(:block_index, :integer)
   end
 
   @desc """
