@@ -1,10 +1,10 @@
-defmodule Explorer.Chain.Cache.Counters.PendingBlockOperationCount do
+defmodule Explorer.Chain.Cache.Counters.PendingTransactionOperationCount do
   @moduledoc """
-  Cache for estimated `pending_block_operations` count.
+  Cache for estimated `pending_transaction_operations` count.
   """
 
   use Explorer.Chain.MapCache,
-    name: :pending_block_operations_count,
+    name: :pending_transaction_operations_count,
     key: :count,
     key: :async_task,
     global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
@@ -17,19 +17,23 @@ defmodule Explorer.Chain.Cache.Counters.PendingBlockOperationCount do
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
-  alias Explorer.Chain.PendingBlockOperation
+  alias Explorer.Chain.PendingTransactionOperation
 
-  @cache_key "pending_block_operations_count"
+  @cache_key "pending_transaction_operations_count"
 
   @doc """
-  Gets count of `t:Explorer.Chain.PendingBlockOperation.t/0`.
+  Gets count of `t:Explorer.Chain.PendingTransactionOperation.t/0`.
 
   """
   @spec get() :: non_neg_integer()
   def get do
     cached_value_from_ets = __MODULE__.get_count()
 
-    CacheCountersHelper.evaluate_count(@cache_key, cached_value_from_ets, :estimated_pending_block_operations_count)
+    CacheCountersHelper.evaluate_count(
+      @cache_key,
+      cached_value_from_ets,
+      :estimated_pending_transaction_operations_count
+    )
   end
 
   defp handle_fallback(:count) do
@@ -50,7 +54,8 @@ defmodule Explorer.Chain.Cache.Counters.PendingBlockOperationCount do
           min_blockchain_trace_block_number =
             RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :trace_block_ranges))
 
-          result = PendingBlockOperation.blocks_count_in_range(min_blockchain_trace_block_number, BlockNumber.get_max())
+          result =
+            PendingTransactionOperation.blocks_count_in_range(min_blockchain_trace_block_number, BlockNumber.get_max())
 
           params = %{
             counter_type: @cache_key,
@@ -63,7 +68,7 @@ defmodule Explorer.Chain.Cache.Counters.PendingBlockOperationCount do
         rescue
           e ->
             Logger.debug([
-              "Couldn't update pending_block_operations count: ",
+              "Couldn't update pending_transaction_operations count: ",
               Exception.format(:error, e, __STACKTRACE__)
             ])
         end
