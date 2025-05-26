@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
   @moduledoc false
-  alias OpenApiSpex.Schema
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+  alias OpenApiSpex.Schema
 
   @zksync_schema %Schema{
     type: :object,

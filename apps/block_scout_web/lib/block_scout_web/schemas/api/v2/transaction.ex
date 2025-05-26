@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   @moduledoc false
+  alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
   alias BlockScoutWeb.Schemas.API.V2.Transaction.Fee
   alias OpenApiSpex.Schema
 
