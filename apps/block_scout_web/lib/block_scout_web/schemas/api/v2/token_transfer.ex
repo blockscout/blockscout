@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
-  alias BlockScoutWeb.Schemas.API.V2.TokenTransfer.{TotalERC721, TotalERC1155, Total}
+  alias BlockScoutWeb.Schemas.API.V2.TokenTransfer.{Total, TotalERC1155, TotalERC721}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{

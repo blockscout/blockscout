@@ -4,9 +4,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.TokenBalance do
   """
   require OpenApiSpex
 
+  alias BlockScoutWeb.Schemas.API.V2.{General, Token, TokenInstance}
   alias OpenApiSpex.Schema
-  alias BlockScoutWeb.Schemas.API.V2.{Token, TokenInstance}
-  alias BlockScoutWeb.Schemas.API.V2.General
 
   OpenApiSpex.schema(%{
     type: :object,

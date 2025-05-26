@@ -240,78 +240,80 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.{Address, General, Block.ChainTypeCustomizations}
+  alias BlockScoutWeb.Schemas.API.V2.{Address, Block.ChainTypeCustomizations, General}
   alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(%{
-    type: :object,
-    properties: %{
-      height: %Schema{type: :integer, nullable: false},
-      timestamp: General.Timestamp,
-      transactions_count: %Schema{type: :integer, nullable: false},
-      internal_transactions_count: %Schema{type: :integer, nullable: false},
-      miner: Address,
-      size: %Schema{type: :integer, nullable: false},
-      hash: General.FullHash,
-      parent_hash: General.FullHash,
-      difficulty: General.IntegerString,
-      total_difficulty: General.IntegerString,
-      gas_used: General.IntegerString,
-      gas_limit: General.IntegerString,
-      nonce: General.HexStringNullable,
-      base_fee_per_gas: General.IntegerStringNullable,
-      burnt_fees: General.IntegerStringNullable,
-      priority_fee: General.IntegerStringNullable,
-      uncles_hashes: %Schema{
-        type: :array,
-        items: %Schema{type: :object, properties: %{hash: General.FullHash}, required: [:hash], nullable: false},
-        nullable: false
-      },
-      rewards: %Schema{
-        type: :array,
-        items: %Schema{
-          type: :object,
-          properties: %{
-            reward_type: %Schema{type: :string, nullable: false},
-            amount: General.IntegerString
-          },
-          required: [:reward_type, :address, :amount]
+  OpenApiSpex.schema(
+    %{
+      type: :object,
+      properties: %{
+        height: %Schema{type: :integer, nullable: false},
+        timestamp: General.Timestamp,
+        transactions_count: %Schema{type: :integer, nullable: false},
+        internal_transactions_count: %Schema{type: :integer, nullable: false},
+        miner: Address,
+        size: %Schema{type: :integer, nullable: false},
+        hash: General.FullHash,
+        parent_hash: General.FullHash,
+        difficulty: General.IntegerString,
+        total_difficulty: General.IntegerString,
+        gas_used: General.IntegerString,
+        gas_limit: General.IntegerString,
+        nonce: General.HexStringNullable,
+        base_fee_per_gas: General.IntegerStringNullable,
+        burnt_fees: General.IntegerStringNullable,
+        priority_fee: General.IntegerStringNullable,
+        uncles_hashes: %Schema{
+          type: :array,
+          items: %Schema{type: :object, properties: %{hash: General.FullHash}, required: [:hash], nullable: false},
+          nullable: false
         },
-        nullable: false
+        rewards: %Schema{
+          type: :array,
+          items: %Schema{
+            type: :object,
+            properties: %{
+              reward_type: %Schema{type: :string, nullable: false},
+              amount: General.IntegerString
+            },
+            required: [:reward_type, :address, :amount]
+          },
+          nullable: false
+        },
+        gas_target_percentage: %Schema{type: :number, format: :float, nullable: false},
+        gas_used_percentage: %Schema{type: :number, format: :float, nullable: false},
+        burnt_fees_percentage: %Schema{type: :number, format: :float, nullable: true},
+        type: %Schema{type: :string, nullable: false, enum: ["Block", "Uncle", "Reorg"]},
+        transaction_fees: General.IntegerString,
+        withdrawals_count: %Schema{type: :integer, nullable: false}
       },
-      gas_target_percentage: %Schema{type: :number, format: :float, nullable: false},
-      gas_used_percentage: %Schema{type: :number, format: :float, nullable: false},
-      burnt_fees_percentage: %Schema{type: :number, format: :float, nullable: true},
-      type: %Schema{type: :string, nullable: false, enum: ["Block", "Uncle", "Reorg"]},
-      transaction_fees: General.IntegerString,
-      withdrawals_count: %Schema{type: :integer, nullable: false}
-    },
-    required: [
-      :height,
-      :timestamp,
-      :transactions_count,
-      :internal_transactions_count,
-      :miner,
-      :size,
-      :hash,
-      :parent_hash,
-      :difficulty,
-      :total_difficulty,
-      :gas_used,
-      :gas_limit,
-      :nonce,
-      :base_fee_per_gas,
-      :burnt_fees,
-      :priority_fee,
-      :uncles_hashes,
-      :rewards,
-      :gas_target_percentage,
-      :gas_used_percentage,
-      :burnt_fees_percentage,
-      :type,
-      :transaction_fees,
-      :withdrawals_count
-    ]
-  })
-  |> ChainTypeCustomizations.chain_type_fields()
+      required: [
+        :height,
+        :timestamp,
+        :transactions_count,
+        :internal_transactions_count,
+        :miner,
+        :size,
+        :hash,
+        :parent_hash,
+        :difficulty,
+        :total_difficulty,
+        :gas_used,
+        :gas_limit,
+        :nonce,
+        :base_fee_per_gas,
+        :burnt_fees,
+        :priority_fee,
+        :uncles_hashes,
+        :rewards,
+        :gas_target_percentage,
+        :gas_used_percentage,
+        :burnt_fees_percentage,
+        :type,
+        :transaction_fees,
+        :withdrawals_count
+      ]
+    }
+    |> ChainTypeCustomizations.chain_type_fields()
+  )
 end

@@ -477,7 +477,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     responses: [
       ok:
         {"All internal transactions for the specified address.", "application/json",
-         Schemas.General.paginated_response(
+         paginated_response(
            items: Schemas.InternalTransaction,
            next_page_params_example: %{
              "block_number" => 22_530_770,
