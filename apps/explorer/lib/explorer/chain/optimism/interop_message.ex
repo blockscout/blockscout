@@ -218,6 +218,24 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   end
 
   @doc """
+    Retrieves message fields by its primary key (`init_chain_id` and `nonce`).
+
+    ## Parameters
+    - `init_chain_id`: The chain ID of the init transaction.
+    - `nonce`: The message nonce.
+  """
+  @spec get_message(non_neg_integer(), non_neg_integer()) :: __MODULE__.t() | nil
+  def get_message(init_chain_id, nonce) do
+    query =
+      from(m in __MODULE__,
+        where: m.init_chain_id == ^init_chain_id and m.nonce == ^nonce
+      )
+
+    query
+    |> Repo.one()
+  end
+
+  @doc """
     Returns relay transaction hash and failure status from the `op_interop_messages` table for the given
     `init_chain_id` and `nonce`.
 
@@ -713,6 +731,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
       Map.merge(
         %{
+          "unique_id" => message_unique_id(message),
           "nonce" => message.nonce,
           "status" => message.status,
           "sender_address_hash" => message.sender_address_hash,
@@ -726,6 +745,31 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
         chain_info
       )
     end
+  end
+
+  @doc """
+    Constructs message id string for using in URLs on frontend. Concatenates hex representations of the `init_chain_id`
+    and `nonce` field (both consisting of 8 hex symbols and padded with leading zeroes).
+
+    ## Parameters
+    - `message`: The message map containing `init_chain_id` and `nonce` keys.
+
+    ## Returns
+    - The message id. Example for `init_chain_id` = 100 and `nonce` = 4000: "0000006400000FA0"
+  """
+  @spec message_unique_id(map()) :: String.t()
+  def message_unique_id(%{init_chain_id: init_chain_id, nonce: nonce} = _message) do
+    init_chain_id_string =
+      init_chain_id
+      |> Integer.to_string(16)
+      |> String.pad_leading(8, "0")
+
+    nonce_string =
+      nonce
+      |> Integer.to_string(16)
+      |> String.pad_leading(8, "0")
+
+    init_chain_id_string <> nonce_string
   end
 
   @doc """

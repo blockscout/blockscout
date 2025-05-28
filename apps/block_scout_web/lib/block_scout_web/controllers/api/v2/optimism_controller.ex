@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.{Hash, Transaction}
+  alias Explorer.Chain.{Hash, Token, Transaction}
 
   alias Explorer.Chain.Optimism.{
     Deposit,
@@ -274,6 +274,62 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
+    Function to handle GET requests to `/api/v2/optimism/interop/messages/:unique_id` endpoint.
+  """
+  @spec interop_message(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def interop_message(conn, params) do
+    unique_id = Map.get(params, "unique_id", "")
+
+    with true <- String.length(unique_id) == 16,
+         {init_chain_id_string, nonce_string} = String.split_at(unique_id, 8),
+         {init_chain_id, ""} <- Integer.parse(init_chain_id_string, 16),
+         {nonce, ""} <- Integer.parse(nonce_string, 16),
+         msg = InteropMessage.get_message(init_chain_id, nonce),
+         false <- is_nil(msg) do
+      current_chain_id =
+        case ChainId.get_id() do
+          nil -> Application.get_env(:block_scout_web, :chain_id)
+          chain_id -> chain_id
+        end
+
+      relay_chain_id = msg.relay_chain_id
+
+      direction =
+        case current_chain_id do
+          ^init_chain_id -> :out
+          ^relay_chain_id -> :in
+          _ -> nil
+        end
+
+      transfer_token =
+        if not is_nil(msg.transfer_token_address_hash) do
+          case Token.get_by_contract_address_hash(msg.transfer_token_address_hash, @api_true) do
+            nil -> %{contract_address_hash: msg.transfer_token_address_hash, symbol: nil, decimals: nil}
+            t -> %{contract_address_hash: t.contract_address_hash, symbol: t.symbol, decimals: t.decimals}
+          end
+        end
+
+      message =
+        msg
+        |> InteropMessage.extend_with_status()
+        |> Map.put(:init_chain, InteropMessage.interop_chain_id_to_instance_info(msg.init_chain_id))
+        |> Map.put(:relay_chain, InteropMessage.interop_chain_id_to_instance_info(msg.relay_chain_id))
+        |> Map.put(:direction, direction)
+        |> Map.put(:transfer_token, transfer_token)
+
+      conn
+      |> put_status(200)
+      |> render(:optimism_interop_message, %{message: message})
+    else
+      _ ->
+        conn
+        |> put_view(ApiView)
+        |> put_status(:not_found)
+        |> render(:message, %{message: "Invalid message id or the message with such id is not found"})
+    end
+  end
+
+  @doc """
     Function to handle GET requests to `/api/v2/optimism/interop/messages` endpoint.
   """
   @spec interop_messages(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -298,18 +354,20 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     messages_extended =
       messages
       |> Enum.map(fn message ->
-        cond do
-          message.init_chain_id != current_chain_id and not is_nil(current_chain_id) ->
-            Map.put(message, :init_chain, InteropMessage.interop_chain_id_to_instance_info(message.init_chain_id))
+        message_extended =
+          cond do
+            message.init_chain_id != current_chain_id and not is_nil(current_chain_id) ->
+              Map.put(message, :init_chain, InteropMessage.interop_chain_id_to_instance_info(message.init_chain_id))
 
-          message.relay_chain_id != current_chain_id and not is_nil(current_chain_id) ->
-            Map.put(message, :relay_chain, InteropMessage.interop_chain_id_to_instance_info(message.relay_chain_id))
+            message.relay_chain_id != current_chain_id and not is_nil(current_chain_id) ->
+              Map.put(message, :relay_chain, InteropMessage.interop_chain_id_to_instance_info(message.relay_chain_id))
 
-          true ->
-            message
-        end
+            true ->
+              message
+          end
+
+        InteropMessage.extend_with_status(message_extended)
       end)
-      |> Enum.map(&InteropMessage.extend_with_status(&1))
 
     conn
     |> put_status(200)
