@@ -41,11 +41,16 @@ defmodule BlockScoutWeb.API.V2.CeloController do
       |> Epoch.fetched_epochs()
       |> split_list_by_page()
 
+    filtered_params =
+      params
+      |> delete_parameters_from_next_page_params()
+      |> Map.drop(["number"])
+
     next_page_params =
       next_page_params(
         next_page,
         epochs,
-        delete_parameters_from_next_page_params(params),
+        filtered_params,
         &%{number: &1.number}
       )
 
