@@ -4,7 +4,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   """
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
+  alias OpenApiSpex.{Schema, Parameter}
+  alias BlockScoutWeb.Schemas.API.V2.Token.Type, as: TokenType
+  alias BlockScoutWeb.Schemas.API.V2.CeloElectionReward.Type, as: CeloElectionRewardType
 
   defmodule AddressHash do
     @moduledoc false
@@ -63,8 +65,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
               example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
               nullable: true
             }
-            |> update_in([:required], &[:filecoin_robust_address | &1])
           )
+          |> update_in([:required], &[:filecoin_robust_address | &1])
 
         _ ->
           schema
@@ -126,20 +128,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
 
   defmodule IntegerStringNullable do
     @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^([1-9][0-9]*|0)$", nullable: true})
+    OpenApiSpex.schema(%{type: :string, pattern: ~r"^-?([1-9][0-9]*|0)$", nullable: true})
   end
 
   defmodule IntegerString do
     @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^([1-9][0-9]*|0)$", nullable: false})
+    OpenApiSpex.schema(%{type: :string, pattern: ~r"^-?([1-9][0-9]*|0)$", nullable: false})
   end
 
   defmodule URLNullable do
     @moduledoc false
     OpenApiSpex.schema(%{
       type: :string,
-      pattern:
-        ~r"/^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/",
+      format: :uri,
       example: "https://example.com",
       nullable: true
     })
@@ -149,8 +150,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     @moduledoc false
     OpenApiSpex.schema(%{
       type: :string,
-      pattern:
-        ~r"/^(https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|ipfs:\/\/[a-zA-Z0-9\/]+)$/",
+      format: :uri,
+      # pattern:
+      #   ~r"/^(https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|ipfs:\/\/[a-zA-Z0-9\/]+)$/",
       example: "https://example.com",
       nullable: true
     })
@@ -160,8 +162,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     @moduledoc false
     OpenApiSpex.schema(%{
       type: :string,
-      pattern: ~r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$",
-      example: "2025-05-20T16:27:47.000000Z",
+      format: :"date-time",
       nullable: false
     })
   end
@@ -170,8 +171,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     @moduledoc false
     OpenApiSpex.schema(%{
       type: :string,
-      pattern: ~r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$",
-      example: "2025-05-20T16:27:47.000000Z",
+      format: :"date-time",
       nullable: true
     })
   end
@@ -191,7 +191,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
               name: %Schema{type: :string, nullable: false},
               type: %Schema{type: :string, nullable: false},
               value: %Schema{
-                oneOf: [%Schema{type: :object}, %Schema{type: :array}, %Schema{type: :string}],
+                anyOf: [%Schema{type: :object}, %Schema{type: :array}, %Schema{type: :string}],
                 nullable: false
               }
             },
@@ -230,7 +230,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
               type: %Schema{type: :string, nullable: false},
               indexed: %Schema{type: :boolean, nullable: false},
               value: %Schema{
-                oneOf: [%Schema{type: :object}, %Schema{type: :array}, %Schema{type: :string}],
+                anyOf: [%Schema{type: :object}, %Schema{type: :array}, %Schema{type: :string}],
                 nullable: false
               }
             },
@@ -245,123 +245,164 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     })
   end
 
+  defmodule EmptyString do
+    @moduledoc false
+    OpenApiSpex.schema(%{type: :string, minLength: 0, maxLength: 0})
+  end
+
   def address_hash_param do
-    {:address_hash_param,
-     [
-       in: :path,
-       type: AddressHash,
-       required: true
-     ]}
+    %Parameter{
+      name: :address_hash_param,
+      in: :path,
+      schema: AddressHash,
+      required: true
+    }
   end
 
   def direction_filter_param do
-    {:filter,
-     [
-       in: :query,
-       schema: %Schema{type: :string, enum: ["to", "from"]},
-       required: false,
-       description: """
-       Filter transactions by direction:
-       * to - Only show transactions sent to this address
-       * from - Only show transactions sent from this address
-       If omitted, all transactions involving the address are returned.
-       """
-     ]}
+    %Parameter{
+      name: :filter,
+      in: :query,
+      schema: %Schema{type: :string, enum: ["to", "from"]},
+      required: false,
+      description: """
+      Filter transactions by direction:
+      * to - Only show transactions sent to this address
+      * from - Only show transactions sent from this address
+      If omitted, all transactions involving the address are returned.
+      """
+    }
   end
 
-  def sorting_params(sort_fields) do
-    {:sort,
-     [
-       in: :query,
-       schema: %Schema{
-         type: :string,
-         enum: sort_fields
-       },
-       required: false,
-       description: """
-       Sort transactions by:
-       * block_number - Sort by block number
-       * value - Sort by transaction value
-       * fee - Sort by transaction fee
-       Should be used together with `order` parameter.
-       """
-     ]}
+  def sort_param(sort_fields) do
+    %Parameter{
+      name: :sort,
+      in: :query,
+      schema: %Schema{
+        type: :string,
+        enum: sort_fields
+      },
+      required: false,
+      description: """
+      Sort transactions by:
+      * block_number - Sort by block number
+      * value - Sort by transaction value
+      * fee - Sort by transaction fee
+      Should be used together with `order` parameter.
+      """
+    }
   end
 
-  def order_params do
-    {:order,
-     [
-       in: :query,
-       schema: %Schema{
-         type: :string,
-         enum: ["asc", "desc"]
-       },
-       required: false,
-       description: """
-       Sort order:
-       * asc - Ascending order
-       * desc - Descending order
-       Should be used together with `sort` parameter.
-       """
-     ]}
+  def order_param do
+    %Parameter{
+      in: :query,
+      schema: %Schema{
+        type: :string,
+        enum: ["asc", "desc"]
+      },
+      required: false,
+      description: """
+      Sort order:
+      * asc - Ascending order
+      * desc - Descending order
+      Should be used together with `sort` parameter.
+      """,
+      name: :order
+    }
   end
 
   def token_type_param do
-    {:type,
-     [
-       in: :query,
-       schema: %Schema{
-         type: :string,
-         pattern: ~r"^(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*$"
-       },
-       required: false,
-       description: """
-       Filter by token type. Comma-separated list of:
-       * ERC-20 - Fungible tokens
-       * ERC-721 - Non-fungible tokens
-       * ERC-1155 - Multi-token standard
-       * ERC-404 - Hybrid fungible/non-fungible tokens
+    %Parameter{
+      in: :query,
+      schema: %Schema{
+        type: :string,
+        pattern: ~r"^(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*$"
+      },
+      required: false,
+      description: """
+      Filter by token type. Comma-separated list of:
+      * ERC-20 - Fungible tokens
+      * ERC-721 - Non-fungible tokens
+      * ERC-1155 - Multi-token standard
+      * ERC-404 - Hybrid fungible/non-fungible tokens
 
-       Example: `ERC-20,ERC-721` to show both fungible and NFT transfers
-       """
-     ]}
+      Example: `ERC-20,ERC-721` to show both fungible and NFT transfers
+      """,
+      name: :type
+    }
   end
 
   def nft_token_type_param do
-    {:type,
-     [
-       in: :query,
-       schema: %Schema{
-         type: :string,
-         pattern: ~r"^(ERC-721|ERC-1155|ERC-404)(,(ERC-721|ERC-1155|ERC-404))*$"
-       },
-       required: false,
-       description: """
-       Filter by token type. Comma-separated list of:
-       * ERC-721 - Non-fungible tokens
-       * ERC-1155 - Multi-token standard
-       * ERC-404 - Hybrid fungible/non-fungible tokens
+    %Parameter{
+      in: :query,
+      schema: %Schema{
+        type: :string,
+        pattern: ~r"^(ERC-721|ERC-1155|ERC-404)(,(ERC-721|ERC-1155|ERC-404))*$"
+      },
+      required: false,
+      description: """
+      Filter by token type. Comma-separated list of:
+      * ERC-721 - Non-fungible tokens
+      * ERC-1155 - Multi-token standard
+      * ERC-404 - Hybrid fungible/non-fungible tokens
 
-       Example: `ERC-721,ERC-1155` to show both NFT and multi-token transfers
-       """
-     ]}
+      Example: `ERC-721,ERC-1155` to show both NFT and multi-token transfers
+      """,
+      name: :type
+    }
   end
 
   def topic_param do
-    {:topic,
-     [
-       in: :query,
-       schema: HexString,
-       required: false,
-       description: "Filter logs by topic"
-     ]}
+    %Parameter{
+      in: :query,
+      schema: HexString,
+      required: false,
+      description: "Filter logs by topic",
+      name: :topic
+    }
+  end
+
+  def token_filter_param do
+    %Parameter{
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "Filter token transfers by token contract address.",
+      name: :token
+    }
+  end
+
+  def api_key_param do
+    %Parameter{
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "API key for rate limiting",
+      name: :api_key
+    }
+  end
+
+  def key_param do
+    %Parameter{
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Secret key for getting access to restricted resources",
+      name: :key
+    }
+  end
+
+  def base_params do
+    [api_key_param(), key_param()]
   end
 
   def paginated_response(options) do
     items_schema = Keyword.fetch!(options, :items)
     next_page_params_example = Keyword.fetch!(options, :next_page_params_example)
+    title_prefix = Keyword.fetch!(options, :title_prefix)
 
     %Schema{
+      title: "#{title_prefix}PaginatedResponse",
       type: :object,
       properties: %{
         items: %Schema{type: :array, items: items_schema, nullable: false},
@@ -374,5 +415,184 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: [:items, :next_page_params],
       nullable: false
     }
+  end
+
+  # `%Schema{anyOf: [%Schema{type: :integer}, EmptyString]}` is used because,
+  # `allowEmptyValue: true` does not allow empty string for some reasons (at least in this case)
+
+  @paging_params %{
+    "block_number" => %Parameter{
+      in: :query,
+      schema: %Schema{anyOf: [%Schema{type: :integer}, EmptyString]},
+      required: false,
+      description: "Block number for paging",
+      allowEmptyValue: true,
+      name: :block_number
+    },
+    "index" => %Parameter{
+      in: :query,
+      schema: %Schema{anyOf: [%Schema{type: :integer}, EmptyString]},
+      required: false,
+      description: "Transaction index for paging",
+      allowEmptyValue: true,
+      name: :index
+    },
+    "inserted_at" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :string, format: :"date-time"},
+      required: false,
+      description: "Inserted at timestamp for paging (ISO8601)",
+      name: :inserted_at
+    },
+    "hash" => %Parameter{
+      in: :query,
+      schema: FullHash,
+      required: false,
+      description: "Transaction hash for paging",
+      name: :hash
+    },
+    # TODO: consider refactoring, to avoid ambiguity with hash param (the same name)
+    "address_hash" => %Parameter{
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "Address hash for paging",
+      name: :hash
+    },
+    "value" => %Parameter{
+      in: :query,
+      schema: IntegerString,
+      required: false,
+      description: "Transaction value for paging",
+      allowEmptyValue: true,
+      name: :value
+    },
+    "fee" => %Parameter{
+      in: :query,
+      schema: IntegerString,
+      required: false,
+      description: "Transaction fee for paging",
+      allowEmptyValue: true,
+      name: :fee
+    },
+    "items_count" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 1, maximum: 50},
+      required: false,
+      description: "Number of items returned per page",
+      allowEmptyValue: true,
+      name: :items_count
+    },
+    "batch_log_index" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer},
+      required: false,
+      description: "Batch log index for paging",
+      allowEmptyValue: true,
+      name: :batch_log_index},
+      "batch_block_hash" => %Parameter{
+      in: :query,
+      schema: FullHash,
+      required: false,
+      description: "Batch block hash for paging",
+      allowEmptyValue: true,
+      name: :batch_block_hash},
+      "batch_transaction_hash" => %Parameter{
+      in: :query,
+      schema: FullHash,
+      required: false,
+      description: "Batch transaction hash for paging",
+      allowEmptyValue: true,
+      name: :batch_transaction_hash},
+      "index_in_batch" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer},
+      required: false,
+      description: "Index in batch for paging",
+      allowEmptyValue: true,
+      name: :index_in_batch},
+      "transaction_index" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer},
+      required: false,
+      description: "Transaction index for paging",
+      allowEmptyValue: true,
+      name: :transaction_index},
+      "fiat_value" => %Parameter{
+      in: :query,
+      schema: FloatStringNullable, #%Schema{anyOf: [IntegerString, EmptyString]},
+      required: false,
+      description: "Fiat value for paging",
+      allowEmptyValue: true,
+      name: :fiat_value},
+      "id" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer},
+      required: false,
+      description: "ID for paging",
+      allowEmptyValue: true,
+      name: :id},
+      "fetched_coin_balance" => %Parameter{
+      in: :query,
+      schema: IntegerStringNullable,
+      required: false,
+      description: "Fetched coin balance for paging",
+      allowEmptyValue: true,
+      name: :fetched_coin_balance},
+      "transactions_count" => %Parameter{
+      in: :query,
+      schema: IntegerStringNullable,
+      required: false,
+      description: "Transactions count for paging",
+      allowEmptyValue: true,
+      name: :transactions_count},
+      "token_contract_address_hash" => %Parameter{
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "Token contract address hash for paging",
+      allowEmptyValue: true,
+      name: :token_contract_address_hash},
+      "token_id" => %Parameter{
+      in: :query,
+      schema: IntegerStringNullable,
+      required: false,
+      description: "Token ID for paging",
+      allowEmptyValue: true,
+      name: :token_id},
+      "token_type" => %Parameter{
+      in: :query,
+      schema: TokenType,
+      required: false,
+      description: "Token type for paging",
+      allowEmptyValue: true,
+      name: :token_type},
+      "amount" => %Parameter{
+      in: :query,
+      schema: IntegerStringNullable,
+      required: false,
+      description: "Amount for paging",
+      allowEmptyValue: true,
+      name: :amount},
+      "associated_account_address_hash" => %Parameter{
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "Associated account address hash for paging",
+      allowEmptyValue: true,
+      name: :associated_account_address_hash},
+      "type" => %Parameter{
+      in: :query,
+      schema: CeloElectionRewardType,
+      required: false,
+      description: "Type for paging",
+      allowEmptyValue: true,
+      name: :type}
+  }
+
+  def define_paging_params(fields) do
+    Enum.map(fields, fn field ->
+      Map.get(@paging_params, field) || raise "Unknown paging param: #{field}"
+    end)
   end
 end

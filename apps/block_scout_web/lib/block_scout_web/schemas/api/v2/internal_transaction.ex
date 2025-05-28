@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.InternalTransaction do
       },
       from: Address,
       to: Address,
-      created_contract: Address,
+      created_contract: %Schema{allOf: [Address], nullable: true},
       value: General.IntegerString,
       block_number: %Schema{
         type: :integer,

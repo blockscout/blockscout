@@ -1919,19 +1919,19 @@ defmodule Explorer.Chain.Transaction do
   Returns next page params based on the provided transaction.
   """
   @spec address_transactions_next_page_params(Explorer.Chain.Transaction.t()) :: %{
-          required(String.t()) => Decimal.t() | Wei.t() | non_neg_integer | DateTime.t() | Hash.t()
+          required(atom()) => Decimal.t() | Wei.t() | non_neg_integer | DateTime.t() | Hash.t()
         }
   def address_transactions_next_page_params(
         %__MODULE__{block_number: block_number, index: index, inserted_at: inserted_at, hash: hash, value: value} =
           transaction
       ) do
     %{
-      "fee" => transaction |> fee(:wei) |> elem(1),
-      "value" => value,
-      "block_number" => block_number,
-      "index" => index,
-      "inserted_at" => inserted_at,
-      "hash" => hash
+      fee: transaction |> fee(:wei) |> elem(1),
+      value: value,
+      block_number: block_number,
+      index: index,
+      inserted_at: inserted_at,
+      hash: hash
     }
   end
 

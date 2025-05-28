@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       from: Address,
       to: Address,
       total: %Schema{
-        oneOf: [
+        anyOf: [
           TotalERC721,
           TotalERC1155,
           Total
@@ -51,12 +51,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TotalERC721 do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.{General, TokenInstance}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     type: :object,
     properties: %{
       token_id: General.IntegerStringNullable,
-      token_instance: TokenInstance
+      token_instance: %Schema{type: :object, anyOf: [TokenInstance], nullable: true}
     },
     required: [:token_id, :token_instance]
   })
@@ -67,6 +68,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TotalERC1155 do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.{General, TokenInstance}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     type: :object,
@@ -74,7 +76,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TotalERC1155 do
       token_id: General.IntegerStringNullable,
       value: General.IntegerStringNullable,
       decimals: General.IntegerStringNullable,
-      token_instance: TokenInstance
+      token_instance: %Schema{type: :object, anyOf: [TokenInstance], nullable: true}
     },
     required: [:token_id, :value, :decimals, :token_instance]
   })

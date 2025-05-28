@@ -107,7 +107,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       l1_timestamp: General.TimestampNullable,
       l1_transaction_hashes: %Schema{type: :array, items: General.FullHash, nullable: false},
       batch_data_container: %Schema{type: :string, nullable: false, enum: ["in_blob4844", "in_celestia", "in_calldata"]},
-      blobs: %Schema{type: :array, items: %Schema{oneOf: [@blob4844_schema, @celestia_schema]}, nullable: false}
+      blobs: %Schema{type: :array, items: %Schema{anyOf: [@blob4844_schema, @celestia_schema]}, nullable: false}
     },
     required: [:number, :l1_timestamp, :l1_transaction_hashes, :batch_data_container]
   }
@@ -250,7 +250,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
         height: %Schema{type: :integer, nullable: false},
         timestamp: General.Timestamp,
         transactions_count: %Schema{type: :integer, nullable: false},
-        internal_transactions_count: %Schema{type: :integer, nullable: false},
+        internal_transactions_count: %Schema{type: :integer, nullable: true},
         miner: Address,
         size: %Schema{type: :integer, nullable: false},
         hash: General.FullHash,
@@ -283,9 +283,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
         gas_target_percentage: %Schema{type: :number, format: :float, nullable: false},
         gas_used_percentage: %Schema{type: :number, format: :float, nullable: false},
         burnt_fees_percentage: %Schema{type: :number, format: :float, nullable: true},
-        type: %Schema{type: :string, nullable: false, enum: ["Block", "Uncle", "Reorg"]},
+        type: %Schema{type: :string, nullable: false, enum: ["block", "uncle", "reorg"]},
         transaction_fees: General.IntegerString,
-        withdrawals_count: %Schema{type: :integer, nullable: false}
+        withdrawals_count: %Schema{type: :integer, nullable: true}
       },
       required: [
         :height,

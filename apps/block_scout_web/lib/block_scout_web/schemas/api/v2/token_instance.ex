@@ -30,9 +30,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
           "60x60" => %Schema{type: :string, format: :uri},
           "original" => %Schema{type: :string, format: :uri}
         },
-        required: ["original"]
+        required: ["original"],
+        nullable: true
       },
-      media_type: %Schema{type: :string, example: "image/png", description: "Mime type of the media in media_url"},
+      media_type: %Schema{type: :string, example: "image/png", description: "Mime type of the media in media_url", nullable: true},
       media_url: General.URLWithIPFSNullable
     },
     required: [
