@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         name: %Schema{type: :string, nullable: false},
         decimals: General.IntegerStringNullable,
         type: %Schema{
-          oneOf: [Type],
+          anyOf: [Type],
           nullable: true
         },
         holders: General.IntegerStringNullable,

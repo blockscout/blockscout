@@ -287,7 +287,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
       properties: %{
         hash: General.FullHash,
         result: %Schema{
-          oneOf: [
+          anyOf: [
             %Schema{
               type: :string,
               enum: ["pending", "awaiting_internal_transactions", "success", "dropped/replaced"]
@@ -312,7 +312,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         timestamp: General.TimestampNullable,
         from: Address,
         to: Address,
-        created_contract: Address,
+        created_contract: %Schema{allOf: [Address], nullable: true},
         confirmations: %Schema{
           type: :integer,
           minimum: 0
@@ -334,7 +334,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         gas_price: General.IntegerStringNullable,
         type: %Schema{
           type: :integer,
-          nullable: false
+          nullable: true
         },
         gas_used: General.IntegerStringNullable,
         gas_limit: General.IntegerString,
@@ -358,7 +358,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
             General.DecodedInput,
             %Schema{
               type: :object,
-              properties: %{raw: %Schema{oneOf: [General.HexString, %Schema{type: :string}], nullable: true}},
+              properties: %{raw: %Schema{anyOf: [General.HexString, %Schema{type: :string}], nullable: true}},
               required: [:raw],
               nullable: false
             }

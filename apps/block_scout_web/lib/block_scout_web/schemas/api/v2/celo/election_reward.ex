@@ -1,10 +1,10 @@
-defmodule BlockScoutWeb.Schemas.API.V2.CeloElectionReward do
+defmodule BlockScoutWeb.Schemas.API.V2.Celo.ElectionReward do
   @moduledoc """
   This module defines the schema for the CeloElectionReward struct.
   """
   require OpenApiSpex
-  alias Explorer.Chain.Celo.ElectionReward
-  alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+
+  alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token, Celo.ElectionReward.Type}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.CeloElectionReward do
       account: Address,
       associated_account: Address,
       amount: General.IntegerString,
-      type: %Schema{type: :string, nullable: false, enum: ElectionReward.types()},
+      type: Type,
       epoch_number: %Schema{type: :integer, nullable: false},
       token: Token
     },
