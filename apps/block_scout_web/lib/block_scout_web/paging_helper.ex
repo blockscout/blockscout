@@ -93,7 +93,7 @@ defmodule BlockScoutWeb.PagingHelper do
     Parse 'type' query parameter from request option map
   """
   @spec nft_types_options(map()) :: [{:token_type, list}]
-  def nft_types_options(%{"type" => filters}) do
+  def nft_types_options(%{type: filters}) do
     [
       token_type: filters_to_list(filters, @allowed_nft_type_labels)
     ]
@@ -402,7 +402,7 @@ defmodule BlockScoutWeb.PagingHelper do
   @spec addresses_sorting(%{required(String.t()) => String.t()}) :: [
           {:sorting, SortingHelper.sorting_params()}
         ]
-  def addresses_sorting(%{"sort" => sort_field, "order" => order}) do
+  def addresses_sorting(%{sort: sort_field, order: order}) do
     [sorting: do_addresses_sorting(sort_field, order)]
   end
 

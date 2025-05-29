@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Celo.ElectionReward do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token, Celo.ElectionReward.Type}
+  alias BlockScoutWeb.Schemas.API.V2.{Address, Celo.ElectionReward.Type, General, Token}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
