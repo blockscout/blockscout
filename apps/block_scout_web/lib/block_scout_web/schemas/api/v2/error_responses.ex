@@ -6,31 +6,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.ErrorResponses do
 
   alias OpenApiSpex.Schema
 
-  defmodule UnprocessableEntityResponse do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      title: "UnprocessableEntityResponse",
-      description: "Response returned when provided parameters are invalid",
-      type: :object,
-      properties: %{
-        message: %Schema{
-          type: :string,
-          description: "Error message indicating invalid parameters",
-          example: "Invalid parameter(s)"
-        }
-      },
-      required: [:message],
-      example: %{
-        "message" => "Invalid parameter(s)"
-      }
-    })
-
-    @spec response() :: {String.t(), String.t(), module()}
-    def response do
-      {"Unprocessable Entity", "application/json", __MODULE__}
-    end
-  end
-
   defmodule ForbiddenResponse do
     @moduledoc false
     OpenApiSpex.schema(%{
