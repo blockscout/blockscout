@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
-  if @chain_type == :zksync do
+  if @chain_type == :zksync || @chain_type == :via do
     @optimization_runs "0"
   else
     @optimization_runs 200
@@ -631,6 +631,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> optional_param(params, "constructorArguments", "constructor_arguments")
     |> optional_param(params, "licenseType", "license_type")
     |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+          do: optional_param(&1, params, "zksolcVersion", "zk_compiler_version"),
+          else: &1
+        )).()
+    |> (&if(Application.get_env(:explorer, :chain_type) == :via,
           do: optional_param(&1, params, "zksolcVersion", "zk_compiler_version"),
           else: &1
         )).()

@@ -35,7 +35,8 @@ config :block_scout_web,
   hide_scam_addresses: ConfigHelper.parse_bool_env_var("HIDE_SCAM_ADDRESSES"),
   show_tenderly_link: ConfigHelper.parse_bool_env_var("SHOW_TENDERLY_LINK"),
   sensitive_endpoints_api_key: System.get_env("API_SENSITIVE_ENDPOINTS_KEY"),
-  disable_api?: disable_api?
+  disable_api?: disable_api?,
+  bitcoin_explorer_url: System.get_env("BITCOIN_EXPLORER_URL", "https://mempool.space/tx")
 
 config :block_scout_web, :recaptcha,
   v2_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY"),
@@ -1160,6 +1161,24 @@ config :indexer, Indexer.Fetcher.ZkSync.BatchesStatusTracker,
 
 config :indexer, Indexer.Fetcher.ZkSync.BatchesStatusTracker.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_ZKSYNC_BATCHES_ENABLED")
+
+config :indexer, Indexer.Fetcher.Via.TransactionBatch,
+  chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_VIA_BATCHES_CHUNK_SIZE", 50),
+  batches_max_range: ConfigHelper.parse_integer_env_var("INDEXER_VIA_NEW_BATCHES_MAX_RANGE", 50),
+  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_VIA_NEW_BATCHES_RECHECK_INTERVAL", 60)
+
+config :indexer, Indexer.Fetcher.Via.TransactionBatch.Supervisor,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_VIA_BATCHES_ENABLED")
+
+config :indexer, Indexer.Fetcher.Via.BatchesStatusTracker,
+  via_l1_rpc: System.get_env("INDEXER_VIA_L1_RPC"),
+  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_VIA_BATCHES_STATUS_RECHECK_INTERVAL", 60)
+
+config :indexer, Indexer.Fetcher.Via.BatchesStatusTracker.Supervisor,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_VIA_BATCHES_ENABLED")
+
+config :block_scout_web,
+  bitcoin_explorer_url: System.get_env("BITCOIN_EXPLORER_URL", "https://mempool.space/tx")
 
 config :indexer, Indexer.Fetcher.Arbitrum.Messaging,
   arbsys_contract:

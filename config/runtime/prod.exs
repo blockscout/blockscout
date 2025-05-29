@@ -99,6 +99,7 @@ for repo <- [
       Explorer.Repo.Stability,
       Explorer.Repo.Zilliqa,
       Explorer.Repo.ZkSync,
+      Explorer.Repo.Via,
       Explorer.Repo.Neon
     ] do
   config :explorer, repo,

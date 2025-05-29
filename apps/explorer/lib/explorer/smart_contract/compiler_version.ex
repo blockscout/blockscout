@@ -91,7 +91,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
   end
 
   defp fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type) do
-    if Application.get_env(:explorer, :chain_type) == :zksync do
+    if Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via do
       # todo: refactor opportunity, currently, Blockscout 2 identical requests to microservice in order to get
       # Solc and Zk compiler versions
       case compiler_list_fn.() do

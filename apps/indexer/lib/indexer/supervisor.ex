@@ -55,6 +55,8 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1, as: ArbitrumTrackingMessagesOnL1
   alias Indexer.Fetcher.ZkSync.BatchesStatusTracker, as: ZkSyncBatchesStatusTracker
   alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
+  alias Indexer.Fetcher.Via.BatchesStatusTracker, as: ViaBatchesStatusTracker
+  alias Indexer.Fetcher.Via.TransactionBatch, as: ViaTransactionBatch
 
   alias Indexer.Migrator.RecoveryWETHTokenTransfers
 
@@ -214,6 +216,12 @@ defmodule Indexer.Supervisor do
         configure(ZkSyncBatchesStatusTracker.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
+        configure(ViaTransactionBatch.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ViaBatchesStatusTracker.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
         configure(Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
@@ -282,7 +290,7 @@ defmodule Indexer.Supervisor do
       |> maybe_add_block_reward_fetcher(
         {BlockReward.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
       )
-      |> maybe_add_nft_media_handler_processes()
+      # |> maybe_add_nft_media_handler_processes()
 
     Supervisor.init(
       all_fetchers,
