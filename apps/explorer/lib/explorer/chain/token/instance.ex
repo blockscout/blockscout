@@ -290,7 +290,7 @@ defmodule Explorer.Chain.Token.Instance do
   @doc """
     Function to be used in BlockScoutWeb.Chain.next_page_params/4
   """
-  @spec nft_list_next_page_params(__MODULE__.t()) :: %{binary() => any}
+  @spec nft_list_next_page_params(__MODULE__.t()) :: %{atom() => any}
   def nft_list_next_page_params(%__MODULE__{
         current_token_balance: %CurrentTokenBalance{},
         token_contract_address_hash: token_contract_address_hash,
@@ -488,7 +488,7 @@ defmodule Explorer.Chain.Token.Instance do
     Function to be used in BlockScoutWeb.Chain.next_page_params/4
   """
   @spec nft_collections_next_page_params(%{:token_contract_address_hash => any, optional(any) => any}) :: %{
-        atom() => any
+          atom() => any
         }
   def nft_collections_next_page_params(%{
         token_contract_address_hash: token_contract_address_hash,

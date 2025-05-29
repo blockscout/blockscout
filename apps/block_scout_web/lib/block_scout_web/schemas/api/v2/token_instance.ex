@@ -17,11 +17,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
         example: %{"name" => "Test", "description" => "Test", "image" => "https://example.com/image.png"}
       },
       owner: %Schema{allOf: [Address], nullable: true},
-      token: Token,
+      token: %Schema{allOf: [Token], nullable: true},
       external_app_url: General.URLWithIPFSNullable,
       animation_url: General.URLWithIPFSNullable,
       image_url: General.URLWithIPFSNullable,
-      is_unique: %Schema{type: :boolean, nullable: false},
+      is_unique: %Schema{type: :boolean, nullable: true},
       thumbnails: %Schema{
         type: :object,
         properties: %{
@@ -33,7 +33,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
         required: ["original"],
         nullable: true
       },
-      media_type: %Schema{type: :string, example: "image/png", description: "Mime type of the media in media_url", nullable: true},
+      media_type: %Schema{
+        type: :string,
+        example: "image/png",
+        description: "Mime type of the media in media_url",
+        nullable: true
+      },
       media_url: General.URLWithIPFSNullable
     },
     required: [

@@ -139,7 +139,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "Retrieve detailed information about a specific address or contract",
     description:
       "Retrieves detailed information for a specific address, including balance, transaction count, and metadata.",
-    parameters: base_params() ++ [address_hash_param()],
+    parameters: [address_hash_param() | base_params()],
     responses: [
       ok: {"Detailed information about the specified address.", "application/json", Schemas.Address.Response},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -199,7 +199,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "Get activity count stats for a specific address",
     description:
       "Retrieves count statistics for an address, including transactions, token transfers, gas usage, and validations.",
-    parameters: base_params() ++ [address_hash_param()],
+    parameters: [address_hash_param() | base_params()],
     responses: [
       ok: {"Count statistics for the specified address", "application/json", Schemas.Address.Counters},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -251,7 +251,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "List all token balances held by a specific address",
     description:
       "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155 and ERC-404 tokens.",
-    parameters: base_params() ++ [address_hash_param()],
+    parameters: [address_hash_param() | base_params()],
     responses: [
       ok:
         {"All token balances for the specified address.", "application/json",
@@ -352,7 +352,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {:ok, _address} ->
           options =
             @transaction_necessity_by_association
-            |> Keyword.merge(paging_options(params) |> dbg())
+            |> Keyword.merge(paging_options(params))
             |> Keyword.merge(current_filter(params))
             |> Keyword.merge(address_transactions_sorting(params))
 
@@ -363,7 +363,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             next_page
             |> next_page_params(
               transactions,
-              delete_parameters_from_next_page_params(params |> dbg()),
+              delete_parameters_from_next_page_params(params),
               &Transaction.address_transactions_next_page_params/1
             )
 
@@ -394,7 +394,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param(), direction_filter_param(), token_type_param(), token_filter_param()] ++
-        define_paging_params(["block_number", "index", "items_count", "batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch"]),
+        define_paging_params([
+          "block_number",
+          "index",
+          "items_count",
+          "batch_log_index",
+          "batch_block_hash",
+          "batch_transaction_hash",
+          "index_in_batch"
+        ]),
     responses: [
       ok:
         {"All token transfers for the specified address.", "application/json",
@@ -484,7 +492,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "List all internal transactions involving a specific address",
     description:
       "Retrieves all internal transactions involving a specific address, with optional filtering for internal transactions sent from or to the address.",
-    parameters: base_params() ++ [address_hash_param(), direction_filter_param()] ++ define_paging_params(["block_number", "index", "items_count", "transaction_index"]),
+    parameters:
+      base_params() ++
+        [address_hash_param(), direction_filter_param()] ++
+        define_paging_params(["block_number", "index", "items_count", "transaction_index"]),
     responses: [
       ok:
         {"All internal transactions for the specified address.", "application/json",
@@ -564,7 +575,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   operation :logs,
     summary: "List event logs emitted by or involving a specific address",
     description: "Retrieves event logs emitted by or involving a specific address.",
-    parameters: base_params() ++ [address_hash_param(), topic_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
+    parameters:
+      base_params() ++
+        [address_hash_param(), topic_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
         {"Event logs for the specified address, with pagination.", "application/json",
@@ -763,7 +776,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "Get daily native coin balance snapshots for an address from previous 10 days",
     description:
       "Retrieves daily snapshots of native coin balance for a specific address. Useful for generating balance-over-time charts.",
-    parameters: base_params() ++ [address_hash_param()],
+    parameters: [address_hash_param() | base_params()],
     responses: [
       ok:
         {"Daily coin balance history for the specified address.", "application/json",
@@ -820,7 +833,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "List token balances for an address with pagination and type filtering",
     description:
       "Retrieves token balances for a specific address with pagination and filtering by token type. Useful for displaying large token portfolios.",
-    parameters: base_params() ++ [address_hash_param(), token_type_param()] ++ define_paging_params(["fiat_value", "id", "items_count", "value"]),
+    parameters:
+      base_params() ++
+        [address_hash_param(), token_type_param()] ++ define_paging_params(["fiat_value", "id", "items_count", "value"]),
     responses: [
       ok:
         {"Token balances for the specified address with pagination.", "application/json",
@@ -866,7 +881,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               |> paging_options()
               |> Keyword.merge(token_transfers_types_options(params))
               |> Keyword.merge(@api_true)
-              |> fetch_scam_token_toggle(conn)|>dbg()
+              |> fetch_scam_token_toggle(conn)
             )
 
           TokenBalanceOnDemand.trigger_fetch(ip, address_hash)
@@ -959,12 +974,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   operation :addresses_list,
     summary: "List addresses holding native coins sorted by balance - top accounts",
     description: "Retrieves a paginated list of addresses holding the native coin, sorted by balance.",
-    parameters: base_params() ++ [sort_param(["balance", "transactions_count"]), order_param()] ++ define_paging_params(["fetched_coin_balance", "address_hash", "items_count", "transactions_count"]),
+    parameters:
+      base_params() ++
+        [sort_param(["balance", "transactions_count"]), order_param()] ++
+        define_paging_params(["fetched_coin_balance", "address_hash", "items_count", "transactions_count"]),
     responses: [
       ok:
         {"List of native coin holders with their balances, with pagination.", "application/json",
          %Schema{
-           title: "AddressesListResponses",
+           title: "AddressesList",
            allOf: [
              paginated_response(
                items: Schemas.Address,
@@ -1028,7 +1046,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   operation :tabs_counters,
     summary: "Get counters for address tabs",
     description: "Retrieves counters for various address-related entities (max counter value is 51).",
-    parameters: base_params() ++ [address_hash_param()],
+    parameters: [address_hash_param() | base_params()],
     responses: [
       ok: {"Counters for address tabs.", "application/json", Schemas.Address.TabsCounters},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -1103,7 +1121,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "List NFTs owned by a specific address with optional type filtering",
     description:
       "Retrieves a list of NFTs (non-fungible tokens) owned by a specific address, with optional filtering by token type.",
-    parameters: base_params() ++ [address_hash_param(), nft_token_type_param()] ++ define_paging_params(["items_count", "token_contract_address_hash", "token_id", "token_type"]),
+    parameters:
+      base_params() ++
+        [address_hash_param(), nft_token_type_param()] ++
+        define_paging_params(["items_count", "token_contract_address_hash", "token_id", "token_type"]),
     responses: [
       ok:
         {"NFTs owned by the specified address, with pagination.", "application/json",
@@ -1177,7 +1198,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "List NFTs owned by an address grouped by collection/project",
     description:
       "Retrieves NFTs owned by a specific address, organized by collection. Useful for displaying an address's NFT portfolio grouped by project.",
-    parameters: base_params() ++ [address_hash_param(), nft_token_type_param()] ++ define_paging_params(["items_count", "token_contract_address_hash", "token_type"]),
+    parameters:
+      base_params() ++
+        [address_hash_param(), nft_token_type_param()] ++
+        define_paging_params(["items_count", "token_contract_address_hash", "token_type"]),
     responses: [
       ok:
         {"NFTs owned by the specified address, grouped by collection, with pagination.", "application/json",
@@ -1249,7 +1273,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   operation :celo_election_rewards,
     summary: "List Celo election rewards for a specific address",
     description: "Retrieves Celo election rewards for a specific address.",
-    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["block_number", "amount", "associated_account_address_hash", "type"]),
+    parameters:
+      base_params() ++
+        [address_hash_param()] ++
+        define_paging_params(["block_number", "amount", "associated_account_address_hash", "type"]),
     responses: [
       ok:
         {"Celo election rewards for the specified address.", "application/json",

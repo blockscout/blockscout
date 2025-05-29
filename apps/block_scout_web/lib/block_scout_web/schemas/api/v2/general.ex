@@ -4,9 +4,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   """
   require OpenApiSpex
 
-  alias OpenApiSpex.{Schema, Parameter}
-  alias BlockScoutWeb.Schemas.API.V2.Token.Type, as: TokenType
   alias BlockScoutWeb.Schemas.API.V2.CeloElectionReward.Type, as: CeloElectionRewardType
+  alias BlockScoutWeb.Schemas.API.V2.Token.Type, as: TokenType
+  alias OpenApiSpex.{Parameter, Schema}
 
   defmodule AddressHash do
     @moduledoc false
@@ -489,105 +489,121 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Batch log index for paging",
       allowEmptyValue: true,
-      name: :batch_log_index},
-      "batch_block_hash" => %Parameter{
+      name: :batch_log_index
+    },
+    "batch_block_hash" => %Parameter{
       in: :query,
       schema: FullHash,
       required: false,
       description: "Batch block hash for paging",
       allowEmptyValue: true,
-      name: :batch_block_hash},
-      "batch_transaction_hash" => %Parameter{
+      name: :batch_block_hash
+    },
+    "batch_transaction_hash" => %Parameter{
       in: :query,
       schema: FullHash,
       required: false,
       description: "Batch transaction hash for paging",
       allowEmptyValue: true,
-      name: :batch_transaction_hash},
-      "index_in_batch" => %Parameter{
+      name: :batch_transaction_hash
+    },
+    "index_in_batch" => %Parameter{
       in: :query,
       schema: %Schema{type: :integer},
       required: false,
       description: "Index in batch for paging",
       allowEmptyValue: true,
-      name: :index_in_batch},
-      "transaction_index" => %Parameter{
+      name: :index_in_batch
+    },
+    "transaction_index" => %Parameter{
       in: :query,
       schema: %Schema{type: :integer},
       required: false,
       description: "Transaction index for paging",
       allowEmptyValue: true,
-      name: :transaction_index},
-      "fiat_value" => %Parameter{
+      name: :transaction_index
+    },
+    "fiat_value" => %Parameter{
       in: :query,
-      schema: FloatStringNullable, #%Schema{anyOf: [IntegerString, EmptyString]},
+      # %Schema{anyOf: [IntegerString, EmptyString]},
+      schema: FloatStringNullable,
       required: false,
       description: "Fiat value for paging",
       allowEmptyValue: true,
-      name: :fiat_value},
-      "id" => %Parameter{
+      name: :fiat_value
+    },
+    "id" => %Parameter{
       in: :query,
       schema: %Schema{type: :integer},
       required: false,
       description: "ID for paging",
       allowEmptyValue: true,
-      name: :id},
-      "fetched_coin_balance" => %Parameter{
+      name: :id
+    },
+    "fetched_coin_balance" => %Parameter{
       in: :query,
       schema: IntegerStringNullable,
       required: false,
       description: "Fetched coin balance for paging",
       allowEmptyValue: true,
-      name: :fetched_coin_balance},
-      "transactions_count" => %Parameter{
+      name: :fetched_coin_balance
+    },
+    "transactions_count" => %Parameter{
       in: :query,
-      schema: IntegerStringNullable,
+      schema: %Schema{anyOf: [%Schema{type: :integer}, EmptyString]},
       required: false,
       description: "Transactions count for paging",
       allowEmptyValue: true,
-      name: :transactions_count},
-      "token_contract_address_hash" => %Parameter{
+      name: :transactions_count
+    },
+    "token_contract_address_hash" => %Parameter{
       in: :query,
       schema: AddressHash,
       required: false,
       description: "Token contract address hash for paging",
       allowEmptyValue: true,
-      name: :token_contract_address_hash},
-      "token_id" => %Parameter{
+      name: :token_contract_address_hash
+    },
+    "token_id" => %Parameter{
       in: :query,
       schema: IntegerStringNullable,
       required: false,
       description: "Token ID for paging",
       allowEmptyValue: true,
-      name: :token_id},
-      "token_type" => %Parameter{
+      name: :token_id
+    },
+    "token_type" => %Parameter{
       in: :query,
       schema: TokenType,
       required: false,
       description: "Token type for paging",
       allowEmptyValue: true,
-      name: :token_type},
-      "amount" => %Parameter{
+      name: :token_type
+    },
+    "amount" => %Parameter{
       in: :query,
       schema: IntegerStringNullable,
       required: false,
       description: "Amount for paging",
       allowEmptyValue: true,
-      name: :amount},
-      "associated_account_address_hash" => %Parameter{
+      name: :amount
+    },
+    "associated_account_address_hash" => %Parameter{
       in: :query,
       schema: AddressHash,
       required: false,
       description: "Associated account address hash for paging",
       allowEmptyValue: true,
-      name: :associated_account_address_hash},
-      "type" => %Parameter{
+      name: :associated_account_address_hash
+    },
+    "type" => %Parameter{
       in: :query,
       schema: CeloElectionRewardType,
       required: false,
       description: "Type for paging",
       allowEmptyValue: true,
-      name: :type}
+      name: :type
+    }
   }
 
   def define_paging_params(fields) do

@@ -199,22 +199,24 @@ defmodule BlockScoutWeb.Chain do
         inserted_at: inserted_at,
         hash: hash_string
       }) do
-    with {:ok, hash} <- string_to_full_hash(hash_string) do
-      [
-        paging_options: %{
-          @default_paging_options
-          | key: %{
-              fee: decimal_parse(fee_string),
-              value: decimal_parse(value_string),
-              block_number: parse_integer(block_number_string),
-              index: parse_integer(index_string),
-              inserted_at: inserted_at,
-              hash: hash
-            }
-        }
-      ]
-    else
-      _ -> [paging_options: @default_paging_options]
+    case string_to_full_hash(hash_string) do
+      {:ok, hash} ->
+        [
+          paging_options: %{
+            @default_paging_options
+            | key: %{
+                fee: decimal_parse(fee_string),
+                value: decimal_parse(value_string),
+                block_number: parse_integer(block_number_string),
+                index: parse_integer(index_string),
+                inserted_at: inserted_at,
+                hash: hash
+              }
+          }
+        ]
+
+      _ ->
+        [paging_options: @default_paging_options]
     end
   end
 
@@ -275,13 +277,12 @@ defmodule BlockScoutWeb.Chain do
   end
 
   def paging_options(%{
-    block_number: block_number,
-    transaction_index: transaction_index,
-    index: index
-  })
-  do
-  [paging_options: %{@default_paging_options | key: {block_number, transaction_index, index}}]
-end
+        block_number: block_number,
+        transaction_index: transaction_index,
+        index: index
+      }) do
+    [paging_options: %{@default_paging_options | key: {block_number, transaction_index, index}}]
+  end
 
   def paging_options(%{
         "block_number" => block_number_string,
@@ -291,7 +292,9 @@ end
         "batch_transaction_hash" => batch_transaction_hash_string,
         "index_in_batch" => index_in_batch_string
       })
-      when is_binary(block_number_string) and is_binary(index_string) and is_binary(batch_log_index_string) and is_binary(batch_block_hash_string) and is_binary(batch_transaction_hash_string) and is_binary(index_in_batch_string) do
+      when is_binary(block_number_string) and is_binary(index_string) and is_binary(batch_log_index_string) and
+             is_binary(batch_block_hash_string) and is_binary(batch_transaction_hash_string) and
+             is_binary(index_in_batch_string) do
     with {block_number, ""} <- Integer.parse(block_number_string),
          {index, ""} <- Integer.parse(index_string),
          {index_in_batch, ""} <- Integer.parse(index_in_batch_string),
@@ -336,50 +339,50 @@ end
   end
 
   def paging_options(%{
-    block_number: block_number,
-    index: index,
-    batch_log_index: batch_log_index,
-    batch_block_hash: batch_block_hash_string,
-    batch_transaction_hash: batch_transaction_hash_string,
-    index_in_batch: index_in_batch
-  })
-  when is_binary(batch_transaction_hash_string) and is_binary(batch_block_hash_string) do
-with {:ok, batch_transaction_hash} <- string_to_full_hash(batch_transaction_hash_string),
-     {:ok, batch_block_hash} <- string_to_full_hash(batch_block_hash_string) do
-  [
-    paging_options: %{
-      @default_paging_options
-      | key: {block_number, index},
-        batch_key: {batch_block_hash, batch_transaction_hash, batch_log_index, index_in_batch}
-    }
-  ]
-else
-  _ ->
-    [paging_options: @default_paging_options]
-end
-end
+        block_number: block_number,
+        index: index,
+        batch_log_index: batch_log_index,
+        batch_block_hash: batch_block_hash_string,
+        batch_transaction_hash: batch_transaction_hash_string,
+        index_in_batch: index_in_batch
+      })
+      when is_binary(batch_transaction_hash_string) and is_binary(batch_block_hash_string) do
+    with {:ok, batch_transaction_hash} <- string_to_full_hash(batch_transaction_hash_string),
+         {:ok, batch_block_hash} <- string_to_full_hash(batch_block_hash_string) do
+      [
+        paging_options: %{
+          @default_paging_options
+          | key: {block_number, index},
+            batch_key: {batch_block_hash, batch_transaction_hash, batch_log_index, index_in_batch}
+        }
+      ]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
 
-def paging_options(%{
-    batch_log_index: batch_log_index,
-    batch_block_hash: batch_block_hash_string,
-    batch_transaction_hash: batch_transaction_hash_string,
-    index_in_batch: index_in_batch
-  })
-  when is_binary(batch_block_hash_string) and
-         is_binary(batch_transaction_hash_string)do
-with     {:ok, batch_transaction_hash} <- string_to_full_hash(batch_transaction_hash_string),
-     {:ok, batch_block_hash} <- string_to_full_hash(batch_block_hash_string) do
-  [
-    paging_options: %{
-      @default_paging_options
-      | batch_key: {batch_block_hash, batch_transaction_hash, batch_log_index, index_in_batch}
-    }
-  ]
-else
-  _ ->
-    [paging_options: @default_paging_options]
-end
-end
+  def paging_options(%{
+        batch_log_index: batch_log_index,
+        batch_block_hash: batch_block_hash_string,
+        batch_transaction_hash: batch_transaction_hash_string,
+        index_in_batch: index_in_batch
+      })
+      when is_binary(batch_block_hash_string) and
+             is_binary(batch_transaction_hash_string) do
+    with {:ok, batch_transaction_hash} <- string_to_full_hash(batch_transaction_hash_string),
+         {:ok, batch_block_hash} <- string_to_full_hash(batch_block_hash_string) do
+      [
+        paging_options: %{
+          @default_paging_options
+          | batch_key: {batch_block_hash, batch_transaction_hash, batch_log_index, index_in_batch}
+        }
+      ]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
 
   def paging_options(%{"block_number" => block_number_string, "index" => index_string})
       when is_binary(block_number_string) and is_binary(index_string) do
@@ -468,9 +471,10 @@ end
   end
 
   def paging_options(%{inserted_at: inserted_at, hash: hash_string}) when is_binary(hash_string) do
-    with {:ok, hash} <- string_to_full_hash(hash_string) do
-      [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
-    else
+    case string_to_full_hash(hash_string) do
+      {:ok, hash} ->
+        [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
+
       _ ->
         [paging_options: @default_paging_options]
     end
@@ -484,10 +488,10 @@ end
   end
 
   def paging_options(%{"fiat_value" => fiat_value_string, "value" => value_string, "id" => id_string})
-  when is_binary(fiat_value_string) and is_binary(value_string) and is_binary(id_string) do
+      when is_binary(fiat_value_string) and is_binary(value_string) and is_binary(id_string) do
     with {id, ""} <- Integer.parse(id_string),
-        {value, ""} <- Decimal.parse(value_string),
-        {_id, _value, {fiat_value, ""}} <- {id, value, Decimal.parse(fiat_value_string)} do
+         {value, ""} <- Decimal.parse(value_string),
+         {_id, _value, {fiat_value, ""}} <- {id, value, Decimal.parse(fiat_value_string)} do
       [paging_options: %{@default_paging_options | key: {fiat_value, value, id}}]
     else
       {id, value, :error} ->
