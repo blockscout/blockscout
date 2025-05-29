@@ -327,7 +327,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
           description:
             "Array of time intervals in milliseconds. Can be empty [] (no info), single value [interval] (means that the transaction was confirmed within {interval} milliseconds), or two values [short_interval, long_interval] (means that the transaction's confirmation took from {short_interval} to {long_interval} milliseconds)",
           example: [1000, 2000],
-          maxLength: 2
+          maxItems: 2
         },
         value: General.IntegerString,
         fee: Fee,
