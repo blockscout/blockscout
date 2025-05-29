@@ -309,11 +309,23 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
           end
         end
 
+      init_chain =
+        case InteropMessage.interop_chain_id_to_instance_info(msg.init_chain_id) do
+          nil -> %{chain_id: msg.init_chain_id}
+          chain -> chain
+        end
+
+      relay_chain =
+        case InteropMessage.interop_chain_id_to_instance_info(msg.relay_chain_id) do
+          nil -> %{chain_id: msg.relay_chain_id}
+          chain -> chain
+        end
+
       message =
         msg
         |> InteropMessage.extend_with_status()
-        |> Map.put(:init_chain, InteropMessage.interop_chain_id_to_instance_info(msg.init_chain_id))
-        |> Map.put(:relay_chain, InteropMessage.interop_chain_id_to_instance_info(msg.relay_chain_id))
+        |> Map.put(:init_chain, init_chain)
+        |> Map.put(:relay_chain, relay_chain)
         |> Map.put(:direction, direction)
         |> Map.put(:transfer_token, transfer_token)
 
