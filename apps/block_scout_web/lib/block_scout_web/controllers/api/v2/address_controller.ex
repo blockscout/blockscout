@@ -310,7 +310,16 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           direction_filter_param(),
           sort_param(["block_number", "value", "fee"]),
           order_param()
-        ] ++ define_paging_params(["block_number", "index", "inserted_at", "hash", "value", "fee", "items_count"]),
+        ] ++
+        define_paging_params([
+          "block_number_nullable",
+          "index_nullable",
+          "inserted_at",
+          "hash",
+          "value",
+          "fee",
+          "items_count"
+        ]),
     responses: [
       ok:
         {"All transactions for the specified address.", "application/json",
@@ -835,7 +844,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       "Retrieves token balances for a specific address with pagination and filtering by token type. Useful for displaying large token portfolios.",
     parameters:
       base_params() ++
-        [address_hash_param(), token_type_param()] ++ define_paging_params(["fiat_value", "id", "items_count", "value"]),
+        [address_hash_param(), token_type_param()] ++
+        define_paging_params(["fiat_value_nullable", "id", "items_count", "value"]),
     responses: [
       ok:
         {"Token balances for the specified address with pagination.", "application/json",
@@ -1276,7 +1286,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["block_number", "amount", "associated_account_address_hash", "type"]),
+        define_paging_params(["block_number_no_casting", "amount", "associated_account_address_hash", "type"]),
     responses: [
       ok:
         {"Celo election rewards for the specified address.", "application/json",

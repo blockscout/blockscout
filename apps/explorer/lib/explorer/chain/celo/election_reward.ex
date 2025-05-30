@@ -30,6 +30,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
   import Ecto.Query, only: [from: 2, where: 3]
+  import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.{Chain, PagingOptions}
@@ -347,14 +348,15 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   @spec address_paging_options(map()) :: [Chain.paging_options()]
   def address_paging_options(params) do
     with %{
-           block_number: block_number,
+           block_number: block_number_string,
            amount: amount_string,
            associated_account_address_hash: associated_account_address_hash_string,
            type: type_string
          }
-         when is_binary(amount_string) and
+         when is_binary(block_number_string) and is_binary(amount_string) and
                 is_binary(associated_account_address_hash_string) and
                 is_binary(type_string) <- params,
+         {:ok, block_number} <- safe_parse_non_negative_integer(block_number_string),
          {amount, ""} <- Decimal.parse(amount_string),
          {:ok, associated_account_address_hash} <-
            Hash.Address.cast(associated_account_address_hash_string),
