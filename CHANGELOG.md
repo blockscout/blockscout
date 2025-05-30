@@ -1,5 +1,11 @@
 # Changelog
 
+## 8.1.1
+
+### 🐛 Bug Fixes
+
+- Add missing preload for logs in /api/v2/transactions/:transactio… ([#12491](https://github.com/blockscout/blockscout/issues/12491))
+
 ## 8.1.0
 
 ### 🚀 Features
