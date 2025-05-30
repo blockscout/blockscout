@@ -251,6 +251,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         Enum.map(messages, fn message ->
           msg =
             %{
+              "unique_id" => InteropMessage.message_unique_id(message),
               "nonce" => message.nonce,
               "timestamp" => message.timestamp,
               "status" => message.status,
@@ -271,6 +272,30 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           |> maybe_add_chain(:relay_chain, message)
         end),
       next_page_params: next_page_params
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/interop/messages/:unique_id` endpoint.
+  """
+  def render("optimism_interop_message.json", %{message: message}) do
+    %{
+      "init_chain" => message.init_chain,
+      "init_transaction_hash" => message.init_transaction_hash,
+      "timestamp" => message.timestamp,
+      "sender_address_hash" => message.sender_address_hash,
+      "relay_chain" => message.relay_chain,
+      "relay_transaction_hash" => message.relay_transaction_hash,
+      "relay_transaction_failed" => message.failed,
+      "target_address_hash" => message.target_address_hash,
+      "transfer_token" => message.transfer_token,
+      "transfer_amount" => message.transfer_amount,
+      "transfer_from_address_hash" => message.transfer_from_address_hash,
+      "transfer_to_address_hash" => message.transfer_to_address_hash,
+      "nonce" => message.nonce,
+      "direction" => message.direction,
+      "status" => message.status,
+      "payload" => ExplorerHelper.add_0x_prefix(message.payload)
     }
   end
 
