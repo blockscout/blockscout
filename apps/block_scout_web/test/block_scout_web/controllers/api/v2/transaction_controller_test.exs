@@ -4,12 +4,13 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
 
-  require Logger
   alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
-  alias Explorer.Repo
-  import Ecto.Query, only: [from: 2]
+  alias Explorer.{Repo, TestHelper}
+
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  require Logger
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.TransactionsApiV2.child_id())
@@ -316,7 +317,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       request = get(conn, "/api/v2/transactions/" <> to_string(transaction.hash))
 
-      assert response = json_response(request, 200)
+      assert json_response(request, 200)
     end
   end
 
@@ -1412,11 +1413,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   if Application.compile_env(:explorer, :chain_type) == :stability do
     @first_topic_hex_string_1 "0x99e7b0ba56da2819c37c047f0511fd2bf6c9b4e27b4a979a19d6da0f74be8155"
 
-    defp topic(topic_hex_string) do
-      {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
-      topic
-    end
-
     describe "stability fees" do
       test "check stability fees", %{conn: conn} do
         transaction = insert(:transaction) |> with_block()
@@ -1427,7 +1423,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
             index: 1,
             block: transaction.block,
             block_number: transaction.block_number,
-            first_topic: topic(@first_topic_hex_string_1),
+            first_topic: TestHelper.topic(@first_topic_hex_string_1),
             data:
               "0x000000000000000000000000dc2b93f3291030f3f7a6d9363ac37757f7ad5c4300000000000000000000000000000000000000000000000000002824369a100000000000000000000000000046b555cb3962bf9533c437cbd04a2f702dfdb999000000000000000000000000000000000000000000000000000014121b4d0800000000000000000000000000faf7a981360c2fab3a5ab7b3d6d8d0cf97a91eb9000000000000000000000000000000000000000000000000000014121b4d0800"
           )
@@ -1490,7 +1486,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
             index: 1,
             block: transaction.block,
             block_number: transaction.block_number,
-            first_topic: topic(@first_topic_hex_string_1),
+            first_topic: TestHelper.topic(@first_topic_hex_string_1),
             data:
               "0x000000000000000000000000dc2b93f3291030f3f7a6d9363ac37757f7ad5c4300000000000000000000000000000000000000000000000000002824369a100000000000000000000000000046b555cb3962bf9533c437cbd04a2f702dfdb999000000000000000000000000000000000000000000000000000014121b4d0800000000000000000000000000faf7a981360c2fab3a5ab7b3d6d8d0cf97a91eb9000000000000000000000000000000000000000000000000000014121b4d0800"
           )
@@ -1648,6 +1644,450 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   defp check_total(_, _, _), do: true
+
+  describe "/transactions/{transaction_hash}/summary?just_request_body=true" do
+    setup do
+      original_config =
+        Application.get_env(:block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation)
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+        enabled: true,
+        service_url: "http://localhost:4000"
+      )
+
+      on_exit(fn ->
+        Application.put_env(
+          :block_scout_web,
+          BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+          original_config
+        )
+      end)
+    end
+
+    test "return 404 on non existing transaction", %{conn: conn} do
+      transaction = build(:transaction)
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "return 422 on invalid transaction hash", %{conn: conn} do
+      request = get(conn, "/api/v2/transactions/0x/summary?just_request_body=true")
+
+      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+    end
+
+    test "return 403 when transaction interpretation service is disabled", %{conn: conn} do
+      Application.put_env(:block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+        enabled: false
+      )
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert %{"message" => "Transaction Interpretation Service is disabled"} = json_response(request, 403)
+    end
+
+    test "return request body for existing transaction", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert response = json_response(request, 200)
+
+      # Verify the structure of the request body
+      assert Map.has_key?(response, "data")
+      assert Map.has_key?(response, "logs_data")
+      assert Map.has_key?(response, "chain_id")
+
+      # Verify data structure
+      data = response["data"]
+      assert Map.has_key?(data, "to")
+      assert Map.has_key?(data, "from")
+      assert Map.has_key?(data, "hash")
+      assert Map.has_key?(data, "type")
+      assert Map.has_key?(data, "value")
+      assert Map.has_key?(data, "method")
+      assert Map.has_key?(data, "status")
+      assert Map.has_key?(data, "transaction_types")
+      assert Map.has_key?(data, "raw_input")
+      assert Map.has_key?(data, "decoded_input")
+      assert Map.has_key?(data, "token_transfers")
+      assert Map.has_key?(data, "internal_transactions")
+
+      # Verify logs_data structure
+      logs_data = response["logs_data"]
+      assert Map.has_key?(logs_data, "items")
+      assert is_list(logs_data["items"])
+
+      # Verify chain_id is present and is an integer
+      assert is_integer(response["chain_id"])
+
+      # Verify transaction data matches
+      assert to_string(transaction.hash) == data["hash"]
+      assert transaction.type == data["type"]
+      assert to_string(transaction.value.value) == data["value"]
+      assert to_string(transaction.status) == data["status"]
+    end
+
+    test "return request body with token transfers", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert response = json_response(request, 200)
+      assert is_list(response["data"]["token_transfers"])
+      assert Enum.count(response["data"]["token_transfers"]) >= 1
+    end
+
+    test "return request body with internal transactions", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction_hash: transaction.hash,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        block_hash: transaction.block_hash,
+        block_index: 1,
+        type: :reward
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert response = json_response(request, 200)
+      assert is_list(response["data"]["internal_transactions"])
+      assert Enum.count(response["data"]["internal_transactions"]) >= 1
+    end
+
+    test "return request body with logs", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:log,
+        transaction: transaction,
+        index: 1,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert response = json_response(request, 200)
+      assert is_list(response["logs_data"]["items"])
+      assert Enum.count(response["logs_data"]["items"]) >= 1
+    end
+
+    test "return request body with smart contract transaction", %{conn: conn} do
+      contract =
+        insert(:smart_contract,
+          contract_code_md5: "123",
+          abi: [
+            %{
+              "constant" => false,
+              "inputs" => [%{"name" => "", "type" => "bytes"}],
+              "name" => "set",
+              "outputs" => [],
+              "payable" => false,
+              "stateMutability" => "nonpayable",
+              "type" => "function"
+            }
+          ]
+        )
+        |> Repo.preload(:address)
+
+      input_data =
+        "set(bytes)"
+        |> ABI.encode([
+          <<48, 120, 253, 69, 39, 88, 49, 136, 89, 142, 21, 123, 116, 129, 248, 32, 77, 29, 224, 121, 49, 137, 216, 8,
+            212, 195, 239, 11, 174, 75, 56, 126>>
+        ])
+        |> Base.encode16(case: :lower)
+
+      transaction =
+        :transaction
+        |> insert(to_address: contract.address, input: "0x" <> input_data)
+        |> with_block()
+        |> Repo.preload(to_address: :smart_contract)
+
+      TestHelper.get_all_proxies_implementation_zero_addresses()
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert response = json_response(request, 200)
+
+      # Verify that the transaction has input data
+      assert response["data"]["raw_input"] == "0x" <> input_data
+
+      assert response["data"]["decoded_input"] == %{
+               "method_call" => "set(bytes arg0)",
+               "method_id" => "0399321e",
+               "parameters" => [
+                 %{
+                   "name" => "arg0",
+                   "type" => "bytes",
+                   "value" => "0x3078fd4527583188598e157b7481f8204d1de0793189d808d4c3ef0bae4b387e"
+                 }
+               ]
+             }
+    end
+
+    test "return request body with proper address information", %{conn: conn} do
+      from_address = insert(:address)
+      to_address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: from_address, to_address: to_address)
+        |> with_block()
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert response = json_response(request, 200)
+
+      # Verify from address
+      from_data = response["data"]["from"]
+      assert Map.has_key?(from_data, "hash")
+      assert from_data["hash"] == Address.checksum(from_address.hash)
+
+      # Verify to address
+      to_data = response["data"]["to"]
+      assert Map.has_key?(to_data, "hash")
+      assert to_data["hash"] == Address.checksum(to_address.hash)
+    end
+
+    test "limits token transfers to 50 items", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      # Insert more than 50 token transfers
+      insert_list(60, :token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["data"]["token_transfers"]) <= 50
+    end
+
+    test "limits internal transactions to 50 items", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      # Insert more than 50 internal transactions
+      for index <- 1..60 do
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: index,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
+          block_index: index
+        )
+      end
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["data"]["internal_transactions"]) <= 50
+    end
+
+    test "limits logs to 50 items", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      # Insert more than 50 logs
+      for index <- 1..60 do
+        insert(:log,
+          transaction: transaction,
+          index: index,
+          block: transaction.block,
+          block_number: transaction.block_number
+        )
+      end
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["logs_data"]["items"]) <= 50
+    end
+
+    test "log could be decoded via verified implementation", %{conn: conn} do
+      address = insert(:contract_address)
+
+      contract_address = insert(:contract_address)
+
+      smart_contract =
+        insert(:smart_contract,
+          address_hash: contract_address.hash,
+          abi: [
+            %{
+              "name" => "OptionSettled",
+              "type" => "event",
+              "inputs" => [
+                %{"name" => "accountId", "type" => "uint256", "indexed" => true, "internalType" => "uint256"},
+                %{"name" => "option", "type" => "address", "indexed" => false, "internalType" => "address"},
+                %{"name" => "subId", "type" => "uint256", "indexed" => false, "internalType" => "uint256"},
+                %{"name" => "amount", "type" => "int256", "indexed" => false, "internalType" => "int256"},
+                %{"name" => "value", "type" => "int256", "indexed" => false, "internalType" => "int256"}
+              ],
+              "anonymous" => false
+            }
+          ]
+        )
+
+      topic1_bytes = ExKeccak.hash_256("OptionSettled(uint256,address,uint256,int256,int256)")
+      topic1 = "0x" <> Base.encode16(topic1_bytes, case: :lower)
+      topic2 = "0x0000000000000000000000000000000000000000000000000000000000005d19"
+
+      log_data =
+        "0x000000000000000000000000aeb81cbe6b19ceeb0dbe0d230cffe35bb40a13a700000000000000000000000000000000000000000000045d964b80006597b700fffffffffffffffffffffffffffffffffffffffffffffffffe55aca2c2f40000ffffffffffffffffffffffffffffffffffffffffffffffe3a8289da3d7a13ef2"
+
+      transaction = :transaction |> insert() |> with_block()
+
+      log =
+        insert(:log,
+          transaction: transaction,
+          first_topic: TestHelper.topic(topic1),
+          second_topic: TestHelper.topic(topic2),
+          third_topic: nil,
+          fourth_topic: nil,
+          data: log_data,
+          address: address,
+          block: transaction.block,
+          block_number: transaction.block_number
+        )
+
+      insert(:proxy_implementation,
+        proxy_address_hash: address.hash,
+        proxy_type: "eip1167",
+        address_hashes: [smart_contract.address_hash],
+        names: ["Test"]
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert response = json_response(request, 200)
+      assert is_list(response["logs_data"]["items"])
+      assert Enum.count(response["logs_data"]["items"]) == 1
+
+      log_from_api = Enum.at(response["logs_data"]["items"], 0)
+      assert not is_nil(log_from_api["decoded"])
+
+      assert log_from_api["decoded"] == %{
+               "method_call" =>
+                 "OptionSettled(uint256 indexed accountId, address option, uint256 subId, int256 amount, int256 value)",
+               "method_id" => "d20a68b2",
+               "parameters" => [
+                 %{
+                   "indexed" => true,
+                   "name" => "accountId",
+                   "type" => "uint256",
+                   "value" => "23833"
+                 },
+                 %{
+                   "indexed" => false,
+                   "name" => "option",
+                   "type" => "address",
+                   "value" => "0xAeB81cbe6b19CeEB0dBE0d230CFFE35Bb40a13a7"
+                 },
+                 %{
+                   "indexed" => false,
+                   "name" => "subId",
+                   "type" => "uint256",
+                   "value" => "20615843020801704441600"
+                 },
+                 %{
+                   "indexed" => false,
+                   "name" => "amount",
+                   "type" => "int256",
+                   "value" => "-120000000000000000"
+                 },
+                 %{
+                   "indexed" => false,
+                   "name" => "value",
+                   "type" => "int256",
+                   "value" => "-522838470013113778446"
+                 }
+               ]
+             }
+    end
+
+    test "test corner case, when preload functions face absent smart contract", %{conn: conn} do
+      address = insert(:contract_address)
+
+      contract_address = insert(:contract_address)
+
+      topic1_bytes = ExKeccak.hash_256("OptionSettled(uint256,address,uint256,int256,int256)")
+      topic1 = "0x" <> Base.encode16(topic1_bytes, case: :lower)
+      topic2 = "0x0000000000000000000000000000000000000000000000000000000000005d19"
+
+      log_data =
+        "0x000000000000000000000000aeb81cbe6b19ceeb0dbe0d230cffe35bb40a13a700000000000000000000000000000000000000000000045d964b80006597b700fffffffffffffffffffffffffffffffffffffffffffffffffe55aca2c2f40000ffffffffffffffffffffffffffffffffffffffffffffffe3a8289da3d7a13ef2"
+
+      transaction = :transaction |> insert() |> with_block()
+
+      log =
+        insert(:log,
+          transaction: transaction,
+          first_topic: TestHelper.topic(topic1),
+          second_topic: TestHelper.topic(topic2),
+          third_topic: nil,
+          fourth_topic: nil,
+          data: log_data,
+          address: address,
+          block: transaction.block,
+          block_number: transaction.block_number
+        )
+
+      insert(:proxy_implementation,
+        proxy_address_hash: address.hash,
+        proxy_type: "eip1167",
+        address_hashes: [contract_address.hash],
+        names: ["Test"]
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
+
+      assert response = json_response(request, 200)
+      assert is_list(response["logs_data"]["items"])
+      assert Enum.count(response["logs_data"]["items"]) == 1
+
+      log_from_api = Enum.at(response["logs_data"]["items"], 0)
+      # In this case, the log should not be decoded since the smart contract is absent
+      assert is_nil(log_from_api["decoded"])
+    end
+  end
 
   if @chain_type == :neon do
     describe "neon linked transactions service" do
