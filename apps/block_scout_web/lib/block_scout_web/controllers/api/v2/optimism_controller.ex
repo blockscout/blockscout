@@ -309,23 +309,11 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
           end
         end
 
-      init_chain =
-        case InteropMessage.interop_chain_id_to_instance_info(msg.init_chain_id) do
-          nil -> %{chain_id: msg.init_chain_id}
-          chain -> chain
-        end
-
-      relay_chain =
-        case InteropMessage.interop_chain_id_to_instance_info(msg.relay_chain_id) do
-          nil -> %{chain_id: msg.relay_chain_id}
-          chain -> chain
-        end
-
       message =
         msg
         |> InteropMessage.extend_with_status()
-        |> Map.put(:init_chain, init_chain)
-        |> Map.put(:relay_chain, relay_chain)
+        |> Map.put(:init_chain, interop_chain_id_to_instance_info(msg.init_chain_id))
+        |> Map.put(:relay_chain, interop_chain_id_to_instance_info(msg.relay_chain_id))
         |> Map.put(:direction, direction)
         |> Map.put(:transfer_token, transfer_token)
 
@@ -338,6 +326,23 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
         |> put_view(ApiView)
         |> put_status(:not_found)
         |> render(:message, %{message: "Invalid message id or the message with such id is not found"})
+    end
+  end
+
+  # Calls `InteropMessage.interop_chain_id_to_instance_info` function and depending on the result
+  # returns a map with the instance info.
+  #
+  # ## Parameters
+  # - `chain_id`: ID of the chain the instance info is needed for.
+  #
+  # ## Returns
+  # - A map with the instance info.
+  # - If the info cannot be retrieved, anyway returns the map with a single `chain_id` item.
+  @spec interop_chain_id_to_instance_info(non_neg_integer()) :: map()
+  defp interop_chain_id_to_instance_info(chain_id) do
+    case InteropMessage.interop_chain_id_to_instance_info(chain_id) do
+      nil -> %{chain_id: chain_id}
+      chain -> chain
     end
   end
 
