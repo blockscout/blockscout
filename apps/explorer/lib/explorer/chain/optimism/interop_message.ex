@@ -154,9 +154,10 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   def get_incomplete_messages_stats(current_chain_id, start_block_number)
       when is_integer(current_chain_id) and is_integer(start_block_number) do
     {:ok, %{rows: [[min_block_number, max_block_number, message_count]]}} =
-      Repo.query("""
-        SELECT MIN(block_number), MAX(block_number), COUNT(*) FROM #{__MODULE__.__schema__(:source)} WHERE ((relay_transaction_hash IS NULL AND init_chain_id = #{current_chain_id}) OR (init_transaction_hash IS NULL AND relay_chain_id = #{current_chain_id})) AND block_number >= #{start_block_number};
-      """)
+      Repo.query(
+        "SELECT MIN(block_number), MAX(block_number), COUNT(*) FROM #{__MODULE__.__schema__(:source)} WHERE ((relay_transaction_hash IS NULL AND init_chain_id = $1) OR (init_transaction_hash IS NULL AND relay_chain_id = $2)) AND block_number >= $3",
+        [current_chain_id, current_chain_id, start_block_number]
+      )
 
     {min_block_number, max_block_number, message_count}
   end
