@@ -121,6 +121,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     })
   end
 
+  defmodule FloatString do
+    @moduledoc false
+    OpenApiSpex.schema(%{type: :string, pattern: ~r"^([1-9][0-9]*|0)(\.[0-9]+)?$"})
+  end
+
   defmodule FloatStringNullable do
     @moduledoc false
     OpenApiSpex.schema(%{type: :string, pattern: ~r"^([1-9][0-9]*|0)(\.[0-9]+)?$", nullable: true})
@@ -250,6 +255,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     OpenApiSpex.schema(%{type: :string, minLength: 0, maxLength: 0})
   end
 
+  defmodule NullString do
+    @moduledoc false
+    OpenApiSpex.schema(%{type: :string, pattern: ~r"^null$"})
+  end
+
   def address_hash_param do
     %Parameter{
       name: :address_hash_param,
@@ -315,8 +325,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       in: :query,
       schema: %Schema{
-        type: :string,
-        pattern: ~r"^(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*$"
+        anyOf: [
+          EmptyString,
+          %Schema{
+            type: :string,
+            pattern: ~r"^(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*$"
+          }
+        ]
       },
       required: false,
       description: """
@@ -336,8 +351,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       in: :query,
       schema: %Schema{
-        type: :string,
-        pattern: ~r"^(ERC-721|ERC-1155|ERC-404)(,(ERC-721|ERC-1155|ERC-404))*$"
+        anyOf: [
+          EmptyString,
+          %Schema{
+            type: :string,
+            pattern: ~r"^(ERC-721|ERC-1155|ERC-404)(,(ERC-721|ERC-1155|ERC-404))*$"
+          }
+        ]
       },
       required: false,
       description: """
@@ -423,18 +443,37 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @paging_params %{
     "block_number" => %Parameter{
       in: :query,
-      schema: %Schema{anyOf: [%Schema{type: :integer}, EmptyString]},
+      schema: %Schema{type: :integer},
       required: false,
       description: "Block number for paging",
-      allowEmptyValue: true,
+      name: :block_number
+    },
+    "block_number_nullable" => %Parameter{
+      in: :query,
+      schema: %Schema{anyOf: [%Schema{type: :integer}, EmptyString, NullString]},
+      required: false,
+      description: "Block number for paging",
+      name: :block_number
+    },
+    "block_number_no_casting" => %Parameter{
+      in: :query,
+      schema: IntegerString,
+      required: false,
+      description: "Block number for paging",
       name: :block_number
     },
     "index" => %Parameter{
       in: :query,
-      schema: %Schema{anyOf: [%Schema{type: :integer}, EmptyString]},
+      schema: %Schema{type: :integer},
       required: false,
       description: "Transaction index for paging",
-      allowEmptyValue: true,
+      name: :index
+    },
+    "index_nullable" => %Parameter{
+      in: :query,
+      schema: %Schema{anyOf: [%Schema{type: :integer}, EmptyString, NullString]},
+      required: false,
+      description: "Transaction index for paging",
       name: :index
     },
     "inserted_at" => %Parameter{
@@ -520,16 +559,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :integer},
       required: false,
       description: "Transaction index for paging",
-      allowEmptyValue: true,
       name: :transaction_index
     },
-    "fiat_value" => %Parameter{
+    "fiat_value_nullable" => %Parameter{
       in: :query,
-      # %Schema{anyOf: [IntegerString, EmptyString]},
-      schema: FloatStringNullable,
+      schema: %Schema{anyOf: [FloatString, EmptyString, NullString]},
       required: false,
       description: "Fiat value for paging",
-      allowEmptyValue: true,
       name: :fiat_value
     },
     "id" => %Parameter{
@@ -550,7 +586,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     },
     "transactions_count" => %Parameter{
       in: :query,
-      schema: %Schema{anyOf: [%Schema{type: :integer}, EmptyString]},
+      schema: %Schema{anyOf: [%Schema{type: :integer}, EmptyString, NullString]},
       required: false,
       description: "Transactions count for paging",
       allowEmptyValue: true,
