@@ -49,11 +49,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     :ok
   end
 
-  defp topic(topic_hex_string) do
-    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
-    topic
-  end
-
   describe "/addresses/{address_hash}" do
     test "get 200 on non existing address", %{conn: conn} do
       address = build(:address)
@@ -2371,7 +2366,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block: transaction.block,
           block_number: transaction.block_number,
           address: address,
-          first_topic: topic(@first_topic_hex_string_1)
+          first_topic: TestHelper.topic(@first_topic_hex_string_1)
         )
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/logs?topic=#{@first_topic_hex_string_1}")
@@ -2417,8 +2412,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log =
         insert(:log,
           transaction: transaction,
-          first_topic: topic(topic1),
-          second_topic: topic(topic2),
+          first_topic: TestHelper.topic(topic1),
+          second_topic: TestHelper.topic(topic2),
           third_topic: nil,
           fourth_topic: nil,
           data: log_data,
@@ -2497,8 +2492,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log =
         insert(:log,
           transaction: transaction,
-          first_topic: topic(topic1),
-          second_topic: topic(topic2),
+          first_topic: TestHelper.topic(topic1),
+          second_topic: TestHelper.topic(topic2),
           third_topic: nil,
           fourth_topic: nil,
           data: log_data,

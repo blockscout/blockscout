@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   alias Explorer.Chain
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias HTTPoison.Response
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
@@ -233,7 +234,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     full_options =
       [
         necessity_by_association: %{
-          [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+          [address: [:names, :smart_contract, Implementation.proxy_implementations_smart_contracts_association()]] =>
+            :optional
         }
       ]
       |> Keyword.merge(@api_true)

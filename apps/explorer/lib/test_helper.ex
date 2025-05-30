@@ -297,4 +297,9 @@ defmodule Explorer.TestHelper do
       {:ok, "0x1"}
     end)
   end
+
+  def topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
+  end
 end
