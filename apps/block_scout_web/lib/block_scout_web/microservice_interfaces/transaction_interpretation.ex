@@ -257,7 +257,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     log_options =
       [
         necessity_by_association: %{
-          [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+          [address: [:names, :smart_contract, Implementation.proxy_implementations_smart_contracts_association()]] =>
+            :optional
         },
         limit: @items_limit
       ]
