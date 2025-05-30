@@ -230,7 +230,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
         {{:ok, balance}, request}, acc ->
           params = %{
             address_hash: request.address_hash,
-            token_contract_address_hash: request.contract_address_hash,
+            token_contract_address_hash: request.token_contract_address_hash,
             token_type: request.token_type,
             token_id: request.token_id,
             block_number: request.block_number,
