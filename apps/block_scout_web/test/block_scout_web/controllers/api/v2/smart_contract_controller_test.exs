@@ -659,7 +659,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
   end
 
-  if Application.compile_env(:explorer, :chain_type) !== :zksync do
+  if Application.compile_env(:explorer, :chain_type) !== :zksync &&
+       Application.compile_env(:explorer, :chain_type) !== :via do
     describe "/smart-contracts/{address_hash} <> eth_bytecode_db" do
       setup do
         old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
