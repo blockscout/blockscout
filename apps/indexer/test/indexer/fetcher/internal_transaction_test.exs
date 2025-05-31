@@ -7,7 +7,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
   alias Ecto.Multi
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, PendingBlockOperation, PendingTransactionOperation}
+  alias Explorer.Chain.{Block, PendingBlockOperation}
   alias Explorer.Chain.Import.Runner.Blocks
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.{InternalTransaction, PendingTransaction, TokenBalance}
