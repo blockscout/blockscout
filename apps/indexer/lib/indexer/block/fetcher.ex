@@ -62,6 +62,8 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Transform.Blocks, as: TransformBlocks
   alias Indexer.Transform.PolygonZkevm.Bridge, as: PolygonZkevmBridge
 
+  alias Indexer.Transform.Celo.L1Epochs, as: CeloL1Epochs
+  alias Indexer.Transform.Celo.L2Epochs, as: CeloL2Epochs
   alias Indexer.Transform.Celo.TransactionGasTokens, as: CeloTransactionGasTokens
   alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
 
@@ -168,6 +170,8 @@ defmodule Indexer.Block.Fetcher do
            CeloTransactionTokenTransfers.parse_transactions(transactions_with_receipts),
          celo_gas_tokens = CeloTransactionGasTokens.parse(transactions_with_receipts),
          token_transfers = token_transfers ++ celo_native_token_transfers,
+         celo_l1_epochs = CeloL1Epochs.parse(blocks),
+         celo_l2_epochs = CeloL2Epochs.parse(logs),
          tokens = Enum.uniq(tokens ++ celo_tokens),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
@@ -257,6 +261,7 @@ defmodule Indexer.Block.Fetcher do
              scroll_l1_fee_params: scroll_l1_fee_params,
              shibarium_bridge_operations: shibarium_bridge_operations,
              celo_gas_tokens: celo_gas_tokens,
+             celo_epochs: celo_l1_epochs ++ celo_l2_epochs,
              arbitrum_messages: arbitrum_xlevel_messages
            }
            |> extend_with_zilliqa_import_options(fetched_blocks),
@@ -332,13 +337,14 @@ defmodule Indexer.Block.Fetcher do
     |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
   end
 
-  defp do_import_options(:celo, basic_import_options, %{celo_gas_tokens: celo_gas_tokens}) do
+  defp do_import_options(:celo, basic_import_options, %{celo_gas_tokens: celo_gas_tokens, celo_epochs: celo_epochs}) do
     tokens =
       basic_import_options
       |> Map.get(:tokens, %{})
       |> Map.get(:params, [])
 
     basic_import_options
+    |> Map.put_new(:celo_epochs, %{params: celo_epochs})
     |> Map.put(
       :tokens,
       %{params: (tokens ++ celo_gas_tokens) |> Enum.uniq()}
@@ -539,10 +545,8 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_polygon_zkevm_bridge_l1_tokens(_), do: :ok
 
-  def async_import_celo_epoch_block_operations(%{blocks: operations}, realtime?) do
-    operations
-    |> Enum.map(&%{block_number: &1.number, block_hash: &1.hash})
-    |> CeloEpochBlockOperations.async_fetch(realtime?)
+  def async_import_celo_epoch_block_operations(%{celo_epochs: epochs}, realtime?) do
+    CeloEpochBlockOperations.async_fetch(epochs, realtime?)
   end
 
   def async_import_celo_epoch_block_operations(_, _), do: :ok
