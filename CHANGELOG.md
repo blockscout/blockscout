@@ -1,15 +1,23 @@
 # Changelog
 
+## 8.1.1
+
+### 🐛 Bug Fixes
+
+- Add missing preload for logs in /api/v2/transactions/:transactio… ([#12491](https://github.com/blockscout/blockscout/issues/12491))
+
 ## 8.1.0
 
 ### 🚀 Features
 
+- Add lower bound for base fee ([#12370](https://github.com/blockscout/blockscout/pull/12370))
 - Multichain Search DB export retry queue ([#12377](https://github.com/blockscout/blockscout/issues/12377))
 - Add TAC operation search ([#12367](https://github.com/blockscout/blockscout/issues/12367))
 - Add `internal_transactions_count` prop in api/v2/blocks/:block endpoint ([#12405](https://github.com/blockscout/blockscout/issues/12405))
 
 ### 🐛 Bug Fixes
 
+- Handle mismatched 0x prefixed bytes ([#12453](https://github.com/blockscout/blockscout/pull/12453))
 - Fix logs decoding issue for proxies ([#12414](https://github.com/blockscout/blockscout/issues/12414))
 - Refactor TokenInstanceMetadataRefetch on demand fetcher ([#12419](https://github.com/blockscout/blockscout/issues/12419))
 - Fix for type output in ETH RPC API transaction by hash endpoint
@@ -37,6 +45,8 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add updated-gas-oracle to Access-Control-Allow-Headers ([#12473](https://github.com/blockscout/blockscout/pull/12473))
+- Add additional test for Universal proxy, duplicate all proxy endpoints at /3rdparty ([#12442](https://github.com/blockscout/blockscout/pull/12442))
 - Improve logic behind emerging of custom fields in the response of `eth_getTransactionByHash` ETH RPC API endpoint ([#12416](https://github.com/blockscout/blockscout/issues/12416))
 - Internal transactions unique index ([#12394](https://github.com/blockscout/blockscout/issues/12394))
 - Update blocks consensus in case of import failure ([#12243](https://github.com/blockscout/blockscout/issues/12243))

@@ -77,7 +77,8 @@ defmodule BlockScoutWeb.Endpoint do
     plug(BlockScoutWeb.Prometheus.PublicExporter)
 
     # 'x-apollo-tracing' header for https://www.graphqlbin.com to work with our GraphQL endpoint
-    plug(CORSPlug, headers: ["x-apollo-tracing" | CORSPlug.defaults()[:headers]])
+    # 'updated-gas-oracle' header for /api/v2/stats endpoint, added to support cross-origin requests (e.g. multichain search explorer)
+    plug(CORSPlug, headers: ["x-apollo-tracing", "updated-gas-oracle"] ++ CORSPlug.defaults()[:headers])
 
     plug(BlockScoutWeb.Router)
   end
