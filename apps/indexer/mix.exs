@@ -69,7 +69,7 @@ defmodule Indexer.MixProject do
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 1.0"},
-      {:logger_json, "~> 5.1"},
+      {:logger_json, "~> 7.0"},
       {:varint, "~> 1.4"},
       {:utils, in_umbrella: true},
       {:cachex, "~> 4.0"}
