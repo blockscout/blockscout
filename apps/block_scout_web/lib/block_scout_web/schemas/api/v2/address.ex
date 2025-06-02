@@ -2,19 +2,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
   @moduledoc false
   require OpenApiSpex
 
+  alias Ecto.Enum, as: EctoEnum
+  alias Explorer.Chain.Address
   alias OpenApiSpex.Schema
 
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  @filecoin_robust_address_schema %Schema{
+    type: :string,
+    example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
+    nullable: true
+  }
 
-  case @chain_type do
-    :filecoin ->
-      @filecoin_robust_address_schema %Schema{
-        type: :string,
-        example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-        nullable: true
-      }
-
-      def chain_type_fields(schema) do
+  def chain_type_fields(schema) do
+    case Application.get_env(:explorer, :chain_type) do
+      :filecoin ->
         schema
         |> put_in([:properties, :filecoin], %Schema{
           type: :object,
@@ -23,16 +23,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
             robust: @filecoin_robust_address_schema,
             actor_type: %Schema{
               type: :string,
-              # credo:disable-for-next-line
-              enum: Ecto.Enum.values(Explorer.Chain.Address, :filecoin_actor_type),
+              enum: EctoEnum.values(Address, :filecoin_actor_type),
               nullable: true
             }
           }
         })
-      end
 
-    _ ->
-      def chain_type_fields(schema), do: schema
+      _ ->
+        schema
+    end
   end
 end
 

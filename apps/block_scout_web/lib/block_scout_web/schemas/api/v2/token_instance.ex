@@ -18,9 +18,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
       },
       owner: %Schema{allOf: [Address], nullable: true},
       token: %Schema{allOf: [Token], nullable: true},
-      external_app_url: General.URLWithIPFSNullable,
-      animation_url: General.URLWithIPFSNullable,
-      image_url: General.URLWithIPFSNullable,
+      external_app_url: General.URLNullable,
+      animation_url: General.URLNullable,
+      image_url: General.URLNullable,
       is_unique: %Schema{type: :boolean, nullable: true},
       thumbnails: %Schema{
         type: :object,
@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
         description: "Mime type of the media in media_url",
         nullable: true
       },
-      media_url: General.URLWithIPFSNullable
+      media_url: General.URLNullable
     },
     required: [
       :id,

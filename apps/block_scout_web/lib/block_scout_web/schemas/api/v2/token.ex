@@ -4,24 +4,22 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.ChainTypeCustomizations do
 
   alias OpenApiSpex.Schema
 
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  @filecoin_robust_address_schema %Schema{
+    type: :string,
+    example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
+    nullable: true
+  }
 
-  case @chain_type do
-    :filecoin ->
-      @filecoin_robust_address_schema %Schema{
-        type: :string,
-        example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-        nullable: true
-      }
-
-      def token_chain_type_fields(schema) do
+  def chain_type_fields(schema) do
+    case Application.get_env(:explorer, :chain_type) do
+      :filecoin ->
         schema
         |> put_in([:properties, :filecoin_robust_address], @filecoin_robust_address_schema)
         |> update_in([:required], &[:filecoin_robust_address | &1])
-      end
 
-    _ ->
-      def token_chain_type_fields(schema), do: schema
+      _ ->
+        schema
+    end
   end
 end
 
@@ -70,7 +68,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         :circulating_market_cap
       ]
     }
-    |> ChainTypeCustomizations.token_chain_type_fields()
+    |> ChainTypeCustomizations.chain_type_fields()
   )
 end
 

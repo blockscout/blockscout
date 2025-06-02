@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
   @moduledoc false
+  alias BlockScoutWeb.API.V2.ZkSyncView
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
   alias OpenApiSpex.Schema
 
@@ -10,7 +11,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       batch_number: %Schema{type: :integer, nullable: true},
       status: %Schema{
         type: :string,
-        enum: ["Executed on L1", "Validated on L1", "Sent to L1", "Sealed on L2", "Processed on L2"],
+        enum: ZkSyncView.batch_status_enum(),
         nullable: false
       },
       commit_transaction_hash: General.FullHashNullable,
@@ -188,6 +189,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
     required: [:view]
   }
 
+  @doc """
+   Applies chain-specific field customizations to the given schema based on the configured chain type.
+
+   ## Parameters
+   - `schema`: The base schema map to be customized
+
+   ## Returns
+   - The schema map with chain-specific properties added based on the current chain type configuration
+  """
+  @spec chain_type_fields(map()) :: map()
   def chain_type_fields(schema) do
     case Application.get_env(:explorer, :chain_type) do
       :rsk ->
@@ -273,10 +284,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
           items: %Schema{
             type: :object,
             properties: %{
-              reward_type: %Schema{type: :string, nullable: false},
-              amount: General.IntegerString
+              type: %Schema{type: :string, nullable: false},
+              reward: General.IntegerString
             },
-            required: [:reward_type, :address, :amount]
+            required: [:type, :reward]
           },
           nullable: false
         },

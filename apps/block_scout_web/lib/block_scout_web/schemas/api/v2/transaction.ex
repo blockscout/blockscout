@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   @moduledoc false
+  alias BlockScoutWeb.API.V2.ZkSyncView
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
   alias BlockScoutWeb.Schemas.API.V2.Transaction.Fee
   alias OpenApiSpex.Schema
@@ -13,7 +14,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       batch_number: %Schema{type: :integer, nullable: true},
       status: %Schema{
         type: :string,
-        enum: ["Executed on L1", "Validated on L1", "Sent to L1", "Sealed on L2", "Processed on L2"],
+        enum: ZkSyncView.batch_status_enum(),
         nullable: true
       },
       commit_transaction_hash: General.FullHashNullable,
@@ -131,6 +132,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
     ]
   }
 
+  @doc """
+   Applies chain-specific field customizations to the given schema based on the configured chain type.
+
+   ## Parameters
+   - `schema`: The base schema map to be customized
+
+   ## Returns
+   - The schema map with chain-specific properties added based on the current chain type configuration
+  """
+  @spec chain_type_fields(map()) :: map()
   # credo:disable-for-next-line
   def chain_type_fields(schema) do
     case Application.get_env(:explorer, :chain_type) do
@@ -279,6 +290,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
 
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, SignedAuthorization, TokenTransfer}
   alias BlockScoutWeb.Schemas.API.V2.Transaction.{ChainTypeCustomizations, Fee}
+  alias Explorer.Chain.TransactionAction
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -377,34 +389,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
             properties: %{
               protocol: %Schema{
                 type: :string,
-                enum: [:uniswap_v3, :opensea_v1_1, :wrapping, :approval, :zkbob, :aave_v3],
+                enum: TransactionAction.supported_protocols(),
                 nullable: false
               },
               type: %Schema{
                 type: :string,
-                enum: [
-                  :mint_nft,
-                  :mint,
-                  :burn,
-                  :collect,
-                  :swap,
-                  :sale,
-                  :cancel,
-                  :transfer,
-                  :wrap,
-                  :unwrap,
-                  :approve,
-                  :revoke,
-                  :withdraw,
-                  :deposit,
-                  :borrow,
-                  :supply,
-                  :repay,
-                  :flash_loan,
-                  :enable_collateral,
-                  :disable_collateral,
-                  :liquidation_call
-                ],
+                enum: TransactionAction.supported_types(),
                 nullable: false
               },
               data: %Schema{

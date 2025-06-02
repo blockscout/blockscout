@@ -4,30 +4,36 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
 
   alias OpenApiSpex.Schema
 
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  @filecoin_robust_address_schema %Schema{
+    type: :string,
+    example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
+    nullable: true
+  }
 
-  case @chain_type do
-    :filecoin ->
-      @filecoin_robust_address_schema %Schema{
-        type: :string,
-        example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-        nullable: true
-      }
+  @doc """
+   Applies chain-specific field customizations to the given schema based on the configured chain type.
 
-      def chain_type_fields(schema) do
+   ## Parameters
+   - `schema`: The base schema map to be customized
+
+   ## Returns
+   - The schema map with chain-specific properties added based on the current chain type configuration
+  """
+  @spec chain_type_fields(map()) :: map()
+  def chain_type_fields(schema) do
+    case Application.get_env(:explorer, :chain_type) do
+      :filecoin ->
         schema
         |> put_in([:properties, :creator_filecoin_robust_address], @filecoin_robust_address_schema)
         |> update_in([:required], &[:creator_filecoin_robust_address | &1])
-      end
 
-    :zilliqa ->
-      def chain_type_fields(schema) do
+      :zilliqa ->
         schema
         |> put_in([:properties, :is_scilla_contract], %Schema{type: :boolean, nullable: false})
-      end
 
-    _ ->
-      def chain_type_fields(schema), do: schema
+      _ ->
+        schema
+    end
   end
 end
 

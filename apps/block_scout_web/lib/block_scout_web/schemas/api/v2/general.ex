@@ -54,6 +54,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     @moduledoc false
     alias OpenApiSpex.Schema
 
+    @doc """
+     Applies chain-specific field customizations to the given schema based on the configured chain type.
+
+     ## Parameters
+     - `schema`: The base schema map to be customized
+
+     ## Returns
+     - The schema map with chain-specific properties added based on the current chain type configuration
+    """
+    @spec chain_type_fields(map()) :: map()
     def chain_type_fields(schema) do
       case Application.get_env(:explorer, :chain_type) do
         :filecoin ->
@@ -146,18 +156,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     OpenApiSpex.schema(%{
       type: :string,
       format: :uri,
-      example: "https://example.com",
-      nullable: true
-    })
-  end
-
-  defmodule URLWithIPFSNullable do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      type: :string,
-      format: :uri,
-      # pattern:
-      #   ~r"/^(https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|ipfs:\/\/[a-zA-Z0-9\/]+)$/",
       example: "https://example.com",
       nullable: true
     })
@@ -260,6 +258,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     OpenApiSpex.schema(%{type: :string, pattern: ~r"^null$"})
   end
 
+  @doc """
+  Returns a parameter definition for an address hash in the path.
+  """
+  @spec address_hash_param() :: Parameter.t()
   def address_hash_param do
     %Parameter{
       name: :address_hash_param,
@@ -269,6 +271,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a parameter definition for filtering transactions by direction (to/from).
+  """
+  @spec direction_filter_param() :: Parameter.t()
   def direction_filter_param do
     %Parameter{
       name: :filter,
@@ -284,6 +290,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a parameter definition for sorting transactions by specified fields.
+  """
+  @spec sort_param([String.t()]) :: Parameter.t()
   def sort_param(sort_fields) do
     %Parameter{
       name: :sort,
@@ -303,6 +313,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a parameter definition for sorting order (asc/desc).
+  """
+  @spec order_param() :: Parameter.t()
   def order_param do
     %Parameter{
       in: :query,
@@ -321,6 +335,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a parameter definition for filtering by token type.
+  """
+  @spec token_type_param() :: Parameter.t()
   def token_type_param do
     %Parameter{
       in: :query,
@@ -347,6 +365,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a parameter definition for filtering by NFT token type.
+  """
+  @spec nft_token_type_param() :: Parameter.t()
   def nft_token_type_param do
     %Parameter{
       in: :query,
@@ -372,6 +394,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a parameter definition for filtering logs by topic.
+  """
+  @spec topic_param() :: Parameter.t()
   def topic_param do
     %Parameter{
       in: :query,
@@ -382,6 +408,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a parameter definition for filtering token transfers by token contract address.
+  """
+  @spec token_filter_param() :: Parameter.t()
   def token_filter_param do
     %Parameter{
       in: :query,
@@ -392,6 +422,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a parameter definition for API key used in rate limiting.
+  """
+  @spec api_key_param() :: Parameter.t()
   def api_key_param do
     %Parameter{
       in: :query,
@@ -402,6 +436,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a parameter definition for secret key used to access restricted resources.
+  """
+  @spec key_param() :: Parameter.t()
   def key_param do
     %Parameter{
       in: :query,
@@ -412,10 +450,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a list of base parameters (api_key and key).
+  """
+  @spec base_params() :: [Parameter.t()]
   def base_params do
     [api_key_param(), key_param()]
   end
 
+  @doc """
+  Returns a schema definition for paginated response.
+  """
+  @spec paginated_response(Keyword.t()) :: Schema.t()
   def paginated_response(options) do
     items_schema = Keyword.fetch!(options, :items)
     next_page_params_example = Keyword.fetch!(options, :next_page_params_example)
@@ -503,7 +549,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: IntegerString,
       required: false,
       description: "Transaction value for paging",
-      allowEmptyValue: true,
       name: :value
     },
     "fee" => %Parameter{
@@ -511,7 +556,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: IntegerString,
       required: false,
       description: "Transaction fee for paging",
-      allowEmptyValue: true,
       name: :fee
     },
     "items_count" => %Parameter{
@@ -519,7 +563,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :integer, minimum: 1, maximum: 50},
       required: false,
       description: "Number of items returned per page",
-      allowEmptyValue: true,
       name: :items_count
     },
     "batch_log_index" => %Parameter{
@@ -527,7 +570,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :integer},
       required: false,
       description: "Batch log index for paging",
-      allowEmptyValue: true,
       name: :batch_log_index
     },
     "batch_block_hash" => %Parameter{
@@ -535,7 +577,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: FullHash,
       required: false,
       description: "Batch block hash for paging",
-      allowEmptyValue: true,
       name: :batch_block_hash
     },
     "batch_transaction_hash" => %Parameter{
@@ -543,7 +584,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: FullHash,
       required: false,
       description: "Batch transaction hash for paging",
-      allowEmptyValue: true,
       name: :batch_transaction_hash
     },
     "index_in_batch" => %Parameter{
@@ -551,7 +591,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :integer},
       required: false,
       description: "Index in batch for paging",
-      allowEmptyValue: true,
       name: :index_in_batch
     },
     "transaction_index" => %Parameter{
@@ -573,7 +612,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :integer},
       required: false,
       description: "ID for paging",
-      allowEmptyValue: true,
       name: :id
     },
     "fetched_coin_balance" => %Parameter{
@@ -581,7 +619,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: IntegerStringNullable,
       required: false,
       description: "Fetched coin balance for paging",
-      allowEmptyValue: true,
       name: :fetched_coin_balance
     },
     "transactions_count" => %Parameter{
@@ -589,7 +626,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{anyOf: [%Schema{type: :integer}, EmptyString, NullString]},
       required: false,
       description: "Transactions count for paging",
-      allowEmptyValue: true,
       name: :transactions_count
     },
     "token_contract_address_hash" => %Parameter{
@@ -597,7 +633,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: AddressHash,
       required: false,
       description: "Token contract address hash for paging",
-      allowEmptyValue: true,
       name: :token_contract_address_hash
     },
     "token_id" => %Parameter{
@@ -605,7 +640,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: IntegerStringNullable,
       required: false,
       description: "Token ID for paging",
-      allowEmptyValue: true,
       name: :token_id
     },
     "token_type" => %Parameter{
@@ -613,7 +647,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: TokenType,
       required: false,
       description: "Token type for paging",
-      allowEmptyValue: true,
       name: :token_type
     },
     "amount" => %Parameter{
@@ -621,7 +654,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: IntegerStringNullable,
       required: false,
       description: "Amount for paging",
-      allowEmptyValue: true,
       name: :amount
     },
     "associated_account_address_hash" => %Parameter{
@@ -629,7 +661,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: AddressHash,
       required: false,
       description: "Associated account address hash for paging",
-      allowEmptyValue: true,
       name: :associated_account_address_hash
     },
     "type" => %Parameter{
@@ -637,11 +668,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: CeloElectionRewardType,
       required: false,
       description: "Type for paging",
-      allowEmptyValue: true,
       name: :type
     }
   }
 
+  @doc """
+  Returns a list of paging parameters based on the provided field names.
+  """
+  @spec define_paging_params([String.t()]) :: [Parameter.t()]
   def define_paging_params(fields) do
     Enum.map(fields, fn field ->
       Map.get(@paging_params, field) || raise "Unknown paging param: #{field}"
