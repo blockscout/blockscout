@@ -141,6 +141,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/backend-version", V2.ConfigController, :backend_version)
       get("/csv-export", V2.ConfigController, :csv_export)
       get("/public-metrics", V2.ConfigController, :public_metrics)
+
+      chain_scope :celo do
+        get("/celo", V2.ConfigController, :celo)
+      end
     end
 
     scope "/transactions" do
