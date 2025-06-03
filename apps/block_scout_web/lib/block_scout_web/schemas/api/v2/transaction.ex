@@ -149,7 +149,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
         schema
         |> put_in([:properties, :polygon_edge_deposit], @polygon_edge_deposit_withdrawal_schema)
         |> put_in([:properties, :polygon_edge_withdrawal], @polygon_edge_deposit_withdrawal_schema)
-        |> update_in([:required], &([:polygon_edge_deposit, :polygon_edge_withdrawal] ++ &1))
 
       :polygon_zkevm ->
         schema
@@ -161,17 +160,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
           enum: ["Confirmed by Sequencer", "L1 Confirmed"],
           nullable: false
         })
-        |> update_in([:required], &[:zkevm_status | &1])
 
       :zksync ->
         schema
         |> put_in([:properties, :zksync], @zksync_schema)
-        |> update_in([:required], &[:zksync | &1])
 
       :arbitrum ->
         schema
         |> put_in([:properties, :arbitrum], @arbitrum_schema)
-        |> update_in([:required], &[:arbitrum | &1])
 
       :optimism ->
         schema
@@ -204,7 +200,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       :scroll ->
         schema
         |> put_in([:properties, :scroll], @scroll_schema)
-        |> update_in([:required], &[:scroll | &1])
 
       :suave ->
         schema
