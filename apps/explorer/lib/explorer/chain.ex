@@ -3681,14 +3681,6 @@ defmodule Explorer.Chain do
     {:ok, [first_trace_formatted]}
   end
 
-  defp find_block_timestamp(number, options) do
-    Block
-    |> where([block], block.number == ^number)
-    |> select([block], block.timestamp)
-    |> limit(1)
-    |> select_repo(options).one()
-  end
-
   @spec get_token_transfer_type(TokenTransfer.t()) ::
           :token_burning | :token_minting | :token_spawning | :token_transfer
   def get_token_transfer_type(transfer) do

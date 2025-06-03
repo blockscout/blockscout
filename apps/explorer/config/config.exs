@@ -113,6 +113,8 @@ config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enable
 
 config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions, enabled: false
 
+config :explorer, Explorer.Migrator.CompletionChecker, enabled: true
+
 for migrator <- [
       # Background migrations
       Explorer.Migrator.TransactionsDenormalization,
