@@ -353,7 +353,7 @@ defmodule Explorer.Helper do
   end
 
   def add_0x_prefix(binary_hash) when is_binary(binary_hash) do
-    if String.starts_with?(binary_hash, "0x") do
+    if String.starts_with?(binary_hash, "0x") and String.printable?(binary_hash) do
       binary_hash
     else
       "0x" <> Base.encode16(binary_hash, case: :lower)

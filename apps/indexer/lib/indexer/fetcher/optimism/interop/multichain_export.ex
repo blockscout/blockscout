@@ -239,15 +239,18 @@ defmodule Indexer.Fetcher.Optimism.Interop.MultichainExport do
     recv_timeout = 5_000
 
     client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
+    json_body = Jason.encode!(body)
     headers = [{"Content-Type", "application/json"}]
-    opts = [adapter: [timeout: recv_timeout, transport_opts: [timeout: timeout]]]
 
-    case Tesla.post(client, url, Jason.encode!(body), headers: headers, opts: opts) do
+    # Mint adapter doesn't support sending more than 65535 bytes when using HTTP/2, so we use HTTP/1
+    opts = [adapter: [timeout: recv_timeout, transport_opts: [timeout: timeout], protocols: [:http1]]]
+
+    case Tesla.post(client, url, json_body, headers: headers, opts: opts) do
       {:ok, %{status: 200}} ->
         true
 
       reason ->
-        Logger.error("Cannot post HTTP request to #{url}. Reason: #{inspect(reason)}. Body: #{inspect(body)}")
+        Logger.error("Cannot post HTTP request to #{url}. Reason: #{inspect(reason)}. Body: #{inspect(json_body)}")
         false
     end
   end
