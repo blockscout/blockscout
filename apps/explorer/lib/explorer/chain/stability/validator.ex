@@ -5,7 +5,8 @@ defmodule Explorer.Chain.Stability.Validator do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Import}
+  alias BlockScoutWeb.GraphQL.Resolvers.Block
+  alias Explorer.Chain.{Address, Block, Import}
   alias Explorer.Chain.Hash.Address, as: HashAddress
   alias Explorer.{Chain, Repo, SortingHelper}
   alias Explorer.SmartContract.Reader
@@ -23,13 +24,13 @@ defmodule Explorer.Chain.Stability.Validator do
   typed_schema "validators_stability" do
     field(:address_hash, HashAddress, primary_key: true)
     field(:state, Ecto.Enum, values: @state_enum)
-    field(:blocks_validated, :integer, virtual: true)
+    field(:blocks_validated, :integer)
 
     has_one(:address, Address, foreign_key: :hash, references: :address_hash)
     timestamps()
   end
 
-  @required_attrs ~w(address_hash)a
+  @required_attrs ~w(address_hash blocks_validated)a
   @optional_attrs ~w(state)a
   def changeset(%__MODULE__{} = validator, attrs) do
     validator
@@ -55,13 +56,6 @@ defmodule Explorer.Chain.Stability.Validator do
 
     __MODULE__
     |> apply_filter_by_state(states)
-    |> select_merge([vs], %{
-      blocks_validated:
-        fragment(
-          "SELECT count(*) FROM blocks WHERE miner_hash = ?",
-          vs.address_hash
-        )
-    })
     |> Chain.join_associations(necessity_by_association)
     |> SortingHelper.apply_sorting(sorting, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
@@ -218,7 +212,7 @@ defmodule Explorer.Chain.Stability.Validator do
   @spec insert_validators([map()]) :: {non_neg_integer(), nil | []}
   def insert_validators(validators) do
     Repo.insert_all(__MODULE__, validators,
-      on_conflict: {:replace_all_except, [:inserted_at]},
+      on_conflict: {:replace_all_except, [:inserted_at, :blocks_validated]},
       conflict_target: [:address_hash]
     )
   end
@@ -286,4 +280,18 @@ defmodule Explorer.Chain.Stability.Validator do
     |> where([vs], vs.state == :active)
     |> Repo.aggregate(:count, :address_hash)
   end
+
+  @doc """
+    Fetch blocks validated
+  """
+  @spec fetch_blocks_validated(list(binary())) :: list({binary(), integer()})
+  def fetch_blocks_validated([_ | _] = miner_address_hashes) do
+    Block
+    |> where([b], b.miner_hash in ^miner_address_hashes)
+    |> group_by([b], b.miner_hash)
+    |> select([b], {b.miner_hash, count(b.hash)})
+    |> Repo.all()
+  end
+
+  def fetch_blocks_validated(_), do: []
 end
