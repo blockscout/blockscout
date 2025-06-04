@@ -4,7 +4,7 @@
 
 ### 🐛 Bug Fixes
 
-- Add missing preload for logs in /api/v2/transactions/:transactio… ([#12491](https://github.com/blockscout/blockscout/issues/12491))
+- Add missing preload for logs in /api/v2/transactions/:transaction_hash_param/summary ([#12491](https://github.com/blockscout/blockscout/issues/12491))
 
 ## 8.1.0
 
