@@ -1,8 +1,6 @@
 defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import Mox
-
   alias Explorer.Chain.SmartContract
   alias Explorer.Chain.{AdvancedFilter, Data, Hash}
   alias Explorer.{Factory, TestHelper}
@@ -191,6 +189,24 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       smart_contract = build(:smart_contract)
 
+      abi =
+        %{
+          "constant" => false,
+          "inputs" => [%{"name" => "x", "type" => "uint64"}, %{"name" => "y", "type" => "address"}],
+          "name" => "getAccess",
+          "outputs" => [],
+          "payable" => false,
+          "stateMutability" => "nonpayable",
+          "type" => "function"
+        }
+
+      [parsed_method] = ABI.parse_specification([abi])
+
+      insert(:contract_method,
+        abi: abi,
+        identifier: parsed_method.method_id
+      )
+
       contract_address =
         insert(:address,
           hash: address_hash(),
@@ -201,7 +217,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       method_id1_string = "0xa9059cbb"
       method_id2_string = "0xa0712d68"
-      method_id3_string = "0x095ea7b3"
+      method_id3_string = "0x3078f114"
       method_id4_string = "0x40993b26"
 
       {:ok, method1} = Data.cast(method_id1_string <> "ab0ba0")
@@ -254,7 +270,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       5 |> insert_list(:token_transfer, transaction: method3_transaction)
       5 |> insert_list(:token_transfer, transaction: method4_transaction)
 
-      request = get(conn, "/api/v2/advanced-filters", %{"methods" => "0xa0712d68,0x095ea7b3"})
+      request = get(conn, "/api/v2/advanced-filters", %{"methods" => "0xa0712d68,0x3078f114"})
       assert response = json_response(request, 200)
 
       assert Enum.all?(response["items"], fn item ->
@@ -1042,6 +1058,30 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       request = get(conn, "/api/v2/advanced-filters/methods", %{"q" => "0x60fe47b1"})
       assert response = json_response(request, 200)
       assert response == [%{"method_id" => "0x60fe47b1", "name" => "set"}]
+    end
+
+    test "finds method with method id starting with 0x", %{conn: conn} do
+      abi =
+        %{
+          "constant" => false,
+          "inputs" => [%{"name" => "x", "type" => "uint64"}, %{"name" => "y", "type" => "address"}],
+          "name" => "getAccess",
+          "outputs" => [],
+          "payable" => false,
+          "stateMutability" => "nonpayable",
+          "type" => "function"
+        }
+
+      [parsed_method] = ABI.parse_specification([abi])
+
+      insert(:contract_method,
+        abi: abi,
+        identifier: parsed_method.method_id
+      )
+
+      request = get(conn, "/api/v2/advanced-filters/methods", %{"q" => "0x3078f114"})
+      assert response = json_response(request, 200)
+      assert response == [%{"method_id" => "0x3078f114", "name" => "getAccess"}]
     end
   end
 

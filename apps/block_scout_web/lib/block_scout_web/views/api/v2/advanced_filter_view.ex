@@ -2,8 +2,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView}
-  alias Explorer.Chain.{Address, Data, Transaction}
-  alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.Chain.{Address, Data, MethodIdentifier, Transaction}
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
 
@@ -74,8 +73,12 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       |> Stream.map(fn advanced_filter ->
         method_id =
           case advanced_filter.input do
-            %{bytes: <<method_id::binary-size(4), _::binary>>} -> ExplorerHelper.add_0x_prefix(method_id)
-            _ -> nil
+            %{bytes: <<method_id::binary-size(4), _::binary>>} ->
+              {:ok, method_id} = MethodIdentifier.cast(method_id)
+              to_string(method_id)
+
+            _ ->
+              nil
           end
 
         {opening_price, closing_price} = date_to_prices[DateTime.to_date(advanced_filter.timestamp)]

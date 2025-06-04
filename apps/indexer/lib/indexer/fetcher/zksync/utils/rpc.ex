@@ -7,7 +7,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
 
   alias ABI.{FunctionSelector, TypeDecoder}
   alias EthereumJSONRPC.ZkSync.Constants.Contracts, as: ZkSyncContracts
-  alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.Chain.Hash
   alias Indexer.Helper, as: IndexerHelper
 
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_error: 1, log_info: 1]
@@ -208,7 +208,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   @spec fetch_transaction_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
   def fetch_transaction_by_hash(raw_hash, json_rpc_named_arguments)
       when is_binary(raw_hash) and is_list(json_rpc_named_arguments) do
-    hash = ExplorerHelper.add_0x_prefix(raw_hash)
+    {:ok, hash} = Hash.Full.cast(raw_hash)
 
     req =
       EthereumJSONRPC.request(%{
@@ -239,7 +239,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   @spec fetch_transaction_receipt_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
   def fetch_transaction_receipt_by_hash(raw_hash, json_rpc_named_arguments)
       when is_binary(raw_hash) and is_list(json_rpc_named_arguments) do
-    hash = ExplorerHelper.add_0x_prefix(raw_hash)
+    {:ok, hash} = Hash.Full.cast(raw_hash)
 
     req =
       EthereumJSONRPC.request(%{

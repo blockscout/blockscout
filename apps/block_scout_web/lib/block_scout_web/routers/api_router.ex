@@ -123,7 +123,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     get("/smart-contracts/:address_hash_param", V2.ImportController, :try_to_search_contract)
 
-    if @chain_type == :optimism do
+    chain_scope :optimism do
       post("/optimism/interop/", V2.OptimismController, :interop_import)
     end
   end
@@ -164,7 +164,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/arbitrum-batch/:batch_number", V2.TransactionController, :arbitrum_batch)
       end
 
-      if @chain_type == :optimism do
+      chain_scope :optimism do
         get("/optimism-batch/:batch_number", V2.TransactionController, :optimism_batch)
       end
 
@@ -217,7 +217,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/:block_hash_or_number/election-rewards/:reward_type", V2.BlockController, :celo_election_rewards)
       end
 
-      if @chain_type == :optimism do
+      chain_scope :optimism do
         get("/optimism-batch/:batch_number", V2.BlockController, :optimism_batch)
       end
 
@@ -260,7 +260,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/transactions/watchlist", V2.MainPageController, :watchlist_transactions)
       get("/indexing-status", V2.MainPageController, :indexing_status)
 
-      if @chain_type == :optimism do
+      chain_scope :optimism do
         get("/optimism-deposits", V2.MainPageController, :optimism_deposits)
       end
 
@@ -291,8 +291,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
-    scope "/optimism" do
-      if @chain_type == :optimism do
+    chain_scope :optimism do
+      scope "/optimism" do
         get("/txn-batches", V2.OptimismController, :transaction_batches)
         get("/txn-batches/count", V2.OptimismController, :transaction_batches_count)
         get("/txn-batches/:l2_block_range_start/:l2_block_range_end", V2.OptimismController, :transaction_batches)

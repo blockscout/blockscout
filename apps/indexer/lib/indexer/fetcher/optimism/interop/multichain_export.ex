@@ -18,7 +18,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MultichainExport do
   require Logger
 
   import Ecto.Query
-  import Explorer.Helper, only: [add_0x_prefix: 1, valid_url?: 1]
+  import Explorer.Helper, only: [valid_url?: 1]
   import Indexer.Fetcher.Optimism.Interop.Helper, only: [log_cant_get_chain_id_from_rpc: 0]
 
   alias Ecto.Multi
@@ -196,10 +196,10 @@ defmodule Indexer.Fetcher.Optimism.Interop.MultichainExport do
               init_transaction_hash: Hash.to_string(message.init_transaction_hash),
               timestamp: Integer.to_string(DateTime.to_unix(message.timestamp)),
               relay_chain_id: Integer.to_string(message.relay_chain_id),
-              payload: add_0x_prefix(message.payload),
-              transfer_token_address_hash: add_0x_prefix(message.transfer_token_address_hash),
-              transfer_from_address_hash: add_0x_prefix(message.transfer_from_address_hash),
-              transfer_to_address_hash: add_0x_prefix(message.transfer_to_address_hash),
+              payload: message.payload,
+              transfer_token_address_hash: message.transfer_token_address_hash,
+              transfer_from_address_hash: message.transfer_from_address_hash,
+              transfer_to_address_hash: message.transfer_to_address_hash,
               transfer_amount:
                 if(not is_nil(message.transfer_amount), do: Decimal.to_string(message.transfer_amount, :normal))
             }

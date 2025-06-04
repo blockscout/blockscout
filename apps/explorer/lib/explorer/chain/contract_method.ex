@@ -137,8 +137,10 @@ defmodule Explorer.Chain.ContractMethod do
         # we always take only the first 4 bytes of the hash.
         <<first_four_bytes::binary-size(4), _::binary>> = selector.method_id
 
+        {:ok, method_id} = MethodIdentifier.cast(first_four_bytes)
+
         %{
-          identifier: first_four_bytes,
+          identifier: method_id,
           abi: element,
           type: Atom.to_string(selector.type),
           inserted_at: now,
