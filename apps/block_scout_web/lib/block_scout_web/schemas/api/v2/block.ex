@@ -224,8 +224,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       :ethereum ->
         schema
         |> put_in([:properties, :blob_transactions_count], %Schema{type: :integer, nullable: false})
-        |> put_in([:properties, :blob_gas_used], General.IntegerString)
-        |> put_in([:properties, :excess_blob_gas], General.IntegerString)
+        |> put_in([:properties, :blob_gas_used], General.IntegerStringNullable)
+        |> put_in([:properties, :excess_blob_gas], General.IntegerStringNullable)
         |> put_in([:properties, :blob_gas_price], General.IntegerString)
         |> put_in([:properties, :burnt_blob_fees], General.IntegerString)
         |> update_in([:required], &([:blob_transactions_count, :blob_gas_used, :excess_blob_gas] ++ &1))
