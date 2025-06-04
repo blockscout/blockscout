@@ -145,4 +145,61 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
       )
     end
   end
+
+  describe "run/2" do
+    test "fetches token balance for an address" do
+      old_env = Application.get_env(:indexer, TokenBalance, [])
+      Application.put_env(:indexer, TokenBalance, Keyword.merge(old_env, fallback_threshold_in_blocks: 0))
+
+      on_exit(fn ->
+        Application.put_env(:indexer, TokenBalance, old_env)
+      end)
+
+      address = insert(:address, hash: "0x3078000000000000000000000000000000000001")
+      token_contract_address = insert(:address, hash: "0x3078000000000000000000000000000000000002")
+
+      token =
+        insert(:token,
+          contract_address_hash: token_contract_address.hash,
+          contract_address: token_contract_address
+        )
+
+      insert(:address_current_token_balance,
+        address_hash: address.hash,
+        address: address,
+        token_contract_address_hash: token_contract_address.hash,
+        token: token,
+        token_type: "ERC-20",
+        value_fetched_at: nil,
+        value: nil
+      )
+
+      insert_list(2, :block)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
+             }
+           ]}
+        end
+      )
+
+      assert TokenBalance.run(
+               [{:fetch, address.hash}],
+               nil
+             ) == :ok
+
+      token_balance_updated = Repo.get_by(Address.CurrentTokenBalance, address_hash: address.hash)
+
+      assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
+      assert token_balance_updated.value_fetched_at != nil
+    end
+  end
 end

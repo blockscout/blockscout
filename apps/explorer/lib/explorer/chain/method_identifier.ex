@@ -7,7 +7,9 @@ defmodule Explorer.Chain.MethodIdentifier do
 
   use Ecto.Type
 
-  @type t :: binary
+  alias Explorer.Chain.Data
+
+  @type t :: Data.t()
 
   @impl true
   def type, do: :integer
@@ -15,20 +17,20 @@ defmodule Explorer.Chain.MethodIdentifier do
   @impl true
   @spec load(integer) :: {:ok, t()}
   def load(value) do
-    {:ok, <<value::integer-signed-32>>}
+    {:ok, %Data{bytes: <<value::integer-signed-32>>}}
   end
 
   @impl true
   @spec cast(binary) :: {:ok, t()} | :error
   def cast(<<_::binary-size(4)>> = identifier) do
-    {:ok, identifier}
+    {:ok, %Data{bytes: identifier}}
   end
 
   def cast(_), do: :error
 
   @impl true
   @spec dump(t()) :: {:ok, integer} | :error
-  def dump(<<num::integer-signed-32>>) do
+  def dump(%Data{bytes: <<num::integer-signed-32>>}) do
     {:ok, num}
   end
 

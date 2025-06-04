@@ -1001,7 +1001,10 @@ defmodule Explorer.Chain.Address do
       %{smart_contract: smart_contract} ->
         CheckBytecodeMatchingOnDemand.trigger_check(options[:ip], address_result, smart_contract)
 
-        SmartContract.check_and_update_constructor_args(address_result)
+        SmartContract.check_and_update_constructor_args(%{
+          address_result
+          | smart_contract: %{address_result.smart_contract | verified_via_sourcify: true, constructor_arguments: nil}
+        })
 
       _ ->
         address_result

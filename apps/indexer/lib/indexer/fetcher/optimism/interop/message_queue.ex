@@ -237,7 +237,6 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
   @spec prepare_post_data(map(), binary()) :: {non_neg_integer(), map()}
   defp prepare_post_data(message, private_key) when is_nil(message.relay_transaction_hash) do
     timestamp = DateTime.to_unix(message.timestamp)
-    payload = add_0x_prefix(message.payload)
 
     data = %{
       sender_address_hash: Hash.to_string(message.sender_address_hash),
@@ -247,7 +246,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
       init_transaction_hash: Hash.to_string(message.init_transaction_hash),
       timestamp: timestamp,
       relay_chain_id: message.relay_chain_id,
-      payload: payload,
+      payload: message.payload,
       signature: nil
     }
 
@@ -257,7 +256,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
         Integer.to_string(message.nonce) <>
         Integer.to_string(message.init_chain_id) <>
         data.init_transaction_hash <>
-        Integer.to_string(timestamp) <> Integer.to_string(message.relay_chain_id) <> payload
+        Integer.to_string(timestamp) <> Integer.to_string(message.relay_chain_id) <> to_string(message.payload)
 
     {:ok, {signature, _}} =
       data_to_sign
@@ -337,12 +336,6 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
           ts -> DateTime.from_unix!(ts)
         end
 
-      payload =
-        case Map.get(response, "payload") do
-          nil -> nil
-          pl -> hash_to_binary(pl)
-        end
-
       %{
         sender_address_hash: Map.get(response, "sender_address_hash"),
         target_address_hash: Map.get(response, "target_address_hash"),
@@ -351,7 +344,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
         init_transaction_hash: Map.get(response, "init_transaction_hash"),
         relay_chain_id: message.relay_chain_id,
         timestamp: timestamp,
-        payload: payload
+        payload: Map.get(response, "payload")
       }
     end
   end
