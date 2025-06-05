@@ -348,13 +348,12 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   @spec address_paging_options(map()) :: [Chain.paging_options()]
   def address_paging_options(params) do
     with %{
-           "block_number" => block_number_string,
-           "amount" => amount_string,
-           "associated_account_address_hash" => associated_account_address_hash_string,
-           "type" => type_string
+           block_number: block_number_string,
+           amount: amount_string,
+           associated_account_address_hash: associated_account_address_hash_string,
+           type: type_string
          }
-         when is_binary(block_number_string) and
-                is_binary(amount_string) and
+         when is_binary(block_number_string) and is_binary(amount_string) and
                 is_binary(associated_account_address_hash_string) and
                 is_binary(type_string) <- params,
          {:ok, block_number} <- safe_parse_non_negative_integer(block_number_string),
@@ -516,10 +515,10 @@ defmodule Explorer.Chain.Celo.ElectionReward do
         type: type
       }) do
     %{
-      "block_number" => block_number,
-      "amount" => amount,
-      "associated_account_address_hash" => associated_account_address_hash,
-      "type" => type
+      block_number: block_number,
+      amount: amount,
+      associated_account_address_hash: associated_account_address_hash,
+      type: type
     }
   end
 

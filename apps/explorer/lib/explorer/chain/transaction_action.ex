@@ -10,7 +10,29 @@ defmodule Explorer.Chain.TransactionAction do
 
   @required_attrs ~w(hash protocol data type log_index)a
   @supported_protocols [:uniswap_v3, :opensea_v1_1, :wrapping, :approval, :zkbob, :aave_v3]
-
+  @supported_types [
+    :mint_nft,
+    :mint,
+    :burn,
+    :collect,
+    :swap,
+    :sale,
+    :cancel,
+    :transfer,
+    :wrap,
+    :unwrap,
+    :approve,
+    :revoke,
+    :withdraw,
+    :deposit,
+    :borrow,
+    :supply,
+    :repay,
+    :flash_loan,
+    :enable_collateral,
+    :disable_collateral,
+    :liquidation_call
+  ]
   @typedoc """
   * `hash` - transaction hash
   * `protocol` - name of the action protocol (see possible values for Enum of the db table field)
@@ -24,29 +46,7 @@ defmodule Explorer.Chain.TransactionAction do
     field(:data, :map, null: false)
 
     field(:type, Ecto.Enum,
-      values: [
-        :mint_nft,
-        :mint,
-        :burn,
-        :collect,
-        :swap,
-        :sale,
-        :cancel,
-        :transfer,
-        :wrap,
-        :unwrap,
-        :approve,
-        :revoke,
-        :withdraw,
-        :deposit,
-        :borrow,
-        :supply,
-        :repay,
-        :flash_loan,
-        :enable_collateral,
-        :disable_collateral,
-        :liquidation_call
-      ],
+      values: @supported_types,
       null: false
     )
 
@@ -70,7 +70,13 @@ defmodule Explorer.Chain.TransactionAction do
     |> foreign_key_constraint(:hash)
   end
 
+  @spec supported_protocols() :: [atom()]
   def supported_protocols do
     @supported_protocols
+  end
+
+  @spec supported_types() :: [atom()]
+  def supported_types do
+    @supported_types
   end
 end
