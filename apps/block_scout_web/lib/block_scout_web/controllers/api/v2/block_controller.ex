@@ -60,6 +60,15 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :op_frame_sequence => :optional
       }
 
+    :via ->
+      @chain_type_transaction_necessity_by_association %{}
+      @chain_type_block_necessity_by_association %{
+        :via_batch => :optional,
+        :via_commit_transaction => :optional,
+        :via_prove_transaction => :optional,
+        :via_execute_transaction => :optional
+      }
+
     :zksync ->
       @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{

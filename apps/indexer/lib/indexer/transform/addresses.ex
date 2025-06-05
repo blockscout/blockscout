@@ -74,7 +74,7 @@ defmodule Indexer.Transform.Addresses do
         %{from: :block_number, to: :fetched_coin_balance_block_number},
         %{from: :to_address_hash, to: :hash}
       ],
-      if @chain_type == :zksync do
+      if @chain_type == :zksync || @chain_type == :via do
         [
           %{from: :block_number, to: :fetched_coin_balance_block_number},
           %{from: :created_contract_address_hash, to: :hash}

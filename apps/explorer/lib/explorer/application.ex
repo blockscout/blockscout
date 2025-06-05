@@ -299,6 +299,7 @@ defmodule Explorer.Application do
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),
+        Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:via),
         configure(Explorer.Chain.Fetcher.AddressesBlacklist),
         Explorer.Migrator.SwitchPendingOperations,
         configure_mode_dependent_process(Explorer.Utility.RateLimiter, :api)
@@ -327,6 +328,7 @@ defmodule Explorer.Application do
         Explorer.Repo.Stability,
         Explorer.Repo.Suave,
         Explorer.Repo.Zilliqa,
+        Explorer.Repo.Via,
         Explorer.Repo.ZkSync
       ]
     else
