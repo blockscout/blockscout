@@ -135,6 +135,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
   use Explorer.Schema
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Explorer.Chain.TokenTransfer.Schema
 
@@ -633,18 +634,45 @@ defmodule Explorer.Chain.TokenTransfer do
           l.first_topic == ^@constant or
             l.first_topic == ^@erc1155_single_transfer_signature or
             l.first_topic == ^@erc1155_batch_transfer_signature,
-        where:
-          not exists(
-            from(tf in TokenTransfer,
-              where: tf.transaction_hash == parent_as(:log).transaction_hash,
-              where: tf.log_index == parent_as(:log).index
-            )
-          ),
+        where: not exists(token_transfer_exists_query()),
         select: l.block_number,
         distinct: l.block_number
       )
 
     Repo.stream_reduce(query, [], &[&1 | &2])
+  end
+
+  # Builds a query to check if a token transfer exists for a given log. Handles
+  # chain-specific logic for transaction_hash comparison.
+  #
+  # For Celo epoch blocks, `transaction_hash` can be `nil` in both `Log` and
+  # `TokenTransfer`. A direct SQL comparison `NULL = NULL` evaluates to
+  # `UNKNOWN` (effectively false in this context). Therefore, we need a
+  # NULL-safe comparison for `transaction_hash`. Additionally, `block_hash` is
+  # included in the join condition to uniquely identify the token transfer, as
+  # `transaction_hash` (when nil) and `log_index` alone are insufficient.
+  @spec token_transfer_exists_query() :: Ecto.Query.t()
+  defp token_transfer_exists_query do
+    query =
+      from(tt in TokenTransfer,
+        where: tt.block_hash == parent_as(:log).block_hash,
+        where: tt.log_index == parent_as(:log).index
+      )
+
+    chain_type()
+    |> case do
+      :celo ->
+        query
+        |> where(
+          [tt],
+          tt.transaction_hash == parent_as(:log).transaction_hash or
+            (is_nil(parent_as(:log).transaction_hash) and is_nil(tt.transaction_hash))
+        )
+
+      _ ->
+        query
+        |> where([tt], tt.transaction_hash == parent_as(:log).transaction_hash)
+    end
   end
 
   @doc """
