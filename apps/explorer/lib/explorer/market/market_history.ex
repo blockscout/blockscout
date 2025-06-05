@@ -83,61 +83,20 @@ defmodule Explorer.Market.MarketHistory do
       market_history in __MODULE__,
       update: [
         set: [
-          opening_price:
-            fragment(
-              """
-              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.opening_price IS NOT NULL AND EXCLUDED.opening_price > 0
-              THEN EXCLUDED.opening_price
-              ELSE ?
-              END
-              """,
-              market_history.opening_price,
-              market_history.opening_price,
-              market_history.opening_price
-            ),
-          closing_price:
-            fragment(
-              """
-              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.closing_price IS NOT NULL AND EXCLUDED.closing_price > 0
-              THEN EXCLUDED.closing_price
-              ELSE ?
-              END
-              """,
-              market_history.closing_price,
-              market_history.closing_price,
-              market_history.closing_price
-            ),
-          market_cap:
-            fragment(
-              """
-              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.market_cap IS NOT NULL AND EXCLUDED.market_cap > 0
-              THEN EXCLUDED.market_cap
-              ELSE ?
-              END
-              """,
-              market_history.market_cap,
-              market_history.market_cap,
-              market_history.market_cap
-            ),
-          tvl:
-            fragment(
-              """
-              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.tvl IS NOT NULL AND EXCLUDED.tvl > 0
-              THEN EXCLUDED.tvl
-              ELSE ?
-              END
-              """,
-              market_history.tvl,
-              market_history.tvl,
-              market_history.tvl
-            )
+          opening_price: fragment("COALESCE(EXCLUDED.opening_price, ?)", market_history.opening_price),
+          closing_price: fragment("COALESCE(EXCLUDED.closing_price, ?)", market_history.closing_price),
+          market_cap: fragment("COALESCE(EXCLUDED.market_cap, ?)", market_history.market_cap),
+          tvl: fragment("COALESCE(EXCLUDED.tvl, ?)", market_history.tvl)
         ]
       ],
       where:
-        is_nil(market_history.tvl) or market_history.tvl == 0 or is_nil(market_history.market_cap) or
-          market_history.market_cap == 0 or is_nil(market_history.opening_price) or
-          market_history.opening_price == 0 or is_nil(market_history.closing_price) or
-          market_history.closing_price == 0
+        fragment(
+          "(EXCLUDED.opening_price, EXCLUDED.closing_price, EXCLUDED.market_cap, EXCLUDED.tvl) IS DISTINCT FROM (? , ?, ?, ?)",
+          market_history.opening_price,
+          market_history.closing_price,
+          market_history.market_cap,
+          market_history.tvl
+        )
     )
   end
 end
