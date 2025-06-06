@@ -310,6 +310,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/games/count", V2.OptimismController, :games_count)
         get("/interop/messages", V2.OptimismController, :interop_messages)
         get("/interop/messages/count", V2.OptimismController, :interop_messages_count)
+        get("/interop/messages/:unique_id", V2.OptimismController, :interop_message)
         get("/interop/public-key", V2.OptimismController, :interop_public_key)
       end
     end
