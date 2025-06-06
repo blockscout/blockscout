@@ -147,6 +147,7 @@ defmodule Explorer.Chain.Celo.Epoch do
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
+    |> Enum.map(&with_loaded_distribution_token_transfers(&1, options))
   end
 
   @doc """

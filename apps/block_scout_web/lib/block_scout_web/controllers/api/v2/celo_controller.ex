@@ -32,6 +32,10 @@ defmodule BlockScoutWeb.API.V2.CeloController do
       end
 
     options = [
+      necessity_by_association: %{
+        :end_processing_block => :optional,
+        :distribution => :optional
+      },
       paging_options: paging_options,
       api?: true
     ]
@@ -68,7 +72,9 @@ defmodule BlockScoutWeb.API.V2.CeloController do
   def epoch(conn, %{"number" => number_string}) do
     options = [
       necessity_by_association: %{
-        :distribution => :optional
+        :distribution => :optional,
+        :start_processing_block => :optional,
+        :end_processing_block => :optional
       },
       api?: true
     ]

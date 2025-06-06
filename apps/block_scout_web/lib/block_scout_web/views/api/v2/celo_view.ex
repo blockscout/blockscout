@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   import Explorer.Chain.SmartContract, only: [dead_address_hash_string: 0]
 
-  alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
+  alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView, TransactionView}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.{CeloCoreContracts, CeloEpochs}
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
@@ -66,10 +66,18 @@ defmodule BlockScoutWeb.API.V2.CeloView do
               |> Map.put(:delegated_payment, nil)
             end)).()
 
-    epoch
-    |> prepare_epoch()
-    |> Map.put(:distribution, distribution_json)
-    |> Map.put(:aggregated_election_rewards, aggregated_election_rewards_json)
+    %{
+      number: epoch.number,
+      start_block_number: epoch.start_block_number,
+      end_block_number: epoch.end_block_number,
+      timestamp: epoch.end_processing_block.timestamp,
+      start_processing_block_hash: epoch.start_processing_block.hash,
+      start_processing_block_number: epoch.start_processing_block.number,
+      end_processing_block_hash: epoch.end_processing_block.hash,
+      end_processing_block_number: epoch.end_processing_block.number,
+      distribution: distribution_json,
+      aggregated_election_rewards: aggregated_election_rewards_json
+    }
   end
 
   def render("celo_base_fee.json", %Block{} = block) do
@@ -240,13 +248,30 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   end
 
   @spec prepare_epoch(Epoch.t()) :: map()
-  defp prepare_epoch(%Epoch{} = epoch) do
+  defp prepare_epoch(epoch) do
+    community_transfer =
+      epoch.distribution.community_transfer |> TokenTransferView.prepare_token_transfer_total()
+
+    carbon_offsetting_transfer =
+      epoch.distribution.carbon_offsetting_transfer |> TokenTransferView.prepare_token_transfer_total()
+
     %{
       number: epoch.number,
       start_block_number: epoch.start_block_number,
       end_block_number: epoch.end_block_number,
-      start_processing_block_hash: epoch.start_processing_block_hash,
-      end_processing_block_hash: epoch.end_processing_block_hash
+      timestamp: epoch.end_processing_block.timestamp,
+      distribution: %{
+        community_transfer: community_transfer,
+        carbon_offsetting_transfer: carbon_offsetting_transfer,
+        transfers_total: %{
+          decimals: "18",
+          value:
+            Decimal.add(
+              community_transfer["value"],
+              carbon_offsetting_transfer["value"]
+            )
+        }
+      }
     }
   end
 
@@ -258,26 +283,114 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           }
           | nil
   defp prepare_distribution(%EpochReward{} = distribution) do
-    Map.new(
-      [
-        reserve_bolster_transfer: distribution.reserve_bolster_transfer,
-        community_transfer: distribution.community_transfer,
-        carbon_offsetting_transfer: distribution.carbon_offsetting_transfer
-      ],
-      fn {field, token_transfer} ->
-        token_transfer_json =
-          token_transfer &&
-            TransactionView.render(
-              "token_transfer.json",
-              %{token_transfer: token_transfer, conn: nil}
-            )
+    transfers_json =
+      Map.new(
+        [
+          reserve_bolster_transfer: distribution.reserve_bolster_transfer,
+          community_transfer: distribution.community_transfer,
+          carbon_offsetting_transfer: distribution.carbon_offsetting_transfer
+        ],
+        fn {field, token_transfer} ->
+          token_transfer_json =
+            token_transfer &&
+              TransactionView.render(
+                "token_transfer.json",
+                %{token_transfer: token_transfer, conn: nil}
+              )
 
-        {field, token_transfer_json}
-      end
-    )
+          {field, token_transfer_json}
+        end
+      )
+
+    total = calculate_total_epoch_rewards(transfers_json)
+
+    transfers_json
+    |> Map.put(:transfers_total, total)
   end
 
   defp prepare_distribution(_), do: nil
+
+  @doc """
+  Calculates the total sum of all epoch reward transfers with token information.
+
+  This function sums up all non-nil token transfers (reserve_bolster_transfer,
+  community_transfer, carbon_offsetting_transfer) and ensures they all use the
+  same token. If different tokens are found, it raises an error.
+
+  ## Parameters
+    - `transfers_map` (`map()`): Map containing the rendered token transfers.
+
+  ## Returns
+    - `%{token: map(), total: %{decimals: Decimal.t(), value: Decimal.t()}}`:
+      Token info and total sum, or `nil` if no transfers exist.
+
+  ## Raises
+    - `ArgumentError`: If transfers use different tokens.
+
+  ## Example
+      iex> transfers = %{
+      ...>   reserve_bolster_transfer: %{"token" => %{"address" => "0xABC..."}, "total" => %{"value" => Decimal.new("100")}},
+      ...>   community_transfer: %{"token" => %{"address" => "0xABC..."}, "total" => %{"value" => Decimal.new("200")}}
+      ...> }
+      iex> calculate_total_epoch_rewards(transfers)
+      %{
+        token: %{"address" => "0xABC...", ...},
+        total: %{decimals: Decimal.new("18"), value: Decimal.new("300")}
+      }
+  """
+  @spec calculate_total_epoch_rewards(map()) :: map() | nil
+  def calculate_total_epoch_rewards(transfers) do
+    transfers =
+      transfers
+      |> Map.values()
+      |> Enum.reject(&is_nil/1)
+
+    case transfers do
+      [] ->
+        nil
+
+      [first_transfer | rest_transfers] ->
+        token_info = validate_and_extract_token(first_transfer, rest_transfers)
+
+        total_value =
+          transfers
+          |> Enum.map(fn transfer ->
+            get_in(transfer, ["total", "value"]) || Decimal.new(0)
+          end)
+          |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+
+        %{
+          token: token_info,
+          total: %{
+            decimals: token_info["decimals"],
+            value: total_value
+          }
+        }
+    end
+  end
+
+  @spec validate_and_extract_token(map(), [map()]) :: map()
+  defp validate_and_extract_token(first_transfer, rest_transfers) do
+    first_token = get_in(first_transfer, ["token"])
+    first_token_address = get_in(first_token, ["address"])
+
+    if is_nil(first_token_address) do
+      raise ArgumentError, "Token transfer missing token address information"
+    end
+
+    # Validate all transfers use the same token
+    Enum.each(rest_transfers, fn transfer ->
+      token_address = get_in(transfer, ["token", "address"])
+
+      if token_address != first_token_address do
+        raise ArgumentError,
+              "Inconsistent token addresses found in epoch rewards. " <>
+                "Expected: #{first_token_address}, Found: #{token_address}"
+      end
+    end)
+
+    first_token
+  end
 
   # Get the breakdown of the base fee for the case when FeeHandler is a contract
   # that receives the base fee.
