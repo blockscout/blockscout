@@ -12,10 +12,10 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
 
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
-  alias ABI.TypeEncoder
   alias EthereumJSONRPC.Contract
   alias Explorer.Application.Constants
   alias Explorer.{Chain, Helper, Repo}
+  alias Explorer.Chain.Data
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Optimism.{DisputeGame, Withdrawal}
   alias Explorer.Helper, as: ExplorerHelper
@@ -338,14 +338,14 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       start_index..end_index
       |> Enum.map(fn index ->
         encoded_call =
-          TypeEncoder.encode([index], %ABI.FunctionSelector{
+          ABI.TypeEncoder.encode([index], %ABI.FunctionSelector{
             function: "gameAtIndex",
             types: [
               {:uint, 256}
             ]
           })
 
-        calldata = ExplorerHelper.add_0x_prefix(encoded_call)
+        calldata = %Data{bytes: encoded_call} |> to_string()
 
         Contract.eth_call_request(calldata, dispute_game_factory, index, nil, nil)
       end)
@@ -367,7 +367,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
         [extra_data] = Helper.decode_data(extra_data_by_index[game.index], [:bytes])
 
         game
-        |> Map.put(:extra_data, ExplorerHelper.add_0x_prefix(extra_data))
+        |> Map.put(:extra_data, %Data{bytes: extra_data})
         |> Map.put(:resolved_at, sanitize_resolved_at(resolved_at_by_index[game.index]))
         |> Map.put(:status, quantity_to_integer(status_by_index[game.index]))
       end)

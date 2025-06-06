@@ -4,8 +4,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
 
   alias BlockScoutWeb.{BlockView, Endpoint}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Beacon.Blob, Block, Hash, Transaction, UserOperation}
-  alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.Chain.{Address, Beacon.Blob, Block, Transaction, UserOperation}
   alias Plug.Conn.Query
 
   def render("search_results.json", %{search_results: search_results, next_page_params: next_page_params}) do
@@ -98,10 +97,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   def prepare_search_result(%{type: "block"} = search_result) do
-    block_hash = ExplorerHelper.add_0x_prefix(search_result.block_hash)
-
     {:ok, block} =
-      Chain.hash_to_block(hash(search_result.block_hash),
+      Chain.hash_to_block(search_result.block_hash,
         necessity_by_association: %{
           :nephews => :optional
         },
@@ -111,8 +108,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     %{
       "type" => search_result.type,
       "block_number" => search_result.block_number,
-      "block_hash" => block_hash,
-      "url" => block_path(Endpoint, :show, block_hash),
+      "block_hash" => search_result.block_hash,
+      "url" => block_path(Endpoint, :show, block.hash),
       "timestamp" => search_result.timestamp,
       "block_type" => block |> BlockView.block_type() |> String.downcase(),
       "priority" => search_result.priority
@@ -120,34 +117,28 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   def prepare_search_result(%{type: "transaction"} = search_result) do
-    transaction_hash = ExplorerHelper.add_0x_prefix(search_result.transaction_hash)
-
     %{
       "type" => search_result.type,
-      "transaction_hash" => transaction_hash,
-      "url" => transaction_path(Endpoint, :show, transaction_hash),
+      "transaction_hash" => search_result.transaction_hash,
+      "url" => transaction_path(Endpoint, :show, search_result.transaction_hash),
       "timestamp" => search_result.timestamp,
       "priority" => search_result.priority
     }
   end
 
   def prepare_search_result(%{type: "user_operation"} = search_result) do
-    user_operation_hash = ExplorerHelper.add_0x_prefix(search_result.user_operation_hash)
-
     %{
       "type" => search_result.type,
-      "user_operation_hash" => user_operation_hash,
+      "user_operation_hash" => search_result.user_operation_hash,
       "timestamp" => search_result.timestamp,
       "priority" => search_result.priority
     }
   end
 
   def prepare_search_result(%{type: "blob"} = search_result) do
-    blob_hash = ExplorerHelper.add_0x_prefix(search_result.blob_hash)
-
     %{
       "type" => search_result.type,
-      "blob_hash" => blob_hash,
+      "blob_hash" => search_result.blob_hash,
       "timestamp" => search_result.timestamp,
       "priority" => search_result.priority
     }
@@ -160,14 +151,6 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "priority" => search_result.priority
     }
   end
-
-  defp hash(%Hash{} = hash), do: hash
-
-  defp hash(bytes),
-    do: %Hash{
-      byte_count: 32,
-      bytes: bytes
-    }
 
   defp redirect_search_results(%Address{} = item) do
     %{"type" => "address", "parameter" => Address.checksum(item.hash)}

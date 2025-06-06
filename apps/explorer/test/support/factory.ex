@@ -39,6 +39,7 @@ defmodule Explorer.Factory do
     Hash,
     InternalTransaction,
     Log,
+    Mud,
     MultichainSearchDbExportRetryQueue,
     PendingBlockOperation,
     PendingTransactionOperation,
@@ -51,7 +52,7 @@ defmodule Explorer.Factory do
     Withdrawal
   }
 
-  alias Explorer.Chain.Optimism.OutputRoot
+  alias Explorer.Chain.Optimism.{InteropMessage, OutputRoot}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ZilliqaStaker
@@ -1277,6 +1278,22 @@ defmodule Explorer.Factory do
     }
   end
 
+  def op_interop_message_factory do
+    %InteropMessage{
+      sender_address_hash: insert(:address).hash,
+      target_address_hash: insert(:address).hash,
+      nonce: sequence("op_interop_message_nonce", & &1),
+      init_chain_id: 1,
+      init_transaction_hash: insert(:transaction).hash,
+      block_number: insert(:block).number,
+      timestamp: DateTime.utc_now(),
+      relay_chain_id: 2,
+      relay_transaction_hash: transaction_hash(),
+      payload: "payload",
+      failed: random_bool()
+    }
+  end
+
   def op_output_root_factory do
     %OutputRoot{
       l2_output_index: op_output_root_l2_output_index(),
@@ -1362,6 +1379,24 @@ defmodule Explorer.Factory do
 
   def deposit_log_factory(params) do
     weth_log(TokenTransfer.weth_deposit_signature(), params)
+  end
+
+  def mud_factory do
+    block = build(:block)
+
+    %Mud{
+      address: build(:address).hash,
+      table_id: sequence("mud_table_id", & &1),
+      key_bytes: data(:mud_key_bytes),
+      key0: sequence("mud_key0", & &1),
+      key1: sequence("mud_key1", & &1),
+      static_data: data(:mud_static_data),
+      encoded_lengths: data(:mud_encoded_lengths),
+      dynamic_data: data(:mud_dynamic_data),
+      is_deleted: false,
+      block_number: block.number,
+      log_index: sequence("mud_log_index", & &1)
+    }
   end
 
   defp weth_log(first_topic, %{

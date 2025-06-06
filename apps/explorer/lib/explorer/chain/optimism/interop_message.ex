@@ -6,9 +6,8 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   require Logger
 
   import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
-  import Explorer.Helper, only: [add_0x_prefix: 1]
 
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Data, Hash}
   alias Explorer.{PagingOptions, Repo}
   alias Indexer.Fetcher.Optimism.Interop.MessageQueue, as: InteropMessageQueue
 
@@ -41,7 +40,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     field(:timestamp, :utc_datetime_usec)
     field(:relay_chain_id, :integer)
     field(:relay_transaction_hash, Hash.Full)
-    field(:payload, :binary)
+    field(:payload, Data)
     field(:failed, :boolean)
 
     timestamps()
@@ -605,7 +604,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
           "target_address_hash" => message.target_address_hash,
           # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `target_address_hash` property
           "target" => message.target_address_hash,
-          "payload" => add_0x_prefix(message.payload)
+          "payload" => message.payload
         },
         chain_info
       )

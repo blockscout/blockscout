@@ -1,12 +1,13 @@
 defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
 
   alias Explorer.Account.{Identity, WatchlistAddress}
-  alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
-  alias Explorer.{Repo, TestHelper}
+  alias Explorer.Chain.{Address, Data, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Repo
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
@@ -318,6 +319,60 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = get(conn, "/api/v2/transactions/" <> to_string(transaction.hash))
 
       assert json_response(request, 200)
+    end
+
+    if @chain_type == :suave do
+      test "renders peeker starting with 0x", %{conn: conn} do
+        bid_contract = insert(:address)
+
+        old_env = Application.get_env(:explorer, Transaction)
+
+        Application.put_env(
+          :explorer,
+          Transaction,
+          Keyword.merge(old_env, suave_bid_contracts: to_string(bid_contract.hash))
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, Transaction, old_env)
+        end)
+
+        transaction =
+          insert(:transaction,
+            to_address_hash: bid_contract.hash,
+            to_address: bid_contract,
+            execution_node_hash: bid_contract.hash
+          )
+
+        insert(:log,
+          transaction_hash: transaction.hash,
+          transaction: transaction,
+          address: bid_contract,
+          first_topic: "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e",
+          data:
+            "0x111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000030787849009c24f10a91a327a9f2ed94ebc49ee9"
+        )
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+
+        assert %{"allowed_peekers" => ["0x30787849009C24F10a91A327a9F2ED94eBc49EE9"]} = json_response(request, 200)
+      end
+    end
+
+    if @chain_type == :optimism do
+      test "returns transaction with interop message", %{conn: conn} do
+        transaction = insert(:transaction)
+
+        insert(:op_interop_message,
+          init_transaction_hash: transaction.hash,
+          payload: "0x30787849009c24f10a91a327a9f2ed94ebc49ee9"
+        )
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+
+        assert %{"op_interop" => %{"payload" => "0x30787849009c24f10a91a327a9f2ed94ebc49ee9"}} =
+                 json_response(request, 200)
+      end
     end
   end
 
@@ -2090,6 +2145,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   if @chain_type == :neon do
+    import Ecto.Query, only: [from: 2]
+
     describe "neon linked transactions service" do
       test "fetches data from the node and caches in the db", %{conn: conn} do
         transaction = insert(:transaction)
