@@ -2245,6 +2245,7 @@ defmodule Explorer.Chain do
   def pending_transactions_list do
     Transaction
     |> pending_transactions_query()
+    |> where([t], t.inserted_at < ago(1, "day"))
     |> Repo.all(timeout: :infinity)
   end
 
