@@ -446,16 +446,25 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         }
       end)
 
-    interop_message =
+    interop_messages =
       transaction_hash
-      |> InteropMessage.message_by_transaction()
+      |> InteropMessage.messages_by_transaction()
 
     out_json = Map.put(out_json, "op_withdrawals", withdrawals)
 
-    if is_nil(interop_message) do
+    if interop_messages == [] do
       out_json
     else
-      Map.put(out_json, "op_interop", interop_message)
+      op_interop =
+        if length(interop_messages) == 1 do
+          # if there is only one message, it should be returned as an item instead of the list of one item
+          # for backward compatibility
+          Enum.at(interop_messages, 0)
+        else
+          interop_messages
+        end
+
+      Map.put(out_json, "op_interop", op_interop)
     end
   end
 
