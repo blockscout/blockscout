@@ -248,9 +248,9 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:address_hash_param/nft", V2.AddressController, :nft_list)
       get("/:address_hash_param/nft/collections", V2.AddressController, :nft_collections)
 
-      if @chain_type == :celo do
-        get("/:address_hash_param/election-rewards", V2.AddressController, :celo_election_rewards)
-        get("/:address_hash_param/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
+      chain_scope :celo do
+        get("/:address_hash_param/celo/election-rewards", V2.AddressController, :celo_election_rewards)
+        get("/:address_hash_param/celo/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
       end
     end
 
@@ -311,6 +311,16 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/interop/messages", V2.OptimismController, :interop_messages)
         get("/interop/messages/count", V2.OptimismController, :interop_messages_count)
         get("/interop/public-key", V2.OptimismController, :interop_public_key)
+      end
+    end
+
+    scope "/celo" do
+      chain_scope :celo do
+        scope "/epochs" do
+          get("/", V2.CeloController, :epochs)
+          get("/:number", V2.CeloController, :epoch)
+          get("/:number/election-rewards/:type", V2.CeloController, :election_rewards)
+        end
       end
     end
 

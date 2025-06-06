@@ -635,9 +635,20 @@ defmodule Explorer.Chain.TokenTransfer do
             l.first_topic == ^@erc1155_batch_transfer_signature,
         where:
           not exists(
-            from(tf in TokenTransfer,
-              where: tf.transaction_hash == parent_as(:log).transaction_hash,
-              where: tf.log_index == parent_as(:log).index
+            from(tt in TokenTransfer,
+              # For Celo epoch blocks, `transaction_hash` can be `nil` in both
+              # `Log` and `TokenTransfer`. A direct SQL comparison `NULL = NULL`
+              # evaluates to `UNKNOWN` (effectively false in this context).
+              # Therefore, we need a NULL-safe comparison for
+              # `transaction_hash`. Additionally, `block_hash` is included in
+              # the join condition to uniquely identify the token transfer, as
+              # `transaction_hash` (when nil) and `log_index` alone are
+              # insufficient.
+              where:
+                tt.transaction_hash == parent_as(:log).transaction_hash or
+                  (is_nil(parent_as(:log).transaction_hash) and is_nil(tt.transaction_hash)),
+              where: tt.block_hash == parent_as(:log).block_hash,
+              where: tt.log_index == parent_as(:log).index
             )
           ),
         select: l.block_number,

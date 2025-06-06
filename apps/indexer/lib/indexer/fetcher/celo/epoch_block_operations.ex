@@ -3,23 +3,27 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   Tracks epoch blocks awaiting processing by the epoch fetcher.
   """
 
-  import Explorer.Chain.Celo.Helper,
-    only: [
-      epoch_block_number?: 1,
-      premigration_block_number?: 1
-    ]
+  import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Chain
-  alias Explorer.Chain.Block
-  alias Explorer.Chain.Celo.PendingEpochBlockOperation
-  alias Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor, as: EpochBlockOperationsSupervisor
-  alias Indexer.Transform.Addresses
+  alias Ecto.Multi
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Block, Import}
+  alias Explorer.Chain.Celo.{Epoch, Helper}
+  alias Explorer.Chain.Celo.Reader.EpochManager
   alias Indexer.{BufferedTask, Tracer}
+  alias Indexer.Transform.Addresses
+
+  alias Explorer.Chain.Import.Runner.Celo.{
+    ElectionRewards,
+    EpochRewards,
+    Epochs
+  }
 
   alias Indexer.Fetcher.Celo.EpochBlockOperations.{
-    DelegatedPayments,
+    DelegatedPaymentsPriorL2Migration,
     Distributions,
-    ValidatorAndGroupPayments,
+    ValidatorAndGroupPaymentsPostL2Migration,
+    ValidatorAndGroupPaymentsPriorL2Migration,
     VoterPayments
   }
 
@@ -53,11 +57,11 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
 
   def defaults do
     [
-      poll: false,
+      poll: true,
       flush_interval: :timer.seconds(3),
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
       max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
-      task_supervisor: Indexer.Fetcher.Celo.EpochBlockOperations.TaskSupervisor,
+      task_supervisor: __MODULE__.TaskSupervisor,
       metadata: [fetcher: :celo_epoch_rewards]
     ]
   end
@@ -68,15 +72,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
           integer()
         ) :: :ok
   def async_fetch(entries, realtime?, timeout \\ 5000) when is_list(entries) do
-    if EpochBlockOperationsSupervisor.disabled?() do
+    if __MODULE__.Supervisor.disabled?() do
       :ok
     else
       filtered_entries =
-        Enum.filter(
-          entries,
-          &(epoch_block_number?(&1.block_number) &&
-              premigration_block_number?(&1.block_number))
-        )
+        entries
+        |> Enum.filter(&(&1.start_processing_block_hash && &1.end_processing_block_hash))
 
       BufferedTask.buffer(__MODULE__, filtered_entries, realtime?, timeout)
     end
@@ -85,7 +86,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   @impl BufferedTask
   def init(initial, reducer, _json_rpc_named_arguments) do
     {:ok, final} =
-      PendingEpochBlockOperation.stream_premigration_epoch_blocks_with_unfetched_rewards(
+      Epoch.stream_unfetched_epochs(
         initial,
         reducer,
         true
@@ -101,56 +102,176 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
               service: :indexer,
               tracer: Tracer
             )
-  def run(pending_operations, json_rpc_named_arguments) do
-    Enum.each(pending_operations, fn pending_operation ->
-      fetch(pending_operation, json_rpc_named_arguments)
+  def run(epochs, json_rpc_named_arguments) do
+    epochs
+    |> Repo.preload([
+      :start_processing_block,
+      :end_processing_block
+    ])
+    |> Enum.each(fn epoch ->
+      epoch
+      |> fetch(json_rpc_named_arguments)
     end)
 
     :ok
   end
 
-  defp fetch(pending_operation, json_rpc_named_arguments) do
-    {:ok, distributions} = Distributions.fetch(pending_operation)
-    {:ok, validator_and_group_payments} = ValidatorAndGroupPayments.fetch(pending_operation)
+  defp fetch(epoch, json_rpc_named_arguments) do
+    election_rewards_params = fetch_election_rewards_params(epoch, json_rpc_named_arguments)
+    epoch_params = fetch_epoch_params(epoch)
+    {:ok, distributions_params} = Distributions.fetch(epoch)
 
-    {:ok, voter_payments} =
-      VoterPayments.fetch(
-        pending_operation,
-        json_rpc_named_arguments
-      )
+    epochs_params =
+      (epoch.number + 1)
+      |> Epoch.epoch_by_number_query()
+      |> Repo.exists?()
+      |> if do
+        [epoch_params]
+      else
+        next_epoch_params = %{
+          number: epoch_params.number + 1,
+          start_block_number: epoch_params.end_block_number + 1
+        }
 
-    {:ok, delegated_payments} =
-      validator_and_group_payments
-      |> Enum.filter(&(&1.type == :validator))
-      |> Enum.map(& &1.account_address_hash)
-      |> DelegatedPayments.fetch(
-        pending_operation,
-        json_rpc_named_arguments
-      )
-
-    election_rewards =
-      [
-        validator_and_group_payments,
-        voter_payments,
-        delegated_payments
-      ]
-      |> Enum.concat()
-      |> Enum.filter(&(&1.amount > 0))
+        [epoch_params, next_epoch_params]
+      end
 
     addresses_params =
       Addresses.extract_addresses(%{
-        celo_election_rewards: election_rewards
+        celo_election_rewards: election_rewards_params
       })
 
-    {:ok, imported} =
-      Chain.import(%{
-        addresses: %{params: addresses_params},
-        celo_election_rewards: %{params: election_rewards},
-        celo_epoch_rewards: %{params: [distributions]}
-      })
+    {:ok, _imported_addresses} = Chain.import(%{addresses: %{params: addresses_params}})
 
-    Logger.info("Fetched epoch rewards for block number: #{pending_operation.block_number}")
+    {:ok, import_multi} =
+      Import.all_single_multi(
+        [
+          Epochs,
+          ElectionRewards,
+          EpochRewards
+        ],
+        %{
+          celo_epoch_rewards: %{params: [distributions_params]},
+          celo_election_rewards: %{params: election_rewards_params},
+          celo_epochs: %{params: epochs_params}
+        }
+      )
 
-    {:ok, imported}
+    Multi.new()
+    |> Multi.run(
+      :acquire_processing_blocks,
+      fn repo, _changes ->
+        acquire_processing_blocks(repo, epoch)
+      end
+    )
+    |> Multi.append(import_multi)
+    |> Repo.transaction()
+    |> case do
+      {:ok, results} ->
+        Logger.info("Successfully fetched and imported epoch rewards for epoch number: #{epoch.number}")
+        {:ok, results}
+
+      {:error, :acquire_processing_blocks, :processing_blocks_not_consensus, _changes} ->
+        Logger.error(
+          "Skipped importing epoch rewards for epoch #{epoch.number} since processing blocks are not consensus"
+        )
+
+        {:error, :processing_blocks_not_consensus}
+
+      {:error, operation, reason, _changes} ->
+        Logger.error("Failed importing epoch rewards for epoch #{epoch.number} on #{operation}: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  defp fetch_election_rewards_params(epoch, json_rpc_named_arguments) do
+    {:ok, voter_payments} =
+      VoterPayments.fetch(
+        epoch,
+        json_rpc_named_arguments
+      )
+
+    {:ok, validator_and_group_payments} =
+      if Helper.pre_migration_block_number?(epoch.start_processing_block.number) do
+        ValidatorAndGroupPaymentsPriorL2Migration.fetch(epoch)
+      else
+        ValidatorAndGroupPaymentsPostL2Migration.fetch(epoch)
+      end
+
+    {:ok, delegated_payments_prior_l2_migration} =
+      if Helper.pre_migration_block_number?(epoch.start_processing_block.number) do
+        validator_and_group_payments
+        |> Enum.filter(&(&1.type == :validator))
+        |> Enum.map(& &1.account_address_hash)
+        |> DelegatedPaymentsPriorL2Migration.fetch(
+          epoch,
+          json_rpc_named_arguments
+        )
+      else
+        {:ok, []}
+      end
+
+    [
+      voter_payments,
+      validator_and_group_payments,
+      delegated_payments_prior_l2_migration
+    ]
+    |> Enum.concat()
+    |> Enum.filter(&(&1.amount > 0))
+  end
+
+  defp acquire_processing_blocks(repo, epoch) do
+    # First verify start block consensus and lock it to prevent changes during our operation
+
+    query =
+      from(b in Block.consensus_blocks_query(),
+        where:
+          b.hash in ^[
+            epoch.start_processing_block_hash,
+            epoch.end_processing_block_hash
+          ],
+        order_by: [asc: b.hash],
+        lock: "FOR SHARE"
+      )
+
+    premigration? = Helper.pre_migration_block_number?(epoch.start_processing_block.number)
+
+    query
+    |> repo.all()
+    |> case do
+      [_] = blocks when premigration? ->
+        {:ok, blocks}
+
+      [_, _] = blocks ->
+        {:ok, blocks}
+
+      [] ->
+        {:error, :processing_blocks_not_consensus}
+    end
+  end
+
+  defp fetch_epoch_params(epoch) do
+    params = %{number: epoch.number, fetched?: true}
+
+    if Helper.pre_migration_block_number?(epoch.start_processing_block.number) do
+      {
+        start_block_number,
+        end_block_number
+      } = Helper.epoch_number_to_block_range(epoch.number)
+
+      params
+      |> Map.put(:start_block_number, start_block_number)
+      |> Map.put(:end_block_number, end_block_number)
+    else
+      {:ok, start_block_number} =
+        EpochManager.fetch_first_block_at_epoch(epoch.number)
+
+      {:ok, end_block_number} =
+        EpochManager.fetch_last_block_at_epoch(epoch.number)
+
+      params
+      |> Map.put(:start_block_number, start_block_number)
+      |> Map.put(:end_block_number, end_block_number)
+    end
   end
 end
