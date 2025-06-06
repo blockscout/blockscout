@@ -1136,33 +1136,26 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       tac_response = """
       {
-          "operation_id": "#{operation_id}",
-          "sender": null,
-          "status_history": [
-              {
-                  "is_exist": true,
-                  "is_success": true,
-                  "note": null,
-                  "timestamp": "1746444308",
-                  "transactions": [
-                      {
-                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                          "type": "TON"
-                      }
-                  ],
-                  "type": "COLLECTED_IN_TAC"
-              }
-          ],
-          "timestamp": "1746444308",
-          "type": "PENDING"
+      "items": [
+        {
+            "operation_id": "#{operation_id}",
+            "sender": null,
+            "timestamp": "2025-05-14T19:16:38.000Z",
+            "type": "TON_TAC_TON"
+        }
+      ],
+      "next_page_params": null
       }
       """
 
-      Bypass.expect(
+      Bypass.expect_once(
         bypass,
         "GET",
-        "/api/v1/tac/operations/#{operation_id}",
-        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+        "/api/v1/tac/operations",
+        fn conn ->
+          assert conn.params["q"] == operation_id
+          Plug.Conn.resp(conn, 200, tac_response)
+        end
       )
 
       request = get(conn, "/api/v2/search?q=#{operation_id}")
@@ -1174,23 +1167,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                    "tac_operation" => %{
                      "operation_id" => operation_id,
                      "sender" => nil,
-                     "status_history" => [
-                       %{
-                         "is_exist" => true,
-                         "is_success" => true,
-                         "note" => nil,
-                         "timestamp" => "1746444308",
-                         "transactions" => [
-                           %{
-                             "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                             "type" => "TON"
-                           }
-                         ],
-                         "type" => "COLLECTED_IN_TAC"
-                       }
-                     ],
-                     "timestamp" => "1746444308",
-                     "type" => "PENDING"
+                     "timestamp" => "2025-05-14T19:16:38.000Z",
+                     "type" => "TON_TAC_TON"
                    },
                    "type" => "tac_operation"
                  }
@@ -1199,7 +1177,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              } == json_response(request, 200)
     end
 
-    test "handles 404 from TAC microservice", %{conn: conn} do
+    test "handles no results from TAC microservice", %{conn: conn} do
       bypass = Bypass.open()
       tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
 
@@ -1217,16 +1195,19 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       tac_response = """
       {
-          "code": 5,
-          "message": "cannot find operation id"
+        "items": [],
+        "next_page_params": null
       }
       """
 
       Bypass.expect(
         bypass,
         "GET",
-        "/api/v1/tac/operations/#{operation_id}",
-        fn conn -> Plug.Conn.resp(conn, 404, tac_response) end
+        "/api/v1/tac/operations",
+        fn conn ->
+          assert conn.params["q"] == operation_id
+          Plug.Conn.resp(conn, 200, tac_response)
+        end
       )
 
       request = get(conn, "/api/v2/search?q=#{operation_id}")
@@ -1257,33 +1238,26 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       tac_response = """
       {
-          "operation_id": "#{operation_id}",
-          "sender": null,
-          "status_history": [
-              {
-                  "is_exist": true,
-                  "is_success": true,
-                  "note": null,
-                  "timestamp": "1746444308",
-                  "transactions": [
-                      {
-                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                          "type": "TON"
-                      }
-                  ],
-                  "type": "COLLECTED_IN_TAC"
-              }
-          ],
-          "timestamp": "1746444308",
-          "type": "PENDING"
+      "items": [
+        {
+            "operation_id": "#{operation_id}",
+            "sender": null,
+            "timestamp": "2025-05-14T19:16:38.000Z",
+            "type": "TON_TAC_TON"
+        }
+      ],
+      "next_page_params": null
       }
       """
 
       Bypass.expect(
         bypass,
         "GET",
-        "/api/v1/tac/operations/#{operation_id}",
-        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+        "/api/v1/tac/operations",
+        fn conn ->
+          assert conn.params["q"] == operation_id
+          Plug.Conn.resp(conn, 200, tac_response)
+        end
       )
 
       request = get(conn, "/api/v2/search?q=#{operation_id}")
@@ -1295,23 +1269,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                "tac_operation" => %{
                  "operation_id" => operation_id,
                  "sender" => nil,
-                 "status_history" => [
-                   %{
-                     "is_exist" => true,
-                     "is_success" => true,
-                     "note" => nil,
-                     "timestamp" => "1746444308",
-                     "transactions" => [
-                       %{
-                         "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                         "type" => "TON"
-                       }
-                     ],
-                     "type" => "COLLECTED_IN_TAC"
-                   }
-                 ],
-                 "timestamp" => "1746444308",
-                 "type" => "PENDING"
+                 "timestamp" => "2025-05-14T19:16:38.000Z",
+                 "type" => "TON_TAC_TON"
                },
                "type" => "tac_operation"
              } in tl(response["items"])
@@ -1345,33 +1304,26 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       tac_response = """
       {
-          "operation_id": "#{operation_id}",
-          "sender": null,
-          "status_history": [
-              {
-                  "is_exist": true,
-                  "is_success": true,
-                  "note": null,
-                  "timestamp": "1746444308",
-                  "transactions": [
-                      {
-                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                          "type": "TON"
-                      }
-                  ],
-                  "type": "COLLECTED_IN_TAC"
-              }
-          ],
-          "timestamp": "1746444308",
-          "type": "PENDING"
+      "items": [
+        {
+            "operation_id": "#{operation_id}",
+            "sender": null,
+            "timestamp": "2025-05-14T19:16:38.000Z",
+            "type": "TON_TAC_TON"
+        }
+      ],
+      "next_page_params": null
       }
       """
 
       Bypass.expect(
         bypass,
         "GET",
-        "/api/v1/tac/operations/#{operation_id}",
-        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+        "/api/v1/tac/operations",
+        fn conn ->
+          assert conn.params["q"] == operation_id
+          Plug.Conn.resp(conn, 200, tac_response)
+        end
       )
 
       request = get(conn, "/api/v2/search?q=#{operation_id}")
@@ -1383,23 +1335,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                "tac_operation" => %{
                  "operation_id" => operation_id,
                  "sender" => nil,
-                 "status_history" => [
-                   %{
-                     "is_exist" => true,
-                     "is_success" => true,
-                     "note" => nil,
-                     "timestamp" => "1746444308",
-                     "transactions" => [
-                       %{
-                         "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                         "type" => "TON"
-                       }
-                     ],
-                     "type" => "COLLECTED_IN_TAC"
-                   }
-                 ],
-                 "timestamp" => "1746444308",
-                 "type" => "PENDING"
+                 "timestamp" => "2025-05-14T19:16:38.000Z",
+                 "type" => "TON_TAC_TON"
                },
                "type" => "tac_operation"
              } in tl(response["items"])
@@ -1413,6 +1350,376 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
                "url" => "/block/#{transaction.block_hash}"
              } in response["items"]
+    end
+
+    test "finds TAC operations by sender and paginates", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      address_hash = Address.checksum(insert(:address).hash)
+      operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
+
+      tac_first_response = """
+      {
+        "items": [
+        #{for i <- 10..59, do: """
+        {
+          "operation_id": "#{operation_id}",
+          "sender": "#{address_hash}",
+          "timestamp": "2025-05-14T19:16:#{i}.000Z",
+          "type": "TON_TAC_TON"
+        }#{if i == 59, do: "", else: ","}
+      """}
+        ],
+        "next_page_params": {
+          "page_token": 1747250219,
+          "page_size": 50
+        }
+      }
+      """
+
+      tac_second_response = """
+      {
+        "items": [
+        #{for i <- 10..59, do: """
+        {
+          "operation_id": "#{operation_id}",
+          "sender": "#{address_hash}",
+          "timestamp": "#{if i == 0, do: "2025-05-14T19:16:59.000Z", else: "2025-05-14T19:17:#{i}.000Z"}",
+          "type": "TON_TAC_TON"
+        }#{if i == 59, do: "", else: ","}
+      """}
+        ],
+        "next_page_params": {
+          "page_token": 1747250279,
+          "page_size": 50
+        }
+      }
+      """
+
+      tac_third_response = """
+      {
+        "items": [
+        {
+          "operation_id": "#{operation_id}",
+          "sender": "#{address_hash}",
+          "timestamp": "2025-05-14T19:18:01.000Z",
+          "type": "TON_TAC_TON"
+        }
+        ],
+        "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations",
+        fn conn ->
+          case conn.params["page_token"] do
+            nil -> Plug.Conn.resp(conn, 200, tac_first_response)
+            "1747250218" -> Plug.Conn.resp(conn, 200, tac_second_response)
+            "1747250279" -> Plug.Conn.resp(conn, 200, tac_third_response)
+            _ -> raise "Unexpected page_token"
+          end
+        end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{address_hash}")
+      assert response = json_response(request, 200)
+
+      second_page_request =
+        get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+
+      second_page_response = json_response(second_page_request, 200)
+
+      third_page_request =
+        get(conn, "/api/v2/search", second_page_response["next_page_params"] |> Query.encode() |> Query.decode())
+
+      assert %{
+               "items" => [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => operation_id,
+                     "sender" => address_hash,
+                     "timestamp" => "2025-05-14T19:18:01.000Z",
+                     "type" => "TON_TAC_TON"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ],
+               "next_page_params" => nil
+             } == json_response(third_page_request, 200)
+    end
+
+    test "finds TAC operations by TON sender", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      tac_response = """
+      {
+      "items": [
+        {
+            "operation_id": "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+            "type": "ROLLBACK",
+            "timestamp": "2025-06-05T12:21:11.000Z",
+            "sender": {
+                "address": "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                "blockchain": "TON"
+            }
+        }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations",
+        fn conn ->
+          case conn.params["q"] do
+            expected_q
+            when expected_q in [
+                   "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                   "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt",
+                   "UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko",
+                   "kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n",
+                   "0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi",
+                   "0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d"
+                 ] ->
+              Plug.Conn.resp(conn, 200, tac_response)
+
+            q ->
+              raise "Unexpected 'q' parameter #{inspect(q)}"
+          end
+        end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt")}")
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response["items"]
+
+      request = get(conn, "/api/v2/search?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt")}")
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response["items"]
+
+      request = get(conn, "/api/v2/search?q=#{URI.encode_www_form("UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko")}")
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response["items"]
+
+      request = get(conn, "/api/v2/search?q=#{URI.encode_www_form("kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n")}")
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response["items"]
+
+      request = get(conn, "/api/v2/search?q=#{URI.encode_www_form("0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi")}")
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response["items"]
+
+      request =
+        get(
+          conn,
+          "/api/v2/search?q=#{URI.encode_www_form("0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d")}"
+        )
+
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response["items"]
+    end
+
+    test "finds TAC operations with transaction and paginates", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
+
+      transaction = insert(:transaction, hash: operation_id)
+
+      tac_first_response = """
+      {
+        "items": [
+        #{for i <- 0..49, do: """
+        {
+          "operation_id": "#{operation_id}",
+          "sender": null,
+          "timestamp": "2025-05-14T19:16:#{i}.000Z",
+          "type": "TON_TAC_TON"
+        }#{if i == 49, do: "", else: ","}
+      """}
+        ],
+        "next_page_params": {
+          "page_token": 1747250209,
+          "page_size": 50
+        }
+      }
+      """
+
+      tac_second_response = """
+      {
+      "items": [
+        {
+            "operation_id": "#{operation_id}",
+            "sender": null,
+            "timestamp": "2025-05-14T19:16:50.000Z",
+            "type": "TON_TAC_TON"
+        }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations",
+        fn conn ->
+          case conn.params["page_token"] do
+            nil -> Plug.Conn.resp(conn, 200, tac_first_response)
+            "1747250208" -> Plug.Conn.resp(conn, 200, tac_second_response)
+            _ -> raise "Unexpected page_token"
+          end
+        end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{operation_id}")
+      assert response = json_response(request, 200)
+      next_page_request = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+
+      assert %{
+               "items" => [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => operation_id,
+                     "sender" => nil,
+                     "timestamp" => "2025-05-14T19:16:50.000Z",
+                     "type" => "TON_TAC_TON"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ],
+               "next_page_params" => nil
+             } == json_response(next_page_request, 200)
     end
   end
 
@@ -1725,33 +2032,26 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       tac_response = """
       {
+      "items": [
+        {
           "operation_id": "#{operation_id}",
           "sender": null,
-          "status_history": [
-              {
-                  "is_exist": true,
-                  "is_success": true,
-                  "note": null,
-                  "timestamp": "1746444308",
-                  "transactions": [
-                      {
-                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                          "type": "TON"
-                      }
-                  ],
-                  "type": "COLLECTED_IN_TAC"
-              }
-          ],
-          "timestamp": "1746444308",
-          "type": "PENDING"
+          "timestamp": "2025-05-14T19:16:38.000Z",
+          "type": "TON_TAC_TON"
+        }
+      ],
+      "next_page_params": null
       }
       """
 
       Bypass.expect(
         bypass,
         "GET",
-        "/api/v1/tac/operations/#{operation_id}",
-        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+        "/api/v1/tac/operations",
+        fn conn ->
+          assert conn.params["q"] == operation_id
+          Plug.Conn.resp(conn, 200, tac_response)
+        end
       )
 
       request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
@@ -1762,23 +2062,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                  "tac_operation" => %{
                    "operation_id" => operation_id,
                    "sender" => nil,
-                   "status_history" => [
-                     %{
-                       "is_exist" => true,
-                       "is_success" => true,
-                       "note" => nil,
-                       "timestamp" => "1746444308",
-                       "transactions" => [
-                         %{
-                           "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                           "type" => "TON"
-                         }
-                       ],
-                       "type" => "COLLECTED_IN_TAC"
-                     }
-                   ],
-                   "timestamp" => "1746444308",
-                   "type" => "PENDING"
+                   "timestamp" => "2025-05-14T19:16:38.000Z",
+                   "type" => "TON_TAC_TON"
                  },
                  "type" => "tac_operation"
                }
@@ -1805,33 +2090,26 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       tac_response = """
       {
-          "operation_id": "#{operation_id}",
-          "sender": null,
-          "status_history": [
-              {
-                  "is_exist": true,
-                  "is_success": true,
-                  "note": null,
-                  "timestamp": "1746444308",
-                  "transactions": [
-                      {
-                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                          "type": "TON"
-                      }
-                  ],
-                  "type": "COLLECTED_IN_TAC"
-              }
-          ],
-          "timestamp": "1746444308",
-          "type": "PENDING"
+      "items": [
+        {
+            "operation_id": "#{operation_id}",
+            "sender": null,
+            "timestamp": "2025-05-14T19:16:38.000Z",
+            "type": "TON_TAC_TON"
+        }
+      ],
+      "next_page_params": null
       }
       """
 
       Bypass.expect(
         bypass,
         "GET",
-        "/api/v1/tac/operations/#{operation_id}",
-        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+        "/api/v1/tac/operations",
+        fn conn ->
+          assert conn.params["q"] == operation_id
+          Plug.Conn.resp(conn, 200, tac_response)
+        end
       )
 
       request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
@@ -1843,23 +2121,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                "tac_operation" => %{
                  "operation_id" => operation_id,
                  "sender" => nil,
-                 "status_history" => [
-                   %{
-                     "is_exist" => true,
-                     "is_success" => true,
-                     "note" => nil,
-                     "timestamp" => "1746444308",
-                     "transactions" => [
-                       %{
-                         "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                         "type" => "TON"
-                       }
-                     ],
-                     "type" => "COLLECTED_IN_TAC"
-                   }
-                 ],
-                 "timestamp" => "1746444308",
-                 "type" => "PENDING"
+                 "timestamp" => "2025-05-14T19:16:38.000Z",
+                 "type" => "TON_TAC_TON"
                },
                "type" => "tac_operation"
              } in tl(response)
@@ -1893,33 +2156,26 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       tac_response = """
       {
-          "operation_id": "#{operation_id}",
-          "sender": null,
-          "status_history": [
-              {
-                  "is_exist": true,
-                  "is_success": true,
-                  "note": null,
-                  "timestamp": "1746444308",
-                  "transactions": [
-                      {
-                          "hash": "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                          "type": "TON"
-                      }
-                  ],
-                  "type": "COLLECTED_IN_TAC"
-              }
-          ],
-          "timestamp": "1746444308",
-          "type": "PENDING"
+      "items": [
+        {
+            "operation_id": "#{operation_id}",
+            "sender": null,
+            "timestamp": "2025-05-14T19:16:38.000Z",
+            "type": "TON_TAC_TON"
+        }
+      ],
+      "next_page_params": null
       }
       """
 
       Bypass.expect(
         bypass,
         "GET",
-        "/api/v1/tac/operations/#{operation_id}",
-        fn conn -> Plug.Conn.resp(conn, 200, tac_response) end
+        "/api/v1/tac/operations",
+        fn conn ->
+          assert conn.params["q"] == operation_id
+          Plug.Conn.resp(conn, 200, tac_response)
+        end
       )
 
       request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
@@ -1931,23 +2187,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                "tac_operation" => %{
                  "operation_id" => operation_id,
                  "sender" => nil,
-                 "status_history" => [
-                   %{
-                     "is_exist" => true,
-                     "is_success" => true,
-                     "note" => nil,
-                     "timestamp" => "1746444308",
-                     "transactions" => [
-                       %{
-                         "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                         "type" => "TON"
-                       }
-                     ],
-                     "type" => "COLLECTED_IN_TAC"
-                   }
-                 ],
-                 "timestamp" => "1746444308",
-                 "type" => "PENDING"
+                 "timestamp" => "2025-05-14T19:16:38.000Z",
+                 "type" => "TON_TAC_TON"
                },
                "type" => "tac_operation"
              } in tl(response)
@@ -1961,6 +2202,349 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
                "url" => "/block/#{transaction.block_hash}"
              } in response
+    end
+
+    test "finds a lot of TAC operations with address", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      address_hash = Address.checksum(insert(:address).hash)
+      operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
+
+      tac_response =
+        """
+        {
+          "items": [
+          #{for i <- 0..49, do: """
+          {
+            "operation_id": "#{operation_id}",
+            "sender": "#{address_hash}",
+            "timestamp": "2025-05-14T19:16:#{i}.000Z",
+            "type": "TON_TAC_TON"
+          }#{if i == 49, do: "", else: ","}
+        """}
+          ],
+          "next_page_params": {
+            "page_token": "2025-05-14T19:16:49.000Z",
+            "page_size": 50
+          }
+        }
+        """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations",
+        fn conn ->
+          assert conn.params["q"] == address_hash
+
+          Plug.Conn.resp(conn, 200, tac_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/search/quick?q=#{address_hash}")
+      assert response = json_response(request, 200)
+
+      correct_response = [
+        %{
+          "address" => address_hash,
+          "address_hash" => address_hash,
+          "certified" => false,
+          "ens_info" => nil,
+          "is_smart_contract_verified" => false,
+          "name" => nil,
+          "priority" => 0,
+          "type" => "address",
+          "url" => "/address/#{address_hash}"
+        }
+        | for(
+            i <- 0..48,
+            do: %{
+              "priority" => 0,
+              "tac_operation" => %{
+                "operation_id" => operation_id,
+                "sender" => address_hash,
+                "timestamp" => "2025-05-14T19:16:#{i}.000Z",
+                "type" => "TON_TAC_TON"
+              },
+              "type" => "tac_operation"
+            }
+          )
+      ]
+
+      assert correct_response == response
+    end
+
+    test "finds a TAC operation with TON address", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      tac_response = """
+      {
+      "items": [
+        {
+            "operation_id": "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+            "type": "ROLLBACK",
+            "timestamp": "2025-06-05T12:21:11.000Z",
+            "sender": {
+                "address": "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                "blockchain": "TON"
+            }
+        }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations",
+        fn conn ->
+          case conn.params["q"] do
+            expected_q
+            when expected_q in [
+                   "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                   "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt",
+                   "UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko",
+                   "kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n",
+                   "0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi",
+                   "0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d"
+                 ] ->
+              Plug.Conn.resp(conn, 200, tac_response)
+
+            q ->
+              raise "Unexpected 'q' parameter #{inspect(q)}"
+          end
+        end
+      )
+
+      request =
+        get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt")}")
+
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response
+
+      request =
+        get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt")}")
+
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response
+
+      request =
+        get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko")}")
+
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response
+
+      request =
+        get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n")}")
+
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response
+
+      request =
+        get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi")}")
+
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response
+
+      request =
+        get(
+          conn,
+          "/api/v2/search/quick?q=#{URI.encode_www_form("0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d")}"
+        )
+
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                   "sender" => %{
+                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "blockchain" => "TON"
+                   },
+                   "timestamp" => "2025-06-05T12:21:11.000Z",
+                   "type" => "ROLLBACK"
+                 },
+                 "type" => "tac_operation"
+               }
+             ] == response
+    end
+
+    test "finds a lot if TAC operations with transaction", %{conn: conn} do
+      bypass = Bypass.open()
+      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+      end)
+
+      transaction =
+        insert(:transaction, hash: "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2") |> with_block()
+
+      operation_id = "#{transaction.hash}"
+
+      tac_response = """
+      {
+        "items": [
+        #{for i <- 0..49, do: """
+        {
+          "operation_id": "#{operation_id}",
+          "sender": null,
+          "timestamp": "2025-05-14T19:16:#{i}.000Z",
+          "type": "TON_TAC_TON"
+        }#{if i == 49, do: "", else: ","}
+      """}
+        ],
+        "next_page_params": {
+          "page_token": "2025-05-14T19:16:49.000Z",
+          "page_size": 50
+        }
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tac/operations",
+        fn conn ->
+          assert conn.params["q"] == operation_id
+
+          Plug.Conn.resp(conn, 200, tac_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+      assert response = json_response(request, 200)
+
+      correct_response = [
+        %{
+          "priority" => 0,
+          "transaction_hash" => "#{transaction.hash}",
+          "type" => "transaction",
+          "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+          "url" => "/tx/#{transaction.hash}"
+        }
+        | for(
+            i <- 0..48,
+            do: %{
+              "priority" => 0,
+              "tac_operation" => %{
+                "operation_id" => operation_id,
+                "sender" => nil,
+                "timestamp" => "2025-05-14T19:16:#{i}.000Z",
+                "type" => "TON_TAC_TON"
+              },
+              "type" => "tac_operation"
+            }
+          )
+      ]
+
+      assert correct_response == response
     end
 
     test "returns empty list and don't crash", %{conn: conn} do
