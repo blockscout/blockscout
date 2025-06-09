@@ -562,7 +562,14 @@ config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
-config :explorer, :celo, l2_migration_block: ConfigHelper.parse_integer_or_nil_env_var("CELO_L2_MIGRATION_BLOCK")
+celo_l2_migration_block = ConfigHelper.parse_integer_or_nil_env_var("CELO_L2_MIGRATION_BLOCK")
+celo_epoch_manager_contract_address = System.get_env("CELO_EPOCH_MANAGER_CONTRACT")
+
+config :explorer, :celo,
+  l2_migration_block: celo_l2_migration_block,
+  epoch_manager_contract_address: celo_epoch_manager_contract_address,
+  celo_unreleased_treasury_contract_address: System.get_env("CELO_UNRELEASED_TREASURY_CONTRACT"),
+  validators_contract_address: System.get_env("CELO_VALIDATORS_CONTRACT")
 
 config :explorer, Explorer.Chain.Cache.CeloCoreContracts,
   contracts: ConfigHelper.parse_json_env_var("CELO_CORE_CONTRACTS")
@@ -763,6 +770,14 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   enabled: ConfigHelper.chain_type() == :filecoin,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_CONCURRENCY", 1)
+
+config :explorer, Explorer.Migrator.CeloL2Epochs,
+  enabled:
+    ConfigHelper.chain_type() == :celo &&
+      !is_nil(celo_l2_migration_block) &&
+      !is_nil(celo_epoch_manager_contract_address)
+
+config :explorer, Explorer.Chain.Cache.CeloEpochs, enabled: ConfigHelper.chain_type() == :celo
 
 config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),

@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
   import Explorer.Chain.Celo.Helper,
     only: [
       epoch_block_number?: 1,
-      premigration_block_number?: 1
+      pre_migration_block_number?: 1
     ]
 
   alias EthereumJSONRPC.{Logs, Transport}
@@ -58,7 +58,7 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
   defp do_fetch(blocks, json_rpc_named_arguments) do
     requests =
       blocks
-      |> Enum.filter(&premigration_block_number?(&1.number))
+      |> Enum.filter(&pre_migration_block_number?(&1.number))
       |> Enum.reduce({[], 0}, &blocks_reducer/2)
       |> elem(0)
       |> Enum.reverse()

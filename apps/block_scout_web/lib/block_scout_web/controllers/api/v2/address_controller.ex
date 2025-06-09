@@ -24,12 +24,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       nft_types_options: 1
     ]
 
+  import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
+
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
-  alias Explorer.{Chain, Market}
+  alias Explorer.{Chain, Market, PagingOptions}
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Address.Counters
 
@@ -38,7 +40,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias BlockScoutWeb.API.V2.CeloView
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
-  alias Explorer.Chain.Celo.Reader, as: CeloReader
 
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
@@ -112,7 +113,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           :smart_contract,
           proxy_implementations_association()
         ]
-      ] => :optional
+      ] => :optional,
+      [epoch: [:end_processing_block]] => :optional
     },
     api?: true
   ]
@@ -937,42 +939,81 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   """
   @spec celo_election_rewards(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def celo_election_rewards(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
-      case Chain.hash_to_address(address_hash, @address_options) do
-        {:ok, _address} ->
-          full_options =
-            @celo_election_rewards_options
-            |> Keyword.merge(CeloElectionReward.address_paging_options(params))
+    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params),
+         {:ok, _address} <- Chain.hash_to_address(address_hash, api?: true) do
+      full_options =
+        @celo_election_rewards_options
+        |> Keyword.put(
+          :paging_options,
+          celo_election_rewards_paging_options(params)
+        )
 
-          results_plus_one = CeloReader.address_hash_to_election_rewards(address_hash, full_options)
+      results_plus_one = CeloElectionReward.address_hash_to_rewards(address_hash, full_options)
 
-          {rewards, next_page} = split_list_by_page(results_plus_one)
+      {rewards, next_page} = split_list_by_page(results_plus_one)
 
-          next_page_params =
-            next_page_params(
-              next_page,
-              rewards,
-              delete_parameters_from_next_page_params(params),
-              &CeloElectionReward.to_address_paging_params/1
-            )
+      filtered_params =
+        params
+        |> delete_parameters_from_next_page_params()
+        |> Map.drop([
+          "epoch_number",
+          "amount",
+          "associated_account_address_hash",
+          "type"
+        ])
 
-          conn
-          |> put_status(200)
-          |> put_view(CeloView)
-          |> render(:celo_election_rewards, %{
-            rewards: rewards,
-            next_page_params: next_page_params
-          })
+      next_page_params =
+        next_page_params(
+          next_page,
+          rewards,
+          filtered_params,
+          &%{
+            epoch_number: &1.epoch_number,
+            amount: &1.amount,
+            associated_account_address_hash: &1.associated_account_address_hash,
+            type: &1.type
+          }
+        )
 
-        _ ->
-          conn
-          |> put_status(200)
-          |> put_view(CeloView)
-          |> render(:celo_election_rewards, %{
-            rewards: [],
-            next_page_params: nil
-          })
-      end
+      conn
+      |> put_status(200)
+      |> put_view(CeloView)
+      |> render(:celo_address_election_rewards, %{
+        rewards: rewards,
+        next_page_params: next_page_params
+      })
+    end
+  end
+
+  @spec celo_election_rewards_paging_options(map()) :: PagingOptions.t()
+  defp celo_election_rewards_paging_options(params) do
+    with %{
+           "epoch_number" => epoch_number_string,
+           "amount" => amount_string,
+           "associated_account_address_hash" => associated_account_address_hash_string,
+           "type" => type_string
+         }
+         when is_binary(epoch_number_string) and
+                is_binary(amount_string) and
+                is_binary(associated_account_address_hash_string) and
+                is_binary(type_string) <- params,
+         {:ok, epoch_number} <- safe_parse_non_negative_integer(epoch_number_string),
+         {amount, ""} <- Decimal.parse(amount_string),
+         {:ok, associated_account_address_hash} <-
+           Hash.Address.cast(associated_account_address_hash_string),
+         {:ok, type} <- CeloElectionReward.type_from_string(type_string) do
+      %{
+        PagingOptions.default_paging_options()
+        | key: %{
+            epoch_number: epoch_number,
+            amount: amount,
+            associated_account_address_hash: associated_account_address_hash,
+            type: type
+          }
+      }
+    else
+      _ ->
+        PagingOptions.default_paging_options()
     end
   end
 

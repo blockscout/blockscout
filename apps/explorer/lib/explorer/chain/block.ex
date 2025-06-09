@@ -20,7 +20,7 @@ defmodule Explorer.Chain.Block.Schema do
 
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
-  alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
+  alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Zilliqa.AggregateQuorumCertificate, as: ZilliqaAggregateQuorumCertificate
   alias Explorer.Chain.Zilliqa.QuorumCertificate, as: ZilliqaQuorumCertificate
@@ -76,10 +76,13 @@ defmodule Explorer.Chain.Block.Schema do
                         :celo ->
                           elem(
                             quote do
-                              has_one(:celo_epoch_reward, CeloEpochReward, foreign_key: :block_hash, references: :hash)
+                              has_one(:celo_initiated_epoch, CeloEpoch,
+                                foreign_key: :start_processing_block_hash,
+                                references: :hash
+                              )
 
-                              has_many(:celo_epoch_election_rewards, CeloEpochReward,
-                                foreign_key: :block_hash,
+                              has_one(:celo_terminated_epoch, CeloEpoch,
+                                foreign_key: :end_processing_block_hash,
                                 references: :hash
                               )
                             end,
