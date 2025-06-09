@@ -4,6 +4,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPaymentsPriorL2Migr
   """
   import Ecto.Query, only: [from: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   import Explorer.Helper, only: [abi_to_method_id: 1]
 
   import Indexer.Helper,
