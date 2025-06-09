@@ -5,9 +5,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.{Block, Hash, Transaction, Wei}
+  alias Explorer.Chain.{Block, Hash, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Range
-  alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue}
+  alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue, TokenInfoExportQueue}
   alias Explorer.{Helper, HttpClient, Repo}
   alias Explorer.Utility.Microservice
 
@@ -226,6 +226,81 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     else
       :ignore
     end
+  end
+
+  @spec prepare_token_metadata_for_queue(Token.t(), %{
+          :token_type => String.t(),
+          :name => String.t(),
+          :symbol => String.t(),
+          :decimals => non_neg_integer(),
+          :total_supply => non_neg_integer(),
+          optional(any()) => any()
+        }) :: %{
+          :token_type => String.t(),
+          :name => String.t(),
+          :symbol => String.t(),
+          :decimals => non_neg_integer(),
+          :total_supply => non_neg_integer(),
+          optional(:icon_url) => String.t()
+        }
+  def prepare_token_metadata_for_queue(%Token{} = token, metadata) do
+    data =
+      %{
+        token_type: token.type,
+        name: metadata.name,
+        symbol: metadata.symbol
+      }
+
+    data
+    |> token_metadata_optional_field(token, :icon_url)
+    |> token_metadata_optional_field(metadata, :decimals)
+    |> token_metadata_optional_field(metadata, :total_supply)
+  end
+
+  defp token_metadata_optional_field(data, metadata, key) do
+    case Map.get(metadata, key) do
+      nil -> data
+      value -> Map.put(data, key, value)
+    end
+  end
+
+  @spec prepare_token_total_supply_for_queue(non_neg_integer() | nil) :: %{:total_supply => non_neg_integer()} | nil
+  def prepare_token_total_supply_for_queue(nil), do: nil
+
+  def prepare_token_total_supply_for_queue(total_supply) do
+    %{total_supply: total_supply}
+  end
+
+  @spec send_token_info_to_queue([%{binary() => map()}], :metadata | :total_supply | :counters | :market_data) ::
+          :ok | :ignore
+  def send_token_info_to_queue(entries, entries_type) do
+    if enabled?() do
+      entries
+      |> extract_token_info_entries_into_chunks(entries_type)
+      |> Enum.each(fn chunk ->
+        Repo.insert_all(TokenInfoExportQueue, Helper.add_timestamps(chunk), on_conflict: :nothing)
+      end)
+
+      :ok
+    else
+      :ignore
+    end
+  end
+
+  @spec extract_token_info_entries_into_chunks(
+          [%{binary() => map()}],
+          :metadata | :total_supply | :counters | :market_data
+        ) :: list()
+  defp extract_token_info_entries_into_chunks(entries, entries_type) do
+    entries
+    |> Enum.map(fn {address_hash, data} ->
+      %{
+        address_hash: address_hash,
+        data_type: entries_type,
+        data: data
+      }
+    end)
+    |> Enum.chunk_every(token_info_chunk_size())
   end
 
   # sobelow_skip ["DOS.StringToAtom"]
@@ -704,5 +779,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp addresses_chunk_size do
     Application.get_env(:explorer, __MODULE__)[:addresses_chunk_size]
+  end
+
+  defp token_info_chunk_size do
+    Application.get_env(:explorer, __MODULE__)[:token_info_chunk_size]
   end
 end
