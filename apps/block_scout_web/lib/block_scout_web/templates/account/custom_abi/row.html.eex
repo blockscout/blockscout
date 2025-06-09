@@ -9,7 +9,7 @@
     <form method="post" action="<%= custom_abi_path(@conn, :delete, @custom_abi.id) %>">
       <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
       <input type="hidden" name="_method" value="delete">
-    </form>  
+    </form>
     <a href="" data-delete-item><%= gettext("Remove") %></a>
   </td>
   <td>

@@ -138,7 +138,7 @@ defmodule Indexer.Fetcher.TransactionAction do
     end
   end
 
-  defp run_fetch(state) do
+  defp run_fetch(%__MODULE__{} = state) do
     pid = self()
     Process.send_after(pid, :fetch, 3000, [])
     %__MODULE__{state | task: nil, pid: pid}

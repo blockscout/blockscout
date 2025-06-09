@@ -192,7 +192,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, address} ->
-          fully_preloaded_address =
+          %Address{} =
+            fully_preloaded_address =
             Address.maybe_preload_smart_contract_associations(address, contract_address_preloads(), @api_true)
 
           implementations = SmartContractHelper.pre_fetch_implementations(fully_preloaded_address)

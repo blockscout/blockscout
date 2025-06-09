@@ -49,7 +49,9 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
     coin_balances_daily_params_set
   end
 
-  def params_set(%{address_coin_balances_params_with_block_timestamp: address_coin_balances_params_with_block_timestamp}) do
+  def params_set(%{
+        address_coin_balances_params_with_block_timestamp: address_coin_balances_params_with_block_timestamp
+      }) do
     coin_balances_params =
       address_coin_balances_params_with_block_timestamp
       |> MapSet.to_list()

@@ -11,7 +11,7 @@ defmodule BlockScout.Mixfile do
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
-      elixir: "~> 1.17",
+      elixir: "~> 1.19",
       preferred_cli_env: [
         credo: :test,
         dialyzer: :test
@@ -94,6 +94,8 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
+      {:phoenix_view, "~> 2.0"},
+      {:phoenix_live_view, "~> 1.1"},
       {:prometheus_ex, "~> 5.0.0", override: true},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.8", override: true},
       {:tesla, "~> 1.15.3"},

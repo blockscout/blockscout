@@ -324,7 +324,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
     |> limit(1)
   end
 
-  defp put_transaction_hash(hash, coin_balance),
+  defp put_transaction_hash(hash, %CoinBalance{} = coin_balance),
     do: if(hash, do: %CoinBalance{coin_balance | transaction_hash: hash}, else: coin_balance)
 
   defp add_block_timestamp_to_balances(

@@ -136,8 +136,6 @@ defmodule BlockScoutWeb.Mixfile do
       {:poison, "~> 5.0.0"},
       {:postgrex, ">= 0.0.0"},
       {:prometheus, "~> 6.0", override: true},
-      # Gather methods for Phoenix requests
-      {:prometheus_phoenix, "~> 1.2"},
       # Expose metrics from URL Prometheus server can scrape
       {:prometheus_plugs, "~> 1.1"},
       # OS process metrics for Prometheus, custom ref to include https://github.com/deadtrickster/prometheus_process_collector/pull/30

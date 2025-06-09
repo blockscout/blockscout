@@ -177,11 +177,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Legacy do
   defp maybe_verify_email(_), do: :ok
 
   defp merge_email_users([primary_user | _] = users, identity_id_to_link, provider_for_linking) do
-    identity_map =
-      users
-      |> Enum.map(& &1["user_id"])
-      |> Identity.find_identities()
-      |> Map.new(&{&1.uid, &1})
+    identity_map = get_identity_map(users)
 
     users_map = users |> Enum.map(&{&1["user_id"], &1}) |> Map.new()
 
@@ -203,11 +199,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Legacy do
   end
 
   defp merge_web3_users([primary_user | _] = users) do
-    identity_map =
-      users
-      |> Enum.map(& &1["user_id"])
-      |> Identity.find_identities()
-      |> Map.new(&{&1.uid, &1})
+    identity_map = get_identity_map(users)
 
     users_map = users |> Enum.map(&{&1["user_id"], &1}) |> Map.new()
 
@@ -242,5 +234,12 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Legacy do
         Logger.error(["Error while merging users with the same address: ", inspect(error)])
         :error
     end
+  end
+
+  defp get_identity_map(users) do
+    users
+    |> Enum.map(& &1["user_id"])
+    |> Identity.find_identities()
+    |> Map.new(&{&1.uid, &1})
   end
 end

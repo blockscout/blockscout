@@ -680,7 +680,7 @@ defmodule Explorer.Chain.Token.Instance do
     is_unique is true for ERC-721 always and for ERC-1155 only if token_id is unique
   """
   @spec put_is_unique(__MODULE__.t(), Token.t(), Keyword.t()) :: __MODULE__.t()
-  def put_is_unique(instance, token, options) do
+  def put_is_unique(%__MODULE__{} = instance, token, options) do
     %__MODULE__{instance | is_unique: unique?(instance, token, options)}
   end
 

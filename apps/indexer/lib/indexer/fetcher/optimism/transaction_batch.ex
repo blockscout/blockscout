@@ -532,7 +532,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           json_rpc_named_arguments_l2,
           blobs_api_url
         )
-        |> Tuple.append(last_block_hash)
+        |> (&Tuple.insert_at(&1, tuple_size(&1), last_block_hash)).()
 
       {_, message_or_errors} ->
         message =

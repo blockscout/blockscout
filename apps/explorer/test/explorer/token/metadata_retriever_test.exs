@@ -1144,8 +1144,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       assert {:ok_store_uri,
               %{
                 metadata: Jason.decode!(json)
-              },
-              url} ==
+              }, url} ==
                MetadataRetriever.fetch_json({:ok, [url]})
     end
   end
