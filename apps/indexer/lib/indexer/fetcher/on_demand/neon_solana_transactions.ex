@@ -29,7 +29,7 @@ defmodule Indexer.Fetcher.OnDemand.NeonSolanaTransactions do
   end
 
   defp cache(transaction_hash) do
-    Repo.all(
+    Repo.replica().all(
       from(
         solanaTransaction in LinkedSolanaTransactions,
         where: solanaTransaction.neon_transaction_hash == ^transaction_hash.bytes,

@@ -11,7 +11,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   import Ecto.Query,
     only: [
       from: 2,
-      select: 3
+      select: 3,
+      where: 3
     ]
 
   alias Explorer.{Chain, Repo}
@@ -62,6 +63,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     field(:names, {:array, :string}, null: false)
 
     has_many(:addresses, Address, foreign_key: :hash, references: :address_hashes)
+    has_many(:smart_contracts, SmartContract, foreign_key: :address_hash, references: :address_hashes)
 
     belongs_to(
       :address,
@@ -423,6 +425,28 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     |> Repo.update()
   end
 
+  @doc """
+  Deletes all proxy implementations associated with the given proxy address hash.
+
+  ## Parameters
+
+    - `address_hash` (binary): The hash of the proxy address whose implementations
+      should be deleted.
+
+  ## Returns
+
+    - `{count, nil}`: A tuple where `count` is the number of records deleted.
+
+  This function uses a query to find all proxy implementations matching the
+  provided `address_hash` and deletes them from the database.
+  """
+  @spec delete_implementations(Hash.Address.t()) :: {non_neg_integer(), nil}
+  def delete_implementations(address_hash) do
+    __MODULE__
+    |> where([proxy_implementations], proxy_implementations.proxy_address_hash == ^address_hash)
+    |> Repo.delete_all()
+  end
+
   # Cut off implementations per proxy up to @max_implementations_number_per_proxy number
   # before insert into the DB to prevent DoS via the verification endpoint of Diamond smart contracts.
   @spec sanitize_implementation_address_hash_strings([EthereumJSONRPC.hash()]) :: [EthereumJSONRPC.hash()]
@@ -448,6 +472,43 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   def names(_, _), do: []
 
+  @doc """
+  Fetches and associates smart contracts for a nested list of address hashes.
+
+  This function takes a nested list of address hashes (`nested_address_hashes`), queries the database
+  for smart contracts matching the flattened list of address hashes, and then maps the results back
+  to the original nested structure. Each address hash is associated with its corresponding smart
+  contract, if found.
+
+  ## Parameters
+
+    - `nested_address_hashes`: A nested list of address hashes (e.g., `[[hash1, hash2], [hash3]]`).
+
+  ## Returns
+
+    - A list of tuples where each tuple contains:
+      - The original list of address hashes.
+      - A list of smart contracts corresponding to the address hashes.
+
+  """
+  @spec smart_contract_association_for_implementations([Hash.Address.t()]) :: [
+          {[Hash.Address.t()], [SmartContract.t() | nil]}
+        ]
+  def smart_contract_association_for_implementations(nested_address_hashes) do
+    query =
+      from(smart_contract in SmartContract, where: smart_contract.address_hash in ^List.flatten(nested_address_hashes))
+
+    smart_contracts_map =
+      query
+      |> Repo.replica().all()
+      |> Map.new(&{&1.address_hash, &1})
+
+    for address_hashes <- nested_address_hashes,
+        smart_contracts when not is_nil(smart_contracts) <- address_hashes |> Enum.map(&smart_contracts_map[&1]) do
+      {address_hashes, smart_contracts}
+    end
+  end
+
   if @chain_type == :filecoin do
     @doc """
     Fetches associated addresses for Filecoin based on the provided nested IDs.
@@ -471,7 +532,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         |> Map.new(&{&1.hash, &1})
 
       for ids <- nested_ids,
-          address <- ids |> Enum.map(&addresses_map[&1]) do
+          address when not is_nil(address) <- ids |> Enum.map(&addresses_map[&1]) do
         {ids, address}
       end
     end
@@ -508,6 +569,15 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     def proxy_implementations_addresses_association do
       [addresses: &__MODULE__.addresses_association_for_filecoin/1]
     end
+
+    def proxy_implementations_smart_contracts_association do
+      [
+        proxy_implementations: [
+          addresses: &__MODULE__.addresses_association_for_filecoin/1,
+          smart_contracts: &__MODULE__.smart_contract_association_for_implementations/1
+        ]
+      ]
+    end
   else
     @doc """
     Returns the association for proxy implementations.
@@ -540,6 +610,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     @spec proxy_implementations_addresses_association() :: []
     def proxy_implementations_addresses_association do
       []
+    end
+
+    def proxy_implementations_smart_contracts_association do
+      [proxy_implementations: [smart_contracts: &__MODULE__.smart_contract_association_for_implementations/1]]
     end
   end
 end

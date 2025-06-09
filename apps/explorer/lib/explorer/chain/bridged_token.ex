@@ -20,6 +20,7 @@ defmodule Explorer.Chain.BridgedToken do
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
+    Address,
     BridgedToken,
     Hash,
     InternalTransaction,
@@ -218,16 +219,10 @@ defmodule Explorer.Chain.BridgedToken do
   def fetch_omni_bridged_tokens_metadata(token_addresses) do
     Enum.each(token_addresses, fn token_address_hash ->
       created_from_internal_transaction_success_query =
-        from(
-          it in InternalTransaction,
-          inner_join: t in assoc(it, :transaction),
-          where: it.created_contract_address_hash == ^token_address_hash,
-          where: t.status == ^1
-        )
+        Address.creation_internal_transaction_query(token_address_hash)
 
       created_from_internal_transaction_success =
         created_from_internal_transaction_success_query
-        |> limit(1)
         |> Repo.one()
 
       created_from_transaction_query =

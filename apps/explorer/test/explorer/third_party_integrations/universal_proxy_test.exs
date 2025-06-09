@@ -221,7 +221,47 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
                }).url
     end
 
-    test "correctly parsing chain_id - dependent param in the path" do
+    test "correctly parsing chain_id - dependent param in the path when chain id is NOT present as param" do
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: %Tesla.Env{
+          status: 200,
+          body:
+            Jason.encode!(%{
+              "platforms" => %{
+                "test_platform" => %{
+                  "base_url" => "https://api.test.com",
+                  "endpoints" => %{
+                    "base" => %{
+                      "path" => "/test/:endpoint_platform_id",
+                      "method" => "get",
+                      "params" => [
+                        %{
+                          "location" => "path",
+                          "type" => "chain_id_dependent",
+                          "name" => "endpoint_platform_id",
+                          "mapping" => %{
+                            "1" => "first_endpoint_platform_id",
+                            "100500" => "another_endpoint_platform_id"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            })
+        }
+      )
+
+      assert "https://api.test.com/test/another_endpoint_platform_id" =
+               UniversalProxy.parse_proxy_params(%{
+                 "platform_id" => "test_platform",
+                 "chain_id" => "100500"
+               }).url
+    end
+
+    test "correctly parsing chain_id - dependent param in the path when chain id is present as param as well" do
       Tesla.Test.expect_tesla_call(
         times: 1,
         returns: %Tesla.Env{

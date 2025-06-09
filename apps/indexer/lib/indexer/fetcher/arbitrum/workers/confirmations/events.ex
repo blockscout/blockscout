@@ -11,7 +11,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Events do
   alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
   alias Indexer.Helper, as: IndexerHelper
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_debug: 1]
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
+
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_debug: 1, log_warning: 1]
 
   require Logger
 
@@ -90,5 +92,80 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Events do
     [_, _, l2_block_hash] = event["topics"]
 
     l2_block_hash
+  end
+
+  @doc """
+    Fetches and sorts rollup block numbers from `SendRootUpdated` events in the specified L1 block range.
+
+    Retrieves logs from the Outbox contract and extracts the top confirmed rollup block numbers.
+    The block numbers are sorted in descending order to ensure proper handling of overlapping
+    confirmations by finding the highest already-confirmed block below the current confirmation.
+    Uses caching to minimize RPC calls.
+
+    ## Parameters
+    - `log_start`: Starting L1 block number for log retrieval
+    - `log_end`: Ending L1 block number for log retrieval
+    - `l1_outbox_config`: Configuration for the Arbitrum outbox contract
+    - `cache`: Cache for logs to minimize RPC calls
+
+    ## Returns
+    A tuple containing:
+    - `{:ok, sorted_block_numbers, new_cache, logs_length}` where:
+      * `sorted_block_numbers` is a list of rollup block numbers in descending order
+      * `new_cache` is the updated logs cache
+      * `logs_length` is the number of logs processed
+    - `{:error, nil, new_cache, logs_length}` if any block hash cannot be resolved
+  """
+  @spec fetch_and_sort_confirmations_logs(
+          non_neg_integer(),
+          non_neg_integer(),
+          %{
+            :outbox_address => binary(),
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            optional(any()) => any()
+          },
+          cached_logs()
+        ) ::
+          {:ok, [non_neg_integer()], cached_logs(), non_neg_integer()} | {:error, nil, cached_logs(), non_neg_integer()}
+  def fetch_and_sort_confirmations_logs(log_start, log_end, l1_outbox_config, cache) do
+    {logs, new_cache} =
+      get_logs_for_confirmations(
+        log_start,
+        log_end,
+        l1_outbox_config.outbox_address,
+        l1_outbox_config.json_rpc_named_arguments,
+        cache
+      )
+
+    logs_length = length(logs)
+
+    # Process each log to extract block numbers
+    blocks =
+      Enum.reduce_while(logs, {:ok, []}, fn log, {:ok, acc} ->
+        log_debug("Examining the transaction #{log["transactionHash"]}")
+
+        rollup_block_hash = send_root_updated_event_parse(log)
+        rollup_block_num = DbSettlement.rollup_block_hash_to_num(rollup_block_hash)
+
+        case rollup_block_num do
+          nil ->
+            log_warning("The rollup block ##{rollup_block_hash} not found")
+            {:halt, :error}
+
+          value ->
+            log_debug("Found rollup block ##{rollup_block_num}")
+            {:cont, {:ok, [value | acc]}}
+        end
+      end)
+
+    case blocks do
+      {:ok, list} ->
+        # Sort block numbers in descending order to find highest confirmed block first
+        sorted = Enum.sort(list, :desc)
+        {:ok, sorted, new_cache, logs_length}
+
+      :error ->
+        {:error, nil, new_cache, logs_length}
+    end
   end
 end

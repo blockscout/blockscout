@@ -364,6 +364,17 @@ defmodule BlockScoutWeb.Notifier do
     )
   end
 
+  def handle_event(
+        {:chain_event, :not_fetched_token_instance_metadata, :on_demand,
+         [token_contract_address_hash_string, token_id, reason]}
+      ) do
+    Endpoint.broadcast(
+      "token_instances:#{token_contract_address_hash_string}",
+      "not_fetched_token_instance_metadata",
+      %{token_id: token_id, reason: reason}
+    )
+  end
+
   def handle_event({:chain_event, :changed_bytecode, :on_demand, [address_hash]}) do
     # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("addresses_old:#{to_string(address_hash)}", "changed_bytecode", %{})

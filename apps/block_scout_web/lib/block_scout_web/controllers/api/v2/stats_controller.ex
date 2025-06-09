@@ -197,8 +197,8 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
     :celo ->
       defp add_chain_type_fields(response) do
-        import Explorer.Chain.Celo.Reader, only: [last_block_epoch_number: 0]
-        response |> Map.put("celo", %{"epoch_number" => last_block_epoch_number()})
+        alias Explorer.Chain.Cache.CeloEpochs
+        response |> Map.put("celo", %{"epoch_number" => CeloEpochs.last_block_epoch_number()})
       end
 
     _ ->

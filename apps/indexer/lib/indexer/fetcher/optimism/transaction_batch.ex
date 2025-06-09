@@ -649,24 +649,44 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end
   end
 
-  defp celestia_blob_to_input("0x" <> transaction_input, transaction_hash, blobs_api_url) do
+  # Gets Celestia blob data & metadata by L1 transaction input (encoding blob's height and commitment).
+  # The data is read from the remote `da-indexer` service.
+  #
+  # ## Parameters
+  # - `transaction_input`: The contents of transaction `input` field.
+  # - `offset`: Offset (in bytes) within the `transaction_input` where blob's height is encoded.
+  # - `transaction_hash`: The L1 transaction hash for logging purposes.
+  # - `blobs_api_url`: The URL to `da-indexer` API.
+  #
+  # ## Returns
+  # - A list with a map containing blob's data and metadata.
+  # - An empty list in case of an error (`da-indexer` didn't respond, URL is not defined, or transaction input is incorrect).
+  @spec celestia_blob_to_input(binary(), non_neg_integer(), String.t(), String.t()) :: [
+          %{
+            :bytes => binary(),
+            :celestia_blob_metadata => %{
+              :height => non_neg_integer(),
+              :namespace => String.t(),
+              :commitment => String.t()
+            }
+          }
+        ]
+  defp celestia_blob_to_input("0x" <> transaction_input, offset, transaction_hash, blobs_api_url) do
     transaction_input
     |> Base.decode16!(case: :mixed)
-    |> celestia_blob_to_input(transaction_hash, blobs_api_url)
+    |> celestia_blob_to_input(offset, transaction_hash, blobs_api_url)
   end
 
-  defp celestia_blob_to_input(transaction_input, _transaction_hash, blobs_api_url)
-       when byte_size(transaction_input) == 1 + 8 + 32 and blobs_api_url != "" do
-    # the first byte encodes Celestia sign 0xCE
-
-    # the next 8 bytes encode little-endian Celestia blob height
+  defp celestia_blob_to_input(transaction_input, offset, _transaction_hash, blobs_api_url)
+       when byte_size(transaction_input) == offset + 8 + 32 and blobs_api_url != "" do
+    # 8 bytes after alt-da signature encode little-endian Celestia blob height
     height =
       transaction_input
-      |> binary_part(1, 8)
+      |> binary_part(offset, 8)
       |> :binary.decode_unsigned(:little)
 
     # the next 32 bytes contain the commitment
-    commitment = binary_part(transaction_input, 1 + 8, 32)
+    commitment = binary_part(transaction_input, offset + 8, 32)
     commitment_string = Base.encode16(commitment, case: :lower)
 
     url = blobs_api_url <> "?height=#{height}&commitment=" <> commitment_string
@@ -699,13 +719,13 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end
   end
 
-  defp celestia_blob_to_input(_transaction_input, transaction_hash, blobs_api_url) when blobs_api_url != "" do
+  defp celestia_blob_to_input(_transaction_input, _offset, transaction_hash, blobs_api_url) when blobs_api_url != "" do
     Logger.error("L1 transaction with Celestia commitment has incorrect input length. Tx hash: #{transaction_hash}")
 
     []
   end
 
-  defp celestia_blob_to_input(_transaction_input, _transaction_hash, "") do
+  defp celestia_blob_to_input(_transaction_input, _offset, _transaction_hash, "") do
     Logger.error(
       "Cannot read Celestia blobs from the server as the API URL is not defined. Please, check INDEXER_OPTIMISM_L1_BATCH_CELESTIA_BLOBS_API_URL env variable."
     )
@@ -739,9 +759,13 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
               chain_id_l1
             )
 
-          first_byte(transaction.input) == 0xCE ->
+          commitment_alt_da_signature(transaction.input) == 0x01010C ->
             # this is Celestia DA transaction, so we get the data from Celestia blob
-            celestia_blob_to_input(transaction.input, transaction.hash, celestia_blobs_api_url)
+            celestia_blob_to_input(transaction.input, 3, transaction.hash, celestia_blobs_api_url)
+
+          first_byte(transaction.input) == 0xCE ->
+            # backward compatibility with OP Celestia Raspberry
+            celestia_blob_to_input(transaction.input, 1, transaction.hash, celestia_blobs_api_url)
 
           true ->
             # this is calldata transaction, so the data is in the transaction input
@@ -1422,14 +1446,38 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end
   end
 
+  # Retrieves Alt-DA signature from L1 transaction input as described in
+  # https://github.com/ethereum-optimism/specs/blob/main/specs/experimental/alt-da.md#example-commitments
+  #
+  # ## Parameters
+  # - `transaction_input`: The contents of transaction `input` field.
+  #
+  # ## Returns
+  # - An integer encoding the signature.
+  # - `nil` if the input doesn't contain Alt-DA signature.
+  @spec commitment_alt_da_signature(binary()) :: non_neg_integer() | nil
+  defp commitment_alt_da_signature("0x" <> transaction_input) do
+    transaction_input
+    |> Base.decode16!(case: :mixed)
+    |> commitment_alt_da_signature()
+  end
+
+  defp commitment_alt_da_signature(<<0, _rest::binary>>), do: 0x00
+  defp commitment_alt_da_signature(<<1, 0, _rest::binary>>), do: 0x0100
+
+  defp commitment_alt_da_signature(<<1, 1, da_layer_byte::size(8), _rest::binary>>),
+    do: :binary.decode_unsigned(<<0x01, 0x01, da_layer_byte>>)
+
+  defp commitment_alt_da_signature(_), do: nil
+
   defp first_byte("0x" <> transaction_input) do
     transaction_input
     |> Base.decode16!(case: :mixed)
     |> first_byte()
   end
 
-  defp first_byte(<<version_byte::size(8), _rest::binary>>) do
-    version_byte
+  defp first_byte(<<first_byte::size(8), _rest::binary>>) do
+    first_byte
   end
 
   defp first_byte(_transaction_input) do

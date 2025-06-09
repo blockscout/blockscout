@@ -1,10 +1,11 @@
-defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPayments do
+defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPaymentsPriorL2Migration do
   @moduledoc """
   Fetches delegated validator payments for the epoch block.
   """
   import Ecto.Query, only: [from: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
-  import Indexer.Fetcher.Celo.Helper, only: [abi_to_method_id: 1]
+
+  import Explorer.Helper, only: [abi_to_method_id: 1]
 
   import Indexer.Helper,
     only: [
@@ -12,8 +13,10 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPayments do
       read_contracts_with_retries: 4
     ]
 
+  alias Explorer.Chain.{Block, Hash, TokenTransfer}
   alias Explorer.Chain.Cache.CeloCoreContracts
-  alias Explorer.Chain.{Hash, TokenTransfer}
+  alias Explorer.Chain.Celo.Epoch
+  alias Explorer.Chain.Wei
   alias Explorer.Repo
   alias Indexer.Fetcher.Celo.EpochBlockOperations.CoreContractVersion
 
@@ -49,17 +52,14 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPayments do
 
   @spec fetch(
           [EthereumJSONRPC.address()],
-          %{
-            :block_hash => EthereumJSONRPC.hash(),
-            :block_number => EthereumJSONRPC.block_number()
-          },
+          Epoch.t(),
           EthereumJSONRPC.json_rpc_named_arguments()
         ) ::
           {:ok, list()}
           | {:error, any()}
   def fetch(
         validator_addresses,
-        %{block_number: block_number, block_hash: block_hash} = _pending_operation,
+        %Epoch{start_processing_block: %Block{number: block_number, hash: block_hash}} = epoch,
         json_rpc_named_arguments
       ) do
     with {:ok, accounts_contract_address} <-
@@ -104,12 +104,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPayments do
         |> Enum.filter(&match?({_, {:ok, [_, fraction]}} when fraction > 0, &1))
         |> Enum.map(fn
           {validator_address, {:ok, [beneficiary_address, _]}} ->
-            amount = Map.get(beneficiary_address_to_amount, beneficiary_address, 0)
+            amount = beneficiary_address_to_amount |> Map.get(beneficiary_address, 0)
 
             %{
-              block_hash: block_hash,
+              epoch_number: epoch.number,
               account_address_hash: beneficiary_address,
-              amount: amount,
+              amount: %Wei{value: amount},
               associated_account_address_hash: validator_address,
               type: :delegated_payment
             }

@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   alias EthereumJSONRPC.Contract
   alias Explorer.Application.Constants
   alias Explorer.{Chain, Helper, Repo}
+  alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Optimism.{DisputeGame, Withdrawal}
   alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Fetcher.Optimism
@@ -214,7 +215,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     query =
       from(
         game in DisputeGame,
-        select: %{index: game.index, address: game.address},
+        select: %{index: game.index, address_hash: game.address_hash},
         where: is_nil(game.resolved_at),
         order_by: [desc: game.index],
         limit: 1000
@@ -385,12 +386,14 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   defp decode_games(responses) do
     responses
     |> Enum.map(fn response ->
-      [game_type, created_at, address] = Helper.decode_data(response.result, [{:uint, 32}, {:uint, 64}, :address])
+      [game_type, created_at, address_hash] = Helper.decode_data(response.result, [{:uint, 32}, {:uint, 64}, :address])
+
+      {:ok, address} = Address.cast(address_hash)
 
       %{
         index: response.id,
         game_type: game_type,
-        address: address,
+        address_hash: address,
         created_at: Timex.from_unix(created_at)
       }
     end)
@@ -399,16 +402,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   defp read_extra_data(method_id, method_name, games, json_rpc_named_arguments, retries \\ 10) do
     requests =
       games
-      |> Enum.map(fn game ->
-        address =
-          if is_binary(game.address) do
-            ExplorerHelper.add_0x_prefix(game.address)
-          else
-            game.address
-          end
-
-        Contract.eth_call_request(method_id, address, game.index, nil, nil)
-      end)
+      |> Enum.map(&Contract.eth_call_request(method_id, &1.address_hash, &1.index, nil, nil))
 
     error_message = &"Cannot call #{method_name} public getter of FaultDisputeGame. Error: #{inspect(&1)}"
 

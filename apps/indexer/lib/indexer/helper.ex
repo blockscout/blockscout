@@ -413,7 +413,8 @@ defmodule Indexer.Helper do
              {[{:ok | :error, any()}], list()})
         ) ::
           {[{:ok | :error, any()}], list()}
-  def read_contracts_with_retries_by_chunks(requests, chunk_size, reader) do
+  def read_contracts_with_retries_by_chunks(requests, chunk_size, reader)
+      when is_list(requests) and is_integer(chunk_size) and chunk_size > 0 do
     {responses_lists, errors_lists} =
       requests
       |> Enum.chunk_every(chunk_size)
@@ -929,5 +930,49 @@ defmodule Indexer.Helper do
     url
     |> String.trim()
     |> String.trim_trailing("/")
+  end
+
+  @max_queue_size 5000
+  @enqueue_busy_waiting_timeout 500
+  @doc """
+  Reduces the given `data` into an accumulator `acc` using the provided `reducer` function,
+  but only if the queue is not full. This function ensures that the processing respects
+  the queue's size constraints.
+
+  If the queue is full (i.e., its size is greater than or equal to `@max_queue_size` or
+  its `maximum_size`), the function will pause for a duration defined by `@busy_waiting_timeout`
+  and retry until the queue has available space.
+
+  ## Parameters
+
+    - `data`: The data to be processed by the `reducer` function.
+    - `acc`: The accumulator that will be passed to the `reducer` function.
+    - `reducer`: A function that takes `data` and `acc` as arguments and returns the updated accumulator.
+
+  ## Returns
+
+  The result of applying the `reducer` function to the `data` and `acc`.
+
+  ## Notes
+
+  This function uses a recursive approach to wait for the queue to have available space.
+  Ensure that the `@busy_waiting_timeout` is set to an appropriate value to avoid excessive delays.
+  """
+  @spec reduce_if_queue_is_not_full(any(), any(), (any(), any() -> any()), module()) :: any()
+  def reduce_if_queue_is_not_full(data, acc, reducer, module) do
+    bound_queue = GenServer.call(module, :state).bound_queue
+
+    max_queue_size = Application.get_env(:indexer, module)[:max_queue_size] || @max_queue_size
+
+    enqueue_busy_waiting_timeout =
+      Application.get_env(:indexer, module)[:enqueue_busy_waiting_timeout] || @enqueue_busy_waiting_timeout
+
+    if bound_queue.size >= max_queue_size or (bound_queue.maximum_size && bound_queue.size >= bound_queue.maximum_size) do
+      :timer.sleep(enqueue_busy_waiting_timeout)
+
+      reduce_if_queue_is_not_full(data, acc, reducer, module)
+    else
+      reducer.(data, acc)
+    end
   end
 end

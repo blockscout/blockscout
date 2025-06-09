@@ -2,6 +2,8 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
   alias BlockScoutWeb.API.V2.TransactionView
+  alias Explorer.Repo
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   describe "decode_logs/2" do
     test "doesn't use decoding candidate event with different 2nd, 3d or 4th topic" do
@@ -54,7 +56,11 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
           data: log2_data
         )
 
-      logs = [log1, log2]
+      logs =
+        [log1, log2]
+        |> Repo.preload(
+          address: [:names, :smart_contract, Implementation.proxy_implementations_smart_contracts_association()]
+        )
 
       assert [
                {:ok, "d20a68b2",
@@ -129,7 +135,11 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
           data: log2_data
         )
 
-      logs = [log1, log2]
+      logs =
+        [log1, log2]
+        |> Repo.preload(
+          address: [:names, :smart_contract, Implementation.proxy_implementations_smart_contracts_association()]
+        )
 
       assert [
                {:ok, "d20a68b2",

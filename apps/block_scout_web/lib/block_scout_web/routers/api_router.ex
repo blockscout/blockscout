@@ -141,6 +141,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/backend-version", V2.ConfigController, :backend_version)
       get("/csv-export", V2.ConfigController, :csv_export)
       get("/public-metrics", V2.ConfigController, :public_metrics)
+
+      chain_scope :celo do
+        get("/celo", V2.ConfigController, :celo)
+      end
     end
 
     scope "/transactions" do
@@ -244,9 +248,9 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:address_hash_param/nft", V2.AddressController, :nft_list)
       get("/:address_hash_param/nft/collections", V2.AddressController, :nft_collections)
 
-      if @chain_type == :celo do
-        get("/:address_hash_param/election-rewards", V2.AddressController, :celo_election_rewards)
-        get("/:address_hash_param/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
+      chain_scope :celo do
+        get("/:address_hash_param/celo/election-rewards", V2.AddressController, :celo_election_rewards)
+        get("/:address_hash_param/celo/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
       end
     end
 
@@ -310,6 +314,16 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
+    scope "/celo" do
+      chain_scope :celo do
+        scope "/epochs" do
+          get("/", V2.CeloController, :epochs)
+          get("/:number", V2.CeloController, :epoch)
+          get("/:number/election-rewards/:type", V2.CeloController, :election_rewards)
+        end
+      end
+    end
+
     scope "/polygon-edge" do
       chain_scope :polygon_edge do
         get("/deposits", V2.PolygonEdgeController, :deposits)
@@ -358,6 +372,27 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/proxy" do
+      scope "/3rdparty" do
+        get("/:platform_id", V2.Proxy.UniversalProxyController, :index)
+
+        scope "/noves-fi" do
+          get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
+
+          get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+
+          get("/transaction-descriptions", V2.Proxy.NovesFiController, :describe_transactions)
+        end
+
+        scope "/xname" do
+          get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
+        end
+
+        scope "/solidityscan" do
+          get("/smart-contracts/:address_hash/report", V2.SmartContractController, :solidityscan_report)
+        end
+      end
+
+      # deprecate in the next major/minor release after 9.0.0
       scope "/3dparty" do
         get("/:platform_id", V2.Proxy.UniversalProxyController, :index)
 
@@ -497,7 +532,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
 
-    # todo: remove these old CSV export related endpoints in 7.2.0 or higher since they are moved to /api/v2/** path
+    # todo: remove these old CSV export related endpoints in 7.2.0 or higher since they are moved to /api/v2/** path.
+    # Related frontend task https://github.com/blockscout/frontend/issues/2718.
     get("/transactions-csv", V2.CsvExportController, :transactions_csv)
     get("/token-transfers-csv", V2.CsvExportController, :token_transfers_csv)
     get("/internal-transactions-csv", V2.CsvExportController, :internal_transactions_csv)

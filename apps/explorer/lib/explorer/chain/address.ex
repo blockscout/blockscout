@@ -805,8 +805,7 @@ defmodule Explorer.Chain.Address do
       it in InternalTransaction,
       order_by: [
         asc_nulls_first: it.error,
-        desc: it.block_number,
-        desc: it.block_index
+        desc: it.block_number
       ],
       limit: 1
     )
@@ -1007,5 +1006,28 @@ defmodule Explorer.Chain.Address do
       _ ->
         address_result
     end
+  end
+
+  @doc """
+  Constructs a query to retrieve the most recent internal transaction that created
+  a smart contract at the specified `address_hash`.
+
+  The query joins the `InternalTransaction` with its associated `Transaction`,
+  filters for internal transactions where the `created_contract_address_hash` matches
+  the given `address_hash`, and ensures that the transaction status is successful (`status == 1`).
+
+  The results are ordered by `block_number` in descending order, and the query is limited
+  to return only the most recent matching internal transaction.
+  """
+  @spec creation_internal_transaction_query(binary() | Hash.t()) :: Ecto.Query.t()
+  def creation_internal_transaction_query(address_hash) do
+    from(
+      it in InternalTransaction,
+      inner_join: t in assoc(it, :transaction),
+      where: it.created_contract_address_hash == ^address_hash,
+      where: t.status == ^1,
+      order_by: [desc: it.block_number],
+      limit: 1
+    )
   end
 end

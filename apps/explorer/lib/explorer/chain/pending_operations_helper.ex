@@ -3,8 +3,8 @@ defmodule Explorer.Chain.PendingOperationsHelper do
 
   import Ecto.Query
 
-  alias Explorer.Chain.{PendingBlockOperation, PendingTransactionOperation, Transaction}
-  alias Explorer.Repo
+  alias Explorer.Chain.{Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
+  alias Explorer.{Helper, Repo}
 
   @transactions_batch_size 1000
   @blocks_batch_size 10
@@ -68,7 +68,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
         :finish
 
       pbo_params ->
-        Repo.insert_all(PendingBlockOperation, add_timestamps(pbo_params), on_conflict: :nothing)
+        Repo.insert_all(PendingBlockOperation, Helper.add_timestamps(pbo_params), on_conflict: :nothing)
 
         block_numbers_to_delete = Enum.map(pbo_params, & &1.block_number)
 
@@ -101,7 +101,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
           |> where([t], t.block_number in ^pbo_block_numbers)
           |> select([t], %{transaction_hash: t.hash})
           |> Repo.all()
-          |> add_timestamps()
+          |> Helper.add_timestamps()
 
         Repo.insert_all(PendingTransactionOperation, pto_params, on_conflict: :nothing)
 
@@ -113,9 +113,22 @@ defmodule Explorer.Chain.PendingOperationsHelper do
     end
   end
 
-  defp add_timestamps(params) do
-    now = DateTime.utc_now()
+  @doc """
+  Generates a query to find pending block operations that match any of the given block hashes.
 
-    Enum.map(params, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
+  ## Parameters
+
+    - `block_hashes`: A list of block hashes to filter the pending block operations.
+
+  ## Returns
+
+    - An Ecto query that can be executed to retrieve the matching pending block operations.
+  """
+  @spec block_hash_in_query([Hash.Full.t()]) :: Ecto.Query.t()
+  def block_hash_in_query(block_hashes) do
+    from(
+      pending_ops in PendingBlockOperation,
+      where: pending_ops.block_hash in ^block_hashes
+    )
   end
 end

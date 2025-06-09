@@ -47,7 +47,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
   ## Implementation
 
   defp do_fetch(address_hash) when not is_nil(address_hash) do
-    token = Repo.get_by(Token, contract_address_hash: address_hash)
+    token = Repo.replica().get_by(Token, contract_address_hash: address_hash)
 
     if (token && !token.skip_metadata && is_nil(token.total_supply_updated_at_block)) or
          BlockNumber.get_max() - token.total_supply_updated_at_block > @ttl_in_blocks do

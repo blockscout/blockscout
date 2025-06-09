@@ -1,5 +1,6 @@
 defmodule Explorer.Chain.Import.Runner.BlocksTest do
   use Explorer.DataCase
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Ecto.Query, only: [from: 2, select: 2, where: 2]
 
@@ -8,11 +9,8 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
   alias Explorer.Chain.{Address, Block, Transaction, PendingBlockOperation}
-  alias Explorer.Chain.Celo.PendingEpochBlockOperation
   alias Explorer.{Chain, Repo}
   alias Explorer.Utility.MissingBlockRange
-
-  alias Explorer.Chain.Celo.Helper, as: CeloHelper
 
   describe "run/1" do
     setup do
@@ -456,60 +454,6 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       assert %{block_number: ^number, block_hash: ^hash} = Repo.one(PendingBlockOperation)
     end
 
-    if Application.compile_env(:explorer, :chain_type) == :celo do
-      test "inserts pending_epoch_block_operations only for epoch blocks",
-           %{consensus_block: %{miner_hash: miner_hash}, options: options} do
-        epoch_block_number = CeloHelper.blocks_per_epoch()
-
-        %{hash: hash} =
-          epoch_block_params =
-          params_for(
-            :block,
-            miner_hash: miner_hash,
-            consensus: true,
-            number: epoch_block_number
-          )
-
-        non_epoch_block_params =
-          params_for(
-            :block,
-            miner_hash: miner_hash,
-            consensus: true,
-            number: epoch_block_number + 1
-          )
-
-        insert_block(epoch_block_params, options)
-        insert_block(non_epoch_block_params, options)
-
-        assert %{block_hash: ^hash} = Repo.one(PendingEpochBlockOperation)
-      end
-
-      test "inserts pending_epoch_block_operations only for consensus epoch blocks",
-           %{consensus_block: %{miner_hash: miner_hash}, options: options} do
-        %{hash: hash} =
-          first_epoch_block_params =
-          params_for(
-            :block,
-            miner_hash: miner_hash,
-            consensus: true,
-            number: CeloHelper.blocks_per_epoch()
-          )
-
-        second_epoch_block_params =
-          params_for(
-            :block,
-            miner_hash: miner_hash,
-            consensus: false,
-            number: CeloHelper.blocks_per_epoch() * 2
-          )
-
-        insert_block(first_epoch_block_params, options)
-        insert_block(second_epoch_block_params, options)
-
-        assert %{block_hash: ^hash} = Repo.one(PendingEpochBlockOperation)
-      end
-    end
-
     test "change instance owner if was token transfer in older blocks",
          %{consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
       block_number = block_number + 2
@@ -674,6 +618,151 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
                 ]
               }} = Multi.new() |> Blocks.run(changes_list, options) |> Repo.transaction()
     end
+
+    if @chain_type == :celo do
+      test "removes celo epoch rewards and sets fetched? = false when starting block loses consensus", %{
+        consensus_block: %{miner_hash: miner_hash} = parent_block,
+        options: options
+      } do
+        start_processing_block = insert(:block, number: 1, consensus: true, parent_hash: parent_block.hash)
+        end_processing_block = insert(:block, number: 2, consensus: true, parent_hash: start_processing_block.hash)
+        address = insert(:address)
+
+        epoch = %{
+          number: 1,
+          start_processing_block_hash: start_processing_block.hash,
+          end_processing_block_hash: end_processing_block.hash,
+          fetched?: true
+        }
+
+        election_reward = %{
+          epoch_number: epoch.number,
+          account_address_hash: address.hash,
+          amount: 100,
+          associated_account_address_hash: address.hash,
+          type: :validator
+        }
+
+        distribution = %{
+          epoch_number: epoch.number,
+          community_transfer_log_index: 1
+        }
+
+        {:ok, _imported} =
+          Chain.import(%{
+            celo_epochs: %{params: [epoch]},
+            celo_election_rewards: %{params: [election_reward]},
+            celo_epoch_rewards: %{params: [distribution]}
+          })
+
+        assert Repo.get_by(Explorer.Chain.Celo.Epoch, number: epoch.number)
+        assert Repo.get_by(Explorer.Chain.Celo.EpochReward, epoch_number: epoch.number)
+        assert Repo.get_by(Explorer.Chain.Celo.ElectionReward, epoch_number: epoch.number)
+
+        block_params =
+          params_for(:block,
+            number: start_processing_block.number,
+            miner_hash: miner_hash,
+            parent_hash: parent_block.hash
+          )
+
+        start_processing_block_hash = start_processing_block.hash
+        start_processing_block_number = start_processing_block.number
+        end_processing_block_hash = end_processing_block.hash
+        end_processing_block_number = end_processing_block.number
+
+        assert {:ok,
+                %{
+                  celo_delete_epoch_rewards: [
+                    %Explorer.Chain.Celo.Epoch{
+                      number: 1,
+                      fetched?: false,
+                      start_processing_block_hash: ^start_processing_block_hash,
+                      end_processing_block_hash: ^end_processing_block_hash
+                    }
+                  ],
+                  lose_consensus: [
+                    {^start_processing_block_number, ^start_processing_block_hash},
+                    {^end_processing_block_number, ^end_processing_block_hash}
+                  ]
+                }} = insert_block(block_params, options)
+
+        assert Repo.get_by(Explorer.Chain.Celo.Epoch, number: epoch.number).fetched? == false
+        assert Repo.get_by(Explorer.Chain.Celo.EpochReward, epoch_number: epoch.number) == nil
+        assert Repo.get_by(Explorer.Chain.Celo.ElectionReward, epoch_number: epoch.number) == nil
+      end
+
+      test "removes celo epoch rewards and sets fetched? = false when ending block loses consensus", %{
+        consensus_block: %{miner_hash: miner_hash},
+        options: options
+      } do
+        start_processing_block = insert(:block, number: 0, consensus: true)
+        intermediate_block = insert(:block, number: 1, consensus: true)
+        end_processing_block = insert(:block, number: 2, consensus: true, parent_hash: intermediate_block.hash)
+        address = insert(:address)
+
+        epoch = %{
+          number: 1,
+          start_processing_block_hash: start_processing_block.hash,
+          end_processing_block_hash: end_processing_block.hash,
+          fetched?: true
+        }
+
+        election_reward = %{
+          epoch_number: epoch.number,
+          account_address_hash: address.hash,
+          amount: 100,
+          associated_account_address_hash: address.hash,
+          type: :validator
+        }
+
+        distribution = %{
+          epoch_number: epoch.number,
+          community_transfer_log_index: 1
+        }
+
+        {:ok, _imported} =
+          Chain.import(%{
+            celo_epochs: %{params: [epoch]},
+            celo_election_rewards: %{params: [election_reward]},
+            celo_epoch_rewards: %{params: [distribution]}
+          })
+
+        assert Repo.get_by(Explorer.Chain.Celo.Epoch, number: epoch.number)
+        assert Repo.get_by(Explorer.Chain.Celo.EpochReward, epoch_number: epoch.number)
+        assert Repo.get_by(Explorer.Chain.Celo.ElectionReward, epoch_number: epoch.number)
+
+        block_params =
+          params_for(:block,
+            number: end_processing_block.number,
+            miner_hash: miner_hash,
+            parent_hash: intermediate_block.hash
+          )
+
+        start_processing_block_hash = start_processing_block.hash
+        end_processing_block_hash = end_processing_block.hash
+        end_processing_block_number = end_processing_block.number
+
+        assert {:ok,
+                %{
+                  celo_delete_epoch_rewards: [
+                    %Explorer.Chain.Celo.Epoch{
+                      number: 1,
+                      fetched?: false,
+                      start_processing_block_hash: ^start_processing_block_hash,
+                      end_processing_block_hash: ^end_processing_block_hash
+                    }
+                  ],
+                  lose_consensus: [
+                    {^end_processing_block_number, ^end_processing_block_hash}
+                  ]
+                }} = insert_block(block_params, options)
+
+        assert Repo.get_by(Explorer.Chain.Celo.Epoch, number: epoch.number).fetched? == false
+        assert Repo.get_by(Explorer.Chain.Celo.EpochReward, epoch_number: epoch.number) == nil
+        assert Repo.get_by(Explorer.Chain.Celo.ElectionReward, epoch_number: epoch.number) == nil
+      end
+    end
   end
 
   describe "lose_consensus/5" do
@@ -692,7 +781,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
         timestamps: %{updated_at: DateTime.utc_now()}
       }
 
-      assert {:ok, [{0, _}, {1, _}]} = Blocks.lose_consensus(Repo, [], [1], [new_block1_changes], opts)
+      assert {:ok, [{0, _}, {1, _}]} = Blocks.process_blocks_consensus([new_block1_changes], Repo, opts)
     end
   end
 

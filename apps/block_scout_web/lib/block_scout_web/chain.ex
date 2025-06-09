@@ -10,8 +10,7 @@ defmodule BlockScoutWeb.Chain do
       hash_to_transaction: 1,
       number_to_block: 1,
       string_to_address_hash: 1,
-      string_to_block_hash: 1,
-      string_to_transaction_hash: 1
+      string_to_full_hash: 1
     ]
 
   import Explorer.PagingOptions,
@@ -199,7 +198,7 @@ defmodule BlockScoutWeb.Chain do
         "inserted_at" => inserted_at_string,
         "hash" => hash_string
       }) do
-    with {:ok, hash} <- string_to_transaction_hash(hash_string),
+    with {:ok, hash} <- string_to_full_hash(hash_string),
          {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string) do
       [
         paging_options: %{
@@ -289,8 +288,8 @@ defmodule BlockScoutWeb.Chain do
     with {block_number, ""} <- Integer.parse(block_number_string),
          {index, ""} <- Integer.parse(index_string),
          {index_in_batch, ""} <- Integer.parse(index_in_batch_string),
-         {:ok, batch_transaction_hash} <- string_to_transaction_hash(batch_transaction_hash_string),
-         {:ok, batch_block_hash} <- string_to_block_hash(batch_block_hash_string),
+         {:ok, batch_transaction_hash} <- string_to_full_hash(batch_transaction_hash_string),
+         {:ok, batch_block_hash} <- string_to_full_hash(batch_block_hash_string),
          {batch_log_index, ""} <- Integer.parse(batch_log_index_string) do
       [
         paging_options: %{
@@ -314,8 +313,8 @@ defmodule BlockScoutWeb.Chain do
       when is_binary(batch_log_index_string) and is_binary(batch_block_hash_string) and
              is_binary(batch_transaction_hash_string) and is_binary(index_in_batch_string) do
     with {index_in_batch, ""} <- Integer.parse(index_in_batch_string),
-         {:ok, batch_transaction_hash} <- string_to_transaction_hash(batch_transaction_hash_string),
-         {:ok, batch_block_hash} <- string_to_block_hash(batch_block_hash_string),
+         {:ok, batch_transaction_hash} <- string_to_full_hash(batch_transaction_hash_string),
+         {:ok, batch_block_hash} <- string_to_full_hash(batch_block_hash_string),
          {batch_log_index, ""} <- Integer.parse(batch_log_index_string) do
       [
         paging_options: %{
@@ -395,7 +394,7 @@ defmodule BlockScoutWeb.Chain do
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string})
       when is_binary(inserted_at_string) and is_binary(hash_string) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
-         {:ok, hash} <- string_to_transaction_hash(hash_string) do
+         {:ok, hash} <- string_to_full_hash(hash_string) do
       [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
     else
       _ ->
@@ -445,7 +444,7 @@ defmodule BlockScoutWeb.Chain do
 
   def paging_options(%{"l1_block_number" => block_number, "transaction_hash" => transaction_hash}) do
     with {block_number, ""} <- Integer.parse(block_number),
-         {:ok, transaction_hash} <- string_to_transaction_hash(transaction_hash) do
+         {:ok, transaction_hash} <- string_to_full_hash(transaction_hash) do
       [paging_options: %{@default_paging_options | key: {block_number, transaction_hash}}]
     else
       _ ->
@@ -472,7 +471,7 @@ defmodule BlockScoutWeb.Chain do
 
   def paging_options(%{"timestamp" => timestamp, "init_transaction_hash" => init_transaction_hash}) do
     with {ts, ""} <- Integer.parse(timestamp),
-         {:ok, transaction_hash} <- string_to_transaction_hash(init_transaction_hash) do
+         {:ok, transaction_hash} <- string_to_full_hash(init_transaction_hash) do
       [paging_options: %{@default_paging_options | key: {ts, transaction_hash}}]
     else
       _ ->
@@ -822,7 +821,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp block_or_transaction_or_operation_or_blob_from_param(param) do
-    with {:ok, hash} <- string_to_transaction_hash(param),
+    with {:ok, hash} <- string_to_full_hash(param),
          {:error, :not_found} <- hash_to_transaction(hash),
          {:error, :not_found} <- hash_to_block(hash),
          {:error, :not_found} <- hash_to_user_operation(hash),
@@ -900,7 +899,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   def parse_block_hash_or_number_param("0x" <> _ = param) do
-    case string_to_block_hash(param) do
+    case string_to_full_hash(param) do
       {:ok, hash} ->
         {:ok, :hash, hash}
 
