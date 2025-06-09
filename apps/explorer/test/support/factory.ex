@@ -749,6 +749,10 @@ defmodule Explorer.Factory do
     %MultichainSearchDb.MainExportQueue{}
   end
 
+  def multichain_search_db_export_balances_queue_factory do
+    %MultichainSearchDb.BalancesExportQueue{}
+  end
+
   def internal_transaction_factory() do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)

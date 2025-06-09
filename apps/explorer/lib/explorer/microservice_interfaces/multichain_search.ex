@@ -4,12 +4,13 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   """
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.{Block, Hash, Transaction}
+  alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Block.Range
-  alias Explorer.Chain.MultichainSearchDb.MainExportQueue
+  alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue}
   alias Explorer.{Helper, HttpClient, Repo}
   alias Explorer.Utility.Microservice
 
+  require Decimal
   require Logger
 
   @max_concurrency 5
@@ -114,8 +115,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     Logger.error(fn ->
       [
         "Error while sending request to microservice url: #{url}, ",
-        "request_body: #{inspect(data_to_retry |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}, ",
-        "error_reason: #{inspect(reason, limit: :infinity, printable_limit: :infinity)}"
+        "error_reason: #{inspect(reason, limit: :infinity, printable_limit: :infinity)}, ",
+        "request_body: #{inspect(data_to_retry |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}"
       ]
     end)
 
@@ -134,9 +135,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     Logger.error(fn ->
       [
         "Error while sending request to microservice url: #{url}, ",
-        "request_body: #{inspect(data_to_retry |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}, ",
         "status_code: #{inspect(status_code)}, ",
-        "response_body: #{inspect(response_body, limit: :infinity, printable_limit: :infinity)}"
+        "response_body: #{inspect(response_body, limit: :infinity, printable_limit: :infinity)}, ",
+        "request_body: #{inspect(data_to_retry |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}"
       ]
     end)
 
@@ -151,50 +152,66 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
        ) do
     log_error(error)
 
-    prepared_data = prepare_export_data_for_queue(data_to_retry)
+    {prepared_main_data, prepared_balances_data} = prepare_export_data_for_queue(data_to_retry)
 
     Repo.insert_all(
       MainExportQueue,
-      Helper.add_timestamps(prepared_data),
+      Helper.add_timestamps(prepared_main_data),
       on_conflict: MainExportQueue.default_on_conflict(),
       conflict_target: [:hash, :hash_type]
+    )
+
+    Repo.insert_all(
+      BalancesExportQueue,
+      Helper.add_timestamps(prepared_balances_data),
+      on_conflict: BalancesExportQueue.default_on_conflict(),
+      conflict_target:
+        {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash_or_native, COALESCE(token_id, -1))>}
     )
   end
 
   defp on_error(_), do: :ignore
 
   @doc """
-  Sends the provided data to the export queue if the feature is enabled.
+  Sends provided blockchain data to the appropriate export queues for further processing.
 
-  Accepts a map with `:addresses`, `:blocks`, and `:transactions` keys, each containing a list.
-  If all lists are empty, returns `:ignore`.
-
-  Otherwise, splits the data into chunks, prepares each chunk for export, and inserts them into the `MainExportQueue` table.
-  If the feature is not enabled, returns `:ignore`.
+  Accepts a map containing lists of addresses, blocks, transactions, and address current token balances.
+  If all lists are empty, returns `:ignore`. Otherwise, if the export functionality is enabled,
+  the data is split into chunks, prepared, and inserted into the `MainExportQueue` and `BalancesExportQueue` tables.
+  If the export functionality is disabled, returns `:ignore`.
 
   ## Parameters
 
-    - data: a map with the following keys:
-      - `:addresses` - list of addresses
-      - `:blocks` - list of blocks
-      - `:transactions` - list of transactions
+    - `data`: A map with the following keys:
+      - `:addresses` - List of address data.
+      - `:blocks` - List of block data.
+      - `:transactions` - List of transaction data.
+      - `:address_current_token_balances` - List of address token balance data.
 
   ## Returns
 
-    - `:ok` on successful insertion
-    - `:ignore` if the feature is disabled or the data is empty
+    - `:ok` if the data was successfully sent to the queues.
+    - `:ignore` if the data is empty or the export functionality is disabled.
   """
-  @spec send_data_to_queue(%{addresses: list(), blocks: list(), transactions: list()}) :: :ignore | :ok
-  def send_data_to_queue(%{addresses: [], blocks: [], transactions: []}), do: :ignore
+  @spec send_data_to_queue(%{
+          addresses: list(),
+          blocks: list(),
+          transactions: list(),
+          address_current_token_balances: list()
+        }) :: :ignore | :ok
+  def send_data_to_queue(%{addresses: [], blocks: [], transactions: [], address_current_token_balances: []}),
+    do: :ignore
 
   def send_data_to_queue(data) do
     if enabled?() do
       data
       |> extract_batch_import_params_into_chunks()
       |> Enum.each(fn data_chunk ->
-        prepared_data = prepare_export_data_for_queue(data_chunk)
+        {prepared_main_data, prepared_balances_data} = prepare_export_data_for_queue(data_chunk)
 
-        Repo.insert_all(MainExportQueue, Helper.add_timestamps(prepared_data), on_conflict: :nothing)
+        Repo.insert_all(MainExportQueue, Helper.add_timestamps(prepared_main_data), on_conflict: :nothing)
+
+        Repo.insert_all(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data), on_conflict: :nothing)
       end)
 
       :ok
@@ -204,9 +221,18 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   end
 
   # sobelow_skip ["DOS.StringToAtom"]
-  defp prepare_export_data_for_queue(%{addresses: addresses, hashes: hashes, block_ranges: block_ranges}) do
+  defp prepare_export_data_for_queue(%{
+         addresses: addresses,
+         hashes: hashes,
+         block_ranges: block_ranges,
+         address_coin_balances: address_coin_balances,
+         address_token_balances: address_token_balances
+       }) do
     block_range =
       case block_ranges do
+        [%{min_block_number: nil, max_block_number: nil} | _] ->
+          nil
+
         [%{min_block_number: min_str, max_block_number: max_str} | _] ->
           with {min_num, ""} <- Integer.parse(min_str),
                {max_num, ""} <- Integer.parse(max_str) do
@@ -239,7 +265,39 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         }
       end)
 
-    hashes_to_queue ++ addresses_to_queue
+    main_queue = hashes_to_queue ++ addresses_to_queue
+
+    coin_balances_queue =
+      address_coin_balances
+      |> Enum.map(fn %{address_hash: address_hash, value: value} ->
+        %{
+          address_hash: Helper.hash_to_binary(address_hash),
+          token_contract_address_hash_or_native: "native",
+          value: value
+        }
+      end)
+
+    token_balances_queue =
+      address_token_balances
+      |> Enum.map(fn %{
+                       address_hash: address_hash,
+                       token_address_hash: token_address_hash,
+                       value: value,
+                       token_id: token_id
+                     } ->
+        %{
+          address_hash: Helper.hash_to_binary(address_hash),
+          token_contract_address_hash_or_native: Helper.hash_to_binary(token_address_hash),
+          # value is of Wei type in Explorer.Chain.Address.CoinBalance
+          # value is of Decimal type in Explorer.Chain.Address.TokenBalance
+          value: if(Decimal.is_decimal(value), do: value |> Wei.cast() |> elem(1), else: value),
+          token_id: token_id
+        }
+      end)
+
+    balances_queue = coin_balances_queue ++ token_balances_queue
+
+    {main_queue, balances_queue}
   end
 
   @spec http_post_request(String.t(), map()) :: {:ok, any()} | {:error, String.t()}
@@ -296,37 +354,53 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
             chain_id: String.t(),
             addresses: [String.t()],
             block_ranges: [%{min_block_number: String.t(), max_block_number: String.t()}],
-            hashes: [%{hash: String.t(), hash_type: String.t()}]
+            hashes: [%{hash: String.t(), hash_type: String.t()}],
+            address_token_balances: [map()],
+            address_coin_balances: [map()]
           }
         ]
-  def extract_batch_import_params_into_chunks(
-        %{
-          addresses: raw_addresses,
-          transactions: transactions
-        } = params
-      ) do
+  def extract_batch_import_params_into_chunks(params) do
     block_ranges =
-      if Map.has_key?(params, :block_ranges), do: params.block_ranges, else: get_block_ranges(params.blocks)
+      if Map.has_key?(params, :block_ranges),
+        do: params.block_ranges,
+        else: get_block_ranges(Map.get(params, :blocks, []))
 
-    addresses =
-      raw_addresses
-      |> Enum.uniq()
+    {addresses, address_coin_balances} =
+      params
+      |> Map.get(:addresses, [])
       |> Repo.preload([:token, :smart_contract])
-      |> Enum.map(&format_address(&1))
+      |> Enum.reduce({[], []}, fn address, {acc_addresses, acc_coin_balances} ->
+        {[format_address(address) | acc_addresses], [format_address_coin_balance(address) | acc_coin_balances]}
+      end)
 
     block_hashes =
       if Map.has_key?(params, :block_hashes),
         do: format_block_hashes(params.block_hashes),
-        else: format_blocks(params.blocks)
+        else: format_blocks(Map.get(params, :blocks, []))
 
-    transaction_hashes = format_transactions(transactions)
+    transaction_hashes = format_transactions(Map.get(params, :transactions, []))
 
     block_transaction_hashes = block_hashes ++ transaction_hashes
 
     indexed_addresses_chunks =
       addresses
+      |> Enum.uniq()
       |> Enum.chunk_every(addresses_chunk_size())
       |> Enum.with_index()
+
+    indexed_address_coin_balances_chunks =
+      address_coin_balances
+      |> Enum.uniq()
+      |> Enum.reject(&is_nil(&1.value))
+      |> Enum.chunk_every(addresses_chunk_size())
+
+    address_token_balances =
+      if Map.has_key?(params, :address_current_token_balances) do
+        params.address_current_token_balances
+        |> Enum.map(&format_address_token_balance/1)
+      else
+        []
+      end
 
     api_key = api_key()
     chain_id = ChainId.get_id()
@@ -336,7 +410,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       api_key: api_key,
       chain_id: chain_id_string,
       addresses: [],
-      block_ranges: []
+      block_ranges: [],
+      address_token_balances: [],
+      address_coin_balances: []
     }
 
     if Enum.empty?(indexed_addresses_chunks) do
@@ -344,17 +420,21 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         base_data_chunk
         |> Map.put(:hashes, block_transaction_hashes)
         |> Map.put(:block_ranges, block_ranges)
+        |> Map.put(:address_token_balances, address_token_balances)
       ]
     else
       Enum.map(indexed_addresses_chunks, fn {addresses_chunk, index} ->
-        # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+        # credo:disable-for-lines:3 Credo.Check.Refactor.Nesting
         hashes_in_chunk = if index == 0, do: block_transaction_hashes, else: []
         block_ranges_in_chunk = if index == 0, do: block_ranges, else: []
+        address_token_balances_in_chunk = if index == 0, do: address_token_balances, else: []
 
         base_data_chunk
         |> Map.put(:addresses, addresses_chunk)
+        |> Map.put(:address_coin_balances, indexed_address_coin_balances_chunks |> Enum.at(index) || [])
         |> Map.put(:hashes, hashes_in_chunk)
         |> Map.put(:block_ranges, block_ranges_in_chunk)
+        |> Map.put(:address_token_balances, address_token_balances_in_chunk)
       end)
     end
   end
@@ -369,6 +449,22 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       token_name: get_token_name(address.token),
       token_type: get_token_type(address.token),
       contract_name: get_smart_contract_name(address.smart_contract)
+    }
+  end
+
+  defp format_address_coin_balance(address) do
+    %{
+      address_hash: Hash.to_string(address.hash),
+      value: address.fetched_coin_balance
+    }
+  end
+
+  defp format_address_token_balance(address_current_token_balance) do
+    %{
+      address_hash: Hash.to_string(address_current_token_balance.address_hash),
+      token_address_hash: Hash.to_string(address_current_token_balance.token_contract_address_hash),
+      token_id: address_current_token_balance.token_id,
+      value: address_current_token_balance.value
     }
   end
 

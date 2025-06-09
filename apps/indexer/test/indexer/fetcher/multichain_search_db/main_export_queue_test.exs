@@ -132,10 +132,10 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
       end)
 
       address_1 = insert(:address)
+      address_1_hash_string = to_string(address_1) |> String.downcase()
       address_2 = insert(:address)
       address_2_hash_string = to_string(address_2) |> String.downcase()
       address_3 = insert(:address)
-      address_3_hash_string = to_string(address_3) |> String.downcase()
       block = insert(:block, number: 1)
       block_number_string = to_string(block.number)
       block_hash_string = to_string(block.hash)
@@ -188,7 +188,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
                         is_verified_contract: false
                       },
                       %{
-                        hash: ^address_3_hash_string,
+                        hash: ^address_1_hash_string,
                         token_type: "UNSPECIFIED",
                         is_contract: false,
                         token_name: nil,
