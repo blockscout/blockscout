@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.MultichainSearchDbExport.QueueProcessor do
+defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor do
   @moduledoc """
   Exports blockchain data to Multichain Search DB service from the queue.
   """
@@ -9,7 +9,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.QueueProcessor do
   use Spandex.Decorators
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Hash, MultichainSearchDbExportQueue, Transaction}
+  alias Explorer.Chain.{Address, Hash, MultichainSearchDb.MainExportQueue, Transaction}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
 
   alias Indexer.BufferedTask
@@ -34,7 +34,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.QueueProcessor do
   @impl BufferedTask
   def init(initial_acc, reducer, _) do
     {:ok, acc} =
-      MultichainSearchDbExportQueue.stream_multichain_db_data_batch_to_retry_export(
+      MainExportQueue.stream_multichain_db_data_batch_to_retry_export(
         initial_acc,
         fn data, acc ->
           IndexerHelper.reduce_if_queue_is_not_full(data, acc, reducer, __MODULE__)
@@ -78,7 +78,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.QueueProcessor do
           end)
 
         all_hashes
-        |> MultichainSearchDbExportQueue.by_hashes_query()
+        |> MainExportQueue.by_hashes_query()
         |> Repo.delete_all()
 
         :ok
@@ -127,7 +127,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.QueueProcessor do
 
   A map with prepared export data, including addresses, transactions, block ranges, and block hashes.
   """
-  @spec prepare_export_data([%{hash: binary, hash_type: atom, block_range: any()}]) :: %{
+  @spec prepare_export_data([%{hash: binary(), hash_type: atom(), block_range: any()}]) :: %{
           addresses: [Address.t()],
           transactions: [Transaction.t() | %{hash: String.t(), hash_type: String.t()}],
           block_ranges: [%{min_block_number: String.t(), max_block_number: String.t()}],

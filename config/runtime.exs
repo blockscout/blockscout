@@ -985,9 +985,14 @@ config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC1155,
 config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC721,
   enabled: !ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_ERC_721_SANITIZE_FETCHER", "false")
 
-config :indexer, Indexer.Fetcher.MultichainSearchDbExport.QueueProcessor.Supervisor,
+config :indexer, Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor.Supervisor,
   disabled?:
     ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_QUEUE_PROCESSOR_FETCHER") ||
+      is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
+
+config :indexer, Indexer.Fetcher.MultichainSearchDbExport.BalancesQueueProcessor.Supervisor,
+  disabled?:
+    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_BALANCES_EXPORT_QUEUE_PROCESSOR_FETCHER") ||
       is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
@@ -1071,7 +1076,7 @@ config :indexer, Indexer.Migrator.RecoveryWETHTokenTransfers,
     ConfigHelper.parse_integer_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_BLOCKS_BATCH_SIZE", 100_000),
   high_verbosity: ConfigHelper.parse_bool_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_HIGH_VERBOSITY", "true")
 
-config :indexer, Indexer.Fetcher.MultichainSearchDbExport.QueueProcessor,
+config :indexer, Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor,
   concurrency:
     ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_QUEUE_PROCESSOR_CONCURRENCY", 10),
   batch_size:
