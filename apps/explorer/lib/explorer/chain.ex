@@ -1158,7 +1158,8 @@ defmodule Explorer.Chain do
         assets_to_import = %{
           addresses: imported[:addresses] || [],
           blocks: imported[:blocks] || [],
-          transactions: imported[:transactions] || []
+          transactions: imported[:transactions] || [],
+          address_current_token_balances: imported[:address_current_token_balances] || []
         }
 
         MultichainSearch.send_data_to_queue(assets_to_import)
