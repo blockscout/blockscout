@@ -1101,8 +1101,6 @@ config :indexer, Indexer.Fetcher.Optimism.Interop.MessageQueue,
   export_expiration: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_INTEROP_EXPORT_EXPIRATION_DAYS", 10)
 
 config :indexer, Indexer.Fetcher.Optimism.Interop.MultichainExport,
-  multichain_api_url: ConfigHelper.parse_url_env_var("INDEXER_OPTIMISM_MULTICHAIN_API_URL", nil, true),
-  multichain_api_key: System.get_env("INDEXER_OPTIMISM_MULTICHAIN_API_KEY"),
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_MULTICHAIN_BATCH_SIZE", 100)
 
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,

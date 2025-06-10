@@ -8,8 +8,8 @@ defmodule Indexer.Fetcher.Optimism.Interop.MultichainExport do
     a default value. Once the found messages are sent, the module starts the next iteration for another
     batch of messages, and so on.
 
-    The base part of Multichain API URL is defined with INDEXER_OPTIMISM_MULTICHAIN_API_URL env variable.
-    API key for the remote service is defined with INDEXER_OPTIMISM_MULTICHAIN_API_KEY env variable.
+    The Multichain API endpoint URL is defined with MICROSERVICE_MULTICHAIN_SEARCH_URL env variable.
+    API key for the remote service is defined with MICROSERVICE_MULTICHAIN_SEARCH_API_KEY env variable.
   """
 
   use GenServer
@@ -18,17 +18,17 @@ defmodule Indexer.Fetcher.Optimism.Interop.MultichainExport do
   require Logger
 
   import Ecto.Query
-  import Explorer.Helper, only: [add_0x_prefix: 1]
+  import Explorer.Helper, only: [add_0x_prefix: 1, valid_url?: 1]
   import Indexer.Fetcher.Optimism.Interop.Helper, only: [log_cant_get_chain_id_from_rpc: 0]
 
   alias Ecto.Multi
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Optimism.InteropMessage
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Repo
   alias Indexer.Fetcher.Optimism
 
   @fetcher_name :optimism_interop_multichain_export
-  @api_endpoint_import "api/v1/import:batch"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -51,7 +51,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MultichainExport do
   end
 
   # Initialization function which is used instead of `init` to avoid Supervisor's stop in case of any critical issues
-  # during initialization. It checks the value of INDEXER_OPTIMISM_MULTICHAIN_API_URL and INDEXER_OPTIMISM_MULTICHAIN_API_KEY
+  # during initialization. It checks the value of MICROSERVICE_MULTICHAIN_SEARCH_URL and MICROSERVICE_MULTICHAIN_SEARCH_API_KEY
   # env variables and starts the handling loop.
   #
   # Also, the function fetches the current chain id to use it in the handler.
@@ -75,8 +75,11 @@ defmodule Indexer.Fetcher.Optimism.Interop.MultichainExport do
 
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    with {:api_url_is_nil, false} <- {:api_url_is_nil, is_nil(env[:multichain_api_url])},
-         {:api_key_is_nil, false} <- {:api_key_is_nil, is_nil(env[:multichain_api_key])},
+    multichain_api_url = MultichainSearch.batch_import_url()
+    multichain_api_key = MultichainSearch.api_key()
+
+    with {:api_url_is_valid, true} <- {:api_url_is_valid, valid_url?(multichain_api_url)},
+         {:api_key_is_nil, false} <- {:api_key_is_nil, is_nil(multichain_api_key)},
          chain_id = Optimism.fetch_chain_id(),
          {:chain_id_is_nil, false} <- {:chain_id_is_nil, is_nil(chain_id)} do
       Process.send(self(), :continue, [])
@@ -84,22 +87,22 @@ defmodule Indexer.Fetcher.Optimism.Interop.MultichainExport do
       {:noreply,
        %{
          chain_id: chain_id,
-         multichain_api_url: env[:multichain_api_url],
-         multichain_api_key: env[:multichain_api_key],
+         multichain_api_url: multichain_api_url,
+         multichain_api_key: multichain_api_key,
          batch_size: env[:batch_size]
        }}
     else
-      {:api_url_is_nil, true} ->
+      {:api_url_is_valid, false} ->
         # Multichain service API URL is not defined, so we don't start this module
         Logger.warning(
-          "INDEXER_OPTIMISM_MULTICHAIN_API_URL env variable is not defined. The module #{__MODULE__} will not start."
+          "MICROSERVICE_MULTICHAIN_SEARCH_URL env variable is invalid or not defined. The module #{__MODULE__} will not start."
         )
 
         {:stop, :normal, %{}}
 
       {:api_key_is_nil, true} ->
         Logger.error(
-          "INDEXER_OPTIMISM_MULTICHAIN_API_KEY env variable is not defined. The module #{__MODULE__} will not start."
+          "MICROSERVICE_MULTICHAIN_SEARCH_API_KEY env variable is not defined. The module #{__MODULE__} will not start."
         )
 
         {:stop, :normal, %{}}
@@ -134,7 +137,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MultichainExport do
 
     data = prepare_post_data(current_chain_id, messages, multichain_api_key)
 
-    if post_json_request(multichain_api_url <> @api_endpoint_import, data) do
+    if post_json_request(multichain_api_url, data) do
       {:ok, _} =
         messages
         |> Enum.reduce(Multi.new(), fn message, multi_acc ->

@@ -148,18 +148,23 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     - `{min_block_number, max_block_number, message_count}` tuple.
     - `{nil, nil, 0}` tuple if there are no messages.
   """
-  # sobelow_skip ["SQL.Query"]
   @spec get_incomplete_messages_stats(non_neg_integer(), non_neg_integer()) ::
           {non_neg_integer() | nil, non_neg_integer() | nil, non_neg_integer()}
   def get_incomplete_messages_stats(current_chain_id, start_block_number)
       when is_integer(current_chain_id) and is_integer(start_block_number) do
-    {:ok, %{rows: [[min_block_number, max_block_number, message_count]]}} =
-      Repo.query(
-        "SELECT MIN(block_number), MAX(block_number), COUNT(*) FROM #{__MODULE__.__schema__(:source)} WHERE ((relay_transaction_hash IS NULL AND init_chain_id = $1) OR (init_transaction_hash IS NULL AND relay_chain_id = $2)) AND block_number >= $3",
-        [current_chain_id, current_chain_id, start_block_number]
+    stats =
+      Repo.one(
+        from(
+          m in __MODULE__,
+          select: %{min: min(m.block_number), max: max(m.block_number), count: fragment("COUNT(*)")},
+          where:
+            ((is_nil(m.relay_transaction_hash) and m.init_chain_id == ^current_chain_id) or
+               (is_nil(m.init_transaction_hash) and m.relay_chain_id == ^current_chain_id)) and
+              m.block_number >= ^start_block_number
+        )
       )
 
-    {min_block_number, max_block_number, message_count}
+    {stats.min, stats.max, stats.count}
   end
 
   @doc """
@@ -215,6 +220,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
           ((not is_nil(m.init_transaction_hash) and m.init_chain_id == ^current_chain_id) or
              (not is_nil(m.relay_transaction_hash) and m.relay_chain_id == ^current_chain_id)) and
             not m.sent_to_multichain,
+        order_by: [desc: m.block_number],
         limit: ^limit
       )
     )

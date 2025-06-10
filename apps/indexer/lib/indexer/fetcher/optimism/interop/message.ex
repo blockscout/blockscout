@@ -439,4 +439,10 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
   end
 
   def fetcher_name, do: @fetcher_name
+
+  def l2tol2_cross_domain_messenger, do: @l2tol2_cross_domain_messenger
+
+  def max_int32, do: @max_int32
+
+  def sent_message_event_signature, do: @sent_message_event
 end
