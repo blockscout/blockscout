@@ -189,23 +189,30 @@ defmodule Explorer.Chain.SmartContract do
     }
   ]
 
-  @default_languages ~w(solidity vyper yul)a
+  @default_languages [
+    solidity: 1,
+    vyper: 2,
+    yul: 3,
+    geas: 5
+  ]
+
   @chain_type_languages (case @chain_type do
                            :arbitrum ->
-                             ~w(stylus_rust)a
+                             [stylus_rust: 4]
 
                            :zilliqa ->
-                             ~w(scilla)a
+                             [scilla: 4]
 
                            _ ->
-                             ~w()a
+                             []
                          end)
 
-  @languages @default_languages ++ @chain_type_languages
-  @languages_enum @languages |> Enum.with_index(1)
-  @language_string_to_atom @languages |> Map.new(&{to_string(&1), &1})
+  @languages_enum @default_languages ++ @chain_type_languages
+  @language_string_to_atom @languages_enum
+                           |> Enum.map(&elem(&1, 0))
+                           |> Map.new(&{to_string(&1), &1})
 
-  @type base_language :: :solidity | :vyper | :yul
+  @type base_language :: :solidity | :vyper | :yul | :geas
 
   case @chain_type do
     :arbitrum ->
