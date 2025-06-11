@@ -23,7 +23,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.Blackfort.Validator, as: ValidatorBlackfort
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
-  alias Indexer.Fetcher.MultichainSearchDbExport.QueueProcessor, as: MultichainSearchDbExportQueueProcessor
+  alias Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor, as: MultichainSearchDbExportQueueProcessor
   alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry

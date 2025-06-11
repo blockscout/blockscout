@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.MultichainSearchDbExportQueue do
+defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
   @moduledoc """
   Tracks data pending for export to the Multichain Service database.
   """
@@ -55,7 +55,7 @@ defmodule Explorer.Chain.MultichainSearchDbExportQueue do
   end
 
   @doc """
-  Builds a query to retrieve records from the `Explorer.Chain.MultichainSearchDbExportQueue` module
+  Builds a query to retrieve records from the `Explorer.Chain.MultichainSearchDb.MainExportQueue` module
   where the `hash` field matches any of the given `hashes`.
 
   ## Parameters

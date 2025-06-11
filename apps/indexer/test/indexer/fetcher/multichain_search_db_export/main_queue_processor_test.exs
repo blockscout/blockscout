@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.MultichainSearchDbExport.QueueProcessorTest do
+defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessorTest do
   use ExUnit.Case
   use Explorer.DataCase
 
@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.QueueProcessorTest do
   alias Explorer.Chain.Block.Range
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.TestHelper
-  alias Indexer.Fetcher.MultichainSearchDbExport.QueueProcessor, as: MultichainSearchDbExportQueueProcessor
+  alias Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor, as: MultichainSearchDbExportQueueProcessor
   alias Plug.Conn
 
   @moduletag :capture_log

@@ -4,7 +4,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
   import Mox
 
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.MultichainSearchDbExportQueue
+  alias Explorer.Chain.MultichainSearchDb.MainExportQueue
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.{Repo, TestHelper}
   alias Plug.Conn
@@ -53,7 +53,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         )
       end)
 
-      assert Repo.aggregate(MultichainSearchDbExportQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
 
       block_1 = insert(:block)
       block_2 = insert(:block)
@@ -71,7 +71,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       }
 
       assert {:ok, {:chunks_processed, _}} = MultichainSearch.batch_import(params)
-      assert Repo.aggregate(MultichainSearchDbExportQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
     end
 
     test "returns {:error, data_to_retry} when an error occurs during processing and 'multichain_search_db_export_queue' table is populated" do
@@ -98,7 +98,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         )
       end)
 
-      assert Repo.aggregate(MultichainSearchDbExportQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
 
       address_1 = insert(:address)
       address_2 = insert(:address)
@@ -130,8 +130,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                 ]
               }} == MultichainSearch.batch_import(params)
 
-      assert Repo.aggregate(MultichainSearchDbExportQueue, :count, :hash) == 6
-      records = Repo.all(MultichainSearchDbExportQueue)
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 6
+      records = Repo.all(MainExportQueue)
 
       assert Enum.all?(records, fn record ->
                (record.hash == address_1.hash.bytes && record.hash_type == :address) ||
@@ -159,7 +159,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       TestHelper.get_chain_id_mock()
 
-      assert Repo.aggregate(MultichainSearchDbExportQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
 
       block_1 = insert(:block)
       block_2 = insert(:block)
@@ -197,7 +197,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert Enum.count(results.block_ranges) == 1
       assert Enum.count(results.hashes) == 4
       # 7000 addresses + 2 blocks + 2 transactions
-      assert Repo.aggregate(MultichainSearchDbExportQueue, :count, :hash) == 7004
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 7004
     end
 
     test "returns {:error, data_to_retry} when an error occurs in all chunks during processing and 'multichain_search_db_export_queue' table is populated with all the input data" do
@@ -224,7 +224,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         )
       end)
 
-      assert Repo.aggregate(MultichainSearchDbExportQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
 
       addresses = 10 |> insert_list(:address)
 
@@ -239,7 +239,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert Enum.count(results.block_ranges) == 0
       assert Enum.count(results.hashes) == 0
 
-      assert Repo.aggregate(MultichainSearchDbExportQueue, :count, :hash) == 10
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 10
     end
 
     test "returns {:error, data_to_retry} when an error occurs in all chunks (and number of chunks more than @max_concurrency) during processing and 'multichain_search_db_export_queue' table is populated with all the input data" do
@@ -266,7 +266,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         )
       end)
 
-      assert Repo.aggregate(MultichainSearchDbExportQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
 
       addresses = 15 |> insert_list(:address)
 
@@ -281,7 +281,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert Enum.count(results.block_ranges) == 0
       assert Enum.count(results.hashes) == 0
 
-      assert Repo.aggregate(MultichainSearchDbExportQueue, :count, :hash) == 15
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 15
     end
   end
 

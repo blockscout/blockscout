@@ -6,7 +6,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Block, Hash, Transaction}
   alias Explorer.Chain.Block.Range
-  alias Explorer.Chain.MultichainSearchDbExportQueue
+  alias Explorer.Chain.MultichainSearchDb.MainExportQueue
   alias Explorer.{Helper, Repo}
   alias Explorer.Utility.Microservice
   alias HTTPoison.Response
@@ -149,9 +149,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     prepared_data = prepare_export_data_for_queue(data_to_retry)
 
     Repo.insert_all(
-      MultichainSearchDbExportQueue,
+      MainExportQueue,
       Helper.add_timestamps(prepared_data),
-      on_conflict: MultichainSearchDbExportQueue.default_on_conflict(),
+      on_conflict: MainExportQueue.default_on_conflict(),
       conflict_target: [:hash, :hash_type]
     )
   end
@@ -164,7 +164,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   Accepts a map with `:addresses`, `:blocks`, and `:transactions` keys, each containing a list.
   If all lists are empty, returns `:ignore`.
 
-  Otherwise, splits the data into chunks, prepares each chunk for export, and inserts them into the `MultichainSearchDbExportQueue` table.
+  Otherwise, splits the data into chunks, prepares each chunk for export, and inserts them into the `MainExportQueue` table.
   If the feature is not enabled, returns `:ignore`.
 
   ## Parameters
@@ -189,7 +189,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       |> Enum.each(fn data_chunk ->
         prepared_data = prepare_export_data_for_queue(data_chunk)
 
-        Repo.insert_all(MultichainSearchDbExportQueue, Helper.add_timestamps(prepared_data), on_conflict: :nothing)
+        Repo.insert_all(MainExportQueue, Helper.add_timestamps(prepared_data), on_conflict: :nothing)
       end)
 
       :ok
@@ -214,7 +214,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           nil
       end
 
-    hashes_to_retry =
+    hashes_to_queue =
       hashes
       |> Enum.map(
         &%{
@@ -224,7 +224,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         }
       )
 
-    addresses_to_retry =
+    addresses_to_queue =
       addresses
       |> Enum.map(fn %{hash: address_hash_string} ->
         %{
@@ -234,7 +234,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         }
       end)
 
-    hashes_to_retry ++ addresses_to_retry
+    hashes_to_queue ++ addresses_to_queue
   end
 
   @spec http_post_request(String.t(), map()) :: {:ok, any()} | {:error, String.t()}
