@@ -43,40 +43,44 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       |> prepare_distribution()
 
     aggregated_election_rewards_json =
-      aggregated_election_rewards
-      |> Map.new(fn {type, %{total: total, count: count, token: token}} ->
-        {type,
-         %{
-           total: total,
-           count: count,
-           token:
-             TokenView.render("token.json", %{
-               token: token,
-               contract_address_hash: token && token.contract_address_hash
-             })
-         }}
-      end)
-      # For L2, delegated payments are implemented differently. They're
-      # distributed on-demand via direct payments rather than through epoch
-      # processing, so we need to handle them separately.
-      |> (&(if CeloHelper.premigration_epoch_number?(epoch.number) do
-              &1
-            else
-              &1
-              |> Map.put(:delegated_payment, nil)
-            end)).()
+      if epoch.fetched? do
+        aggregated_election_rewards
+        |> Map.new(fn {type, %{total: total, count: count, token: token}} ->
+          {type,
+           %{
+             total: total,
+             count: count,
+             token:
+               TokenView.render("token.json", %{
+                 token: token,
+                 contract_address_hash: token && token.contract_address_hash
+               })
+           }}
+        end)
+        # For L2, delegated payments are implemented differently. They're
+        # distributed on-demand via direct payments rather than through epoch
+        # processing, so we need to handle them separately.
+        |> (&(if CeloHelper.pre_migration_epoch_number?(epoch.number) do
+                &1
+              else
+                &1
+                |> Map.put(:delegated_payment, nil)
+              end)).()
+      end
 
     %{
       number: epoch.number,
+      type: epoch_type(epoch),
+      is_finalized: epoch.fetched?,
       start_block_number: epoch.start_block_number,
       end_block_number: epoch.end_block_number,
-      timestamp: epoch.end_processing_block.timestamp,
-      start_processing_block_hash: epoch.start_processing_block.hash,
-      start_processing_block_number: epoch.start_processing_block.number,
-      end_processing_block_hash: epoch.end_processing_block.hash,
-      end_processing_block_number: epoch.end_processing_block.number,
       distribution: distribution_json,
-      aggregated_election_rewards: aggregated_election_rewards_json
+      aggregated_election_rewards: aggregated_election_rewards_json,
+      timestamp: epoch.end_processing_block && epoch.end_processing_block.timestamp,
+      start_processing_block_hash: epoch.start_processing_block && epoch.start_processing_block.hash,
+      start_processing_block_number: epoch.start_processing_block && epoch.start_processing_block.number,
+      end_processing_block_hash: epoch.end_processing_block && epoch.end_processing_block.hash,
+      end_processing_block_number: epoch.end_processing_block && epoch.end_processing_block.number
     }
   end
 
@@ -167,6 +171,12 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     }
   end
 
+  defp epoch_type(epoch) do
+    epoch.number
+    |> CeloHelper.pre_migration_epoch_number?()
+    |> if(do: "L1", else: "L2")
+  end
+
   @doc """
   Extends the JSON output with a sub-map containing information related to Celo,
   such as the epoch number, whether the block is an epoch block, and the routing
@@ -249,29 +259,38 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   @spec prepare_epoch(Epoch.t()) :: map()
   defp prepare_epoch(epoch) do
-    community_transfer =
-      epoch.distribution.community_transfer |> TokenTransferView.prepare_token_transfer_total()
+    distribution_json =
+      if epoch.distribution do
+        community_transfer =
+          epoch.distribution.community_transfer
+          |> TokenTransferView.prepare_token_transfer_total()
 
-    carbon_offsetting_transfer =
-      epoch.distribution.carbon_offsetting_transfer |> TokenTransferView.prepare_token_transfer_total()
+        carbon_offsetting_transfer =
+          epoch.distribution.carbon_offsetting_transfer
+          |> TokenTransferView.prepare_token_transfer_total()
+
+        %{
+          community_transfer: community_transfer,
+          carbon_offsetting_transfer: carbon_offsetting_transfer,
+          transfers_total: %{
+            decimals: "18",
+            value:
+              Decimal.add(
+                community_transfer["value"],
+                carbon_offsetting_transfer["value"]
+              )
+          }
+        }
+      end
 
     %{
       number: epoch.number,
+      type: epoch_type(epoch),
       start_block_number: epoch.start_block_number,
       end_block_number: epoch.end_block_number,
-      timestamp: epoch.end_processing_block.timestamp,
-      distribution: %{
-        community_transfer: community_transfer,
-        carbon_offsetting_transfer: carbon_offsetting_transfer,
-        transfers_total: %{
-          decimals: "18",
-          value:
-            Decimal.add(
-              community_transfer["value"],
-              carbon_offsetting_transfer["value"]
-            )
-        }
-      }
+      timestamp: epoch.end_processing_block && epoch.end_processing_block.timestamp,
+      is_finalized: epoch.fetched?,
+      distribution: distribution_json
     }
   end
 
