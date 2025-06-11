@@ -276,8 +276,8 @@ defmodule BlockScoutWeb.API.V2.CeloView do
             decimals: "18",
             value:
               Decimal.add(
-                community_transfer["value"],
-                carbon_offsetting_transfer["value"]
+                (community_transfer && community_transfer["value"]) || Decimal.new(0),
+                (carbon_offsetting_transfer && carbon_offsetting_transfer["value"]) || Decimal.new(0)
               )
           }
         }
