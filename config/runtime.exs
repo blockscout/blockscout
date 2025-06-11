@@ -1281,6 +1281,7 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, enabled: Conf
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch,
   chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_CHUNK_SIZE", 20),
+  ignore_numbers: System.get_env("INDEXER_POLYGON_ZKEVM_BATCHES_IGNORE", "0"),
   recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_RECHECK_INTERVAL", 60)
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor,
