@@ -143,7 +143,12 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesQueueProcessor do
   Native coin balances are grouped under `:address_coin_balances`, while token balances are grouped under `:address_token_balances`. The function also converts binary hashes to string representations using the `Hash` struct.
   """
   @spec prepare_export_data([
-          %{address_hash: binary(), token_contract_address_hash_or_native: binary(), value: Decimal.t()}
+          %{
+            address_hash: binary(),
+            token_contract_address_hash_or_native: binary(),
+            value: Decimal.t() | nil,
+            token_id: Decimal.t() | nil
+          }
         ]) :: %{
           address_coin_balances: list(),
           address_token_balances: list()

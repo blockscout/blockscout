@@ -745,7 +745,7 @@ defmodule Explorer.Factory do
     %PendingTransactionOperation{}
   end
 
-  def multichain_search_db_balances_export_queue_factory do
+  def multichain_search_db_export_balances_queue_factory do
     %MultichainSearchDb.BalancesExportQueue{}
   end
 

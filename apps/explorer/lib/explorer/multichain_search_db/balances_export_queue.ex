@@ -13,7 +13,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
   @allowed_attrs @optional_attrs ++ @required_attrs
 
   @primary_key false
-  typed_schema "multichain_search_db_balances_export_queue" do
+  typed_schema "multichain_search_db_export_balances_queue" do
     field(:address_hash, :binary, null: false, primary_key: true)
     field(:token_contract_address_hash_or_native, :binary, null: false, primary_key: true)
     field(:value, Wei)
@@ -65,7 +65,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
 
   @doc """
   Returns an Ecto query that defines the default conflict resolution strategy for the
-  `multichain_search_db_balances_export_queue` table. On conflict, it increments the `retries_number`
+  `multichain_search_db_export_balances_queue` table. On conflict, it increments the `retries_number`
   (by using the value from `EXCLUDED.retries_number` or 0 if not present) and updates the
   `updated_at` field to the greatest value between the current and the new timestamp.
 
@@ -75,17 +75,18 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
   @spec default_on_conflict :: Ecto.Query.t()
   def default_on_conflict do
     from(
-      multichain_search_db_balances_export_queue in __MODULE__,
+      multichain_search_db_export_balances_queue in __MODULE__,
       update: [
         set: [
           retries_number: fragment("COALESCE(EXCLUDED.retries_number, 0) + 1"),
           updated_at:
-            fragment("GREATEST(?, EXCLUDED.updated_at)", multichain_search_db_balances_export_queue.updated_at)
+            fragment("GREATEST(?, EXCLUDED.updated_at)", multichain_search_db_export_balances_queue.updated_at)
         ]
       ]
     )
   end
 
+  # todo:
   @spec by_address_query([binary()]) :: Ecto.Query.t()
   def by_address_query(balances) do
     __MODULE__

@@ -5,6 +5,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.MultichainSearchDb.MainExportQueue
+  alias Explorer.Chain.Wei
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.{Repo, TestHelper}
   alias Plug.Conn
@@ -370,17 +371,29 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
     end
 
     test "returns chunks with the correct structure when all types of data is provided" do
-      address_1 = insert(:address)
-      address_2 = insert(:address)
+      address_1 = insert(:address, fetched_coin_balance: Decimal.new(100))
+      address_2 = insert(:address, fetched_coin_balance: Decimal.new(200))
       block_1 = insert(:block)
       block_2 = insert(:block)
       transaction_1 = insert(:transaction)
       transaction_2 = insert(:transaction)
 
+      token = insert(:token, contract_address: address_1, type: "ERC-20", name: "Test Token")
+
+      current_token_balance =
+        insert(:address_current_token_balance,
+          address: address_1,
+          token_type: "ERC-20",
+          token_id: nil,
+          token_contract_address_hash: token.contract_address_hash,
+          value: 30_000
+        )
+
       params = %{
         addresses: [address_1, address_2],
         blocks: [block_1, block_2],
-        transactions: [transaction_1, transaction_2]
+        transactions: [transaction_1, transaction_2],
+        address_current_token_balances: [current_token_balance]
       }
 
       chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
@@ -420,6 +433,20 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                %{
                  hash: "0x" <> Base.encode16(transaction_2.hash.bytes, case: :lower),
                  hash_type: "TRANSACTION"
+               }
+             ]
+
+      assert chunk[:address_coin_balances] == [
+               %{value: %Wei{value: Decimal.new("200")}, address_hash: to_string(address_2.hash)},
+               %{value: %Wei{value: Decimal.new("100")}, address_hash: to_string(address_1.hash)}
+             ]
+
+      assert chunk[:address_token_balances] == [
+               %{
+                 value: Decimal.new("30000"),
+                 address_hash: to_string(address_1.hash),
+                 token_id: nil,
+                 token_address_hash: to_string(token.contract_address_hash)
                }
              ]
     end
