@@ -455,16 +455,10 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     if interop_messages == [] do
       out_json
     else
-      op_interop =
-        if length(interop_messages) == 1 do
-          # if there is only one message, it should be returned as an item instead of the list of one item
-          # for backward compatibility
-          Enum.at(interop_messages, 0)
-        else
-          interop_messages
-        end
-
-      Map.put(out_json, "op_interop", op_interop)
+      out_json
+      |> Map.put("op_interop_messages", interop_messages)
+      # TODO: remove the deprecated `op_interop` map after frontend switches to the new `op_interop_messages`
+      |> Map.put("op_interop", Enum.at(interop_messages, 0))
     end
   end
 
