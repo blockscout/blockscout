@@ -46,7 +46,7 @@ defmodule Explorer.Utility.Microservice do
       "your_api_key_here"
 
   """
-  @spec api_key(atom(), atom()) :: String.t()
+  @spec api_key(atom(), atom()) :: String.t() | nil
   def api_key(application \\ :explorer, module) do
     Application.get_env(application, module)[:api_key]
   end
