@@ -471,16 +471,19 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         }
       end)
 
-    interop_message =
+    interop_messages =
       transaction_hash
-      |> InteropMessage.message_by_transaction()
+      |> InteropMessage.messages_by_transaction()
 
     out_json = Map.put(out_json, "op_withdrawals", withdrawals)
 
-    if is_nil(interop_message) do
+    if interop_messages == [] do
       out_json
     else
-      Map.put(out_json, "op_interop", interop_message)
+      out_json
+      |> Map.put("op_interop_messages", interop_messages)
+      # TODO: remove the deprecated `op_interop` map after frontend switches to the new `op_interop_messages`
+      |> Map.put("op_interop", Enum.at(interop_messages, 0))
     end
   end
 

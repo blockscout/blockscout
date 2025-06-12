@@ -697,31 +697,28 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   end
 
   @doc """
-    Finds a message by transaction hash and prepares to display the message details on transaction page.
+    Finds messages by transaction hash and prepares to display the message details on transaction page.
     Used by `BlockScoutWeb.API.V2.OptimismView.add_optimism_fields` function.
 
     ## Parameters
-    - `transaction_hash`: The transaction hash we need to find the corresponding message for.
+    - `transaction_hash`: The transaction hash we need to find the corresponding messages for.
 
     ## Returns
-    - A map with message details ready to be displayed on transaction page.
-    - `nil` if the message not found.
+    - A list with maps containing message details ready to be displayed on transaction page. The list can be empty.
   """
-  @spec message_by_transaction(Hash.t()) :: map() | nil
-  def message_by_transaction(transaction_hash) do
+  @spec messages_by_transaction(Hash.t()) :: [map()]
+  def messages_by_transaction(transaction_hash) do
     query =
       from(
         m in __MODULE__,
-        where: m.init_transaction_hash == ^transaction_hash or m.relay_transaction_hash == ^transaction_hash,
-        limit: 1
+        where: m.init_transaction_hash == ^transaction_hash or m.relay_transaction_hash == ^transaction_hash
       )
 
-    message =
-      query
-      |> Repo.replica().one()
-      |> extend_with_status()
+    query
+    |> Repo.replica().all()
+    |> Enum.map(fn msg ->
+      message = extend_with_status(msg)
 
-    if not is_nil(message) do
       chain_info =
         if message.init_transaction_hash == transaction_hash do
           %{
@@ -750,7 +747,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
         },
         chain_info
       )
-    end
+    end)
   end
 
   @doc """
