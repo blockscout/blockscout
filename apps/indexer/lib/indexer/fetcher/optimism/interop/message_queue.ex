@@ -188,7 +188,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
         max(latest_block_number - export_expiration_blocks, 0)
       end
 
-    {min_block_number, max_block_number, message_count} =
+    %{min: min_block_number, max: max_block_number, count: message_count} =
       InteropMessage.get_incomplete_messages_stats(current_chain_id, start_block_number)
 
     chunks_number = ceil(message_count / @chunk_size)

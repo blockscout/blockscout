@@ -145,26 +145,23 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     - `start_block_number`: The block number starting from which the messages should be considered.
 
     ## Returns
-    - `{min_block_number, max_block_number, message_count}` tuple.
-    - `{nil, nil, 0}` tuple if there are no messages.
+    - A map with `min`, `max`, and `count` fields.
+    - `%{min: nil, max: nil, count: 0}` map if there are no messages.
   """
   @spec get_incomplete_messages_stats(non_neg_integer(), non_neg_integer()) ::
-          {non_neg_integer() | nil, non_neg_integer() | nil, non_neg_integer()}
+          %{min: non_neg_integer() | nil, max: non_neg_integer() | nil, count: non_neg_integer()}
   def get_incomplete_messages_stats(current_chain_id, start_block_number)
       when is_integer(current_chain_id) and is_integer(start_block_number) do
-    stats =
-      Repo.one(
-        from(
-          m in __MODULE__,
-          select: %{min: min(m.block_number), max: max(m.block_number), count: fragment("COUNT(*)")},
-          where:
-            ((is_nil(m.relay_transaction_hash) and m.init_chain_id == ^current_chain_id) or
-               (is_nil(m.init_transaction_hash) and m.relay_chain_id == ^current_chain_id)) and
-              m.block_number >= ^start_block_number
-        )
+    Repo.one(
+      from(
+        m in __MODULE__,
+        select: %{min: min(m.block_number), max: max(m.block_number), count: fragment("COUNT(*)")},
+        where:
+          ((is_nil(m.relay_transaction_hash) and m.init_chain_id == ^current_chain_id) or
+             (is_nil(m.init_transaction_hash) and m.relay_chain_id == ^current_chain_id)) and
+            m.block_number >= ^start_block_number
       )
-
-    {stats.min, stats.max, stats.count}
+    )
   end
 
   @doc """
