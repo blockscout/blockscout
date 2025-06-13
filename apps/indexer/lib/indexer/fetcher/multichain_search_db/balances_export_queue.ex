@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Wei
   alias Explorer.Chain.{Hash, MultichainSearchDb.BalancesExportQueue}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
 
@@ -74,9 +74,10 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue do
             coin_balances ++ token_balances
           end)
 
-        all_balances
-        |> BalancesExportQueue.by_address_query()
-        |> Repo.delete_all()
+        unless Enum.empty?(all_balances) do
+          all_balances
+          |> BalancesExportQueue.delete_elements_from_queue_by_params()
+        end
 
         :ok
 
@@ -93,16 +94,18 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue do
     token_balances
     |> Enum.map(fn token_balance ->
       %{
-        address_hash:
-          case Chain.string_to_address_hash(Map.get(token_balance, :address_hash)) do
-            {:ok, hash} -> hash.bytes
-            :error -> nil
-          end,
-        token_contract_address_hash_or_native:
-          case Chain.string_to_full_hash(Map.get(token_balance, :token_contract_address_hash)) do
-            {:ok, hash} -> hash.bytes
-            :error -> nil
-          end
+        address_hash: token_balance.address_hash,
+        token_contract_address_hash_or_native: token_balance.token_address_hash,
+        token_id:
+          if(is_nil(token_balance.token_id),
+            do: nil,
+            else: token_balance.token_id |> Decimal.to_integer()
+          ),
+        value:
+          if(is_nil(token_balance.value),
+            do: nil,
+            else: token_balance.value |> Wei.dump() |> elem(1) |> Decimal.to_integer()
+          )
       }
     end)
     |> Enum.reject(&is_nil/1)
@@ -112,12 +115,14 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue do
     coin_balances
     |> Enum.map(fn coin_balance ->
       %{
-        address_hash:
-          case Chain.string_to_address_hash(Map.get(coin_balance, :address_hash)) do
-            {:ok, hash} -> hash.bytes
-            :error -> nil
-          end,
-        token_contract_address_hash_or_native: "native"
+        address_hash: coin_balance.address_hash,
+        token_contract_address_hash_or_native: "native",
+        token_id: nil,
+        value:
+          if(is_nil(coin_balance.value),
+            do: nil,
+            else: coin_balance.value |> Wei.dump() |> elem(1) |> Decimal.to_integer()
+          )
       }
     end)
     |> Enum.reject(&is_nil(&1.address_hash))

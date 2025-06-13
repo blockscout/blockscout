@@ -10,7 +10,7 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
   alias Explorer.Chain.Block.Range
 
   @required_attrs ~w(hash hash_type)a
-  @optional_attrs ~w(block_range retries_count)a
+  @optional_attrs ~w(block_range retries_number)a
   @allowed_attrs @optional_attrs ++ @required_attrs
 
   @primary_key false

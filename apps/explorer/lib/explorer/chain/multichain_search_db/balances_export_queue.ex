@@ -5,15 +5,17 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
 
   use Explorer.Schema
   import Ecto.Query
+  alias Ecto.Multi
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Wei
 
   @required_attrs ~w(address_hash token_contract_address_hash_or_native)a
-  @optional_attrs ~w(value token_id retries_count)a
+  @optional_attrs ~w(value token_id retries_number)a
   @allowed_attrs @optional_attrs ++ @required_attrs
 
   @primary_key false
   typed_schema "multichain_search_db_export_balances_queue" do
+    field(:id, :integer, primary_key: false, null: false)
     field(:address_hash, :binary, null: false, primary_key: true)
     field(:token_contract_address_hash_or_native, :binary, null: false, primary_key: true)
     field(:value, Wei)
@@ -86,10 +88,56 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
     )
   end
 
-  # todo:
-  @spec by_address_query([binary()]) :: Ecto.Query.t()
-  def by_address_query(balances) do
-    __MODULE__
-    |> where([export], export.hash in ^balances)
+  @spec delete_elements_from_queue_by_params([map()]) :: list()
+  def delete_elements_from_queue_by_params(balances) do
+    q =
+      Enum.reduce(balances, nil, fn balance, acc ->
+        balance_address_hash = balance.address_hash
+        balance_token_contract_address_hash_or_native = balance.token_contract_address_hash_or_native
+
+        balance_token_id = balance.token_id
+
+        query =
+          from(
+            b in __MODULE__,
+            where:
+              fragment(
+                "?::text = '\\' || SUBSTRING(?, 2, LENGTH(?) - 1)",
+                b.address_hash,
+                ^balance_address_hash,
+                ^balance_address_hash
+              ),
+            # \x6e6174697665 == hex('native')
+            where:
+              fragment(
+                "?::text = (CASE WHEN LENGTH(?) = 42 THEN '\\' || SUBSTRING(?, 2, LENGTH(?) - 1) ELSE '\\x6e6174697665' END)",
+                b.token_contract_address_hash_or_native,
+                ^balance_token_contract_address_hash_or_native,
+                ^balance_token_contract_address_hash_or_native,
+                ^balance_token_contract_address_hash_or_native
+              ),
+            where: fragment("COALESCE(?, -1) = COALESCE(?, -1)", b.token_id, ^balance_token_id),
+            select: b
+          )
+
+        if is_nil(acc) do
+          query
+        else
+          acc
+          |> union(^query)
+        end
+      end)
+
+    elements = Repo.all(q)
+
+    delete_elements =
+      elements
+      |> Enum.with_index()
+      |> Enum.reduce(Multi.new(), fn {elem, ind}, acc ->
+        acc
+        |> Multi.delete(String.to_atom("delete_#{ind}"), elem)
+      end)
+
+    Repo.transact(delete_elements)
   end
 end

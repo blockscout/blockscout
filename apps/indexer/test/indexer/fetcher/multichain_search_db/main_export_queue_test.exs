@@ -215,7 +215,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
 
       export_data_2 = [
         %{hash: address_2.hash.bytes, hash_type: :address, block_range: %Range{from: block.number, to: block.number}},
-        %{hash: address_3.hash.bytes, hash_type: :address, block_range: %Range{from: block.number, to: block.number}},
+        %{hash: address_1.hash.bytes, hash_type: :address, block_range: %Range{from: block.number, to: block.number}},
         %{hash: block.hash.bytes, hash_type: :block, block_range: %Range{from: block.number, to: block.number}},
         %{
           hash: transaction.hash.bytes,

@@ -1034,12 +1034,12 @@ config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC721,
 
 config :indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor,
   disabled?:
-    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_PROCESSOR_FETCHER") ||
+    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_FETCHER") ||
       is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
 
 config :indexer, Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue.Supervisor,
   disabled?:
-    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_PROCESSOR_FETCHER") ||
+    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_FETCHER") ||
       is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
@@ -1124,34 +1124,30 @@ config :indexer, Indexer.Migrator.RecoveryWETHTokenTransfers,
   high_verbosity: ConfigHelper.parse_bool_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_HIGH_VERBOSITY", "true")
 
 config :indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue,
-  concurrency:
-    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_PROCESSOR_CONCURRENCY", 10),
-  batch_size:
-    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_PROCESSOR_BATCH_SIZE", 1000),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_CONCURRENCY", 10),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_BATCH_SIZE", 1000),
   enqueue_busy_waiting_timeout:
     ConfigHelper.parse_time_env_var(
-      "INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_PROCESSOR_ENQUEUE_BUSY_WAITING_TIMEOUT",
+      "INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_ENQUEUE_BUSY_WAITING_TIMEOUT",
       "1s"
     ),
   max_queue_size:
-    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_PROCESSOR_MAX_QUEUE_SIZE", 1000)
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_MAX_QUEUE_SIZE", 1000)
 
 config :indexer, Indexer.Fetcher.SignedAuthorizationStatus,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_SIGNED_AUTHORIZATION_STATUS_BATCH_SIZE", 10)
 
 config :indexer, Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue,
-  concurrency:
-    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_PROCESSOR_CONCURRENCY", 10),
-  batch_size:
-    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_PROCESSOR_BATCH_SIZE", 1000),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_CONCURRENCY", 10),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_BATCH_SIZE", 1000),
   enqueue_busy_waiting_timeout:
     ConfigHelper.parse_time_env_var(
-      "INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_PROCESSOR_ENQUEUE_BUSY_WAITING_TIMEOUT",
+      "INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_ENQUEUE_BUSY_WAITING_TIMEOUT",
       "1s"
     ),
   max_queue_size:
     ConfigHelper.parse_integer_env_var(
-      "INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_PROCESSOR_MAX_QUEUE_SIZE",
+      "INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_MAX_QUEUE_SIZE",
       1000
     )
 

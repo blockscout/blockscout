@@ -64,14 +64,19 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
                %{
                  addresses: error.data_to_retry.addresses,
                  block_ranges: error.data_to_retry.block_ranges,
-                 hashes: error.data_to_retry.hashes
+                 hashes: error.data_to_retry.hashes,
+                 address_coin_balances: error.data_to_retry.address_coin_balances,
+                 address_token_balances: error.data_to_retry.address_token_balances
                }}
 
             {:error, data_to_retry} ->
               merged_data_to_retry = %{
                 addresses: error.data_to_retry.addresses ++ data_to_retry.addresses,
                 block_ranges: error.data_to_retry.block_ranges ++ data_to_retry.block_ranges,
-                hashes: error.data_to_retry.hashes ++ data_to_retry.hashes
+                hashes: error.data_to_retry.hashes ++ data_to_retry.hashes,
+                address_coin_balances: error.data_to_retry.address_coin_balances ++ data_to_retry.address_coin_balances,
+                address_token_balances:
+                  error.data_to_retry.address_token_balances ++ data_to_retry.address_token_balances
               }
 
               {:error, merged_data_to_retry}
@@ -300,6 +305,43 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     {main_queue, balances_queue}
   end
 
+  defp prepare_export_data_for_queue(%{
+         address_coin_balances: address_coin_balances,
+         address_token_balances: address_token_balances
+       }) do
+    coin_balances_queue =
+      address_coin_balances
+      |> Enum.map(fn %{address_hash: address_hash, value: value} ->
+        %{
+          address_hash: Helper.hash_to_binary(address_hash),
+          token_contract_address_hash_or_native: "native",
+          value: value
+        }
+      end)
+
+    token_balances_queue =
+      address_token_balances
+      |> Enum.map(fn %{
+                       address_hash: address_hash,
+                       token_address_hash: token_address_hash,
+                       value: value,
+                       token_id: token_id
+                     } ->
+        %{
+          address_hash: Helper.hash_to_binary(address_hash),
+          token_contract_address_hash_or_native: Helper.hash_to_binary(token_address_hash),
+          # value is of Wei type in Explorer.Chain.Address.CoinBalance
+          # value is of Decimal type in Explorer.Chain.Address.TokenBalance
+          value: if(Decimal.is_decimal(value), do: value |> Wei.cast() |> elem(1), else: value),
+          token_id: token_id
+        }
+      end)
+
+    balances_queue = coin_balances_queue ++ token_balances_queue
+
+    {[], balances_queue}
+  end
+
   @spec http_post_request(String.t(), map()) :: {:ok, any()} | {:error, String.t()}
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
@@ -365,13 +407,28 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         do: params.block_ranges,
         else: get_block_ranges(Map.get(params, :blocks, []))
 
-    {addresses, address_coin_balances} =
+    {addresses, coin_balances_from_addresses_list} =
       params
       |> Map.get(:addresses, [])
       |> Repo.preload([:token, :smart_contract])
       |> Enum.reduce({[], []}, fn address, {acc_addresses, acc_coin_balances} ->
         {[format_address(address) | acc_addresses], [format_address_coin_balance(address) | acc_coin_balances]}
       end)
+
+    address_coin_balances =
+      if Map.has_key?(params, :address_coin_balances) do
+        params.address_coin_balances
+        |> Enum.map(fn address_coin_balance ->
+          %{
+            address_hash: "0x" <> Base.encode16(address_coin_balance.address_hash),
+            token_contract_address_hash_or_native: "native",
+            token_id: nil,
+            value: address_coin_balance.value
+          }
+        end)
+      else
+        coin_balances_from_addresses_list
+      end
 
     block_hashes =
       if Map.has_key?(params, :block_hashes),
@@ -393,13 +450,27 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       |> Enum.uniq()
       |> Enum.reject(&is_nil(&1.value))
       |> Enum.chunk_every(addresses_chunk_size())
+      |> Enum.with_index()
 
     address_token_balances =
-      if Map.has_key?(params, :address_current_token_balances) do
-        params.address_current_token_balances
-        |> Enum.map(&format_address_token_balance/1)
-      else
-        []
+      cond do
+        Map.has_key?(params, :address_current_token_balances) == true ->
+          params.address_current_token_balances
+          |> Enum.map(&format_address_token_balance/1)
+
+        Map.has_key?(params, :address_token_balances) == true ->
+          params.address_token_balances
+          |> Enum.map(fn address_token_balance ->
+            %{
+              address_hash: address_token_balance.address_hash,
+              token_address_hash: address_token_balance.token_contract_address_hash,
+              token_id: address_token_balance.token_id,
+              value: address_token_balance.value
+            }
+          end)
+
+        true ->
+          []
       end
 
     api_key = api_key()
@@ -411,32 +482,76 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       chain_id: chain_id_string,
       addresses: [],
       block_ranges: [],
+      hashes: [],
       address_token_balances: [],
       address_coin_balances: []
     }
 
-    if Enum.empty?(indexed_addresses_chunks) do
-      [
-        base_data_chunk
-        |> Map.put(:hashes, block_transaction_hashes)
-        |> Map.put(:block_ranges, block_ranges)
-        |> Map.put(:address_token_balances, address_token_balances)
-      ]
-    else
-      Enum.map(indexed_addresses_chunks, fn {addresses_chunk, index} ->
-        # credo:disable-for-lines:3 Credo.Check.Refactor.Nesting
-        hashes_in_chunk = if index == 0, do: block_transaction_hashes, else: []
-        block_ranges_in_chunk = if index == 0, do: block_ranges, else: []
-        address_token_balances_in_chunk = if index == 0, do: address_token_balances, else: []
+    prepare_chunk(indexed_addresses_chunks, indexed_address_coin_balances_chunks, base_data_chunk, %{
+      block_transaction_hashes: block_transaction_hashes,
+      block_ranges: block_ranges,
+      address_token_balances: address_token_balances
+    })
+  end
 
-        base_data_chunk
-        |> Map.put(:addresses, addresses_chunk)
-        |> Map.put(:address_coin_balances, indexed_address_coin_balances_chunks |> Enum.at(index) || [])
-        |> Map.put(:hashes, hashes_in_chunk)
-        |> Map.put(:block_ranges, block_ranges_in_chunk)
-        |> Map.put(:address_token_balances, address_token_balances_in_chunk)
-      end)
-    end
+  defp address_token_balances_chunk_by_index(address_token_balances, 0), do: address_token_balances
+
+  defp address_token_balances_chunk_by_index(_address_token_balances, _index), do: []
+
+  defp prepare_chunk([], [], base_data_chunk, %{
+         block_transaction_hashes: block_transaction_hashes,
+         block_ranges: block_ranges,
+         address_token_balances: address_token_balances
+       }) do
+    [
+      base_data_chunk
+      |> Map.put(:hashes, block_transaction_hashes)
+      |> Map.put(:block_ranges, block_ranges)
+      |> Map.put(:address_token_balances, address_token_balances)
+    ]
+  end
+
+  defp prepare_chunk(indexed_addresses_chunks, indexed_address_coin_balances_chunks, base_data_chunk, %{
+         block_transaction_hashes: block_transaction_hashes,
+         block_ranges: block_ranges,
+         address_token_balances: address_token_balances
+       })
+       when indexed_addresses_chunks != [] do
+    Enum.map(indexed_addresses_chunks, fn {addresses_chunk, index} ->
+      # credo:disable-for-lines:3 Credo.Check.Refactor.Nesting
+      hashes_in_chunk = if index == 0, do: block_transaction_hashes, else: []
+      block_ranges_in_chunk = if index == 0, do: block_ranges, else: []
+      address_token_balances_in_chunk = address_token_balances_chunk_by_index(address_token_balances, index)
+
+      base_data_chunk
+      |> Map.put(:addresses, addresses_chunk)
+      |> Map.put(
+        :address_coin_balances,
+        if(Enum.empty?(indexed_address_coin_balances_chunks),
+          do: [],
+          else: indexed_address_coin_balances_chunks |> Enum.at(index) |> elem(0) || []
+        )
+      )
+      |> Map.put(:hashes, hashes_in_chunk)
+      |> Map.put(:block_ranges, block_ranges_in_chunk)
+      |> Map.put(:address_token_balances, address_token_balances_in_chunk)
+    end)
+  end
+
+  defp prepare_chunk(_indexed_addresses_chunks, indexed_address_coin_balances_chunks, base_data_chunk, %{
+         address_token_balances: address_token_balances
+       })
+       when indexed_address_coin_balances_chunks != [] do
+    Enum.map(indexed_address_coin_balances_chunks, fn {indexed_address_coin_balance_chunk, index} ->
+      address_token_balances_in_chunk = address_token_balances_chunk_by_index(address_token_balances, index)
+
+      base_data_chunk
+      |> Map.put(
+        :address_coin_balances,
+        indexed_address_coin_balance_chunk
+      )
+      |> Map.put(:address_token_balances, address_token_balances_in_chunk)
+    end)
   end
 
   defp format_address(address) do

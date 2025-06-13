@@ -5,7 +5,8 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueueTest do
   import ExUnit.CaptureLog, only: [capture_log: 1]
   import Mox
 
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.MultichainSearchDb.BalancesExportQueue
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.TestHelper
 
@@ -142,7 +143,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueueTest do
           address_hash: nft_contract_address_hash_bytes,
           token_contract_address_hash_or_native: nft_contract_address_hash_bytes,
           value: nil,
-          token_id: %Wei{value: Decimal.new(12345)}
+          token_id: Decimal.new(12345)
         }
       ]
 
@@ -177,13 +178,18 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueueTest do
 
       address_1 = insert(:address)
       address_2 = insert(:address)
+      address_2_hash_string = to_string(address_2) |> String.downcase()
       address_3 = insert(:address)
+      address_3_hash_string = to_string(address_3) |> String.downcase()
       address_4 = insert(:address)
       address_4_hash_string = to_string(address_4) |> String.downcase()
+      address_4_hash_string_checksummed = Address.checksum(address_4)
       address_5 = insert(:address)
       address_5_hash_string = to_string(address_5) |> String.downcase()
       token_address_1 = insert(:address)
+      token_address_1_hash_string = to_string(token_address_1) |> String.downcase()
       token_address_2 = insert(:address)
+      token_address_2_hash_string = to_string(token_address_2) |> String.downcase()
 
       export_data = [
         %{
@@ -218,15 +224,14 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueueTest do
 
       TestHelper.get_chain_id_mock()
 
-      for _ <- 0..2 do
+      for _ <- 0..1 do
         Explorer.Mox.HTTPoison
         |> expect(:post, fn "http://localhost:1234/api/v1/import:batch",
                             body,
                             [{"Content-Type", "application/json"}],
                             _options ->
           case Jason.decode(body) do
-            # todo:
-            {:ok, %{"block_ranges" => [%{"max_block_number" => _, "min_block_number" => _}]}} ->
+            {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_4_hash_string_checksummed}]}} ->
               {:ok, %HTTPoison.Response{status_code: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
 
             _ ->
@@ -235,8 +240,10 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueueTest do
         end)
       end
 
-      val1 = Decimal.new(400)
-      val2 = Decimal.new(500)
+      val1 = Decimal.new(200) |> Wei.cast() |> elem(1)
+      val2 = Decimal.new(300) |> Wei.cast() |> elem(1)
+      val3 = Decimal.new(400) |> Wei.cast() |> elem(1)
+      val4 = Decimal.new(500) |> Wei.cast() |> elem(1)
 
       log =
         capture_log(fn ->
@@ -246,21 +253,75 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueueTest do
                       %{
                         address_hash: ^address_4_hash_string,
                         token_contract_address_hash_or_native: "native",
-                        value: ^val1
+                        value: ^val3
                       }
                     ],
                     address_token_balances: [
                       %{
                         address_hash: ^address_5_hash_string,
-                        token_contract_address_hash_or_native: "native",
+                        token_address_hash: ^token_address_1_hash_string,
+                        value: ^val4,
+                        token_id: nil
+                      },
+                      %{
+                        address_hash: ^address_3_hash_string,
+                        token_address_hash: ^token_address_2_hash_string,
                         value: ^val2,
+                        token_id: nil
+                      },
+                      %{
+                        address_hash: ^address_2_hash_string,
+                        token_address_hash: ^token_address_1_hash_string,
+                        value: ^val1,
                         token_id: nil
                       }
                     ]
                   }} = MultichainSearchDbExportBalancesExportQueue.run(export_data, nil)
         end)
 
+      assert Repo.aggregate(BalancesExportQueue, :count, :id) == 4
       assert log =~ "Batch export retry to the Multichain Search DB failed"
+
+      export_data_2 = [
+        %{
+          address_hash: address_2.hash.bytes,
+          token_contract_address_hash_or_native: token_address_1.hash.bytes,
+          value: %Wei{value: Decimal.new(200)},
+          token_id: nil
+        },
+        %{
+          address_hash: address_3.hash.bytes,
+          token_contract_address_hash_or_native: token_address_2.hash.bytes,
+          value: %Wei{value: Decimal.new(300)},
+          token_id: nil
+        },
+        %{
+          address_hash: address_4.hash.bytes,
+          token_contract_address_hash_or_native: "native",
+          value: %Wei{value: Decimal.new(400)}
+        },
+        %{
+          address_hash: address_5.hash.bytes,
+          token_contract_address_hash_or_native: token_address_1.hash.bytes,
+          value: %Wei{value: Decimal.new(500)},
+          token_id: nil
+        }
+      ]
+
+      Explorer.Mox.HTTPoison
+      |> expect(:post, fn "http://localhost:1234/api/v1/import:batch",
+                          body,
+                          [{"Content-Type", "application/json"}],
+                          _options ->
+        case Jason.decode(body) do
+          _ ->
+            {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"status" => "ok"})}}
+        end
+      end)
+
+      MultichainSearchDbExportBalancesExportQueue.run(export_data_2, nil)
+
+      assert Repo.aggregate(BalancesExportQueue, :count, :id) == 0
 
       Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
     end

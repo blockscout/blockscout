@@ -28,7 +28,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       params = %{
         addresses: [],
         blocks: [],
-        transactions: []
+        transactions: [],
+        address_current_token_balances: []
       }
 
       assert MultichainSearch.batch_import(params) == {:ok, :service_disabled}
@@ -74,7 +75,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       params = %{
         addresses: [address_1, address_2],
         blocks: [block_1, block_2],
-        transactions: [transaction_1, transaction_2]
+        transactions: [transaction_1, transaction_2],
+        address_current_token_balances: []
       }
 
       assert {:ok, {:chunks_processed, _}} = MultichainSearch.batch_import(params)
@@ -88,7 +90,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       Application.put_env(:explorer, MultichainSearch,
         service_url: "http://localhost:#{bypass.port}",
-        api_key: "123456",
+        api_key: "12345",
         addresses_chunk_size: 7000
       )
 
@@ -119,7 +121,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       params = %{
         addresses: [address_1, address_2],
         blocks: [block_1, block_2],
-        transactions: [transaction_1, transaction_2]
+        transactions: [transaction_1, transaction_2],
+        address_current_token_balances: []
       }
 
       assert {:error,
@@ -136,7 +139,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                   block_export_data(block_2),
                   transaction_export_data(transaction_1),
                   transaction_export_data(transaction_2)
-                ]
+                ],
+                address_coin_balances: [],
+                address_token_balances: []
               }} == MultichainSearch.batch_import(params)
 
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 6
@@ -205,7 +210,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       params = %{
         addresses: addresses,
         blocks: [block_1, block_2],
-        transactions: [transaction_1, transaction_2]
+        transactions: [transaction_1, transaction_2],
+        address_current_token_balances: []
       }
 
       assert {:error, results} = MultichainSearch.batch_import(params)
@@ -249,7 +255,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       params = %{
         addresses: addresses,
         blocks: [],
-        transactions: []
+        transactions: [],
+        address_current_token_balances: []
       }
 
       assert {:error, results} = MultichainSearch.batch_import(params)
@@ -293,7 +300,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       params = %{
         addresses: addresses,
         blocks: [],
-        transactions: []
+        transactions: [],
+        address_current_token_balances: []
       }
 
       assert {:error, results} = MultichainSearch.batch_import(params)
@@ -326,7 +334,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert MultichainSearch.extract_batch_import_params_into_chunks(%{
                addresses: [],
                blocks: [],
-               transactions: []
+               transactions: [],
+               address_current_token_balances: []
              }) == [
                %{
                  api_key: "12345",
@@ -349,7 +358,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       params = %{
         addresses: [],
         blocks: [block_1, block_2],
-        transactions: [transaction_1, transaction_2]
+        transactions: [transaction_1, transaction_2],
+        address_current_token_balances: []
       }
 
       chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
@@ -484,7 +494,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       params = %{
         addresses: addresses,
         blocks: [block_1, block_2],
-        transactions: [transaction_1, transaction_2]
+        transactions: [transaction_1, transaction_2],
+        address_current_token_balances: []
       }
 
       chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
@@ -552,7 +563,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       params = %{
         addresses: [address_1, address_2],
         blocks: [],
-        transactions: []
+        transactions: [],
+        address_current_token_balances: []
       }
 
       chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
@@ -585,7 +597,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       params = %{
         addresses: [address_1, address_2, address_3_with_preloads],
         blocks: [],
-        transactions: []
+        transactions: [],
+        address_current_token_balances: []
       }
 
       chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
