@@ -7,6 +7,7 @@
   ignore: ["Config.HTTPS"],
   ignore_files: [
     "lib/explorer/smart_contract/solidity/code_compiler.ex",
-    "lib/explorer/smart_contract/vyper/code_compiler.ex"
+    "lib/explorer/smart_contract/vyper/code_compiler.ex",
+    "lib/explorer/chain/multichain_search_db/balances_export_queue.ex"
   ]
 ]
