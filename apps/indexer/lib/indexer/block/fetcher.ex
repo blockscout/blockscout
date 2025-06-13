@@ -34,6 +34,7 @@ defmodule Indexer.Block.Fetcher do
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
+    SignedAuthorizationStatus,
     Token,
     TokenBalance,
     UncleBlock
@@ -558,6 +559,15 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_filecoin_addresses_info(_, _), do: :ok
+
+  def async_import_signed_authorizations_statuses(
+        %{transactions: transactions, signed_authorizations: signed_authorizations},
+        realtime?
+      ) do
+    SignedAuthorizationStatus.async_fetch(transactions, signed_authorizations, realtime?)
+  end
+
+  def async_import_signed_authorizations_statuses(_, _), do: :ok
 
   defp block_reward_errors_to_block_numbers(block_reward_errors) when is_list(block_reward_errors) do
     Enum.map(block_reward_errors, &block_reward_error_to_block_number/1)
