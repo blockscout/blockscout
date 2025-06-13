@@ -2451,7 +2451,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                    "indexed" => false,
                    "name" => "option",
                    "type" => "address",
-                   "value" => "0xAeB81cbe6b19CeEB0dBE0d230CFFE35Bb40a13a7"
+                   "value" => Address.checksum("0xAeB81cbe6b19CeEB0dBE0d230CFFE35Bb40a13a7")
                  },
                  %{
                    "indexed" => false,

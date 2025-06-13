@@ -6,11 +6,10 @@ defmodule BlockScoutWeb.ChainController do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.{ChainView, Controller}
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain.{Address, Block, Hash, Transaction}
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime, BlocksCount, GasUsageSum, TransactionsCount}
   alias Explorer.Chain.Search
   alias Explorer.Chain.Supply.RSK
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Market
   alias Phoenix.View
 
@@ -99,7 +98,7 @@ defmodule BlockScoutWeb.ChainController do
         item =
           if transaction_hash_bytes do
             item
-            |> Map.replace(:transaction_hash, ExplorerHelper.add_0x_prefix(transaction_hash_bytes))
+            |> Map.replace(:transaction_hash, hash(transaction_hash_bytes))
           else
             item
           end
@@ -107,7 +106,7 @@ defmodule BlockScoutWeb.ChainController do
         item =
           if block_hash_bytes do
             item
-            |> Map.replace(:block_hash, ExplorerHelper.add_0x_prefix(block_hash_bytes))
+            |> Map.replace(:block_hash, hash(block_hash_bytes))
           else
             item
           end
@@ -175,5 +174,12 @@ defmodule BlockScoutWeb.ChainController do
 
   defp redirect_search_results(conn, _item, search_path) do
     redirect(conn, to: search_path)
+  end
+
+  defp hash(%Hash{} = hash), do: to_string(hash)
+
+  defp hash(bytes) when is_binary(bytes) do
+    {:ok, hash} = Hash.Full.cast(bytes)
+    to_string(hash)
   end
 end

@@ -27,7 +27,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias Explorer.Chain.Arbitrum.Reader.Indexer.Messages, as: MessagesIndexerReader
   alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Hash.Address
-  alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Helper, as: IndexerHelper
 
   require Logger
@@ -508,7 +507,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # Converts list of binaries into the hex-encoded 0x-prefixed strings
   defp raw_proof_to_hex(proof) do
     proof
-    |> Enum.map(fn p -> ExplorerHelper.add_0x_prefix(p) end)
+    |> Enum.map(fn p -> %Data{bytes: p} |> to_string() end)
   end
 
   # Retrieves the size parameter (total count of L2->L1 messages) needed for outbox

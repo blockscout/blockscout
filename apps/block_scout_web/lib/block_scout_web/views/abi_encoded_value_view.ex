@@ -10,7 +10,6 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   import Phoenix.LiveView.Helpers, only: [sigil_H: 2]
 
   alias ABI.FunctionSelector
-  alias Explorer.Helper, as: ExplorerHelper
   alias Phoenix.HTML
   alias Phoenix.HTML.Safe
 
@@ -45,7 +44,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   end
 
   defp do_copy_text({:bytes, _type}, value) do
-    ExplorerHelper.add_0x_prefix(value)
+    "0x" <> Base.encode16(value, case: :lower)
   end
 
   defp do_copy_text({:array, type, _}, value) do
@@ -66,11 +65,11 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   end
 
   defp do_copy_text(_, {:dynamic, value}) do
-    ExplorerHelper.add_0x_prefix(value)
+    "0x" <> Base.encode16(value, case: :lower)
   end
 
   defp do_copy_text(type, value) when type in [:bytes, :address] do
-    ExplorerHelper.add_0x_prefix(value)
+    "0x" <> Base.encode16(value, case: :lower)
   end
 
   defp do_copy_text({:tuple, types}, value) do
@@ -161,14 +160,14 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   defp base_value_html(_, {:dynamic, value}, _no_links) do
     assigns = %{value: value}
 
-    ~H|<%= ExplorerHelper.add_0x_prefix(@value) %>|
+    ~H|<%= "0x" <> Base.encode16(@value, case: :lower) %>|
   end
 
   defp base_value_html(:address, value, no_links) do
     if no_links do
       base_value_html(:address_text, value, no_links)
     else
-      address = ExplorerHelper.add_0x_prefix(value)
+      address = "0x" <> Base.encode16(value, case: :lower)
       path = address_path(BlockScoutWeb.Endpoint, :show, address)
 
       assigns = %{address: address, path: path}
@@ -180,13 +179,13 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   defp base_value_html(:address_text, value, _no_links) do
     assigns = %{value: value}
 
-    ~H|<%= ExplorerHelper.add_0x_prefix(@value) %>|
+    ~H|<%= "0x" <> Base.encode16(@value, case: :lower) %>|
   end
 
   defp base_value_html(:bytes, value, _no_links) do
     assigns = %{value: value}
 
-    ~H|<%= ExplorerHelper.add_0x_prefix(@value) %>|
+    ~H|<%= "0x" <> Base.encode16(@value, case: :lower) %>|
   end
 
   defp base_value_html(_, value, _no_links), do: HTML.html_escape(value)

@@ -320,6 +320,7 @@ defmodule Explorer.Chain.Transaction do
     Data,
     DenormalizationHelper,
     Hash,
+    MethodIdentifier,
     SmartContract.Proxy,
     TokenTransfer,
     Transaction,
@@ -329,8 +330,6 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
 
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-
-  alias Explorer.Helper, as: ExplorerHelper
 
   alias Explorer.SmartContract.SigProviderInterface
 
@@ -1040,7 +1039,8 @@ defmodule Explorer.Chain.Transaction do
           parse_method_name(decoded_func)
 
         {:error, :contract_not_verified, []} ->
-          ExplorerHelper.add_0x_prefix(method_id)
+          {:ok, method_id} = MethodIdentifier.cast(method_id)
+          to_string(method_id)
 
         _ ->
           "Transfer"
@@ -2116,7 +2116,7 @@ defmodule Explorer.Chain.Transaction do
     empty_methods_map =
       transactions
       |> Enum.flat_map(fn
-        %{input: %{bytes: <<method_id::binary-size(4), _::binary>>}} -> [method_id]
+        %{input: %{bytes: <<method_id::binary-size(4), _::binary>>}} -> [%Data{bytes: method_id}]
         _ -> []
       end)
       |> Enum.into(%{}, &{&1, []})
@@ -2225,7 +2225,7 @@ defmodule Explorer.Chain.Transaction do
         skip_sc_check?
       ) do
     if skip_sc_check? || Address.smart_contract?(to_address) do
-      ExplorerHelper.add_0x_prefix(method_id)
+      %Data{bytes: method_id} |> to_string()
     else
       nil
     end

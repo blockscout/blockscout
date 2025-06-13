@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{AdvancedFilter, ContractMethod, Data, Token, Transaction}
   alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
-  alias Explorer.Helper, as: ExplorerHelper
   alias Plug.Conn
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -139,7 +138,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
         case mb_contract_method do
           %ContractMethod{abi: %{"name" => name}, identifier: identifier} ->
-            render(conn, :methods, methods: [%{method_id: ExplorerHelper.add_0x_prefix(identifier), name: name}])
+            render(conn, :methods, methods: [%{method_id: identifier, name: name}])
 
           _ ->
             render(conn, :methods, methods: [])
@@ -175,7 +174,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     |> Enum.reduce(%{}, fn contract_method, acc ->
       case contract_method do
         %ContractMethod{abi: %{"name" => name}, identifier: identifier} when is_binary(name) ->
-          Map.put(acc, ExplorerHelper.add_0x_prefix(identifier), name)
+          Map.put(acc, identifier, name)
 
         _ ->
           acc
