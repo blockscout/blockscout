@@ -10,7 +10,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
   setup :verify_on_exit!
 
-  if Application.compile_env(:explorer, :chain_type) == :zksync do
+  if Application.compile_env(:explorer, :chain_type) == :zksync ||
+       Application.compile_env(:explorer, :chain_type) == :via do
     @optimization_runs "0"
   else
     @optimization_runs 200

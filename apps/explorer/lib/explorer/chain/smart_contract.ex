@@ -13,6 +13,14 @@ defmodule Explorer.Chain.SmartContract.Schema do
   }
 
   case @chain_type do
+    :via ->
+      @chain_type_fields quote(
+                           do: [
+                             field(:optimization_runs, :string),
+                             field(:zk_compiler_version, :string, null: true)
+                           ]
+                         )
+
     :zksync ->
       @chain_type_fields quote(
                            do: [
@@ -148,6 +156,9 @@ defmodule Explorer.Chain.SmartContract do
                                 :zksync ->
                                   ~w(zk_compiler_version)a
 
+                                :via ->
+                                  ~w(zk_compiler_version)a
+
                                 :arbitrum ->
                                   ~w(package_name github_repository_metadata)a
 
@@ -165,6 +176,30 @@ defmodule Explorer.Chain.SmartContract do
                                       end)
 
   @create_zksync_abi [
+    %{
+      "inputs" => [
+        %{"internalType" => "bytes32", "name" => "_salt", "type" => "bytes32"},
+        %{"internalType" => "bytes32", "name" => "_bytecodeHash", "type" => "bytes32"},
+        %{"internalType" => "bytes", "name" => "_input", "type" => "bytes"}
+      ],
+      "name" => "create2",
+      "outputs" => [%{"internalType" => "address", "name" => "", "type" => "address"}],
+      "stateMutability" => "payable",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [
+        %{"internalType" => "bytes32", "name" => "_salt", "type" => "bytes32"},
+        %{"internalType" => "bytes32", "name" => "_bytecodeHash", "type" => "bytes32"},
+        %{"internalType" => "bytes", "name" => "_input", "type" => "bytes"}
+      ],
+      "name" => "create",
+      "outputs" => [%{"internalType" => "address", "name" => "", "type" => "address"}],
+      "stateMutability" => "payable",
+      "type" => "function"
+    }
+  ]
+  @create_via_abi [
     %{
       "inputs" => [
         %{"internalType" => "bytes32", "name" => "_salt", "type" => "bytes32"},
@@ -451,6 +486,9 @@ defmodule Explorer.Chain.SmartContract do
     :zksync -> """
        * `zk_compiler_version` - the version of ZkSolc or ZkVyper compilers.
       """
+    :via -> """
+       * `zk_compiler_version` - the version of ZkSolc or ZkVyper compilers.
+      """
     :arbitrum -> """
        * `package_name` - package name of stylus contract.
        * `github_repository_metadata` - map with repository details.
@@ -580,7 +618,7 @@ defmodule Explorer.Chain.SmartContract do
 
   def merge_twin_contract_with_changeset(nil, %Changeset{} = changeset) do
     optimization_runs =
-      if Application.get_env(:explorer, :chain_type) == :zksync,
+      if Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via,
         do: "0",
         else: "200"
 
@@ -593,7 +631,8 @@ defmodule Explorer.Chain.SmartContract do
     |> Changeset.put_change(:contract_source_code, "")
     |> Changeset.put_change(:autodetect_constructor_args, true)
     |> Changeset.put_change(:is_yul, false)
-    |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+    |> (&if(
+          Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via,
           do: Changeset.put_change(&1, :zk_compiler_version, "latest"),
           else: &1
         )).()
@@ -616,12 +655,14 @@ defmodule Explorer.Chain.SmartContract do
     merge_twin_vyper_contract_with_changeset(nil, changeset)
   end
 
+  # VIA-TODO
   def merge_twin_vyper_contract_with_changeset(nil, %Changeset{} = changeset) do
     changeset
     |> Changeset.put_change(:name, "Vyper_contract")
     |> Changeset.put_change(:compiler_version, "latest")
     |> Changeset.put_change(:contract_source_code, "")
-    |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+    |> (&if(
+          Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via,
           do: Changeset.put_change(&1, :zk_compiler_version, "latest"),
           else: &1
         )).()
@@ -1535,6 +1576,30 @@ defmodule Explorer.Chain.SmartContract do
     creation_input = Chain.contract_creation_input_data_from_transaction(address_hash_string)
 
     case @create_zksync_abi |> ABI.parse_specification() |> ABI.find_and_decode(creation_input) do
+      {%FunctionSelector{}, [_, _, constructor_args]} ->
+        Base.encode16(constructor_args, case: :lower)
+
+      _ ->
+        nil
+    end
+  end
+
+  @doc """
+  Retrieves the constructor arguments for a via smart contract.
+  Using @create_via_abi function decodes transaction input of contract creation
+
+  ## Parameters
+  - `binary()`: The binary data representing the smart contract.
+
+  ## Returns
+  - `nil`: If the constructor arguments cannot be retrieved.
+  - `binary()`: The constructor arguments in binary format.
+  """
+  @spec via_get_constructor_arguments(binary()) :: nil | binary()
+  def via_get_constructor_arguments(address_hash_string) do
+    creation_input = Chain.contract_creation_input_data_from_transaction(address_hash_string)
+
+    case @create_via_abi |> ABI.parse_specification() |> ABI.find_and_decode(creation_input) do
       {%FunctionSelector{}, [_, _, constructor_args]} ->
         Base.encode16(constructor_args, case: :lower)
 
