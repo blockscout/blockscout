@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   require Ecto.Query
 
-  import Ecto.Query, only: [from: 2, where: 3, subquery: 1]
+  import Ecto.Query, only: [dynamic: 1, dynamic: 2, from: 2, where: 3, subquery: 1]
   import Explorer.Chain.Import.Runner.Helper, only: [chain_type_dependent_import: 3]
 
   alias Ecto.{Changeset, Multi, Repo}
@@ -361,39 +361,147 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     )
   end
 
-  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp default_on_conflict do
-    from(
-      block in Block,
-      update: [
-        set: [
-          consensus: fragment("EXCLUDED.consensus"),
-          difficulty: fragment("EXCLUDED.difficulty"),
-          gas_limit: fragment("EXCLUDED.gas_limit"),
-          gas_used: fragment("EXCLUDED.gas_used"),
-          miner_hash: fragment("EXCLUDED.miner_hash"),
-          nonce: fragment("EXCLUDED.nonce"),
-          number: fragment("EXCLUDED.number"),
-          parent_hash: fragment("EXCLUDED.parent_hash"),
-          size: fragment("EXCLUDED.size"),
-          timestamp: fragment("EXCLUDED.timestamp"),
-          total_difficulty: fragment("EXCLUDED.total_difficulty"),
-          refetch_needed: fragment("EXCLUDED.refetch_needed"),
-          # Don't update `hash` as it is used for the conflict target
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", block.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", block.updated_at)
-        ]
-      ],
-      where:
-        fragment("EXCLUDED.consensus <> ?", block.consensus) or fragment("EXCLUDED.difficulty <> ?", block.difficulty) or
-          fragment("EXCLUDED.gas_limit <> ?", block.gas_limit) or fragment("EXCLUDED.gas_used <> ?", block.gas_used) or
-          fragment("EXCLUDED.miner_hash <> ?", block.miner_hash) or fragment("EXCLUDED.nonce <> ?", block.nonce) or
-          fragment("EXCLUDED.number <> ?", block.number) or fragment("EXCLUDED.parent_hash <> ?", block.parent_hash) or
-          fragment("EXCLUDED.size <> ?", block.size) or fragment("EXCLUDED.timestamp <> ?", block.timestamp) or
-          fragment("EXCLUDED.total_difficulty <> ?", block.total_difficulty) or
-          fragment("EXCLUDED.refetch_needed <> ?", block.refetch_needed)
-    )
+    chain_type = Application.get_env(:explorer, :chain_type)
+
+    base_fields = [
+      consensus: dynamic(fragment("EXCLUDED.consensus")),
+      difficulty: dynamic(fragment("EXCLUDED.difficulty")),
+      gas_limit: dynamic(fragment("EXCLUDED.gas_limit")),
+      gas_used: dynamic(fragment("EXCLUDED.gas_used")),
+      miner_hash: dynamic(fragment("EXCLUDED.miner_hash")),
+      nonce: dynamic(fragment("EXCLUDED.nonce")),
+      number: dynamic(fragment("EXCLUDED.number")),
+      parent_hash: dynamic(fragment("EXCLUDED.parent_hash")),
+      size: dynamic(fragment("EXCLUDED.size")),
+      timestamp: dynamic(fragment("EXCLUDED.timestamp")),
+      total_difficulty: dynamic(fragment("EXCLUDED.total_difficulty")),
+      refetch_needed: dynamic(fragment("EXCLUDED.refetch_needed")),
+      base_fee_per_gas: dynamic(fragment("EXCLUDED.base_fee_per_gas")),
+      is_empty: dynamic(fragment("EXCLUDED.is_empty")),
+      # Don't update `hash` as it is used for the conflict target
+      inserted_at: dynamic([block], fragment("LEAST(?, EXCLUDED.inserted_at)", block.inserted_at)),
+      updated_at: dynamic([block], fragment("GREATEST(?, EXCLUDED.updated_at)", block.updated_at))
+    ]
+
+    base_condition =
+      dynamic(
+        [block],
+        fragment(
+          "(EXCLUDED.consensus, EXCLUDED.difficulty, EXCLUDED.gas_limit, EXCLUDED.gas_used, EXCLUDED.miner_hash, EXCLUDED.nonce, EXCLUDED.number, EXCLUDED.parent_hash, EXCLUDED.size, EXCLUDED.timestamp, EXCLUDED.total_difficulty, EXCLUDED.refetch_needed, EXCLUDED.base_fee_per_gas, EXCLUDED.is_empty) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          block.consensus,
+          block.difficulty,
+          block.gas_limit,
+          block.gas_used,
+          block.miner_hash,
+          block.nonce,
+          block.number,
+          block.parent_hash,
+          block.size,
+          block.timestamp,
+          block.total_difficulty,
+          block.refetch_needed,
+          block.base_fee_per_gas,
+          block.is_empty
+        )
+      )
+
+    case on_conflict_chain_type_extension(chain_type) do
+      {chain_type_fields, chain_type_condition} ->
+        base_with_chain_type_fields = Keyword.merge(base_fields, chain_type_fields)
+        base_with_chain_type_condition = dynamic(^base_condition or ^chain_type_condition)
+
+        from(
+          block in Block,
+          update: ^[set: base_with_chain_type_fields],
+          where: ^base_with_chain_type_condition
+        )
+
+      _ ->
+        from(
+          block in Block,
+          update: ^[set: base_fields],
+          where: ^base_condition
+        )
+    end
   end
+
+  defp on_conflict_chain_type_extension(:ethereum) do
+    {
+      [
+        blob_gas_used: dynamic(fragment("EXCLUDED.blob_gas_used")),
+        excess_blob_gas: dynamic(fragment("EXCLUDED.excess_blob_gas"))
+      ],
+      dynamic(
+        [block],
+        fragment(
+          "(EXCLUDED.blob_gas_used, EXCLUDED.excess_blob_gas) IS DISTINCT FROM (?, ?)",
+          block.blob_gas_used,
+          block.excess_blob_gas
+        )
+      )
+    }
+  end
+
+  defp on_conflict_chain_type_extension(:rsk) do
+    {
+      [
+        bitcoin_merged_mining_header: dynamic(fragment("EXCLUDED.bitcoin_merged_mining_header")),
+        bitcoin_merged_mining_coinbase_transaction:
+          dynamic(fragment("EXCLUDED.bitcoin_merged_mining_coinbase_transaction")),
+        bitcoin_merged_mining_merkle_proof: dynamic(fragment("EXCLUDED.bitcoin_merged_mining_merkle_proof")),
+        hash_for_merged_mining: dynamic(fragment("EXCLUDED.hash_for_merged_mining")),
+        minimum_gas_price: dynamic(fragment("EXCLUDED.minimum_gas_price"))
+      ],
+      dynamic(
+        [block],
+        fragment(
+          "(EXCLUDED.bitcoin_merged_mining_header, EXCLUDED.bitcoin_merged_mining_coinbase_transaction, EXCLUDED.bitcoin_merged_mining_merkle_proof, EXCLUDED.hash_for_merged_mining, EXCLUDED.minimum_gas_price) IS DISTINCT FROM (?, ?, ?, ?, ?)",
+          block.bitcoin_merged_mining_header,
+          block.bitcoin_merged_mining_coinbase_transaction,
+          block.bitcoin_merged_mining_merkle_proof,
+          block.hash_for_merged_mining,
+          block.minimum_gas_price
+        )
+      )
+    }
+  end
+
+  defp on_conflict_chain_type_extension(:arbitrum) do
+    {
+      [
+        send_count: dynamic(fragment("EXCLUDED.send_count")),
+        send_root: dynamic(fragment("EXCLUDED.send_root")),
+        l1_block_number: dynamic(fragment("EXCLUDED.l1_block_number"))
+      ],
+      dynamic(
+        [block],
+        fragment(
+          "(EXCLUDED.send_count, EXCLUDED.send_root, EXCLUDED.l1_block_number) IS DISTINCT FROM (?, ?, ?)",
+          block.send_count,
+          block.send_root,
+          block.l1_block_number
+        )
+      )
+    }
+  end
+
+  defp on_conflict_chain_type_extension(:zilliqa) do
+    {
+      [
+        zilliqa_view: dynamic(fragment("EXCLUDED.zilliqa_view"))
+      ],
+      dynamic(
+        [block],
+        fragment(
+          "EXCLUDED.zilliqa_view IS DISTINCT FROM ?",
+          block.zilliqa_view
+        )
+      )
+    }
+  end
+
+  defp on_conflict_chain_type_extension(_), do: nil
 
   defp consensus_block_numbers(blocks_changes) when is_list(blocks_changes) do
     blocks_changes
