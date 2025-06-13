@@ -7,14 +7,31 @@ defmodule Explorer.ChainSpec.GenesisDataTest do
                 |> Jason.decode!()
   setup do
     # Patch application env
-    Application.put_env(:explorer, Explorer.ChainSpec.GenesisData,
-      chain_spec_path: "#{File.cwd!()}/test/support/fixture/chain_spec/qdai_genesis.json",
-      precompiled_config_path: nil
+    old_genesis_data = Application.get_env(:explorer, Explorer.ChainSpec.GenesisData)
+
+    old_json_rpc_named_arguments =
+      Application.get_env(:indexer, :json_rpc_named_arguments)
+
+    Application.put_env(
+      :explorer,
+      Explorer.ChainSpec.GenesisData,
+      Keyword.merge(old_genesis_data,
+        chain_spec_path: "#{File.cwd!()}/test/support/fixture/chain_spec/qdai_genesis.json",
+        precompiled_config_path: nil
+      )
     )
 
-    Application.put_env(:indexer, :json_rpc_named_arguments, variant: EthereumJSONRPC.Besu)
+    Application.put_env(
+      :indexer,
+      :json_rpc_named_arguments,
+      Keyword.merge(old_json_rpc_named_arguments, variant: EthereumJSONRPC.Besu)
+    )
 
-    on_exit(fn -> :meck.unload() end)
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.ChainSpec.GenesisData, old_genesis_data)
+      Application.put_env(:indexer, :json_rpc_named_arguments, old_json_rpc_named_arguments)
+      :meck.unload()
+    end)
 
     :ok
   end
@@ -23,6 +40,7 @@ defmodule Explorer.ChainSpec.GenesisDataTest do
     test_pid = self()
 
     :meck.new(Explorer.ChainSpec.Geth.Importer, [:passthrough])
+
     :meck.expect(Explorer.ChainSpec.Geth.Importer, :import_genesis_accounts, fn args ->
       send(test_pid, {:import_called, args})
       {:ok, []}
