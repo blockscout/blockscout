@@ -703,14 +703,15 @@ defmodule BlockScoutWeb.Notifier do
       })
     end
 
-    v2_params_function = fn transactions ->
+    prepared_transactions =
       TransactionView.render("transactions.json", %{
         transactions: Repo.preload(transactions, @transaction_associations),
         conn: nil
       })
-    end
 
-    group_by_address_hashes_and_broadcast(transactions, event, :transactions, v2_params_function)
+    transactions
+    |> Enum.zip(prepared_transactions)
+    |> group_by_address_hashes_and_broadcast(event, :transactions, & &1["hash"])
   end
 
   defp broadcast_transaction(%Transaction{block_number: nil} = pending) do
@@ -748,14 +749,19 @@ defmodule BlockScoutWeb.Notifier do
       })
     end
 
-    v2_params_function = fn transfers ->
+    prepared_token_transfers =
       TransactionView.render("token_transfers.json", %{
-        token_transfers: transfers,
+        token_transfers: tokens_transfers,
         conn: nil
       })
-    end
 
-    group_by_address_hashes_and_broadcast(tokens_transfers, "token_transfer", :token_transfers, v2_params_function)
+    tokens_transfers
+    |> Enum.zip(prepared_token_transfers)
+    |> group_by_address_hashes_and_broadcast(
+      "token_transfer",
+      :token_transfers,
+      &{&1["transaction_hash"], &1["block_hash"], &1["log_index"]}
+    )
   end
 
   defp broadcast_token_transfer(token_transfer) do
@@ -781,19 +787,19 @@ defmodule BlockScoutWeb.Notifier do
     end
   end
 
-  defp group_by_address_hashes_and_broadcast(elements, event, map_key, params_function) do
+  defp group_by_address_hashes_and_broadcast(elements, event, map_key, uniq_function) do
     grouped_by_from =
       elements
-      |> Enum.group_by(fn el -> el.from_address_hash end)
+      |> Enum.group_by(fn {el, _} -> el.from_address_hash end, fn {_, prepared_el} -> prepared_el end)
 
     grouped_by_to =
       elements
-      |> Enum.group_by(fn el -> el.to_address_hash end)
+      |> Enum.group_by(fn {el, _} -> el.to_address_hash end, fn {_, prepared_el} -> prepared_el end)
 
-    grouped = Map.merge(grouped_by_to, grouped_by_from, fn _k, v1, v2 -> Enum.uniq(v1 ++ v2) end)
+    grouped = Map.merge(grouped_by_to, grouped_by_from, fn _k, v1, v2 -> Enum.uniq_by(v1 ++ v2, uniq_function) end)
 
     for {address_hash, elements} <- grouped do
-      Endpoint.broadcast("addresses:#{address_hash}", event, %{map_key => params_function.(elements)})
+      Endpoint.broadcast("addresses:#{address_hash}", event, %{map_key => elements})
     end
   end
 
