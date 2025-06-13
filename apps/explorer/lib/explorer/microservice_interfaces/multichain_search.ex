@@ -396,6 +396,43 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     coin_balances_queue ++ token_balances_queue
   end
 
+  defp prepare_export_data_for_queue(%{
+         address_coin_balances: address_coin_balances,
+         address_token_balances: address_token_balances
+       }) do
+    coin_balances_queue =
+      address_coin_balances
+      |> Enum.map(fn %{address_hash: address_hash, value: value} ->
+        %{
+          address_hash: Helper.hash_to_binary(address_hash),
+          token_contract_address_hash_or_native: "native",
+          value: value
+        }
+      end)
+
+    token_balances_queue =
+      address_token_balances
+      |> Enum.map(fn %{
+                       address_hash: address_hash,
+                       token_address_hash: token_address_hash,
+                       value: value,
+                       token_id: token_id
+                     } ->
+        %{
+          address_hash: Helper.hash_to_binary(address_hash),
+          token_contract_address_hash_or_native: Helper.hash_to_binary(token_address_hash),
+          # value is of Wei type in Explorer.Chain.Address.CoinBalance
+          # value is of Decimal type in Explorer.Chain.Address.TokenBalance
+          value: if(Decimal.is_decimal(value), do: value |> Wei.cast() |> elem(1), else: value),
+          token_id: token_id
+        }
+      end)
+
+    balances_queue = coin_balances_queue ++ token_balances_queue
+
+    {[], balances_queue}
+  end
+
   @spec http_post_request(String.t(), map()) :: {:ok, any()} | {:error, String.t()}
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
