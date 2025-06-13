@@ -326,7 +326,10 @@ config :explorer, Explorer.Chain.Cache.Counters.TransactionsCount,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_TXS_COUNT_PERIOD", "2h")
 
 config :explorer, Explorer.Chain.Cache.Counters.PendingBlockOperationCount,
-  global_ttl: ConfigHelper.parse_time_env_var("CACHE_PBO_COUNT_PERIOD", "20m")
+  global_ttl: ConfigHelper.parse_time_env_var("CACHE_PBO_COUNT_PERIOD", "5m")
+
+config :explorer, Explorer.Chain.Cache.Counters.PendingTransactionOperationCount,
+  global_ttl: ConfigHelper.parse_time_env_var("CACHE_PBO_COUNT_PERIOD", "5m")
 
 config :explorer, Explorer.Chain.Cache.GasPriceOracle,
   global_ttl: ConfigHelper.parse_time_env_var("GAS_PRICE_ORACLE_CACHE_PERIOD", "30s"),

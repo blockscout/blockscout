@@ -453,8 +453,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         index: 0,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
-        block_hash: transaction.block_hash,
-        block_index: 0
+        block_hash: transaction.block_hash
       )
 
       internal_transactions =
@@ -463,15 +462,14 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
           transaction =
             :transaction
             |> insert()
-            |> with_block(block)
+            |> with_block(block, index: index)
 
           insert(:internal_transaction,
             transaction: transaction,
             index: index,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
-            block_hash: transaction.block_hash,
-            block_index: index
+            block_hash: transaction.block_hash
           )
         end)
 

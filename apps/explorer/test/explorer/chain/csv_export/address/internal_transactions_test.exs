@@ -20,7 +20,6 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
           from_address: address,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 1,
           transaction_index: transaction.index
         )
 
@@ -45,8 +44,6 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
                          [[], block_number],
                          _,
                          [[], block_hash],
-                         _,
-                         [[], block_index],
                          _,
                          [[], transaction_index],
                          _,
@@ -81,7 +78,6 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
             transaction_hash: transaction_hash,
             index: index,
             block_number: block_number,
-            block_index: block_index,
             block_hash: block_hash,
             transaction_index: transaction_index,
             timestamp: timestamp,
@@ -103,7 +99,6 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
       assert result.transaction_hash == to_string(internal_transaction.transaction_hash)
       assert result.index == to_string(internal_transaction.index)
       assert result.block_number == to_string(internal_transaction.block_number)
-      assert result.block_index == to_string(internal_transaction.block_index)
       assert result.block_hash == to_string(internal_transaction.block_hash)
       assert result.transaction_index == to_string(internal_transaction.transaction_index)
       assert result.timestamp
@@ -143,7 +138,6 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
           from_address: address,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: index,
           transaction_index: transaction.index
         )
       end)
@@ -162,7 +156,6 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
           to_address: address,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: index,
           transaction_index: transaction.index
         )
       end)
@@ -181,7 +174,6 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
           created_contract_address: address,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: index,
           transaction_index: transaction.index
         )
       end)
@@ -216,7 +208,6 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
           from_address: address,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 1,
           transaction_index: transaction.index,
           error: "reverted",
           gas_used: nil,
@@ -244,8 +235,6 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
                          [[], block_number],
                          _,
                          [[], block_hash],
-                         _,
-                         [[], block_index],
                          _,
                          [[], transaction_index],
                          _,
@@ -280,7 +269,6 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
             transaction_hash: transaction_hash,
             index: index,
             block_number: block_number,
-            block_index: block_index,
             block_hash: block_hash,
             transaction_index: transaction_index,
             timestamp: timestamp,
@@ -302,7 +290,6 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
       assert result.transaction_hash == to_string(internal_transaction.transaction_hash)
       assert result.index == to_string(internal_transaction.index)
       assert result.block_number == to_string(internal_transaction.block_number)
-      assert result.block_index == to_string(internal_transaction.block_index)
       assert result.block_hash == to_string(internal_transaction.block_hash)
       assert result.transaction_index == to_string(internal_transaction.transaction_index)
       assert result.timestamp

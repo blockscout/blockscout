@@ -539,7 +539,6 @@ defmodule Explorer.Chain.TransactionTest do
           index: 0,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
