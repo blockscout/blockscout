@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   use BlockScoutWeb.ConnCase
+  require Decimal
 
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Withdrawal}
 
@@ -500,7 +501,12 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   end
 
   defp compare_item(%Withdrawal{} = withdrawal, json) do
-    assert withdrawal.index == json["index"]
+    # `index` field is of decimal type for `berachain` chain type
+    if Decimal.is_decimal(withdrawal.index) do
+      assert withdrawal.index == Decimal.new(json["index"])
+    else
+      assert withdrawal.index == json["index"]
+    end
   end
 
   defp compare_item(%InternalTransaction{} = internal_transaction, json) do

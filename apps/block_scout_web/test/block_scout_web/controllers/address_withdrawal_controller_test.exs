@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.AddressWithdrawalControllerTest do
   use BlockScoutWeb.ConnCase, async: true
   use ExUnit.Case, async: false
+  require Decimal
 
   import BlockScoutWeb.Routers.WebRouter.Helpers, only: [address_withdrawal_path: 3, address_withdrawal_path: 4]
   import BlockScoutWeb.WeiHelper, only: [format_wei_value: 2]
@@ -70,7 +71,16 @@ defmodule BlockScoutWeb.AddressWithdrawalControllerTest do
 
       conn =
         get(conn, address_withdrawal_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), %{
-          "index" => first_page |> List.last() |> (& &1.index).() |> Integer.to_string(),
+          "index" =>
+            first_page
+            |> List.last()
+            |> (& &1.index).()
+            |> case do
+              index when is_integer(index) -> Integer.to_string(index)
+              # `index` field is of decimal type for `berachain` chain type
+              index when Decimal.is_decimal(index) -> Decimal.to_string(index)
+              index -> index
+            end,
           "type" => "JSON"
         })
 
