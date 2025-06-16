@@ -1,4 +1,4 @@
-*[GitHub keywords to close any associated issues](https://blog.github.com/2013-05-14-closing-issues-via-pull-requests/)*
+*[GitHub keywords to close any associated issues](https://blog.github.com/2025-05-14-closing-issues-via-pull-requests/)*
 
 ## Motivation
 
