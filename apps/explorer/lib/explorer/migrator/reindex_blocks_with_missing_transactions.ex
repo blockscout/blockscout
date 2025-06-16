@@ -64,19 +64,11 @@ defmodule Explorer.Migrator.ReindexBlocksWithMissingTransactions do
       |> Repo.all()
       |> Map.new()
 
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-    case EthereumJSONRPC.fetch_blocks_by_numbers(consensus_block_numbers, json_rpc_named_arguments) do
-      {:ok, %{transactions_params: transactions_params, errors: errors}} ->
+    case fetch_transactions_count(consensus_block_numbers) do
+      {:ok, %{transactions_count_map: node_transactions_count_map, errors: errors}} ->
         unless Enum.empty?(errors) do
           Logger.warning("Migration #{@migration_name} encountered errors fetching blocks: #{inspect(errors)}")
         end
-
-        node_transactions_count_map =
-          transactions_params
-          |> Enum.group_by(& &1.block_number)
-          |> Enum.map(fn {number, transactions} -> {number, Enum.count(transactions)} end)
-          |> Map.new()
 
         consensus_block_numbers
         |> Enum.filter(&Map.has_key?(node_transactions_count_map, &1))
@@ -86,6 +78,44 @@ defmodule Explorer.Migrator.ReindexBlocksWithMissingTransactions do
       error ->
         Logger.error("Migration #{@migration_name} failed: #{inspect(error)}")
         {:error, error}
+    end
+  end
+
+  defp fetch_transactions_count(block_numbers) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    id_to_params = EthereumJSONRPC.id_to_params(block_numbers)
+
+    id_to_params
+    |> Enum.map(fn {id, number} ->
+      EthereumJSONRPC.request(%{
+        id: id,
+        method: "eth_getBlockTransactionCountByNumber",
+        params: [EthereumJSONRPC.integer_to_quantity(number)]
+      })
+    end)
+    |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+    |> case do
+      {:ok, responses} ->
+        %{errors: errors, counts: counts} =
+          responses
+          |> EthereumJSONRPC.sanitize_responses(id_to_params)
+          |> Enum.reduce(%{errors: [], counts: %{}}, fn
+            %{id: id, result: nil}, %{errors: errors} = acc ->
+              error = {:error, %{code: 404, message: "Not Found", data: Map.fetch!(id_to_params, id)}}
+              %{acc | errors: [error | errors]}
+
+            %{id: id, result: count}, %{counts: counts} = acc ->
+              %{acc | counts: Map.put(counts, Map.fetch!(id_to_params, id), EthereumJSONRPC.quantity_to_integer(count))}
+
+            %{id: id, error: error}, %{errors: errors} = acc ->
+              %{acc | errors: [{:error, Map.put(error, :data, Map.fetch!(id_to_params, id))} | errors]}
+          end)
+
+        {:ok, %{transactions_count_map: Map.new(counts), errors: errors}}
+
+      error ->
+        error
     end
   end
 end

@@ -43,22 +43,22 @@ defmodule Explorer.Migrator.ReindexBlocksWithMissingTransactionsTest do
       [
         %{
           id: id,
-          method: "eth_getBlockByNumber",
-          params: [^correct_block_number_quantity, true]
+          method: "eth_getBlockTransactionCountByNumber",
+          params: [^correct_block_number_quantity]
         }
       ],
       _ ->
-        block_fake_response(id, block_number_correct, 1)
+        {:ok, [%{id: id, result: "0x1", jsonrpc: "2.0"}]}
 
       [
         %{
           id: id,
-          method: "eth_getBlockByNumber",
-          params: [^incorrect_block_number_quantity, true]
+          method: "eth_getBlockTransactionCountByNumber",
+          params: [^incorrect_block_number_quantity]
         }
       ],
       _ ->
-        block_fake_response(id, block_number_incorrect, 2)
+        {:ok, [%{id: id, result: "0x2", jsonrpc: "2.0"}]}
     end)
 
     assert MigrationStatus.get_status("reindex_blocks_with_missing_transactions") == nil
@@ -75,52 +75,5 @@ defmodule Explorer.Migrator.ReindexBlocksWithMissingTransactionsTest do
 
     assert %{consensus: true, refetch_needed: false} = Repo.get_by(Block, number: block_number_correct)
     assert %{consensus: true, refetch_needed: true} = Repo.get_by(Block, number: block_number_incorrect)
-  end
-
-  defp block_fake_response(id, block_number, transactions_count) do
-    {:ok,
-     [
-       %{
-         id: id,
-         result: %{
-           "difficulty" => "0x0",
-           "gasLimit" => "0x0",
-           "gasUsed" => "0x0",
-           "hash" => "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
-           "extraData" => "0x0",
-           "logsBloom" => "0x0",
-           "miner" => "0x0",
-           "number" => block_number,
-           "parentHash" => "0x0",
-           "receiptsRoot" => "0x0",
-           "size" => "0x0",
-           "sha3Uncles" => "0x0",
-           "stateRoot" => "0x0",
-           "timestamp" => "0x0",
-           "totalDifficulty" => "0x0",
-           "transactions" =>
-             Enum.map(0..(transactions_count - 1), fn index ->
-               %{
-                 "blockHash" => "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
-                 "blockNumber" => block_number,
-                 "from" => "0x0",
-                 "gas" => "0x0",
-                 "gasPrice" => "0x0",
-                 "hash" => "0x5626d3aaf5f7666f0d82919178b0ba0880683e8531b6718a83ca946d337a81c9",
-                 "input" => "0x",
-                 "nonce" => "0x0",
-                 "r" => "0x0",
-                 "s" => "0x0",
-                 "to" => "0x0",
-                 "transactionIndex" => EthereumJSONRPC.integer_to_quantity(index),
-                 "v" => "0x0",
-                 "value" => "0x0"
-               }
-             end),
-           "transactionsRoot" => "0x0",
-           "uncles" => []
-         }
-       }
-     ]}
   end
 end
