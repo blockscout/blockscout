@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   alias Explorer.Chain.Cache.{CeloCoreContracts, CeloEpochs}
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
   alias Explorer.Chain.Celo.{Epoch, EpochReward}
-  alias Explorer.Chain.{Block, Token, Transaction, Wei}
+  alias Explorer.Chain.{Block, Token, TokenTransfer, Transaction, Wei}
 
   @address_params [
     necessity_by_association: %{
@@ -262,24 +262,27 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     distribution_json =
       if epoch.distribution do
         community_transfer =
-          epoch.distribution.community_transfer
-          |> TokenTransferView.prepare_token_transfer_total()
+          epoch.distribution.community_transfer &&
+            epoch.distribution.community_transfer
+            |> TokenTransferView.prepare_token_transfer_total()
 
         carbon_offsetting_transfer =
-          epoch.distribution.carbon_offsetting_transfer
-          |> TokenTransferView.prepare_token_transfer_total()
+          epoch.distribution.carbon_offsetting_transfer &&
+            epoch.distribution.carbon_offsetting_transfer
+            |> TokenTransferView.prepare_token_transfer_total()
+
+        reserve_bolster_transfer =
+          epoch.distribution.reserve_bolster_transfer &&
+            epoch.distribution.reserve_bolster_transfer
+            |> TokenTransferView.prepare_token_transfer_total()
+
+        result = calculate_total_epoch_rewards(epoch.distribution)
 
         %{
           community_transfer: community_transfer,
           carbon_offsetting_transfer: carbon_offsetting_transfer,
-          transfers_total: %{
-            decimals: "18",
-            value:
-              Decimal.add(
-                (community_transfer && community_transfer["value"]) || Decimal.new(0),
-                (carbon_offsetting_transfer && carbon_offsetting_transfer["value"]) || Decimal.new(0)
-              )
-          }
+          reserve_bolster_transfer: reserve_bolster_transfer,
+          transfers_total: result && result.total
         }
       end
 
@@ -321,7 +324,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
         end
       )
 
-    total = calculate_total_epoch_rewards(transfers_json)
+    total = calculate_total_epoch_rewards(distribution)
 
     transfers_json
     |> Map.put(:transfers_total, total)
@@ -358,10 +361,13 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       }
   """
   @spec calculate_total_epoch_rewards(map()) :: map() | nil
-  def calculate_total_epoch_rewards(transfers) do
+  def calculate_total_epoch_rewards(distribution) do
     transfers =
-      transfers
-      |> Map.values()
+      [
+        distribution.reserve_bolster_transfer,
+        distribution.community_transfer,
+        distribution.carbon_offsetting_transfer
+      ]
       |> Enum.reject(&is_nil/1)
 
     case transfers do
@@ -369,46 +375,41 @@ defmodule BlockScoutWeb.API.V2.CeloView do
         nil
 
       [first_transfer | rest_transfers] ->
-        token_info = validate_and_extract_token(first_transfer, rest_transfers)
+        case validate_and_extract_token(first_transfer, rest_transfers) do
+          {:ok, token_info} ->
+            total_value =
+              transfers
+              |> Enum.map(&(&1 |> TokenTransferView.prepare_token_transfer_total() |> Map.get("value")))
+              |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
 
-        total_value =
-          transfers
-          |> Enum.map(fn transfer ->
-            get_in(transfer, ["total", "value"]) || Decimal.new(0)
-          end)
-          |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+            %{
+              token: token_info,
+              total: %{
+                decimals: token_info.decimals,
+                value: total_value
+              }
+            }
 
-        %{
-          token: token_info,
-          total: %{
-            decimals: token_info["decimals"],
-            value: total_value
-          }
-        }
+          :error ->
+            raise ArgumentError,
+                  "All transfers must use the same token, but found different tokens: #{inspect(transfers)}"
+        end
     end
   end
 
-  @spec validate_and_extract_token(map(), [map()]) :: map()
+  @spec validate_and_extract_token(TokenTransfer.t(), [TokenTransfer.t()]) ::
+          {:ok, Token.t()} | :error
   defp validate_and_extract_token(first_transfer, rest_transfers) do
-    first_token = get_in(first_transfer, ["token"])
-    first_token_address = get_in(first_token, ["address"])
-
-    if is_nil(first_token_address) do
-      raise ArgumentError, "Token transfer missing token address information"
+    with token when not is_nil(token) <- first_transfer.token,
+         true <-
+           Enum.all?(
+             rest_transfers,
+             &(&1.token && &1.token.contract_address_hash == token.contract_address_hash)
+           ) do
+      {:ok, token}
+    else
+      _ -> :error
     end
-
-    # Validate all transfers use the same token
-    Enum.each(rest_transfers, fn transfer ->
-      token_address = get_in(transfer, ["token", "address"])
-
-      if token_address != first_token_address do
-        raise ArgumentError,
-              "Inconsistent token addresses found in epoch rewards. " <>
-                "Expected: #{first_token_address}, Found: #{token_address}"
-      end
-    end)
-
-    first_token
   end
 
   # Get the breakdown of the base fee for the case when FeeHandler is a contract
