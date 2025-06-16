@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
     {epochs, next_page} =
       options
-      |> Epoch.fetched_epochs()
+      |> Epoch.all()
       |> split_list_by_page()
 
     filtered_params =
