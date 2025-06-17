@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.PagingHelper do
   """
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  import Explorer.Chain, only: [string_to_transaction_hash: 1]
+  import Explorer.Chain, only: [string_to_full_hash: 1]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.Chain.InternalTransaction.CallType, as: InternalTransactionCallType
@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}, [:pending | _]) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
-         {:ok, hash} <- string_to_transaction_hash(hash_string) do
+         {:ok, hash} <- string_to_full_hash(hash_string) do
       [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
     else
       _ ->
@@ -292,8 +292,22 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def address_transactions_sorting(_), do: []
 
-  defp do_address_transaction_sorting("block_number", "asc"), do: [asc: :block_number, asc: :index]
-  defp do_address_transaction_sorting("block_number", "desc"), do: [desc: :block_number, desc: :index]
+  defp do_address_transaction_sorting("block_number", "asc"),
+    do: [
+      asc: :block_number,
+      asc: :index,
+      asc: :inserted_at,
+      desc: :hash
+    ]
+
+  defp do_address_transaction_sorting("block_number", "desc"),
+    do: [
+      desc: :block_number,
+      desc: :index,
+      desc: :inserted_at,
+      asc: :hash
+    ]
+
   defp do_address_transaction_sorting("value", "asc"), do: [asc: :value]
   defp do_address_transaction_sorting("value", "desc"), do: [desc: :value]
   defp do_address_transaction_sorting("fee", "asc"), do: [{:dynamic, :fee, :asc_nulls_first, Transaction.dynamic_fee()}]

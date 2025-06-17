@@ -449,7 +449,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   defp to_transaction_hash(transaction_hash_string) do
-    {:format, Chain.string_to_transaction_hash(transaction_hash_string)}
+    {:format, Chain.string_to_full_hash(transaction_hash_string)}
   end
 
   defp put_order_by_direction(options, params) do
