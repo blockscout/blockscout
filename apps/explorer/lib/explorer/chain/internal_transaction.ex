@@ -711,6 +711,7 @@ defmodule Explorer.Chain.InternalTransaction do
             |> where_nonpending_block()
             |> where_address_fields_match(hash, :to_address_hash)
             |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+            |> where_is_different_from_parent_transaction()
             |> common_where_limit_order(paging_options)
             |> Chain.wrapped_union_subquery()
 
@@ -719,6 +720,7 @@ defmodule Explorer.Chain.InternalTransaction do
             |> where_nonpending_block()
             |> where_address_fields_match(hash, :from_address_hash)
             |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+            |> where_is_different_from_parent_transaction()
             |> common_where_limit_order(paging_options)
             |> Chain.wrapped_union_subquery()
 
@@ -727,22 +729,25 @@ defmodule Explorer.Chain.InternalTransaction do
             |> where_nonpending_block()
             |> where_address_fields_match(hash, :created_contract_address_hash)
             |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+            |> where_is_different_from_parent_transaction()
             |> common_where_limit_order(paging_options)
             |> Chain.wrapped_union_subquery()
 
           query_to_address_hash_wrapped
-          |> union(^query_from_address_hash_wrapped)
-          |> union(^query_created_contract_address_hash_wrapped)
+          |> union_all(^query_from_address_hash_wrapped)
+          |> union_all(^query_created_contract_address_hash_wrapped)
           |> Chain.wrapped_union_subquery()
-          |> common_where_limit_order(paging_options)
+          |> common_where_and_order(paging_options)
           |> preload(:block)
           |> Chain.join_associations(necessity_by_association)
           |> Chain.select_repo(options).all()
+          |> deduplicate_and_trim_internal_transactions(paging_options)
         else
           __MODULE__
           |> where_nonpending_block()
           |> where_address_fields_match(hash, direction)
           |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+          |> where_is_different_from_parent_transaction()
           |> common_where_limit_order(paging_options)
           |> preload(:block)
           |> Chain.join_associations(necessity_by_association)
@@ -751,11 +756,27 @@ defmodule Explorer.Chain.InternalTransaction do
     end
   end
 
+  @doc """
+  Deduplicates and trims internal transactions based on the page_size specified in paging options.
+  """
+  @spec deduplicate_and_trim_internal_transactions([__MODULE__.t()], PagingOptions.t()) :: [__MODULE__.t()]
+  def deduplicate_and_trim_internal_transactions(internal_transactions, paging_options) do
+    internal_transactions
+    |> Enum.uniq_by(fn internal_transaction ->
+      {internal_transaction.transaction_hash, internal_transaction.index}
+    end)
+    |> Enum.take(paging_options.page_size)
+  end
+
   defp common_where_limit_order(query, paging_options) do
     query
-    |> where_is_different_from_parent_transaction()
-    |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
+    |> common_where_and_order(paging_options)
     |> limit(^paging_options.page_size)
+  end
+
+  defp common_where_and_order(query, paging_options) do
+    query
+    |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
     |> order_by(
       [it],
       desc: it.block_number,
