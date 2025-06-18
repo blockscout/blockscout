@@ -1,5 +1,8 @@
 defmodule Explorer.ThirdPartyIntegrations.Auth0.Legacy do
   @moduledoc """
+  Module for internal usage, not supposed to be used directly, if
+  you want to interact with Auth0, use `Explorer.ThirdPartyIntegrations.Auth0`.
+
   Provides Auth0 authentication for legacy Auth0 configuration.
 
   This module implements Auth0 authentication functionality for the legacy Auth0

@@ -1,5 +1,8 @@
 defmodule Explorer.ThirdPartyIntegrations.Auth0.Internal do
   @moduledoc """
+  Module for internal usage, not supposed to be used directly, if
+  you want to interact with Auth0, use `Explorer.ThirdPartyIntegrations.Auth0`.
+
   Provides internal implementation for Auth0 authentication functionality.
 
   This module handles core Auth0 operations including user management, OTP verification,

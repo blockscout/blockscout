@@ -1,5 +1,8 @@
 defmodule Explorer.ThirdPartyIntegrations.Auth0.Migrated do
   @moduledoc """
+  Module for internal usage, not supposed to be used directly, if
+  you want to interact with Auth0, use `Explorer.ThirdPartyIntegrations.Auth0`.
+
   Provides Auth0 authentication for migrated Auth0 configuration.
 
   This module implements Auth0 authentication functionality for the migrated Auth0
@@ -22,7 +25,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Migrated do
 
   @spec redis_key() :: String.t()
   def redis_key do
-    client_id = Application.get_env(:ueberauth, OAuth)[:client_id]
+    client_id = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id]
 
     client_id <> "auth0:migrated"
   end
