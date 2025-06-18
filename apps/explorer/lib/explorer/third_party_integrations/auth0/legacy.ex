@@ -24,7 +24,11 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Legacy do
   alias Ueberauth.Strategy.Auth0.OAuth
 
   @spec redis_key() :: String.t()
-  def redis_key, do: "auth0"
+  def redis_key do
+    client_id = Application.get_env(:ueberauth, OAuth)[:client_id]
+
+    client_id <> "auth0:legacy"
+  end
 
   @spec find_users_by_email_query(String.t()) :: String.t()
   def find_users_by_email_query(encoded_email) do
@@ -204,7 +208,11 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Legacy do
 
     users_map = users |> Enum.map(&{&1["user_id"], &1}) |> Map.new()
 
-    case users |> Enum.map(&identity_map[&1["user_id"]]) |> Enum.reject(&is_nil(&1)) |> Account.merge() do
+    users
+    |> Enum.map(&identity_map[&1["user_id"]])
+    |> Enum.reject(&is_nil(&1))
+    |> Account.merge()
+    |> case do
       {{:ok, 0}, nil} ->
         unless match?(%{"user_metadata" => %{"web3_address_hash" => _}}, primary_user) do
           update_user_with_web3_address(

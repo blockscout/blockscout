@@ -13,12 +13,19 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Migrated do
   the same Auth0 tenant.
   """
 
+  use Utils.RuntimeEnvHelper,
+    auth0_application_identifier: [:ueberauth, Ueberauth.Strategy.Auth0.OAuth, :auth0_application_id]
+
   alias Explorer.ThirdPartyIntegrations.Auth0.Internal
   alias Ueberauth.Auth
   alias Ueberauth.Strategy.Auth0, as: UeberauthAuth0
 
   @spec redis_key() :: String.t()
-  def redis_key, do: "auth0_migrated"
+  def redis_key do
+    client_id = Application.get_env(:ueberauth, OAuth)[:client_id]
+
+    client_id <> "auth0:migrated"
+  end
 
   @spec find_users_by_email_query(String.t()) :: String.t()
   def find_users_by_email_query(encoded_email) do
@@ -150,21 +157,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Migrated do
         {:ok, user}
 
       {:ok, []} ->
-        with {:ok, %{"user_id" => user_id} = user} <- Internal.create_web3_user(address, signature, %{}) do
-          Internal.update_user(
-            user_id,
-            %{
-              "user_metadata" => %{
-                auth0_application_identifier() =>
-                  Map.merge(
-                    %{"web3_address_hash" => address},
-                    Map.take(user, ["user_id", "name", "nickname", "picture"])
-                  )
-              }
-            },
-            "Failed to update user with web3 address"
-          )
-        end
+        create_web3_user(address, signature)
 
       {:ok, _} ->
         {:error, "Multiple users with the same web3 address found"}
@@ -174,6 +167,21 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Migrated do
     end
   end
 
-  defp auth0_application_identifier,
-    do: Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:auth0_application_id]
+  defp create_web3_user(address, signature) do
+    with {:ok, %{"user_id" => user_id} = user} <- Internal.create_web3_user(address, signature, %{}) do
+      Internal.update_user(
+        user_id,
+        %{
+          "user_metadata" => %{
+            auth0_application_identifier() =>
+              Map.merge(
+                %{"web3_address_hash" => address},
+                Map.take(user, ["user_id", "name", "nickname", "picture"])
+              )
+          }
+        },
+        "Failed to update user with web3 address"
+      )
+    end
+  end
 end

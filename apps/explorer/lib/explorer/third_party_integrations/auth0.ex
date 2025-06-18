@@ -27,7 +27,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   """
   @spec get_m2m_jwt() :: nil | String.t()
   def get_m2m_jwt do
-    get_m2m_jwt_inner(Redix.command(:redix, ["GET", cookie_key(Internal.redis_key())]))
+    get_m2m_jwt_inner(Redix.command(:redix, ["GET", Internal.redis_key()]))
   end
 
   def get_m2m_jwt_inner({:ok, token}) when not is_nil(token), do: token
@@ -81,7 +81,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   end
 
   defp cache_token(token, ttl) do
-    Redix.command(:redix, ["SET", cookie_key(Internal.redis_key()), token, "EX", ttl])
+    Redix.command(:redix, ["SET", Internal.redis_key(), token, "EX", ttl])
     token
   end
 
@@ -229,7 +229,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   - `{:new, Identity.session()}` if the address hash was added to the session
   """
   @spec update_session_with_address_hash(Identity.session()) :: {:old, Identity.session()} | {:new, Identity.session()}
-  def update_session_with_address_hash(%{address_hash: _} = session),
+  def update_session_with_address_hash(session),
     do: Internal.update_session_with_address_hash(session)
 
   @doc """
