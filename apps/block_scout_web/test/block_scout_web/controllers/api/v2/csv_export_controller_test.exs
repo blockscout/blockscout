@@ -241,7 +241,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         from_address: address,
         block_number: transaction_1.block_number,
         block_hash: transaction_1.block_hash,
-        block_index: 0,
         transaction_index: transaction_1.index
       )
 
@@ -251,7 +250,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         to_address: address,
         block_number: transaction_2.block_number,
         block_hash: transaction_2.block_hash,
-        block_index: 1,
         transaction_index: transaction_2.index
       )
 
@@ -261,7 +259,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         created_contract_address: address,
         block_number: transaction_3.block_number,
         block_hash: transaction_3.block_hash,
-        block_index: 2,
         transaction_index: transaction_3.index
       )
 

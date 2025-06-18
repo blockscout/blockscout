@@ -42,9 +42,9 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
         :internal_transaction_create,
         index: 0,
         transaction: transaction,
+        transaction_index: transaction.index,
         created_contract_address: address,
-        block_hash: transaction.block_hash,
-        block_index: 0
+        block_hash: transaction.block_hash
       )
 
       TestHelper.get_all_proxies_implementation_zero_addresses()
