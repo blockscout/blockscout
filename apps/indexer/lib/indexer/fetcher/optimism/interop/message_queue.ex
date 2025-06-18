@@ -27,12 +27,12 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
 
   require Logger
 
-  import Explorer.Helper, only: [add_0x_prefix: 1, hash_to_binary: 1]
+  import Explorer.Helper, only: [hash_to_binary: 1]
   import Indexer.Fetcher.Optimism.Interop.Helper, only: [log_cant_get_chain_id_from_rpc: 0]
 
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Optimism.InteropMessage
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
@@ -270,7 +270,6 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
   @spec prepare_post_data(map(), binary()) :: {non_neg_integer(), map()}
   defp prepare_post_data(message, private_key) when is_nil(message.relay_transaction_hash) do
     timestamp = DateTime.to_unix(message.timestamp)
-    payload = add_0x_prefix(message.payload)
 
     data = %{
       sender_address_hash: Hash.to_string(message.sender_address_hash),
@@ -280,7 +279,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
       init_transaction_hash: Hash.to_string(message.init_transaction_hash),
       timestamp: timestamp,
       relay_chain_id: message.relay_chain_id,
-      payload: payload,
+      payload: message.payload,
       signature: nil
     }
 
@@ -290,7 +289,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
         Integer.to_string(message.nonce) <>
         Integer.to_string(message.init_chain_id) <>
         data.init_transaction_hash <>
-        Integer.to_string(timestamp) <> Integer.to_string(message.relay_chain_id) <> payload
+        Integer.to_string(timestamp) <> Integer.to_string(message.relay_chain_id) <> to_string(message.payload)
 
     {:ok, {signature, _}} =
       data_to_sign
@@ -334,9 +333,10 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
   # - `{chain_id, post_data_signed}` tuple where
   #   `chain_id` is the chain id from the input parameter.
   #   `post_data_signed` is the `data` map with the `signature` field.
+  @doc false
   @spec set_post_data_signature(non_neg_integer(), map(), binary()) :: {non_neg_integer(), map()}
-  defp set_post_data_signature(chain_id, data, signature) do
-    {chain_id, %{data | signature: add_0x_prefix(signature)}}
+  def set_post_data_signature(chain_id, data, signature) do
+    {chain_id, %{data | signature: %Data{bytes: signature} |> to_string()}}
   end
 
   # Prepares a map to import to the `op_interop_messages` table based on the current handling message and

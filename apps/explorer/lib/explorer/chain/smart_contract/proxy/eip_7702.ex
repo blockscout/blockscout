@@ -6,7 +6,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.Helper, as: ExplorerHelper
 
   @doc """
   Get implementation address hash string following EIP-7702. It returns the value as array of the strings.
@@ -65,18 +64,25 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
     - `nil` if the delegate address is not present in the bytecode.
 
     ## Examples
-      iex> get_delegate_address(<<239, 1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20>>)
-      "0x0102030405060708090a0b0c0d0e0f10111213"
+      iex> Explorer.Chain.SmartContract.Proxy.EIP7702.get_delegate_address(<<239, 1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20>>)
+      "0x0102030405060708090a0b0c0d0e0f1011121314"
 
-      iex> get_delegate_address(<<1, 2, 3>>)
+      iex> Explorer.Chain.SmartContract.Proxy.EIP7702.get_delegate_address(<<239, 1, 0, 0x30, 0x78, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20>>)
+      "0x3078030405060708090a0b0c0d0e0f1011121314"
+
+      iex> Explorer.Chain.SmartContract.Proxy.EIP7702.get_delegate_address(<<1, 2, 3>>)
       nil
   """
   @spec get_delegate_address(binary()) :: String.t() | nil
   def get_delegate_address(contract_code_bytes) do
     case contract_code_bytes do
       # 0xef0100 <> address
-      <<239, 1, 0>> <> <<address::binary-size(20)>> -> ExplorerHelper.add_0x_prefix(address)
-      _ -> nil
+      <<239, 1, 0>> <> <<address::binary-size(20)>> ->
+        {:ok, address_hash} = Hash.Address.cast(address)
+        to_string(address_hash)
+
+      _ ->
+        nil
     end
   end
 end

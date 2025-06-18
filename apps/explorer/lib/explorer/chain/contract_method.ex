@@ -8,7 +8,7 @@ defmodule Explorer.Chain.ContractMethod do
   import Ecto.Query, only: [from: 2]
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, MethodIdentifier, SmartContract}
+  alias Explorer.Chain.{Data, Hash, MethodIdentifier, SmartContract}
   alias Explorer.{Chain, Repo}
 
   typed_schema "contract_methods" do
@@ -138,7 +138,7 @@ defmodule Explorer.Chain.ContractMethod do
         <<first_four_bytes::binary-size(4), _::binary>> = selector.method_id
 
         %{
-          identifier: first_four_bytes,
+          identifier: %Data{bytes: first_four_bytes},
           abi: element,
           type: Atom.to_string(selector.type),
           inserted_at: now,
