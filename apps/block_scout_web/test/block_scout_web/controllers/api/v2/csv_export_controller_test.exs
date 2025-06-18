@@ -12,7 +12,8 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
       csv_setup()
     end
 
-    test "do not export token transfers to csv without recaptcha recaptcha_response provided", %{conn: conn} do
+    test "do not export token transfers to csv after rate limit is reached (1 per hour) without recaptcha recaptcha_response provided",
+         %{conn: conn} do
       address = insert(:address)
 
       transaction =
@@ -29,16 +30,28 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
       to_period = now |> DateTime.to_iso8601()
 
       conn =
-        get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
+        conn
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
 
-      assert conn.status == 403
+      assert conn.status == 200
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("user-agent", "test-agent")
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.status == 429
     end
 
-    test "do not export token transfers to csv without recaptcha passed", %{
+    test "do not export token transfers to csv after rate limit is reached without recaptcha passed", %{
       conn: conn,
       v2_secret_key: recaptcha_secret_key
     } do
@@ -68,14 +81,27 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
+          "to_period" => to_period
         })
 
-      assert conn.status == 403
+      assert conn.status == 200
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("recaptcha-v2-response", "123")
+        |> put_req_header("user-agent", "test-agent")
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.status == 429
     end
 
-    test "exports token transfers to csv without recaptcha if recaptcha is disabled", %{conn: conn} do
+    test "exports token transfers to csv after rate limit is reached without recaptcha if recaptcha is disabled", %{
+      conn: conn
+    } do
       init_config = Application.get_env(:block_scout_web, :recaptcha)
       Application.put_env(:block_scout_web, :recaptcha, is_disabled: true)
 
@@ -101,6 +127,19 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
           "to_period" => to_period
         })
 
+      assert conn.status == 200
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("user-agent", "test-agent")
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.status == 200
       assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
 
       Application.put_env(:block_scout_web, :recaptcha, init_config)
@@ -141,10 +180,23 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
+          "to_period" => to_period
         })
 
+      assert conn.status == 200
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("recaptcha-v2-response", "123")
+        |> put_req_header("user-agent", "test-agent")
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.status == 200
       assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
     end
   end
@@ -189,10 +241,23 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/transactions/csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
+          "to_period" => to_period
         })
 
+      assert conn.status == 200
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("recaptcha-v2-response", "123")
+        |> put_req_header("user-agent", "test-agent")
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/transactions/csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.status == 200
       assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
     end
   end
@@ -274,10 +339,23 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/internal-transactions/csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
+          "to_period" => to_period
         })
 
+      assert conn.status == 200
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 5
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("recaptcha-v2-response", "123")
+        |> put_req_header("user-agent", "test-agent")
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/internal-transactions/csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.status == 200
       assert conn.resp_body |> String.split("\n") |> Enum.count() == 5
     end
   end
@@ -353,29 +431,27 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/logs/csv", %{
           "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
+          "to_period" => to_period
         })
 
+      assert conn.status == 200
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 5
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("recaptcha-v2-response", "123")
+        |> put_req_header("user-agent", "test-agent")
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/logs/csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.status == 200
       assert conn.resp_body |> String.split("\n") |> Enum.count() == 5
     end
 
-    test "handles null filter", %{conn: conn, v2_secret_key: recaptcha_secret_key} do
-      expected_body = "secret=#{recaptcha_secret_key}&response=123"
-
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
-
+    test "handles null filter", %{conn: conn} do
       address = insert(:address)
 
       transaction =
@@ -402,10 +478,10 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
           "filter_type" => "null",
           "filter_value" => "null",
           "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
+          "to_period" => to_period
         })
 
+      assert conn.status == 200
       assert conn.resp_body |> String.split("\n") |> Enum.count() == 3
     end
   end
@@ -413,6 +489,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
   defp csv_setup() do
     old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
     old_http_adapter = Application.get_env(:block_scout_web, :http_adapter)
+    original_api_rate_limit = Application.get_env(:block_scout_web, :api_rate_limit)
 
     v2_secret_key = "v2_secret_key"
     v3_secret_key = "v3_secret_key"
@@ -425,9 +502,13 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
     Application.put_env(:block_scout_web, :http_adapter, Explorer.Mox.HTTPoison)
 
+    Application.put_env(:block_scout_web, :api_rate_limit, Keyword.put(original_api_rate_limit, :disabled, false))
+
     on_exit(fn ->
       Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
       Application.put_env(:block_scout_web, :http_adapter, old_http_adapter)
+      :ets.delete_all_objects(BlockScoutWeb.RateLimit.Hammer.ETS)
+      Application.put_env(:block_scout_web, :api_rate_limit, original_api_rate_limit)
     end)
 
     {:ok, %{v2_secret_key: v2_secret_key, v3_secret_key: v3_secret_key}}

@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     UtilsApiV2Router
   }
 
-  alias BlockScoutWeb.Plug.{CheckApiV2, CheckFeature, RateLimit}
+  alias BlockScoutWeb.Plug.{CheckApiV2, CheckFeature}
   alias BlockScoutWeb.Routers.AccountRouter
 
   @max_query_string_length 5_000
@@ -75,7 +75,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
-    plug(RateLimit)
   end
 
   pipeline :api_v2_no_session do
@@ -90,7 +89,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)
-    plug(RateLimit)
   end
 
   pipeline :api_v1_graphql do
@@ -103,7 +101,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
-    plug(RateLimit, graphql?: true)
     plug(BlockScoutWeb.Plug.GraphQLSchemaIntrospection)
   end
 
@@ -533,13 +530,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
 
-    # todo: remove these old CSV export related endpoints in 7.2.0 or higher since they are moved to /api/v2/** path.
-    # Related frontend task https://github.com/blockscout/frontend/issues/2718.
-    get("/transactions-csv", V2.CsvExportController, :transactions_csv)
-    get("/token-transfers-csv", V2.CsvExportController, :token_transfers_csv)
-    get("/internal-transactions-csv", V2.CsvExportController, :internal_transactions_csv)
-    get("/logs-csv", V2.CsvExportController, :logs_csv)
-
     if @chain_type == :celo do
       get("/celo-election-rewards-csv", V2.CsvExportController, :celo_election_rewards_csv)
     end
@@ -575,7 +565,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     get("/multichain-search-export", BlockScoutWeb.API.HealthController, :multichain_search_db_export)
   end
 
-  # For backward compatibility. Should be removed
   scope "/" do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC}

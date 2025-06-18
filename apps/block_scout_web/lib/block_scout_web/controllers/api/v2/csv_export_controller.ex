@@ -1,8 +1,7 @@
 defmodule BlockScoutWeb.API.V2.CsvExportController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
-  alias BlockScoutWeb.API.V2.ApiView
+  alias BlockScoutWeb.AccessHelper
   alias Explorer.Chain
   alias Explorer.Chain.Address
   alias Explorer.Chain.Address.CurrentTokenBalance
@@ -31,7 +30,6 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   def export_token_holders(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)},
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
       token_holders = Chain.fetch_token_holders_from_token_hash_for_csv(address_hash, options())
 
@@ -73,8 +71,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
        )
        when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)},
-         {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)} do
+         {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)} do
       filter_type = Map.get(params, "filter_type")
       filter_value = Map.get(params, "filter_value")
 
@@ -95,12 +92,6 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
 
       {:address_exists, false} ->
         not_found(conn)
-
-      {:recaptcha, false} ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ApiView)
-        |> render(:message, %{message: "Invalid reCAPTCHA response"})
     end
   end
 

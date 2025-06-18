@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.V2.APIKeyController do
   """
   @spec get_key(Plug.Conn.t(), nil | map) :: {:recaptcha, any} | Plug.Conn.t()
   def get_key(conn, params) do
-    ttl = Application.get_env(:block_scout_web, :api_rate_limit)[:api_v2_token_ttl_seconds]
+    ttl = div(Application.get_env(:block_scout_web, :api_rate_limit)[:api_v2_token_ttl], 1000)
 
     with {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)} do
       conn
