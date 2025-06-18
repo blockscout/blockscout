@@ -133,8 +133,8 @@ defmodule Explorer.Chain.Celo.Epoch do
       iex> Explorer.Chain.Celo.Epoch.fetched_epochs(sorting: [asc: :number], paging_options: %{page_size: 10})
       [%Explorer.Chain.Celo.Epoch{number: 1, fetched?: true, ...}, ...]
   """
-  @spec fetched_epochs(Keyword.t()) :: [__MODULE__.t()]
-  def fetched_epochs(options) do
+  @spec all(Keyword.t()) :: [__MODULE__.t()]
+  def all(options) do
     default_sorting = [desc: :number]
 
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -142,7 +142,6 @@ defmodule Explorer.Chain.Celo.Epoch do
     sorting_options = Keyword.get(options, :sorting, [])
 
     __MODULE__
-    |> where(fetched?: true)
     |> SortingHelper.apply_sorting(sorting_options, default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
     |> Chain.join_associations(necessity_by_association)
