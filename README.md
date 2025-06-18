@@ -4,6 +4,7 @@
 
 [![Blockscout](https://github.com/blockscout/blockscout/actions/workflows/config.yml/badge.svg)](https://github.com/blockscout/blockscout/actions)
 [![Discord](https://dcbadge.vercel.app/api/server/blockscout?style=flat)](https://discord.gg/blockscout)
+[![Twitter](https://img.shields.io/twitter/follow/blockscout)](https://x.com/blockscout)
 
 </div>
 
