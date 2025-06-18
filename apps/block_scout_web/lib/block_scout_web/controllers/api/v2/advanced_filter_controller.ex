@@ -120,7 +120,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   """
   @spec list_methods(Plug.Conn.t(), map()) :: {:method, nil | Explorer.Chain.ContractMethod.t()} | Plug.Conn.t()
   def list_methods(conn, %{"q" => query}) do
-    case {@methods_id_to_name_map[query], @methods_name_to_id_map[query]} do
+    case {@methods_id_to_name_map[String.downcase(query)], @methods_name_to_id_map[String.downcase(query)]} do
       {name, _} when is_binary(name) ->
         render(conn, :methods, methods: [%{method_id: query, name: name}])
 
@@ -128,18 +128,21 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
         render(conn, :methods, methods: [%{method_id: id, name: query}])
 
       _ ->
-        mb_contract_method =
+        contract_method_method_id_tuple =
           case Data.cast(query) do
             {:ok, %Data{bytes: <<_::bytes-size(4)>> = binary_method_id}} ->
-              ContractMethod.find_contract_method_by_selector_id(binary_method_id, @api_true)
+              {ContractMethod.find_contract_method_by_selector_id(binary_method_id, @api_true), binary_method_id}
 
             _ ->
-              ContractMethod.find_contract_method_by_name(query, @api_true)
+              {ContractMethod.find_contract_method_by_name(query, @api_true), nil}
           end
 
-        case mb_contract_method do
-          %ContractMethod{abi: %{"name" => name}, identifier: identifier} ->
-            render(conn, :methods, methods: [%{method_id: ExplorerHelper.add_0x_prefix(identifier), name: name}])
+        case contract_method_method_id_tuple do
+          {%ContractMethod{abi: %{"name" => name}, identifier: identifier}, _} ->
+            render(conn, :methods, methods: [%{method_id: "0x" <> Base.encode16(identifier, case: :lower), name: name}])
+
+          {_, identifier} when is_binary(identifier) ->
+            render(conn, :methods, methods: [%{method_id: "0x" <> Base.encode16(identifier, case: :lower), name: ""}])
 
           _ ->
             render(conn, :methods, methods: [])
@@ -230,7 +233,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     ]
   end
 
-  @allowed_transaction_types ~w(COIN_TRANSFER ERC-20 ERC-404 ERC-721 ERC-1155)
+  @allowed_transaction_types ~w(COIN_TRANSFER CONTRACT_INTERACTION CONTRACT_CREATION ERC-20 ERC-404 ERC-721 ERC-1155)
 
   defp prepare_transaction_types(transaction_types) when is_binary(transaction_types) do
     transaction_types
