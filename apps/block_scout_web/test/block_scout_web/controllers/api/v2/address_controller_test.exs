@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
   use EthereumJSONRPC.Case, async: false
   use BlockScoutWeb.ChannelCase
+  require Decimal
 
   alias ABI.{TypeDecoder, TypeEncoder}
   alias Explorer.{Chain, Repo, TestHelper}
@@ -3906,7 +3907,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   defp compare_item(%Withdrawal{} = withdrawal, json) do
-    assert withdrawal.index == json["index"]
+    # `index` field is of decimal type for `berachain` chain type
+    if Decimal.is_decimal(withdrawal.index) do
+      assert withdrawal.index == Decimal.new(json["index"])
+    else
+      assert withdrawal.index == json["index"]
+    end
   end
 
   defp compare_item(%Instance{token: %Token{} = token} = instance, json) do
