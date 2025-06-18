@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
 
     post("/standard-input", V2.VerificationController, :verification_via_standard_input)
 
-    if @chain_type !== :zksync do
+    if @chain_type !== :zksync && @chain_type !== :via do
       post("/flattened-code", V2.VerificationController, :verification_via_flattened_code)
       post("/sourcify", V2.VerificationController, :verification_via_sourcify)
       post("/multi-part", V2.VerificationController, :verification_via_multi_part)

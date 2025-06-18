@@ -400,7 +400,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     }
 
     base_attributes
-    |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+    |> (&if(
+          Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via,
           do: Map.put(&1, :zk_compiler_version, params["zk_compiler_version"]),
           else: &1
         )).()
@@ -446,7 +447,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   end
 
   defp maybe_add_zksync_specific_data(params) do
-    if Application.get_env(:explorer, :chain_type) == :zksync do
+    if Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via do
       Map.put(params, "constructor_arguments", SmartContract.zksync_get_constructor_arguments(params["address_hash"]))
     else
       params
