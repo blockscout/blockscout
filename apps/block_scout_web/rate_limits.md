@@ -1,6 +1,6 @@
 # Rate Limits Configuration
 
-Rate limits can be defined in a JSON configuration file, which should be passed to `API_RATE_LIMIT_CONFIG_URL` as a URL to the JSON file.
+Rate limits can be defined in a JSON configuration file `apps/block_scout_web/priv/rate_limit_config.json` or passed to `API_RATE_LIMIT_CONFIG_URL` as a URL to the JSON file.
 
 ## Configuration Structure
 
@@ -25,6 +25,7 @@ The JSON configuration is a map where:
 - Paths can contain:
   - `*` - Works as a wildcard (matches any path starting from the asterisk)
     - Example: `api/v2/*` matches `api/v2` and `api/v2/addresses`
+    - ⚠️ Wildcard `*` allowed only at the end of the path
   - `:param` - Represents a variable parameter in the endpoint path
     - Example: `api/v2/addresses/:param` matches `api/v2/addresses/0x00000..000`
 - ⚠️ It's not allowed to use `*` and `:param` simultaneously

@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
   use BlockScoutWeb.ConnCase, async: false
   alias BlockScoutWeb.Utility.RateLimitConfigHelper
 
-  describe "fetch_config/0" do
+  describe "store_rate_limit_config/0" do
     setup do
       # Store original config URL
       original_config = Application.get_env(:block_scout_web, :api_rate_limit)
@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
       end)
 
-      RateLimitConfigHelper.fetch_config()
+      RateLimitConfigHelper.store_rate_limit_config()
 
       assert :persistent_term.get(:rate_limit_config) == %{
                wildcard_match: %{
@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
         Plug.Conn.resp(conn, 500, "Internal Server Error")
       end)
 
-      RateLimitConfigHelper.fetch_config()
+      RateLimitConfigHelper.store_rate_limit_config()
       # Verify that we got some config (from local file)
       assert is_map(:persistent_term.get(:rate_limit_config)[:static_match]["default"])
     end
@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
       end)
 
-      RateLimitConfigHelper.fetch_config()
+      RateLimitConfigHelper.store_rate_limit_config()
       result = :persistent_term.get(:rate_limit_config)
 
       assert result.wildcard_match == %{
@@ -98,7 +98,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
       end)
 
-      RateLimitConfigHelper.fetch_config()
+      RateLimitConfigHelper.store_rate_limit_config()
       assert is_map(:persistent_term.get(:rate_limit_config)[:static_match]["default"])
     end
 
@@ -119,7 +119,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
       end)
 
-      RateLimitConfigHelper.fetch_config()
+      RateLimitConfigHelper.store_rate_limit_config()
       result = :persistent_term.get(:rate_limit_config)
 
       # 5 minutes in milliseconds
@@ -144,7 +144,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
       end)
 
-      RateLimitConfigHelper.fetch_config()
+      RateLimitConfigHelper.store_rate_limit_config()
       assert is_map(:persistent_term.get(:rate_limit_config)[:static_match]["default"])
     end
 
@@ -173,7 +173,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
       end)
 
-      RateLimitConfigHelper.fetch_config()
+      RateLimitConfigHelper.store_rate_limit_config()
       result = :persistent_term.get(:rate_limit_config)
 
       # Check that all keys are properly converted to atoms
@@ -217,7 +217,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
       end)
 
-      RateLimitConfigHelper.fetch_config()
+      RateLimitConfigHelper.store_rate_limit_config()
       result = :persistent_term.get(:rate_limit_config)
 
       # Check processing of parametrized path with nested config
@@ -259,7 +259,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
       end)
 
-      RateLimitConfigHelper.fetch_config()
+      RateLimitConfigHelper.store_rate_limit_config()
       result = :persistent_term.get(:rate_limit_config)
 
       processed_config = result.static_match["api/v2/endpoint"]

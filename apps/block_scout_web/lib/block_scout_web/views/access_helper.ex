@@ -71,7 +71,7 @@ defmodule BlockScoutWeb.AccessHelper do
 
   ## Parameters
   - conn: The connection to handle.
-  - api_v2?: Whether the API is v2.
+  - api_v1?: Whether the API is v1.
 
   ## Returns
   - A connection with the status code 429 and the view set to ApiView if api_v2? is true, otherwise the view is set to RPCView.

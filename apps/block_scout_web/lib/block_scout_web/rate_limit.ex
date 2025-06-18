@@ -76,6 +76,8 @@ defmodule BlockScoutWeb.RateLimit do
     global_result
   end
 
+  @spec rate_limit_with_config(Plug.Conn.t(), map()) ::
+          {:allow, -1} | {:deny, integer(), integer(), integer()} | {:allow, integer(), integer(), integer()}
   def rate_limit_with_config(conn, config) do
     config
     |> prepare_pipeline(conn)

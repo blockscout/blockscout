@@ -119,11 +119,11 @@ config :block_scout_web, :api_rate_limit,
   static_api_key_value: System.get_env("API_RATE_LIMIT_STATIC_API_KEY"),
   static_api_key: %{
     limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_KEY", default_api_rate_limit_by_key),
-    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s")
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_KEY_TIME_INTERVAL", "1s")
   },
   whitelisted_ip: %{
     limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP", default_global_api_rate_limit),
-    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s")
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP_TIME_INTERVAL", "1s")
   },
   ip: %{
     limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_IP", 500),
@@ -131,10 +131,10 @@ config :block_scout_web, :api_rate_limit,
   },
   temporary_token: %{
     limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN", 4),
-    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s")
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN_TIME_INTERVAL", "1s")
   },
   account_api_key: %{
-    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s")
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_ACCOUNT_API_KEY_TIME_INTERVAL", "1s")
   },
   no_rate_limit_api_key_value: System.get_env("API_NO_RATE_LIMIT_API_KEY"),
   whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS"),

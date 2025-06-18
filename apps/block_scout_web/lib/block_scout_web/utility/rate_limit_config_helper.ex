@@ -9,8 +9,8 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelper do
   @doc """
   Fetches the rate limit config from the config url and puts it into the persistent term under the key `:rate_limit_config`.
   """
-  @spec fetch_config() :: :ok
-  def fetch_config do
+  @spec store_rate_limit_config() :: :ok
+  def store_rate_limit_config do
     :persistent_term.put(:rate_limit_config, fetch_config_inner())
   end
 
