@@ -310,7 +310,14 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
   defp preload_template_variables(error), do: error
 
+  # TODO: remove this once we have updated the transaction interpretation service
   defp preload_template_variable(%{"type" => "token", "value" => %{"address" => address_hash_string} = value}),
+    do: %{
+      "type" => "token",
+      "value" => address_hash_string |> Chain.token_from_address_hash(@api_true) |> token_from_db() |> Map.merge(value)
+    }
+
+  defp preload_template_variable(%{"type" => "token", "value" => %{"address_hash" => address_hash_string} = value}),
     do: %{
       "type" => "token",
       "value" => address_hash_string |> Chain.token_from_address_hash(@api_true) |> token_from_db() |> Map.merge(value)
