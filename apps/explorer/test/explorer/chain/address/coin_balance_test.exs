@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
 
   alias Ecto.Changeset
   alias Explorer.Chain.Address.CoinBalance
-  alias Explorer.Chain.{Block, Wei}
+  alias Explorer.Chain.{Address, Block, Wei}
   alias Explorer.PagingOptions
 
   describe "changeset/2" do
@@ -296,6 +296,410 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       value = result |> List.first() |> Map.get(:value)
 
       assert(value == Wei.from(Decimal.new(2000), :wei))
+    end
+  end
+
+  describe "stream_unfetched_balances/2" do
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+           "does not return `t:Explorer.Chain.Block.t/0` `miner_hash`" do
+      %Address{hash: miner_hash} = miner = insert(:address)
+      %Block{number: block_number} = insert(:block, miner: miner)
+      balance = insert(:unfetched_balance, address_hash: miner_hash, block_number: block_number)
+
+      assert {:ok, [%{address_hash: ^miner_hash, block_number: ^block_number}]} =
+               CoinBalance.stream_unfetched_balances([], &[&1 | &2])
+
+      update_balance_value(balance, 1)
+
+      assert {:ok, []} = CoinBalance.stream_unfetched_balances([], &[&1 | &2])
+    end
+
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+           "does not return `t:Explorer.Chain.Transaction.t/0` `from_address_hash`" do
+      %Address{hash: from_address_hash} = from_address = insert(:address)
+      %Block{number: block_number} = block = insert(:block)
+
+      :transaction
+      |> insert(from_address: from_address)
+      |> with_block(block)
+
+      balance = insert(:unfetched_balance, address_hash: from_address_hash, block_number: block_number)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      assert %{address_hash: from_address_hash, block_number: block_number} in balance_fields_list
+
+      update_balance_value(balance, 1)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      refute %{address_hash: from_address_hash, block_number: block_number} in balance_fields_list
+    end
+
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+           "does not return `t:Explorer.Chain.Transaction.t/0` `to_address_hash`" do
+      %Address{hash: to_address_hash} = to_address = insert(:address)
+      %Block{number: block_number} = block = insert(:block)
+
+      :transaction
+      |> insert(to_address: to_address)
+      |> with_block(block)
+
+      balance = insert(:unfetched_balance, address_hash: to_address_hash, block_number: block_number)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      assert %{address_hash: to_address_hash, block_number: block_number} in balance_fields_list
+
+      update_balance_value(balance, 1)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      refute %{address_hash: to_address_hash, block_number: block_number} in balance_fields_list
+    end
+
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+           "does not return `t:Explorer.Chain.Log.t/0` `address_hash`" do
+      address = insert(:address)
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:log, address: address, transaction: transaction, block: block, block_number: block.number)
+
+      balance = insert(:unfetched_balance, address_hash: address.hash, block_number: block.number)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      assert %{
+               address_hash: address.hash,
+               block_number: block.number
+             } in balance_fields_list
+
+      update_balance_value(balance, 1)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      refute %{
+               address_hash: address.hash,
+               block_number: block.number
+             } in balance_fields_list
+    end
+
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+           "does not return `t:Explorer.Chain.InternalTransaction.t/0` `created_contract_address_hash`" do
+      created_contract_address = insert(:address)
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(
+        :internal_transaction_create,
+        created_contract_address: created_contract_address,
+        index: 0,
+        transaction: transaction,
+        block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        transaction_index: transaction.index
+      )
+
+      balance = insert(:unfetched_balance, address_hash: created_contract_address.hash, block_number: block.number)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      assert %{
+               address_hash: created_contract_address.hash,
+               block_number: block.number
+             } in balance_fields_list
+
+      update_balance_value(balance, 1)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      refute %{
+               address_hash: created_contract_address.hash,
+               block_number: block.number
+             } in balance_fields_list
+    end
+
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+           "does not return `t:Explorer.Chain.InternalTransaction.t/0` `from_address_hash`" do
+      from_address = insert(:address)
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(
+        :internal_transaction_create,
+        from_address: from_address,
+        index: 0,
+        transaction: transaction,
+        block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        transaction_index: transaction.index
+      )
+
+      balance = insert(:unfetched_balance, address_hash: from_address.hash, block_number: block.number)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      assert %{address_hash: from_address.hash, block_number: block.number} in balance_fields_list
+
+      update_balance_value(balance, 1)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      refute %{address_hash: from_address.hash, block_number: block.number} in balance_fields_list
+    end
+
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+           "does not return `t:Explorer.Chain.InternalTransaction.t/0` `to_address_hash`" do
+      to_address = insert(:address)
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(
+        :internal_transaction_create,
+        to_address: to_address,
+        index: 0,
+        transaction: transaction,
+        block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        transaction_index: transaction.index
+      )
+
+      balance = insert(:unfetched_balance, address_hash: to_address.hash, block_number: block.number)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      assert %{address_hash: to_address.hash, block_number: block.number} in balance_fields_list
+
+      update_balance_value(balance, 1)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      refute %{address_hash: to_address.hash, block_number: block.number} in balance_fields_list
+    end
+
+    test "an address_hash used for multiple block_numbers returns all block_numbers" do
+      miner = insert(:address)
+      mined_block = insert(:block, miner: miner)
+
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: mined_block.number)
+
+      from_transaction_block = insert(:block)
+
+      :transaction
+      |> insert(from_address: miner)
+      |> with_block(from_transaction_block)
+
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: from_transaction_block.number)
+
+      to_transaction_block = insert(:block)
+
+      :transaction
+      |> insert(to_address: miner)
+      |> with_block(to_transaction_block)
+
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: to_transaction_block.number)
+
+      log_block = insert(:block)
+
+      log_transaction =
+        :transaction
+        |> insert()
+        |> with_block(log_block)
+
+      insert(:log, address: miner, transaction: log_transaction, block: log_block, block_number: log_block.number)
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: log_block.number)
+
+      from_internal_transaction_block = insert(:block)
+
+      from_internal_transaction_transaction =
+        :transaction
+        |> insert()
+        |> with_block(from_internal_transaction_block)
+
+      insert(
+        :internal_transaction_create,
+        from_address: miner,
+        index: 0,
+        transaction: from_internal_transaction_transaction,
+        block_number: from_internal_transaction_transaction.block_number,
+        block_hash: from_internal_transaction_transaction.block_hash,
+        block_index: 0,
+        transaction_index: from_internal_transaction_transaction.index
+      )
+
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: from_internal_transaction_block.number)
+
+      to_internal_transaction_block = insert(:block)
+
+      to_internal_transaction_transaction =
+        :transaction
+        |> insert()
+        |> with_block(to_internal_transaction_block)
+
+      insert(
+        :internal_transaction_create,
+        index: 0,
+        to_address: miner,
+        transaction: to_internal_transaction_transaction,
+        block_number: to_internal_transaction_transaction.block_number,
+        block_hash: to_internal_transaction_transaction.block_hash,
+        block_index: 0,
+        transaction_index: to_internal_transaction_transaction.index
+      )
+
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: to_internal_transaction_block.number)
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      balance_fields_list_by_address_hash = Enum.group_by(balance_fields_list, & &1.address_hash)
+
+      assert balance_fields_list_by_address_hash[miner.hash] |> Enum.map(& &1.block_number) |> Enum.sort() ==
+               Enum.sort([
+                 to_internal_transaction_block.number,
+                 from_internal_transaction_block.number,
+                 log_block.number,
+                 to_transaction_block.number,
+                 from_transaction_block.number,
+                 mined_block.number
+               ])
+    end
+
+    test "an address_hash used for the same block_number is only returned once" do
+      miner = insert(:address)
+      block = insert(:block, miner: miner)
+
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: block.number)
+
+      :transaction
+      |> insert(from_address: miner)
+      |> with_block(block)
+
+      :transaction
+      |> insert(to_address: miner)
+      |> with_block(block)
+
+      log_transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:log, address: miner, transaction: log_transaction, block: block, block_number: block.number)
+
+      from_internal_transaction_transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(
+        :internal_transaction_create,
+        from_address: miner,
+        index: 0,
+        transaction: from_internal_transaction_transaction,
+        block_number: from_internal_transaction_transaction.block_number,
+        block_hash: from_internal_transaction_transaction.block_hash,
+        block_index: 0,
+        transaction_index: from_internal_transaction_transaction.index
+      )
+
+      to_internal_transaction_transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(
+        :internal_transaction_create,
+        to_address: miner,
+        index: 0,
+        transaction: to_internal_transaction_transaction,
+        block_number: to_internal_transaction_transaction.block_number,
+        block_hash: to_internal_transaction_transaction.block_hash,
+        block_index: 1,
+        transaction_index: to_internal_transaction_transaction.index
+      )
+
+      {:ok, balance_fields_list} =
+        CoinBalance.stream_unfetched_balances(
+          [],
+          fn balance_fields, acc -> [balance_fields | acc] end
+        )
+
+      balance_fields_list_by_address_hash = Enum.group_by(balance_fields_list, & &1.address_hash)
+
+      assert balance_fields_list_by_address_hash[miner.hash] |> Enum.map(& &1.block_number) |> Enum.sort() == [
+               block.number
+             ]
     end
   end
 end

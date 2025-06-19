@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
   alias Explorer.{Chain, Market, PagingOptions}
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction}
-  alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Address.{CoinBalance, Counters}
 
   alias Explorer.Chain.Token.Instance
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
@@ -574,7 +574,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {:ok, address} ->
           full_options = params |> paging_options() |> Keyword.merge(@api_true)
 
-          results_plus_one = Chain.address_to_coin_balances(address, full_options)
+          results_plus_one = CoinBalance.address_to_coin_balances(address, full_options)
 
           {coin_balances, next_page} = split_list_by_page(results_plus_one)
 

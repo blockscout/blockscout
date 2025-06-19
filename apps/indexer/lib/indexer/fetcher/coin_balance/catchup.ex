@@ -7,7 +7,7 @@ defmodule Indexer.Fetcher.CoinBalance.Catchup do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.{Block, Hash}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.CoinBalance.Catchup.Supervisor, as: CoinBalanceSupervisor
@@ -41,7 +41,7 @@ defmodule Indexer.Fetcher.CoinBalance.Catchup do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_balances(
+      CoinBalance.stream_unfetched_balances(
         initial,
         fn address_fields, acc ->
           address_fields
