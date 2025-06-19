@@ -31,6 +31,7 @@ defmodule BlockScoutWeb.Notifier do
 
   alias Explorer.Chain.{
     Address,
+    Address.CoinBalance,
     BlockNumberHelper,
     DenormalizationHelper,
     InternalTransaction,
@@ -550,7 +551,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
-    coin_balance = Chain.get_coin_balance(address_hash, block_number)
+    coin_balance = CoinBalance.get_coin_balance(address_hash, block_number)
 
     # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("addresses_old:#{address_hash}", "coin_balance", %{
