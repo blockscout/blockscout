@@ -44,6 +44,7 @@ defmodule Explorer.Chain.SignedAuthorization do
     * `r` - the 'r' component of the signature.
     * `s` - the 's' component of the signature.
     * `authority` - the signer of the authorization.
+    * `status` - the validity status of the authorization.
     * `inserted_at` - timestamp indicating when the signed authorization was created.
     * `updated_at` - timestamp indicating when the signed authorization was last updated.
     * `transaction` - an instance of `Explorer.Chain.Transaction` referenced by `transaction_hash`.

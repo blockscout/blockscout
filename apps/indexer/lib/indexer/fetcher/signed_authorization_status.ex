@@ -75,28 +75,16 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
   # Chunks a list of transactions into entries, with all transactions from the same block grouped together.
   @spec entries_from_transactions([Transaction.t()]) :: [entry()]
   defp entries_from_transactions(transactions) do
-    chunk_fun = fn t, acc ->
-      if Enum.empty?(acc) or acc |> List.first() |> Map.get(:block_hash) == t.block_hash do
-        {:cont, [t | acc]}
-      else
-        {:cont, acc, [t]}
-      end
-    end
-
-    after_fun = fn
-      [] -> {:cont, []}
-      acc -> {:cont, acc, []}
-    end
-
-    # order gets reversed twice, first time due to :desc, second time due to list accumulator in chunk_fun
     transactions
-    |> Enum.sort_by(&{&1.block_hash, &1.block_number, &1.index}, :desc)
-    |> Enum.chunk_while([], chunk_fun, after_fun)
-    |> Enum.map(fn entries ->
+    |> Enum.group_by(& &1.block_hash)
+    |> Enum.map(fn {block_hash, block_transactions} ->
       %{
-        block_number: entries |> List.first() |> Map.get(:block_number),
-        block_hash: entries |> List.first() |> Map.get(:block_hash),
-        entries: entries |> Enum.flat_map(&transaction_to_inner_entries/1)
+        block_number: block_transactions |> List.first() |> Map.get(:block_number),
+        block_hash: block_hash,
+        entries:
+          block_transactions
+          |> Enum.sort_by(& &1.index)
+          |> Enum.flat_map(&transaction_to_inner_entries/1)
       }
     end)
     |> Enum.sort_by(& &1.block_number)
@@ -460,7 +448,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
       poll: false,
       flush_interval: :timer.seconds(3),
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
-      max_batch_size: Application.get_env(:indexer, __MODULE__)[:max_batch_size] || @default_max_batch_size,
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
       task_supervisor: __MODULE__.TaskSupervisor,
       metadata: [fetcher: :signed_authorization_status]
     ]
