@@ -9,7 +9,20 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    Hash,
+    InternalTransaction,
+    InternalTransactionArchive,
+    Log,
+    SmartContract,
+    Token,
+    TokenTransfer,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Market.Token, as: TokenExchangeRate
@@ -62,6 +75,32 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def address_partial_selector(%InternalTransaction{from_address: address}, :from, current_address, truncate) do
+    matching_address_check(current_address, address, Address.smart_contract?(address), truncate)
+  end
+
+  def address_partial_selector(
+        %InternalTransactionArchive{to_address_hash: nil, created_contract_address_hash: nil},
+        :to,
+        _current_address,
+        _truncate
+      ) do
+    gettext("Contract Address Pending")
+  end
+
+  def address_partial_selector(
+        %InternalTransactionArchive{to_address: nil, created_contract_address: contract_address},
+        :to,
+        current_address,
+        truncate
+      ) do
+    matching_address_check(current_address, contract_address, true, truncate)
+  end
+
+  def address_partial_selector(%InternalTransactionArchive{to_address: address}, :to, current_address, truncate) do
+    matching_address_check(current_address, address, Address.smart_contract?(address), truncate)
+  end
+
+  def address_partial_selector(%InternalTransactionArchive{from_address: address}, :from, current_address, truncate) do
     matching_address_check(current_address, address, Address.smart_contract?(address), truncate)
   end
 
@@ -278,12 +317,24 @@ defmodule BlockScoutWeb.AddressView do
     address.contract_creation_internal_transaction.transaction_hash
   end
 
+  def transaction_hash(
+        %Address{contract_archival_creation_internal_transaction: %InternalTransactionArchive{}} = address
+      ) do
+    address.contract_archival_creation_internal_transaction.transaction_hash
+  end
+
   def transaction_hash(%Address{contract_creation_transaction: %Transaction{}} = address) do
     address.contract_creation_transaction.hash
   end
 
   def from_address_hash(%Address{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
     address.contract_creation_internal_transaction.from_address_hash
+  end
+
+  def from_address_hash(
+        %Address{contract_archival_creation_internal_transaction: %InternalTransactionArchive{}} = address
+      ) do
+    address.contract_archival_creation_internal_transaction.from_address_hash
   end
 
   def from_address_hash(%Address{contract_creation_transaction: %Transaction{}} = address) do
