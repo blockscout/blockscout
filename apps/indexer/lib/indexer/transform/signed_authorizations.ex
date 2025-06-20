@@ -39,9 +39,15 @@ defmodule Indexer.Transform.SignedAuthorizations do
             })
 
           # we can immediately do some basic validation that doesn't require any extra JSON-RPC requests
-          # full validation for :invalid_nonce is deferred to async fetcher
+          # full validation for :invalid_nonce is deferred to async fetcher (so :ok is replaced with nil)
+          status =
+            case SignedAuthorization.basic_validate(new_authorization) do
+              :ok -> nil
+              status -> status
+            end
+
           new_authorization
-          |> Map.put(:status, SignedAuthorization.basic_validate(new_authorization))
+          |> Map.put(:status, status)
         end))
     )
   end
