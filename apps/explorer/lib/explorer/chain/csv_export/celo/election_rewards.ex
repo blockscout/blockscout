@@ -7,7 +7,7 @@ defmodule Explorer.Chain.CsvExport.Address.Celo.ElectionRewards do
       block_number_to_epoch_number: 1
     ]
 
-  alias Explorer.Chain.Celo.Reader
+  alias Explorer.Chain.Celo.ElectionReward
   alias Explorer.Chain.CsvExport.Helper
   alias Explorer.Chain.{Hash, Wei}
 
@@ -22,7 +22,7 @@ defmodule Explorer.Chain.CsvExport.Address.Celo.ElectionRewards do
     ]
 
     address_hash
-    |> Reader.address_hash_to_election_rewards(options)
+    |> ElectionReward.address_hash_to_rewards(options)
     |> to_csv_format()
     |> Helper.dump_to_stream()
   end

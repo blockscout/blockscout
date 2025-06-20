@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.17.3-erlang-27.1-alpine-3.20.3 AS builder-deps
+FROM hexpm/elixir:1.17.3-erlang-27.3.4-alpine-3.21.3 AS builder-deps
 
 WORKDIR /app
 
@@ -49,7 +49,7 @@ RUN mkdir -p /opt/release && \
     mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
 ##############################################################
-FROM hexpm/elixir:1.17.3-erlang-27.1-alpine-3.20.3
+FROM hexpm/elixir:1.17.3-erlang-27.3.4-alpine-3.21.3
 
 WORKDIR /app
 
@@ -60,7 +60,7 @@ ARG BLOCKSCOUT_GID=10001
 
 RUN apk --no-cache --update add jq curl && \
     addgroup --system --gid ${BLOCKSCOUT_GID} ${BLOCKSCOUT_GROUP} && \
-    adduser --system --uid ${BLOCKSCOUT_UID} --ingroup ${BLOCKSCOUT_GROUP} --disabled-password ${BLOCKSCOUT_USER}
+    adduser --system --uid ${BLOCKSCOUT_UID} --ingroup ${BLOCKSCOUT_GROUP} --disabled-password --home /app ${BLOCKSCOUT_USER}
 
 ENV DISABLE_WEBAPP=true
 ENV ADMIN_PANEL_ENABLED=false
