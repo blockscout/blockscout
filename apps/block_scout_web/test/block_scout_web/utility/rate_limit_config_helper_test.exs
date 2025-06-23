@@ -30,7 +30,8 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
                wildcard_match: %{
                  {["api", "v2"], 2} => %{
                    static_api_key: true,
-                   account_api_key: true
+                   account_api_key: true,
+                   bucket_key_prefix: ""
                  }
                },
                parametrized_match: %{},
@@ -48,7 +49,13 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
 
       RateLimitConfigHelper.store_rate_limit_config()
       # Verify that we got some config (from local file)
-      assert is_map(:persistent_term.get(:rate_limit_config)[:static_match]["default"])
+      config = :persistent_term.get(:rate_limit_config)
+      assert is_map(config[:static_match]["default"])
+
+      assert config[:static_match]["api/account/v2/authenticate_via_wallet"][:bucket_key_prefix] ==
+               "api/account/v2/authenticate_via_wallet_"
+
+      assert config[:static_match]["api/account/v2/authenticate_via_wallet"][:isolate_rate_limit?] == true
     end
 
     test "correctly categorizes different path types when fetching config" do
@@ -69,15 +76,15 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       result = :persistent_term.get(:rate_limit_config)
 
       assert result.wildcard_match == %{
-               {["api", "v2"], 2} => %{limit: 100}
+               {["api", "v2"], 2} => %{limit: 100, bucket_key_prefix: ""}
              }
 
       assert result.parametrized_match == %{
-               ["api", "v2", "tokens", ":param"] => %{limit: 50}
+               ["api", "v2", "tokens", ":param"] => %{limit: 50, bucket_key_prefix: ""}
              }
 
       assert result.static_match == %{
-               "api/v2/static" => %{limit: 25}
+               "api/v2/static" => %{limit: 25, bucket_key_prefix: ""}
              }
     end
 
@@ -162,7 +169,8 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
           "recaptcha_to_bypass_429" => true,
           "static_api_key" => true,
           "temporary_token" => true,
-          "whitelisted_ip" => true
+          "whitelisted_ip" => true,
+          "isolate_rate_limit?" => true
         }
       }
 
@@ -190,6 +198,8 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       assert processed_config[:static_api_key] == true
       assert processed_config[:temporary_token] == true
       assert processed_config[:whitelisted_ip] == true
+      assert processed_config[:isolate_rate_limit?] == true
+      assert processed_config[:bucket_key_prefix] == "api/v2/endpoint_"
     end
 
     test "correctly processes nested structures with reserved keywords" do

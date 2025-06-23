@@ -112,15 +112,37 @@ defmodule BlockScoutWeb.RateLimit do
       config[:ignore] && fn _ -> {:allow, -1} end,
       check_no_rate_limit_api_key(conn, global_config[:no_rate_limit_api_key_value]) && fn _ -> {:allow, -1} end,
       config[:temporary_token] &&
-        (&rate_limit_by_temporary_token(&1, config[:temporary_token], global_config[:temporary_token])),
+        (&rate_limit_by_temporary_token(
+           &1,
+           config[:temporary_token],
+           global_config[:temporary_token],
+           config[:bucket_key_prefix]
+         )),
       config[:static_api_key] &&
-        (&rate_limit_by_static_api_key(&1, config[:static_api_key], global_config[:static_api_key], global_config)),
+        (&rate_limit_by_static_api_key(
+           &1,
+           config[:static_api_key],
+           global_config[:static_api_key],
+           global_config,
+           config[:bucket_key_prefix]
+         )),
       config[:account_api_key] &&
-        (&rate_limit_by_account_api_key(&1, config[:account_api_key], global_config[:account_api_key])),
+        (&rate_limit_by_account_api_key(
+           &1,
+           config[:account_api_key],
+           global_config[:account_api_key],
+           config[:bucket_key_prefix]
+         )),
       config[:whitelisted_ip] &&
-        (&rate_limit_by_whitelisted_ip(&1, config[:whitelisted_ip], global_config[:whitelisted_ip], global_config)),
+        (&rate_limit_by_whitelisted_ip(
+           &1,
+           config[:whitelisted_ip],
+           global_config[:whitelisted_ip],
+           global_config,
+           config[:bucket_key_prefix]
+         )),
       config[:ip] &&
-        (&rate_limit_by_ip(&1, config[:ip], global_config[:ip]))
+        (&rate_limit_by_ip(&1, config[:ip], global_config[:ip], config[:bucket_key_prefix]))
     ]
   end
 
@@ -200,59 +222,66 @@ defmodule BlockScoutWeb.RateLimit do
     end
   end
 
-  defp rate_limit_by_static_api_key(conn, route_config, default_config, global_config) do
+  defp rate_limit_by_static_api_key(conn, route_config, default_config, global_config, bucket_key_prefix) do
     config = config_or_default(route_config, default_config)
     static_api_key = global_config[:static_api_key_value]
 
     if has_api_key_param?(conn) && get_api_key(conn) == static_api_key do
-      rate_limit(static_api_key, config[:period], config[:limit], config[:cost] || 1)
+      rate_limit(static_api_key, config[:period], config[:limit], config[:cost] || 1, bucket_key_prefix)
     else
       :skip
     end
   end
 
-  @spec rate_limit_by_account_api_key(any(), any(), any()) ::
+  @spec rate_limit_by_account_api_key(any(), any(), any(), String.t()) ::
           :skip | {:allow, -1} | {:deny, integer(), integer(), integer()} | {:allow, integer(), integer(), integer()}
-  defp rate_limit_by_account_api_key(conn, route_config, global_config) do
+  defp rate_limit_by_account_api_key(conn, route_config, global_config, bucket_key_prefix) do
     config = config_or_default(route_config, global_config)
     plan = get_plan(conn.query_params)
 
     if plan do
       {plan, api_key} = plan
-      rate_limit(api_key, config[:period], config[:limit] || plan.max_req_per_second, config[:cost] || 1)
+
+      rate_limit(
+        api_key,
+        config[:period],
+        config[:limit] || plan.max_req_per_second,
+        config[:cost] || 1,
+        bucket_key_prefix
+      )
     else
       :skip
     end
   end
 
-  defp rate_limit_by_whitelisted_ip(conn, route_config, default_config, global_config) do
+  defp rate_limit_by_whitelisted_ip(conn, route_config, default_config, global_config, bucket_key_prefix) do
     config = config_or_default(route_config, default_config)
     ip_string = AccessHelper.conn_to_ip_string(conn)
 
     if Enum.member?(whitelisted_ips(global_config), ip_string) do
-      rate_limit(ip_string, config[:period], config[:limit], config[:cost] || 1)
+      rate_limit(ip_string, config[:period], config[:limit], config[:cost] || 1, bucket_key_prefix)
     else
       :skip
     end
   end
 
-  defp rate_limit_by_temporary_token(conn, route_config, default_config) do
+  defp rate_limit_by_temporary_token(conn, route_config, default_config, bucket_key_prefix) do
     config = config_or_default(route_config, default_config)
     ip_string = AccessHelper.conn_to_ip_string(conn)
     token = get_ui_v2_token(conn, ip_string)
 
     if token && !is_nil(get_user_agent(conn)) do
-      rate_limit(token, config[:period], config[:limit], config[:cost] || 1)
+      rate_limit(token, config[:period], config[:limit], config[:cost] || 1, bucket_key_prefix)
     else
       :skip
     end
   end
 
-  defp rate_limit_by_ip(conn, route_config, default_config) do
+  defp rate_limit_by_ip(conn, route_config, default_config, bucket_key_prefix) do
     config = config_or_default(route_config, default_config)
     ip_string = AccessHelper.conn_to_ip_string(conn)
 
-    rate_limit(ip_string, config[:period], config[:limit], config[:cost] || 1)
+    rate_limit(ip_string, config[:period], config[:limit], config[:cost] || 1, bucket_key_prefix)
   end
 
   @spec config_or_default(any(), any()) :: any()
@@ -264,10 +293,10 @@ defmodule BlockScoutWeb.RateLimit do
     end
   end
 
-  @spec rate_limit(String.t(), integer(), integer(), integer()) ::
+  @spec rate_limit(String.t(), integer(), integer(), integer(), String.t()) ::
           {:allow, integer(), integer(), integer()} | {:deny, integer(), integer(), integer()} | {:allow, -1}
-  def rate_limit(key, time_interval, limit, multiplier) do
-    case Hammer.hit(add_chain_prefix(key), time_interval, limit, multiplier) do
+  def rate_limit(key, time_interval, limit, multiplier, bucket_key_prefix \\ "") do
+    case Hammer.hit(construct_bucket_key(key, bucket_key_prefix), time_interval, limit, multiplier) do
       {:allow, count} ->
         {:allow, count, limit, time_interval}
 
@@ -280,10 +309,10 @@ defmodule BlockScoutWeb.RateLimit do
     end
   end
 
-  @spec add_chain_prefix(String.t()) :: String.t()
-  defp add_chain_prefix(key) do
+  @spec construct_bucket_key(String.t(), String.t()) :: String.t()
+  defp construct_bucket_key(key, bucket_key_prefix) do
     chain_id = Application.get_env(:block_scout_web, :chain_id)
-    "#{chain_id}_#{key}"
+    "#{chain_id}_#{bucket_key_prefix}#{key}"
   end
 
   defp check_no_rate_limit_api_key(conn, no_rate_limit_api_key) do

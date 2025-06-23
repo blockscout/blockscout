@@ -57,6 +57,7 @@ Each rate limit entry can contain the following keys:
 - `ignore` - If `true`, the endpoint won't be rate limited
 - `recaptcha_to_bypass_429` - If `true`, allows passing recaptcha header with response to bypass 429 errors. 
 - `bypass_token_scope` - Scope of recaptcha bypass token (currently only supports `token_instance_refetch_metadata`)
+- `isolate_rate_limit?` - If `true`, creates a separate rate limit bucket for this endpoint. Instead of using the shared rate limit key, it prepends the endpoint path to create an isolated bucket (e.g., `api/v2/address_127.0.0.1` for the `/api/v2/address` endpoint with IP-based rate limiting).
 
 ⚠️ It is recommended to use either `recaptcha_to_bypass_429` or `temporary_token`, not both.
 

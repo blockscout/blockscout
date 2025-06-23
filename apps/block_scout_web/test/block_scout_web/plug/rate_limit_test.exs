@@ -402,5 +402,76 @@ defmodule BlockScoutWeb.Plug.RateLimitTest do
       assert get_resp_header(request, "x-ratelimit-remaining") == ["0"]
       assert get_resp_header(request, "x-ratelimit-reset") |> hd() |> String.to_integer() > 0
     end
+
+    test "rate limit requests with isolated rate limit", %{conn: conn} do
+      config = %{
+        static_match: %{
+          "api/v2/blocks" => %{
+            ip: %{
+              period: 60_000,
+              limit: 1
+            }
+          },
+          "api/v2/transactions" => %{
+            ip: %{
+              period: 60_000,
+              limit: 1
+            },
+            isolate_rate_limit?: true,
+            bucket_key_prefix: "api/v2/transactions_"
+          },
+          "api/v2/addresses" => %{
+            ip: %{
+              period: 60_000,
+              limit: 1
+            }
+          }
+        },
+        wildcard_match: %{},
+        parametrized_match: %{}
+      }
+
+      :persistent_term.put(:rate_limit_config, config)
+
+      # First request - allowed
+      first_request = conn |> get("/api/v2/blocks")
+      assert first_request.status == 200
+      assert get_resp_header(first_request, "x-ratelimit-limit") == ["1"]
+      assert get_resp_header(first_request, "x-ratelimit-remaining") == ["0"]
+      assert get_resp_header(first_request, "x-ratelimit-reset") |> hd() |> String.to_integer() > 0
+      assert get_resp_header(first_request, "bypass-429-option") == ["no_bypass"]
+
+      # Second request - should be denied with 429
+      second_request = conn |> get("/api/v2/blocks")
+      assert second_request.status == 429
+      assert get_resp_header(second_request, "x-ratelimit-limit") == ["1"]
+      assert get_resp_header(second_request, "x-ratelimit-remaining") == ["0"]
+      assert get_resp_header(second_request, "x-ratelimit-reset") |> hd() |> String.to_integer() > 0
+      assert get_resp_header(second_request, "bypass-429-option") == ["no_bypass"]
+
+      # Third request - should be allowed
+      third_request = conn |> get("/api/v2/transactions")
+      assert third_request.status == 200
+      assert get_resp_header(third_request, "x-ratelimit-limit") == ["1"]
+      assert get_resp_header(third_request, "x-ratelimit-remaining") == ["0"]
+      assert get_resp_header(third_request, "x-ratelimit-reset") |> hd() |> String.to_integer() > 0
+      assert get_resp_header(third_request, "bypass-429-option") == ["no_bypass"]
+
+      # Fourth request - should be allowed
+      fourth_request = conn |> get("/api/v2/transactions")
+      assert fourth_request.status == 429
+      assert get_resp_header(fourth_request, "x-ratelimit-limit") == ["1"]
+      assert get_resp_header(fourth_request, "x-ratelimit-remaining") == ["0"]
+      assert get_resp_header(fourth_request, "x-ratelimit-reset") |> hd() |> String.to_integer() > 0
+      assert get_resp_header(fourth_request, "bypass-429-option") == ["no_bypass"]
+
+      # Fifth request - should be denied with 429
+      fifth_request = conn |> get("/api/v2/addresses")
+      assert fifth_request.status == 429
+      assert get_resp_header(fifth_request, "x-ratelimit-limit") == ["1"]
+      assert get_resp_header(fifth_request, "x-ratelimit-remaining") == ["0"]
+      assert get_resp_header(fifth_request, "x-ratelimit-reset") |> hd() |> String.to_integer() > 0
+      assert get_resp_header(fifth_request, "bypass-429-option") == ["no_bypass"]
+    end
   end
 end

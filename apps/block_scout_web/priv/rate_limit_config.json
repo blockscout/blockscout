@@ -7,14 +7,16 @@
     "ip": {
       "period": "1h",
       "limit": 1
-    }
+    },
+    "isolate_rate_limit?": true
   },
   "api/account/v2/send_otp": {
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
       "limit": 1
-    }
+    },
+    "isolate_rate_limit?": true
   },
   "api/v2/tokens/:param/instances/:param/refetch-metadata": {
     "recaptcha_to_bypass_429": true,
@@ -22,63 +24,72 @@
       "period": "1h",
       "limit": 1
     },
-    "bypass_token_scope": "token_instance_refetch_metadata"
+    "bypass_token_scope": "token_instance_refetch_metadata",
+    "isolate_rate_limit?": true
   },
   "api/v2/advanced-filters/csv": {
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
       "limit": 1
-    }
+    },
+    "isolate_rate_limit?": true
   },
   "api/v2/tokens/:param/holders/csv": {
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
       "limit": 1
-    }
+    },
+    "isolate_rate_limit?": true
   },
   "api/v2/addresses/:param/transactions/csv": {
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
       "limit": 1
-    }
+    },
+    "isolate_rate_limit?": true
   },
   "api/v2/addresses/:param/token-transfers/csv": {
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
       "limit": 1
-    }
+    },
+    "isolate_rate_limit?": true
   },
   "api/v2/addresses/:param/internal-transactions/csv": {
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
       "limit": 1
-    }
+    },
+    "isolate_rate_limit?": true
   },
   "api/v2/addresses/:param/logs/csv": {
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
       "limit": 1
-    }
+    },
+    "isolate_rate_limit?": true
   },
   "api/v2/addresses/:param/election-rewards/csv": {
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
       "limit": 1
-    }
+    },
+    "isolate_rate_limit?": true
   },
   "api/v2/smart-contracts/:param/audit-reports": {
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
       "limit": 1
-    }
+    },
+    "isolate_rate_limit?": true
   },
   "api/v2/*": {
     "static_api_key": true,

@@ -11,10 +11,10 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelper do
   """
   @spec store_rate_limit_config() :: :ok
   def store_rate_limit_config do
-    :persistent_term.put(:rate_limit_config, fetch_config_inner())
+    :persistent_term.put(:rate_limit_config, fetch_config())
   end
 
-  defp fetch_config_inner do
+  defp fetch_config do
     url = Application.get_env(:block_scout_web, :api_rate_limit)[:config_url]
 
     with {:ok, config} <- download_config(url),
@@ -78,7 +78,8 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelper do
           "recaptcha_to_bypass_429",
           "static_api_key",
           "temporary_token",
-          "whitelisted_ip"
+          "whitelisted_ip",
+          "isolate_rate_limit?"
         ],
         true
       )
@@ -103,8 +104,17 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelper do
     |> Enum.reduce(%{wildcard_match: %{}, parametrized_match: %{}, static_match: %{}}, fn key, acc ->
       {type, value} = process_endpoint_path(key)
 
-      Map.update(acc, type, %{value => config[key]}, fn existing_value ->
-        Map.put(existing_value, value, config[key])
+      prefix =
+        if config[key][:isolate_rate_limit?] do
+          "#{key}_"
+        else
+          ""
+        end
+
+      config = Map.put(config[key], :bucket_key_prefix, prefix)
+
+      Map.update(acc, type, %{value => config}, fn existing_value ->
+        Map.put(existing_value, value, config)
       end)
     end)
   end
