@@ -508,6 +508,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       description: "Block number for paging",
       name: :block_number
     },
+    "epoch_number" => %Parameter{
+      in: :query,
+      schema: IntegerString,
+      required: false,
+      description: "Epoch number for paging",
+      name: :epoch_number
+    },
     "index" => %Parameter{
       in: :query,
       schema: %Schema{type: :integer},

@@ -1288,7 +1288,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["block_number_no_casting", "amount", "associated_account_address_hash", "type"]),
+        define_paging_params(["epoch_number", "amount", "associated_account_address_hash", "type"]),
     responses: [
       ok:
         {"Celo election rewards for the specified address.", "application/json",
@@ -1360,10 +1360,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @spec celo_election_rewards_paging_options(map()) :: PagingOptions.t()
   defp celo_election_rewards_paging_options(params) do
     with %{
-           "epoch_number" => epoch_number_string,
-           "amount" => amount_string,
-           "associated_account_address_hash" => associated_account_address_hash_string,
-           "type" => type_string
+           epoch_number: epoch_number_string,
+           amount: amount_string,
+           associated_account_address_hash: associated_account_address_hash_string,
+           type: type_string
          }
          when is_binary(epoch_number_string) and
                 is_binary(amount_string) and
