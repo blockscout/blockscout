@@ -1919,19 +1919,19 @@ defmodule Explorer.Chain.Transaction do
   Returns next page params based on the provided transaction.
   """
   @spec address_transactions_next_page_params(Explorer.Chain.Transaction.t()) :: %{
-          required(String.t()) => Decimal.t() | Wei.t() | non_neg_integer | DateTime.t() | Hash.t()
+          required(atom()) => Decimal.t() | Wei.t() | non_neg_integer | DateTime.t() | Hash.t()
         }
   def address_transactions_next_page_params(
         %__MODULE__{block_number: block_number, index: index, inserted_at: inserted_at, hash: hash, value: value} =
           transaction
       ) do
     %{
-      "fee" => transaction |> fee(:wei) |> elem(1),
-      "value" => value,
-      "block_number" => block_number,
-      "index" => index,
-      "inserted_at" => inserted_at,
-      "hash" => hash
+      fee: transaction |> fee(:wei) |> elem(1),
+      value: value,
+      block_number: block_number,
+      index: index,
+      inserted_at: inserted_at,
+      hash: hash
     }
   end
 
@@ -1964,7 +1964,7 @@ defmodule Explorer.Chain.Transaction do
       {:actual, Decimal.new(4)}
 
   """
-  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t() | nil}
+  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t() | nil} | {:actual, Decimal.t() | nil}
   def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
 
   def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil} = transaction, unit) do
