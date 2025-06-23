@@ -4,9 +4,15 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
 
   describe "store_rate_limit_config/0" do
     setup do
+      original_config_from_persistent_term = :persistent_term.get(:rate_limit_config)
+
       # Store original config URL
       original_config = Application.get_env(:block_scout_web, :api_rate_limit)
-      on_exit(fn -> Application.put_env(:block_scout_web, :api_rate_limit, original_config) end)
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :api_rate_limit, original_config)
+        :persistent_term.put(:rate_limit_config, original_config_from_persistent_term)
+      end)
     end
 
     test "successfully fetches and parses config from URL" do
