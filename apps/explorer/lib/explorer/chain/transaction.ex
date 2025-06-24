@@ -2108,7 +2108,9 @@ defmodule Explorer.Chain.Transaction do
   Where
     - `decoded_input_data` is list of results: either `{:ok, _identifier, _text, _mapping}` or `nil`
   """
-  @spec decode_transactions([Transaction.t()], boolean(), Keyword.t()) :: [nil | {:ok, String.t(), String.t(), map()}]
+  @spec decode_transactions([%{:__struct__ => Transaction, optional(any()) => any()}], boolean(), Keyword.t()) :: [
+          nil | {:ok, String.t(), String.t(), map()}
+        ]
   def decode_transactions(transactions, skip_sig_provider?, opts) do
     smart_contract_full_abi_map = combine_smart_contract_full_abi_map(transactions)
 

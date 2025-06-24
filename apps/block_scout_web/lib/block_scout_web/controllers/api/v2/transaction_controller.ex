@@ -37,14 +37,16 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   require Logger
 
-  alias BlockScoutWeb.AccessHelper
+  alias BlockScoutWeb.{AccessHelper, API.V2.ApiView}
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Cache.Counters.{NewPendingTransactionsCount, Transactions24hCount}
-  alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.Hash.Address, as: AddressHash
+  alias Explorer.Chain.Hash.Full, as: FullHash
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
@@ -723,6 +725,68 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
          {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       {:ok, transaction, transaction_hash}
+    end
+  end
+
+  @doc """
+    Function to handle POST request to `/api/v2/transactions/decode-input/` endpoint.
+  """
+  @spec decode_input(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def decode_input(
+        conn,
+        %{
+          "target_address_hash" => target_address_hash,
+          "transaction_hash" => transaction_hash,
+          "input" => input
+        } = _params
+      ) do
+    target_address =
+      case AddressHash.cast(target_address_hash) do
+        {:ok, hash} -> %Address{hash: hash}
+        _ -> nil
+      end
+
+    input_bytes =
+      input
+      |> String.trim_leading("0x")
+      |> Base.decode16(case: :mixed)
+      |> case do
+        {:ok, bytes} -> bytes
+        _ -> nil
+      end
+
+    with {:target_address_valid, true} <- {:target_address_valid, !is_nil(target_address)},
+         {:input_valid, true} <- {:input_valid, !is_nil(input_bytes)} do
+      transaction_hash_casted =
+        case FullHash.cast(transaction_hash) do
+          {:ok, hash} -> hash
+          _ -> FullHash.cast("0x0000000000000000000000000000000000000000000000000000000000000000")
+        end
+
+      transaction =
+        %Transaction{
+          to_address: target_address,
+          input: %{bytes: input_bytes},
+          hash: transaction_hash_casted
+        }
+
+      [decoded_input] = Transaction.decode_transactions([transaction], false, @api_true)
+
+      conn
+      |> put_status(200)
+      |> render(:decoded_input, %{decoded_input: decoded_input})
+    else
+      {:target_address_valid, false} ->
+        conn
+        |> put_view(ApiView)
+        |> put_status(400)
+        |> render(:message, %{message: "Invalid target address hash"})
+
+      {:input_valid, false} ->
+        conn
+        |> put_view(ApiView)
+        |> put_status(400)
+        |> render(:message, %{message: "Invalid input"})
     end
   end
 end
