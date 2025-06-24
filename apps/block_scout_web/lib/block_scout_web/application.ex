@@ -12,7 +12,9 @@ defmodule BlockScoutWeb.Application do
   def start(_type, _args) do
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
 
-    RateLimitConfigHelper.store_rate_limit_config()
+    if not @disable_api? do
+      RateLimitConfigHelper.store_rate_limit_config()
+    end
 
     if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
       Supervisor.start_link([Supervisor.child_spec(HealthEndpoint, [])], opts)
