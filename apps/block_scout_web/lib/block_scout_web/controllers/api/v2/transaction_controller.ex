@@ -759,8 +759,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
          {:input_valid, true} <- {:input_valid, !is_nil(input_bytes)} do
       transaction_hash_casted =
         case FullHash.cast(transaction_hash) do
-          {:ok, hash} -> hash
-          _ -> FullHash.cast("0x0000000000000000000000000000000000000000000000000000000000000000")
+          {:ok, hash} ->
+            hash
+
+          _ ->
+            {:ok, zero_hash} = FullHash.cast("0x0000000000000000000000000000000000000000000000000000000000000000")
+            zero_hash
         end
 
       transaction =
