@@ -1093,6 +1093,10 @@ config :indexer, Indexer.Fetcher.MultichainSearchDbExport.Retry,
     ConfigHelper.parse_time_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_ENQUEUE_BUSY_WAITING_TIMEOUT", "1s"),
   max_queue_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_MAX_QUEUE_SIZE", 1000)
 
+config :indexer, Indexer.Fetcher.SignedAuthorizationStatus,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_SIGNED_AUTHORIZATION_STATUS_BATCH_SIZE", 1),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_SIGNED_AUTHORIZATION_STATUS_CONCURRENCY", 4)
+
 config :indexer, Indexer.Fetcher.Optimism.TransactionBatch.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 config :indexer, Indexer.Fetcher.Optimism.DisputeGame.Supervisor, enabled: ConfigHelper.chain_type() == :optimism

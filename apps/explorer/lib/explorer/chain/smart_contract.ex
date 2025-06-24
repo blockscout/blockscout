@@ -1119,7 +1119,8 @@ defmodule Explorer.Chain.SmartContract do
   @doc """
   Converts address hash to smart-contract object with metadata_from_verified_bytecode_twin=true
   """
-  @spec address_hash_to_smart_contract_with_bytecode_twin(Hash.Address.t(), [api?]) :: {__MODULE__.t() | nil, boolean()}
+  @spec address_hash_to_smart_contract_with_bytecode_twin(Hash.Address.t(), [api?], boolean()) ::
+          {__MODULE__.t() | nil, boolean()}
   def address_hash_to_smart_contract_with_bytecode_twin(address_hash, options \\ [], fetch_implementation? \\ true) do
     current_smart_contract = address_hash_to_smart_contract(address_hash, options)
 

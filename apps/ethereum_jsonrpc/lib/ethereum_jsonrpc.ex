@@ -34,6 +34,7 @@ defmodule EthereumJSONRPC do
     FetchedBalances,
     FetchedBeneficiaries,
     FetchedCodes,
+    Nonces,
     Receipts,
     RequestCoordinator,
     Subscription,
@@ -272,6 +273,44 @@ defmodule EthereumJSONRPC do
            |> FetchedCodes.requests()
            |> json_rpc(json_rpc_named_arguments) do
       {:ok, FetchedCodes.from_responses(responses, id_to_params)}
+    end
+  end
+
+  @doc """
+    Fetches address nonces for multiple addresses at specified block numbers.
+
+    This function takes a list of parameters, each containing an address and a
+    block number, and retrieves the nonce for each address at the specified
+    block.
+
+    ## Parameters
+    - `params_list`: A list of maps, each containing:
+      - `:block_quantity`: The block number (as a quantity string) at which to fetch the nonce.
+      - `:address`: The address of the contract to fetch the nonce for.
+    - `json_rpc_named_arguments`: A keyword list of JSON-RPC configuration options.
+
+    ## Returns
+    - `{:ok, fetched_nonces}`, where `fetched_nonces` is a `Nonces.t()` struct containing:
+      - `params_list`: A list of successfully fetched code parameters, each containing:
+        - `address`: The contract address.
+        - `block_number`: The block number at which the nonce was fetched.
+        - `nonce`: The fetched nonce.
+      - `errors`: A list of errors encountered during the fetch operation.
+    - `{:error, reason}`: An error occurred during the fetch operation.
+  """
+  @spec fetch_nonces(
+          [%{required(:block_quantity) => quantity, required(:address) => address()}],
+          json_rpc_named_arguments
+        ) :: {:ok, Nonces.t()} | {:error, reason :: term}
+  def fetch_nonces(params_list, json_rpc_named_arguments)
+      when is_list(params_list) and is_list(json_rpc_named_arguments) do
+    id_to_params = id_to_params(params_list)
+
+    with {:ok, responses} <-
+           id_to_params
+           |> Nonces.requests()
+           |> json_rpc(json_rpc_named_arguments) do
+      {:ok, Nonces.from_responses(responses, id_to_params)}
     end
   end
 
