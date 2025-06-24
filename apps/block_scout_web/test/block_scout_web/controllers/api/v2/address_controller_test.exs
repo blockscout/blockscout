@@ -162,6 +162,27 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["creation_status"] == "success"
     end
 
+    test "returns failed creation transaction for a contract",
+         %{conn: conn} do
+      contract_address = insert(:address, contract_code: "0x")
+
+      failed_transaction =
+        insert(:transaction,
+          created_contract_address_hash: contract_address.hash
+        )
+        |> with_block(status: :error)
+
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:ok, []}
+      end)
+
+      request = get(conn, "/api/v2/addresses/#{Address.checksum(contract_address.hash)}")
+      response = json_response(request, 200)
+      assert response["is_contract"]
+      assert response["creation_transaction_hash"] == to_string(failed_transaction.hash)
+      assert response["creation_status"] == "failed"
+    end
+
     defp check_response(pattern_response, response) do
       assert pattern_response["hash"] == response["hash"]
       assert pattern_response["is_contract"] == response["is_contract"]
@@ -186,6 +207,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert pattern_response["has_beacon_chain_withdrawals"] == response["has_beacon_chain_withdrawals"]
       assert pattern_response["ens_domain_name"] == response["ens_domain_name"]
       assert pattern_response["metadata"] == response["metadata"]
+      assert pattern_response["creation_status"] == response["creation_status"]
     end
 
     test "get EIP-1167 proxy contract info", %{conn: conn} do
