@@ -2156,6 +2156,55 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(acb, Enum.at(response["items"], 0))
     end
 
+    test "get coin balance with transaction", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address_hash: address.hash, to_address: address, value: 123)
+        |> with_block()
+
+      acb = insert(:address_coin_balance, address: address, block_number: transaction.block_number)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history")
+
+      assert %{"items" => [acb_json], "next_page_params" => nil} = json_response(request, 200)
+      assert acb_json["transaction_hash"] == to_string(transaction.hash)
+
+      compare_item(acb, acb_json)
+    end
+
+    test "get coin balance with internal transaction", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      address = insert(:address)
+
+      insert(:internal_transaction,
+        type: "call",
+        call_type: "call",
+        transaction: transaction,
+        block: transaction.block,
+        to_address: address,
+        value: 123,
+        block_number: transaction.block_number,
+        index: 1,
+        block_index: 1
+      )
+
+      insert(:address_coin_balance)
+      acb = insert(:address_coin_balance, address: address, block_number: transaction.block_number)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history")
+
+      assert %{"items" => [acb_json], "next_page_params" => nil} = json_response(request, 200)
+      assert acb_json["transaction_hash"] == to_string(transaction.hash)
+
+      compare_item(acb, acb_json)
+    end
+
     test "coin balance history can paginate", %{conn: conn} do
       address = insert(:address)
 
