@@ -75,7 +75,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "watchlist_address_id" => nil,
         "has_beacon_chain_withdrawals" => false,
         "ens_domain_name" => nil,
-        "metadata" => nil
+        "metadata" => nil,
+        "creation_status" => nil
       }
 
       stub(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
@@ -117,7 +118,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "watchlist_address_id" => nil,
         "has_beacon_chain_withdrawals" => false,
         "ens_domain_name" => nil,
-        "metadata" => nil
+        "metadata" => nil,
+        "creation_status" => nil
       }
 
       stub(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
@@ -157,6 +159,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
       assert response["is_contract"]
       assert response["creation_transaction_hash"] == to_string(succeeded_transaction.hash)
+      assert response["creation_status"] == "success"
     end
 
     defp check_response(pattern_response, response) do
@@ -273,6 +276,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
                "creation_transaction_hash" => ^transaction_hash,
+               "creation_status" => "success",
                "proxy_type" => "eip1167",
                "implementations" => [
                  %{
@@ -323,6 +327,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
                "creation_transaction_hash" => ^transaction_hash,
+               "creation_status" => "success",
                "proxy_type" => "eip1967",
                "implementations" => [
                  %{
@@ -396,6 +401,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
                "creation_transaction_hash" => ^transaction_hash,
+               "creation_status" => "success",
                "proxy_type" => "resolved_delegate_proxy",
                "implementations" => [
                  %{
