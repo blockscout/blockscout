@@ -162,6 +162,7 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.SmartContractLanguage),
         configure(Explorer.Migrator.CeloL2Epochs),
         configure(Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds),
+        configure(Explorer.Migrator.TransactionHasTokenTransfers),
         Explorer.Migrator.BackfillMultichainSearchDB
         |> configure_mode_dependent_process(:indexer)
         |> configure_multichain_search_microservice(),
@@ -298,6 +299,10 @@ defmodule Explorer.Application do
         ),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsTokenTransferMethodIdOrderedIndex,
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),

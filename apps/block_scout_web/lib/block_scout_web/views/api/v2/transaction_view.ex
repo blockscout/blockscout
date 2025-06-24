@@ -637,8 +637,19 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end)
   end
 
-  defp format_status({:error, reason}), do: reason
-  defp format_status(status), do: status
+  @spec format_status(
+          :pending
+          | :awaiting_internal_transactions
+          | :success
+          | {:error, :awaiting_internal_transactions}
+          | {:error, reason :: String.t()}
+        ) ::
+          :pending
+          | :awaiting_internal_transactions
+          | :success
+          | String.t()
+  def format_status({:error, reason}), do: reason
+  def format_status(status), do: status
 
   defp format_decoded_log_input({:error, :could_not_decode}), do: nil
   defp format_decoded_log_input({:ok, _method_id, _text, _mapping} = decoded), do: decoded
