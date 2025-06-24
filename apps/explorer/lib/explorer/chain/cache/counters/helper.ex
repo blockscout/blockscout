@@ -263,4 +263,21 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
 
     if is_nil(count), do: 0, else: max(count, 0)
   end
+
+  @doc """
+  Returns the estimated count of pending transaction operations.
+
+  This function retrieves the estimated count from the "pending_transaction_operations" cache.
+  If the count is `nil`, it returns `0`. Otherwise, it ensures the count is non-negative
+  by returning the maximum of the count and `0`.
+
+  ## Returns
+    - `integer`: The estimated count of pending transaction operations, or `0` if the count is `nil`.
+  """
+  @spec estimated_pending_transaction_operations_count() :: non_neg_integer()
+  def estimated_pending_transaction_operations_count do
+    count = estimated_count_from("pending_transaction_operations")
+
+    if is_nil(count), do: 0, else: max(count, 0)
+  end
 end
