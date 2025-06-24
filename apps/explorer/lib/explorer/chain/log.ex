@@ -391,6 +391,7 @@ defmodule Explorer.Chain.Log do
       ) do
     with true <- SigProviderInterface.enabled?(),
          false <- skip_sig_provider?,
+         false <- is_nil(log.first_topic),
          {:ok, result} <-
            SigProviderInterface.decode_event(
              [
