@@ -36,6 +36,7 @@ defmodule Indexer.Transform.AddressCoinBalancesTest do
         :internal_transaction
         |> Factory.params_for()
         |> Map.put(:type, "call")
+        |> Map.put(:call_type, "call")
         |> Map.put(:block_number, block_number)
         |> Map.put(:from_address_hash, from_address_hash)
         |> Map.put(:to_address_hash, to_address_hash)
@@ -78,6 +79,52 @@ defmodule Indexer.Transform.AddressCoinBalancesTest do
 
       assert MapSet.size(params_set) == 1
       assert MapSet.member?(params_set, %{address_hash: created_contract_address_hash, block_number: block_number})
+    end
+
+    test "with create2 internal transaction without error extracts created_contract_address_hash and from_address_hash" do
+      block_number = 1
+
+      created_contract_address_hash =
+        Factory.address_hash()
+        |> to_string()
+
+      from_address_hash =
+        Factory.address_hash()
+        |> to_string()
+
+      internal_transaction_params =
+        :internal_transaction_create
+        |> Factory.params_for()
+        |> Map.put(:type, "create2")
+        |> Map.put(:block_number, block_number)
+        |> Map.put(:created_contract_address_hash, created_contract_address_hash)
+        |> Map.put(:from_address_hash, from_address_hash)
+
+      params_set = AddressCoinBalances.params_set(%{internal_transactions_params: [internal_transaction_params]})
+
+      assert MapSet.size(params_set) == 2
+      assert MapSet.member?(params_set, %{address_hash: created_contract_address_hash, block_number: block_number})
+      assert MapSet.member?(params_set, %{address_hash: from_address_hash, block_number: block_number})
+    end
+
+    test "ignores call internal transaction with call type that does not change balances" do
+      block_number = 1
+
+      from_address_hash =
+        Factory.address_hash()
+        |> to_string()
+
+      internal_transaction_params =
+        :internal_transaction
+        |> Factory.params_for()
+        |> Map.put(:type, "call")
+        |> Map.put(:call_type, "staticcall")
+        |> Map.put(:block_number, block_number)
+        |> Map.put(:from_address_hash, from_address_hash)
+
+      params_set = AddressCoinBalances.params_set(%{internal_transactions_params: [internal_transaction_params]})
+
+      assert MapSet.size(params_set) == 0
     end
 
     test "with self-destruct internal transaction extracts from_address_hash and to_address_hash" do
