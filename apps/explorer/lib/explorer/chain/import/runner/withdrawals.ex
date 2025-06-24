@@ -72,7 +72,7 @@ defmodule Explorer.Chain.Import.Runner.Withdrawals do
         repo,
         ordered_changes_list,
         conflict_target: [:index],
-        on_conflict: on_conflict,
+        on_conflict: if(Application.get_env(:explorer, :chain_type) == :berachain, do: :nothing, else: on_conflict),
         for: Withdrawal,
         returning: true,
         timeout: timeout,

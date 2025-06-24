@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.WithdrawalControllerTest do
       conn =
         get(conn, withdrawal_path(conn, :index), %{
           "type" => "JSON",
-          "index" => Integer.to_string(withdrawal.index)
+          "index" => withdrawal.index
         })
 
       items = Map.get(json_response(conn, 200), "items")
