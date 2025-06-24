@@ -1155,6 +1155,9 @@ config :indexer, Indexer.Fetcher.Optimism.Interop.MessageQueue,
   recv_timeout: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_INTEROP_RECV_TIMEOUT", 10),
   export_expiration: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_INTEROP_EXPORT_EXPIRATION_DAYS", 10)
 
+config :indexer, Indexer.Fetcher.Optimism.Interop.MultichainExport,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_MULTICHAIN_BATCH_SIZE", 100)
+
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"
 
@@ -1333,6 +1336,7 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, enabled: Conf
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch,
   chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_CHUNK_SIZE", 20),
+  ignore_numbers: System.get_env("INDEXER_POLYGON_ZKEVM_BATCHES_IGNORE", "0"),
   recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_RECHECK_INTERVAL", 60)
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor,

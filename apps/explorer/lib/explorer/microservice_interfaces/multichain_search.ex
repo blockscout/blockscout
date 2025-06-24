@@ -379,7 +379,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     ]
   end
 
-  defp batch_import_url do
+  @doc """
+    Returns a full URL to the Multichain service API import endpoint.
+
+    ## Returns
+    - A string containing the URL.
+  """
+  @spec batch_import_url() :: String.t()
+  def batch_import_url do
     "#{base_url()}/import:batch"
   end
 
@@ -393,7 +400,15 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
-  defp api_key do
+  @doc """
+    Returns an API key for the Multichain service.
+
+    ## Returns
+    - A string containing the API key.
+    - `nil` if the key is not defined.
+  """
+  @spec api_key() :: String.t() | nil
+  def api_key do
     Microservice.api_key(__MODULE__)
   end
 
