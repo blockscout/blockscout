@@ -29,6 +29,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
 
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
+  alias Explorer.Chain.Data
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.InteropMessage
   alias Indexer.Fetcher.Optimism
@@ -332,7 +333,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
             block_number: block_number,
             timestamp: Map.get(timestamps, block_number),
             relay_chain_id: quantity_to_integer(Enum.at(event["topics"], 1)),
-            payload: payload,
+            payload: %Data{bytes: payload},
             transfer_token_address_hash: transfer_token_address_hash,
             transfer_from_address_hash: transfer_from_address_hash,
             transfer_to_address_hash: transfer_to_address_hash,
