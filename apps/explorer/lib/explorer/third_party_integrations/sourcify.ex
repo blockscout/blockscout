@@ -370,7 +370,9 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     runs =
       optimizer
       |> Map.get("runs")
-      |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+      |> (&if(
+            Application.get_env(:explorer, :chain_type) == :zksync ||
+              Application.get_env(:explorer, :chain_type) == :via,
             do: to_string(&1),
             else: &1
           )).()
