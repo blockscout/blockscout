@@ -4,14 +4,13 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
   import Mox
 
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.MultichainSearchDbExportRetryQueue
+  alias Explorer.Chain.MultichainSearchDb.MainExportQueue
+  alias Explorer.Chain.Wei
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.{Repo, TestHelper}
   alias Plug.Conn
 
   setup :verify_on_exit!
-
-  @error_msg "Error while sending request to Multichain Search DB Service"
 
   describe "batch_import/2" do
     setup do
@@ -55,7 +54,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         )
       end)
 
-      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
 
       block_1 = insert(:block)
       block_2 = insert(:block)
@@ -73,15 +72,15 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       }
 
       assert {:ok, {:chunks_processed, _}} = MultichainSearch.batch_import(params)
-      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
     end
 
-    test "returns {:error, reason} when an error occurs during processing and 'multichain_search_db_export_retry_queue' table is populated" do
+    test "returns {:error, data_to_retry} when an error occurs during processing and 'multichain_search_db_export_queue' table is populated" do
       bypass = Bypass.open()
 
       Application.put_env(:explorer, MultichainSearch,
         service_url: "http://localhost:#{bypass.port}",
-        api_key: "12345",
+        api_key: "123456",
         addresses_chunk_size: 7000
       )
 
@@ -100,7 +99,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         )
       end)
 
-      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
 
       address_1 = insert(:address)
       address_2 = insert(:address)
@@ -115,10 +114,25 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         transactions: [transaction_1, transaction_2]
       }
 
-      assert {:error, @error_msg} = MultichainSearch.batch_import(params)
+      assert {:error,
+              %{
+                addresses: [
+                  address_export_data(address_2),
+                  address_export_data(address_1)
+                ],
+                block_ranges: [
+                  %{max_block_number: to_string(block_2.number), min_block_number: to_string(block_1.number)}
+                ],
+                hashes: [
+                  block_export_data(block_1),
+                  block_export_data(block_2),
+                  transaction_export_data(transaction_1),
+                  transaction_export_data(transaction_2)
+                ]
+              }} == MultichainSearch.batch_import(params)
 
-      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 6
-      records = Repo.all(MultichainSearchDbExportRetryQueue)
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 6
+      records = Repo.all(MainExportQueue)
 
       assert Enum.all?(records, fn record ->
                (record.hash == address_1.hash.bytes && record.hash_type == :address) ||
@@ -130,7 +144,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
              end)
     end
 
-    test "returns {:error, reason} when at least one chunk is failed" do
+    test "returns {:error, data_to_retry} when at least one chunk is failed" do
       Application.put_env(:explorer, MultichainSearch,
         service_url: "http://localhost:1234",
         api_key: "12345",
@@ -146,7 +160,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       TestHelper.get_chain_id_mock()
 
-      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
 
       block_1 = insert(:block)
       block_2 = insert(:block)
@@ -179,12 +193,15 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         transactions: [transaction_1, transaction_2]
       }
 
-      assert {:error, @error_msg} = MultichainSearch.batch_import(params)
+      assert {:error, results} = MultichainSearch.batch_import(params)
+      assert Enum.count(results.addresses) == 7000
+      assert Enum.count(results.block_ranges) == 1
+      assert Enum.count(results.hashes) == 4
       # 7000 addresses + 2 blocks + 2 transactions
-      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 7004
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 7004
     end
 
-    test "returns {:error, reason} when an error occurs in all chunks during processing and 'multichain_search_db_export_retry_queue' table is populated with all the input data" do
+    test "returns {:error, data_to_retry} when an error occurs in all chunks during processing and 'multichain_search_db_export_queue' table is populated with all the input data" do
       bypass = Bypass.open()
 
       Application.put_env(:explorer, MultichainSearch,
@@ -208,7 +225,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         )
       end)
 
-      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
 
       addresses = 10 |> insert_list(:address)
 
@@ -218,12 +235,15 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         transactions: []
       }
 
-      assert {:error, @error_msg} = MultichainSearch.batch_import(params)
+      assert {:error, results} = MultichainSearch.batch_import(params)
+      assert Enum.count(results.addresses) == 10
+      assert Enum.count(results.block_ranges) == 0
+      assert Enum.count(results.hashes) == 0
 
-      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 10
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 10
     end
 
-    test "returns {:error, reason} when an error occurs in all chunks (and number of chunks more than @max_concurrency) during processing and 'multichain_search_db_export_retry_queue' table is populated with all the input data" do
+    test "returns {:error, data_to_retry} when an error occurs in all chunks (and number of chunks more than @max_concurrency) during processing and 'multichain_search_db_export_queue' table is populated with all the input data" do
       bypass = Bypass.open()
 
       Application.put_env(:explorer, MultichainSearch,
@@ -247,7 +267,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         )
       end)
 
-      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 0
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
 
       addresses = 15 |> insert_list(:address)
 
@@ -257,9 +277,12 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         transactions: []
       }
 
-      assert {:error, @error_msg} = MultichainSearch.batch_import(params)
+      assert {:error, results} = MultichainSearch.batch_import(params)
+      assert Enum.count(results.addresses) == 15
+      assert Enum.count(results.block_ranges) == 0
+      assert Enum.count(results.hashes) == 0
 
-      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 15
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 15
     end
   end
 
@@ -285,7 +308,17 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                addresses: [],
                blocks: [],
                transactions: []
-             }) == [%{api_key: "12345", addresses: [], block_ranges: [], chain_id: "1", hashes: []}]
+             }) == [
+               %{
+                 api_key: "12345",
+                 addresses: [],
+                 block_ranges: [],
+                 chain_id: "1",
+                 hashes: [],
+                 address_coin_balances: [],
+                 address_token_balances: []
+               }
+             ]
     end
 
     test "returns chunks with transactions and blocks when no addresses provided" do
@@ -338,17 +371,29 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
     end
 
     test "returns chunks with the correct structure when all types of data is provided" do
-      address_1 = insert(:address)
-      address_2 = insert(:address)
+      address_1 = insert(:address, fetched_coin_balance: Decimal.new(100))
+      address_2 = insert(:address, fetched_coin_balance: Decimal.new(200))
       block_1 = insert(:block)
       block_2 = insert(:block)
       transaction_1 = insert(:transaction)
       transaction_2 = insert(:transaction)
 
+      token = insert(:token, contract_address: address_1, type: "ERC-20", name: "Test Token")
+
+      current_token_balance =
+        insert(:address_current_token_balance,
+          address: address_1,
+          token_type: "ERC-20",
+          token_id: nil,
+          token_contract_address_hash: token.contract_address_hash,
+          value: 30_000
+        )
+
       params = %{
         addresses: [address_1, address_2],
         blocks: [block_1, block_2],
-        transactions: [transaction_1, transaction_2]
+        transactions: [transaction_1, transaction_2],
+        address_current_token_balances: [current_token_balance]
       }
 
       chunks = MultichainSearch.extract_batch_import_params_into_chunks(params)
@@ -388,6 +433,20 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                %{
                  hash: "0x" <> Base.encode16(transaction_2.hash.bytes, case: :lower),
                  hash_type: "TRANSACTION"
+               }
+             ]
+
+      assert chunk[:address_coin_balances] == [
+               %{value: %Wei{value: Decimal.new("200")}, address_hash: to_string(address_2.hash)},
+               %{value: %Wei{value: Decimal.new("100")}, address_hash: to_string(address_1.hash)}
+             ]
+
+      assert chunk[:address_token_balances] == [
+               %{
+                 value: Decimal.new("30000"),
+                 address_hash: to_string(address_1.hash),
+                 token_id: nil,
+                 token_address_hash: to_string(token.contract_address_hash)
                }
              ]
     end
@@ -462,8 +521,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert second_chunk[:hashes] == []
 
       assert Enum.all?(second_chunk[:addresses], fn item ->
-               item.hash == "0x" <> Base.encode16(Enum.at(addresses, -2).hash.bytes, case: :lower) ||
-                 item.hash == "0x" <> Base.encode16(List.last(addresses).hash.bytes, case: :lower)
+               item.hash == "0x" <> Base.encode16(Enum.at(addresses, 0).hash.bytes, case: :lower) ||
+                 item.hash == "0x" <> Base.encode16(Enum.at(addresses, 1).hash.bytes, case: :lower)
              end)
     end
 
@@ -521,14 +580,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       assert chunk[:addresses] == [
                %{
-                 hash: "0x" <> Base.encode16(address_1.hash.bytes, case: :lower),
-                 is_contract: false,
-                 is_verified_contract: false,
-                 contract_name: nil,
-                 token_name: nil,
-                 token_type: "UNSPECIFIED",
-                 is_token: false,
-                 ens_name: "te.eth"
+                 hash: "0x" <> Base.encode16(address_3.hash.bytes, case: :lower),
+                 is_contract: true,
+                 is_verified_contract: true,
+                 contract_name: "SimpleStorage",
+                 token_name: "Main Token",
+                 token_type: "ERC-721",
+                 is_token: true,
+                 ens_name: nil
                },
                %{
                  hash: "0x" <> Base.encode16(address_2.hash.bytes, case: :lower),
@@ -541,19 +600,46 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                  ens_name: nil
                },
                %{
-                 hash: "0x" <> Base.encode16(address_3.hash.bytes, case: :lower),
-                 is_contract: true,
-                 is_verified_contract: true,
-                 contract_name: "SimpleStorage",
-                 token_name: "Main Token",
-                 token_type: "ERC-721",
-                 is_token: true,
-                 ens_name: nil
+                 hash: "0x" <> Base.encode16(address_1.hash.bytes, case: :lower),
+                 is_contract: false,
+                 is_verified_contract: false,
+                 contract_name: nil,
+                 token_name: nil,
+                 token_type: "UNSPECIFIED",
+                 is_token: false,
+                 ens_name: "te.eth"
                }
              ]
 
       assert chunk[:block_ranges] == []
       assert chunk[:hashes] == []
     end
+  end
+
+  defp transaction_export_data(transaction) do
+    %{
+      hash: "0x" <> Base.encode16(transaction.hash.bytes, case: :lower),
+      hash_type: "TRANSACTION"
+    }
+  end
+
+  defp block_export_data(block) do
+    %{
+      hash: "0x" <> Base.encode16(block.hash.bytes, case: :lower),
+      hash_type: "BLOCK"
+    }
+  end
+
+  defp address_export_data(address) do
+    %{
+      hash: "0x" <> Base.encode16(address.hash.bytes, case: :lower),
+      token_type: "UNSPECIFIED",
+      is_contract: false,
+      token_name: nil,
+      contract_name: nil,
+      ens_name: nil,
+      is_token: false,
+      is_verified_contract: false
+    }
   end
 end
