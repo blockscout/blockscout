@@ -26,6 +26,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   alias Explorer.Chain.{Address, Data, SmartContract}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.SmartContract.EthBytecodeDBInterface
+  alias Explorer.SmartContract.Geas.Publisher, as: GeasPublisher
   alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.Utility.RateLimiter
@@ -194,6 +195,10 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
 
   def process_contract_source("YUL", source, address_hash_string) do
     SolidityPublisher.process_rust_verifier_response(source, address_hash_string, %{}, true, true, true)
+  end
+
+  def process_contract_source("GEAS", source, address_hash_string) do
+    GeasPublisher.process_rust_verifier_response(source, address_hash_string, %{}, true, true, true)
   end
 
   def process_contract_source(_, _source, _address_hash), do: false
