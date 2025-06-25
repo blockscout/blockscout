@@ -60,12 +60,14 @@ defmodule BlockScoutWeb.API.V2.CeloView do
         # For L2, delegated payments are implemented differently. They're
         # distributed on-demand via direct payments rather than through epoch
         # processing, so we need to handle them separately.
-        |> (&(if CeloHelper.pre_migration_epoch_number?(epoch.number) do
-                &1
-              else
-                &1
-                |> Map.put(:delegated_payment, nil)
-              end)).()
+        |> then(fn rewards ->
+          if CeloHelper.pre_migration_epoch_number?(epoch.number) do
+            rewards
+          else
+            rewards
+            |> Map.put(:delegated_payment, nil)
+          end
+        end)
       end
 
     %{
@@ -376,16 +378,22 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
       [first_transfer | rest_transfers] ->
         case validate_and_extract_token(first_transfer, rest_transfers) do
-          {:ok, token_info} ->
+          {:ok, token} ->
             total_value =
               transfers
               |> Enum.map(&(&1 |> TokenTransferView.prepare_token_transfer_total() |> Map.get("value")))
               |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
 
+            token_json =
+              TokenView.render("token.json", %{
+                token: token,
+                contract_address_hash: token.contract_address_hash
+              })
+
             %{
-              token: token_info,
+              token: token_json,
               total: %{
-                decimals: token_info.decimals,
+                decimals: token.decimals,
                 value: total_value
               }
             }
