@@ -353,7 +353,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
-        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269",
+        type: 2
       )
 
       :transaction
@@ -367,7 +368,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
-        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03",
+        type: 2
       )
 
       :transaction
@@ -381,7 +383,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 3_000_000_000,
         max_priority_fee_per_gas: 3_000_000_000,
         max_fee_per_gas: 3_000_000_000,
-        hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016"
+        hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016",
+        type: 2
       )
 
       assert {{:ok,
@@ -423,7 +426,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
         hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269",
-        earliest_processing_start: ~U[2023-12-12 12:12:00.000000Z]
+        earliest_processing_start: ~U[2023-12-12 12:12:00.000000Z],
+        type: 2
       )
 
       :transaction
@@ -439,7 +443,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
         hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03",
-        earliest_processing_start: ~U[2023-12-12 12:12:00.000000Z]
+        earliest_processing_start: ~U[2023-12-12 12:12:00.000000Z],
+        type: 2
       )
 
       :transaction
@@ -455,7 +460,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         max_priority_fee_per_gas: 3_000_000_000,
         max_fee_per_gas: 3_000_000_000,
         hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016",
-        earliest_processing_start: ~U[2023-12-12 12:12:55.000000Z]
+        earliest_processing_start: ~U[2023-12-12 12:12:55.000000Z],
+        type: 2
       )
 
       assert {{
@@ -527,7 +533,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
-        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269",
+        type: 2
       )
 
       :transaction
@@ -541,7 +548,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
-        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03",
+        type: 2
       )
 
       :transaction
@@ -555,7 +563,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 3_000_000_000,
         max_priority_fee_per_gas: 3_000_000_000,
         max_fee_per_gas: 3_000_000_000,
-        hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016"
+        hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016",
+        type: 2
       )
 
       AverageBlockTime.refresh()
@@ -595,7 +604,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         index: 0,
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
-        max_fee_per_gas: 1_000_000_000
+        max_fee_per_gas: 1_000_000_000,
+        type: 2
       )
 
       :transaction
@@ -608,7 +618,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         index: 0,
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
-        max_fee_per_gas: 1_000_000_000
+        max_fee_per_gas: 1_000_000_000,
+        type: 2
       )
 
       :transaction
@@ -659,6 +670,38 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
 
       assert {{:ok, %{average: %{price: 1.0}, fast: %{base_fee: 1.0}, slow: %{base_fee: 1.0}}}, _} =
                GasPriceOracle.get_average_gas_price(1, 35, 60, 90)
+    end
+
+    if Application.compile_env(:explorer, :chain_type) == :celo do
+      test "ignores transactions with unsupported types" do
+        block =
+          insert(:block,
+            number: 200,
+            hash: "0xfeedface00000000000000000000000000000000000000000000000000000000",
+            base_fee_per_gas: nil
+          )
+
+        :transaction
+        |> insert(
+          status: :ok,
+          block_hash: block.hash,
+          block_number: block.number,
+          index: 0,
+          # 1 Gwei
+          gas_price: 1_000_000_000,
+          type: 123,
+          hash: "0xcafe010000000000000000000000000000000000000000000000000000000000",
+          cumulative_gas_used: 884_322,
+          gas_used: 106_025
+        )
+
+        assert {{:ok,
+                 %{
+                   slow: nil,
+                   average: nil,
+                   fast: nil
+                 }}, []} = GasPriceOracle.get_average_gas_price(1, 35, 60, 90)
+      end
     end
   end
 end

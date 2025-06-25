@@ -7,7 +7,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   import Ecto.Query,
     only: [
-      from: 2
+      from: 2,
+      where: 3
     ]
 
   alias Explorer.Chain.{Block, Wei}
@@ -98,6 +99,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       from(
         block in Block,
         left_join: transaction in assoc(block, :transactions),
+        as: :transaction,
         where: block.consensus == true,
         where: is_nil(transaction.gas_price) or transaction.gas_price > ^0,
         where: transaction.block_number > ^from_block_query,
@@ -168,7 +170,11 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
         }
       )
 
-    new_acc = fee_query |> Repo.all(timeout: :infinity) |> merge_gas_prices(acc, from_block_actual)
+    new_acc =
+      fee_query
+      |> filter_unknown_transaction_types(Application.get_env(:explorer, :chain_type))
+      |> Repo.all(timeout: :infinity)
+      |> merge_gas_prices(acc, from_block_actual)
 
     gas_prices = new_acc |> process_fee_data_from_db()
 
@@ -177,6 +183,14 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
     error ->
       Logger.error("Failed to get gas prices: #{inspect(error)}")
       {{:error, error}, get_gas_prices_acc()}
+  end
+
+  defp filter_unknown_transaction_types(query, :celo) do
+    query |> where([transaction: t], is_nil(t.type) or t.type != 123)
+  end
+
+  defp filter_unknown_transaction_types(query, _chain_type) do
+    query
   end
 
   defp merge_gas_prices(new, acc, from_block), do: Enum.take_while(new ++ acc, &(&1.block_number > from_block))
