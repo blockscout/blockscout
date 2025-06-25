@@ -43,32 +43,8 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       |> prepare_distribution()
 
     aggregated_election_rewards_json =
-      if epoch.fetched? do
-        aggregated_election_rewards
-        |> Map.new(fn {type, %{total: total, count: count, token: token}} ->
-          {type,
-           %{
-             total: total,
-             count: count,
-             token:
-               TokenView.render("token.json", %{
-                 token: token,
-                 contract_address_hash: token && token.contract_address_hash
-               })
-           }}
-        end)
-        # For L2, delegated payments are implemented differently. They're
-        # distributed on-demand via direct payments rather than through epoch
-        # processing, so we need to handle them separately.
-        |> then(fn rewards ->
-          if CeloHelper.pre_migration_epoch_number?(epoch.number) do
-            rewards
-          else
-            rewards
-            |> Map.put(:delegated_payment, nil)
-          end
-        end)
-      end
+      epoch
+      |> prepare_aggregated_election_rewards(aggregated_election_rewards)
 
     %{
       number: epoch.number,
@@ -171,6 +147,35 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       "items" => rewards_json,
       "next_page_params" => next_page_params
     }
+  end
+
+  defp prepare_aggregated_election_rewards(%Epoch{fetched?: false}, _), do: nil
+
+  defp prepare_aggregated_election_rewards(%Epoch{} = epoch, aggregated_election_rewards) do
+    aggregated_election_rewards
+    |> Map.new(fn {type, %{total: total, count: count, token: token}} ->
+      {type,
+       %{
+         total: total,
+         count: count,
+         token:
+           TokenView.render("token.json", %{
+             token: token,
+             contract_address_hash: token && token.contract_address_hash
+           })
+       }}
+    end)
+    # For L2, delegated payments are implemented differently. They're
+    # distributed on-demand via direct payments rather than through epoch
+    # processing, so we need to handle them separately.
+    |> then(fn rewards ->
+      if CeloHelper.pre_migration_epoch_number?(epoch.number) do
+        rewards
+      else
+        rewards
+        |> Map.put(:delegated_payment, nil)
+      end
+    end)
   end
 
   defp epoch_type(epoch) do
