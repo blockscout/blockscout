@@ -78,7 +78,17 @@ defmodule BlockScoutWeb.Endpoint do
 
     # 'x-apollo-tracing' header for https://www.graphqlbin.com to work with our GraphQL endpoint
     # 'updated-gas-oracle' header for /api/v2/stats endpoint, added to support cross-origin requests (e.g. multichain search explorer)
-    plug(CORSPlug, headers: ["x-apollo-tracing", "updated-gas-oracle"] ++ CORSPlug.defaults()[:headers])
+    plug(CORSPlug,
+      headers:
+        [
+          "x-apollo-tracing",
+          "updated-gas-oracle",
+          "recaptcha-v2-response",
+          "recaptcha-v3-response",
+          "recaptcha-bypass-token",
+          "scoped-recaptcha-bypass-token"
+        ] ++ CORSPlug.defaults()[:headers]
+    )
 
     plug(BlockScoutWeb.Router)
   end
