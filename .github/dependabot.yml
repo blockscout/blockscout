@@ -2,13 +2,13 @@ version: 2
 updates:
   - package-ecosystem: "solidity"
     directory: "/"
-    open-pull-requests-limit: 20
+    open-pull-requests-limit: 10000
     schedule:
       interval: "hourly" 
       
   - package-ecosystem: "npm"
     directory: "/apps/block_scout_web/assets"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 10000
     schedule:
       interval: "hourly"
     ignore:
