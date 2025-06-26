@@ -75,6 +75,8 @@ defmodule Explorer.Prometheus.Instrumenter do
     registry: :public
   ]
 
+  @gauge [name: :batch_average_time, help: "L2 average batch time"]
+
   def block_import_stage_runner(function, stage, runner, step) do
     {time, result} = :timer.tc(function)
 
@@ -125,5 +127,92 @@ defmodule Explorer.Prometheus.Instrumenter do
 
   def increment_failed_uploading_media_number do
     Counter.inc(name: :failed_uploading_media_number, registry: :public)
+  end
+
+  defp batch_average_time(average_time) do
+    Gauge.set([name: :batch_average_time], average_time)
+  end
+
+  @doc """
+  Prepares a batch metric from a list of batch data.
+
+  ## Parameters
+
+    - `batches`: A list of maps, where each map represents a batch with the following keys:
+    - `:number` (integer): The batch number.
+    - `:timestamp` (DateTime.t): The timestamp of the batch.
+
+  ## Returns
+
+    - `{:ok, %{latest_batch_number: integer, latest_batch_timestamp: DateTime.t(), average_batch_time: integer}}`:
+      - `:latest_batch_number`: The number of the latest batch.
+      - `:latest_batch_timestamp`: The timestamp of the latest batch.
+      - `:average_batch_time`: The average time in seconds between batches, or `0` if there is only one batch.
+    - `{:error, :not_found}`: If the input list of batches is empty.
+
+  ## Examples
+
+    - When the list of batches is empty:
+      ```elixir
+      prepare_batch_metric([])
+      # => {:error, :not_found}
+      ```
+
+    - When the list contains a single batch:
+      ```elixir
+      prepare_batch_metric([%{number: 1, timestamp: ~U[2023-01-01T00:00:00Z]}])
+      # => {:ok, %{latest_batch_number: 1, latest_batch_timestamp: ~U[2023-01-01T00:00:00Z], average_batch_time: 0}}
+      ```
+
+    - When the list contains multiple batches:
+      ```elixir
+      prepare_batch_metric([
+        %{number: 3, timestamp: ~U[2023-01-01T00:02:00Z]},
+        %{number: 2, timestamp: ~U[2023-01-01T00:01:00Z]},
+        %{number: 1, timestamp: ~U[2023-01-01T00:00:00Z]}
+      ])
+      # => {:ok, %{latest_batch_number: 3, latest_batch_timestamp: ~U[2023-01-01T00:02:00Z], average_batch_time: 60}}
+      ```
+  """
+  @spec prepare_batch_metric([%{number: integer, timestamp: DateTime.t()}]) ::
+          {:ok,
+           %{
+             latest_batch_number: integer,
+             latest_batch_timestamp: DateTime.t(),
+             average_batch_time: integer
+           }}
+          | {:error, :not_found}
+  def prepare_batch_metric(batches) do
+    case batches do
+      [] ->
+        {:error, :not_found}
+
+      [batch] ->
+        batch_average_time(0)
+
+        {
+          :ok,
+          %{
+            latest_batch_number: batch.number,
+            latest_batch_timestamp: batch.timestamp,
+            average_batch_time: 0
+          }
+        }
+
+      batches ->
+        latest_batch = List.first(batches)
+        older_batch = List.last(batches)
+        average_time = div(DateTime.diff(latest_batch.timestamp, older_batch.timestamp, :second), length(batches) - 1)
+        batch_average_time(average_time)
+
+        {
+          :ok,
+          %{
+            latest_batch_number: latest_batch.number,
+            latest_batch_timestamp: latest_batch.timestamp,
+            average_batch_time: average_time
+          }
+        }
+    end
   end
 end

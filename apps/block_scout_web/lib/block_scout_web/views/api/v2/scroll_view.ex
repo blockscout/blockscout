@@ -98,8 +98,16 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
         {batch.bundle.finalize_block_number, batch.bundle.finalize_transaction_hash, batch.bundle.finalize_timestamp}
       end
 
-    transaction_count =
-      Transaction.transaction_count_for_block_range(batch.l2_block_range.from..batch.l2_block_range.to)
+    {start_block_number, end_block_number, transactions_count} =
+      if is_nil(batch.l2_block_range) do
+        {nil, nil, nil}
+      else
+        {
+          batch.l2_block_range.from,
+          batch.l2_block_range.to,
+          Transaction.transaction_count_for_block_range(batch.l2_block_range.from..batch.l2_block_range.to)
+        }
+      end
 
     %{
       "number" => batch.number,
@@ -116,14 +124,21 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
       "data_availability" => %{
         "batch_data_container" => batch.container
       },
-      "start_block" => batch.l2_block_range.from,
-      "end_block" => batch.l2_block_range.to,
-      "transaction_count" => transaction_count
+      "start_block_number" => start_block_number,
+      "end_block_number" => end_block_number,
+      # todo: It should be removed in favour `start_block_number` property with the next release after 8.0.0
+      "start_block" => start_block_number,
+      # todo: It should be removed in favour `end_block_number` property with the next release after 8.0.0
+      "end_block" => end_block_number,
+      "transactions_count" => transactions_count,
+      # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
+      "transaction_count" => transactions_count
     }
   end
 
   @doc """
     Extends the json output with a sub-map containing information related Scroll.
+    For pending transactions the output is not extended.
 
     ## Parameters
     - `out_json`: A map defining output json which will be extended.
@@ -134,11 +149,16 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
   """
   @spec extend_transaction_json_response(map(), %{
           :__struct__ => Transaction,
-          :block_number => non_neg_integer(),
+          :block_number => non_neg_integer() | nil,
           :index => non_neg_integer(),
           :input => Data.t(),
           optional(any()) => any()
         }) :: map()
+  def extend_transaction_json_response(out_json, %Transaction{block_number: nil}) do
+    # this is a pending transaction
+    out_json
+  end
+
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     config = Application.get_all_env(:explorer)[L1FeeParam]
 

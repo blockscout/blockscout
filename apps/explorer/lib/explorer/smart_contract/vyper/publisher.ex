@@ -28,7 +28,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
         process_rust_verifier_response(source, address_hash, params, false, false)
 
       {:ok, %{abi: abi}} ->
-        publish_smart_contract(address_hash, params, abi)
+        publish_smart_contract(address_hash, params, abi, false)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil)}
@@ -63,7 +63,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
         process_rust_verifier_response(source, address_hash, params, true, standard_json?)
 
       {:ok, %{abi: abi}} ->
-        publish_smart_contract(address_hash, params, abi)
+        publish_smart_contract(address_hash, params, abi, true)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
@@ -120,50 +120,28 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       |> Map.put("license_type", initial_params["license_type"])
       |> Map.put("is_blueprint", source["isBlueprint"])
 
-    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
+    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string), save_file_path?)
   end
 
-  def publish_smart_contract(address_hash, params, abi) do
+  def publish_smart_contract(address_hash, params, abi, verification_with_files?) do
     attrs = address_hash |> attributes(params, abi)
 
-    create_or_update_smart_contract(address_hash, attrs)
-  end
+    ok_or_error =
+      SmartContract.create_or_update_smart_contract(
+        address_hash,
+        attrs,
+        verification_with_files?
+      )
 
-  @doc """
-    Creates or updates a smart contract record based on its verification status.
+    case ok_or_error do
+      {:ok, _smart_contract} ->
+        Logger.info("Vyper smart-contract #{address_hash} successfully published")
 
-    This function first checks if a smart contract associated with the provided address hash
-    is already verified. If verified, it updates the existing smart contract record with the
-    new attributes provided, such as external libraries and secondary sources. During the update,
-    the contract methods are also updated: existing methods are preserved, and any new methods
-    from the provided ABI are added to ensure the contract's integrity and completeness.
-
-    If the smart contract is not verified, it creates a new record in the database with the
-    provided attributes, setting it up for verification. In this case, all contract methods
-    from the ABI are freshly inserted as part of the new smart contract creation.
-
-    ## Parameters
-    - `address_hash`: The hash of the address for the smart contract.
-    - `attrs`: A map containing attributes such as external libraries and secondary sources.
-
-    ## Returns
-    - `{:ok, Explorer.Chain.SmartContract.t()}`: Successfully created or updated smart
-      contract.
-    - `{:error, data}`: on failure, returning `Ecto.Changeset.t()` or, if any issues
-      happen during setting the address as verified, an error message.
-  """
-  @spec create_or_update_smart_contract(binary() | Explorer.Chain.Hash.t(), %{
-          :secondary_sources => list(),
-          optional(any()) => any()
-        }) :: {:error, Ecto.Changeset.t() | String.t()} | {:ok, Explorer.Chain.SmartContract.t()}
-  def create_or_update_smart_contract(address_hash, attrs) do
-    Logger.info("Publish successfully verified Vyper smart-contract #{address_hash} into the DB")
-
-    if SmartContract.verified?(address_hash) do
-      SmartContract.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
-    else
-      SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+      {:error, error} ->
+        Logger.error("Vyper smart-contract #{address_hash} failed to publish: #{inspect(error)}")
     end
+
+    ok_or_error
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do
@@ -216,7 +194,6 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
       verified_via_verifier_alliance: params["verified_via_verifier_alliance"] || false,
       partially_verified: params["partially_verified"] || false,
-      is_vyper_contract: true,
       file_path: params["file_path"],
       compiler_settings: clean_compiler_settings,
       license_type: prepare_license_type(params["license_type"]) || :none,

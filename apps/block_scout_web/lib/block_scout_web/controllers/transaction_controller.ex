@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.TransactionController do
   }
 
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Cache.Transaction, as: TransactionCache
+  alias Explorer.Chain.Cache.Counters.TransactionsCount
   alias Explorer.Chain.DenormalizationHelper
   alias Phoenix.View
 
@@ -118,7 +118,7 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   def index(conn, _params) do
-    transaction_estimated_count = TransactionCache.estimated_count()
+    transaction_estimated_count = TransactionsCount.get()
 
     render(
       conn,
@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   def show(conn, %{"id" => transaction_hash_string, "type" => "JSON"}) do
-    case Chain.string_to_transaction_hash(transaction_hash_string) do
+    case Chain.string_to_full_hash(transaction_hash_string) do
       {:ok, transaction_hash} ->
         if Chain.transaction_has_token_transfers?(transaction_hash) do
           TransactionTokenTransferController.index(conn, %{
@@ -149,7 +149,7 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   def show(conn, %{"id" => id} = params) do
-    with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(id),
+    with {:ok, transaction_hash} <- Chain.string_to_full_hash(id),
          :ok <- Chain.check_transaction_exists(transaction_hash) do
       if Chain.transaction_has_token_transfers?(transaction_hash) do
         with {:ok, transaction} <-

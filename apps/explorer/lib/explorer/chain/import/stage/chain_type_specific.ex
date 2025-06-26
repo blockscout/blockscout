@@ -17,7 +17,8 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.Optimism.Deposits,
       Runner.Optimism.Withdrawals,
       Runner.Optimism.WithdrawalEvents,
-      Runner.Optimism.EIP1559ConfigUpdates
+      Runner.Optimism.EIP1559ConfigUpdates,
+      Runner.Optimism.InteropMessages
     ],
     polygon_edge: [
       Runner.PolygonEdge.Deposits,
@@ -62,6 +63,7 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
     ],
     celo: [
       Runner.Celo.ValidatorGroupVotes,
+      Runner.Celo.Epochs,
       Runner.Celo.ElectionRewards,
       Runner.Celo.EpochRewards
     ],

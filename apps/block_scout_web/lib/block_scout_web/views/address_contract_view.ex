@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.AddressContractView do
   alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
   alias Explorer.Chain.SmartContract
   alias Explorer.Chain.SmartContract.Proxy.EIP1167
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Phoenix.HTML.Safe
 
@@ -64,7 +65,7 @@ defmodule BlockScoutWeb.AddressContractView do
         val_to_string_if_array(val, type, conn)
 
       type =~ "address" ->
-        address_hash = "0x" <> Base.encode16(val, case: :lower)
+        address_hash = ExplorerHelper.add_0x_prefix(val)
 
         address = Chain.string_to_address_hash_or_nil(address_hash)
 
@@ -113,8 +114,27 @@ defmodule BlockScoutWeb.AddressContractView do
   end
 
   def contract_creation_code(%Address{
+        contract_creation_transaction: %Transaction{
+          status: :error,
+          input: creation_code
+        }
+      }) do
+    {:failed, creation_code}
+  end
+
+  def contract_creation_code(%Address{
+        contract_creation_internal_transaction: %InternalTransaction{
+          error: error,
+          init: init
+        }
+      })
+      when not is_nil(error) do
+    {:failed, init}
+  end
+
+  def contract_creation_code(%Address{
         contract_code: %Data{bytes: <<>>},
-        contracts_creation_internal_transaction: %InternalTransaction{init: init}
+        contract_creation_internal_transaction: %InternalTransaction{init: init}
       }) do
     {:selfdestructed, init}
   end
@@ -123,15 +143,15 @@ defmodule BlockScoutWeb.AddressContractView do
     {:ok, contract_code}
   end
 
-  def creation_code(%Address{contracts_creation_transaction: %Transaction{}} = address) do
-    address.contracts_creation_transaction.input
+  def creation_code(%Address{contract_creation_transaction: %Transaction{}} = address) do
+    address.contract_creation_transaction.input
   end
 
-  def creation_code(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction.init
+  def creation_code(%Address{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contract_creation_internal_transaction.init
   end
 
-  def creation_code(%Address{contracts_creation_transaction: nil}) do
+  def creation_code(%Address{contract_creation_transaction: nil}) do
     nil
   end
 

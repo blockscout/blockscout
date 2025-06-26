@@ -14,6 +14,7 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
 
   alias Explorer.Chain.PolygonZkevm.{BatchTransaction, Bridge, BridgeL1Token, LifecycleTransaction, TransactionBatch}
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Prometheus.Instrumenter
   alias Indexer.Helper
 
   @doc """
@@ -190,6 +191,8 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
     Reads a list of L1 transactions by their hashes from `polygon_zkevm_lifecycle_l1_transactions` table.
   """
   @spec lifecycle_transactions(list()) :: list()
+  def lifecycle_transactions([]), do: []
+
   def lifecycle_transactions(l1_transaction_hashes) do
     query =
       from(
@@ -355,5 +358,39 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
 
   defp page_deposits_or_withdrawals(query, %PagingOptions{key: {index}}) do
     from(b in query, where: b.index < ^index)
+  end
+
+  @doc """
+    Gets information about the latest finalized batch and calculates average time between finalized batches, in seconds.
+
+    ## Parameters
+      - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - If at least two batches exist:
+      `{:ok, %{latest_batch_number: integer, latest_batch_timestamp: DateTime.t(), average_batch_time: integer}}`
+      where:
+        * latest_batch_number - id of the latest batch in the database.
+        * latest_batch_timestamp - when the latest batch was committed to L1.
+        * average_batch_time - average number of seconds between batches for the last 100 batches.
+
+    - If less than two batches exist: `{:error, :not_found}`.
+  """
+  @spec get_latest_batch_info(keyword()) :: {:ok, map()} | {:error, :not_found}
+  def get_latest_batch_info(options \\ []) do
+    query =
+      from(tb in TransactionBatch,
+        where: not is_nil(tb.timestamp),
+        order_by: [desc: tb.number],
+        limit: 100,
+        select: %{
+          number: tb.number,
+          timestamp: tb.timestamp
+        }
+      )
+
+    items = select_repo(options).all(query)
+
+    Instrumenter.prepare_batch_metric(items)
   end
 end

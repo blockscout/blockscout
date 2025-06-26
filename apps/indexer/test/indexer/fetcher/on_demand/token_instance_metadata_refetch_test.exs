@@ -32,6 +32,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
   describe "refetch token instance metadata behaviour" do
     setup do
       Subscriber.to(:fetched_token_instance_metadata, :on_demand)
+      Subscriber.to(:not_fetched_token_instance_metadata, :on_demand)
 
       Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
 
@@ -181,6 +182,11 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
       refute_receive(
         {:chain_event, :fetched_token_instance_metadata, :on_demand,
          [^token_contract_address_hash_string, ^token_id, %{metadata: ^metadata}]}
+      )
+
+      assert_receive(
+        {:chain_event, :not_fetched_token_instance_metadata, :on_demand,
+         [^token_contract_address_hash_string, ^token_id, "error"]}
       )
     end
   end

@@ -13,28 +13,24 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     ]
 
   import BlockScoutWeb.PagingHelper,
-    only: [delete_parameters_from_next_page_params: 1, select_block_type: 1, type_filter_options: 1]
+    only: [
+      delete_parameters_from_next_page_params: 1,
+      select_block_type: 1,
+      type_filter_options: 1,
+      internal_transaction_type_options: 1,
+      internal_transaction_call_type_options: 1
+    ]
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
-  import Explorer.Chain.Celo.Helper,
-    only: [
-      validate_epoch_block_number: 1,
-      block_number_to_epoch_number: 1
-    ]
-
   alias BlockScoutWeb.API.V2.{
-    CeloView,
     TransactionView,
     WithdrawalView
   }
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
-  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
-  alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
-  alias Explorer.Chain.Celo.Reader, as: CeloReader
   alias Explorer.Chain.InternalTransaction
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
@@ -121,7 +117,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :nephews => :optional,
         :rewards => :optional,
         :transactions => :optional,
-        :withdrawals => :optional
+        :withdrawals => :optional,
+        :internal_transactions => :optional
       }
       |> Map.merge(@chain_type_block_necessity_by_association),
     api?: true
@@ -298,6 +295,10 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/internal-transactions` endpoint.
+  Query params:
+   - `type` - Filters internal transactions by type. Possible values: (#{Explorer.Chain.InternalTransaction.Type.values()})
+   - `call_type` - Filters internal transactions by call type. Possible values: (#{Explorer.Chain.InternalTransaction.CallType.values()})
+  These two filters are mutually exclusive. If both are set, call_type takes priority, and type will be ignored.
   """
   @spec internal_transactions(Plug.Conn.t(), map()) ::
           {:error, :not_found | {:invalid, :hash | :number}}
@@ -309,6 +310,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         @internal_transaction_necessity_by_association
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(@api_true)
+        |> Keyword.merge(internal_transaction_type_options(params))
+        |> Keyword.merge(internal_transaction_call_type_options(params))
 
       internal_transactions_plus_one = InternalTransaction.block_to_internal_transactions(block.hash, full_options)
 
@@ -366,123 +369,9 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
-  @doc """
-  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/epoch` endpoint.
-  """
-  @spec celo_epoch(Plug.Conn.t(), map()) ::
-          {:error, :not_found | {:invalid, :hash | :number | :celo_election_reward_type}}
-          | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
-          | Plug.Conn.t()
-  def celo_epoch(conn, %{"block_hash_or_number" => block_hash_or_number}) do
-    params = [
-      necessity_by_association: %{
-        :celo_epoch_reward => :optional
-      },
-      api?: true
-    ]
-
-    with {:ok, block} <- block_param_to_block(block_hash_or_number, params),
-         :ok <- validate_epoch_block_number(block.number) do
-      epoch_number = block_number_to_epoch_number(block.number)
-
-      epoch_distribution =
-        block
-        |> Map.get(:celo_epoch_reward)
-        |> case do
-          %CeloEpochReward{} = epoch_reward ->
-            CeloEpochReward.load_token_transfers(epoch_reward, api?: true)
-
-          _ ->
-            nil
-        end
-
-      aggregated_election_rewards =
-        CeloReader.block_hash_to_aggregated_election_rewards_by_type(
-          block.hash,
-          api?: true
-        )
-
-      conn
-      |> put_status(200)
-      |> put_view(CeloView)
-      |> render(:celo_epoch, %{
-        epoch_number: epoch_number,
-        epoch_distribution: epoch_distribution,
-        aggregated_election_rewards: aggregated_election_rewards
-      })
-    end
-  end
-
-  @doc """
-  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/election-rewards/:reward_type` endpoint.
-  """
-  @spec celo_election_rewards(Plug.Conn.t(), map()) ::
-          {:error, :not_found | {:invalid, :hash | :number | :celo_election_reward_type}}
-          | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
-          | Plug.Conn.t()
-  def celo_election_rewards(
-        conn,
-        %{"block_hash_or_number" => block_hash_or_number, "reward_type" => reward_type} = params
-      ) do
-    with {:ok, reward_type_atom} <- celo_reward_type_to_atom(reward_type),
-         {:ok, block} <-
-           block_param_to_block(block_hash_or_number) do
-      address_associations = [:names, :smart_contract, proxy_implementations_association()]
-
-      full_options =
-        [
-          necessity_by_association: %{
-            [account_address: address_associations] => :optional,
-            [associated_account_address: address_associations] => :optional
-          }
-        ]
-        |> Keyword.merge(CeloElectionReward.block_paging_options(params))
-        |> Keyword.merge(@api_true)
-
-      rewards_plus_one =
-        CeloReader.block_hash_to_election_rewards_by_type(
-          block.hash,
-          reward_type_atom,
-          full_options
-        )
-
-      {rewards, next_page} = split_list_by_page(rewards_plus_one)
-
-      filtered_params =
-        params
-        |> delete_parameters_from_next_page_params()
-        |> Map.delete("reward_type")
-
-      next_page_params =
-        next_page_params(
-          next_page,
-          rewards,
-          filtered_params,
-          &CeloElectionReward.to_block_paging_params/1
-        )
-
-      conn
-      |> put_status(200)
-      |> put_view(CeloView)
-      |> render(:celo_election_rewards, %{
-        rewards: rewards,
-        next_page_params: next_page_params
-      })
-    end
-  end
-
   defp block_param_to_block(block_hash_or_number, options \\ @api_true) do
     with {:ok, type, value} <- parse_block_hash_or_number_param(block_hash_or_number) do
       fetch_block(type, value, options)
-    end
-  end
-
-  defp celo_reward_type_to_atom(reward_type_string) do
-    reward_type_string
-    |> CeloElectionReward.type_from_url_string()
-    |> case do
-      {:ok, type} -> {:ok, type}
-      :error -> {:error, {:invalid, :celo_election_reward_type}}
     end
   end
 end

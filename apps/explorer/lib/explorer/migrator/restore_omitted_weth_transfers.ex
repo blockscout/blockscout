@@ -6,7 +6,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
   use GenServer, restart: :transient
 
   alias Explorer.{Chain, Helper}
-  alias Explorer.Chain.{Log, TokenTransfer}
+  alias Explorer.Chain.{Log, Token, TokenTransfer}
   alias Explorer.Migrator.MigrationStatus
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -65,7 +65,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
     to_insert =
       Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:whitelisted_weth_contracts]
       |> Enum.map(fn contract_address_hash_string ->
-        if !Chain.token_from_address_hash_exists?(contract_address_hash_string, []) do
+        if !Token.by_contract_address_hash_exists?(contract_address_hash_string, []) do
           %{
             contract_address_hash: contract_address_hash_string,
             type: "ERC-20"

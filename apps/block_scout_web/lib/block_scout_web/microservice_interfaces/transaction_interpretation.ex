@@ -10,7 +10,9 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
   alias HTTPoison.Response
 
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
+    only: [proxy_implementations_association: 0, proxy_implementations_smart_contracts_association: 0]
+
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Utility.Microservice, only: [base_url: 2, check_enabled: 2]
   require Logger
@@ -37,6 +39,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
           | {:ok, any()}
   def interpret(transaction_or_map, request_builder \\ &prepare_request_body/1) do
     with {:enabled, true} <- {:enabled, enabled?()},
+         {:success_transaction, true} <-
+           {:success_transaction, success_transaction_or_user_op?(transaction_or_map)},
          {:cache, :no_cached_data} <-
            {:cache, try_get_cached_value(get_hash(transaction_or_map))} do
       url = interpret_url()
@@ -46,6 +50,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       http_post_request(url, body)
     else
       {:cache, {:ok, _response} = result} -> result
+      {:success_transaction, false} -> {:ok, nil}
       {:enabled, false} -> {{:error, :disabled}, 403}
     end
   end
@@ -230,7 +235,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     full_options =
       [
         necessity_by_association: %{
-          [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+          [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
         }
       ]
       |> Keyword.merge(@api_true)
@@ -252,7 +257,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     log_options =
       [
         necessity_by_association: %{
-          [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+          [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
         },
         limit: @items_limit
       ]
@@ -317,15 +322,12 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       "value" =>
         address_hash_string
         |> Chain.hash_to_address(
-          [
-            necessity_by_association: %{
-              :names => :optional,
-              :smart_contract => :optional,
-              proxy_implementations_association() => :optional
-            },
-            api?: true
-          ],
-          false
+          necessity_by_association: %{
+            :names => :optional,
+            :smart_contract => :optional,
+            proxy_implementations_association() => :optional
+          },
+          api?: true
         )
         |> address_from_db()
         |> Map.merge(value)
@@ -394,7 +396,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   def decode_user_op_calldata(user_op_hash, call_data) do
     {:ok, input} = Data.cast(call_data)
 
-    {:ok, op_hash} = Chain.string_to_transaction_hash(user_op_hash)
+    {:ok, op_hash} = Chain.string_to_full_hash(user_op_hash)
 
     mock_transaction = %Transaction{
       to_address: %NotLoaded{},
@@ -412,4 +414,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
   defp get_hash(%{hash: hash}), do: hash
   defp get_hash(%{"hash" => hash}), do: hash
+
+  defp success_transaction_or_user_op?(%Transaction{status: :ok}), do: true
+  defp success_transaction_or_user_op?(%{"hash" => _hash}), do: true
+  defp success_transaction_or_user_op?(_), do: false
 end

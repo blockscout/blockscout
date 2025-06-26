@@ -11,7 +11,7 @@ defmodule Explorer.Account.Notifier.EmailTest do
   import Explorer.Chain,
     only: [
       string_to_address_hash: 1,
-      string_to_transaction_hash: 1
+      string_to_full_hash: 1
     ]
 
   import Explorer.Account.Notifier.Email,
@@ -43,7 +43,7 @@ defmodule Explorer.Account.Notifier.EmailTest do
   describe "composing email" do
     test "compose_email" do
       {:ok, transaction_hash} =
-        string_to_transaction_hash("0x5d5ff210261f1b2d6e4af22ea494f428f9997d4ab614a629d4f1390004b3e80d")
+        string_to_full_hash("0x5d5ff210261f1b2d6e4af22ea494f428f9997d4ab614a629d4f1390004b3e80d")
 
       {:ok, from_hash} = string_to_address_hash("0x092D537737E767Dae48c28aE509f34094496f030")
 

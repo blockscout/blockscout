@@ -1,9 +1,9 @@
-FROM hexpm/elixir:1.17.3-erlang-27.1-alpine-3.20.3 AS builder-deps
+FROM hexpm/elixir:1.17.3-erlang-27.3.4-alpine-3.21.3 AS builder-deps
 
 WORKDIR /app
 
 RUN apk --no-cache --update add \
-    alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file gcompat libstdc++ curl ca-certificates git make
+    alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file gcompat libstdc++ curl ca-certificates git make bash
 
 # Cache elixir deps
 COPY mix.exs mix.lock ./
@@ -28,8 +28,6 @@ FROM builder-deps AS builder
 
 ENV DISABLE_WEBAPP=true
 ENV ADMIN_PANEL_ENABLED=false
-ARG DISABLE_INDEXER
-ENV DISABLE_INDEXER=${DISABLE_INDEXER}
 ARG DISABLE_API
 ENV DISABLE_API=${DISABLE_API}
 ARG API_V1_READ_METHODS_DISABLED
@@ -40,10 +38,6 @@ ARG CHAIN_TYPE
 ENV CHAIN_TYPE=${CHAIN_TYPE}
 ARG BRIDGED_TOKENS_ENABLED
 ENV BRIDGED_TOKENS_ENABLED=${BRIDGED_TOKENS_ENABLED}
-ARG MUD_INDEXER_ENABLED
-ENV MUD_INDEXER_ENABLED=${MUD_INDEXER_ENABLED}
-ARG SHRINK_INTERNAL_TRANSACTIONS_ENABLED
-ENV SHRINK_INTERNAL_TRANSACTIONS_ENABLED=${SHRINK_INTERNAL_TRANSACTIONS_ENABLED}
 ARG API_GRAPHQL_MAX_COMPLEXITY
 ENV API_GRAPHQL_MAX_COMPLEXITY=${API_GRAPHQL_MAX_COMPLEXITY}
 
@@ -55,7 +49,7 @@ RUN mkdir -p /opt/release && \
     mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
 ##############################################################
-FROM hexpm/elixir:1.17.3-erlang-27.1-alpine-3.20.3
+FROM hexpm/elixir:1.17.3-erlang-27.3.4-alpine-3.21.3
 
 WORKDIR /app
 
@@ -66,12 +60,10 @@ ARG BLOCKSCOUT_GID=10001
 
 RUN apk --no-cache --update add jq curl && \
     addgroup --system --gid ${BLOCKSCOUT_GID} ${BLOCKSCOUT_GROUP} && \
-    adduser --system --uid ${BLOCKSCOUT_UID} --ingroup ${BLOCKSCOUT_GROUP} --disabled-password ${BLOCKSCOUT_USER}
+    adduser --system --uid ${BLOCKSCOUT_UID} --ingroup ${BLOCKSCOUT_GROUP} --disabled-password --home /app ${BLOCKSCOUT_USER}
 
 ENV DISABLE_WEBAPP=true
 ENV ADMIN_PANEL_ENABLED=false
-ARG DISABLE_INDEXER
-ENV DISABLE_INDEXER=${DISABLE_INDEXER}
 ARG DISABLE_API
 ENV DISABLE_API=${DISABLE_API}
 ARG API_V1_READ_METHODS_DISABLED
@@ -82,10 +74,6 @@ ARG CHAIN_TYPE
 ENV CHAIN_TYPE=${CHAIN_TYPE}
 ARG BRIDGED_TOKENS_ENABLED
 ENV BRIDGED_TOKENS_ENABLED=${BRIDGED_TOKENS_ENABLED}
-ARG MUD_INDEXER_ENABLED
-ENV MUD_INDEXER_ENABLED=${MUD_INDEXER_ENABLED}
-ARG SHRINK_INTERNAL_TRANSACTIONS_ENABLED
-ENV SHRINK_INTERNAL_TRANSACTIONS_ENABLED=${SHRINK_INTERNAL_TRANSACTIONS_ENABLED}
 ARG API_GRAPHQL_MAX_COMPLEXITY
 ENV API_GRAPHQL_MAX_COMPLEXITY=${API_GRAPHQL_MAX_COMPLEXITY}
 

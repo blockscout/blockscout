@@ -29,7 +29,9 @@ defmodule BlockScoutWeb do
       import BlockScoutWeb.ErrorHelper
       import BlockScoutWeb.Routers.AccountRouter.Helpers, except: [static_path: 2]
       import Plug.Conn
-      import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+
+      import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
+        only: [proxy_implementations_association: 0, proxy_implementations_smart_contracts_association: 0]
 
       alias BlockScoutWeb.Routers.AdminRouter.Helpers, as: AdminRoutes
     end

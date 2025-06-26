@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias Explorer.Chain
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.{Events.Subscriber, Transaction, Wei}
-  alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
+  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Explorer.Repo
 
@@ -22,12 +22,18 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
     start_supervised!(AverageBlockTime)
-    start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
-    start_supervised!(AddressesCounter)
+
+    configuration = Application.get_env(:indexer, CoinBalanceOnDemand.Supervisor)
+    Application.put_env(:indexer, CoinBalanceOnDemand.Supervisor, disabled?: false)
+
+    CoinBalanceOnDemand.Supervisor.Case.start_supervised!(json_rpc_named_arguments: mocked_json_rpc_named_arguments)
+
+    start_supervised!(AddressesCount)
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
     on_exit(fn ->
+      Application.put_env(:indexer, CoinBalanceOnDemand.Supervisor, configuration)
       Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
     end)
 
@@ -159,7 +165,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^mining_address_hash, "0x66"]
+                                                       params: [^address_hash, "0x66"]
                                                      }
                                                    ],
                                                    _options ->
@@ -183,7 +189,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^address_hash, "0x66"]
+                                                       params: [^mining_address_hash, "0x66"]
                                                      }
                                                    ],
                                                    _options ->
@@ -205,6 +211,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         conn
         |> get("/api", params)
         |> json_response(200)
+
+      Process.sleep(100)
 
       schema = listaccounts_schema()
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
