@@ -1835,6 +1835,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       |> insert(
         transaction: transaction,
         index: 0,
+        value: 1,
         from_address: address,
         to_address: address_2,
         block_hash: transaction.block_hash,
@@ -1847,6 +1848,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> insert(
           transaction: transaction,
           index: 1,
+          value: 2,
           from_address: address,
           to_address: address_2,
           block_hash: transaction.block_hash,
@@ -1877,6 +1879,185 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response =
                conn
                |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "returns only non zero value internal transactions by default", %{conn: conn, params: params} do
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: address_2)
+        |> with_block(block)
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 0,
+        value: 1,
+        from_address: address,
+        to_address: address_2,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        block_number: block.number
+      )
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 2,
+        value: 0,
+        from_address: address,
+        to_address: address_2,
+        block_hash: transaction.block_hash,
+        block_index: 2,
+        block_number: block.number
+      )
+
+      internal_transaction =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 1,
+          value: 2,
+          from_address: address,
+          to_address: address_2,
+          block_hash: transaction.block_hash,
+          block_index: 1,
+          block_number: block.number
+        )
+
+      expected_result = [
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction.from_address_hash}",
+          "to" => "#{internal_transaction.to_address_hash}",
+          "value" => "#{internal_transaction.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction.input}",
+          "type" => "#{internal_transaction.type}",
+          "callType" => "#{internal_transaction.call_type}",
+          "gas" => "#{internal_transaction.gas}",
+          "gasUsed" => "#{internal_transaction.gas_used}",
+          "index" => "#{internal_transaction.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction.error}"
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "with zero value internal transactions when `include_zero_value=true` param is provided", %{
+      conn: conn,
+      params: params
+    } do
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: address_2)
+        |> with_block(block)
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 0,
+        value: 1,
+        from_address: address,
+        to_address: address_2,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        block_number: block.number
+      )
+
+      internal_transaction_a =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 1,
+          value: 2,
+          from_address: address,
+          to_address: address_2,
+          block_hash: transaction.block_hash,
+          block_index: 1,
+          block_number: block.number
+        )
+
+      internal_transaction_b =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 2,
+          value: 0,
+          from_address: address,
+          to_address: address_2,
+          block_hash: transaction.block_hash,
+          block_index: 2,
+          block_number: block.number
+        )
+
+      expected_result = [
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction_b.from_address_hash}",
+          "to" => "#{internal_transaction_b.to_address_hash}",
+          "value" => "#{internal_transaction_b.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction_b.input}",
+          "type" => "#{internal_transaction_b.type}",
+          "callType" => "#{internal_transaction_b.call_type}",
+          "gas" => "#{internal_transaction_b.gas}",
+          "gasUsed" => "#{internal_transaction_b.gas_used}",
+          "index" => "#{internal_transaction_b.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction_b.error}"
+        },
+        %{
+          "blockNumber" => "#{internal_transaction_a.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction_a.from_address_hash}",
+          "to" => "#{internal_transaction_a.to_address_hash}",
+          "value" => "#{internal_transaction_a.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction_a.input}",
+          "type" => "#{internal_transaction_a.type}",
+          "callType" => "#{internal_transaction_a.call_type}",
+          "gas" => "#{internal_transaction_a.gas}",
+          "gasUsed" => "#{internal_transaction_a.gas_used}",
+          "index" => "#{internal_transaction_a.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction_a.error}"
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api/v1", Map.merge(params, %{"include_zero_value" => "true"}))
                |> json_response(200)
 
       assert response["result"] == expected_result
@@ -1941,6 +2122,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> insert(
           transaction: transaction,
           index: 0,
+          value: 1,
           from_address: address,
           block_hash: transaction.block_hash,
           block_index: 0
@@ -1993,6 +2175,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       internal_transaction_details = [
         transaction: transaction,
         index: 0,
+        value: 1,
         type: :reward,
         error: "some error",
         block_hash: transaction.block_hash,
@@ -2030,7 +2213,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           transaction: transaction,
           index: index,
           block_hash: transaction.block_hash,
-          block_index: index
+          block_index: index,
+          value: 1
         )
       end
 
@@ -2047,6 +2231,177 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                |> json_response(200)
 
       assert length(found_internal_transactions) == 3
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "returns only non zero value internal transactions by default", %{conn: conn} do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 0,
+        value: 1,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        block_number: block.number
+      )
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 2,
+        value: 0,
+        block_hash: transaction.block_hash,
+        block_index: 2,
+        block_number: block.number
+      )
+
+      internal_transaction =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 1,
+          value: 2,
+          block_hash: transaction.block_hash,
+          block_index: 1,
+          block_number: block.number
+        )
+
+      expected_result = [
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction.from_address_hash}",
+          "to" => "#{internal_transaction.to_address_hash}",
+          "value" => "#{internal_transaction.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction.input}",
+          "type" => "#{internal_transaction.type}",
+          "callType" => "#{internal_transaction.call_type}",
+          "gas" => "#{internal_transaction.gas}",
+          "gasUsed" => "#{internal_transaction.gas_used}",
+          "index" => "#{internal_transaction.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction.error}"
+        }
+      ]
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "with zero value internal transactions when `include_zero_value=true` param is provided", %{conn: conn} do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 0,
+        value: 1,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        block_number: block.number
+      )
+
+      internal_transaction_a =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 1,
+          value: 2,
+          block_hash: transaction.block_hash,
+          block_index: 1,
+          block_number: block.number
+        )
+
+      internal_transaction_b =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 2,
+          value: 0,
+          block_hash: transaction.block_hash,
+          block_index: 2,
+          block_number: block.number
+        )
+
+      expected_result = [
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction_a.from_address_hash}",
+          "to" => "#{internal_transaction_a.to_address_hash}",
+          "value" => "#{internal_transaction_a.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction_a.input}",
+          "type" => "#{internal_transaction_a.type}",
+          "callType" => "#{internal_transaction_a.call_type}",
+          "gas" => "#{internal_transaction_a.gas}",
+          "gasUsed" => "#{internal_transaction_a.gas_used}",
+          "index" => "#{internal_transaction_a.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction_a.error}"
+        },
+        %{
+          "blockNumber" => "#{internal_transaction_b.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction_b.from_address_hash}",
+          "to" => "#{internal_transaction_b.to_address_hash}",
+          "value" => "#{internal_transaction_b.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction_b.input}",
+          "type" => "#{internal_transaction_b.type}",
+          "callType" => "#{internal_transaction_b.call_type}",
+          "gas" => "#{internal_transaction_b.gas}",
+          "gasUsed" => "#{internal_transaction_b.gas_used}",
+          "index" => "#{internal_transaction_b.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction_b.error}"
+        }
+      ]
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "txhash" => "#{transaction.hash}",
+        "include_zero_value" => "true"
+      }
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
@@ -2225,6 +2580,187 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                |> json_response(200)
 
       assert length(found_internal_transactions) == 3
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "returns only non zero value internal transactions by default", %{conn: conn} do
+      address = insert(:address)
+
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 0,
+        value: 1,
+        from_address: address,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        block_number: block.number
+      )
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 2,
+        value: 0,
+        from_address: address,
+        block_hash: transaction.block_hash,
+        block_index: 2,
+        block_number: block.number
+      )
+
+      internal_transaction =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 1,
+          value: 2,
+          from_address: address,
+          block_hash: transaction.block_hash,
+          block_index: 1,
+          block_number: block.number
+        )
+
+      expected_result = [
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction.from_address_hash}",
+          "to" => "#{internal_transaction.to_address_hash}",
+          "value" => "#{internal_transaction.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction.input}",
+          "type" => "#{internal_transaction.type}",
+          "callType" => "#{internal_transaction.call_type}",
+          "gas" => "#{internal_transaction.gas}",
+          "gasUsed" => "#{internal_transaction.gas_used}",
+          "index" => "#{internal_transaction.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction.error}"
+        }
+      ]
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "address" => "#{address.hash}"
+      }
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "with zero value internal transactions when `include_zero_value=true` param is provided", %{conn: conn} do
+      address = insert(:address)
+
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 0,
+        value: 1,
+        from_address: address,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        block_number: block.number
+      )
+
+      internal_transaction_a =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 1,
+          value: 2,
+          from_address: address,
+          block_hash: transaction.block_hash,
+          block_index: 1,
+          block_number: block.number
+        )
+
+      internal_transaction_b =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 2,
+          value: 0,
+          from_address: address,
+          block_hash: transaction.block_hash,
+          block_index: 2,
+          block_number: block.number
+        )
+
+      expected_result = [
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction_b.from_address_hash}",
+          "to" => "#{internal_transaction_b.to_address_hash}",
+          "value" => "#{internal_transaction_b.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction_b.input}",
+          "type" => "#{internal_transaction_b.type}",
+          "callType" => "#{internal_transaction_b.call_type}",
+          "gas" => "#{internal_transaction_b.gas}",
+          "gasUsed" => "#{internal_transaction_b.gas_used}",
+          "index" => "#{internal_transaction_b.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction_b.error}"
+        },
+        %{
+          "blockNumber" => "#{internal_transaction_a.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction_a.from_address_hash}",
+          "to" => "#{internal_transaction_a.to_address_hash}",
+          "value" => "#{internal_transaction_a.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction_a.input}",
+          "type" => "#{internal_transaction_a.type}",
+          "callType" => "#{internal_transaction_a.call_type}",
+          "gas" => "#{internal_transaction_a.gas}",
+          "gasUsed" => "#{internal_transaction_a.gas_used}",
+          "index" => "#{internal_transaction_a.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction_a.error}"
+        }
+      ]
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "address" => "#{address.hash}",
+        "include_zero_value" => "true"
+      }
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)

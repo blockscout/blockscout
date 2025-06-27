@@ -977,4 +977,26 @@ defmodule Explorer.Chain.InternalTransaction do
     query
     |> where([internal_transaction], internal_transaction.transaction_hash == ^transaction_hash)
   end
+
+  @doc """
+  Conditionally filters internal transactions to include or exclude zero-value transfers.
+
+  When `include_zero` is `true`, the query remains unchanged and will return all
+  internal transactions regardless of their value. When `include_zero` is `false`,
+  the query is modified to exclude internal transactions where the transferred
+  value is zero, returning only transactions with positive Wei values.
+
+  ## Parameters
+  - `query`: An Ecto query for internal transactions
+  - `include_zero`: Whether to include zero-value internal transactions
+
+  ## Returns
+  - Modified Ecto query that either includes or excludes zero-value transfers
+  """
+  @spec include_zero_value(Ecto.Query.t(), boolean()) :: Ecto.Query.t()
+  def include_zero_value(query, true), do: query
+
+  def include_zero_value(query, false) do
+    where(query, [internal_transaction], internal_transaction.value > ^0)
+  end
 end
