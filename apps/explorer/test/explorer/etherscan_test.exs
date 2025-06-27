@@ -615,7 +615,7 @@ defmodule Explorer.EtherscanTest do
     end
   end
 
-  describe "list_internal_transactions/1 with transaction hash" do
+  describe "list_internal_transactions/2 with transaction hash" do
     test "with empty db" do
       transaction = build(:transaction)
 
@@ -639,6 +639,7 @@ defmodule Explorer.EtherscanTest do
         |> insert(
           transaction: transaction,
           index: 0,
+          value: 1,
           from_address: address,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
@@ -684,6 +685,7 @@ defmodule Explorer.EtherscanTest do
         insert(:internal_transaction,
           transaction: transaction,
           index: index,
+          value: index + 1,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
           block_index: index,
@@ -711,6 +713,7 @@ defmodule Explorer.EtherscanTest do
       insert(:internal_transaction,
         transaction: transaction1,
         index: 0,
+        value: 1,
         block_number: transaction1.block_number,
         block_hash: transaction1.block_hash,
         block_index: 0,
@@ -720,6 +723,7 @@ defmodule Explorer.EtherscanTest do
       insert(:internal_transaction,
         transaction: transaction1,
         index: 1,
+        value: 2,
         block_number: transaction1.block_number,
         block_hash: transaction1.block_hash,
         block_index: 1,
@@ -729,6 +733,7 @@ defmodule Explorer.EtherscanTest do
       insert(:internal_transaction,
         transaction: transaction2,
         index: 0,
+        value: 3,
         type: :reward,
         block_number: transaction2.block_number,
         block_hash: transaction2.block_hash,
@@ -744,6 +749,78 @@ defmodule Explorer.EtherscanTest do
       internal_transactions2 = Etherscan.list_internal_transactions(transaction2.hash)
 
       assert length(internal_transactions2) == 1
+    end
+
+    test "only non zero value internal transactions by default" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for index <- 0..2 do
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: index,
+          value: index + 1,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        )
+      end
+
+      for index <- 3..5 do
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: index,
+          value: 0,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        )
+      end
+
+      found_internal_transactions = Etherscan.list_internal_transactions(transaction.hash)
+
+      assert length(found_internal_transactions) == 2
+    end
+
+    test "with zero value internal transactions when `include_zero_value: true` option is set" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for index <- 0..2 do
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: index,
+          value: index + 1,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        )
+      end
+
+      for index <- 3..5 do
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: index,
+          value: 0,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        )
+      end
+
+      options = %{include_zero_value: true}
+
+      found_internal_transactions = Etherscan.list_internal_transactions(transaction.hash, options)
+
+      assert length(found_internal_transactions) == 5
     end
 
     # Note that `list_internal_transactions/1` relies on
@@ -989,6 +1066,94 @@ defmodule Explorer.EtherscanTest do
       end
     end
 
+    test "only non zero value internal transactions by default" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for index <- 0..3 do
+        internal_transaction_details = %{
+          transaction: transaction,
+          index: index,
+          value: 0,
+          from_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        }
+
+        insert(:internal_transaction, internal_transaction_details)
+      end
+
+      for index <- 4..5 do
+        internal_transaction_details = %{
+          transaction: transaction,
+          index: index,
+          value: index,
+          from_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        }
+
+        insert(:internal_transaction, internal_transaction_details)
+      end
+
+      found_internal_transactions = Etherscan.list_internal_transactions(address.hash)
+
+      assert length(found_internal_transactions) == 2
+    end
+
+    test "with zero value internal transactions when `include_zero_value: true` option is set" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for index <- 0..3 do
+        internal_transaction_details = %{
+          transaction: transaction,
+          index: index,
+          value: 0,
+          from_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        }
+
+        insert(:internal_transaction, internal_transaction_details)
+      end
+
+      for index <- 4..5 do
+        internal_transaction_details = %{
+          transaction: transaction,
+          index: index,
+          value: index,
+          from_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        }
+
+        insert(:internal_transaction, internal_transaction_details)
+      end
+
+      options = %{include_zero_value: true}
+
+      found_internal_transactions = Etherscan.list_internal_transactions(address.hash, options)
+
+      assert length(found_internal_transactions) == 5
+    end
+
     # Note that `list_internal_transactions/2` relies on
     # `Chain.where_transaction_has_multiple_transactions/1` to ensure the
     # following behavior:
@@ -1000,6 +1165,96 @@ defmodule Explorer.EtherscanTest do
     #   even when they are alone in the parent transaction
     #
     # These two requirements are tested in `Explorer.ChainTest`.
+  end
+
+  describe "list_internal_transactions/2 without param" do
+    test "only non zero value internal transactions by default" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for index <- 0..3 do
+        internal_transaction_details = %{
+          transaction: transaction,
+          index: index,
+          value: 0,
+          from_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        }
+
+        insert(:internal_transaction, internal_transaction_details)
+      end
+
+      for index <- 4..5 do
+        internal_transaction_details = %{
+          transaction: transaction,
+          index: index,
+          value: index,
+          from_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        }
+
+        insert(:internal_transaction, internal_transaction_details)
+      end
+
+      found_internal_transactions = Etherscan.list_internal_transactions(:all)
+
+      assert length(found_internal_transactions) == 2
+    end
+
+    test "with zero value internal transactions when `include_zero_value: true` option is set" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for index <- 0..3 do
+        internal_transaction_details = %{
+          transaction: transaction,
+          index: index,
+          value: 0,
+          from_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        }
+
+        insert(:internal_transaction, internal_transaction_details)
+      end
+
+      for index <- 4..5 do
+        internal_transaction_details = %{
+          transaction: transaction,
+          index: index,
+          value: index,
+          from_address: address,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
+          transaction_index: transaction.index
+        }
+
+        insert(:internal_transaction, internal_transaction_details)
+      end
+
+      options = %{include_zero_value: true}
+
+      found_internal_transactions = Etherscan.list_internal_transactions(:all, options)
+
+      assert length(found_internal_transactions) == 5
+    end
   end
 
   describe "list_token_transfers/2" do

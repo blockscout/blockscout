@@ -977,4 +977,10 @@ defmodule Explorer.Chain.InternalTransaction do
     query
     |> where([internal_transaction], internal_transaction.transaction_hash == ^transaction_hash)
   end
+
+  def include_zero_value(query, true), do: query
+
+  def include_zero_value(query, false) do
+    where(query, [internal_transaction], internal_transaction.value > ^0)
+  end
 end

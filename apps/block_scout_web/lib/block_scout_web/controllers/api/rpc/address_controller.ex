@@ -131,35 +131,25 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       {:error, :error} ->
         txlistinternal(conn, params, :no_param)
 
-      {{:ok, transaction_param}, :error} ->
-        txlistinternal(conn, transaction_param, :transaction)
-
-      {:error, {:ok, address_param}} ->
+      {_, {:ok, address_param}} ->
         txlistinternal(conn, params, address_param, :address)
+
+      {{:ok, transaction_param}, _} ->
+        txlistinternal(conn, params, transaction_param, :transaction)
     end
   end
 
-  def txlistinternal(conn, transaction_param, :transaction) do
-    with {:format, {:ok, transaction_hash}} <- to_transaction_hash(transaction_param),
-         {:ok, internal_transactions} <- list_internal_transactions(transaction_hash) do
-      render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
-    else
-      {:format, :error} ->
-        render(conn, :error, error: "Invalid txhash format")
-
-      {:error, :not_found} ->
-        render(conn, :error, error: "No internal transactions found", data: [])
-    end
-  end
-
-  def txlistinternal(conn, params, :no_param) do
+  def txlistinternal(conn, params, transaction_param, :transaction) do
     options =
       params
       |> optional_params()
 
-    case list_internal_transactions(:all, options) do
-      {:ok, internal_transactions} ->
-        render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
+    with {:format, {:ok, transaction_hash}} <- to_transaction_hash(transaction_param),
+         {:ok, internal_transactions} <- list_internal_transactions(transaction_hash, options) do
+      render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
+    else
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid txhash format")
 
       {:error, :not_found} ->
         render(conn, :error, error: "No internal transactions found", data: [])
@@ -178,6 +168,20 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         render(conn, :error, error: @invalid_address_message)
 
       {_, :not_found} ->
+        render(conn, :error, error: "No internal transactions found", data: [])
+    end
+  end
+
+  def txlistinternal(conn, params, :no_param) do
+    options =
+      params
+      |> optional_params()
+
+    case list_internal_transactions(:all, options) do
+      {:ok, internal_transactions} ->
+        render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
+
+      {:error, :not_found} ->
         render(conn, :error, error: "No internal transactions found", data: [])
     end
   end
@@ -294,6 +298,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   @spec optional_params(map()) :: map()
   def optional_params(params) do
     %{}
+    |> put_boolean(params, "include_zero_value", :include_zero_value)
     |> put_order_by_direction(params)
     |> Helper.put_pagination_options(params)
     |> put_block(params, "startblock")
@@ -452,6 +457,14 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     {:format, Chain.string_to_full_hash(transaction_hash_string)}
   end
 
+  defp put_boolean(options, params, params_key, options_key) do
+    case params |> Map.get(params_key, "") |> String.downcase() do
+      "true" -> Map.put(options, options_key, true)
+      "false" -> Map.put(options, options_key, false)
+      _ -> options
+    end
+  end
+
   defp put_order_by_direction(options, params) do
     case params do
       %{"sort" => sort} when sort in ["asc", "desc"] ->
@@ -516,22 +529,8 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
-  defp list_internal_transactions(transaction_hash) do
-    case Etherscan.list_internal_transactions(transaction_hash) do
-      [] -> {:error, :not_found}
-      internal_transactions -> {:ok, internal_transactions}
-    end
-  end
-
-  defp list_internal_transactions(:all, options) do
-    case Etherscan.list_internal_transactions(:all, options) do
-      [] -> {:error, :not_found}
-      internal_transactions -> {:ok, internal_transactions}
-    end
-  end
-
-  defp list_internal_transactions(address_hash, options) do
-    case Etherscan.list_internal_transactions(address_hash, options) do
+  defp list_internal_transactions(type, options) do
+    case Etherscan.list_internal_transactions(type, options) do
       [] -> {:error, :not_found}
       internal_transactions -> {:ok, internal_transactions}
     end
