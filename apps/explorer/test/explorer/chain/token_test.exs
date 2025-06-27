@@ -148,4 +148,40 @@ defmodule Explorer.Chain.TokenTest do
       assert {:ok, _updated_token} = Token.update(token, update_params)
     end
   end
+
+  describe "list_top/2" do
+    test "returns market data with enabled token fetcher" do
+      old_source_env = Application.get_env(:explorer, Explorer.Market.Source)
+      old_fetcher_env = Application.get_env(:explorer, Explorer.Market.Fetcher.Token)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Market.Source,
+        Keyword.merge(old_source_env, tokens_source: Explorer.Market.Source.OneCoinSource)
+      )
+
+      Application.put_env(:explorer, Explorer.Market.Fetcher.Token, Keyword.merge(old_fetcher_env, enabled: true))
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Market.Source, old_source_env)
+        Application.put_env(:explorer, Explorer.Market.Fetcher.Token, old_fetcher_env)
+      end)
+
+      start_supervised!(Explorer.Market.Fetcher.Token)
+
+      insert_list(10, :token)
+
+      market_data = Token.list_top(nil)
+
+      assert Enum.all?(market_data, fn token -> not is_nil(token.fiat_value) end)
+    end
+
+    test "ignores market data with disabled token fetcher" do
+      insert_list(10, :token)
+
+      market_data = Token.list_top(nil)
+
+      assert Enum.all?(market_data, fn token -> is_nil(token.fiat_value) end)
+    end
+  end
 end
