@@ -361,7 +361,7 @@ config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_AVERAGE_BLOCK_PERIOD", "30m")
 
 config :explorer, Explorer.Market.MarketHistoryCache,
-  cache_period: ConfigHelper.parse_time_env_var("CACHE_MARKET_HISTORY_PERIOD", "6h")
+  cache_period: ConfigHelper.parse_time_env_var("CACHE_MARKET_HISTORY_PERIOD", "1h")
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_COUNTER_PERIOD", "1h")

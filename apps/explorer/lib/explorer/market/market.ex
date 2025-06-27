@@ -3,7 +3,7 @@ defmodule Explorer.Market do
   Context for data related to the cryptocurrency market.
   """
 
-  alias Explorer.Market.Fetcher.Coin
+  alias Explorer.Market.Fetcher.{Coin, History}
   alias Explorer.Market.{MarketHistory, MarketHistoryCache, Token}
 
   @doc """
@@ -13,18 +13,11 @@ defmodule Explorer.Market do
   """
   @spec fetch_recent_history(boolean()) :: [MarketHistory.t()]
   def fetch_recent_history(secondary_coin? \\ false) do
-    MarketHistoryCache.fetch(secondary_coin?)
-  end
-
-  @doc """
-  Retrieves today's native coin exchange rate from the database.
-  """
-  @spec get_native_coin_exchange_rate_from_db(boolean()) :: Token.t()
-  def get_native_coin_exchange_rate_from_db(secondary_coin? \\ false) do
-    secondary_coin?
-    |> fetch_recent_history()
-    |> List.first()
-    |> MarketHistory.to_token()
+    if GenServer.whereis(History) do
+      MarketHistoryCache.fetch(secondary_coin?)
+    else
+      []
+    end
   end
 
   @doc """
@@ -32,7 +25,7 @@ defmodule Explorer.Market do
   """
   @spec get_coin_exchange_rate() :: Token.t()
   def get_coin_exchange_rate do
-    Coin.get_coin_exchange_rate() || get_native_coin_exchange_rate_from_db()
+    Coin.get_coin_exchange_rate() || Token.null()
   end
 
   @doc """
@@ -40,7 +33,7 @@ defmodule Explorer.Market do
   """
   @spec get_secondary_coin_exchange_rate() :: Token.t()
   def get_secondary_coin_exchange_rate do
-    Coin.get_secondary_coin_exchange_rate() || get_native_coin_exchange_rate_from_db(true)
+    Coin.get_secondary_coin_exchange_rate() || Token.null()
   end
 
   @doc """
