@@ -5,7 +5,6 @@ defmodule Explorer.Chain.Stability.Validator do
 
   use Explorer.Schema
 
-  alias BlockScoutWeb.GraphQL.Resolvers.Block
   alias Explorer.Chain.{Address, Block, Import}
   alias Explorer.Chain.Hash.Address, as: HashAddress
   alias Explorer.{Chain, Repo, SortingHelper}
