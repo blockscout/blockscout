@@ -2557,7 +2557,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         address: address
       )
 
+      # cspell:disable
       Bypass.expect_once(bypass, "POST", "/api/v1/abi/events%3Abatch-get", fn conn ->
+        # cspell:enable
         {:ok, body, conn} = Plug.Conn.read_body(conn)
         body = Jason.decode!(body)
         assert Enum.count(body["requests"]) == 1
