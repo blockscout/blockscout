@@ -69,7 +69,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response do
             has_tokens: %Schema{type: :boolean, nullable: false},
             has_token_transfers: %Schema{type: :boolean, nullable: false},
             watchlist_address_id: %Schema{type: :integer, nullable: true},
-            has_beacon_chain_withdrawals: %Schema{type: :boolean, nullable: false}
+            has_beacon_chain_withdrawals: %Schema{type: :boolean, nullable: false},
+            creation_status: %Schema{
+              type: :string,
+              description: "Creation status of the contract",
+              enum: ["success", "failed", "selfdestructed"],
+              nullable: true
+            }
           },
           required: [
             :creator_address_hash,
@@ -83,7 +89,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response do
             :has_tokens,
             :has_token_transfers,
             :watchlist_address_id,
-            :has_beacon_chain_withdrawals
+            :has_beacon_chain_withdrawals,
+            :creation_status
           ]
         }
         |> ChainTypeCustomizations.chain_type_fields()
