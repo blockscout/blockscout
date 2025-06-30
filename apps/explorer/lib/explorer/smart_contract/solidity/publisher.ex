@@ -406,7 +406,11 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         )).()
   end
 
-  defp clear_constructor_arguments(constructor_arguments) do
+  @doc """
+  Helper function to clean constructor arguments
+  """
+  @spec clear_constructor_arguments(String.t() | nil) :: String.t() | nil
+  def clear_constructor_arguments(constructor_arguments) do
     if constructor_arguments != nil && constructor_arguments != "" do
       constructor_arguments
     else
