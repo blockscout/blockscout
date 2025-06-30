@@ -2543,6 +2543,65 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log_from_api = Enum.at(response["items"], 0)
       compare_item(log, log_from_api)
     end
+
+    test "ignore logs without topics when trying to decode with sig provider", %{conn: conn} do
+      bypass = Bypass.open()
+
+      old_env_sig_provider = Application.get_env(:explorer, Explorer.SmartContract.SigProviderInterface)
+
+      Application.put_env(:explorer, Explorer.SmartContract.SigProviderInterface,
+        enabled: true,
+        service_url: "http://localhost:#{bypass.port}"
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.SmartContract.SigProviderInterface, old_env_sig_provider)
+      end)
+
+      address = insert(:contract_address)
+
+      log_data =
+        "0x000000000000000000000000aeb81cbe6b19ceeb0dbe0d230cffe35bb40a13a700000000000000000000000000000000000000000000045d964b80006597b700fffffffffffffffffffffffffffffffffffffffffffffffffe55aca2c2f40000ffffffffffffffffffffffffffffffffffffffffffffffe3a8289da3d7a13ef2"
+
+      transaction = :transaction |> insert() |> with_block()
+
+      insert(:log,
+        transaction: transaction,
+        first_topic: nil,
+        second_topic: nil,
+        third_topic: nil,
+        fourth_topic: nil,
+        data: log_data,
+        address: address
+      )
+
+      insert(:log,
+        transaction: transaction,
+        first_topic: TestHelper.topic("0x0000000000000000000000000000000000000000000000000000000000005d19"),
+        second_topic: nil,
+        third_topic: nil,
+        fourth_topic: nil,
+        data: log_data,
+        address: address
+      )
+
+      # cspell:disable
+      Bypass.expect_once(bypass, "POST", "/api/v1/abi/events%3Abatch-get", fn conn ->
+        # cspell:enable
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        body = Jason.decode!(body)
+        assert Enum.count(body["requests"]) == 1
+
+        Conn.resp(conn, 200, Jason.encode!([]))
+      end)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 2
+
+      Bypass.down(bypass)
+    end
   end
 
   describe "/addresses/{address_hash}/tokens" do
