@@ -126,12 +126,13 @@ defmodule Explorer.Chain.Celo.Helper do
   @doc """
   Checks if an epoch number is prior to Celo L2 migration.
   """
-  @spec premigration_epoch_number?(non_neg_integer()) :: boolean()
-  def premigration_epoch_number?(epoch_number) do
+  @spec pre_migration_epoch_number?(non_neg_integer()) :: boolean()
+  def pre_migration_epoch_number?(epoch_number) do
     l2_migration_block_number = Application.get_env(:explorer, :celo)[:l2_migration_block]
 
     if l2_migration_block_number do
-      epoch_number < block_number_to_epoch_number(l2_migration_block_number)
+      l2_migration_epoch_number = l2_migration_block_number |> block_number_to_epoch_number()
+      epoch_number < l2_migration_epoch_number
     else
       true
     end

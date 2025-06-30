@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
     {epochs, next_page} =
       options
-      |> Epoch.fetched_epochs()
+      |> Epoch.all()
       |> split_list_by_page()
 
     filtered_params =
@@ -181,7 +181,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
           {:ok, non_neg_integer()} | {:error, {:invalid, :number}}
   defp parse_epoch_number(number) do
     case safe_parse_non_negative_integer(number) do
-      {:ok, epoch_number} -> {:ok, epoch_number}
+      {:ok, epoch_number} when epoch_number < 32_768 -> {:ok, epoch_number}
       _ -> {:error, {:invalid, :number}}
     end
   end
