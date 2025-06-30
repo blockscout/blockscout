@@ -110,8 +110,6 @@ config :explorer, Explorer.Chain.Cache.Counters.BlockPriorityFeeCount,
 
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: true
 
-config :explorer, Explorer.Migrator.ReindexBlocksWithMissingTransactions, enabled: false
-
 for migrator <- [
       # Background migrations
       Explorer.Migrator.TransactionsDenormalization,
