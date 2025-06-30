@@ -50,8 +50,8 @@ defmodule Explorer.Account.Identity do
   @doc false
   def changeset(identity, attrs) do
     identity
-    |> cast(attrs, [:uid, :email, :name, :nickname, :avatar, :verification_email_sent_at])
-    |> validate_required([:uid, :email, :name])
+    |> cast(attrs, [:uid, :email, :name, :nickname, :avatar, :verification_email_sent_at, :otp_sent_at])
+    |> validate_required([:uid])
     |> put_hashed_fields()
   end
 
