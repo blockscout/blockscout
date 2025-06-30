@@ -349,7 +349,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
 
         {{:error, _}, _} ->
           # Error case: DB is inconsistent: although there should not be any unconfirmed blocks
-          # above the highest unconfirmed block, we cannot find the the confirmations transaction
+          # above the highest unconfirmed block, we cannot find the confirmations transaction
           # for one of the block higher than the highest unconfirmed block.
           raise "DB is inconsistent: could not get the L1 block of the closest confirmed block above the highest unconfirmed block"
       end
