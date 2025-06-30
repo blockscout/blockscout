@@ -239,20 +239,6 @@ defmodule Explorer.Chain.Stability.Validator do
   def state_enum, do: @state_enum
 
   @doc """
-    Returns dynamic query for validated blocks count. Needed for SortingHelper
-  """
-  @spec dynamic_validated_blocks() :: Ecto.Query.dynamic_expr()
-  def dynamic_validated_blocks do
-    dynamic(
-      [vs],
-      fragment(
-        "SELECT count(*) FROM blocks WHERE miner_hash = ?",
-        vs.address_hash
-      )
-    )
-  end
-
-  @doc """
     Returns total count of validators.
   """
   @spec count_validators() :: integer()
