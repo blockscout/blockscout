@@ -452,7 +452,8 @@ config :explorer, Explorer.Market.Source.CryptoRank,
       ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_COIN_ID"),
   secondary_coin_id:
     System.get_env("MARKET_CRYPTORANK_SECONDARY_COIN_ID") ||
-      ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_SECONDARY_COIN_ID")
+      ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_SECONDARY_COIN_ID"),
+  currency: "USD"
 
 config :explorer, Explorer.Market.Source.DefiLlama,
   coin_id: System.get_env("MARKET_DEFILLAMA_COIN_ID"),
