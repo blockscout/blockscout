@@ -2,7 +2,6 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   @moduledoc """
   Module for universal proxying 3rd party API endpoints
   """
-  use Tesla
 
   alias Explorer.Helper
 

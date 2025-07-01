@@ -5,7 +5,7 @@ defmodule Explorer.ThirdPartyIntegrations.Xname do
 
   require Logger
 
-  alias Explorer.Helper
+  alias Explorer.{Helper, HttpClient}
   alias Explorer.Utility.Microservice
 
   @recv_timeout 60_000
@@ -19,8 +19,8 @@ defmodule Explorer.ThirdPartyIntegrations.Xname do
   def api_request(url, _conn, :get) do
     headers = [{"x-api-key", api_key()}]
 
-    case HTTPoison.get(url, headers, recv_timeout: @recv_timeout) do
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+    case HttpClient.get(url, headers, recv_timeout: @recv_timeout) do
+      {:ok, %{status_code: status, body: body}} ->
         {Helper.decode_json(body), status}
 
       {:error, reason} ->

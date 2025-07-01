@@ -11,7 +11,7 @@ config :explorer,
   json_rpc_named_arguments: [
     transport: EthereumJSONRPC.HTTP,
     transport_options: [
-      http: EthereumJSONRPC.HTTP.HTTPoison,
+      http: EthereumJSONRPC.HTTP.Mint,
       urls: ConfigHelper.parse_urls_list(:http),
       eth_call_urls: ConfigHelper.parse_urls_list(:eth_call),
       fallback_urls: ConfigHelper.parse_urls_list(:fallback_http),

@@ -7,9 +7,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   alias Explorer.Chain.{Block, Hash, Transaction}
   alias Explorer.Chain.Block.Range
   alias Explorer.Chain.MultichainSearchDb.MainExportQueue
-  alias Explorer.{Helper, Repo}
+  alias Explorer.{Helper, HttpClient, Repo}
   alias Explorer.Utility.Microservice
-  alias HTTPoison.Response
 
   require Logger
 
@@ -247,14 +246,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case Application.get_env(:explorer, :http_adapter).post(url, Jason.encode!(body), headers,
+    case HttpClient.post(url, Jason.encode!(body), headers,
            recv_timeout: @post_timeout,
            hackney: [pool: false]
          ) do
-      {:ok, %Response{body: response_body, status_code: 200}} ->
+      {:ok, %{body: response_body, status_code: 200}} ->
         response_body |> Jason.decode()
 
-      {:ok, %Response{body: response_body, status_code: status_code}} ->
+      {:ok, %{body: response_body, status_code: status_code}} ->
         {:error,
          %{
            url: url,
@@ -263,7 +262,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
            response_body: response_body
          }}
 
-      {:error, %HTTPoison.Error{reason: reason}} ->
+      {:error, reason} ->
         {:error,
          %{
            url: url,

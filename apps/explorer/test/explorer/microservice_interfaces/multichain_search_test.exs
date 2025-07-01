@@ -16,6 +16,12 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
       Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
 
+      tesla_config = Application.get_env(:tesla, :adapter)
+
+      on_exit(fn ->
+        Application.put_env(:tesla, :adapter, tesla_config)
+      end)
+
       :ok
     end
 
@@ -31,6 +37,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
     test "processes chunks and returns {:ok, result} when the service is enabled" do
       bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Application.put_env(:explorer, MultichainSearch,
         service_url: "http://localhost:#{bypass.port}",
@@ -76,6 +84,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
     test "returns {:error, data_to_retry} when an error occurs during processing and 'multichain_search_db_main_export_queue' table is populated" do
       bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Application.put_env(:explorer, MultichainSearch,
         service_url: "http://localhost:#{bypass.port}",
@@ -150,11 +160,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         addresses_chunk_size: 7000
       )
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
       on_exit(fn ->
         Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
-        Application.put_env(:explorer, :http_adapter, HTTPoison)
       end)
 
       TestHelper.get_chain_id_mock()
@@ -173,18 +180,28 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
           insert(:address)
         end
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn "http://localhost:1234/api/v1/import:batch", _expected_body, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"status" => "ok"})}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: "http://localhost:1234/api/v1/import:batch"}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(%{"status" => "ok"})
+           }}
+        end
+      )
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn "http://localhost:1234/api/v1/import:batch",
-                          _expected_body,
-                          [{"Content-Type", "application/json"}],
-                          _options ->
-        {:ok, %HTTPoison.Response{status_code: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: "http://localhost:1234/api/v1/import:batch", headers: [{"Content-Type", "application/json"}]},
+                    _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 500,
+             body: Jason.encode!(%{"code" => 0, "message" => "Error"})
+           }}
+        end
+      )
 
       params = %{
         addresses: addresses,
@@ -202,6 +219,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
     test "returns {:error, data_to_retry} when an error occurs in all chunks during processing and 'multichain_search_db_main_export_queue' table is populated with all the input data" do
       bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Application.put_env(:explorer, MultichainSearch,
         service_url: "http://localhost:#{bypass.port}",
@@ -244,6 +263,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
     test "returns {:error, data_to_retry} when an error occurs in all chunks (and number of chunks more than @max_concurrency) during processing and 'multichain_search_db_main_export_queue' table is populated with all the input data" do
       bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Application.put_env(:explorer, MultichainSearch,
         service_url: "http://localhost:#{bypass.port}",
