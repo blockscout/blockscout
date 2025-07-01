@@ -318,6 +318,27 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @not_a_smart_contract})
   end
 
+  def call(conn, {:average_block_time, {:error, :disabled}}) do
+    conn
+    |> put_status(501)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Average block time calculating is disabled, so getblockcountdown is not available"})
+  end
+
+  def call(conn, {stage, _}) when stage in ~w(max_block average_block_time)a do
+    conn
+    |> put_status(200)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Chain is indexing now, try again later"})
+  end
+
+  def call(conn, {:remaining_blocks, _}) do
+    conn
+    |> put_status(200)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Error! Block number already pass"})
+  end
+
   def call(conn, {code, response}) when is_integer(code) do
     conn
     |> put_status(code)

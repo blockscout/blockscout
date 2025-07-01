@@ -28,6 +28,20 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     prepare_block(block, nil, false)
   end
 
+  def render("block_countdown.json", %{
+        current_block: current_block,
+        countdown_block: countdown_block,
+        remaining_blocks: remaining_blocks,
+        estimated_time_in_sec: estimated_time_in_sec
+      }) do
+    %{
+      current_block: to_string(current_block),
+      countdown_block: to_string(countdown_block),
+      remaining_blocks: to_string(remaining_blocks),
+      estimated_time_in_sec: to_string(estimated_time_in_sec)
+    }
+  end
+
   def prepare_block(block, _conn, single_block? \\ false) do
     burnt_fees = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
     priority_fee = block.base_fee_per_gas && BlockPriorityFeeCount.fetch(block.hash)
