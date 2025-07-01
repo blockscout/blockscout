@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.PagingHelper do
 
   alias Explorer.Chain.InternalTransaction.CallType, as: InternalTransactionCallType
   alias Explorer.Chain.InternalTransaction.Type, as: InternalTransactionType
-  alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias Explorer.Chain.{SmartContract, Transaction}
   alias Explorer.{Helper, PagingOptions, SortingHelper}
 
