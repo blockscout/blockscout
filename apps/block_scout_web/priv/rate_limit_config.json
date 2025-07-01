@@ -84,7 +84,10 @@
     "isolate_rate_limit?": true
   },
   "api/v2/smart-contracts/:param/audit-reports": {
-    "recaptcha_to_bypass_429": true,
+    "temporary_token": {
+      "period": "1h",
+      "limit": 50
+    },
     "ip": {
       "period": "1h",
       "limit": 1

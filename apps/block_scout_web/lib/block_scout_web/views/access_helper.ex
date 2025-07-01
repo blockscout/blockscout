@@ -86,7 +86,7 @@ defmodule BlockScoutWeb.AccessHelper do
     conn
     |> Conn.put_status(429)
     |> put_view(view)
-    |> render(tag, %{tag => "429 Too Many Requests"})
+    |> render(tag, %{tag => "Too Many Requests"})
     |> Conn.halt()
   end
 

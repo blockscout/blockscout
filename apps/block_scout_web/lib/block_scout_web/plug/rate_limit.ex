@@ -110,6 +110,7 @@ defmodule BlockScoutWeb.Plug.RateLimit do
   end
 
   defp api_v2?(conn) do
-    conn.path_info |> Enum.take(2) == ["api", "v2"]
+    path_part = conn.path_info |> Enum.take(2)
+    path_part == ["api", "v2"] or path_part == ["api", "account"]
   end
 end
