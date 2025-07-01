@@ -2,8 +2,8 @@ defmodule Explorer.Visualize.Sol2uml do
   @moduledoc """
     Adapter for sol2uml visualizer with https://github.com/blockscout/blockscout-rs/blob/main/visualizer
   """
+  alias Explorer.HttpClient
   alias Explorer.Utility.Microservice
-  alias HTTPoison.Response
   require Logger
 
   @post_timeout 60_000
@@ -16,11 +16,11 @@ defmodule Explorer.Visualize.Sol2uml do
   def http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+      {:ok, %{body: body, status_code: 200}} ->
         process_visualizer_response(body)
 
-      {:ok, %Response{body: body, status_code: status_code}} ->
+      {:ok, %{body: body, status_code: status_code}} ->
         Logger.error(fn -> ["Invalid status code from visualizer: #{status_code}. body: ", inspect(body)] end)
         {:error, "failed to visualize contract"}
 

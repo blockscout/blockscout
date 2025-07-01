@@ -3,10 +3,9 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   Module to interact with Metadata microservice
   """
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, HttpClient}
   alias Explorer.Chain.{Address.MetadataPreloader, Transaction}
   alias Explorer.Utility.Microservice
-  alias HTTPoison.Response
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.Chain.Address.MetadataPreloader, only: [maybe_preload_meta: 3]
@@ -103,8 +102,8 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   defp http_get_request(url, params, parsing_function \\ &decode_meta/1) do
     headers = []
 
-    case HTTPoison.get(url, headers, params: params, recv_timeout: @request_timeout) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.get(url, headers, params: params, recv_timeout: @request_timeout) do
+      {:ok, %{body: body, status_code: 200}} ->
         body |> Jason.decode() |> parsing_function.()
 
       {_, error} ->
@@ -120,11 +119,11 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   end
 
   defp http_get_request_for_proxy_method(url, params, parsing_function) do
-    case HTTPoison.get(url, [], params: params, recv_timeout: config()[:proxy_requests_timeout]) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.get(url, [], params: params, recv_timeout: config()[:proxy_requests_timeout]) do
+      {:ok, %{body: body, status_code: 200}} ->
         {200, body |> Jason.decode() |> parsing_function.()}
 
-      {_, %Response{body: body, status_code: status_code} = error} ->
+      {_, %{body: body, status_code: status_code} = error} ->
         old_truncate = Application.get_env(:logger, :truncate)
         Logger.configure(truncate: :infinity)
 
@@ -139,7 +138,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
         {:ok, response_json} = Jason.decode(body)
         {status_code, response_json}
 
-      {:error, %HTTPoison.Error{reason: reason}} ->
+      {:error, reason} ->
         {500, %{error: reason}}
     end
   end

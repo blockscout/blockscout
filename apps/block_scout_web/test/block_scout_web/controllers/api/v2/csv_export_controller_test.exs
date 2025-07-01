@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
   import Mox
 
+  setup :set_mox_from_context
   setup :verify_on_exit!
 
   describe "GET token-transfers-csv/2" do
@@ -44,10 +45,16 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     } do
       expected_body = "secret=#{recaptcha_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"success" => false})}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(%{"success" => false})
+           }}
+        end
+      )
 
       address = insert(:address)
 
@@ -109,18 +116,20 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     test "exports token transfers to csv", %{conn: conn, v2_secret_key: recaptcha_secret_key} do
       expected_body = "secret=#{recaptcha_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       address = insert(:address)
 
@@ -157,18 +166,20 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     test "download csv file with transactions", %{conn: conn, v2_secret_key: recaptcha_secret_key} do
       expected_body = "secret=#{recaptcha_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       address = insert(:address)
 
@@ -205,18 +216,20 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     test "download csv file with internal transactions", %{conn: conn, v2_secret_key: recaptcha_secret_key} do
       expected_body = "secret=#{recaptcha_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       address = insert(:address)
 
@@ -290,18 +303,20 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     test "download csv file with logs", %{conn: conn, v2_secret_key: recaptcha_secret_key} do
       expected_body = "secret=#{recaptcha_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       address = insert(:address)
 
@@ -363,18 +378,20 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     test "handles null filter", %{conn: conn, v2_secret_key: recaptcha_secret_key} do
       expected_body = "secret=#{recaptcha_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       address = insert(:address)
 
@@ -412,7 +429,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
   defp csv_setup() do
     old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
-    old_http_adapter = Application.get_env(:block_scout_web, :http_adapter)
 
     v2_secret_key = "v2_secret_key"
     v3_secret_key = "v3_secret_key"
@@ -423,11 +439,8 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
       is_disabled: false
     )
 
-    Application.put_env(:block_scout_web, :http_adapter, Explorer.Mox.HTTPoison)
-
     on_exit(fn ->
       Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
-      Application.put_env(:block_scout_web, :http_adapter, old_http_adapter)
     end)
 
     {:ok, %{v2_secret_key: v2_secret_key, v3_secret_key: v3_secret_key}}

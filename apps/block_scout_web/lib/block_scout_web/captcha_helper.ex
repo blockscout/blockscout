@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
   """
   require Logger
 
-  alias Explorer.Helper
+  alias Explorer.{Helper, HttpClient}
 
   @type token_scope() :: :token_instance_refetch_metadata
 
@@ -103,13 +103,12 @@ defmodule BlockScoutWeb.CaptchaHelper do
     headers = [{"Content-type", "application/x-www-form-urlencoded"}]
 
     case !Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] &&
-           Application.get_env(:block_scout_web, :http_adapter).post(
+           HttpClient.post(
              "https://www.google.com/recaptcha/api/siteverify",
              body,
-             headers,
-             []
+             headers
            ) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+      {:ok, %{status_code: 200, body: body}} ->
         body |> Jason.decode!() |> success?()
 
       false ->

@@ -34,7 +34,7 @@ defmodule Explorer.Market.Source do
   """
 
   alias Explorer.Chain.Hash
-  alias Explorer.Helper
+  alias Explorer.{Helper, HttpClient}
 
   alias Explorer.Market.Source.{
     CoinGecko,
@@ -46,8 +46,6 @@ defmodule Explorer.Market.Source do
   }
 
   alias Explorer.Market.Token
-
-  alias HTTPoison.{Error, Response}
 
   # Native coin processing
   @callback native_coin_fetching_enabled?() :: boolean() | :ignore
@@ -128,22 +126,22 @@ defmodule Explorer.Market.Source do
     - HTTP client errors: reason will be the underlying error
     - JSON decoding errors: reason will be the raw response body
   """
-  @spec http_request(String.t(), HTTPoison.headers()) :: {:ok, any()} | {:error, any()}
+  @spec http_request(String.t(), [{atom() | binary(), binary()}]) :: {:ok, any()} | {:error, any()}
   def http_request(source_url, additional_headers) do
-    case HTTPoison.get(source_url, headers() ++ additional_headers) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.get(source_url, headers() ++ additional_headers) do
+      {:ok, %{body: body, status_code: 200}} ->
         parse_http_success_response(body)
 
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..526 ->
+      {:ok, %{body: body, status_code: status_code}} when status_code in 400..526 ->
         {:error, "#{status_code}: #{body}"}
 
-      {:ok, %Response{status_code: status_code}} when status_code in 300..308 ->
+      {:ok, %{status_code: status_code}} when status_code in 300..308 ->
         {:error, "Source redirected"}
 
-      {:ok, %Response{status_code: _status_code}} ->
+      {:ok, %{status_code: _status_code}} ->
         {:error, "Source unexpected status code"}
 
-      {:error, %Error{reason: reason}} ->
+      {:error, reason} ->
         {:error, reason}
     end
   end

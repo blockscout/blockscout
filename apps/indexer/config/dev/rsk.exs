@@ -18,7 +18,7 @@ config :indexer,
         else: EthereumJSONRPC.IPC
       ),
     transport_options: [
-      http: EthereumJSONRPC.HTTP.HTTPoison,
+      http: EthereumJSONRPC.HTTP.Mint,
       urls: ConfigHelper.parse_urls_list(:http),
       trace_urls: ConfigHelper.parse_urls_list(:trace),
       eth_call_urls: ConfigHelper.parse_urls_list(:eth_call),

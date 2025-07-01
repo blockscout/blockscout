@@ -5,6 +5,7 @@ defmodule Explorer.SmartContract.SolcDownloader do
   """
   use GenServer
 
+  alias Explorer.HttpClient
   alias Explorer.SmartContract.CompilerVersion
 
   @latest_compiler_refetch_time :timer.minutes(30)
@@ -93,7 +94,7 @@ defmodule Explorer.SmartContract.SolcDownloader do
     download_path = "https://solc-bin.ethereum.org/bin/soljson-#{version}.js"
 
     download_path
-    |> HTTPoison.get!([], timeout: 60_000, recv_timeout: 60_000)
+    |> HttpClient.get!([], timeout: 60_000, recv_timeout: 60_000)
     |> Map.get(:body)
   end
 end

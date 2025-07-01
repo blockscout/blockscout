@@ -1536,8 +1536,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
       old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
-      old_http_adapter = Application.get_env(:block_scout_web, :http_adapter)
-      old_explorer_http_adapter = Application.get_env(:explorer, :http_adapter)
 
       v2_secret_key = "v2_secret_key"
       v3_secret_key = "v3_secret_key"
@@ -1547,8 +1545,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         v3_secret_key: v3_secret_key,
         is_disabled: false
       )
-
-      Application.put_env(:block_scout_web, :http_adapter, Explorer.Mox.HTTPoison)
 
       mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
 
@@ -1566,8 +1562,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       on_exit(fn ->
         Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
-        Application.put_env(:block_scout_web, :http_adapter, old_http_adapter)
-        Application.put_env(:explorer, :http_adapter, old_explorer_http_adapter)
       end)
 
       {:ok, %{v2_secret_key: v2_secret_key, v3_secret_key: v3_secret_key}}
@@ -1576,18 +1570,20 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "token instance metadata on-demand re-fetcher is called", %{conn: conn, v2_secret_key: v2_secret_key} do
       expected_body = "secret=#{v2_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       token = insert(:token, type: "ERC-721")
       token_id = 1
@@ -1604,12 +1600,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(metadata)
+           }}
+        end
+      )
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -1652,18 +1652,20 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     } do
       expected_body = "secret=#{v2_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       token = insert(:token, type: "ERC-721")
       token_id = 0
@@ -1684,18 +1686,20 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     } do
       expected_body = "secret=#{v2_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       token = insert(:token, type: "ERC-721")
       token_id = 1
@@ -1712,12 +1716,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(metadata)
+           }}
+        end
+      )
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -1760,18 +1768,20 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     } do
       expected_body = "secret=#{v2_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       token = insert(:token, type: "ERC-721")
       token_id = 1
@@ -1787,12 +1797,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 500, body: "Error"}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 500,
+             body: "Error"
+           }}
+        end
+      )
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -1844,11 +1858,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         )
       )
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
       on_exit(fn ->
         Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
-        Application.put_env(:explorer, :http_adapter, HTTPoison)
       end)
 
       token = insert(:token, type: "ERC-721")
@@ -1866,10 +1877,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(metadata)
+           }}
+        end
+      )
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -1924,11 +1941,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         )
       )
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
       on_exit(fn ->
         Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
-        Application.put_env(:explorer, :http_adapter, HTTPoison)
       end)
 
       token = insert(:token, type: "ERC-721")
@@ -1957,23 +1971,31 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       # Set up normal reCAPTCHA validation for the second request
       expected_body = "secret=#{v2_secret_key}&response=correct_recaptcha_token"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(metadata)
+           }}
+        end
+      )
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -2022,11 +2044,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         )
       )
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
       on_exit(fn ->
         Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
-        Application.put_env(:explorer, :http_adapter, HTTPoison)
       end)
 
       token = insert(:token, type: "ERC-721")
@@ -2067,25 +2086,33 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       # Set up normal reCAPTCHA validation for the second request
       expected_body = "secret=#{v2_secret_key}&response=correct_recaptcha_token"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(metadata)
+           }}
+        end
+      )
 
       # Second request with correct reCAPTCHA token - should work
       request =
