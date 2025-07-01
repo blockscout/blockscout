@@ -22,7 +22,7 @@
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
-      "limit": 1
+      "limit": 50
     },
     "bypass_token_scope": "token_instance_refetch_metadata",
     "isolate_rate_limit?": true
@@ -31,7 +31,7 @@
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
-      "limit": 1
+      "limit": 50
     },
     "isolate_rate_limit?": true
   },
@@ -39,7 +39,7 @@
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
-      "limit": 1
+      "limit": 50
     },
     "isolate_rate_limit?": true
   },
@@ -47,7 +47,7 @@
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
-      "limit": 1
+      "limit": 50
     },
     "isolate_rate_limit?": true
   },
@@ -55,7 +55,7 @@
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
-      "limit": 1
+      "limit": 50
     },
     "isolate_rate_limit?": true
   },
@@ -63,7 +63,7 @@
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
-      "limit": 1
+      "limit": 50
     },
     "isolate_rate_limit?": true
   },
@@ -71,7 +71,7 @@
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
-      "limit": 1
+      "limit": 50
     },
     "isolate_rate_limit?": true
   },
@@ -79,7 +79,7 @@
     "recaptcha_to_bypass_429": true,
     "ip": {
       "period": "1h",
-      "limit": 1
+      "limit": 50
     },
     "isolate_rate_limit?": true
   },
@@ -90,7 +90,7 @@
     },
     "ip": {
       "period": "1h",
-      "limit": 1
+      "limit": 50
     },
     "isolate_rate_limit?": true
   },
