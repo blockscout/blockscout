@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.PagingHelper do
 
   alias Explorer.Chain.InternalTransaction.CallType, as: InternalTransactionCallType
   alias Explorer.Chain.InternalTransaction.Type, as: InternalTransactionType
-  alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias Explorer.Chain.{SmartContract, Transaction}
   alias Explorer.{Helper, PagingOptions, SortingHelper}
 
@@ -330,12 +329,8 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_validators_stability_sorting("state", "desc"), do: [desc_nulls_last: :state]
   defp do_validators_stability_sorting("address_hash", "asc"), do: [asc_nulls_first: :address_hash]
   defp do_validators_stability_sorting("address_hash", "desc"), do: [desc_nulls_last: :address_hash]
-
-  defp do_validators_stability_sorting("blocks_validated", "asc"),
-    do: [{:dynamic, :blocks_validated, :asc_nulls_first, ValidatorStability.dynamic_validated_blocks()}]
-
-  defp do_validators_stability_sorting("blocks_validated", "desc"),
-    do: [{:dynamic, :blocks_validated, :desc_nulls_last, ValidatorStability.dynamic_validated_blocks()}]
+  defp do_validators_stability_sorting("blocks_validated", "asc"), do: [asc_nulls_first: :blocks_validated]
+  defp do_validators_stability_sorting("blocks_validated", "desc"), do: [desc_nulls_last: :blocks_validated]
 
   defp do_validators_stability_sorting(_, _), do: []
 

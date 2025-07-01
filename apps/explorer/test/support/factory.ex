@@ -1319,7 +1319,8 @@ defmodule Explorer.Factory do
 
     %ValidatorStability{
       address_hash: address.hash,
-      state: Enum.random(0..2)
+      state: Enum.random(0..2),
+      blocks_validated: Enum.random(0..100)
     }
   end
 
