@@ -3256,7 +3256,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
           block_index: x,
-          from_address: address
+          to_address: address
         )
       end
 
