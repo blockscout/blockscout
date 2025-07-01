@@ -3,6 +3,7 @@ defmodule Explorer.Chain.Token.Schema do
   use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.Token.FiatValue
 
   if @bridged_tokens_enabled do
     @bridged_field [
@@ -28,11 +29,11 @@ defmodule Explorer.Chain.Token.Schema do
         field(:skip_metadata, :boolean)
         field(:total_supply_updated_at_block, :integer)
         field(:metadata_updated_at, :utc_datetime_usec)
-        field(:fiat_value, :decimal)
-        field(:circulating_market_cap, :decimal)
+        field(:fiat_value, FiatValue)
+        field(:circulating_market_cap, FiatValue)
         field(:icon_url, :string)
         field(:is_verified_via_admin_panel, :boolean)
-        field(:volume_24h, :decimal)
+        field(:volume_24h, FiatValue)
 
         belongs_to(
           :contract_address,
