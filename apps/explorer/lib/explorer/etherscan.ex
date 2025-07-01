@@ -27,6 +27,7 @@ defmodule Explorer.Etherscan do
 
   @default_options %{
     order_by_direction: :desc,
+    include_zero_value: false,
     page_number: 1,
     page_size: 10_000,
     startblock: nil,
@@ -99,7 +100,8 @@ defmodule Explorer.Etherscan do
   )a
 
   @doc """
-  Gets a list of internal transactions for a given transaction hash
+  Gets a list of all internal transactions (with :all option) or for a given address hash
+  (`t:Explorer.Chain.Hash.Address.t/0`) or transaction hash
   (`t:Explorer.Chain.Hash.Full.t/0`).
 
   Note that this function relies on `Explorer.Chain` to exclude/include
@@ -109,10 +111,13 @@ defmodule Explorer.Etherscan do
       transaction
     * include internal transactions of type create, reward, or selfdestruct
       even when they are alone in the parent transaction
-
   """
-  @spec list_internal_transactions(Hash.Full.t()) :: [map()]
-  def list_internal_transactions(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash) do
+  @spec list_internal_transactions(Hash.Full.t() | Hash.Address.t() | :all, map()) :: [map()]
+  def list_internal_transactions(transaction_or_address_hash_param_or_no_param, raw_options \\ %{})
+
+  def list_internal_transactions(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash, raw_options) do
+    options = Map.merge(@default_options, raw_options)
+
     query =
       if DenormalizationHelper.transactions_denormalization_finished?() do
         from(
@@ -146,24 +151,9 @@ defmodule Explorer.Etherscan do
     |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
     |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_nonpending_block()
+    |> InternalTransaction.include_zero_value(options.include_zero_value)
     |> Repo.replica().all()
   end
-
-  @doc """
-  Gets a list of all internal transactions (with :all option) or for a given address hash
-  (`t:Explorer.Chain.Hash.Address.t/0`).
-
-  Note that this function relies on `Explorer.Chain` to exclude/include
-  internal transactions as follows:
-
-    * exclude internal transactions of type call with no siblings in the
-      transaction
-    * include internal transactions of type create, reward, or selfdestruct
-      even when they are alone in the parent transaction
-
-  """
-  @spec list_internal_transactions(Hash.Address.t() | :all, map()) :: [map()]
-  def list_internal_transactions(address_hash_param_or_no_param, raw_options \\ %{})
 
   def list_internal_transactions(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
@@ -184,6 +174,7 @@ defmodule Explorer.Etherscan do
       |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
       |> InternalTransaction.where_address_fields_match(address_hash, direction)
       |> InternalTransaction.where_is_different_from_parent_transaction()
+      |> InternalTransaction.include_zero_value(options.include_zero_value)
       |> where_start_block_match(options)
       |> where_end_block_match(options)
       |> InternalTransaction.where_nonpending_block()
@@ -196,6 +187,7 @@ defmodule Explorer.Etherscan do
         query
         |> InternalTransaction.where_address_fields_match(address_hash, :to_address_hash)
         |> InternalTransaction.where_is_different_from_parent_transaction()
+        |> InternalTransaction.include_zero_value(options.include_zero_value)
         |> where_start_block_match(options)
         |> where_end_block_match(options)
         |> Chain.wrapped_union_subquery()
@@ -204,6 +196,7 @@ defmodule Explorer.Etherscan do
         query
         |> InternalTransaction.where_address_fields_match(address_hash, :from_address_hash)
         |> InternalTransaction.where_is_different_from_parent_transaction()
+        |> InternalTransaction.include_zero_value(options.include_zero_value)
         |> where_start_block_match(options)
         |> where_end_block_match(options)
         |> Chain.wrapped_union_subquery()
@@ -212,6 +205,7 @@ defmodule Explorer.Etherscan do
         query
         |> InternalTransaction.where_address_fields_match(address_hash, :created_contract_address_hash)
         |> InternalTransaction.where_is_different_from_parent_transaction()
+        |> InternalTransaction.include_zero_value(options.include_zero_value)
         |> where_start_block_match(options)
         |> where_end_block_match(options)
         |> Chain.wrapped_union_subquery()
@@ -242,6 +236,7 @@ defmodule Explorer.Etherscan do
     options
     |> internal_transactions_query(consensus_blocks)
     |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> InternalTransaction.include_zero_value(options.include_zero_value)
     |> where_start_block_match(options)
     |> where_end_block_match(options)
     |> Repo.replica().all()
