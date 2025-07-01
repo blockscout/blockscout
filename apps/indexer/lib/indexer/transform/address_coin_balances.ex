@@ -74,7 +74,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
       %{error: _} ->
         acc
 
-      %{type: "call", call_type: call_type} = params when call_type in ~w(call callcode invalid) ->
+      %{type: "call", call_type: call_type, value: value} = params when call_type in ~w(call invalid) and value > 0 ->
         acc
         |> process_internal_transaction_field(params, :from_address_hash, block_number)
         |> process_internal_transaction_field(params, :to_address_hash, block_number)
