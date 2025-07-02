@@ -372,6 +372,25 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
+  @doc """
+  Function to handle GET requests to `/api/v2/blocks/:block_number/countdown` endpoint.
+  Calculates the estimated time remaining until a specified block number is reached
+  based on the current block number and average block time.
+
+  ## Parameters
+  - `conn`: The connection struct
+  - `params`: Map containing the target block number
+
+  ## Returns
+  - Renders countdown data with current block, target block, remaining blocks, and estimated time
+  - Returns appropriate error responses via fallback controller for various failure cases
+  """
+  @spec block_countdown(Plug.Conn.t(), map()) ::
+          Plug.Conn.t()
+          | {:format, {:error, :invalid}}
+          | {:max_block, nil}
+          | {:average_block_time, {:error, :disabled}}
+          | {:remaining_blocks, 0}
   def block_countdown(conn, %{"block_number" => block_number}) do
     with {:format, {:ok, target_block_number}} <- {:format, param_to_block_number(block_number)},
          {:max_block, current_block_number} when not is_nil(current_block_number) <-
