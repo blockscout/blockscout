@@ -1,6 +1,7 @@
 defmodule Explorer.Chain.Cache.BlocksTest do
   use Explorer.DataCase
 
+  alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.Blocks
   alias Explorer.Repo
 
@@ -16,7 +17,7 @@ defmodule Explorer.Chain.Cache.BlocksTest do
 
       Blocks.update(block)
 
-      assert Blocks.all() == [block]
+      assert Blocks.all() == [block |> Block.aggregate_transactions() |> Map.put(:transactions, [])]
     end
 
     test "adds a new elements removing the oldest one" do
