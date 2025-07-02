@@ -5,7 +5,7 @@ defmodule Explorer.Helper do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain
-  alias Explorer.Chain.{Data, Hash}
+  alias Explorer.Chain.{Data, Hash, Wei}
 
   import Ecto.Query, only: [where: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -508,4 +508,28 @@ defmodule Explorer.Helper do
 
     Enum.map(params, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
   end
+
+  @doc """
+  Converts various value types to a Decimal type.
+
+  This function handles multiple input types and ensures they are properly
+  converted to a Decimal representation.
+
+  ## Parameters
+  - `value`: The value to convert, which can be:
+    - `nil`: Converted to Decimal 0
+    - `%Wei{}`: The Decimal value is extracted from the struct
+    - `float`: Converted using Decimal.from_float/1
+    - `String.t()` or `integer()`: Converted using Decimal.new/1
+    - `Decimal.t()`: Returned unchanged
+
+  ## Returns
+  - A Decimal representation of the input value
+  """
+  @spec number_to_decimal(nil | Wei.t() | integer() | float() | String.t() | Decimal.t()) :: Decimal.t()
+  def number_to_decimal(nil), do: Decimal.new(0)
+  def number_to_decimal(%Wei{value: value}), do: value
+  def number_to_decimal(value) when is_float(value), do: Decimal.from_float(value)
+  def number_to_decimal(value) when is_binary(value) or is_integer(value), do: Decimal.new(value)
+  def number_to_decimal(%Decimal{} = value), do: value
 end
