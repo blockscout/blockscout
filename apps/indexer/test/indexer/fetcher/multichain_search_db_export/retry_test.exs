@@ -132,6 +132,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
 
       address_1 = insert(:address)
       address_2 = insert(:address)
+      address_2_hash_string = to_string(address_2) |> String.downcase()
       address_3 = insert(:address)
       address_3_hash_string = to_string(address_3) |> String.downcase()
       block = insert(:block)
@@ -160,6 +161,9 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
             {:ok, %{"block_ranges" => [%{"max_block_number" => _, "min_block_number" => _}]}} ->
               {:ok, %HTTPoison.Response{status_code: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
 
+            {:ok, %{"addresses" => [%{"hash" => ^address_2_hash_string}]}} ->
+              {:ok, %HTTPoison.Response{status_code: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
+
             _ ->
               {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"status" => "ok"})}}
           end
@@ -172,6 +176,16 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
                   [
                     %{
                       addresses: [
+                        %{
+                          hash: ^address_2_hash_string,
+                          token_type: "UNSPECIFIED",
+                          is_contract: false,
+                          token_name: nil,
+                          contract_name: nil,
+                          ens_name: nil,
+                          is_token: false,
+                          is_verified_contract: false
+                        },
                         %{
                           hash: ^address_3_hash_string,
                           token_type: "UNSPECIFIED",
@@ -195,9 +209,38 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
                   ]} = MultichainSearchDbExportRetry.run(export_data, nil)
         end)
 
-      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 3
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 4
 
       assert log =~ "Batch export retry to the Multichain Search DB failed"
+
+      export_data_2 = [
+        %{hash: address_2.hash.bytes, hash_type: :address},
+        %{hash: address_3.hash.bytes, hash_type: :address},
+        %{hash: block.hash.bytes, hash_type: :block},
+        %{hash: transaction.hash.bytes, hash_type: :transaction}
+      ]
+
+      TestHelper.get_chain_id_mock()
+
+      for _ <- 0..1 do
+        Explorer.Mox.HTTPoison
+        |> expect(:post, fn "http://localhost:1234/api/v1/import:batch",
+                            body,
+                            [{"Content-Type", "application/json"}],
+                            _options ->
+          case Jason.decode(body) do
+            {:ok, %{"block_ranges" => [%{"max_block_number" => _, "min_block_number" => _}]}} ->
+              {:ok, %HTTPoison.Response{status_code: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
+
+            _ ->
+              {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"status" => "ok"})}}
+          end
+        end)
+      end
+
+      MultichainSearchDbExportRetry.run(export_data_2, nil)
+
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 3
     end
   end
 end

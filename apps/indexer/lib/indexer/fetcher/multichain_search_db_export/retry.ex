@@ -52,13 +52,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.Retry do
     case MultichainSearch.batch_import(prepared_export_data) do
       {:ok, result} ->
         unless result == :service_disabled do
-          transaction_hashes =
-            prepared_export_data[:transactions] |> Enum.map(&Map.get(&1, :hash))
-
-          block_hashes = prepared_export_data[:blocks] |> Enum.map(&to_string(Map.get(&1, :hash)))
-
-          address_hashes = prepared_export_data[:addresses] |> Enum.map(&to_string(Map.get(&1, :hash)))
-          hashes = transaction_hashes ++ block_hashes ++ address_hashes
+          hashes = all_hashes(prepared_export_data)
 
           hashes
           |> MultichainSearchDbExportRetryQueue.by_hashes_query()
@@ -67,13 +61,52 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.Retry do
 
         :ok
 
-      {:error, retry} ->
+      {:error, data_to_retry} ->
         Logger.error(fn ->
           ["#{@failed_to_re_export_data_error}", "#{inspect(prepared_export_data)}"]
         end)
 
-        {:retry, [retry]}
+        hashes = all_hashes(prepared_export_data)
+        failed_hashes = failed_hashes(data_to_retry)
+
+        successful_hashes = hashes -- failed_hashes
+
+        successful_hash_binaries =
+          successful_hashes
+          |> Enum.map(fn hash ->
+            "0x" <> hex = hash
+            Base.decode16!(hex)
+          end)
+
+        successful_hash_binaries
+        |> MultichainSearchDbExportRetryQueue.by_hashes_query()
+        |> Repo.delete_all()
+
+        {:retry, [data_to_retry]}
     end
+  end
+
+  defp all_hashes(prepared_export_data) do
+    transaction_hashes =
+      prepared_export_data[:transactions] |> Enum.map(&Map.get(&1, :hash))
+
+    block_hashes = prepared_export_data[:blocks] |> Enum.map(&to_string(Map.get(&1, :hash)))
+
+    address_hashes = prepared_export_data[:addresses] |> Enum.map(&to_string(Map.get(&1, :hash)))
+
+    transaction_hashes ++ block_hashes ++ address_hashes
+  end
+
+  defp failed_hashes(data_to_retry) do
+    block_transaction_hashes =
+      data_to_retry.hashes
+      |> Enum.map(&Map.get(&1, :hash))
+
+    address_hashes =
+      data_to_retry.addresses
+      |> Enum.map(&Map.get(&1, :hash))
+
+    block_transaction_hashes ++ address_hashes
   end
 
   @doc """
