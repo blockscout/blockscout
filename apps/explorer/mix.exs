@@ -96,7 +96,7 @@ defmodule Explorer.Mixfile do
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
-      {:prometheus, "~> 4.0", override: true},
+      {:prometheus, "~> 5.1", override: true},
       # Prometheus metrics for query duration
       {:prometheus_ecto, "~> 1.4.3"},
       {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
