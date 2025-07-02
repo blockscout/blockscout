@@ -110,7 +110,7 @@ defmodule Explorer.Chain.Import.Runner.Optimism.InteropMessages do
       ],
       where:
         fragment(
-          "(EXCLUDED.sender_address_hash, EXCLUDED.target_address_hash, EXCLUDED.init_transaction_hash, EXCLUDED.block_number, EXCLUDED.timestamp, EXCLUDED.relay_chain_id, EXCLUDED.relay_transaction_hash, EXCLUDED.payload, EXCLUDED.failed, EXCLUDED.transfer_token_address_hash, EXCLUDED.transfer_from_address_hash, EXCLUDED.transfer_to_address_hash, EXCLUDED.transfer_amount, EXCLUDED.sent_to_multichain) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.sender_address_hash, EXCLUDED.target_address_hash, EXCLUDED.init_transaction_hash, EXCLUDED.block_number, EXCLUDED.timestamp, EXCLUDED.relay_chain_id, EXCLUDED.relay_transaction_hash, EXCLUDED.payload, EXCLUDED.failed, EXCLUDED.transfer_token_address_hash, EXCLUDED.transfer_from_address_hash, EXCLUDED.transfer_to_address_hash, EXCLUDED.transfer_amount) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           message.sender_address_hash,
           message.target_address_hash,
           message.init_transaction_hash,
@@ -123,8 +123,7 @@ defmodule Explorer.Chain.Import.Runner.Optimism.InteropMessages do
           message.transfer_token_address_hash,
           message.transfer_from_address_hash,
           message.transfer_to_address_hash,
-          message.transfer_amount,
-          message.sent_to_multichain
+          message.transfer_amount
         )
     )
   end
