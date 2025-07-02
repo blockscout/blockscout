@@ -16,9 +16,9 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   alias EthereumJSONRPC.Contract
   alias Explorer.Application.Constants
   alias Explorer.{Chain, Helper, Repo}
+  alias Explorer.Chain.Data
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Optimism.{DisputeGame, Withdrawal}
-  alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper, as: IndexerHelper
 
@@ -345,7 +345,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
             ]
           })
 
-        calldata = ExplorerHelper.add_0x_prefix(encoded_call)
+        calldata = %Data{bytes: encoded_call}
 
         Contract.eth_call_request(calldata, dispute_game_factory, index, nil, nil)
       end)
@@ -367,7 +367,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
         [extra_data] = Helper.decode_data(extra_data_by_index[game.index], [:bytes])
 
         game
-        |> Map.put(:extra_data, ExplorerHelper.add_0x_prefix(extra_data))
+        |> Map.put(:extra_data, %Data{bytes: extra_data})
         |> Map.put(:resolved_at, sanitize_resolved_at(resolved_at_by_index[game.index]))
         |> Map.put(:status, quantity_to_integer(status_by_index[game.index]))
       end)

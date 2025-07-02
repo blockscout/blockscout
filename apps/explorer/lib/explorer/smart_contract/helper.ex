@@ -309,6 +309,7 @@ defmodule Explorer.SmartContract.Helper do
           nil
       end
 
+    # todo: Dangerous, fix with https://github.com/blockscout/blockscout/issues/12544
     ExplorerHelper.add_0x_prefix(binary_hash)
   end
 end

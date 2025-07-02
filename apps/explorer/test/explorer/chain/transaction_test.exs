@@ -867,4 +867,13 @@ defmodule Explorer.Chain.TransactionTest do
                )
     end
   end
+
+  describe "get_method_name/1" do
+    test "returns method name for transaction with input data starting with 0x" do
+      transaction =
+        :transaction |> insert(input: "0x3078f1140ab0ba")
+
+      assert "0x3078f114" == Transaction.get_method_name(transaction)
+    end
+  end
 end
