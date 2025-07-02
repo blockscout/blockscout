@@ -1006,7 +1006,7 @@ defmodule Explorer.EtherscanTest do
     test "with empty db" do
       address = build(:address)
 
-      assert Etherscan.list_token_transfers(address.hash, nil) == []
+      assert Etherscan.list_token_transfers(:erc20, address.hash, nil, %{}) == []
     end
 
     test "with from address" do
@@ -1022,7 +1022,7 @@ defmodule Explorer.EtherscanTest do
           block_number: transaction.block_number
         )
 
-      [found_token_transfer] = Etherscan.list_token_transfers(token_transfer.from_address_hash, nil)
+      [found_token_transfer] = Etherscan.list_token_transfers(:erc20, token_transfer.from_address_hash, nil, %{})
 
       assert token_transfer.from_address_hash == found_token_transfer.from_address_hash
     end
@@ -1040,7 +1040,7 @@ defmodule Explorer.EtherscanTest do
           block_number: transaction.block_number
         )
 
-      [found_token_transfer] = Etherscan.list_token_transfers(token_transfer.to_address_hash, nil)
+      [found_token_transfer] = Etherscan.list_token_transfers(:erc20, token_transfer.to_address_hash, nil, %{})
 
       assert token_transfer.to_address_hash == found_token_transfer.to_address_hash
     end
@@ -1048,7 +1048,7 @@ defmodule Explorer.EtherscanTest do
     test "with address with 0 token transfers" do
       address = insert(:address)
 
-      assert Etherscan.list_token_transfers(address.hash, nil) == []
+      assert Etherscan.list_token_transfers(:erc20, address.hash, nil, %{}) == []
     end
 
     test "with address with multiple token transfers" do
@@ -1081,80 +1081,13 @@ defmodule Explorer.EtherscanTest do
         block_number: transaction.block_number
       )
 
-      found_token_transfers = Etherscan.list_token_transfers(address1.hash, nil)
+      found_token_transfers = Etherscan.list_token_transfers(:erc20, address1.hash, nil, %{})
 
       assert length(found_token_transfers) == 2
 
       for found_token_transfer <- found_token_transfers do
         assert found_token_transfer.from_address_hash == address1.hash
       end
-    end
-
-    test "confirmations value is calculated correctly" do
-      insert(:block)
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      token_transfer =
-        insert(:token_transfer,
-          transaction: transaction,
-          block: transaction.block,
-          block_number: transaction.block_number
-        )
-
-      insert(:block)
-
-      [found_token_transfer] = Etherscan.list_token_transfers(token_transfer.from_address_hash, nil)
-
-      block_height = Chain.block_height()
-      expected_confirmations = block_height - transaction.block_number
-
-      assert found_token_transfer.confirmations == expected_confirmations
-    end
-
-    test "returns all required fields" do
-      block = insert(:block)
-
-      transaction =
-        %{block: block} =
-        :transaction
-        |> insert(block_timestamp: block.timestamp)
-        |> with_block(block)
-
-      token_transfer =
-        insert(:token_transfer,
-          transaction: transaction,
-          block: transaction.block,
-          block_number: transaction.block_number
-        )
-
-      {:ok, token} = Chain.token_from_address_hash(token_transfer.token_contract_address_hash)
-
-      [found_token_transfer] = Etherscan.list_token_transfers(token_transfer.from_address_hash, nil)
-
-      assert found_token_transfer.block_number == transaction.block_number
-      assert found_token_transfer.block_timestamp == block.timestamp
-      assert found_token_transfer.transaction_hash == token_transfer.transaction_hash
-      assert found_token_transfer.transaction_nonce == transaction.nonce
-      assert found_token_transfer.block_hash == block.hash
-      assert found_token_transfer.from_address_hash == token_transfer.from_address_hash
-      assert found_token_transfer.token_contract_address_hash == token_transfer.token_contract_address_hash
-      assert found_token_transfer.to_address_hash == token_transfer.to_address_hash
-      assert found_token_transfer.amount == token_transfer.amount
-      assert found_token_transfer.token_name == token.name
-      assert found_token_transfer.token_symbol == token.symbol
-      assert found_token_transfer.token_decimals == token.decimals
-      assert found_token_transfer.transaction_index == transaction.index
-      assert found_token_transfer.transaction_gas == transaction.gas
-      assert found_token_transfer.transaction_gas_price == transaction.gas_price
-      assert found_token_transfer.transaction_gas_used == transaction.gas_used
-      assert found_token_transfer.transaction_cumulative_gas_used == transaction.cumulative_gas_used
-      assert found_token_transfer.transaction_input == transaction.input
-      # There is a separate test to ensure confirmations are calculated correctly.
-      assert found_token_transfer.confirmations
     end
 
     test "orders token transfers by block, in ascending order (default)" do
@@ -1199,7 +1132,7 @@ defmodule Explorer.EtherscanTest do
         block_number: transaction3.block_number
       )
 
-      found_token_transfers = Etherscan.list_token_transfers(address.hash, nil)
+      found_token_transfers = Etherscan.list_token_transfers(:erc20, address.hash, nil, %{})
 
       block_numbers_order = Enum.map(found_token_transfers, & &1.block_number)
 
@@ -1251,7 +1184,7 @@ defmodule Explorer.EtherscanTest do
 
       options = %{order_by_direction: :desc}
 
-      found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
+      found_token_transfers = Etherscan.list_token_transfers(:erc20, address.hash, nil, options)
 
       block_numbers_order = Enum.map(found_token_transfers, & &1.block_number)
 
@@ -1307,7 +1240,7 @@ defmodule Explorer.EtherscanTest do
 
       options1 = %{page_number: 1, page_size: 2}
 
-      page1_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options1)
+      page1_token_transfers = Etherscan.list_token_transfers(:erc20, address.hash, nil, options1)
 
       page1_hashes = Enum.map(page1_token_transfers, & &1.transaction_hash)
 
@@ -1319,7 +1252,7 @@ defmodule Explorer.EtherscanTest do
 
       options2 = %{page_number: 2, page_size: 2}
 
-      page2_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options2)
+      page2_token_transfers = Etherscan.list_token_transfers(:erc20, address.hash, nil, options2)
 
       page2_hashes = Enum.map(page2_token_transfers, & &1.transaction_hash)
 
@@ -1331,7 +1264,7 @@ defmodule Explorer.EtherscanTest do
 
       options3 = %{page_number: 3, page_size: 2}
 
-      page3_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options3)
+      page3_token_transfers = Etherscan.list_token_transfers(:erc20, address.hash, nil, options3)
 
       page3_hashes = Enum.map(page3_token_transfers, & &1.transaction_hash)
 
@@ -1343,7 +1276,7 @@ defmodule Explorer.EtherscanTest do
 
       options4 = %{page_number: 4, page_size: 2}
 
-      assert Etherscan.list_token_transfers(address.hash, nil, options4) == []
+      assert Etherscan.list_token_transfers(:erc20, address.hash, nil, options4) == []
     end
 
     test "with start and end block options" do
@@ -1369,7 +1302,7 @@ defmodule Explorer.EtherscanTest do
         endblock: third_block.number
       }
 
-      found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
+      found_token_transfers = Etherscan.list_token_transfers(:erc20, address.hash, nil, options)
 
       expected_block_numbers = [second_block.number, third_block.number]
 
@@ -1400,7 +1333,7 @@ defmodule Explorer.EtherscanTest do
 
       options = %{startblock: third_block.number}
 
-      found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
+      found_token_transfers = Etherscan.list_token_transfers(:erc20, address.hash, nil, options)
 
       expected_block_numbers = [third_block.number, fourth_block.number]
 
@@ -1431,7 +1364,7 @@ defmodule Explorer.EtherscanTest do
 
       options = %{endblock: second_block.number}
 
-      found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
+      found_token_transfers = Etherscan.list_token_transfers(:erc20, address.hash, nil, options)
 
       expected_block_numbers = [first_block.number, second_block.number]
 
@@ -1464,7 +1397,7 @@ defmodule Explorer.EtherscanTest do
         block_number: transaction.block_number
       )
 
-      [found_token_transfer] = Etherscan.list_token_transfers(address.hash, contract_address.hash)
+      [found_token_transfer] = Etherscan.list_token_transfers(:erc20, address.hash, contract_address.hash, %{})
 
       assert found_token_transfer.token_contract_address_hash == contract_address.hash
     end

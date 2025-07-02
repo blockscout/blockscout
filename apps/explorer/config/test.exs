@@ -18,7 +18,7 @@ config :explorer, Explorer.Repo,
   timeout: :timer.seconds(60),
   queue_target: 1000,
   migration_lock: nil,
-  log: false
+  log: :debug
 
 # Configure API database
 config :explorer, Explorer.Repo.Replica1,
