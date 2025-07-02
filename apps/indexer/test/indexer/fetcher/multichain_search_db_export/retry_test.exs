@@ -5,6 +5,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
   import ExUnit.CaptureLog, only: [capture_log: 1]
   import Mox
 
+  alias Explorer.Chain.MultichainSearchDbExportRetryQueue
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.TestHelper
   alias Indexer.Fetcher.MultichainSearchDbExport.Retry, as: MultichainSearchDbExportRetry
@@ -194,9 +195,9 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.RetryTest do
                   ]} = MultichainSearchDbExportRetry.run(export_data, nil)
         end)
 
-      assert log =~ "Batch export retry to the Multichain Search DB failed"
+      assert Repo.aggregate(MultichainSearchDbExportRetryQueue, :count, :hash) == 3
 
-      Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
+      assert log =~ "Batch export retry to the Multichain Search DB failed"
     end
   end
 end

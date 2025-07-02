@@ -69,9 +69,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
             {:error, data_to_retry} ->
               merged_data_to_retry = %{
-                addresses: data_to_retry.addresses ++ error.data_to_retry.addresses,
-                block_ranges: data_to_retry.block_ranges ++ error.data_to_retry.block_ranges,
-                hashes: data_to_retry.hashes ++ error.data_to_retry.hashes
+                addresses: error.data_to_retry.addresses ++ data_to_retry.addresses,
+                block_ranges: error.data_to_retry.block_ranges ++ data_to_retry.block_ranges,
+                hashes: error.data_to_retry.hashes ++ data_to_retry.hashes
               }
 
               {:error, merged_data_to_retry}
