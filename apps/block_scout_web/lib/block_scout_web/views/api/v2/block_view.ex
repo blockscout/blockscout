@@ -35,9 +35,9 @@ defmodule BlockScoutWeb.API.V2.BlockView do
         estimated_time_in_sec: estimated_time_in_sec
       }) do
     %{
-      current_block_number: to_string(current_block),
-      countdown_block_number: to_string(countdown_block),
-      remaining_blocks_count: to_string(remaining_blocks),
+      current_block_number: current_block,
+      countdown_block_number: countdown_block,
+      remaining_blocks_count: remaining_blocks,
       estimated_time_in_seconds: to_string(estimated_time_in_sec)
     }
   end
