@@ -71,16 +71,18 @@ defmodule Indexer.Transform.AddressCoinBalances do
   defp internal_transactions_params_reducer(%{block_number: block_number} = internal_transaction_params, acc)
        when is_integer(block_number) do
     case internal_transaction_params do
-      %{type: "call"} = params ->
+      %{error: _} ->
+        acc
+
+      %{type: "call", call_type: call_type, value: value} = params when call_type in ~w(call invalid) and value > 0 ->
         acc
         |> process_internal_transaction_field(params, :from_address_hash, block_number)
         |> process_internal_transaction_field(params, :to_address_hash, block_number)
 
-      %{type: "create", error: _} ->
+      %{type: type} = params when type in ~w(create create2) ->
         acc
-
-      %{type: "create"} = params ->
-        process_internal_transaction_field(acc, params, :created_contract_address_hash, block_number)
+        |> process_internal_transaction_field(params, :from_address_hash, block_number)
+        |> process_internal_transaction_field(params, :created_contract_address_hash, block_number)
 
       %{type: "selfdestruct", from_address_hash: from_address_hash, to_address_hash: to_address_hash}
       when is_binary(from_address_hash) and is_binary(to_address_hash) ->
