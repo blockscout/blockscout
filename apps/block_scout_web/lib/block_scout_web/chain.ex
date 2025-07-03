@@ -587,16 +587,11 @@ defmodule BlockScoutWeb.Chain do
   end
 
   def param_to_block_timestamp(timestamp_string) when is_binary(timestamp_string) do
-    case Integer.parse(timestamp_string) do
-      {timestamp_int, ""} ->
-        timestamp =
-          timestamp_int
-          |> DateTime.from_unix!(:second)
-
-        {:ok, timestamp}
-
-      _ ->
-        {:error, :invalid_timestamp}
+    with {timestamp_int, ""} <- Integer.parse(timestamp_string),
+         {:ok, timestamp} <- DateTime.from_unix(timestamp_int, :second) do
+      {:ok, timestamp}
+    else
+      _ -> {:error, :invalid_timestamp}
     end
   end
 

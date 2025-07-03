@@ -262,6 +262,25 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
 
+    test "with an excessively large timestamp param", %{conn: conn} do
+      response =
+        conn
+        |> get("/api", %{
+          "module" => "block",
+          "action" => "getblocknobytime",
+          "timestamp" => "1000000000000000000000000",
+          "closest" => "before"
+        })
+        |> json_response(200)
+
+      assert response["message"] =~ "Invalid `timestamp` param"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+      schema = resolve_getblocknobytime_schema()
+      assert :ok = ExJsonSchema.Validator.validate(schema, response)
+    end
+
     test "with an invalid closest param", %{conn: conn} do
       response =
         conn
