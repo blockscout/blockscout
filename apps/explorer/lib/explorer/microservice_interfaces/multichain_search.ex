@@ -15,7 +15,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   @max_concurrency 5
   @post_timeout :timer.minutes(5)
-  @request_error_msg "Error while sending request to Multichain Search DB Service"
   @unspecified "UNSPECIFIED"
 
   @doc """
@@ -35,11 +34,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   @spec batch_import(
           %{
             addresses: [Address.t()],
-            blocks: [Block.t()],
-            transactions: [Transaction.t()]
+            blocks: [Block.t() | %{hash: String.t(), hash_type: String.t()}],
+            transactions: [Transaction.t() | %{hash: String.t(), hash_type: String.t()}]
           },
           boolean()
-        ) :: {:error, :disabled | String.t() | Jason.DecodeError.t()} | {:ok, any()}
+        ) :: {:error, map()} | {:ok, any()}
   def batch_import(params, retry? \\ false) do
     if enabled?() do
       params_chunks = extract_batch_import_params_into_chunks(params)
@@ -56,11 +55,29 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         {:ok, {:ok, _result}}, acc ->
           acc
 
-        {:ok, {:error, error}}, _acc ->
+        {:ok, {:error, error}}, acc ->
           on_error(error, retry?)
-          {:error, @request_error_msg}
 
-        {:exit, {export_body, reason}}, _acc ->
+          case acc do
+            {:ok, {:chunks_processed, _}} ->
+              {:error,
+               %{
+                 addresses: error.data_to_retry.addresses,
+                 block_ranges: error.data_to_retry.block_ranges,
+                 hashes: error.data_to_retry.hashes
+               }}
+
+            {:error, data_to_retry} ->
+              merged_data_to_retry = %{
+                addresses: error.data_to_retry.addresses ++ data_to_retry.addresses,
+                block_ranges: error.data_to_retry.block_ranges ++ data_to_retry.block_ranges,
+                hashes: error.data_to_retry.hashes ++ data_to_retry.hashes
+              }
+
+              {:error, merged_data_to_retry}
+          end
+
+        {:exit, {export_body, reason}}, acc ->
           on_error(
             %{
               url: url,
@@ -70,7 +87,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
             retry?
           )
 
-          {:error, @request_error_msg}
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          case acc do
+            {:ok, {:chunks_processed, _}} ->
+              {:error, export_body}
+
+            {:error, acc} ->
+              {:error, Map.merge(acc, export_body)}
+          end
       end)
     else
       {:ok, :service_disabled}
@@ -222,8 +246,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   """
   @spec extract_batch_import_params_into_chunks(%{
           addresses: [Address.t()],
-          blocks: [Block.t()],
-          transactions: [Transaction.t()]
+          blocks: [Block.t() | %{hash: String.t(), hash_type: String.t()}],
+          transactions: [Transaction.t() | %{hash: String.t(), hash_type: String.t()}]
         }) :: [
           %{
             api_key: String.t(),
