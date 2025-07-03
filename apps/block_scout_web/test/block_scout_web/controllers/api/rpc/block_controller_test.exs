@@ -225,7 +225,7 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
-      schema = resolve_getblockreward_schema()
+      schema = resolve_getblocknobytime_schema()
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
 
@@ -239,7 +239,7 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
-      schema = resolve_getblockreward_schema()
+      schema = resolve_getblocknobytime_schema()
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
 
@@ -258,7 +258,7 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
-      schema = resolve_getblockreward_schema()
+      schema = resolve_getblocknobytime_schema()
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
 
@@ -277,7 +277,7 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
-      schema = resolve_getblockreward_schema()
+      schema = resolve_getblocknobytime_schema()
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
 
@@ -292,10 +292,6 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
         (timestamp_int + 1)
         |> to_string()
 
-      expected_result = %{
-        "blockNumber" => "#{block.number}"
-      }
-
       assert response =
                conn
                |> get("/api", %{
@@ -306,10 +302,10 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
                })
                |> json_response(200)
 
-      assert response["result"] == expected_result
+      assert response["result"] == "#{block.number}"
       assert response["status"] == "1"
       assert response["message"] == "OK"
-      schema = resolve_getblockreward_schema()
+      schema = resolve_getblocknobytime_schema()
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
 
@@ -324,10 +320,6 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
         (timestamp_int - 1)
         |> to_string()
 
-      expected_result = %{
-        "blockNumber" => "#{block.number}"
-      }
-
       assert response =
                conn
                |> get("/api", %{
@@ -338,10 +330,10 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
                })
                |> json_response(200)
 
-      assert response["result"] == expected_result
+      assert response["result"] == "#{block.number}"
       assert response["status"] == "1"
       assert response["message"] == "OK"
-      schema = resolve_getblockreward_schema()
+      schema = resolve_getblocknobytime_schema()
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
 
@@ -356,10 +348,6 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
         (timestamp_int - 2 * 60)
         |> to_string()
 
-      expected_result = %{
-        "blockNumber" => "#{block.number}"
-      }
-
       assert response =
                conn
                |> get("/api", %{
@@ -370,10 +358,10 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
                })
                |> json_response(200)
 
-      assert response["result"] == expected_result
+      assert response["result"] == "#{block.number}"
       assert response["status"] == "1"
       assert response["message"] == "OK"
-      schema = resolve_getblockreward_schema()
+      schema = resolve_getblocknobytime_schema()
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
   end
@@ -423,6 +411,20 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
             "RemainingBlock" => %{"type" => "string"},
             "EstimateTimeInSec" => %{"type" => "string"}
           }
+        }
+      }
+    })
+  end
+
+  defp resolve_getblocknobytime_schema do
+    ExJsonSchema.Schema.resolve(%{
+      "type" => "object",
+      "properties" => %{
+        "message" => %{"type" => "string"},
+        "status" => %{"type" => "string"},
+        "result" => %{
+          "type" => ["string", "null"],
+          "description" => "Block number as a string or null if not found"
         }
       }
     })
