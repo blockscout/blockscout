@@ -579,6 +579,7 @@ defmodule BlockScoutWeb.Chain do
     %PagingOptions{options | page_number: new_page_number, page_size: new_page_size}
   end
 
+  @spec param_to_block_number(binary()) :: {:ok, integer()} | {:error, :invalid}
   def param_to_block_number(formatted_number) when is_binary(formatted_number) do
     case Integer.parse(formatted_number) do
       {number, ""} -> {:ok, number}

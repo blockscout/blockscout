@@ -207,6 +207,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:block_hash_or_number/transactions", V2.BlockController, :transactions)
       get("/:block_hash_or_number/internal-transactions", V2.BlockController, :internal_transactions)
       get("/:block_hash_or_number/withdrawals", V2.BlockController, :withdrawals)
+      get("/:block_number/countdown", V2.BlockController, :block_countdown)
 
       if @chain_type == :arbitrum do
         get("/arbitrum-batch/:batch_number", V2.BlockController, :arbitrum_batch)

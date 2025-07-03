@@ -27,6 +27,20 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     prepare_block(block, nil, false)
   end
 
+  def render("block_countdown.json", %{
+        current_block: current_block,
+        countdown_block: countdown_block,
+        remaining_blocks: remaining_blocks,
+        estimated_time_in_sec: estimated_time_in_sec
+      }) do
+    %{
+      current_block_number: current_block,
+      countdown_block_number: countdown_block,
+      remaining_blocks_count: remaining_blocks,
+      estimated_time_in_seconds: to_string(estimated_time_in_sec)
+    }
+  end
+
   def prepare_block(block, _conn, single_block? \\ false) do
     block = Block.aggregate_transactions(block)
 
