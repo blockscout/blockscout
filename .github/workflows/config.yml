@@ -52,7 +52,6 @@ jobs:
 
             const chainTypes = [
               "arbitrum",
-              "berachain",
               "blackfort",
               "celo",
               "ethereum",
