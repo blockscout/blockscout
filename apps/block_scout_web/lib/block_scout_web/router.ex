@@ -44,6 +44,7 @@ defmodule BlockScoutWeb.Router do
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(BlockScoutWeb.Plug.RateLimit)
     plug(:accepts, ["json"])
   end
 
@@ -57,12 +58,21 @@ defmodule BlockScoutWeb.Router do
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
-    plug(BlockScoutWeb.Plug.RateLimit, graphql?: true)
+    plug(BlockScoutWeb.Plug.RateLimit)
+  end
+
+  pipeline :rate_limit do
+    plug(:fetch_query_params)
+    plug(:accepts, ["json"])
+    plug(BlockScoutWeb.Plug.RateLimit)
   end
 
   match(:*, "/auth/*path", AccountRouter, [])
 
-  forward("/api", ApiRouter)
+  scope "/api" do
+    pipe_through(:rate_limit)
+    forward("/", ApiRouter)
+  end
 
   scope "/graphiql" do
     pipe_through(:api_v1_graphql)

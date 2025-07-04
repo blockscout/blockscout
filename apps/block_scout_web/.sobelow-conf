@@ -10,6 +10,8 @@
     "apps/block_scout_web/lib/block_scout_web/routers/smart_contracts_api_v2_router.ex",
     "apps/block_scout_web/lib/block_scout_web/routers/tokens_api_v2_router.ex",
     "apps/block_scout_web/lib/block_scout_web/routers/utils_api_v2_router.ex",
-    "apps/block_scout_web/lib/block_scout_web/routers/address_badges_v2_router.ex"
+    "apps/block_scout_web/lib/block_scout_web/routers/address_badges_v2_router.ex",
+    "apps/block_scout_web/lib/block_scout_web/utility/rate_limit_config_helper.ex",
+    "apps/block_scout_web/lib/block_scout_web/rate_limit.ex"
   ]
 ]
