@@ -320,7 +320,18 @@ defmodule Explorer.Chain.TokenTransfer do
     end
   end
 
-  defp maybe_filter_by_token_type(query, token_types) do
+  def maybe_filter_by_token_type(query, token_type) when is_binary(token_type) do
+    if DenormalizationHelper.tt_denormalization_finished?() do
+      query
+      |> where([tt], tt.token_type == ^token_type)
+    else
+      query
+      |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+      |> where([tt, block, token], token.type == ^token_type)
+    end
+  end
+
+  def maybe_filter_by_token_type(query, token_types) do
     if Enum.empty?(token_types) do
       query
     else
@@ -673,17 +684,6 @@ defmodule Explorer.Chain.TokenTransfer do
         query
         |> where([tt], tt.transaction_hash == parent_as(:log).transaction_hash)
     end
-  end
-
-  @doc """
-    Returns ecto query to fetch consensus token transfers with ERC-721 token type
-  """
-  @spec erc_721_token_transfers_query() :: Ecto.Query.t()
-  def erc_721_token_transfers_query do
-    only_consensus_transfers_query()
-    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
-    |> where([tt, token: token], token.type == "ERC-721")
-    |> preload([tt, token: token], [{:token, token}])
   end
 
   @doc """
