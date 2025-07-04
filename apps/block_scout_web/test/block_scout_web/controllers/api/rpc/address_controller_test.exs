@@ -1243,6 +1243,34 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
     end
 
+    test "ignores too big endblock", %{conn: conn} do
+      blocks = [_, _, _, _] = insert_list(4, :block)
+      address = insert(:address)
+
+      for block <- blocks do
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(block)
+      end
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "endblock" => "99999999999"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 8
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
+    end
+
     test "with start_timestamp and end_timestamp params", %{conn: conn} do
       now = Timex.now()
       timestamp1 = Timex.shift(now, hours: -6)
