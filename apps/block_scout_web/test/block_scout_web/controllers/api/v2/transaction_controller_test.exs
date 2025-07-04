@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
+  import Ecto.Query, only: [from: 2]
 
   alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.{Address, Data, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}

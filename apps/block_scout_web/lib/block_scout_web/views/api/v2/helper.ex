@@ -111,6 +111,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "hash" => Address.checksum(address_hash),
       "is_contract" => false,
       "name" => nil,
+      "is_scam" => false,
       "proxy_type" => nil,
       "implementations" => [],
       "is_verified" => nil,

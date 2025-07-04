@@ -204,4 +204,12 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
       true -> "Processed on L2"
     end
   end
+
+  @doc """
+  Returns a list of possible batch statuses.
+  """
+  @spec batch_status_enum() :: [String.t()]
+  def batch_status_enum do
+    ["Executed on L1", "Validated on L1", "Sent to L1", "Sealed on L2", "Processed on L2"]
+  end
 end
