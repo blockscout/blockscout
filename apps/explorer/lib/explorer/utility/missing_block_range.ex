@@ -490,9 +490,8 @@ defmodule Explorer.Utility.MissingBlockRange do
   # Deletes all missing block ranges that overlap with the interval [from, to]
   @spec delete_ranges_between(Block.block_number(), Block.block_number()) :: :ok
   defp delete_ranges_between(from, to) do
-    from
-    |> from_number_below_query()
-    |> to_number_above_query(to)
+    __MODULE__
+    |> where([r], fragment("int4range(?, ?, '()') @> int4range(?, ?, '[]')", ^to, ^from, r.to_number, r.from_number))
     |> Repo.delete_all()
   end
 
