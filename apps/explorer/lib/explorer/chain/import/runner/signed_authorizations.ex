@@ -91,20 +91,22 @@ defmodule Explorer.Chain.Import.Runner.SignedAuthorizations do
           s: fragment("EXCLUDED.s"),
           v: fragment("EXCLUDED.v"),
           authority: fragment("EXCLUDED.authority"),
+          status: fragment("EXCLUDED.status"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", authorization.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", authorization.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.chain_id, EXCLUDED.address, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.v, EXCLUDED.authority) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.chain_id, EXCLUDED.address, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.v, EXCLUDED.authority, EXCLUDED.status) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?)",
           authorization.chain_id,
           authorization.address,
           authorization.nonce,
           authorization.r,
           authorization.s,
           authorization.v,
-          authorization.authority
+          authorization.authority,
+          authorization.status
         )
     )
   end
