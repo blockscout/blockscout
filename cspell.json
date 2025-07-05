@@ -749,6 +749,7 @@
         "zkevm",
         "zksolc",
         "zksync",
+        "via",
         "zstd"
     ],
     "enableFiletypes": [

@@ -30,6 +30,7 @@ defmodule Explorer.Chain.Transaction.Schema do
   alias Explorer.Chain.PolygonZkevm.BatchTransaction, as: ZkevmBatchTransaction
   alias Explorer.Chain.Transaction.{Fork, Status}
   alias Explorer.Chain.ZkSync.BatchTransaction, as: ZkSyncBatchTransaction
+  alias Explorer.Chain.Via.BatchTransaction, as: ViaBatchTransaction
 
   @chain_type_fields (case @chain_type do
                         :ethereum ->
@@ -132,6 +133,22 @@ defmodule Explorer.Chain.Transaction.Schema do
                               has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
                               has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
                               has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
+                            end,
+                            2
+                          )
+
+                        :via ->
+                          elem(
+                            quote do
+                              has_one(:via_batch_transaction, ViaBatchTransaction,
+                                foreign_key: :transaction_hash,
+                                references: :hash
+                              )
+
+                              has_one(:via_batch, through: [:via_batch_transaction, :batch])
+                              has_one(:via_commit_transaction, through: [:via_batch, :commit_transaction])
+                              has_one(:via_prove_transaction, through: [:via_batch, :prove_transaction])
+                              has_one(:via_execute_transaction, through: [:via_batch, :execute_transaction])
                             end,
                             2
                           )

@@ -66,6 +66,13 @@ defmodule Explorer.Chain.Address.Schema do
                             ]
                           end
 
+                        :via ->
+                          quote do
+                            [
+                              field(:contract_code_refetched, :boolean)
+                            ]
+                          end
+
                         _ ->
                           []
                       end)
@@ -151,6 +158,9 @@ defmodule Explorer.Chain.Address do
                                   ~w(filecoin_id filecoin_robust filecoin_actor_type)a
 
                                 :zksync ->
+                                  ~w(contract_code_refetched)a
+
+                                :via ->
                                   ~w(contract_code_refetched)a
 
                                 _ ->

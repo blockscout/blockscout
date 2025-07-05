@@ -39,6 +39,12 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.ZkSync.BatchTransactions,
       Runner.ZkSync.BatchBlocks
     ],
+    via: [
+      Runner.Via.LifecycleTransactions,
+      Runner.Via.TransactionBatches,
+      Runner.Via.BatchTransactions,
+      Runner.Via.BatchBlocks
+    ],
     shibarium: [
       Runner.Shibarium.BridgeOperations
     ],
