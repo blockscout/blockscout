@@ -1158,21 +1158,12 @@ defmodule Explorer.Chain do
         assets_to_import = %{
           addresses: imported[:addresses] || [],
           blocks: imported[:blocks] || [],
-          transactions: imported[:transactions] || []
+          transactions: imported[:transactions] || [],
+          address_current_token_balances: imported[:address_current_token_balances] || []
         }
 
-        if assets_to_import == %{
-             addresses: [],
-             blocks: [],
-             transactions: []
-           } do
-          result
-        else
-          # todo: consider robust async way of importing
-          MultichainSearch.batch_import(assets_to_import)
-
-          result
-        end
+        MultichainSearch.send_data_to_queue(assets_to_import)
+        result
 
       other_result ->
         other_result
