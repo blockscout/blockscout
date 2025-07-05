@@ -234,6 +234,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> Enum.map(&prepare_signed_authorization/1)
   end
 
+  def render("decoded_input.json", %{decoded_input: decoded_input}) do
+    %{
+      "decoded_input" => decoded_input(decoded_input)
+    }
+  end
+
   @doc """
   Returns the ABI of a smart contract or an empty list if the smart contract is nil
   """
