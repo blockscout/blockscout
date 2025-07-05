@@ -78,11 +78,7 @@ defmodule BlockScoutWeb.API.RPC.BlockView do
   end
 
   def render("getblocknobytime.json", %{block_number: block_number}) do
-    data = %{
-      "blockNumber" => to_string(block_number)
-    }
-
-    RPCView.render("show.json", data: data)
+    RPCView.render("show.json", data: to_string(block_number))
   end
 
   def render("eth_block_number.json", %{number: number, id: id}) do
