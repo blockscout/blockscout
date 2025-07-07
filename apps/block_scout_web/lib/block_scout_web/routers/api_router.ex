@@ -192,6 +192,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/:transaction_hash_param/blobs", V2.TransactionController, :blobs)
       end
 
+      pipe_through(:api_v2_no_session)
       post("/decode-input/", V2.TransactionController, :decode_input)
     end
 
