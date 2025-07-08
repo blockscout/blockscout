@@ -428,9 +428,9 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
         created_contract_address: created_contract_address,
         index: 0,
         transaction: transaction,
+        transaction_index: transaction.index,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -476,9 +476,9 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
         from_address: from_address,
         index: 0,
         transaction: transaction,
+        transaction_index: transaction.index,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -518,9 +518,9 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
         to_address: to_address,
         index: 0,
         transaction: transaction,
+        transaction_index: transaction.index,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -589,9 +589,9 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
         from_address: miner,
         index: 0,
         transaction: from_internal_transaction_transaction,
+        transaction_index: from_internal_transaction_transaction.index,
         block_number: from_internal_transaction_transaction.block_number,
         block_hash: from_internal_transaction_transaction.block_hash,
-        block_index: 0,
         transaction_index: from_internal_transaction_transaction.index
       )
 
@@ -609,9 +609,9 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
         index: 0,
         to_address: miner,
         transaction: to_internal_transaction_transaction,
+        transaction_index: to_internal_transaction_transaction.index,
         block_number: to_internal_transaction_transaction.block_number,
         block_hash: to_internal_transaction_transaction.block_hash,
-        block_index: 0,
         transaction_index: to_internal_transaction_transaction.index
       )
 
@@ -669,7 +669,6 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
         transaction: from_internal_transaction_transaction,
         block_number: from_internal_transaction_transaction.block_number,
         block_hash: from_internal_transaction_transaction.block_hash,
-        block_index: 0,
         transaction_index: from_internal_transaction_transaction.index
       )
 
@@ -685,7 +684,6 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
         transaction: to_internal_transaction_transaction,
         block_number: to_internal_transaction_transaction.block_number,
         block_hash: to_internal_transaction_transaction.block_hash,
-        block_index: 1,
         transaction_index: to_internal_transaction_transaction.index
       )
 

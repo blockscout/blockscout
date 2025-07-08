@@ -18,7 +18,7 @@ defmodule Explorer.Migrator.CompletionChecker do
           Enum.all?(migration_statuses, &(&1 == "completed"))
 
       unless all_migrations_completed? do
-        raise "All of these migrations should be completed before #{Application.get_env(:block_scout_web, :version)} release: #{inspect(migration_names)}"
+        raise "All of these migrations should be completed before #{Application.get_env(:block_scout_web, :version)} release: #{inspect(migration_names)}, you should rollback to previous version and complete migrations"
       end
     end
   end

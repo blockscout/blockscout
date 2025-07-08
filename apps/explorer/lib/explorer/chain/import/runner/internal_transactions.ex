@@ -341,8 +341,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       "transactions" ->
         transaction_hashes =
           changes_list
-          |> Enum.map(& &1.transaction_hash)
+          |> Enum.map(&Map.get(&1, :transaction_hash))
           |> Enum.uniq()
+          |> Enum.reject(&is_nil/1)
 
         query =
           from(

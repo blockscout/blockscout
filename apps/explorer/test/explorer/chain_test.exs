@@ -829,7 +829,7 @@ defmodule Explorer.ChainTest do
       end)
     end
 
-    test "returns indexed ratio" do
+    test "returns indexed ratio (pending_block_operation)" do
       for index <- 0..9 do
         block = insert(:block, number: index)
 
@@ -840,6 +840,31 @@ defmodule Explorer.ChainTest do
 
       config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
       Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+
+      Chain.indexed_ratio_internal_transactions()
+
+      assert Decimal.compare(Chain.indexed_ratio_internal_transactions(), Decimal.from_float(0.7)) == :eq
+    end
+
+    test "returns indexed ratio (pending_transaction_operation)" do
+      for index <- 0..9 do
+        block = insert(:block, number: index)
+
+        transaction_hashes =
+          2
+          |> insert_list(:transaction)
+          |> with_block(block)
+          |> Enum.map(& &1.hash)
+
+        if index === 0 || index === 5 || index === 7 do
+          insert(:pending_transaction_operation, transaction_hash: List.first(transaction_hashes))
+        end
+      end
+
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, false))
 
       on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
 

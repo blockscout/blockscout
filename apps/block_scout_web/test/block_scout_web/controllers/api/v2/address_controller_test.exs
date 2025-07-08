@@ -2617,6 +2617,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         type: "call",
         call_type: "call",
         transaction: transaction,
+        transaction_index: transaction.index,
         block: transaction.block,
         to_address: address,
         value: 123,
