@@ -33,7 +33,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     * `transfer_from_address_hash` - The cross-chain transfer `from` address. Can be `nil` (if this is not transfer operation).
     * `transfer_to_address_hash` - The cross-chain transfer `to` address. Can be `nil` (if this is not transfer operation).
     * `transfer_amount` - The cross-chain transfer amount. Can be `nil` (if this is not transfer operation).
-    * `sent_to_multichain` - Equals to `true` if message details are sent to multichain service. Defaults to `false`.
+    * `sent_to_multichain` - Equals to `true` if message details are sent to multichain service. Defaults to `nil`.
   """
   @primary_key false
   typed_schema "op_interop_messages" do
@@ -215,7 +215,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
         where:
           ((not is_nil(m.init_transaction_hash) and m.init_chain_id == ^current_chain_id) or
              (not is_nil(m.relay_transaction_hash) and m.relay_chain_id == ^current_chain_id)) and
-            not m.sent_to_multichain,
+            (is_nil(m.sent_to_multichain) or m.sent_to_multichain == false),
         order_by: [desc: m.block_number],
         limit: ^limit
       )

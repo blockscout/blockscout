@@ -103,6 +103,7 @@ defmodule Explorer.Chain.Import.Runner.Optimism.InteropMessages do
           transfer_to_address_hash:
             fragment("COALESCE(EXCLUDED.transfer_to_address_hash, ?)", message.transfer_to_address_hash),
           transfer_amount: fragment("COALESCE(EXCLUDED.transfer_amount, ?)", message.transfer_amount),
+          sent_to_multichain: fragment("COALESCE(EXCLUDED.sent_to_multichain, ?)", message.sent_to_multichain),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", message.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", message.updated_at)
         ]
