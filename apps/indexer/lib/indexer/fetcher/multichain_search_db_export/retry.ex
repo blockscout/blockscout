@@ -75,7 +75,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.Retry do
           successful_hashes
           |> Enum.map(fn hash ->
             "0x" <> hex = hash
-            Base.decode16!(hex)
+            Base.decode16!(hex, case: :mixed)
           end)
 
         successful_hash_binaries
