@@ -17,14 +17,8 @@ defmodule Indexer.Utils.NotificationsCleaner do
   end
 
   def init(args) do
-    Process.send(self(), :clean_up_legacy_notifications, [])
     Process.send(self(), :clean_up_notifications, [])
     {:ok, args}
-  end
-
-  def handle_info(:clean_up_legacy_notifications, state) do
-    clean_up_legacy_notifications()
-    {:noreply, state}
   end
 
   def handle_info(:clean_up_notifications, state) do
@@ -40,15 +34,6 @@ defmodule Indexer.Utils.NotificationsCleaner do
       |> Repo.delete_all()
 
     Logger.info("Deleted #{count} event notifications")
-  end
-
-  defp clean_up_legacy_notifications do
-    {count, _} =
-      EventNotification
-      |> where([en], is_nil(en.inserted_at))
-      |> Repo.delete_all()
-
-    Logger.info("Deleted #{count} event notifications with nil inserted_at")
   end
 
   defp max_age do
