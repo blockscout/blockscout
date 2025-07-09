@@ -5,7 +5,7 @@ defmodule Explorer.Chain.SignedAuthorization.Reader do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Chain.Block
+  alias Explorer.Chain.{Block, Hash, SignedAuthorization}
   alias Explorer.Repo
 
   @doc """
@@ -42,5 +42,32 @@ defmodule Explorer.Chain.SignedAuthorization.Reader do
       )
 
     query |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
+  Returns latest successful authorizations for a list of addresses.
+
+  ## Parameters
+
+    - `address_hashes`: The list of `authority` addresses to fetch authorizations for.
+
+  ## Returns
+
+    - `[%{authority: Hash.Address.t(), nonce: non_neg_integer()}]`: The list of latest
+      successful authorizations and their nonces for the given addresses, if there are any.
+  """
+  @spec address_hashes_to_latest_authorizations([Hash.Address.t()]) :: [
+          %{authority: Hash.Address.t(), nonce: non_neg_integer()}
+        ]
+  def address_hashes_to_latest_authorizations(address_hashes) do
+    query =
+      from(
+        s in SignedAuthorization,
+        where: s.authority in ^address_hashes and s.status == :ok,
+        select: %{authority: s.authority, nonce: max(s.nonce)},
+        group_by: s.authority
+      )
+
+    Repo.all(query)
   end
 end

@@ -13,7 +13,8 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
 
   import Explorer.Chain.SignedAuthorization.Reader,
     only: [
-      stream_blocks_to_refetch_signed_authorizations_statuses: 2
+      stream_blocks_to_refetch_signed_authorizations_statuses: 2,
+      address_hashes_to_latest_authorizations: 1
     ]
 
   alias EthereumJSONRPC.Utility.RangesHelper
@@ -44,8 +45,8 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
 
   @behaviour BufferedTask
 
-  @default_max_batch_size 1
-  @default_max_concurrency 4
+  @default_max_batch_size 10
+  @default_max_concurrency 1
 
   @doc """
   Enqueues a batch of transactions to fetch and handle signed authorization statuses.
@@ -362,12 +363,30 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
   # Imports all updated signed authorizations, updates relevant addresses and proxy implementations.
   @spec import_authorizations([SignedAuthorization.t()]) :: :ok | {:error, any()}
   defp import_authorizations(signed_authorizations) do
-    addresses =
+    address_params =
       signed_authorizations
       |> Enum.filter(&(&1.status == :ok))
       # keeps only the latest record for each authority address
       |> Enum.into(%{}, &{&1.authority, SignedAuthorization.to_address_params(&1)})
       |> Map.values()
+
+    # Fetch latest successful authorizations for each authority address
+    # and skip importing addresses for which newer authorization already exists.
+    # Will only work correctly with concurrency of the fetcher set to 1.
+    # Alternative concurrent approach may be considered in the future by moving
+    # this check to the DB level inside an "on conflict" clause and introduction
+    # of the `last_code_change_nonce` column.
+    latest_authorization_nonces =
+      address_params
+      |> Enum.map(& &1.hash)
+      |> address_hashes_to_latest_authorizations()
+      |> Enum.into(%{}, &{&1.authority, &1.nonce})
+
+    addresses =
+      address_params
+      |> Enum.filter(fn %{hash: hash, nonce: nonce} ->
+        Decimal.gt?(nonce, Map.get(latest_authorization_nonces, hash, -1))
+      end)
 
     case Chain.import(%{
            addresses: %{
@@ -432,14 +451,10 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
       update: [
         set: [
           contract_code: fragment("EXCLUDED.contract_code"),
-          nonce: fragment("EXCLUDED.nonce"),
+          nonce: fragment("GREATEST(EXCLUDED.nonce, ?)", address.nonce),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", address.updated_at)
         ]
-      ],
-      # won't work in 100% of cases, especially for frequent transacting addresses,
-      # since nonce might be already updated to a higher value by other transaction
-      # maybe we can rename and repurpose `nonce` column to something like `last_code_change_nonce`
-      where: fragment("EXCLUDED.nonce > COALESCE(?, -1)", address.nonce)
+      ]
     )
   end
 
@@ -447,7 +462,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
     [
       poll: false,
       flush_interval: :timer.seconds(3),
-      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
+      max_concurrency: @default_max_concurrency,
       max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
       task_supervisor: __MODULE__.TaskSupervisor,
       metadata: [fetcher: :signed_authorization_status]
