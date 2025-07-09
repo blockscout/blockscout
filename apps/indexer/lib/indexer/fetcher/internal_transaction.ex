@@ -1,4 +1,3 @@
-# credo:disable-for-this-file
 defmodule Indexer.Fetcher.InternalTransaction do
   @moduledoc """
   Fetches and indexes `t:Explorer.Chain.InternalTransaction.t/0`.
@@ -170,7 +169,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
         block_numbers_or_transactions
         |> check_and_filter_block_numbers()
-        |> fetch_block_internal_transactions(json_rpc_named_arguments)
+        |> EthereumJSONRPC.fetch_block_internal_transactions(json_rpc_named_arguments)
 
       :transaction_params ->
         Logger.debug("fetching internal transactions by transactions")
@@ -183,42 +182,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
           error ->
             {:error, error, __STACKTRACE__}
         end
-    end
-  end
-
-  # TODO: remove this function after the migration of internal transactions PK to [:block_hash, :transaction_index, :index]
-  defp fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) do
-    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
-
-    if variant in block_traceable_variants() do
-      EthereumJSONRPC.fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments)
-    else
-      Enum.reduce(block_numbers, {:ok, []}, fn
-        block_number, {:ok, acc_list} ->
-          block_number
-          |> Transaction.get_transactions_of_block_number()
-          |> filter_non_traceable_transactions()
-          |> Enum.map(&params/1)
-          |> case do
-            [] ->
-              {:ok, []}
-
-            transactions ->
-              try do
-                EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
-              catch
-                :exit, error ->
-                  {:error, error, __STACKTRACE__}
-              end
-          end
-          |> case do
-            {:ok, internal_transactions} -> {:ok, internal_transactions ++ acc_list}
-            error_or_ignore -> error_or_ignore
-          end
-
-        _, error_or_ignore ->
-          error_or_ignore
-      end)
     end
   end
 
@@ -513,20 +476,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   defp invalidate_block_from_error(_error_data), do: :ok
 
-  defp queue_data_type(_json_rpc_named_arguments) do
-    # TODO: bring back after the migration of internal transactions PK to [:block_hash, :transaction_index, :index]
-    # variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
+  defp queue_data_type(json_rpc_named_arguments) do
+    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-    # if variant in block_traceable_variants() do
-    #   :block_number
-    # else
-    #   :transaction_params
-    # end
-
-    if Application.get_env(:explorer, :non_existing_variable, false) do
-      :transaction_params
-    else
+    if variant in block_traceable_variants() do
       :block_number
+    else
+      :transaction_params
     end
   end
 
