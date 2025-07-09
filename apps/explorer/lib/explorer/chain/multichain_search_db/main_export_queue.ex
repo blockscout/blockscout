@@ -11,7 +11,7 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
   @required_attrs ~w(hash hash_type)a
 
   @primary_key false
-  typed_schema "multichain_search_db_export_queue" do
+  typed_schema "multichain_search_db_main_export_queue" do
     field(:hash, :binary, null: false)
 
     field(:hash_type, Ecto.Enum,
@@ -35,13 +35,13 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
     |> validate_required(@required_attrs)
   end
 
-  @spec stream_multichain_db_data_batch_to_retry_export(
+  @spec stream_multichain_db_data_batch(
           initial :: accumulator,
           reducer :: (entry :: map(), accumulator -> accumulator),
           limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_multichain_db_data_batch_to_retry_export(initial, reducer, limited? \\ false)
+  def stream_multichain_db_data_batch(initial, reducer, limited? \\ false)
       when is_function(reducer, 2) do
     __MODULE__
     |> select([export], %{
@@ -74,7 +74,7 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
 
   @doc """
   Returns an Ecto query that defines the default conflict resolution strategy for the
-  `multichain_search_db_export_queue` table. On conflict, it increments the `retries_number`
+  `multichain_search_db_main_export_queue` table. On conflict, it increments the `retries_number`
   (by using the value from `EXCLUDED.retries_number` or 0 if not present) and updates the
   `updated_at` field to the greatest value between the current and the new timestamp.
 
@@ -84,11 +84,11 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
   @spec default_on_conflict :: Ecto.Query.t()
   def default_on_conflict do
     from(
-      multichain_search_db_export_queue in __MODULE__,
+      multichain_search_db_main_export_queue in __MODULE__,
       update: [
         set: [
           retries_number: fragment("COALESCE(EXCLUDED.retries_number, 0) + 1"),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", multichain_search_db_export_queue.updated_at)
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", multichain_search_db_main_export_queue.updated_at)
         ]
       ]
     )

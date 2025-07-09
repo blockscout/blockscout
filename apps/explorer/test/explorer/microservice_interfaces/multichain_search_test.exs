@@ -74,7 +74,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
     end
 
-    test "returns {:error, data_to_retry} when an error occurs during processing and 'multichain_search_db_export_queue' table is populated" do
+    test "returns {:error, data_to_retry} when an error occurs during processing and 'multichain_search_db_main_export_queue' table is populated" do
       bypass = Bypass.open()
 
       Application.put_env(:explorer, MultichainSearch,
@@ -200,7 +200,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 7004
     end
 
-    test "returns {:error, data_to_retry} when an error occurs in all chunks during processing and 'multichain_search_db_export_queue' table is populated with all the input data" do
+    test "returns {:error, data_to_retry} when an error occurs in all chunks during processing and 'multichain_search_db_main_export_queue' table is populated with all the input data" do
       bypass = Bypass.open()
 
       Application.put_env(:explorer, MultichainSearch,
@@ -242,7 +242,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 10
     end
 
-    test "returns {:error, data_to_retry} when an error occurs in all chunks (and number of chunks more than @max_concurrency) during processing and 'multichain_search_db_export_queue' table is populated with all the input data" do
+    test "returns {:error, data_to_retry} when an error occurs in all chunks (and number of chunks more than @max_concurrency) during processing and 'multichain_search_db_main_export_queue' table is populated with all the input data" do
       bypass = Bypass.open()
 
       Application.put_env(:explorer, MultichainSearch,

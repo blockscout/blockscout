@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor do
+defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueue do
   @moduledoc """
   Exports blockchain data to Multichain Search DB service from the queue.
   """
@@ -34,7 +34,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor do
   @impl BufferedTask
   def init(initial_acc, reducer, _) do
     {:ok, acc} =
-      MainExportQueue.stream_multichain_db_data_batch_to_retry_export(
+      MainExportQueue.stream_multichain_db_data_batch(
         initial_acc,
         fn data, acc ->
           IndexerHelper.reduce_if_queue_is_not_full(data, acc, reducer, __MODULE__)
@@ -97,7 +97,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor do
           successful_hashes
           |> Enum.map(fn hash ->
             "0x" <> hex = hash
-            Base.decode16!(hex)
+            Base.decode16!(hex, case: :mixed)
           end)
 
         successful_hash_binaries
@@ -196,7 +196,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor do
                 [%Hash{byte_count: 20, bytes: res.hash}],
                 &[%Hash{byte_count: 20, bytes: res.hash} | &1]
               )
-              |> maybe_update_block_ranges_in_params_map?(res.block_range)
+              |> maybe_update_block_ranges_in_params_map(res.block_range)
 
             :block ->
               acc
@@ -205,7 +205,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor do
                 [%Hash{byte_count: 32, bytes: res.hash}],
                 &[%Hash{byte_count: 32, bytes: res.hash} | &1]
               )
-              |> maybe_update_block_ranges_in_params_map?(res.block_range)
+              |> maybe_update_block_ranges_in_params_map(res.block_range)
 
             :transaction ->
               acc
@@ -214,7 +214,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor do
                 [%{hash: to_string(%Hash{byte_count: 32, bytes: res.hash})}],
                 &[%{hash: to_string(%Hash{byte_count: 32, bytes: res.hash})} | &1]
               )
-              |> maybe_update_block_ranges_in_params_map?(res.block_range)
+              |> maybe_update_block_ranges_in_params_map(res.block_range)
           end
         end
       )
@@ -237,9 +237,9 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor do
     ]
   end
 
-  defp maybe_update_block_ranges_in_params_map?(params_map, nil), do: params_map
+  defp maybe_update_block_ranges_in_params_map(params_map, nil), do: params_map
 
-  defp maybe_update_block_ranges_in_params_map?(params_map, block_range) do
+  defp maybe_update_block_ranges_in_params_map(params_map, block_range) do
     params_map
     |> Map.update!(
       :block_ranges,

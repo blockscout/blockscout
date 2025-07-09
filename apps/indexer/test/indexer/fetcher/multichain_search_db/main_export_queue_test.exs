@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessorTest do
+defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
   use ExUnit.Case
   use Explorer.DataCase
 
@@ -9,17 +9,17 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessorTest do
   alias Explorer.Chain.Block.Range
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.TestHelper
-  alias Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessor, as: MultichainSearchDbExportQueueProcessor
+  alias Indexer.Fetcher.MultichainSearchDb.MainExportQueue, as: MultichainSearchDbMainExportQueue
   alias Plug.Conn
 
   @moduletag :capture_log
 
   setup do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-    Application.put_env(:indexer, MultichainSearchDbExportQueueProcessor.Supervisor, disabled?: false)
+    Application.put_env(:indexer, MultichainSearchDbMainExportQueue.Supervisor, disabled?: false)
 
     on_exit(fn ->
-      Application.put_env(:indexer, MultichainSearchDbExportQueueProcessor.Supervisor, disabled?: true)
+      Application.put_env(:indexer, MultichainSearchDbMainExportQueue.Supervisor, disabled?: true)
     end)
 
     :ok
@@ -47,18 +47,18 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessorTest do
       transaction_hash_bytes =
         "aba197aa8a13871bdd53861f7b5108394000fc0f72893661ae39610e9cd94019" |> Base.decode16!(case: :mixed)
 
-      insert(:multichain_search_db_export_queue, %{hash: address_hash_bytes, hash_type: :address})
-      insert(:multichain_search_db_export_queue, %{hash: block_hash_bytes, hash_type: :block})
-      insert(:multichain_search_db_export_queue, %{hash: transaction_hash_bytes, hash_type: :transaction})
+      insert(:multichain_search_db_main_export_queue, %{hash: address_hash_bytes, hash_type: :address})
+      insert(:multichain_search_db_main_export_queue, %{hash: block_hash_bytes, hash_type: :block})
+      insert(:multichain_search_db_main_export_queue, %{hash: transaction_hash_bytes, hash_type: :transaction})
 
       reducer = fn data, acc -> [data | acc] end
 
       pid =
         []
-        |> MultichainSearchDbExportQueueProcessor.Supervisor.child_spec()
+        |> MultichainSearchDbMainExportQueue.Supervisor.child_spec()
         |> ExUnit.Callbacks.start_supervised!()
 
-      results = MultichainSearchDbExportQueueProcessor.init([], reducer, nil)
+      results = MultichainSearchDbMainExportQueue.init([], reducer, nil)
 
       assert Enum.count(results) == 3
       assert Enum.member?(results, %{hash: address_hash_bytes, hash_type: :address, block_range: nil})
@@ -112,7 +112,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessorTest do
         )
       end)
 
-      assert :ok = MultichainSearchDbExportQueueProcessor.run(export_data, nil)
+      assert :ok = MultichainSearchDbMainExportQueue.run(export_data, nil)
     end
 
     test "returns {:retry, failed_data} on error where failed_data is only chunks that failed to export", %{
@@ -209,7 +209,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessorTest do
                         hash_type: "TRANSACTION"
                       }
                     ]
-                  }} = MultichainSearchDbExportQueueProcessor.run(export_data, nil)
+                  }} = MultichainSearchDbMainExportQueue.run(export_data, nil)
         end)
 
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 4
@@ -245,7 +245,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.MainQueueProcessorTest do
         end)
       end
 
-      MultichainSearchDbExportQueueProcessor.run(export_data_2, nil)
+      MultichainSearchDbMainExportQueue.run(export_data_2, nil)
 
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 3
     end

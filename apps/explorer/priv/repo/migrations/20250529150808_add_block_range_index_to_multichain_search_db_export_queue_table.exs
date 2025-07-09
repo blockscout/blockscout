@@ -4,10 +4,10 @@ defmodule Explorer.Repo.Migrations.AddBlockRangeIndexToMultichainSearchDbExportQ
   def change do
     execute(
       """
-      CREATE INDEX multichain_search_db_export_queue_upper_block_range_index ON multichain_search_db_export_queue (upper(block_range) DESC);
+      CREATE INDEX multichain_search_db_main_export_queue_upper_block_range_index ON multichain_search_db_main_export_queue (upper(block_range) DESC);
       """,
       """
-      DROP INDEX multichain_search_db_export_queue_upper_block_range_index;
+      DROP INDEX multichain_search_db_main_export_queue_upper_block_range_index;
       """
     )
   end
