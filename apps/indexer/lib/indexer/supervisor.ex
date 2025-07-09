@@ -64,6 +64,8 @@ defmodule Indexer.Supervisor do
     UnclesWithoutIndex
   }
 
+  alias Indexer.Utils.EventNotificationsCleaner
+
   def child_spec([]) do
     child_spec([[]])
   end
@@ -255,6 +257,9 @@ defmodule Indexer.Supervisor do
         {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {TokenTotalSupplyUpdater, [[]]},
+
+        # Notifications cleaner
+        configure(EventNotificationsCleaner, [[]]),
 
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},

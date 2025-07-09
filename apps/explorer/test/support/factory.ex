@@ -62,7 +62,7 @@ defmodule Explorer.Factory do
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
-  alias Explorer.Utility.{MissingBalanceOfToken, MissingBlockRange}
+  alias Explorer.Utility.{EventNotification, MissingBalanceOfToken, MissingBlockRange}
 
   alias Ueberauth.Strategy.Auth0
   alias Ueberauth.Auth.{Extra, Info}
@@ -1397,6 +1397,13 @@ defmodule Explorer.Factory do
       fourth_topic: nil,
       index: sequence("log_index", & &1),
       transaction: transaction
+    }
+  end
+
+  def event_notification_factory do
+    %EventNotification{
+      data: "test_data",
+      inserted_at: DateTime.utc_now()
     }
   end
 end
