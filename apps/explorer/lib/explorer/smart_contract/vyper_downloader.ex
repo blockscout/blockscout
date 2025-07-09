@@ -125,8 +125,7 @@ defmodule Explorer.SmartContract.VyperDownloader do
     |> HttpClient.get!([],
       timeout: 60_000,
       recv_timeout: 60_000,
-      follow_redirect: true,
-      hackney: [force_redirect: true]
+      follow_redirect: true
     )
     |> Map.get(:body)
   end

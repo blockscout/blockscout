@@ -11,6 +11,8 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
     test "returns not found for nonexistent address", %{conn: conn} do
       nonexistent_address_hash = Hash.to_string(Factory.address_hash())
 
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
+
       conn =
         get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, Address.checksum(nonexistent_address_hash)))
 
@@ -20,6 +22,8 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
     test "returns not found given an invalid address hash ", %{conn: conn} do
       invalid_hash = "invalid_hash"
 
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
+
       conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, invalid_hash))
 
       assert html_response(conn, 404)
@@ -27,6 +31,8 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
 
     test "returns not found when the address isn't a contract", %{conn: conn} do
       address = insert(:address)
+
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
 
       conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address)))
 
@@ -48,6 +54,8 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
       )
 
       TestHelper.get_all_proxies_implementation_zero_addresses()
+
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
 
       conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address)))
 

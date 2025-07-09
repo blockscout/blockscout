@@ -228,7 +228,7 @@ defmodule Indexer.Helper do
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),
-          hackney: [pool: :ethereum_jsonrpc]
+          pool: :ethereum_jsonrpc
         ]
       ]
     ]

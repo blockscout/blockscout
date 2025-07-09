@@ -248,7 +248,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     case HttpClient.post(url, Jason.encode!(body), headers,
            recv_timeout: @post_timeout,
-           hackney: [pool: false]
+           pool: false
          ) do
       {:ok, %{body: response_body, status_code: 200}} ->
         response_body |> Jason.decode()

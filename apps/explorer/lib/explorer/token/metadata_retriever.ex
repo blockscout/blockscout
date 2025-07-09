@@ -850,7 +850,7 @@ defmodule Explorer.Token.MetadataRetriever do
     case HttpClient.get(uri, headers,
            recv_timeout: 30_000,
            follow_redirect: true,
-           hackney: [pool: :token_instance_fetcher]
+           pool: :token_instance_fetcher
          ) do
       {:ok, %{body: body, status_code: 200, headers: response_headers}} ->
         content_type = get_content_type_from_headers(response_headers)
