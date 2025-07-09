@@ -1535,6 +1535,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     setup :verify_on_exit!
 
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      original_config = :persistent_term.get(:rate_limit_config)
       old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
       old_http_adapter = Application.get_env(:block_scout_web, :http_adapter)
       old_explorer_http_adapter = Application.get_env(:explorer, :http_adapter)
@@ -1567,7 +1568,24 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       Application.put_env(:block_scout_web, :api_rate_limit, Keyword.put(original_api_rate_limit, :disabled, false))
 
+      config = %{
+        static_match: %{},
+        wildcard_match: %{},
+        parametrized_match: %{
+          ["api", "v2", "tokens", ":param", "instances", ":param", "refetch-metadata"] => %{
+            ip: %{period: 3_600_000, limit: 1},
+            recaptcha_to_bypass_429: true,
+            bypass_token_scope: "token_instance_refetch_metadata",
+            bucket_key_prefix: "api/v2/tokens/:param/instances/:param/refetch-metadata_",
+            isolate_rate_limit?: true
+          }
+        }
+      }
+
+      :persistent_term.put(:rate_limit_config, config)
+
       on_exit(fn ->
+        :persistent_term.put(:rate_limit_config, original_config)
         Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
         Application.put_env(:block_scout_web, :http_adapter, old_http_adapter)
         Application.put_env(:explorer, :http_adapter, old_explorer_http_adapter)
@@ -1998,7 +2016,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> put_req_header("scoped-recaptcha-bypass-token", "wrong_scoped_token")
         |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
-      assert %{"message" => "429 Too Many Requests"} = json_response(request, 429)
+      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
 
       # Set up normal reCAPTCHA validation for the second request
       expected_body = "secret=#{v2_secret_key}&response=correct_recaptcha_token"
@@ -2109,7 +2127,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> put_req_header("scoped-recaptcha-bypass-token", "some_token_that_does_not_exist")
         |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
-      assert %{"message" => "429 Too Many Requests"} = json_response(request, 429)
+      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
 
       request =
         Phoenix.ConnTest.build_conn()
@@ -2117,7 +2135,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> put_req_header("scoped-recaptcha-bypass-token", "some_token_that_does_not_exist")
         |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
-      assert %{"message" => "429 Too Many Requests"} = json_response(request, 429)
+      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
 
       request =
         Phoenix.ConnTest.build_conn()
@@ -2125,7 +2143,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> put_req_header("scoped-recaptcha-bypass-token", "")
         |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
-      assert %{"message" => "429 Too Many Requests"} = json_response(request, 429)
+      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
 
       # Set up normal reCAPTCHA validation for the second request
       expected_body = "secret=#{v2_secret_key}&response=correct_recaptcha_token"
