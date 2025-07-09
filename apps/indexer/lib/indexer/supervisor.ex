@@ -64,7 +64,7 @@ defmodule Indexer.Supervisor do
     UnclesWithoutIndex
   }
 
-  alias Indexer.Utils.NotificationsCleaner
+  alias Indexer.Utils.EventNotificationsCleaner
 
   def child_spec([]) do
     child_spec([[]])
@@ -259,7 +259,7 @@ defmodule Indexer.Supervisor do
         {TokenTotalSupplyUpdater, [[]]},
 
         # Notifications cleaner
-        configure(NotificationsCleaner, [[]]),
+        configure(EventNotificationsCleaner, [[]]),
 
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},

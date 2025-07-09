@@ -1,19 +1,19 @@
-defmodule Indexer.Utils.NotificationsCleanerTest do
+defmodule Indexer.Utils.EventNotificationsCleanerTest do
   use Explorer.DataCase
 
   alias Explorer.Repo
   alias Explorer.Utility.EventNotification
-  alias Indexer.Utils.NotificationsCleaner
+  alias Indexer.Utils.EventNotificationsCleaner
 
   import Ecto.Query
 
   setup do
     # Store original config
-    original_config = Application.get_env(:indexer, NotificationsCleaner)
+    original_config = Application.get_env(:indexer, EventNotificationsCleaner)
 
     # Restore original config after each test
     on_exit(fn ->
-      Application.put_env(:indexer, NotificationsCleaner, original_config)
+      Application.put_env(:indexer, EventNotificationsCleaner, original_config)
     end)
 
     :ok
@@ -21,13 +21,13 @@ defmodule Indexer.Utils.NotificationsCleanerTest do
 
   describe "start_link/1" do
     test "starts the GenServer with the given name" do
-      assert {:ok, pid} = NotificationsCleaner.start_link([])
+      assert {:ok, pid} = EventNotificationsCleaner.start_link([])
       assert Process.alive?(pid)
       Process.exit(pid, :normal)
     end
   end
 
-  describe "clean_up_notifications/0" do
+  describe "clean_up_event_notifications/0" do
     test "deletes notifications older than max_age" do
       # Create notifications with different timestamps
       old_time = DateTime.utc_now() |> DateTime.add(-2000, :millisecond)
@@ -40,10 +40,10 @@ defmodule Indexer.Utils.NotificationsCleanerTest do
       assert Repo.aggregate(EventNotification, :count) == 2
 
       # Set configuration for max_age of 1000ms
-      config = Application.get_env(:indexer, NotificationsCleaner)
-      Application.put_env(:indexer, NotificationsCleaner, Keyword.put(config, :max_age, 1000))
+      config = Application.get_env(:indexer, EventNotificationsCleaner)
+      Application.put_env(:indexer, EventNotificationsCleaner, Keyword.put(config, :max_age, 1000))
 
-      assert {:ok, _pid} = NotificationsCleaner.start_link([])
+      assert {:ok, _pid} = EventNotificationsCleaner.start_link([])
       Process.sleep(500)
 
       # Verify only the old notification was deleted
@@ -65,10 +65,10 @@ defmodule Indexer.Utils.NotificationsCleanerTest do
       assert Repo.aggregate(EventNotification, :count) == 4
 
       # Set configuration
-      config = Application.get_env(:indexer, NotificationsCleaner)
-      Application.put_env(:indexer, NotificationsCleaner, Keyword.put(config, :max_age, 1000))
+      config = Application.get_env(:indexer, EventNotificationsCleaner)
+      Application.put_env(:indexer, EventNotificationsCleaner, Keyword.put(config, :max_age, 1000))
 
-      assert {:ok, _pid} = NotificationsCleaner.start_link([])
+      assert {:ok, _pid} = EventNotificationsCleaner.start_link([])
       Process.sleep(500)
 
       # Verify only the new notification remains
@@ -85,10 +85,10 @@ defmodule Indexer.Utils.NotificationsCleanerTest do
       assert Repo.aggregate(EventNotification, :count) == 3
 
       # Set configuration
-      config = Application.get_env(:indexer, NotificationsCleaner)
-      Application.put_env(:indexer, NotificationsCleaner, Keyword.put(config, :max_age, 1000))
+      config = Application.get_env(:indexer, EventNotificationsCleaner)
+      Application.put_env(:indexer, EventNotificationsCleaner, Keyword.put(config, :max_age, 1000))
 
-      assert {:ok, _pid} = NotificationsCleaner.start_link([])
+      assert {:ok, _pid} = EventNotificationsCleaner.start_link([])
       Process.sleep(500)
 
       # Verify all notifications still exist

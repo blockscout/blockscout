@@ -1411,10 +1411,10 @@ config :indexer, Indexer.Fetcher.Scroll.BridgeL2.Supervisor, disabled?: ConfigHe
 
 config :indexer, Indexer.Fetcher.Scroll.Batch.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
 
-config :indexer, Indexer.Utils.NotificationsCleaner,
-  interval: ConfigHelper.parse_time_env_var("INDEXER_NOTIFICATIONS_CLEANUP_INTERVAL", "2m"),
-  enabled: ConfigHelper.parse_bool_env_var("INDEXER_NOTIFICATIONS_CLEANUP_ENABLED", "true"),
-  max_age: ConfigHelper.parse_time_env_var("INDEXER_NOTIFICATIONS_CLEANUP_MAX_AGE", "5m")
+config :indexer, Indexer.Utils.EventNotificationsCleaner,
+  interval: ConfigHelper.parse_time_env_var("INDEXER_DB_EVENT_NOTIFICATIONS_CLEANUP_INTERVAL", "2m"),
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_DB_EVENT_NOTIFICATIONS_CLEANUP_ENABLED", "true"),
+  max_age: ConfigHelper.parse_time_env_var("INDEXER_DB_EVENT_NOTIFICATIONS_CLEANUP_MAX_AGE", "5m")
 
 config :ex_aws,
   json_codec: Jason,

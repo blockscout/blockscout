@@ -1,6 +1,6 @@
-defmodule Indexer.Utils.NotificationsCleaner do
+defmodule Indexer.Utils.EventNotificationsCleaner do
   @moduledoc """
-  Module is responsible for cleaning up notifications from the database.
+  Module is responsible for cleaning up event notifications from the database.
   """
 
   alias Explorer.Repo
@@ -17,17 +17,17 @@ defmodule Indexer.Utils.NotificationsCleaner do
   end
 
   def init(args) do
-    Process.send(self(), :clean_up_notifications, [])
+    Process.send(self(), :clean_up_event_notifications, [])
     {:ok, args}
   end
 
-  def handle_info(:clean_up_notifications, state) do
-    clean_up_notifications()
-    Process.send_after(self(), :clean_up_notifications, interval())
+  def handle_info(:clean_up_event_notifications, state) do
+    clean_up_event_notifications()
+    Process.send_after(self(), :clean_up_event_notifications, interval())
     {:noreply, state}
   end
 
-  defp clean_up_notifications do
+  defp clean_up_event_notifications do
     {count, _} =
       EventNotification
       |> where([en], en.inserted_at < ago(^max_age(), "millisecond"))
