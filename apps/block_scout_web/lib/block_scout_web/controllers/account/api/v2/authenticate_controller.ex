@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
-  alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.Account.API.V2.UserView
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Account.Identity
@@ -72,27 +72,24 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
           :error
           | {:error, String.t()}
           | {:interval, integer()}
-          | {:recaptcha, false}
           | Conn.t()
-  def send_otp(conn, %{"email" => email} = params) do
-    with {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)} do
-      case conn |> Conn.fetch_session() |> current_user() do
-        nil ->
-          with :ok <- Auth0.send_otp(email, AccessHelper.conn_to_ip_string(conn)) do
-            conn |> put_status(200) |> json(%{message: "Success"})
-          end
+  def send_otp(conn, %{"email" => email}) do
+    case conn |> Conn.fetch_session() |> current_user() do
+      nil ->
+        with :ok <- Auth0.send_otp(email, AccessHelper.conn_to_ip_string(conn)) do
+          conn |> put_status(200) |> json(%{message: "Success"})
+        end
 
-        %{email: nil} ->
-          with :ok <- Auth0.send_otp_for_linking(email, AccessHelper.conn_to_ip_string(conn)) do
-            conn |> put_status(200) |> json(%{message: "Success"})
-          end
+      %{email: nil} ->
+        with :ok <- Auth0.send_otp_for_linking(email, AccessHelper.conn_to_ip_string(conn)) do
+          conn |> put_status(200) |> json(%{message: "Success"})
+        end
 
-        %{} ->
-          conn
-          |> put_status(500)
-          |> put_view(ApiView)
-          |> render(:message, %{message: "This account already has an email"})
-      end
+      %{} ->
+        conn
+        |> put_status(500)
+        |> put_view(ApiView)
+        |> render(:message, %{message: "This account already has an email"})
     end
   end
 
@@ -216,9 +213,8 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
     information.
   """
   @spec authenticate_via_wallet(Conn.t(), map()) :: :error | {:error, any()} | Conn.t()
-  def authenticate_via_wallet(conn, %{"message" => message, "signature" => signature} = params) do
-    with {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)},
-         {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
+  def authenticate_via_wallet(conn, %{"message" => message, "signature" => signature}) do
+    with {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
       put_auth_to_session(conn, auth)
     end
   end
