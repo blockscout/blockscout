@@ -487,6 +487,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
   end
 
   defp csv_setup() do
+    original_config = :persistent_term.get(:rate_limit_config)
     old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
     old_http_adapter = Application.get_env(:block_scout_web, :http_adapter)
     original_api_rate_limit = Application.get_env(:block_scout_web, :api_rate_limit)
@@ -504,7 +505,53 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
     Application.put_env(:block_scout_web, :api_rate_limit, Keyword.put(original_api_rate_limit, :disabled, false))
 
+    config = %{
+      static_match: %{},
+      wildcard_match: %{},
+      parametrized_match: %{
+        ["api", "v2", "addresses", ":param", "election-rewards", "csv"] => %{
+          ip: %{period: 3_600_000, limit: 1},
+          recaptcha_to_bypass_429: true,
+          bucket_key_prefix: "api/v2/addresses/:param/election-rewards/csv_",
+          isolate_rate_limit?: true
+        },
+        ["api", "v2", "addresses", ":param", "internal-transactions", "csv"] => %{
+          ip: %{period: 3_600_000, limit: 1},
+          recaptcha_to_bypass_429: true,
+          bucket_key_prefix: "api/v2/addresses/:param/internal-transactions/csv_",
+          isolate_rate_limit?: true
+        },
+        ["api", "v2", "addresses", ":param", "logs", "csv"] => %{
+          ip: %{period: 3_600_000, limit: 1},
+          recaptcha_to_bypass_429: true,
+          bucket_key_prefix: "api/v2/addresses/:param/logs/csv_",
+          isolate_rate_limit?: true
+        },
+        ["api", "v2", "addresses", ":param", "token-transfers", "csv"] => %{
+          ip: %{period: 3_600_000, limit: 1},
+          recaptcha_to_bypass_429: true,
+          bucket_key_prefix: "api/v2/addresses/:param/token-transfers/csv_",
+          isolate_rate_limit?: true
+        },
+        ["api", "v2", "addresses", ":param", "transactions", "csv"] => %{
+          ip: %{period: 3_600_000, limit: 1},
+          recaptcha_to_bypass_429: true,
+          bucket_key_prefix: "api/v2/addresses/:param/transactions/csv_",
+          isolate_rate_limit?: true
+        },
+        ["api", "v2", "tokens", ":param", "holders", "csv"] => %{
+          ip: %{period: 3_600_000, limit: 1},
+          recaptcha_to_bypass_429: true,
+          bucket_key_prefix: "api/v2/tokens/:param/holders/csv_",
+          isolate_rate_limit?: true
+        }
+      }
+    }
+
+    :persistent_term.put(:rate_limit_config, config)
+
     on_exit(fn ->
+      :persistent_term.put(:rate_limit_config, original_config)
       Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
       Application.put_env(:block_scout_web, :http_adapter, old_http_adapter)
       :ets.delete_all_objects(BlockScoutWeb.RateLimit.Hammer.ETS)
