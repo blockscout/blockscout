@@ -157,7 +157,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       timeout: :infinity,
       shutdown: Application.get_env(:indexer, :graceful_shutdown_period)
     )
-    |> handle_fetch_and_import_results(ranges)
+    |> handle_fetch_and_import_results()
   end
 
   # Run at state.blocks_concurrency max_concurrency when called by `stream_import/1`
@@ -178,7 +178,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     Prometheus.Instrumenter.block_full_process(fetch_duration, __MODULE__)
 
     case result do
-      {:ok, %{inserted: inserted, errors: errors}} ->
+      {:ok, %{errors: errors}} ->
         valid_errors = handle_null_rounds(errors)
 
         {:ok, %{range: range, errors: valid_errors}}
@@ -223,7 +223,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       {:error, exception}
   end
 
-  defp handle_fetch_and_import_results(results, processed_ranges) do
+  defp handle_fetch_and_import_results(results) do
     results
     |> Enum.reduce([], fn
       {:ok, {:ok, %{range: range, errors: errors}}}, acc ->
