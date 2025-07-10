@@ -7,6 +7,7 @@ defmodule Explorer.Market.Source.CryptoRankTest do
   setup do
     bypass = Bypass.open()
     old_env = Application.get_env(:explorer, CryptoRank, [])
+    tesla_config = Application.get_env(:tesla, :adapter)
 
     Application.put_env(
       :explorer,
@@ -21,8 +22,11 @@ defmodule Explorer.Market.Source.CryptoRankTest do
       )
     )
 
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
     on_exit(fn ->
       Application.put_env(:explorer, CryptoRank, old_env)
+      Application.put_env(:tesla, :adapter, tesla_config)
     end)
 
     {:ok, old_env: old_env, bypass: bypass}

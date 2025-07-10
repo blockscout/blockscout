@@ -688,8 +688,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
+        tesla_config = Application.get_env(:tesla, :adapter)
+
         {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         bypass = Bypass.open()
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
         Application.put_env(:block_scout_web, :chain_id, 5)
 
@@ -709,6 +713,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_fetcher_env)
           Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_verifier_env)
           Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+          Application.put_env(:tesla, :adapter, tesla_config)
           Bypass.down(bypass)
         end)
 

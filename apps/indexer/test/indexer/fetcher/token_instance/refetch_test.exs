@@ -76,6 +76,8 @@ defmodule Indexer.Fetcher.TokenInstance.RefetchTest do
     test "filters and fetches token instances marked to refetch" do
       bypass = Bypass.open()
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       json = """
       {
         "name": "nice nft"

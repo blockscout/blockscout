@@ -4,14 +4,14 @@ defmodule Explorer.HttpClient.Tesla do
   def get(url, headers, options) do
     options
     |> client()
-    |> Tesla.get(url, headers: headers, opts: request_opts(options))
+    |> Tesla.get(url, headers: headers, query: options[:params] || [], opts: request_opts(options))
     |> parse_response()
   end
 
   def get!(url, headers, options) do
     options
     |> client()
-    |> Tesla.get!(url, headers: headers, opts: request_opts(options))
+    |> Tesla.get!(url, headers: headers, query: options[:params] || [], opts: request_opts(options))
     |> parse_response()
   end
 

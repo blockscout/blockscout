@@ -10,6 +10,7 @@ defmodule Explorer.Market.Source.CryptoCompareTest do
     coin = Application.get_env(:explorer, :coin)
     source_configuration = Application.get_env(:explorer, Explorer.Market.Source)
     crypto_compare_configuration = Application.get_env(:explorer, CryptoCompare)
+    tesla_config = Application.get_env(:tesla, :adapter)
 
     Application.put_env(:explorer, :coin, "TEST")
 
@@ -30,10 +31,13 @@ defmodule Explorer.Market.Source.CryptoCompareTest do
       currency: "AED"
     )
 
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
     on_exit(fn ->
       Application.put_env(:explorer, :coin, coin)
       Application.put_env(:explorer, Explorer.Market.Source, source_configuration)
       Application.put_env(:explorer, CryptoCompare, crypto_compare_configuration)
+      Application.put_env(:tesla, :adapter, tesla_config)
     end)
 
     {:ok, bypass: bypass}

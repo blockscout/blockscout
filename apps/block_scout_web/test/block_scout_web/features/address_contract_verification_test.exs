@@ -8,13 +8,18 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
   setup do
     bypass = Bypass.open()
 
+    tesla_config = Application.get_env(:tesla, :adapter)
+
     configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
     Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
 
     Application.put_env(:explorer, :solc_bin_api_url, "http://localhost:#{bypass.port}")
 
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
     on_exit(fn ->
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
+      Application.put_env(:tesla, :adapter, tesla_config)
     end)
 
     {:ok, bypass: bypass}

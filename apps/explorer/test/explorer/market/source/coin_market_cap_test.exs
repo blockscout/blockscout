@@ -10,6 +10,7 @@ defmodule Explorer.Market.Source.CoinMarketCapTest do
 
     coin_market_cap_configuration = Application.get_env(:explorer, CoinMarketCap)
     source_configuration = Application.get_env(:explorer, Explorer.Market.Source)
+    tesla_config = Application.get_env(:tesla, :adapter)
 
     Application.put_env(:explorer, Explorer.Market.Source,
       native_coin_source: CoinMarketCap,
@@ -28,9 +29,12 @@ defmodule Explorer.Market.Source.CoinMarketCapTest do
       currency_id: "2781"
     )
 
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
     on_exit(fn ->
       Application.put_env(:explorer, Explorer.Market.Source, source_configuration)
       Application.put_env(:explorer, CoinMarketCap, coin_market_cap_configuration)
+      Application.put_env(:tesla, :adapter, tesla_config)
     end)
 
     {:ok, bypass: bypass}

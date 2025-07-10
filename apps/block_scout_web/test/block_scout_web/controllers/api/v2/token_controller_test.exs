@@ -1673,10 +1673,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         times: 1,
         returns: fn %{url: ^url}, _opts ->
           {:ok,
-            %Tesla.Env{
-              status: 200,
-              body: Jason.encode!(metadata)
-            }}
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(metadata)
+           }}
         end
       )
 
@@ -1946,10 +1946,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         times: 1,
         returns: fn %{url: ^url}, _opts ->
           {:ok,
-            %Tesla.Env{
-              status: 200,
-              body: Jason.encode!(metadata)
-            }}
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(metadata)
+           }}
         end
       )
 
@@ -2023,10 +2023,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         times: 1,
         returns: fn %{url: ^url}, _opts ->
           {:ok,
-            %Tesla.Env{
-              status: 200,
-              body: Jason.encode!(%{"name" => "test"})
-            }}
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(%{"name" => "test"})
+           }}
         end
       )
 
@@ -2145,10 +2145,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         times: 1,
         returns: fn %{url: ^url}, _opts ->
           {:ok,
-            %Tesla.Env{
-              status: 200,
-              body: Jason.encode!(%{"name" => "test"})
-            }}
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(%{"name" => "test"})
+           }}
         end
       )
 

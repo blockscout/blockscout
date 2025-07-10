@@ -52,15 +52,18 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
   test "handle_info with native_coin_price_history" do
     source_configuration = Application.get_env(:explorer, Source)
     crypto_compare_configuration = Application.get_env(:explorer, CryptoCompare)
+    tesla_config = Application.get_env(:tesla, :adapter)
 
     bypass = Bypass.open()
 
     Application.put_env(:explorer, Source, native_coin_history_source: CryptoCompare)
     Application.put_env(:explorer, CryptoCompare, base_url: "http://localhost:#{bypass.port}", coin_symbol: "TEST")
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
     on_exit(fn ->
       Application.put_env(:explorer, Source, source_configuration)
       Application.put_env(:explorer, CryptoCompare, crypto_compare_configuration)
+      Application.put_env(:tesla, :adapter, tesla_config)
     end)
 
     resp =
@@ -187,13 +190,16 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
     bypass = Bypass.open()
     crypto_compare_configuration = Application.get_env(:explorer, CryptoCompare)
     source_configuration = Application.get_env(:explorer, Source)
+    tesla_config = Application.get_env(:tesla, :adapter)
 
     Application.put_env(:explorer, Source, native_coin_history_source: CryptoCompare)
     Application.put_env(:explorer, CryptoCompare, base_url: "http://localhost:#{bypass.port}", coin_symbol: "TEST")
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
     on_exit(fn ->
       Application.put_env(:explorer, CryptoCompare, crypto_compare_configuration)
       Application.put_env(:explorer, Source, source_configuration)
+      Application.put_env(:tesla, :adapter, tesla_config)
     end)
 
     resp =

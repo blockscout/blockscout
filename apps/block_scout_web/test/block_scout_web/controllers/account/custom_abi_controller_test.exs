@@ -9,6 +9,14 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
   setup %{conn: conn} do
     auth = build(:auth)
 
+    tesla_config = Application.get_env(:tesla, :adapter)
+
+    on_exit(fn ->
+      Application.put_env(:tesla, :adapter, tesla_config)
+    end)
+
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
     {:ok, user} = Identity.find_or_create(auth)
 
     {:ok, conn: Plug.Test.init_test_session(conn, current_user: user)}

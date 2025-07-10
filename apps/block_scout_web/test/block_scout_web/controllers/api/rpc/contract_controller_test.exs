@@ -76,6 +76,15 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     }
   end
 
+  setup do
+    tesla_config = Application.get_env(:tesla, :adapter)
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+    on_exit(fn ->
+      Application.put_env(:tesla, :adapter, tesla_config)
+    end)
+  end
+
   describe "listcontracts" do
     setup do
       %{params: %{"module" => "contract", "action" => "listcontracts"}}
@@ -336,6 +345,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
       }
 
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
+
       assert response =
                conn
                |> get("/api", params)
@@ -355,6 +366,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         "action" => "getabi",
         "address" => to_string(contract.address_hash)
       }
+
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
 
       assert response =
                conn
@@ -419,6 +432,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         }
       ]
 
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
+
       assert response =
                conn
                |> get("/api", params)
@@ -464,6 +479,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       ]
 
       TestHelper.get_all_proxies_implementation_zero_addresses()
+
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
 
       assert response =
                conn
@@ -662,6 +679,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         "address" => Address.checksum(proxy_address.hash)
       }
 
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
+
       assert response =
                conn
                |> get("/api", params)
@@ -729,6 +748,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       ]
 
       TestHelper.get_all_proxies_implementation_zero_addresses()
+
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
 
       assert response =
                conn
@@ -839,6 +860,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
       TestHelper.get_all_proxies_implementation_zero_addresses()
 
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
+
       assert response =
                conn
                |> get("/api", params)
@@ -858,6 +881,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
   describe "verify" do
     test "verify known on sourcify repo contract", %{conn: conn} do
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
       response = verify(conn)
 
       assert response["message"] == "OK"
@@ -880,6 +904,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         "action" => "verify_via_sourcify",
         "addressHash" => "0xf26594F585De4EB0Ae9De865d9053FEe02ac6eF1"
       }
+
+      Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
 
       response =
         conn

@@ -284,12 +284,16 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
 
         old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
 
+        tesla_config = Application.get_env(:tesla, :adapter)
+
         Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
           service_url: "http://localhost:#{bypass.port}",
           enabled: true,
           type: "sc_verifier",
           eth_bytecode_db?: true
         )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
         Bypass.expect_once(bypass, "POST", "/api/v2//verifier/vyper/sources%3Averify-multi-part", fn conn ->
           Conn.resp(conn, 200, sc_verifier_response)
@@ -344,6 +348,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
         assert response["is_blueprint"] == true
 
         Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
+        Application.put_env(:tesla, :adapter, tesla_config)
         Bypass.down(bypass)
       end
     end

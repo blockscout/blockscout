@@ -11,6 +11,7 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
 
     coin_gecko_configuration = Application.get_env(:explorer, CoinGecko)
     source_configuration = Application.get_env(:explorer, Explorer.Market.Source)
+    tesla_config = Application.get_env(:tesla, :adapter)
 
     Application.put_env(:explorer, Explorer.Market.Source,
       native_coin_source: CoinGecko,
@@ -30,9 +31,12 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
       platform: "test"
     )
 
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
     on_exit(fn ->
       Application.put_env(:explorer, Explorer.Market.Source, source_configuration)
       Application.put_env(:explorer, CoinGecko, coin_gecko_configuration)
+      Application.put_env(:tesla, :adapter, tesla_config)
     end)
 
     {:ok, bypass: bypass}
