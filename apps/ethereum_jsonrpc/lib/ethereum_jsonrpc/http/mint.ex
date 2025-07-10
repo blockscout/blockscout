@@ -6,6 +6,7 @@ defmodule EthereumJSONRPC.HTTP.Mint do
   alias EthereumJSONRPC.HTTP
   alias EthereumJSONRPC.HTTP.Helper
   alias EthereumJSONRPC.Prometheus.Instrumenter
+  alias Utils.HttpClient.TeslaHelper
 
   @behaviour HTTP
 
@@ -15,7 +16,7 @@ defmodule EthereumJSONRPC.HTTP.Mint do
 
     Instrumenter.json_rpc_requests(method)
 
-    case Tesla.post(client(options), url, json, headers: headers, opts: request_opts(options)) do
+    case Tesla.post(TeslaHelper.client(options), url, json, headers: headers, opts: TeslaHelper.request_opts(options)) do
       {:ok, %Tesla.Env{body: body, status: status_code, headers: headers}} ->
         with {:ok, decoded_body} <- Jason.decode(body),
              true <- Helper.response_body_has_error?(decoded_body) do
@@ -32,12 +33,4 @@ defmodule EthereumJSONRPC.HTTP.Mint do
   end
 
   def json_rpc(url, _json, _headers, _options) when is_nil(url), do: {:error, "URL is nil"}
-
-  defp client(options) do
-    Tesla.client([{Tesla.Middleware.Timeout, timeout: options[:recv_timeout]}], Tesla.Adapter.Mint)
-  end
-
-  defp request_opts(options) do
-    [adapter: [protocols: [:http1], timeout: options[:recv_timeout], transport_opts: [timeout: options[:timeout]]]]
-  end
 end

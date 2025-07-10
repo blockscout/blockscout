@@ -50,7 +50,21 @@ defmodule ConfigHelper do
     basic_auth_pass = System.get_env("ETHEREUM_JSONRPC_PASSWORD", nil)
 
     [pool: :ethereum_jsonrpc]
-    |> (&if(System.get_env("ETHEREUM_JSONRPC_HTTP_INSECURE", "") == "true", do: [:insecure] ++ &1, else: &1)).()
+    |> (&if(System.get_env("ETHEREUM_JSONRPC_HTTP_INSECURE", "") == "true", do: [insecure: true] ++ &1, else: &1)).()
+    |> (&if(basic_auth_user != "" && !is_nil(basic_auth_pass),
+          do: [basic_auth: {basic_auth_user, basic_auth_pass}] ++ &1,
+          else: &1
+        )).()
+  end
+
+  @spec http_options(non_neg_integer()) :: list()
+  def http_options(default_timeout \\ 1) do
+    http_timeout = timeout(default_timeout)
+    basic_auth_user = System.get_env("ETHEREUM_JSONRPC_USER", "")
+    basic_auth_pass = System.get_env("ETHEREUM_JSONRPC_PASSWORD", nil)
+
+    [pool: :ethereum_jsonrpc, recv_timeout: http_timeout, timeout: http_timeout]
+    |> (&if(System.get_env("ETHEREUM_JSONRPC_HTTP_INSECURE", "") == "true", do: [insecure: true] ++ &1, else: &1)).()
     |> (&if(basic_auth_user != "" && !is_nil(basic_auth_pass),
           do: [basic_auth: {basic_auth_user, basic_auth_pass}] ++ &1,
           else: &1

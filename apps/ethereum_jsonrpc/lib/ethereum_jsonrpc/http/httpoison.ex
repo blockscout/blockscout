@@ -6,6 +6,7 @@ defmodule EthereumJSONRPC.HTTP.HTTPoison do
   alias EthereumJSONRPC.HTTP
   alias EthereumJSONRPC.HTTP.Helper
   alias EthereumJSONRPC.Prometheus.Instrumenter
+  alias Utils.HttpClient.HTTPoisonHelper
 
   @behaviour HTTP
 
@@ -15,7 +16,7 @@ defmodule EthereumJSONRPC.HTTP.HTTPoison do
 
     Instrumenter.json_rpc_requests(method)
 
-    case HTTPoison.post(url, json, headers, options) do
+    case HTTPoison.post(url, json, headers, HTTPoisonHelper.request_opts(options)) do
       {:ok, %HTTPoison.Response{body: body, status_code: status_code, headers: headers}} ->
         with {:ok, decoded_body} <- Jason.decode(body),
              true <- Helper.response_body_has_error?(decoded_body) do

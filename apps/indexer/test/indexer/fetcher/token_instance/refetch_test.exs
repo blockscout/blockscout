@@ -76,6 +76,7 @@ defmodule Indexer.Fetcher.TokenInstance.RefetchTest do
     test "filters and fetches token instances marked to refetch" do
       bypass = Bypass.open()
 
+      tesla_config = Application.get_env(:tesla, :adapter)
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       json = """
@@ -207,6 +208,7 @@ defmodule Indexer.Fetcher.TokenInstance.RefetchTest do
         assert updated_token_instance.error == nil
       end
 
+      Application.put_env(:tesla, :adapter, tesla_config)
       Bypass.down(bypass)
     end
   end

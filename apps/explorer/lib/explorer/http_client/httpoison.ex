@@ -1,27 +1,29 @@
 defmodule Explorer.HttpClient.HTTPoison do
   @moduledoc false
 
+  alias Utils.HttpClient.HTTPoisonHelper
+
   def get(url, headers, options) do
     url
-    |> HTTPoison.get(headers, options)
+    |> HTTPoison.get(headers, HTTPoisonHelper.request_opts(options))
     |> parse_response()
   end
 
   def get!(url, headers, options) do
     url
-    |> HTTPoison.get!(headers, options)
+    |> HTTPoison.get!(headers, HTTPoisonHelper.request_opts(options))
     |> parse_response()
   end
 
   def post(url, body, headers, options) do
     url
-    |> HTTPoison.post(body, headers, options)
+    |> HTTPoison.post(body, headers, HTTPoisonHelper.request_opts(options))
     |> parse_response()
   end
 
   def head(url, headers, options) do
     url
-    |> HTTPoison.head(headers, options)
+    |> HTTPoison.head(headers, HTTPoisonHelper.request_opts(options))
     |> parse_response()
   end
 

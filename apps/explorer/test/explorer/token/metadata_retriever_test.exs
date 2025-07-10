@@ -1008,8 +1008,6 @@ defmodule Explorer.Token.MetadataRetrieverTest do
         Conn.resp(conn, 200, json)
       end)
 
-      # Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
       assert {:ok_store_uri,
               %{
                 metadata: Jason.decode!(json)

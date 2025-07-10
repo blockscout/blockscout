@@ -4,9 +4,6 @@ import Config
 |> Path.join()
 |> Code.eval_file()
 
-hackney_opts = ConfigHelper.hackney_options()
-timeout = ConfigHelper.timeout(1)
-
 config :explorer,
   json_rpc_named_arguments: [
     transport: EthereumJSONRPC.HTTP,
@@ -23,7 +20,7 @@ config :explorer,
         eth_getBalance: :trace,
         trace_replayTransaction: :trace
       ],
-      http_options: [recv_timeout: timeout, timeout: timeout, hackney: hackney_opts]
+      http_options: ConfigHelper.http_options(1)
     ],
     variant: EthereumJSONRPC.Nethermind
   ],
