@@ -38,7 +38,7 @@ defmodule Explorer.Factory do
     Hash,
     InternalTransaction,
     Log,
-    MultichainSearchDbExportRetryQueue,
+    MultichainSearchDb,
     PendingBlockOperation,
     PendingTransactionOperation,
     SmartContract,
@@ -744,8 +744,8 @@ defmodule Explorer.Factory do
     %PendingTransactionOperation{}
   end
 
-  def multichain_search_db_export_retry_queue_factory do
-    %MultichainSearchDbExportRetryQueue{}
+  def multichain_search_db_main_export_queue_factory do
+    %MultichainSearchDb.MainExportQueue{}
   end
 
   def internal_transaction_factory() do
