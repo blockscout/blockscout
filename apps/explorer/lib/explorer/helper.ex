@@ -133,7 +133,7 @@ defmodule Explorer.Helper do
         iex> safe_parse_non_negative_integer("27606393966689717254124294199939478533331961967491413693980084341759630764504")
         {:error, :too_big_integer}
   """
-  @spec safe_parse_non_negative_integer(String.t()) ::
+  @spec safe_parse_non_negative_integer(String.t(), integer()) ::
           {:ok, integer()} | {:error, :negative_integer | :too_big_integer | :invalid_integer}
   def safe_parse_non_negative_integer(string, max_safe_integer \\ @max_safe_integer) do
     case Integer.parse(string) do
