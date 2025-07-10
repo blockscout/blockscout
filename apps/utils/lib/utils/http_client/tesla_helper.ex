@@ -1,6 +1,22 @@
 defmodule Utils.HttpClient.TeslaHelper do
-  @moduledoc false
+  @moduledoc """
+  Helper module for building Tesla HTTP clients and adapter options.
 
+  This module provides utilities to construct Tesla clients with appropriate
+  middleware and adapter options, including timeouts, authentication, redirects,
+  and TLS settings.
+  """
+
+  @doc """
+  Builds a Tesla client with configured middleware based on the provided options.
+
+  ## Parameters
+  - `options`: A keyword list or map containing HTTP client options
+
+  ## Returns
+  - A Tesla client struct with configured middleware
+  """
+  @spec client(keyword() | map()) :: Tesla.Client.t()
   def client(options) do
     options[:recv_timeout]
     |> add_timeout_middleware()
@@ -9,6 +25,16 @@ defmodule Utils.HttpClient.TeslaHelper do
     |> Tesla.client()
   end
 
+  @doc """
+  Builds adapter options for Tesla HTTP client requests from the provided options map.
+
+  ## Parameters
+  - `options`: A keyword list or map containing HTTP client options
+
+  ## Returns
+  - A keyword list containing adapter options for Tesla
+  """
+  @spec request_opts(keyword() | map()) :: keyword()
   def request_opts(options) do
     adapter_options =
       [protocols: [:http1]]

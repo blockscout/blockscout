@@ -1,5 +1,11 @@
 defmodule Utils.HttpClient.HTTPoisonHelper do
-  @moduledoc false
+  @moduledoc """
+  Helper module for building HTTPoison request options.
+
+  This module provides utilities to construct keyword lists of options
+  for HTTPoison HTTP client requests, including timeouts, authentication,
+  redirects, and connection pooling.
+  """
 
   def request_opts(options) do
     []
