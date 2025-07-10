@@ -586,6 +586,18 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  @doc """
+  Converts a timestamp string to a `DateTime.t()` struct for block timestamp
+  queries.
+
+  ## Parameters
+  - `timestamp_string`: A string containing a Unix timestamp in seconds
+
+  ## Returns
+  - `{:ok, DateTime.t()}` if the timestamp is valid and can be converted
+  - `{:error, :invalid_timestamp}` if the timestamp is invalid or out of range
+  """
+  @spec param_to_block_timestamp(String.t()) :: {:ok, DateTime.t()} | {:error, :invalid_timestamp}
   def param_to_block_timestamp(timestamp_string) when is_binary(timestamp_string) do
     with {timestamp_int, ""} <- Integer.parse(timestamp_string),
          {:ok, timestamp} <- DateTime.from_unix(timestamp_int, :second) do

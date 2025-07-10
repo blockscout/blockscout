@@ -1139,7 +1139,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert block_number == to_string(internal_transaction.transaction.block_number)
       assert timestamp == to_string(unix_timestamp)
       assert contract_factory == to_string(internal_transaction.from_address_hash)
-      assert creation_bytecode == ""
+      assert creation_bytecode == to_string(internal_transaction.init)
     end
   end
 

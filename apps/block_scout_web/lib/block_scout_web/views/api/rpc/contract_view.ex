@@ -253,9 +253,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     %{
       "contractAddress" => to_string(internal_transaction.created_contract_address_hash),
       "contractFactory" => to_string(internal_transaction.from_address_hash),
-      # Although we could render `to_string(internal_transaction.init)` here,
-      # Etherscan doesn't do that
-      "creationBytecode" => ""
+      "creationBytecode" => to_string(internal_transaction.init)
     }
     |> with_creation_transaction_info(transaction)
   end
