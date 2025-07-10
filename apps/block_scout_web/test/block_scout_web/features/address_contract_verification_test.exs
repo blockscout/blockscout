@@ -8,8 +8,6 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
   setup do
     bypass = Bypass.open()
 
-    tesla_config = Application.get_env(:tesla, :adapter)
-
     configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
     Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
 
@@ -19,7 +17,7 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
 
     on_exit(fn ->
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
-      Application.put_env(:tesla, :adapter, tesla_config)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
     end)
 
     {:ok, bypass: bypass}

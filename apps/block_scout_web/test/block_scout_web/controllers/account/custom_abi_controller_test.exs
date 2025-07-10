@@ -9,10 +9,8 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
   setup %{conn: conn} do
     auth = build(:auth)
 
-    tesla_config = Application.get_env(:tesla, :adapter)
-
     on_exit(fn ->
-      Application.put_env(:tesla, :adapter, tesla_config)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
     end)
 
     Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)

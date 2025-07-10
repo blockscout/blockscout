@@ -18,7 +18,6 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       source_configuration = Application.get_env(:explorer, Explorer.Market.Source)
       fetcher_configuration = Application.get_env(:explorer, Explorer.Market.Fetcher.Token)
       coin_gecko_configuration = Application.get_env(:explorer, Explorer.Market.Source.CoinGecko)
-      tesla_config = Application.get_env(:tesla, :adapter)
 
       Application.put_env(:explorer, Explorer.Market.Source, tokens_source: Explorer.Market.Source.CoinGecko)
 
@@ -41,7 +40,7 @@ defmodule Explorer.Market.Fetcher.TokenTest do
         Application.put_env(:explorer, Explorer.Market.Source, source_configuration)
         Application.put_env(:explorer, Explorer.Market.Fetcher.Token, fetcher_configuration)
         Application.put_env(:explorer, Explorer.Market.Source.CoinGecko, coin_gecko_configuration)
-        Application.put_env(:tesla, :adapter, tesla_config)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       [_token_with_no_exchange_rate | tokens] =

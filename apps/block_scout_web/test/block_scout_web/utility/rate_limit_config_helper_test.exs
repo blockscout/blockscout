@@ -9,11 +9,9 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       # Store original config URL
       original_config = Application.get_env(:block_scout_web, :api_rate_limit)
 
-      tesla_config = Application.get_env(:tesla, :adapter)
-
       on_exit(fn ->
         Application.put_env(:block_scout_web, :api_rate_limit, original_config)
-        Application.put_env(:tesla, :adapter, tesla_config)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
         :persistent_term.put(:rate_limit_config, original_config_from_persistent_term)
       end)
     end

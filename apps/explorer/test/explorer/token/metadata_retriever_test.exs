@@ -587,10 +587,8 @@ defmodule Explorer.Token.MetadataRetrieverTest do
     setup do
       bypass = Bypass.open()
 
-      tesla_config = Application.get_env(:tesla, :adapter)
-
       on_exit(fn ->
-        Application.put_env(:tesla, :adapter, tesla_config)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       {:ok, bypass: bypass}

@@ -29,7 +29,6 @@ defmodule Indexer.Fetcher.TokenInstance.RealtimeTest do
     test "retry once after timeout" do
       bypass = Bypass.open()
 
-      tesla_config = Application.get_env(:tesla, :adapter)
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       []
@@ -120,7 +119,7 @@ defmodule Indexer.Fetcher.TokenInstance.RealtimeTest do
 
       assert is_nil(instance.error)
       assert instance.metadata == %{"name" => "name"}
-      Application.put_env(:tesla, :adapter, tesla_config)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       Bypass.down(bypass)
     end
   end

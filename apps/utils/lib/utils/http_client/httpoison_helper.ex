@@ -8,6 +8,7 @@ defmodule Utils.HttpClient.HTTPoisonHelper do
     |> add_basic_auth_option(options[:basic_auth])
     |> add_pool_option(options[:pool])
     |> add_follow_redirect_option(options[:follow_redirect])
+    |> add_insecure_option(options[:insecure])
     |> add_params_option(options[:params])
   end
 

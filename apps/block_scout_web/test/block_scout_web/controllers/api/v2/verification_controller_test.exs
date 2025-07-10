@@ -13,9 +13,11 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
   setup do
     configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
     Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
     on_exit(fn ->
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
     end)
   end
 
@@ -284,8 +286,6 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
 
         old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
 
-        tesla_config = Application.get_env(:tesla, :adapter)
-
         Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
           service_url: "http://localhost:#{bypass.port}",
           enabled: true,
@@ -348,7 +348,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
         assert response["is_blueprint"] == true
 
         Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-        Application.put_env(:tesla, :adapter, tesla_config)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
         Bypass.down(bypass)
       end
     end

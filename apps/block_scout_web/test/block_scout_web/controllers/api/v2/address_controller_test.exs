@@ -2668,7 +2668,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       bypass = Bypass.open()
 
-      tesla_config = Application.get_env(:tesla, :adapter)
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       old_chain_id = Application.get_env(:block_scout_web, :chain_id)
@@ -2750,7 +2749,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       Application.put_env(:block_scout_web, :chain_id, old_chain_id)
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
-      Application.put_env(:tesla, :adapter, tesla_config)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       Bypass.down(bypass)
     end
 
@@ -2942,7 +2941,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "ignore logs without topics when trying to decode with sig provider", %{conn: conn} do
       bypass = Bypass.open()
 
-      tesla_config = Application.get_env(:tesla, :adapter)
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       old_env_sig_provider = Application.get_env(:explorer, Explorer.SmartContract.SigProviderInterface)
@@ -2954,7 +2952,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       on_exit(fn ->
         Application.put_env(:explorer, Explorer.SmartContract.SigProviderInterface, old_env_sig_provider)
-        Application.put_env(:tesla, :adapter, tesla_config)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       address = insert(:contract_address)

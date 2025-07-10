@@ -73,8 +73,6 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
     setup do
       bypass = Bypass.open()
 
-      tesla_config = Application.get_env(:tesla, :adapter)
-
       Application.put_env(:explorer, MultichainSearch,
         service_url: "http://localhost:#{bypass.port}",
         api_key: "12345",
@@ -83,7 +81,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
 
       on_exit(fn ->
         Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
-        Application.put_env(:tesla, :adapter, tesla_config)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
         Bypass.down(bypass)
       end)
 

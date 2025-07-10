@@ -16,10 +16,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
       Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
 
-      tesla_config = Application.get_env(:tesla, :adapter)
-
       on_exit(fn ->
-        Application.put_env(:tesla, :adapter, tesla_config)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       :ok
