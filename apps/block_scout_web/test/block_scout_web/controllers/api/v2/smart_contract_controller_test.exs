@@ -1617,7 +1617,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           for _ <- 0..50 do
             insert(:smart_contract)
           end
-          |> Enum.sort_by(& &1.address_hash.bytes, :desc)
+          |> Enum.sort_by(& &1.id)
 
         request = get(conn, "/api/v2/smart-contracts")
         assert response = json_response(request, 200)
@@ -1634,7 +1634,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           for _ <- 0..50 do
             insert(:smart_contract)
           end
-          |> Enum.sort_by(& &1.address_hash.bytes, :desc)
+          |> Enum.sort_by(& &1.id)
 
         ordering_params = %{"sort" => "foo", "order" => "bar"}
 
