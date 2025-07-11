@@ -163,11 +163,21 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       |> Map.put_new(:FileName, Map.get(contract, :file_path, "") || "")
       |> insert_additional_sources(address)
       |> add_zksync_info(contract)
+      |> add_via_info(contract)
     end
   end
 
   defp add_zksync_info(smart_contract_info, contract) do
-    if Application.get_env(:explorer, :chain_type) == :zksync do
+    if Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via do
+      smart_contract_info
+      |> Map.put_new(:ZkCompilerVersion, Map.get(contract, :zk_compiler_version, ""))
+    else
+      smart_contract_info
+    end
+  end
+
+  defp add_via_info(smart_contract_info, contract) do
+    if Application.get_env(:explorer, :chain_type) == :via do
       smart_contract_info
       |> Map.put_new(:ZkCompilerVersion, Map.get(contract, :zk_compiler_version, ""))
     else
@@ -227,10 +237,20 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
     smart_contract_info
     |> merge_zksync_info(contract)
+    |> merge_via_info(contract)
   end
 
   defp merge_zksync_info(smart_contract_info, contract) do
     if Application.get_env(:explorer, :chain_type) == :zksync do
+      smart_contract_info
+      |> Map.merge(%{"ZkCompilerVersion" => contract.zk_compiler_version})
+    else
+      smart_contract_info
+    end
+  end
+
+  defp merge_via_info(smart_contract_info, contract) do
+    if Application.get_env(:explorer, :chain_type) == :via do
       smart_contract_info
       |> Map.merge(%{"ZkCompilerVersion" => contract.zk_compiler_version})
     else

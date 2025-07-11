@@ -6,7 +6,7 @@ defmodule Indexer.Prometheus.Instrumenter do
   use Prometheus.Metric
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  @rollups [:arbitrum, :zksync, :optimism, :polygon_zkevm, :scroll]
+  @rollups [:arbitrum, :zksync, :via, :optimism, :polygon_zkevm, :scroll]
 
   @histogram [
     name: :block_full_processing_duration_microseconds,

@@ -1,0 +1,5 @@
+<% bitcoin_explorer_url = Application.get_env(:block_scout_web, :bitcoin_explorer_url) %>
+<% bitcoin_link = bitcoin_explorer_url <> "/" <> @transaction_hash %>
+<a data-test="external_url" href="<%= bitcoin_link %>" target="_blank" class="d-flex flex-row">
+    Open in Bitcoin Explorer <span class="external-link-icon-2"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
+</a>

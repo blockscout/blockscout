@@ -132,7 +132,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
 
     verification_params =
-      if Application.get_env(:explorer, :chain_type) == :zksync do
+      if Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via do
         %{
           "solcCompiler" => params["compiler_version"],
           "zkCompiler" => params["zk_compiler_version"],
@@ -145,7 +145,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     verification_params
     |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
     |> Map.put("input", json_input)
-    |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+    |> (&if(
+          Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via,
           do: RustVerifierInterface.zksync_verify_standard_json_input(&1, verifier_metadata),
           else: RustVerifierInterface.verify_standard_json_input(&1, verifier_metadata)
         )).()
@@ -234,7 +235,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     %{"enabled" => optimization, "runs" => optimization_runs} = json_input["settings"]["optimizer"]
 
     optimization_runs =
-      if Application.get_env(:explorer, :chain_type) == :zksync,
+      if Application.get_env(:explorer, :chain_type) == :zksync || Application.get_env(:explorer, :chain_type) == :via,
         do: to_string(optimization_runs),
         else: optimization_runs
 

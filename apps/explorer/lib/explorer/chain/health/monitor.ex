@@ -14,6 +14,7 @@ defmodule Explorer.Chain.Health.Monitor do
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
+  alias Explorer.Chain.Via.Reader, as: ViaReader
   alias Explorer.Repo
 
   def start_link(_) do
@@ -76,6 +77,9 @@ defmodule Explorer.Chain.Health.Monitor do
 
         :zksync ->
           get_latest_batch_info_from_module(ZkSyncReader)
+
+        :via ->
+          get_latest_batch_info_from_module(ViaReader)
 
         :optimism ->
           get_latest_batch_info_from_module(OptimismReader)

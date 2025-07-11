@@ -32,6 +32,7 @@ defmodule BlockScoutWeb.Mixfile do
           Explorer.Chain.Optimism.OutputRoot,
           Explorer.Chain.Optimism.WithdrawalEvent,
           Explorer.Chain.ZkSync.Reader,
+          Explorer.Chain.Via.Reader,
           Explorer.Chain.Arbitrum.Reader
         ]
       ]
