@@ -1,0 +1,333 @@
+version: '3.9'
+
+# LUX Network Explorer Services - Docker Swarm Configuration
+# Network: hanzo-network
+# Domain: explore.lux.network
+
+x-default-opts: &default-opts
+  networks:
+    - hanzo-network
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  # Redis Service for LUX Explorer
+  redis-db:
+    <<: *default-opts
+    extends:
+      file: ./services/redis.yml
+      service: redis-db
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=false"
+        - "com.docker.service=explorer-luxnet-redis"
+
+  # Database Initialization
+  db-init:
+    <<: *default-opts
+    extends:
+      file: ./services/db.yml
+      service: db-init
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 1
+
+  # PostgreSQL Database for LUX Explorer
+  db:
+    <<: *default-opts
+    extends:
+      file: ./services/db.yml
+      service: db
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=false"
+        - "com.docker.service=explorer-luxnet-db"
+    volumes:
+      - luxnet-explorer-db:/var/lib/postgresql/data
+
+  # Backend Service for LUX Explorer
+  backend:
+    <<: *default-opts
+    depends_on:
+      - db
+      - redis-db
+    extends:
+      file: ./services/backend.yml
+      service: backend
+    command: "bin/blockscout start"
+    extra_hosts:
+      - "k8s-host:192.168.1.99"
+      - "host-postgres:192.168.1.99"
+      - "host-redis:192.168.1.99"
+    environment:
+      ETHEREUM_JSONRPC_HTTP_URL: http://k8s-host:9650/ext/bc/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/rpc
+      ETHEREUM_JSONRPC_TRACE_URL: http://k8s-host:9650/ext/bc/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/rpc
+      ETHEREUM_JSONRPC_WS_URL: ws://k8s-host:9650/ext/bc/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/ws
+      CHAIN_ID: '96369'
+      DISABLE_INDEXER: 'true'
+      DISABLE_REALTIME_INDEXER: 'true'
+      DISABLE_CATCHUP_INDEXER: 'true'
+      INDEXER_DISABLE_TOKEN_INSTANCE_FETCHER: 'true'
+      INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
+      INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=hanzo-network"
+        # API endpoint
+        - "traefik.http.routers.luxnet-explorer-api.rule=Host(`explore.lux.network`) && PathPrefix(`/api`)"
+        - "traefik.http.routers.luxnet-explorer-api.entrypoints=websecure"
+        - "traefik.http.routers.luxnet-explorer-api.tls=true"
+        - "traefik.http.routers.luxnet-explorer-api.tls.certresolver=letsencrypt"
+        - "traefik.http.services.luxnet-explorer-api.loadbalancer.server.port=4000"
+        - "com.docker.service=explorer-luxnet"
+
+  # NFT Media Handler
+  nft_media_handler:
+    <<: *default-opts
+    depends_on:
+      - backend
+    extends:
+      file: ./services/nft_media_handler.yml
+      service: nft_media_handler
+    extra_hosts:
+      - "k8s-host:192.168.1.99"
+      - "host-postgres:192.168.1.99"
+      - "host-redis:192.168.1.99"
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=false"
+        - "com.docker.service=explorer-luxnet-nft-media-handler"
+
+  # Visualizer Service
+  visualizer:
+    <<: *default-opts
+    extends:
+      file: ./services/visualizer.yml
+      service: visualizer
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=false"
+        - "com.docker.service=explorer-luxnet-visualizer"
+
+  # Signature Provider
+  sig-provider:
+    <<: *default-opts
+    extends:
+      file: ./services/sig-provider.yml
+      service: sig-provider
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=false"
+        - "com.docker.service=explorer-luxnet-sig-provider"
+
+  # Frontend Service for LUX Explorer
+  frontend:
+    <<: *default-opts
+    depends_on:
+      - backend
+    extends:
+      file: ./services/frontend.yml
+      service: frontend
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=hanzo-network"
+        # Main frontend - explore.lux.network
+        - "traefik.http.routers.luxnet-explorer.rule=Host(`explore.lux.network`)"
+        - "traefik.http.routers.luxnet-explorer.entrypoints=websecure"
+        - "traefik.http.routers.luxnet-explorer.tls=true"
+        - "traefik.http.routers.luxnet-explorer.tls.certresolver=letsencrypt"
+        - "traefik.http.services.luxnet-explorer.loadbalancer.server.port=3000"
+        # HTTP to HTTPS redirect for explore.lux.network
+        - "traefik.http.routers.luxnet-explorer-http.rule=Host(`explore.lux.network`)"
+        - "traefik.http.routers.luxnet-explorer-http.entrypoints=web"
+        - "traefik.http.routers.luxnet-explorer-http.middlewares=redirect-to-https"
+        # Additional route for lux.exchange
+        - "traefik.http.routers.lux-exchange.rule=Host(`lux.exchange`)"
+        - "traefik.http.routers.lux-exchange.entrypoints=websecure"
+        - "traefik.http.routers.lux-exchange.tls=true"
+        - "traefik.http.routers.lux-exchange.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.lux-exchange.service=luxnet-explorer"
+        # HTTP to HTTPS redirect for lux.exchange
+        - "traefik.http.routers.lux-exchange-http.rule=Host(`lux.exchange`)"
+        - "traefik.http.routers.lux-exchange-http.entrypoints=web"
+        - "traefik.http.routers.lux-exchange-http.middlewares=redirect-to-https"
+        - "com.docker.service=explorer-luxnet"
+
+  # Stats Database Initialization
+  stats-db-init:
+    <<: *default-opts
+    extends:
+      file: ./services/stats.yml
+      service: stats-db-init
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 1
+
+  # Stats Database
+  stats-db:
+    <<: *default-opts
+    depends_on:
+      stats-db-init:
+        condition: service_completed_successfully
+    extends:
+      file: ./services/stats.yml
+      service: stats-db
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=false"
+        - "com.docker.service=explorer-luxnet-stats-db"
+    volumes:
+      - luxnet-explorer-stats-db:/var/lib/postgresql/data
+
+  # Stats Service
+  stats:
+    <<: *default-opts
+    depends_on:
+      - stats-db
+      - backend
+    extends:
+      file: ./services/stats.yml
+      service: stats
+    extra_hosts:
+      - "k8s-host:192.168.1.99"
+      - "host-postgres:192.168.1.99"
+      - "host-redis:192.168.1.99"
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=hanzo-network"
+        # Stats API
+        - "traefik.http.routers.luxnet-stats.rule=Host(`explore.lux.network`) && PathPrefix(`/stats`)"
+        - "traefik.http.routers.luxnet-stats.entrypoints=websecure"
+        - "traefik.http.routers.luxnet-stats.tls=true"
+        - "traefik.http.routers.luxnet-stats.tls.certresolver=letsencrypt"
+        - "traefik.http.services.luxnet-stats.loadbalancer.server.port=8050"
+        - "com.docker.service=explorer-luxnet-stats"
+
+  # User Operations Indexer
+  user-ops-indexer:
+    <<: *default-opts
+    depends_on:
+      - db
+      - backend
+    extends:
+      file: ./services/user-ops-indexer.yml
+      service: user-ops-indexer
+    extra_hosts:
+      - "k8s-host:192.168.1.99"
+      - "host-postgres:192.168.1.99"
+      - "host-redis:192.168.1.99"
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=false"
+        - "com.docker.service=explorer-luxnet-user-ops-indexer"
+
+networks:
+  hanzo-network:
+    external: true
+    attachable: true
+
+volumes:
+  luxnet-explorer-db:
+    driver: local
+  luxnet-explorer-stats-db:
+    driver: local

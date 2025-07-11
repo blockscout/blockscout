@@ -6,7 +6,7 @@ services:
     pull_policy: always
     platform: linux/amd64
     restart: always
-    container_name: 'user-ops-indexer'
+    container_name: 'explorer-luxnet-user-ops-indexer'
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     env_file:

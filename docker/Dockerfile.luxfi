@@ -1,0 +1,23 @@
+# LuxFi branded Blockscout image
+# This extends the official Blockscout image with LuxFi branding
+
+ARG BLOCKSCOUT_VERSION=latest
+FROM ghcr.io/blockscout/blockscout:${BLOCKSCOUT_VERSION}
+
+# Add custom branding
+LABEL org.opencontainers.image.source="https://github.com/luxfi/explorer"
+LABEL org.opencontainers.image.description="LuxFi Blockchain Explorer based on Blockscout"
+LABEL org.opencontainers.image.vendor="LuxFi"
+
+# Copy custom assets
+COPY --chown=blockscout:blockscout ./branding/logos /app/static/images/
+COPY --chown=blockscout:blockscout ./branding/favicon.ico /app/static/
+
+# Set LuxFi specific environment defaults
+ENV FOOTER_LOGO=/images/lux_logo.svg \
+    FOOTER_LOGO_DARK=/images/lux_logo_dark.svg \
+    FOOTER_CHAT_LINK=https://discord.gg/luxfi \
+    FOOTER_FORUM_LINK=https://forum.lux.network \
+    FOOTER_GITHUB_LINK=https://github.com/luxfi
+
+# The rest inherits from the base image

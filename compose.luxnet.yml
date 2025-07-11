@@ -1,0 +1,89 @@
+version: '3.9'
+
+networks:
+  hanzo-network:
+    external: true
+
+services:
+  backend:
+    image: ghcr.io/blockscout/blockscout:${DOCKER_TAG:-latest}
+    container_name: 'luxnet-backend'
+    restart: always
+    stop_grace_period: 5m
+    command: "bin/blockscout start"
+    networks:
+      - hanzo-network
+    ports:
+      - "4000:4000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./docker-compose/envs/common-blockscout.env
+    environment:
+      ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:9650/ext/bc/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/rpc
+      ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:9650/ext/bc/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/rpc
+      ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:9650/ext/bc/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/ws
+      CHAIN_ID: '96369'
+      DATABASE_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@192.168.1.99:5432/explorer_luxnet?sslmode=disable
+      DISABLE_MIGRATE: 'true'
+
+  frontend:
+    image: ghcr.io/blockscout/frontend:${FRONTEND_TAG:-latest}
+    container_name: 'luxnet-frontend'
+    restart: always
+    networks:
+      - hanzo-network
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./docker-compose/envs/common-frontend.env
+    environment:
+      NEXT_PUBLIC_API_HOST: api-explore.lux.network
+      NEXT_PUBLIC_NETWORK_NAME: "LUX Network"
+      NEXT_PUBLIC_NETWORK_ID: 96369
+      NEXT_PUBLIC_NETWORK_SHORT_NAME: LUX
+      NEXT_PUBLIC_NETWORK_CURRENCY_NAME: LUX
+      NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL: LUX
+      NEXT_PUBLIC_IS_TESTNET: 'false'
+
+  visualizer:
+    image: ghcr.io/blockscout/visualizer:${VISUALIZER_VERSION:-latest}
+    container_name: 'luxnet-visualizer'
+    restart: always
+    networks:
+      - hanzo-network
+    env_file:
+      - ./docker-compose/envs/common-visualizer.env
+    ports:
+      - "8050:8050"
+
+  sig-provider:
+    image: ghcr.io/blockscout/sig-provider:${SIG_PROVIDER_VERSION:-latest}
+    container_name: 'luxnet-sig-provider'
+    restart: always
+    networks:
+      - hanzo-network
+    ports:
+      - "8051:8050"
+
+  stats:
+    image: ghcr.io/blockscout/stats:${STATS_VERSION:-latest}
+    container_name: 'luxnet-stats'
+    restart: always
+    networks:
+      - hanzo-network
+    depends_on:
+      - backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./docker-compose/envs/common-stats.env
+    environment:
+      STATS__DB_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@192.168.1.99:5432/stats_luxnet?sslmode=disable
+      STATS__BLOCKSCOUT_DB_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@192.168.1.99:5432/explorer_luxnet?sslmode=disable
+      STATS__CREATE_DATABASE: 'false'
+      STATS__RUN_MIGRATIONS: 'false'
+    ports:
+      - "8053:8050"

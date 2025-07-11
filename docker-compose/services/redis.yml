@@ -3,7 +3,7 @@ version: '3.9'
 services:
   redis-db:
     image: 'redis:alpine'
-    container_name: redis-db
+    container_name: 'explorer-luxnet-redis'
     command: redis-server
     volumes:
       - ./redis-data:/data

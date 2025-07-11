@@ -1,0 +1,40 @@
+{
+  "name": "spc",
+  "displayName": "SPC Network",
+  "chainId": 36911,
+  "testnet": false,
+  "currency": {
+    "name": "SPC",
+    "symbol": "SPC",
+    "decimals": 18
+  },
+  "rpc": {
+    "http": "http://127.0.0.1:9650/ext/bc/QFAFyn1hh59mh7kokA55dJq5ywskF5A1yn8dDpLhmKApS6FP1/rpc",
+    "ws": "ws://127.0.0.1:9650/ext/bc/QFAFyn1hh59mh7kokA55dJq5ywskF5A1yn8dDpLhmKApS6FP1/ws"
+  },
+  "explorer": {
+    "frontend": {
+      "port": 3002,
+      "host": "explore.spc.network"
+    },
+    "backend": {
+      "port": 4002,
+      "host": "api-explore.spc.network"
+    }
+  },
+  "database": {
+    "name": "explorer_spcnet",
+    "statsName": "stats_spcnet",
+    "userOpsName": "user_ops_spcnet"
+  },
+  "logo": {
+    "light": "/images/spc_logo.svg",
+    "dark": "/images/spc_logo_dark.svg"
+  },
+  "theme": {
+    "primaryColor": "#FF6B00",
+    "homepage": {
+      "heroBackground": "linear-gradient(136.9deg, rgb(255, 107, 0) 1.5%, rgb(255, 163, 77) 56.84%, rgb(255, 107, 0) 98.54%)"
+    }
+  }
+}

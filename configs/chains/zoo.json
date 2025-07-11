@@ -1,0 +1,40 @@
+{
+  "name": "zoo",
+  "displayName": "ZOO Network",
+  "chainId": 200200,
+  "testnet": false,
+  "currency": {
+    "name": "ZOO",
+    "symbol": "ZOO",
+    "decimals": 18
+  },
+  "rpc": {
+    "http": "http://127.0.0.1:9650/ext/bc/bXe2MhhAnXg6WGj6G8oDk55AKT1dMMsN72S8te7JdvzfZX1zM/rpc",
+    "ws": "ws://127.0.0.1:9650/ext/bc/bXe2MhhAnXg6WGj6G8oDk55AKT1dMMsN72S8te7JdvzfZX1zM/ws"
+  },
+  "explorer": {
+    "frontend": {
+      "port": 3001,
+      "host": "explore.zoo.network"
+    },
+    "backend": {
+      "port": 4001,
+      "host": "api-explore.zoo.network"
+    }
+  },
+  "database": {
+    "name": "explorer_zoonet",
+    "statsName": "stats_zoonet",
+    "userOpsName": "user_ops_zoonet"
+  },
+  "logo": {
+    "light": "/images/zoo_logo.svg",
+    "dark": "/images/zoo_logo_dark.svg"
+  },
+  "theme": {
+    "primaryColor": "#00A651",
+    "homepage": {
+      "heroBackground": "linear-gradient(136.9deg, rgb(0, 166, 81) 1.5%, rgb(0, 209, 102) 56.84%, rgb(0, 166, 81) 98.54%)"
+    }
+  }
+}

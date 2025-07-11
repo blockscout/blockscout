@@ -16,7 +16,7 @@ services:
     user: 2000:2000
     shm_size: 256m
     restart: always
-    container_name: 'db'
+    container_name: 'explorer-luxnet-db'
     command: postgres -c 'max_connections=200' -c 'client_connection_check_interval=60000'
     environment:
         POSTGRES_DB: 'blockscout'
@@ -27,6 +27,7 @@ services:
         published: 7432
     volumes:
       - ./blockscout-db-data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U blockscout -d blockscout"]
       interval: 10s

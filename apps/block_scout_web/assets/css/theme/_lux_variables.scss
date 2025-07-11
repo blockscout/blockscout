@@ -1,0 +1,105 @@
+// LUX Network Theme Variables
+// Monochromatic theme with black background
+
+// Brand Colors
+$primary: #ffffff;
+$secondary: #f0f0f0;
+$tertiary: #e0e0e0;
+
+// Backgrounds
+$body-bg: #000000;
+$header-bg: #0a0a0a;
+$card-bg: #111111;
+$tile-bg: #0f0f0f;
+$modal-bg: #0a0a0a;
+
+// Text Colors
+$text-primary: #ffffff;
+$text-secondary: #cccccc;
+$text-muted: #999999;
+$text-dark: #666666;
+
+// Border Colors
+$border-color: #222222;
+$border-light: #333333;
+$border-dark: #111111;
+
+// Link Colors
+$link-color: #ffffff;
+$link-hover: #cccccc;
+
+// Button Colors
+$btn-primary-bg: #ffffff;
+$btn-primary-color: #000000;
+$btn-secondary-bg: #222222;
+$btn-secondary-color: #ffffff;
+
+// Success/Error/Warning
+$success: #4caf50;
+$error: #f44336;
+$warning: #ff9800;
+$info: #2196f3;
+
+// Navbar
+$navbar-logo-height: 30px;
+$navbar-logo-width: auto;
+$navbar-background-color: $header-bg;
+$sub-navbar-background-color: #050505;
+
+// Cards and Tiles
+$card-background-color: $card-bg;
+$card-background-color-1: $card-bg;
+$card-background-color-2: $tile-bg;
+$card-border-color: $border-color;
+$card-box-shadow: 0 2px 4px rgba(255, 255, 255, 0.05);
+
+// Tables
+$table-head-background: #0a0a0a;
+$table-row-hover: #1a1a1a;
+$table-border-color: $border-color;
+
+// Dropdowns
+$dropdown-background-color: $card-bg;
+$dropdown-border-color: $border-color;
+$dropdown-link-color: $text-primary;
+$dropdown-link-hover-color: $text-primary;
+$dropdown-link-hover-bg: #1a1a1a;
+
+// Inputs
+$input-bg: #0a0a0a;
+$input-border-color: $border-color;
+$input-color: $text-primary;
+$input-placeholder-color: $text-dark;
+
+// Code
+$code-bg: #0a0a0a;
+$code-color: #ffffff;
+
+// Footer
+$footer-background-color: #000000;
+$footer-text-color: $text-secondary;
+
+// Custom scrollbar
+$scrollbar-thumb-color: #333333;
+$scrollbar-track-color: #0a0a0a;
+
+// Dashboard
+$dashboard-banner-background: linear-gradient(180deg, #111111 0%, #000000 100%);
+$dashboard-banner-chart-legend-label-color: $text-secondary;
+$dashboard-banner-chart-legend-value-color: $text-primary;
+
+// Tooltips
+$tooltip-bg: #1a1a1a;
+$tooltip-color: $text-primary;
+
+// Override base variables for dark mode
+$body-color: $text-primary;
+$gray-100: #1a1a1a;
+$gray-200: #2a2a2a;
+$gray-300: #3a3a3a;
+$gray-400: #4a4a4a;
+$gray-500: #5a5a5a;
+$gray-600: #6a6a6a;
+$gray-700: #7a7a7a;
+$gray-800: #8a8a8a;
+$gray-900: #9a9a9a;

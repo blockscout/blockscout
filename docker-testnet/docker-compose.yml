@@ -1,0 +1,87 @@
+version: '3.9'
+
+services:
+  backend:
+    image: ghcr.io/blockscout/blockscout:${DOCKER_TAG:-latest}
+    pull_policy: always
+    restart: always
+    stop_grace_period: 5m
+    container_name: 'explorer-lux-testnet-backend'
+    command: "bin/blockscout start"
+    ports:
+      - "4010:4000"
+    extra_hosts:
+      - "k8s-host:192.168.1.99"
+      - "host-postgres:192.168.1.99"
+      - "host-redis:192.168.1.99"
+    env_file:
+      - ./envs/common-blockscout.env
+    environment:
+      ETHEREUM_JSONRPC_HTTP_URL: http://k8s-host:9650/ext/bc/2sdADEgBC3NjLM4inKc1hY1PQpCT3JVyGVJxdmcq6sqrDndjFG/rpc
+      ETHEREUM_JSONRPC_TRACE_URL: http://k8s-host:9650/ext/bc/2sdADEgBC3NjLM4inKc1hY1PQpCT3JVyGVJxdmcq6sqrDndjFG/rpc
+      ETHEREUM_JSONRPC_WS_URL: ws://k8s-host:9650/ext/bc/2sdADEgBC3NjLM4inKc1hY1PQpCT3JVyGVJxdmcq6sqrDndjFG/ws
+      CHAIN_ID: '96368'
+      DATABASE_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@host-postgres:5432/explorer_luxtest?sslmode=disable
+      DISABLE_MIGRATE: 'true'
+      DISABLE_INDEXER: 'true'
+      DISABLE_REALTIME_INDEXER: 'true'
+      DISABLE_CATCHUP_INDEXER: 'true'
+
+  frontend:
+    image: ghcr.io/blockscout/frontend:${FRONTEND_TAG:-latest}
+    pull_policy: always
+    restart: always
+    container_name: 'explorer-lux-testnet-frontend'
+    depends_on:
+      - backend
+    ports:
+      - "3010:3000"
+    env_file:
+      - ./envs/common-frontend.env
+    environment:
+      NEXT_PUBLIC_API_HOST: localhost:4010
+      NEXT_PUBLIC_NETWORK_NAME: "LUX Testnet"
+      NEXT_PUBLIC_NETWORK_ID: 96368
+      NEXT_PUBLIC_NETWORK_SHORT_NAME: LUX
+      NEXT_PUBLIC_NETWORK_CURRENCY_NAME: LUX
+      NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL: LUX
+      NEXT_PUBLIC_IS_TESTNET: 'true'
+
+  visualizer:
+    image: ghcr.io/blockscout/visualizer:${VISUALIZER_VERSION:-latest}
+    pull_policy: always
+    restart: always
+    container_name: 'explorer-lux-testnet-visualizer'
+    env_file:
+      - ./envs/common-visualizer.env
+    ports:
+      - "8151:8050"
+
+  sig-provider:
+    image: ghcr.io/blockscout/sig-provider:${SIG_PROVIDER_VERSION:-latest}
+    pull_policy: always
+    restart: always
+    container_name: 'explorer-lux-testnet-sig-provider'
+    ports:
+      - "8152:8050"
+
+  stats:
+    image: ghcr.io/blockscout/stats:${STATS_VERSION:-latest}
+    pull_policy: always
+    restart: always
+    container_name: 'explorer-lux-testnet-stats'
+    depends_on:
+      - backend
+    extra_hosts:
+      - "k8s-host:192.168.1.99"
+      - "host-postgres:192.168.1.99"
+      - "host-redis:192.168.1.99"
+    env_file:
+      - ./envs/common-stats.env
+    environment:
+      STATS__DB_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@host-postgres:5432/stats_luxtest?sslmode=disable
+      STATS__BLOCKSCOUT_DB_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@host-postgres:5432/explorer_luxtest?sslmode=disable
+      STATS__CREATE_DATABASE: 'false'
+      STATS__RUN_MIGRATIONS: 'false'
+    ports:
+      - "8153:8050"

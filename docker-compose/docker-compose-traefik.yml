@@ -1,0 +1,138 @@
+version: '3.9'
+
+# LUX Network Explorer Services with Traefik
+# Domains: explore.lux.network, lux.exchange
+
+services:
+  # Backend Service
+  backend:
+    extends:
+      file: ./services/backend.yml
+      service: backend
+    command: "bin/blockscout start"
+    networks:
+      - explorer-network
+    extra_hosts:
+      - "k8s-host:192.168.1.99"
+      - "host-postgres:192.168.1.99"
+      - "host-redis:192.168.1.99"
+    environment:
+      ETHEREUM_JSONRPC_HTTP_URL: http://k8s-host:9650/ext/bc/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/rpc
+      ETHEREUM_JSONRPC_TRACE_URL: http://k8s-host:9650/ext/bc/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/rpc
+      ETHEREUM_JSONRPC_WS_URL: ws://k8s-host:9650/ext/bc/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/ws
+      CHAIN_ID: '96369'
+      COIN: 'LUX'
+      COIN_NAME: 'LUX'
+      NETWORK: 'LUX Network'
+      SUBNETWORK: 'LUX Mainnet'
+      NETWORK_ICON: '_network_icon.html'
+      LOGO: '/images/lux-logo.svg'
+      ETHEREUM_JSONRPC_VARIANT: 'avalanche'
+      HEART_BEAT_TIMEOUT: '30'
+      DISABLE_REALTIME_INDEXER: 'false'
+      DISABLE_INDEXER: 'false'
+      INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
+      INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'false'
+      DATABASE_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@host-postgres:5432/blockscout_lux
+      REDIS_URL: redis://host-redis:6379
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.luxnet-api.rule=Host(`explore.lux.network`, `lux.exchange`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.luxnet-api.entrypoints=websecure"
+      - "traefik.http.routers.luxnet-api.tls=true"
+      - "traefik.http.routers.luxnet-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.luxnet-api.loadbalancer.server.port=4000"
+
+  # Frontend Service
+  frontend:
+    extends:
+      file: ./services/frontend.yml
+      service: frontend
+    depends_on:
+      - backend
+    networks:
+      - explorer-network
+    environment:
+      NEXT_PUBLIC_API_HOST: https://explore.lux.network
+      NEXT_PUBLIC_API_BASE_PATH: /
+      NEXT_PUBLIC_NETWORK_NAME: "LUX Network"
+      NEXT_PUBLIC_NETWORK_SHORT_NAME: "LUX"
+      NEXT_PUBLIC_NETWORK_ID: "96369"
+      NEXT_PUBLIC_NETWORK_CURRENCY_NAME: "LUX"
+      NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL: "LUX"
+      NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS: "18"
+      NEXT_PUBLIC_HOMEPAGE_CHARTS: "['daily_txs']"
+      NEXT_PUBLIC_IS_TESTNET: "false"
+    labels:
+      - "traefik.enable=true"
+      # explore.lux.network routing
+      - "traefik.http.routers.luxnet-explorer.rule=Host(`explore.lux.network`)"
+      - "traefik.http.routers.luxnet-explorer.entrypoints=websecure"
+      - "traefik.http.routers.luxnet-explorer.tls=true"
+      - "traefik.http.routers.luxnet-explorer.tls.certresolver=letsencrypt"
+      - "traefik.http.services.luxnet-explorer.loadbalancer.server.port=3000"
+      # lux.exchange routing
+      - "traefik.http.routers.lux-exchange.rule=Host(`lux.exchange`)"
+      - "traefik.http.routers.lux-exchange.entrypoints=websecure"
+      - "traefik.http.routers.lux-exchange.tls=true"
+      - "traefik.http.routers.lux-exchange.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.lux-exchange.service=luxnet-explorer"
+      # HTTP to HTTPS redirects
+      - "traefik.http.routers.luxnet-explorer-http.rule=Host(`explore.lux.network`)"
+      - "traefik.http.routers.luxnet-explorer-http.entrypoints=web"
+      - "traefik.http.routers.luxnet-explorer-http.middlewares=https-redirect"
+      - "traefik.http.routers.lux-exchange-http.rule=Host(`lux.exchange`)"
+      - "traefik.http.routers.lux-exchange-http.entrypoints=web"
+      - "traefik.http.routers.lux-exchange-http.middlewares=https-redirect"
+
+  # Stats Service
+  stats:
+    extends:
+      file: ./services/stats.yml
+      service: stats
+    depends_on:
+      - backend
+    networks:
+      - explorer-network
+    extra_hosts:
+      - "k8s-host:192.168.1.99"
+      - "host-postgres:192.168.1.99"
+      - "host-redis:192.168.1.99"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.luxnet-stats.rule=Host(`explore.lux.network`, `lux.exchange`) && PathPrefix(`/stats`)"
+      - "traefik.http.routers.luxnet-stats.entrypoints=websecure"
+      - "traefik.http.routers.luxnet-stats.tls=true"
+      - "traefik.http.routers.luxnet-stats.tls.certresolver=letsencrypt"
+      - "traefik.http.services.luxnet-stats.loadbalancer.server.port=8050"
+
+  # Traefik Reverse Proxy
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - explorer-network
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Dashboard
+    environment:
+      - CF_API_EMAIL=${CF_API_EMAIL:-admin@lux.network}
+      - CF_API_KEY=${CF_API_KEY:-your-cloudflare-api-key}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik-data/traefik.yml:/traefik.yml:ro
+      - ./traefik-data/acme.json:/acme.json
+      - ./traefik-data/config.yml:/config.yml:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+
+networks:
+  explorer-network:
+    driver: bridge

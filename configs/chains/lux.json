@@ -1,0 +1,40 @@
+{
+  "name": "lux",
+  "displayName": "LUX Network",
+  "chainId": 96369,
+  "testnet": false,
+  "currency": {
+    "name": "LUX",
+    "symbol": "LUX",
+    "decimals": 18
+  },
+  "rpc": {
+    "http": "http://127.0.0.1:9650/ext/bc/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/rpc",
+    "ws": "ws://127.0.0.1:9650/ext/bc/dnmzhuf6poM6PUNQCe7MWWfBdTJEnddhHRNXz2x7H6qSmyBEJ/ws"
+  },
+  "explorer": {
+    "frontend": {
+      "port": 3000,
+      "host": "explore.lux.network"
+    },
+    "backend": {
+      "port": 4000,
+      "host": "api-explore.lux.network"
+    }
+  },
+  "database": {
+    "name": "explorer_luxnet",
+    "statsName": "stats_luxnet",
+    "userOpsName": "user_ops_luxnet"
+  },
+  "logo": {
+    "light": "/images/lux_logo.svg",
+    "dark": "/images/lux_logo_dark.svg"
+  },
+  "theme": {
+    "primaryColor": "#000000",
+    "homepage": {
+      "heroBackground": "radial-gradient(103.03% 103.03% at 0% 0%, rgba(183, 148, 244, 0.8) 0%, rgba(0, 163, 196, 0.8) 100%), var(--chakra-colors-blue-400)"
+    }
+  }
+}

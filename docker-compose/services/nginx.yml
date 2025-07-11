@@ -3,7 +3,7 @@ version: '3.9'
 services:
   proxy:
     image: nginx
-    container_name: proxy
+    container_name: explorer-luxnet-proxy
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     volumes:
