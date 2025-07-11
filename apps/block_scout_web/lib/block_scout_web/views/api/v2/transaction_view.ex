@@ -387,7 +387,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "r" => signed_authorization.r,
       "s" => signed_authorization.s,
       "v" => signed_authorization.v,
-      "authority" => Address.checksum(signed_authorization.authority)
+      "authority" => Address.checksum(signed_authorization.authority),
+      "status" => signed_authorization.status
     }
   end
 
