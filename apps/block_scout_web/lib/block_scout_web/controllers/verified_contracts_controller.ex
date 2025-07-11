@@ -7,10 +7,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
   import BlockScoutWeb.PagingHelper, only: [current_filter: 1, search_query: 1]
 
   import BlockScoutWeb.API.V2.SmartContractController,
-    only: [
-      smart_contract_addresses_paging_options: 1
-      # smart_contract_addresses_paging_params: 1
-    ]
+    only: [smart_contract_addresses_paging_options: 1]
 
   alias BlockScoutWeb.{Controller, VerifiedContractsView}
   alias Explorer.Chain
