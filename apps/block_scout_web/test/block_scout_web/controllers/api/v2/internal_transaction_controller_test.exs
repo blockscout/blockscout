@@ -22,8 +22,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
   #     insert(:internal_transaction,
   #       transaction: tx,
   #       block_hash: tx.block_hash,
-  #       index: 0,
-  #       block_index: 0
+  #       index: 0
   #     )
 
   #     request = get(conn, "/api/v2/internal-transactions")
@@ -42,8 +41,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
   #         transaction_index: 0,
   #         block_number: transaction.block_number,
   #         block_hash: transaction.block_hash,
-  #         index: 0,
-  #         block_index: 0
+  #         index: 0
   #       )
 
   #     transaction_2 = insert(:transaction) |> with_block()
@@ -55,8 +53,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
   #           transaction_index: 0,
   #           block_number: transaction_2.block_number,
   #           block_hash: transaction_2.block_hash,
-  #           index: i,
-  #           block_index: i
+  #           index: i
   #         )
   #       end
 
@@ -77,7 +74,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
   #   assert Address.checksum(internal_transaction.to_address_hash) == json["to"]["hash"]
   #   assert to_string(internal_transaction.transaction_hash) == json["transaction_hash"]
   #   assert internal_transaction.block_number == json["block_number"]
-  #   assert internal_transaction.block_index == json["block_index"]
   # end
 
   # defp check_paginated_response(first_page_resp, second_page_resp, internal_transactions) do
