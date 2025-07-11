@@ -57,10 +57,16 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     } do
       expected_body = "secret=#{recaptcha_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"success" => false})}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(%{"success" => false})
+           }}
+        end
+      )
 
       address = insert(:address)
 
@@ -148,18 +154,20 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     test "exports token transfers to csv", %{conn: conn, v2_secret_key: recaptcha_secret_key} do
       expected_body = "secret=#{recaptcha_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       address = insert(:address)
 
@@ -209,18 +217,20 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     test "download csv file with transactions", %{conn: conn, v2_secret_key: recaptcha_secret_key} do
       expected_body = "secret=#{recaptcha_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       address = insert(:address)
 
@@ -270,18 +280,20 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     test "download csv file with internal transactions", %{conn: conn, v2_secret_key: recaptcha_secret_key} do
       expected_body = "secret=#{recaptcha_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       address = insert(:address)
 
@@ -368,18 +380,20 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     test "download csv file with logs", %{conn: conn, v2_secret_key: recaptcha_secret_key} do
       expected_body = "secret=#{recaptcha_secret_key}&response=123"
 
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{body: ^expected_body}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body:
+               Jason.encode!(%{
+                 "success" => true,
+                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+               })
+           }}
+        end
+      )
 
       address = insert(:address)
 
@@ -489,7 +503,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
   defp csv_setup() do
     original_config = :persistent_term.get(:rate_limit_config)
     old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
-    old_http_adapter = Application.get_env(:block_scout_web, :http_adapter)
     original_api_rate_limit = Application.get_env(:block_scout_web, :api_rate_limit)
 
     v2_secret_key = "v2_secret_key"
@@ -500,8 +513,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
       v3_secret_key: v3_secret_key,
       is_disabled: false
     )
-
-    Application.put_env(:block_scout_web, :http_adapter, Explorer.Mox.HTTPoison)
 
     Application.put_env(:block_scout_web, :api_rate_limit, Keyword.put(original_api_rate_limit, :disabled, false))
 
@@ -553,7 +564,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     on_exit(fn ->
       :persistent_term.put(:rate_limit_config, original_config)
       Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
-      Application.put_env(:block_scout_web, :http_adapter, old_http_adapter)
       :ets.delete_all_objects(BlockScoutWeb.RateLimit.Hammer.ETS)
       Application.put_env(:block_scout_web, :api_rate_limit, original_api_rate_limit)
     end)

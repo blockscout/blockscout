@@ -7,6 +7,14 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
   alias Explorer.Market.Token
   alias Explorer.{Factory, TestHelper}
 
+  setup do
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+    on_exit(fn ->
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+    end)
+  end
+
   describe "GET index/3" do
     test "returns not found for nonexistent address", %{conn: conn} do
       nonexistent_address_hash = Hash.to_string(Factory.address_hash())

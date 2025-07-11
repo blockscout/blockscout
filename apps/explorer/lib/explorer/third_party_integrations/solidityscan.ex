@@ -4,7 +4,7 @@ defmodule Explorer.ThirdPartyIntegrations.SolidityScan do
   """
 
   require Logger
-  alias Explorer.Helper
+  alias Explorer.{Helper, HttpClient}
 
   @recv_timeout 60_000
 
@@ -18,8 +18,8 @@ defmodule Explorer.ThirdPartyIntegrations.SolidityScan do
     url = base_url(address_hash_string)
 
     if url do
-      case HTTPoison.get(url, headers, recv_timeout: @recv_timeout) do
-        {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+      case HttpClient.get(url, headers, recv_timeout: @recv_timeout) do
+        {:ok, %{status_code: 200, body: body}} ->
           Helper.decode_json(body)
 
         _ ->

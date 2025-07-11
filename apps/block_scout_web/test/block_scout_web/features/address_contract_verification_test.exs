@@ -13,8 +13,11 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
 
     Application.put_env(:explorer, :solc_bin_api_url, "http://localhost:#{bypass.port}")
 
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
     on_exit(fn ->
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
     end)
 
     {:ok, bypass: bypass}

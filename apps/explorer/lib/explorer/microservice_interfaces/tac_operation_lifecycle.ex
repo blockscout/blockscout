@@ -3,8 +3,8 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
     Interface to interact with Tac Operation Lifecycle Service (https://github.com/blockscout/blockscout-rs/tree/main/tac-operation-lifecycle)
   """
 
+  alias Explorer.HttpClient
   alias Explorer.Utility.Microservice
-  alias HTTPoison.Response
   require Logger
 
   @request_error_msg "Error while sending request to Tac Operation Lifecycle Service"
@@ -33,8 +33,8 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
   end
 
   defp http_get_request(url, query_params) do
-    case HTTPoison.get(url, [], params: query_params) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.get(url, [], params: query_params) do
+      {:ok, %{body: body, status_code: 200}} ->
         case Jason.decode(body) do
           {:ok, decoded_body} ->
             {:ok, decoded_body}
@@ -44,7 +44,7 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
             {:error, error}
         end
 
-      {:ok, %Response{body: _body, status_code: 404}} ->
+      {:ok, %{body: _body, status_code: 404}} ->
         {:error, :not_found}
 
       {_, error} ->

@@ -34,10 +34,13 @@ defmodule Explorer.Market.Fetcher.TokenTest do
         base_url: "http://localhost:#{bypass.port}"
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Application.put_env(:explorer, Explorer.Market.Source, source_configuration)
         Application.put_env(:explorer, Explorer.Market.Fetcher.Token, fetcher_configuration)
         Application.put_env(:explorer, Explorer.Market.Source.CoinGecko, coin_gecko_configuration)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       [_token_with_no_exchange_rate | tokens] =
