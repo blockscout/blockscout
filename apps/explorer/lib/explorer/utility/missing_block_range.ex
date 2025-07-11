@@ -408,8 +408,7 @@ defmodule Explorer.Utility.MissingBlockRange do
   @spec fill_ranges_between(Block.block_number(), Block.block_number(), integer() | nil) :: :ok
   defp fill_ranges_between(from, to, priority) when from >= to do
     __MODULE__
-    |> where([r], r.from_number <= ^from)
-    |> where([r], r.to_number >= ^to)
+    |> where([r], fragment("int4range(?, ?, '[]') @> int4range(?, ?, '[]')", ^to, ^from, r.to_number, r.from_number))
     |> priority_filter(priority)
     |> Repo.delete_all()
 
@@ -475,8 +474,7 @@ defmodule Explorer.Utility.MissingBlockRange do
 
   defp select_all_ranges_within_the_range(from, to) do
     __MODULE__
-    |> where([r], r.from_number <= ^from)
-    |> where([r], r.to_number >= ^to)
+    |> where([r], fragment("int4range(?, ?, '[]') @> int4range(?, ?, '[]')", ^to, ^from, r.to_number, r.from_number))
     |> order_by([r], desc: r.from_number)
     |> Repo.all()
   end
@@ -492,9 +490,8 @@ defmodule Explorer.Utility.MissingBlockRange do
   # Deletes all missing block ranges that overlap with the interval [from, to]
   @spec delete_ranges_between(Block.block_number(), Block.block_number()) :: :ok
   defp delete_ranges_between(from, to) do
-    from
-    |> from_number_below_query()
-    |> to_number_above_query(to)
+    __MODULE__
+    |> where([r], fragment("int4range(?, ?, '()') @> int4range(?, ?, '[]')", ^to, ^from, r.to_number, r.from_number))
     |> Repo.delete_all()
   end
 
@@ -604,7 +601,7 @@ defmodule Explorer.Utility.MissingBlockRange do
   """
   @spec include_bound_query(Block.block_number()) :: Ecto.Query.t()
   def include_bound_query(bound) do
-    from(r in __MODULE__, where: r.from_number >= ^bound, where: r.to_number <= ^bound)
+    from(r in __MODULE__, where: fragment("int4range(?, ?, '[]') @> ?::int", r.to_number, r.from_number, ^bound))
   end
 
   defp numbers_to_ranges([]), do: []
