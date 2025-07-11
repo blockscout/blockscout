@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.Etherscan.{Addresses, Blocks}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   @api_true [api?: true]
@@ -13,6 +14,8 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   @invalid_address_message "Invalid address format"
   @invalid_contract_address_message "Invalid contract address format"
   @no_token_transfers_message "No token transfers found"
+
+  @max_safe_block_number round(:math.pow(2, 31)) - 1
 
   def listaccounts(conn, params) do
     options =
@@ -479,7 +482,11 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   # sobelow_skip ["DOS.StringToAtom"]
   defp put_block(options, params, key) do
     with %{^key => block_param} <- params,
-         {block_number, ""} <- Integer.parse(block_param) do
+         {:ok, block_number} <-
+           ExplorerHelper.safe_parse_non_negative_integer(
+             block_param,
+             @max_safe_block_number
+           ) do
       Map.put(options, String.to_atom(key), block_number)
     else
       _ ->
