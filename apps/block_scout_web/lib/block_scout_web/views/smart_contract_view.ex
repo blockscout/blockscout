@@ -4,7 +4,6 @@ defmodule BlockScoutWeb.SmartContractView do
   import Explorer.SmartContract.Reader, only: [zip_tuple_values_with_types: 2]
 
   alias Explorer.Chain
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Hash.Address, as: HashAddress
   alias Explorer.Chain.SmartContract
@@ -164,20 +163,6 @@ defmodule BlockScoutWeb.SmartContractView do
     |> Enum.map(fn {{type, value}, index} ->
       values_with_type(value, type, fetch_name(names, index), 0)
     end)
-  end
-
-  def binary_to_utf_string(item) do
-    case Integer.parse(to_string(item)) do
-      {item_integer, ""} ->
-        to_string(item_integer)
-
-      _ ->
-        if is_binary(item) do
-          ExplorerHelper.add_0x_prefix(item)
-        else
-          to_string(item)
-        end
-    end
   end
 
   defp render_type_value(type, value, type) do

@@ -22,13 +22,12 @@ defmodule Explorer.Chain.Mud do
     Block,
     Data,
     Hash,
+    MethodIdentifier,
     Mud,
     Mud.Schema,
     Mud.Schema.FieldSchema,
     SmartContract
   }
-
-  alias Explorer.Helper, as: ExplorerHelper
 
   require Logger
 
@@ -312,7 +311,10 @@ defmodule Explorer.Chain.Mud do
       ((system_contract && system_contract.abi) || [])
       |> ABI.parse_specification()
       |> Enum.filter(&(&1.type == :function))
-      |> Enum.into(%{}, fn selector -> {ExplorerHelper.add_0x_prefix(selector.method_id), selector} end)
+      |> Enum.into(%{}, fn selector ->
+        {:ok, method_id} = MethodIdentifier.cast(selector.method_id)
+        {to_string(method_id), selector}
+      end)
 
     function_selector_signature_records
     |> Enum.reject(&(&1 == {nil, nil}))
@@ -545,7 +547,7 @@ defmodule Explorer.Chain.Mud do
         int |> Integer.to_string()
 
       _ when type < 96 or type == 196 ->
-        ExplorerHelper.add_0x_prefix(raw)
+        %Data{bytes: raw} |> to_string()
 
       96 ->
         raw == <<1>>

@@ -686,10 +686,10 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     # Map.get is only needed for the case when the module is compiled with
     # chain_type different from "arbitrum", `|| 0` is used to avoid nil values
     # for the transaction prior to the migration to Arbitrum specific BS build.
-    gas_used_for_l1 = Map.get(arbitrum_transaction, :gas_used_for_l1, 0) || 0
+    gas_used_for_l1 = Map.get(arbitrum_transaction, :gas_used_for_l1) || Decimal.new(0)
 
-    gas_used = Map.get(arbitrum_transaction, :gas_used, 0) || 0
-    gas_price = Map.get(arbitrum_transaction, :gas_price, 0) || 0
+    gas_used = Map.get(arbitrum_transaction, :gas_used) || Decimal.new(0)
+    gas_price = Map.get(arbitrum_transaction, :gas_price) || %Wei{value: Decimal.new(0)}
 
     gas_used_for_l2 =
       gas_used

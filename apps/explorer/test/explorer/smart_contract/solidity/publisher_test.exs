@@ -8,7 +8,7 @@ if Application.compile_env(:explorer, :chain_type) !== :zksync do
 
     @moduletag timeout: :infinity
 
-    alias Explorer.Chain.{ContractMethod, SmartContract}
+    alias Explorer.Chain.{Data, ContractMethod, SmartContract}
     alias Explorer.{Factory, Repo}
     alias Explorer.SmartContract.Solidity.Publisher
 
@@ -107,7 +107,7 @@ if Application.compile_env(:explorer, :chain_type) !== :zksync do
         Enum.each(contract_code_info.abi, fn selector ->
           [parsed] = ABI.parse_specification([selector])
 
-          assert Repo.get_by(ContractMethod, abi: selector, identifier: parsed.method_id)
+          assert Repo.get_by(ContractMethod, abi: selector, identifier: %Data{bytes: parsed.method_id})
         end)
       end
 

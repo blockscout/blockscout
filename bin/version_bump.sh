@@ -14,7 +14,7 @@ CONFIG_FILE="$(pwd)/rel/config.exs"
 DOCKER_COMPOSE_FILE="$(pwd)/docker-compose/docker-compose.yml"
 DOCKER_COMPOSE_NO_SERVICES_FILE="$(pwd)/docker-compose/no-services.yml"
 MAKE_FILE="$(pwd)/docker/Makefile"
-WORKFLOW_FILES=($(find "$(pwd)/.github/workflows" -type f \( -name "pre-release*" -o -name "release*" -o -name "publish-regular-docker-image-on-demand*" -o -name "publish-docker-image-*" \)))
+WORKFLOW_FILES=($(find "$(pwd)/.github/workflows" -type f \( -name "pre-release*" -o -name "release*" -o -name "publish-regular-docker-image-on-demand*" -o -name "publish-docker-image-*" -o -name "generate-swagger*" \)))
 METADATA_RETRIEVER_FILE="$(pwd)/apps/explorer/lib/explorer/token/metadata_retriever.ex"
 
 # Function to bump version

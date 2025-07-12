@@ -320,6 +320,7 @@ defmodule Explorer.Chain.Transaction do
     Data,
     DenormalizationHelper,
     Hash,
+    MethodIdentifier,
     SmartContract.Proxy,
     TokenTransfer,
     Transaction,
@@ -329,8 +330,6 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
 
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-
-  alias Explorer.Helper, as: ExplorerHelper
 
   alias Explorer.SmartContract.SigProviderInterface
 
@@ -1040,7 +1039,8 @@ defmodule Explorer.Chain.Transaction do
           parse_method_name(decoded_func)
 
         {:error, :contract_not_verified, []} ->
-          ExplorerHelper.add_0x_prefix(method_id)
+          {:ok, method_id} = MethodIdentifier.cast(method_id)
+          to_string(method_id)
 
         _ ->
           "Transfer"
@@ -1919,19 +1919,19 @@ defmodule Explorer.Chain.Transaction do
   Returns next page params based on the provided transaction.
   """
   @spec address_transactions_next_page_params(Explorer.Chain.Transaction.t()) :: %{
-          required(String.t()) => Decimal.t() | Wei.t() | non_neg_integer | DateTime.t() | Hash.t()
+          required(atom()) => Decimal.t() | Wei.t() | non_neg_integer | DateTime.t() | Hash.t()
         }
   def address_transactions_next_page_params(
         %__MODULE__{block_number: block_number, index: index, inserted_at: inserted_at, hash: hash, value: value} =
           transaction
       ) do
     %{
-      "fee" => transaction |> fee(:wei) |> elem(1),
-      "value" => value,
-      "block_number" => block_number,
-      "index" => index,
-      "inserted_at" => inserted_at,
-      "hash" => hash
+      fee: transaction |> fee(:wei) |> elem(1),
+      value: value,
+      block_number: block_number,
+      index: index,
+      inserted_at: inserted_at,
+      hash: hash
     }
   end
 
@@ -1964,7 +1964,7 @@ defmodule Explorer.Chain.Transaction do
       {:actual, Decimal.new(4)}
 
   """
-  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t() | nil}
+  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t() | nil} | {:actual, Decimal.t() | nil}
   def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
 
   def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil} = transaction, unit) do
@@ -2116,8 +2116,12 @@ defmodule Explorer.Chain.Transaction do
     empty_methods_map =
       transactions
       |> Enum.flat_map(fn
-        %{input: %{bytes: <<method_id::binary-size(4), _::binary>>}} -> [method_id]
-        _ -> []
+        %{input: %{bytes: <<method_id::binary-size(4), _::binary>>}} ->
+          {:ok, method_id} = MethodIdentifier.cast(method_id)
+          [method_id]
+
+        _ ->
+          []
       end)
       |> Enum.into(%{}, &{&1, []})
 
@@ -2225,7 +2229,8 @@ defmodule Explorer.Chain.Transaction do
         skip_sc_check?
       ) do
     if skip_sc_check? || Address.smart_contract?(to_address) do
-      ExplorerHelper.add_0x_prefix(method_id)
+      {:ok, method_id} = MethodIdentifier.cast(method_id)
+      method_id |> to_string()
     else
       nil
     end

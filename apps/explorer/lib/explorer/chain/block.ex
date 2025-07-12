@@ -153,6 +153,12 @@ defmodule Explorer.Chain.Block.Schema do
         field(:refetch_needed, :boolean)
         field(:base_fee_per_gas, Wei)
         field(:is_empty, :boolean)
+        field(:aggregated?, :boolean, virtual: true)
+        field(:transactions_count, :integer, virtual: true)
+        field(:blob_transactions_count, :integer, virtual: true)
+        field(:transactions_fees, :decimal, virtual: true)
+        field(:burnt_fees, :decimal, virtual: true)
+        field(:priority_fees, :decimal, virtual: true)
 
         timestamps()
 
@@ -197,7 +203,7 @@ defmodule Explorer.Chain.Block do
 
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Block.{EmissionReward, Reward}
-  alias Explorer.Repo
+  alias Explorer.{Helper, Repo}
   alias Explorer.Utility.MissingRangesManipulator
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
@@ -364,7 +370,7 @@ defmodule Explorer.Chain.Block do
       if gas_price do
         gas_used
         |> Decimal.new()
-        |> Decimal.mult(gas_price_to_decimal(gas_price))
+        |> Decimal.mult(Helper.number_to_decimal(gas_price))
         |> Decimal.add(acc)
       else
         acc
@@ -382,14 +388,10 @@ defmodule Explorer.Chain.Block do
       if is_nil(beacon_blob_transaction) do
         nil
       else
-        gas_price_to_decimal(beacon_blob_transaction.blob_gas_price)
+        Helper.number_to_decimal(beacon_blob_transaction.blob_gas_price)
       end
     end)
   end
-
-  defp gas_price_to_decimal(nil), do: nil
-  defp gas_price_to_decimal(%Wei{} = wei), do: wei.value
-  defp gas_price_to_decimal(gas_price), do: Decimal.new(gas_price)
 
   @doc """
   Calculates burnt fees for the list of transactions (from a single block)
@@ -405,7 +407,7 @@ defmodule Explorer.Chain.Block do
         |> Decimal.new()
         |> Decimal.add(acc)
       end)
-      |> Decimal.mult(gas_price_to_decimal(base_fee_per_gas))
+      |> Decimal.mult(Helper.number_to_decimal(base_fee_per_gas))
     end
   end
 
@@ -619,5 +621,103 @@ defmodule Explorer.Chain.Block do
   def by_hashes_query(hashes) do
     __MODULE__
     |> where([block], block.hash in ^hashes)
+  end
+
+  @doc """
+  Calculates and aggregates transaction-related metrics for a block if not already aggregated.
+
+  This function processes all transactions in a block to compute aggregate
+  statistics including transaction counts, fees, burnt fees, and priority fees.
+  The aggregation only occurs if the block has not been previously aggregated
+  (when `aggregated?` is `nil` or `false`) and contains a list of transactions.
+
+  For each transaction, the function calculates:
+  - Total transaction fees (gas_used * gas_price)
+  - Burnt fees (gas_used * base_fee_per_gas)
+  - Priority fees paid to miners (min of priority fee and effective fee)
+  - Blob transaction detection (type 3 transactions)
+
+  ## Parameters
+  - `block`: A Block struct containing transactions to be aggregated
+
+  ## Returns
+  - Block struct with aggregated transaction metrics and `aggregated?` set to `true`
+  - Original block unchanged if already aggregated or transactions is not a list
+  """
+  @spec aggregate_transactions(t()) :: t()
+  def aggregate_transactions(%__MODULE__{transactions: transactions, aggregated?: aggregated?} = block)
+      when is_list(transactions) and aggregated? in [nil, false] do
+    aggregate_results =
+      Enum.reduce(
+        transactions,
+        %{
+          transactions_count: 0,
+          blob_transactions_count: 0,
+          transactions_fees: Decimal.new(0),
+          burnt_fees: Decimal.new(0),
+          priority_fees: Decimal.new(0)
+        },
+        &transaction_aggregator(&1, &2, block.base_fee_per_gas)
+      )
+
+    block
+    |> Map.merge(aggregate_results)
+    |> Map.put(:aggregated?, true)
+  end
+
+  def aggregate_transactions(block), do: block
+
+  defp transaction_aggregator(transaction, acc, block_base_fee_per_gas) do
+    gas_used = Helper.number_to_decimal(transaction.gas_used)
+
+    transaction_fees =
+      if is_nil(transaction.gas_price) do
+        acc.transactions_fees
+      else
+        gas_used
+        |> Decimal.new()
+        |> Decimal.mult(Helper.number_to_decimal(transaction.gas_price))
+        |> Decimal.add(acc.transactions_fees)
+      end
+
+    burnt_fees =
+      if is_nil(block_base_fee_per_gas) do
+        acc.burnt_fees
+      else
+        transaction.gas_used
+        |> Decimal.new()
+        |> Decimal.mult(Helper.number_to_decimal(block_base_fee_per_gas))
+        |> Decimal.add(acc.burnt_fees)
+      end
+
+    priority_fees =
+      block_base_fee_per_gas
+      |> is_nil()
+      |> if do
+        acc.priority_fees
+      else
+        max_fee = Helper.number_to_decimal(transaction.max_fee_per_gas || transaction.gas_price)
+        priority_fee = Helper.number_to_decimal(transaction.max_priority_fee_per_gas || transaction.gas_price)
+
+        max_fee
+        |> Decimal.eq?(Decimal.new(0))
+        |> if do
+          Decimal.new(0)
+        else
+          max_fee
+          |> Decimal.sub(Helper.number_to_decimal(block_base_fee_per_gas))
+          |> Decimal.min(priority_fee)
+          |> Decimal.mult(gas_used)
+        end
+        |> Decimal.add(acc.priority_fees)
+      end
+
+    %{
+      transactions_count: acc.transactions_count + 1,
+      blob_transactions_count: acc.blob_transactions_count + if(transaction.type == 3, do: 1, else: 0),
+      transactions_fees: transaction_fees,
+      burnt_fees: burnt_fees,
+      priority_fees: priority_fees
+    }
   end
 end

@@ -90,7 +90,7 @@ defmodule Explorer.Mixfile do
       {:logger_file_backend, "~> 0.0.10"},
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:mox, "~> 1.0"},
+      {:mox, "~> 1.1.0"},
       {:phoenix_html, "== 3.3.4"},
       {:poison, "~> 4.0.1"},
       {:nimble_csv, "~> 1.1"},
@@ -119,7 +119,7 @@ defmodule Explorer.Mixfile do
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
-      {:hammer_backend_redis, "~> 6.1"},
+      {:hammer_backend_redis, "~> 7.0"},
       {:logger_json, "~> 5.1"},
       {:typed_ecto_schema, "~> 0.4.1"},
       {:ueberauth, "~> 0.7"},
@@ -133,7 +133,8 @@ defmodule Explorer.Mixfile do
       {:utils, in_umbrella: true},
       {:dns, "~> 2.4.0"},
       {:inet_cidr, "~> 1.0.0"},
-      {:hammer, "~> 6.0"}
+      {:hammer, "~> 7.0"},
+      {:ton, "~> 0.5.0"}
     ]
   end
 

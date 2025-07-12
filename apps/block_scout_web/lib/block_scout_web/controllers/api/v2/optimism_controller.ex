@@ -15,12 +15,12 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       delete_parameters_from_next_page_params: 1
     ]
 
-  import Explorer.Helper, only: [add_0x_prefix: 1, hash_to_binary: 1]
+  import Explorer.Helper, only: [hash_to_binary: 1]
 
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.{Hash, Token, Transaction}
+  alias Explorer.Chain.{Data, Hash, Token, Transaction}
 
   alias Explorer.Chain.Optimism.{
     Deposit,
@@ -445,7 +445,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
          {:ok, public_key} <- ExSecp256k1.create_public_key(private_key) do
       conn
       |> put_status(200)
-      |> render(:optimism_interop_public_key, %{public_key: add_0x_prefix(public_key)})
+      |> render(:optimism_interop_public_key, %{public_key: %Data{bytes: public_key}})
     else
       _ ->
         Logger.error("Interop: cannot derive a public key from the private key. Private key is invalid or undefined.")

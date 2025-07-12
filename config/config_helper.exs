@@ -4,6 +4,7 @@ defmodule ConfigHelper do
   import Bitwise
   alias Explorer.Market.Source
   alias Indexer.Transform.Blocks
+  alias Utils.ConfigHelper
 
   def repos do
     base_repos = [Explorer.Repo, Explorer.Repo.Account]
@@ -105,12 +106,12 @@ defmodule ConfigHelper do
         nil
 
       value ->
-        case value |> String.downcase() |> Integer.parse() do
-          {milliseconds, "ms"} -> milliseconds
-          {hours, "h"} -> :timer.hours(hours)
-          {minutes, "m"} -> :timer.minutes(minutes)
-          {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
-          _ -> raise "Invalid time format in environment variable #{env_var}: #{value}"
+        case ConfigHelper.parse_time_value(value) do
+          :error ->
+            raise "Invalid time format in environment variable #{env_var}: #{value}"
+
+          time ->
+            time
         end
     end
   end

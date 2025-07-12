@@ -499,7 +499,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       case address do
         %Hash{} = address_hash ->
           [
-            # todo: "address" should be removed in favour `address_hash` property with the next release after 8.0.0
+            # todo: "address" should be removed in favour `address_hash` property with the next release after 8.0.0 + UPDATE PATTERN MATCHING in `chain_type_fields()` function
             %{
               "address_hash" => Address.checksum(address_hash),
               "address" => Address.checksum(address_hash),
@@ -513,7 +513,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
           with {:ok, address_hash} <- string_to_address_hash(address),
                checksummed_address <- Address.checksum(address_hash) do
             [
-              # todo: "address" should be removed in favour `address_hash` property with the next release after 8.0.0
+              # todo: "address" should be removed in favour `address_hash` property with the next release after 8.0.0 + UPDATE PATTERN MATCHING in `chain_type_fields()` function
               %{"address_hash" => checksummed_address, "address" => checksummed_address, "name" => name}
               |> chain_type_fields(implementations_info)
               | acc

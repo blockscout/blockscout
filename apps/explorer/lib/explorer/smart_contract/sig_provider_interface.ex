@@ -142,7 +142,9 @@ defmodule Explorer.SmartContract.SigProviderInterface do
 
   defp decode_event_url, do: "#{base_api_url()}" <> "/event"
 
-  defp decode_events_batch_url, do: "#{base_api_url()}" <> "/events:batch-get"
+  # cspell:disable
+  defp decode_events_batch_url, do: "#{base_api_url()}" <> "/events%3Abatch-get"
+  # cspell:enable
 
   def base_api_url, do: "#{base_url()}" <> "/api/v1/abi"
 

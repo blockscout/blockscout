@@ -393,7 +393,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
           # The situation when the interim start block is not equal to the start block
           # means that the confirmations gap has not been inspected fully yet. It is
           # necessary to continue the confirmations discovery from the interim start
-          # block to the the block predecessor of the current start block.
+          # block to the block predecessor of the current start block.
           {retcode, state_for_next_iteration_historical(state, start_block - 1, interim_start_block)}
 
         {:confirmation_missed, _} ->

@@ -238,6 +238,48 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches transactions count for every `block_number`
+  """
+  @spec fetch_transactions_count([integer()], json_rpc_named_arguments) ::
+          {:ok, %{transactions_count_map: %{integer() => integer()}, errors: [{:error, map()}]}}
+          | {:error, reason :: term()}
+  def fetch_transactions_count(block_numbers, json_rpc_named_arguments) do
+    id_to_params = EthereumJSONRPC.id_to_params(block_numbers)
+
+    id_to_params
+    |> Enum.map(fn {id, number} ->
+      EthereumJSONRPC.request(%{
+        id: id,
+        method: "eth_getBlockTransactionCountByNumber",
+        params: [EthereumJSONRPC.integer_to_quantity(number)]
+      })
+    end)
+    |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+    |> case do
+      {:ok, responses} ->
+        %{errors: errors, counts: counts} =
+          responses
+          |> EthereumJSONRPC.sanitize_responses(id_to_params)
+          |> Enum.reduce(%{errors: [], counts: %{}}, fn
+            %{id: id, result: nil}, %{errors: errors} = acc ->
+              error = {:error, %{code: 404, message: "Not Found", data: Map.fetch!(id_to_params, id)}}
+              %{acc | errors: [error | errors]}
+
+            %{id: id, result: count}, %{counts: counts} = acc ->
+              %{acc | counts: Map.put(counts, Map.fetch!(id_to_params, id), EthereumJSONRPC.quantity_to_integer(count))}
+
+            %{id: id, error: error}, %{errors: errors} = acc ->
+              %{acc | errors: [{:error, Map.put(error, :data, Map.fetch!(id_to_params, id))} | errors]}
+          end)
+
+        {:ok, %{transactions_count_map: Map.new(counts), errors: errors}}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
     Fetches contract code for multiple addresses at specified block numbers.
 
     This function takes a list of parameters, each containing an address and a

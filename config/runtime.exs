@@ -110,25 +110,44 @@ config :block_scout_web, :contract,
   certified_list: ConfigHelper.parse_list_env_var("CONTRACT_CERTIFIED_LIST", ""),
   partial_reverification_disabled: !ConfigHelper.parse_bool_env_var("CONTRACT_ENABLE_PARTIAL_REVERIFICATION")
 
-default_global_api_rate_limit = 50
+default_global_api_rate_limit = 25
 default_api_rate_limit_by_key = 10
+api_rate_limit_redis_url = ConfigHelper.safe_get_env("API_RATE_LIMIT_HAMMER_REDIS_URL", nil)
 
 config :block_scout_web, :api_rate_limit,
   disabled: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_DISABLED"),
-  global_limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT", default_global_api_rate_limit),
-  limit_by_key: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_KEY", default_api_rate_limit_by_key),
-  limit_by_whitelisted_ip:
-    ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP", default_global_api_rate_limit),
-  time_interval_limit: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s"),
-  limit_by_ip: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_IP", 3000),
-  time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_IP_TIME_INTERVAL", "5m"),
-  static_api_key: System.get_env("API_RATE_LIMIT_STATIC_API_KEY"),
-  no_rate_limit_api_key: System.get_env("API_NO_RATE_LIMIT_API_KEY"),
+  static_api_key_value: System.get_env("API_RATE_LIMIT_STATIC_API_KEY"),
+  static_api_key: %{
+    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_KEY", default_api_rate_limit_by_key),
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_KEY_TIME_INTERVAL", "1s")
+  },
+  whitelisted_ip: %{
+    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP", default_global_api_rate_limit),
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP_TIME_INTERVAL", "1s")
+  },
+  ip: %{
+    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_IP", 500),
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_IP_TIME_INTERVAL", "15m")
+  },
+  temporary_token: %{
+    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN", 4),
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN_TIME_INTERVAL", "1s")
+  },
+  account_api_key: %{
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_ACCOUNT_API_KEY_TIME_INTERVAL", "1s")
+  },
+  no_rate_limit_api_key_value: System.get_env("API_NO_RATE_LIMIT_API_KEY"),
   whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS"),
   is_blockscout_behind_proxy: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_IS_BLOCKSCOUT_BEHIND_PROXY"),
-  api_v2_ui_limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN", 5),
-  api_v2_token_ttl_seconds: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL_IN_SECONDS", 18000),
-  eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5)
+  api_v2_token_ttl: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL", "30m"),
+  eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5),
+  redis_url: if(api_rate_limit_redis_url == "", do: nil, else: api_rate_limit_redis_url),
+  rate_limit_backend:
+    if(api_rate_limit_redis_url == "",
+      do: BlockScoutWeb.RateLimit.Hammer.ETS,
+      else: BlockScoutWeb.RateLimit.Hammer.Redis
+    ),
+  config_url: System.get_env("API_RATE_LIMIT_CONFIG_URL")
 
 default_graphql_rate_limit = 10
 
@@ -144,7 +163,7 @@ config :block_scout_web, Api.GraphQL,
   limit_by_key: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT_BY_KEY", default_graphql_rate_limit),
   time_interval_limit: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_TIME_INTERVAL", "1s"),
   limit_by_ip: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP", 500),
-  time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP_TIME_INTERVAL", "5m"),
+  time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP_TIME_INTERVAL", "1h"),
   static_api_key: System.get_env("API_GRAPHQL_RATE_LIMIT_STATIC_API_KEY")
 
 # Configures History
@@ -182,7 +201,8 @@ config :block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpr
 config :ueberauth, Ueberauth.Strategy.Auth0.OAuth,
   domain: System.get_env("ACCOUNT_AUTH0_DOMAIN"),
   client_id: System.get_env("ACCOUNT_AUTH0_CLIENT_ID"),
-  client_secret: System.get_env("ACCOUNT_AUTH0_CLIENT_SECRET")
+  client_secret: System.get_env("ACCOUNT_AUTH0_CLIENT_SECRET"),
+  auth0_application_id: ConfigHelper.safe_get_env("ACCOUNT_AUTH0_APPLICATION_ID", nil) |> String.replace(".", "")
 
 # Configures Ueberauth local settings
 config :ueberauth, Ueberauth, logout_url: "https://#{System.get_env("ACCOUNT_AUTH0_DOMAIN")}/v2/logout"
@@ -451,7 +471,8 @@ config :explorer, Explorer.Market.Source.CryptoRank,
       ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_COIN_ID"),
   secondary_coin_id:
     System.get_env("MARKET_CRYPTORANK_SECONDARY_COIN_ID") ||
-      ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_SECONDARY_COIN_ID")
+      ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_SECONDARY_COIN_ID"),
+  currency: "USD"
 
 config :explorer, Explorer.Market.Source.DefiLlama,
   coin_id: System.get_env("MARKET_DEFILLAMA_COIN_ID"),
@@ -728,6 +749,12 @@ config :explorer, Explorer.Migrator.ReindexDuplicatedInternalTransactions,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_CONCURRENCY", 1),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_TIMEOUT", "0s")
 
+config :explorer, Explorer.Migrator.ReindexBlocksWithMissingTransactions,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_REINDEX_BLOCKS_WITH_MISSING_TRANSACTIONS_BATCH_SIZE", 10),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_REINDEX_BLOCKS_WITH_MISSING_TRANSACTIONS_CONCURRENCY", 1),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_REINDEX_BLOCKS_WITH_MISSING_TRANSACTIONS_TIMEOUT", "0s"),
+  enabled: ConfigHelper.parse_bool_env_var("MIGRATION_REINDEX_BLOCKS_WITH_MISSING_TRANSACTIONS_ENABLED", "false")
+
 config :explorer, Explorer.Migrator.RestoreOmittedWETHTransfers,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_RESTORE_OMITTED_WETH_TOKEN_TRANSFERS_CONCURRENCY", 5),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_RESTORE_OMITTED_WETH_TOKEN_TRANSFERS_BATCH_SIZE", 50),
@@ -833,11 +860,13 @@ config :explorer, Explorer.Utility.RateLimiter,
   redis_url: rate_limiter_redis_url,
   on_demand: [
     time_interval_limit: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_TIME_INTERVAL", "5s"),
-    limit_by_ip: ConfigHelper.parse_integer_env_var("RATE_LIMITER_ON_DEMAND_LIMIT_BY_IP", 100),
+    limit_by_ip: ConfigHelper.parse_integer_env_var("RATE_LIMITER_ON_DEMAND_LIMIT_BY_IP", 50),
     exp_timeout_coeff: ConfigHelper.parse_integer_env_var("RATE_LIMITER_ON_DEMAND_EXPONENTIAL_TIMEOUT_COEFF", 100),
     max_ban_interval: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_MAX_BAN_INTERVAL", "1h"),
     limitation_period: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_LIMITATION_PERIOD", "1h")
-  ]
+  ],
+  hammer_backend_module:
+    if(rate_limiter_redis_url, do: Explorer.Utility.Hammer.Redis, else: Explorer.Utility.Hammer.ETS)
 
 config :explorer, Explorer.ThirdPartyIntegrations.UniversalProxy,
   config_url:
@@ -1000,9 +1029,9 @@ config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC1155,
 config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC721,
   enabled: !ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_ERC_721_SANITIZE_FETCHER", "false")
 
-config :indexer, Indexer.Fetcher.MultichainSearchDbExport.Retry.Supervisor,
+config :indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor,
   disabled?:
-    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_FETCHER") ||
+    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_PROCESSOR_FETCHER") ||
       is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
@@ -1086,12 +1115,18 @@ config :indexer, Indexer.Migrator.RecoveryWETHTokenTransfers,
     ConfigHelper.parse_integer_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_BLOCKS_BATCH_SIZE", 100_000),
   high_verbosity: ConfigHelper.parse_bool_env_var("MIGRATION_RECOVERY_WETH_TOKEN_TRANSFERS_HIGH_VERBOSITY", "true")
 
-config :indexer, Indexer.Fetcher.MultichainSearchDbExport.Retry,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_CONCURRENCY", 10),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_BATCH_SIZE", 10),
+config :indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue,
+  concurrency:
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_PROCESSOR_CONCURRENCY", 10),
+  batch_size:
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_PROCESSOR_BATCH_SIZE", 1000),
   enqueue_busy_waiting_timeout:
-    ConfigHelper.parse_time_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_ENQUEUE_BUSY_WAITING_TIMEOUT", "1s"),
-  max_queue_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_RETRY_MAX_QUEUE_SIZE", 1000)
+    ConfigHelper.parse_time_env_var(
+      "INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_PROCESSOR_ENQUEUE_BUSY_WAITING_TIMEOUT",
+      "1s"
+    ),
+  max_queue_size:
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_PROCESSOR_MAX_QUEUE_SIZE", 1000)
 
 config :indexer, Indexer.Fetcher.Optimism.TransactionBatch.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
@@ -1402,6 +1437,11 @@ config :indexer, Indexer.Fetcher.Scroll.BridgeL1.Supervisor, disabled?: ConfigHe
 config :indexer, Indexer.Fetcher.Scroll.BridgeL2.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
 
 config :indexer, Indexer.Fetcher.Scroll.Batch.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
+
+config :indexer, Indexer.Utils.EventNotificationsCleaner,
+  interval: ConfigHelper.parse_time_env_var("INDEXER_DB_EVENT_NOTIFICATIONS_CLEANUP_INTERVAL", "2m"),
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_DB_EVENT_NOTIFICATIONS_CLEANUP_ENABLED", "true"),
+  max_age: ConfigHelper.parse_time_env_var("INDEXER_DB_EVENT_NOTIFICATIONS_CLEANUP_MAX_AGE", "5m")
 
 config :ex_aws,
   json_codec: Jason,

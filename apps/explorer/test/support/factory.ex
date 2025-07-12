@@ -38,7 +38,7 @@ defmodule Explorer.Factory do
     Hash,
     InternalTransaction,
     Log,
-    MultichainSearchDbExportRetryQueue,
+    MultichainSearchDb,
     PendingBlockOperation,
     PendingTransactionOperation,
     SmartContract,
@@ -50,7 +50,7 @@ defmodule Explorer.Factory do
     Withdrawal
   }
 
-  alias Explorer.Chain.Optimism.OutputRoot
+  alias Explorer.Chain.Optimism.{InteropMessage, OutputRoot}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ZilliqaStaker
@@ -62,7 +62,7 @@ defmodule Explorer.Factory do
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
-  alias Explorer.Utility.{MissingBalanceOfToken, MissingBlockRange}
+  alias Explorer.Utility.{EventNotification, MissingBalanceOfToken, MissingBlockRange}
 
   alias Ueberauth.Strategy.Auth0
   alias Ueberauth.Auth.{Extra, Info}
@@ -744,8 +744,8 @@ defmodule Explorer.Factory do
     %PendingTransactionOperation{}
   end
 
-  def multichain_search_db_export_retry_queue_factory do
-    %MultichainSearchDbExportRetryQueue{}
+  def multichain_search_db_main_export_queue_factory do
+    %MultichainSearchDb.MainExportQueue{}
   end
 
   def internal_transaction_factory() do
@@ -1276,6 +1276,22 @@ defmodule Explorer.Factory do
     }
   end
 
+  def op_interop_message_factory do
+    %InteropMessage{
+      sender_address_hash: insert(:address).hash,
+      target_address_hash: insert(:address).hash,
+      nonce: sequence("op_interop_message_nonce", & &1),
+      init_chain_id: 1,
+      init_transaction_hash: insert(:transaction).hash,
+      block_number: insert(:block).number,
+      timestamp: DateTime.utc_now(),
+      relay_chain_id: 2,
+      relay_transaction_hash: transaction_hash(),
+      payload: "0x123123",
+      failed: random_bool()
+    }
+  end
+
   def op_output_root_factory do
     %OutputRoot{
       l2_output_index: op_output_root_l2_output_index(),
@@ -1319,7 +1335,8 @@ defmodule Explorer.Factory do
 
     %ValidatorStability{
       address_hash: address.hash,
-      state: Enum.random(0..2)
+      state: Enum.random(0..2),
+      blocks_validated: Enum.random(0..100)
     }
   end
 
@@ -1380,6 +1397,13 @@ defmodule Explorer.Factory do
       fourth_topic: nil,
       index: sequence("log_index", & &1),
       transaction: transaction
+    }
+  end
+
+  def event_notification_factory do
+    %EventNotification{
+      data: "test_data",
+      inserted_at: DateTime.utc_now()
     }
   end
 end
