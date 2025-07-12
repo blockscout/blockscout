@@ -273,7 +273,7 @@ defmodule Indexer.Fetcher.ContractCode do
   defp zilliqa_verify_scilla_contracts(entries, addresses) do
     zilliqa_contract_address_hashes =
       entries
-      |> Enum.filter(&ZilliqaHelper.scilla_transaction?(&1.type))
+      |> Enum.filter(&(ZilliqaHelper.scilla_transaction?(&1.type) and &1.status == :ok))
       |> MapSet.new(& &1.created_contract_address_hash)
 
     addresses
