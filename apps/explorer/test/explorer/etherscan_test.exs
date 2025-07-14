@@ -880,6 +880,7 @@ defmodule Explorer.EtherscanTest do
         input: internal_transaction.input,
         index: internal_transaction.index,
         transaction_hash: internal_transaction.transaction_hash,
+        transaction_index: internal_transaction.transaction_index,
         type: internal_transaction.type,
         call_type: internal_transaction.call_type,
         gas: internal_transaction.gas,
@@ -1030,23 +1031,26 @@ defmodule Explorer.EtherscanTest do
       blocks = [_, second_block, third_block, _] = insert_list(4, :block)
       address = insert(:address)
 
-      for block <- blocks, index <- 0..1 do
+      for block <- blocks do
         transaction =
           :transaction
           |> insert()
           |> with_block(block)
 
-        internal_transaction_details = %{
-          transaction: transaction,
-          index: index,
-          from_address: address,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: index,
-          transaction_index: transaction.index
-        }
+        for index <- 0..1 do
+          internal_transaction_details = %{
+            transaction: transaction,
+            index: index,
+            from_address: address,
+            block_number: block.number,
+            block_hash: block.hash,
+            block_index: index,
+            transaction_index: transaction.index,
+            value: 1
+          }
 
-        insert(:internal_transaction, internal_transaction_details)
+          insert(:internal_transaction, internal_transaction_details)
+        end
       end
 
       options = %{

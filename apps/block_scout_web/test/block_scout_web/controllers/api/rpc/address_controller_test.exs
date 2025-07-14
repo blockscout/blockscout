@@ -2589,7 +2589,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           index: index,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: index
+          block_index: index,
+          value: 1
         }
 
         insert(:internal_transaction_create, internal_transaction_details)
