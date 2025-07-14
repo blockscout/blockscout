@@ -33,7 +33,7 @@ defmodule Explorer.Chain.SignedAuthorization.Reader do
         b in Block,
         join: t in assoc(b, :transactions),
         join: s in assoc(t, :signed_authorizations),
-        where: is_nil(s.status) and b.consensus == true,
+        where: is_nil(s.status) and b.consensus == true and b.refetch_needed == false,
         distinct: true,
         select: %{
           block_hash: b.hash,
