@@ -803,9 +803,11 @@ defmodule Explorer.Chain.Address do
   def contract_creation_internal_transaction_preload_query do
     from(
       it in InternalTransaction,
+      where: it.index > 0,
       order_by: [
         asc_nulls_first: it.error,
-        desc: it.block_number
+        desc: it.block_number,
+        desc: it.block_index
       ],
       limit: 1
     )
