@@ -821,6 +821,9 @@ config :explorer, Explorer.Migrator.BackfillMetadataURL,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_METADATA_URL_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_METADATA_URL_CONCURRENCY", 5)
 
+config :explorer, Explorer.Migrator.MergeAdjacentMissingBlockRanges,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_MERGE_ADJACENT_MISSING_BLOCK_RANGES_BATCH_SIZE", 100)
+
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
   bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
