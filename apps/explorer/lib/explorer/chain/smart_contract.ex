@@ -249,8 +249,6 @@ defmodule Explorer.Chain.SmartContract do
     @dead_address_hash_string
   end
 
-  @default_sorting [asc: :hash]
-
   @typedoc """
   The name of a parameter to a function or event.
   """
@@ -1444,7 +1442,20 @@ defmodule Explorer.Chain.SmartContract do
   def verified_contract_addresses(options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
-    sorting_options = Keyword.get(options, :sorting, [])
+
+    # If no sorting options are provided, we sort by `:id` descending only. If
+    # there are some sorting options supplied, we sort by `:hash` ascending as a
+    # secondary key.
+    {sorting_options, default_sorting_options} =
+      options
+      |> Keyword.get(:sorting)
+      |> case do
+        nil ->
+          {[], [{:desc, :id, :smart_contract}]}
+
+        options ->
+          {options, [asc: :hash]}
+      end
 
     addresses_query =
       if background_migrations_finished?() do
@@ -1456,8 +1467,8 @@ defmodule Explorer.Chain.SmartContract do
 
     addresses_query
     |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
-    |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
-    |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
+    |> SortingHelper.apply_sorting(sorting_options, default_sorting_options)
+    |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting_options)
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
   end
@@ -1501,6 +1512,7 @@ defmodule Explorer.Chain.SmartContract do
       as: :address,
       where: address.verified == true,
       inner_lateral_join: contract in ^smart_contracts_subquery,
+      as: :smart_contract,
       on: true,
       select: address,
       preload: [smart_contract: contract]
