@@ -395,8 +395,10 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   @current_token_balances_limit 50
-  def handle_event({:chain_event, :address_current_token_balances, :on_demand, address_current_token_balances}) do
+  def handle_event({:chain_event, :address_current_token_balances, type, address_current_token_balances})
+      when type in [:realtime, :on_demand] do
     address_current_token_balances.address_current_token_balances
+    |> Repo.preload(:token)
     |> Enum.group_by(& &1.token_type)
     |> Enum.each(fn {token_type, balances} ->
       broadcast_token_balances(address_current_token_balances.address_hash, token_type, balances)
