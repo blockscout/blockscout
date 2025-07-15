@@ -8,7 +8,7 @@ config :explorer,
   json_rpc_named_arguments: [
     transport: EthereumJSONRPC.HTTP,
     transport_options: [
-      http: EthereumJSONRPC.HTTP.Mint,
+      http: EthereumJSONRPC.HTTP.Tesla,
       urls: ConfigHelper.parse_urls_list(:http, "http://localhost:1234/rpc/v1"),
       trace_urls: ConfigHelper.parse_urls_list(:trace, "http://localhost:1234/rpc/v1"),
       eth_call_urls: ConfigHelper.parse_urls_list(:eth_call, "http://localhost:1234/rpc/v1"),

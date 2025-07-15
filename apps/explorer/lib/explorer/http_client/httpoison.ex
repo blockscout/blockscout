@@ -27,6 +27,12 @@ defmodule Explorer.HttpClient.HTTPoison do
     |> parse_response()
   end
 
+  def request(method, url, headers, body, options) do
+    method
+    |> HTTPoison.request(url, body, headers, HTTPoisonHelper.request_opts(options))
+    |> parse_response()
+  end
+
   defp parse_response({:ok, %{body: body, status_code: status_code, headers: response_headers}}) do
     {:ok, %{body: body, status_code: status_code, headers: response_headers}}
   end

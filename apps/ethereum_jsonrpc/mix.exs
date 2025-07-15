@@ -31,7 +31,7 @@ defmodule EthereumJSONRPC.MixProject do
   def application do
     [
       mod: {EthereumJSONRPC.Application, []},
-      extra_applications: [:logger]
+      extra_applications: [:logger, :tesla]
     ]
   end
 

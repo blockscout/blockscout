@@ -1,4 +1,4 @@
-defmodule EthereumJSONRPC.HTTP.Mint do
+defmodule EthereumJSONRPC.HTTP.Tesla do
   @moduledoc """
   Uses `Tesla.Mint` for `EthereumJSONRPC.HTTP`
   """

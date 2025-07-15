@@ -2019,17 +2019,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(%{"name" => "test"})
-           }}
-        end
-      )
-
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
@@ -2058,6 +2047,17 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
+           }}
+        end
+      )
+
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(%{"name" => "test"})
            }}
         end
       )
@@ -2141,17 +2141,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       token_contract_address_hash_string = to_string(token.contract_address_hash)
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(%{"name" => "test"})
-           }}
-        end
-      )
-
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
@@ -2196,6 +2185,17 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
+           }}
+        end
+      )
+
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(%{"name" => "test"})
            }}
         end
       )

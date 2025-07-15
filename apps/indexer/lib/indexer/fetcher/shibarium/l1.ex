@@ -563,7 +563,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     [
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
-        http: EthereumJSONRPC.HTTP.Mint,
+        http: EthereumJSONRPC.HTTP.Tesla,
         urls: [rpc_url],
         http_options: [
           recv_timeout: :timer.minutes(10),

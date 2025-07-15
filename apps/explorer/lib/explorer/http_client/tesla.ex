@@ -31,6 +31,13 @@ defmodule Explorer.HttpClient.Tesla do
     |> parse_response()
   end
 
+  def request(method, url, headers, body, options) do
+    options
+    |> TeslaHelper.client()
+    |> Tesla.request(method: method, url: url, headers: headers, body: body, opts: TeslaHelper.request_opts(options))
+    |> parse_response()
+  end
+
   defp parse_response({:ok, %{body: body, status: status_code, headers: response_headers}}) do
     {:ok, %{body: body, status_code: status_code, headers: response_headers}}
   end

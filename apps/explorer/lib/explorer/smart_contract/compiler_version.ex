@@ -76,7 +76,6 @@ defmodule Explorer.SmartContract.CompilerVersion do
     else
       headers = [{"Content-Type", "application/json"}]
 
-      # credo:disable-for-next-line
       case HttpClient.get(source_url(compiler_type), headers) do
         {:ok, %{status_code: 200, body: body}} ->
           {:ok, format_data(body, compiler_type)}

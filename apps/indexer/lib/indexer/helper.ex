@@ -223,7 +223,7 @@ defmodule Indexer.Helper do
     [
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
-        http: EthereumJSONRPC.HTTP.Mint,
+        http: EthereumJSONRPC.HTTP.Tesla,
         urls: [rpc_url],
         http_options: [
           recv_timeout: :timer.minutes(10),
