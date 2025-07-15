@@ -415,8 +415,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         index: 0,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
-        block_hash: transaction.block_hash,
-        block_index: 0
+        block_hash: transaction.block_hash
       )
 
       internal_transaction =
@@ -425,8 +424,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: 1
+          block_hash: transaction.block_hash
         )
 
       transaction_1 =
@@ -441,8 +439,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           index: index,
           block_number: transaction_1.block_number,
           transaction_index: transaction_1.index,
-          block_hash: transaction_1.block_hash,
-          block_index: index
+          block_hash: transaction_1.block_hash
         )
       end)
 
@@ -465,8 +462,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         index: 0,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
-        block_hash: transaction.block_hash,
-        block_index: 0
+        block_hash: transaction.block_hash
       )
 
       internal_transactions =
@@ -477,8 +473,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
             index: index,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
-            block_hash: transaction.block_hash,
-            block_index: index
+            block_hash: transaction.block_hash
           )
         end)
 
@@ -1097,7 +1092,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         block_hash: transaction.block_hash,
-        block_index: 0,
         value: %Wei{value: Decimal.new(7)},
         from_address_hash: internal_transaction_from.hash,
         from_address: internal_transaction_from,
@@ -1162,7 +1156,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         block_hash: transaction.block_hash,
-        block_index: 0,
         value: %Wei{value: Decimal.new(7)},
         from_address_hash: internal_transaction_from.hash,
         from_address: internal_transaction_from,
@@ -1178,7 +1171,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         block_hash: transaction.block_hash,
-        block_index: 1,
         value: %Wei{value: Decimal.new(7)},
         from_address_hash: internal_transaction_from_delegatecall.hash,
         from_address: internal_transaction_from_delegatecall,
@@ -1193,7 +1185,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         block_hash: transaction.block_hash,
-        block_index: 2,
         value: %Wei{value: Decimal.new(7)},
         from_address_hash: internal_transaction_from.hash,
         from_address: internal_transaction_from,
@@ -1824,7 +1815,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         block_hash: transaction.block_hash,
-        block_index: 1,
         type: :reward
       )
 
@@ -1965,8 +1955,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           index: index,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: index
+          block_hash: transaction.block_hash
         )
       end
 

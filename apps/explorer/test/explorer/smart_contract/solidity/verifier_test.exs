@@ -511,9 +511,9 @@ if Application.compile_env(:explorer, :chain_type) !== :zksync do
           created_contract_code: bytecode,
           input: nil,
           transaction_hash: transaction.hash,
+          transaction_index: transaction.index,
           index: 0,
-          block_hash: transaction.block_hash,
-          block_index: 0
+          block_hash: transaction.block_hash
         )
 
         params = %{
@@ -569,9 +569,9 @@ if Application.compile_env(:explorer, :chain_type) !== :zksync do
           created_contract_code: bytecode,
           input: nil,
           transaction_hash: transaction_success.hash,
+          transaction_index: transaction_success.index,
           index: 0,
-          block_hash: transaction_success.block_hash,
-          block_index: 0
+          block_hash: transaction_success.block_hash
         )
 
         :internal_transaction
@@ -582,9 +582,9 @@ if Application.compile_env(:explorer, :chain_type) !== :zksync do
           created_contract_code: bytecode,
           input: nil,
           transaction_hash: transaction_failure.hash,
+          transaction_index: transaction_failure.index,
           index: 0,
-          block_hash: transaction_failure.block_hash,
-          block_index: 0
+          block_hash: transaction_failure.block_hash
         )
 
         params = %{
