@@ -457,6 +457,9 @@ defmodule Explorer.Utility.MissingBlockRange do
         end
       end)
       |> then(fn
+        [range | []] ->
+          insert_or_update_adjacent_ranges(range.first, range.last, priority, :both)
+
         [lowest_range | rest_ranges] ->
           [highest_range | middle_ranges] = Enum.reverse(rest_ranges)
 
