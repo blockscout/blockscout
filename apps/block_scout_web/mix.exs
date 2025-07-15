@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "8.1.1",
+      version: "9.0.0",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
