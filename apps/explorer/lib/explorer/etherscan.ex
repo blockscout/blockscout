@@ -176,6 +176,7 @@ defmodule Explorer.Etherscan do
       ]
     )
     |> offset(^options_to_offset(options))
+    |> limit(^options.page_size)
     |> Repo.replica().all()
   end
 
@@ -209,7 +210,7 @@ defmodule Explorer.Etherscan do
           {^options.order_by_direction, it.transaction_index},
           {^options.order_by_direction, it.index}
         ],
-        limit: ^options_to_limit(options),
+        limit: ^options_to_limit_for_inner_query(options),
         select:
           merge(map(it, ^@internal_transaction_fields), %{
             block_timestamp: transaction.block_timestamp,
@@ -228,7 +229,7 @@ defmodule Explorer.Etherscan do
           {^options.order_by_direction, it.transaction_index},
           {^options.order_by_direction, it.index}
         ],
-        limit: ^options_to_limit(options),
+        limit: ^options_to_limit_for_inner_query(options),
         select:
           merge(map(it, ^@internal_transaction_fields), %{
             block_timestamp: b.timestamp,
@@ -435,7 +436,7 @@ defmodule Explorer.Etherscan do
     query =
       from(
         t in Transaction,
-        limit: ^options_to_limit(options),
+        limit: ^options_to_limit_for_inner_query(options),
         select: map(t, ^@pending_transaction_fields)
       )
 
@@ -458,6 +459,7 @@ defmodule Explorer.Etherscan do
       desc: transaction.hash
     )
     |> offset(^options_to_offset(options))
+    |> limit(^options.page_size)
     |> Repo.replica().all()
   end
 
@@ -469,7 +471,7 @@ defmodule Explorer.Etherscan do
           where: not is_nil(t.block_hash),
           where: t.block_consensus == true,
           order_by: [{^options.order_by_direction, t.block_number}, {^options.order_by_direction, t.index}],
-          limit: ^options_to_limit(options),
+          limit: ^options_to_limit_for_inner_query(options),
           select:
             merge(map(t, ^@transaction_fields), %{
               confirmations: fragment("? - ?", ^max_block_number, t.block_number)
@@ -481,7 +483,7 @@ defmodule Explorer.Etherscan do
           inner_join: b in assoc(t, :block),
           where: b.consensus == true,
           order_by: [{^options.order_by_direction, t.block_number}, {^options.order_by_direction, t.index}],
-          limit: ^options_to_limit(options),
+          limit: ^options_to_limit_for_inner_query(options),
           select:
             merge(map(t, ^@transaction_fields), %{
               block_timestamp: b.timestamp,
@@ -513,6 +515,7 @@ defmodule Explorer.Etherscan do
       ]
     )
     |> offset(^options_to_offset(options))
+    |> limit(^options.page_size)
     |> Repo.replica().all()
   end
 
@@ -684,7 +687,7 @@ defmodule Explorer.Etherscan do
 
   defp options_to_offset(options), do: (options.page_number - 1) * options.page_size
 
-  defp options_to_limit(options), do: options.page_number * options.page_size
+  defp options_to_limit_for_inner_query(options), do: options.page_number * options.page_size
 
   defp options_to_directions(options) do
     case options do

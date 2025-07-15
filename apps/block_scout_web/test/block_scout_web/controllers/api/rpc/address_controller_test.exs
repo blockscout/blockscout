@@ -4728,7 +4728,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "end_timestamp" => "1539186474"
       }
 
-      optional_params = AddressController.optional_params(params)
+      {:ok, optional_params} = AddressController.optional_params(params)
 
       # 1539186474 equals "2018-10-10 15:47:54Z"
       {:ok, expected_timestamp, _} = DateTime.from_iso8601("2018-10-10 15:47:54Z")
@@ -4746,41 +4746,41 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     test "'sort' values can be 'asc' or 'desc'" do
       params1 = %{"sort" => "asc"}
 
-      optional_params = AddressController.optional_params(params1)
+      {:ok, optional_params} = AddressController.optional_params(params1)
 
       assert optional_params.order_by_direction == :asc
 
       params2 = %{"sort" => "desc"}
 
-      optional_params = AddressController.optional_params(params2)
+      {:ok, optional_params} = AddressController.optional_params(params2)
 
       assert optional_params.order_by_direction == :desc
 
       params3 = %{"sort" => "invalid"}
 
-      assert AddressController.optional_params(params3) == %{}
+      assert AddressController.optional_params(params3) == {:ok, %{}}
     end
 
     test "'filter_by' value can be 'to' or 'from'" do
       params1 = %{"filter_by" => "to"}
 
-      optional_params1 = AddressController.optional_params(params1)
+      {:ok, optional_params1} = AddressController.optional_params(params1)
 
       assert optional_params1.filter_by == "to"
 
       params2 = %{"filter_by" => "from"}
 
-      optional_params2 = AddressController.optional_params(params2)
+      {:ok, optional_params2} = AddressController.optional_params(params2)
 
       assert optional_params2.filter_by == "from"
 
       params3 = %{"filter_by" => "invalid"}
 
-      assert AddressController.optional_params(params3) == %{}
+      assert AddressController.optional_params(params3) == {:ok, %{}}
     end
 
     test "only includes optional params when they're given" do
-      assert AddressController.optional_params(%{}) == %{}
+      assert AddressController.optional_params(%{}) == {:ok, %{}}
     end
 
     test "ignores invalid optional params, keeps valid ones" do
@@ -4794,7 +4794,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "end_timestamp" => "invalid"
       }
 
-      assert AddressController.optional_params(params1) == %{}
+      assert AddressController.optional_params(params1) == {:ok, %{}}
 
       params2 = %{
         "startblock" => "4",
@@ -4806,7 +4806,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "end_timestamp" => "invalid"
       }
 
-      optional_params = AddressController.optional_params(params2)
+      {:ok, optional_params} = AddressController.optional_params(params2)
 
       assert optional_params.startblock == 4
       assert optional_params.endblock == 10
@@ -4815,19 +4815,19 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     test "ignores 'page' if less than 1" do
       params = %{"page" => "0"}
 
-      assert AddressController.optional_params(params) == %{}
+      assert AddressController.optional_params(params) == {:ok, %{}}
     end
 
     test "ignores 'offset' if less than 1" do
       params = %{"offset" => "0"}
 
-      assert AddressController.optional_params(params) == %{}
+      assert AddressController.optional_params(params) == {:ok, %{}}
     end
 
     test "ignores 'offset' if more than 10,000" do
       params = %{"offset" => "10001"}
 
-      assert AddressController.optional_params(params) == %{}
+      assert AddressController.optional_params(params) == {:ok, %{}}
     end
   end
 
