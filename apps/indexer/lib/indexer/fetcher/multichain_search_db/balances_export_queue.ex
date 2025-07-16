@@ -46,16 +46,6 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
   end
 
   @impl BufferedTask
-  def run(
-        %{
-          balances: _balances
-        } = prepared_export_data,
-        _json_rpc_named_arguments
-      ) do
-    export_data_to_multichain(prepared_export_data)
-  end
-
-  @impl BufferedTask
   def run(data, _json_rpc_named_arguments) when is_list(data) do
     prepared_export_data = prepare_export_data(data)
 
