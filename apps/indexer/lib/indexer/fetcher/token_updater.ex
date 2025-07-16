@@ -83,19 +83,14 @@ defmodule Indexer.Fetcher.TokenUpdater do
     |> Enum.reduce(%{}, fn %{contract_address_hash: contract_address_hash} = metadata, acc ->
       {:ok, hash} = Hash.Address.cast(contract_address_hash)
 
-      data_for_multichain =
-        with {:ok, %Token{cataloged: true} = token} <- Chain.token_from_address_hash(hash) do
+      case Chain.token_from_address_hash(hash) do
+        {:ok, %Token{cataloged: true} = token} ->
           update_metadata(token, metadata)
+          data_for_multichain = MultichainSearch.prepare_token_metadata_for_queue(token, metadata)
+          Map.put(acc, hash.bytes, data_for_multichain)
 
-          MultichainSearch.prepare_token_metadata_for_queue(token, metadata)
-        else
-          _ -> nil
-        end
-
-      if is_nil(data_for_multichain) do
-        acc
-      else
-        Map.put(acc, hash.bytes, data_for_multichain)
+        _ ->
+          acc
       end
     end)
     |> MultichainSearch.send_token_info_to_queue(:metadata)
