@@ -19,6 +19,7 @@
 
 ### 🐛 Bug Fixes
 
+- Filter out creation internal transaction with `index == 0` ([#12777](https://github.com/blockscout/blockscout/issues/12777))
 - Filter out scilla transactions in internal transactions fetcher ([#12793](https://github.com/blockscout/blockscout/issues/12793))
 - Change default ordering in `/api/v2/smart-contracts` ([#12767](https://github.com/blockscout/blockscout/issues/12767))
 - Filter scilla transactions by status ([#12756](https://github.com/blockscout/blockscout/issues/12756))
