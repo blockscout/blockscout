@@ -184,7 +184,9 @@ config :explorer, Explorer.SmartContract.CertifiedSmartContractCataloger, enable
 
 config :explorer, Explorer.Utility.RateLimiter, enabled: true
 
-config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime_usec]
+config :explorer, Explorer.Repo,
+  migration_timestamps: [type: :utc_datetime_usec],
+  disconnect_on_error_codes: [:query_canceled]
 
 config :explorer, Explorer.Tracer,
   service: :explorer,
