@@ -3,7 +3,6 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
   use Explorer.DataCase
 
   import ExUnit.CaptureLog, only: [capture_log: 1]
-  import Mox
 
   alias Explorer.Chain.MultichainSearchDb.MainExportQueue
   alias Explorer.Chain.Block.Range
