@@ -466,14 +466,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
              ]
 
       assert chunk[:address_coin_balances] == [
-               %{value: %Wei{value: Decimal.new("200")}, address_hash: to_string(address_2.hash)},
-               %{value: %Wei{value: Decimal.new("100")}, address_hash: to_string(address_1.hash)}
+               %{value: %Wei{value: Decimal.new("200")}, address_hash: address_2.hash},
+               %{value: %Wei{value: Decimal.new("100")}, address_hash: address_1.hash}
              ]
 
       assert chunk[:address_token_balances] == [
                %{
                  value: Decimal.new("30000"),
-                 address_hash: to_string(address_1.hash),
+                 address_hash: address_1.hash,
                  token_id: nil,
                  token_address_hash: to_string(token.contract_address_hash)
                }

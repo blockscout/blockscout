@@ -5,6 +5,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
   import ExUnit.CaptureLog, only: [capture_log: 1]
   import Mox
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.Chain.MultichainSearchDb.BalancesExportQueue
   alias Explorer.MicroserviceInterfaces.MultichainSearch
@@ -42,26 +43,28 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
     end
 
     test "initializes with data from the retry queue" do
-      address_hash_bytes = "66A9B160F6a06f53f23785F069882Ee7337180E8" |> Base.decode16!(case: :mixed)
+      {:ok, address_hash} =
+        Chain.string_to_address_hash("0x66A9B160F6a06f53f23785F069882Ee7337180E8")
+
       erc_20_contract_address_hash_bytes = "A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" |> Base.decode16!(case: :mixed)
       nft_contract_address_hash_bytes = "B01b6a7EF8560017AA59A990e39f26b8df29F80f" |> Base.decode16!(case: :mixed)
 
       insert(:multichain_search_db_export_balances_queue, %{
-        address_hash: address_hash_bytes,
+        address_hash: address_hash,
         token_contract_address_hash_or_native: "native",
         value: 100,
         token_id: nil
       })
 
       insert(:multichain_search_db_export_balances_queue, %{
-        address_hash: address_hash_bytes,
+        address_hash: address_hash,
         token_contract_address_hash_or_native: erc_20_contract_address_hash_bytes,
         value: 200,
         token_id: nil
       })
 
       insert(:multichain_search_db_export_balances_queue, %{
-        address_hash: address_hash_bytes,
+        address_hash: address_hash,
         token_contract_address_hash_or_native: nft_contract_address_hash_bytes,
         value: nil,
         token_id: 12345
@@ -79,21 +82,21 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
       assert Enum.count(results) == 3
 
       assert Enum.member?(results, %{
-               address_hash: address_hash_bytes,
+               address_hash: address_hash,
                token_contract_address_hash_or_native: "native",
                value: %Wei{value: Decimal.new(100)},
                token_id: nil
              })
 
       assert Enum.member?(results, %{
-               address_hash: address_hash_bytes,
+               address_hash: address_hash,
                token_contract_address_hash_or_native: erc_20_contract_address_hash_bytes,
                value: %Wei{value: Decimal.new(200)},
                token_id: nil
              })
 
       assert Enum.member?(results, %{
-               address_hash: address_hash_bytes,
+               address_hash: address_hash,
                token_contract_address_hash_or_native: nft_contract_address_hash_bytes,
                value: nil,
                token_id: Decimal.new(12345)
@@ -123,25 +126,30 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
     end
 
     test "successfully processes multichain search db export retry queue data", %{bypass: bypass} do
-      address_hash_bytes = "66A9B160F6a06f53f23785F069882Ee7337180E8" |> Base.decode16!(case: :mixed)
-      erc_20_contract_address_hash_bytes = "A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" |> Base.decode16!(case: :mixed)
-      nft_contract_address_hash_bytes = "B01b6a7EF8560017AA59A990e39f26b8df29F80f" |> Base.decode16!(case: :mixed)
+      {:ok, address_hash} =
+        Chain.string_to_address_hash("0x66A9B160F6a06f53f23785F069882Ee7337180E8")
+
+      {:ok, erc_20_contract_address_hash} =
+        Chain.string_to_address_hash("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
+
+      {:ok, nft_contract_address_hash} =
+        Chain.string_to_address_hash("0xB01b6a7EF8560017AA59A990e39f26b8df29F80f")
 
       export_data = [
         %{
-          address_hash: address_hash_bytes,
+          address_hash: address_hash,
           token_contract_address_hash_or_native: "native",
           value: %Wei{value: Decimal.new(100)}
         },
         %{
-          address_hash: erc_20_contract_address_hash_bytes,
-          token_contract_address_hash_or_native: erc_20_contract_address_hash_bytes,
+          address_hash: erc_20_contract_address_hash,
+          token_contract_address_hash_or_native: erc_20_contract_address_hash.bytes,
           value: %Wei{value: Decimal.new(200)},
           token_id: nil
         },
         %{
-          address_hash: nft_contract_address_hash_bytes,
-          token_contract_address_hash_or_native: nft_contract_address_hash_bytes,
+          address_hash: nft_contract_address_hash,
+          token_contract_address_hash_or_native: nft_contract_address_hash.bytes,
           value: nil,
           token_id: Decimal.new(12345)
         }
@@ -178,13 +186,14 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
 
       address_1 = insert(:address)
       address_2 = insert(:address)
-      address_2_hash_string = to_string(address_2) |> String.downcase()
+      address_2_hash = address_2.hash
       address_3 = insert(:address)
-      address_3_hash_string = to_string(address_3) |> String.downcase()
+      address_3_hash = address_3.hash
       address_4 = insert(:address)
+      address_4_hash = address_4.hash
       address_4_hash_string_checksummed = Address.checksum(address_4)
       address_5 = insert(:address)
-      address_5_hash_string = to_string(address_5) |> String.downcase()
+      address_5_hash = address_5.hash
       token_address_1 = insert(:address)
       token_address_1_hash_string = to_string(token_address_1) |> String.downcase()
       token_address_2 = insert(:address)
@@ -192,29 +201,29 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
 
       export_data = [
         %{
-          address_hash: address_1.hash.bytes,
+          address_hash: address_1.hash,
           token_contract_address_hash_or_native: "native",
           value: %Wei{value: Decimal.new(100)}
         },
         %{
-          address_hash: address_2.hash.bytes,
+          address_hash: address_2.hash,
           token_contract_address_hash_or_native: token_address_1.hash.bytes,
           value: %Wei{value: Decimal.new(200)},
           token_id: nil
         },
         %{
-          address_hash: address_3.hash.bytes,
+          address_hash: address_3.hash,
           token_contract_address_hash_or_native: token_address_2.hash.bytes,
           value: %Wei{value: Decimal.new(300)},
           token_id: nil
         },
         %{
-          address_hash: address_4.hash.bytes,
+          address_hash: address_4.hash,
           token_contract_address_hash_or_native: "native",
           value: %Wei{value: Decimal.new(400)}
         },
         %{
-          address_hash: address_5.hash.bytes,
+          address_hash: address_5.hash,
           token_contract_address_hash_or_native: token_address_1.hash.bytes,
           value: %Wei{value: Decimal.new(500)},
           token_id: nil
@@ -250,26 +259,26 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
                   %{
                     address_coin_balances: [
                       %{
-                        address_hash: ^address_4_hash_string_checksummed,
+                        address_hash: ^address_4_hash,
                         token_contract_address_hash_or_native: "native",
                         value: ^val3
                       }
                     ],
                     address_token_balances: [
                       %{
-                        address_hash: ^address_5_hash_string,
+                        address_hash: ^address_5_hash,
                         token_address_hash: ^token_address_1_hash_string,
                         value: ^val4,
                         token_id: nil
                       },
                       %{
-                        address_hash: ^address_3_hash_string,
+                        address_hash: ^address_3_hash,
                         token_address_hash: ^token_address_2_hash_string,
                         value: ^val2,
                         token_id: nil
                       },
                       %{
-                        address_hash: ^address_2_hash_string,
+                        address_hash: ^address_2_hash,
                         token_address_hash: ^token_address_1_hash_string,
                         value: ^val1,
                         token_id: nil
@@ -283,24 +292,24 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
 
       export_data_2 = [
         %{
-          address_hash: address_2.hash.bytes,
+          address_hash: address_2.hash,
           token_contract_address_hash_or_native: token_address_1.hash.bytes,
           value: %Wei{value: Decimal.new(200)},
           token_id: nil
         },
         %{
-          address_hash: address_3.hash.bytes,
+          address_hash: address_3.hash,
           token_contract_address_hash_or_native: token_address_2.hash.bytes,
           value: %Wei{value: Decimal.new(300)},
           token_id: nil
         },
         %{
-          address_hash: address_4.hash.bytes,
+          address_hash: address_4.hash,
           token_contract_address_hash_or_native: "native",
           value: %Wei{value: Decimal.new(400)}
         },
         %{
-          address_hash: address_5.hash.bytes,
+          address_hash: address_5.hash,
           token_contract_address_hash_or_native: token_address_1.hash.bytes,
           value: %Wei{value: Decimal.new(500)},
           token_id: nil

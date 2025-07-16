@@ -122,7 +122,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
   ## Parameters
 
     - `export_data`: A list of maps, each containing:
-      - `:address_hash` - The address hash as a binary.
+      - `:address_hash` - The address hash of Hash.Address.t().
       - `:token_contract_address_hash_or_native` - The token contract address hash as a binary, or the string `"native"` for native coins.
       - `:value` - The balance value as a `Decimal.t()`.
       - `:token_id` (optional) - The token ID, present for token balances.
@@ -137,7 +137,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
   """
   @spec prepare_export_data([
           %{
-            address_hash: binary(),
+            address_hash: Hash.Address.t(),
             token_contract_address_hash_or_native: binary(),
             value: Decimal.t() | nil,
             token_id: Decimal.t() | nil

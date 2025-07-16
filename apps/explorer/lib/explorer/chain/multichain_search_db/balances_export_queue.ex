@@ -7,7 +7,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
   import Ecto.Query
   alias Ecto.Multi
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{Hash, Wei}
 
   @required_attrs ~w(address_hash token_contract_address_hash_or_native)a
   @optional_attrs ~w(value token_id retries_number)a
@@ -16,7 +16,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
   @primary_key false
   typed_schema "multichain_search_db_export_balances_queue" do
     field(:id, :integer, primary_key: false, null: false)
-    field(:address_hash, :binary, null: false, primary_key: true)
+    field(:address_hash, Hash.Address, null: false, primary_key: true)
     field(:token_contract_address_hash_or_native, :binary, null: false, primary_key: true)
     field(:value, Wei)
     field(:token_id, :decimal)
@@ -101,13 +101,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
         query =
           from(
             b in __MODULE__,
-            where:
-              fragment(
-                "?::text = '\\' || SUBSTRING(?, 2, LENGTH(?) - 1)",
-                b.address_hash,
-                ^balance_address_hash,
-                ^balance_address_hash
-              ),
+            where: b.address_hash == ^balance_address_hash,
             # \x6e6174697665 == hex('native')
             where:
               fragment(
@@ -117,8 +111,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
                 ^balance_token_contract_address_hash_or_native,
                 ^balance_token_contract_address_hash_or_native
               ),
-            where: fragment("COALESCE(?, -1) = COALESCE(?, -1)", b.token_id, ^balance_token_id),
-            select: b
+            where: fragment("COALESCE(?, -1) = COALESCE(?, -1)", b.token_id, ^balance_token_id)
           )
 
         if is_nil(acc) do
