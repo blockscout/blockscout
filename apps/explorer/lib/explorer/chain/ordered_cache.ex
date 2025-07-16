@@ -255,13 +255,16 @@ defmodule Explorer.Chain.OrderedCache do
       def update(elements) when is_nil(elements), do: :ok
 
       def update(elements) when is_list(elements) do
+        prepared_elements =
+          elements
+          |> Enum.sort_by(&element_to_id(&1), &prevails?(&1, &2))
+          |> Enum.take(max_size())
+          |> do_preloads()
+          |> Enum.map(&{element_to_id(&1), sanitize_before_update(&1)})
+
         ConCache.update(cache_name(), ids_list_key(), fn ids ->
           updated_list =
-            elements
-            |> Enum.sort_by(&element_to_id(&1), &prevails?(&1, &2))
-            |> Enum.take(max_size())
-            |> do_preloads()
-            |> Enum.map(&{element_to_id(&1), sanitize_before_update(&1)})
+            prepared_elements
             |> merge_and_update(ids || [], max_size())
 
           # ids_list is set to never expire

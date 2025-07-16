@@ -821,6 +821,9 @@ config :explorer, Explorer.Migrator.BackfillMetadataURL,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_METADATA_URL_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_METADATA_URL_CONCURRENCY", 5)
 
+config :explorer, Explorer.Migrator.MergeAdjacentMissingBlockRanges,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_MERGE_ADJACENT_MISSING_BLOCK_RANGES_BATCH_SIZE", 100)
+
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
   bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
@@ -1127,6 +1130,9 @@ config :indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue,
     ),
   max_queue_size:
     ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_PROCESSOR_MAX_QUEUE_SIZE", 1000)
+
+config :indexer, Indexer.Fetcher.SignedAuthorizationStatus,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_SIGNED_AUTHORIZATION_STATUS_BATCH_SIZE", 10)
 
 config :indexer, Indexer.Fetcher.Optimism.TransactionBatch.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == :optimism

@@ -7,10 +7,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
   import BlockScoutWeb.PagingHelper, only: [current_filter: 1, search_query: 1]
 
   import BlockScoutWeb.API.V2.SmartContractController,
-    only: [
-      smart_contract_addresses_paging_options: 1,
-      smart_contract_addresses_paging_params: 1
-    ]
+    only: [smart_contract_addresses_paging_options: 1]
 
   alias BlockScoutWeb.{Controller, VerifiedContractsView}
   alias Explorer.Chain
@@ -18,7 +15,8 @@ defmodule BlockScoutWeb.VerifiedContractsController do
   alias Phoenix.View
 
   @necessity_by_association %{
-    :token => :optional
+    :token => :optional,
+    :smart_contract => :optional
   }
 
   def index(conn, %{"type" => "JSON"} = params) do
@@ -48,7 +46,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
              next_page,
              verified_contracts,
              params,
-             &smart_contract_addresses_paging_params(&1.address)
+             &%{id: &1.id}
            ) do
         nil -> nil
         next_page_params -> verified_contracts_path(conn, :index, Map.delete(next_page_params, "type"))
