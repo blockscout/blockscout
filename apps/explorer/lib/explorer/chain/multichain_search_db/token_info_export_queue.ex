@@ -16,6 +16,7 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
   @primary_key false
   typed_schema "multichain_search_db_export_token_info_queue" do
     field(:address_hash, :binary, null: false, primary_key: true)
+
     field(:data_type, Ecto.Enum,
       values: [
         :metadata,
@@ -26,6 +27,7 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
       null: false,
       primary_key: true
     )
+
     field(:data, :map)
     field(:retries_number, :integer)
 
@@ -57,7 +59,8 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
           limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_multichain_db_token_info_batch_to_retry_export(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+  def stream_multichain_db_token_info_batch_to_retry_export(initial, reducer, limited? \\ false)
+      when is_function(reducer, 2) do
     __MODULE__
     |> select([export], %{
       address_hash: export.address_hash,
