@@ -170,7 +170,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
                 :address_token_balances,
                 [
                   %{
-                    address_hash: to_string(%Hash{byte_count: 20, bytes: res.address_hash}),
+                    address_hash: res.address_hash,
                     token_contract_address_hash:
                       to_string(%Hash{byte_count: 20, bytes: res.token_contract_address_hash_or_native}),
                     token_id: res.token_id,
@@ -179,7 +179,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
                 ],
                 &[
                   %{
-                    address_hash: to_string(%Hash{byte_count: 20, bytes: res.address_hash}),
+                    address_hash: res.address_hash,
                     token_contract_address_hash:
                       to_string(%Hash{byte_count: 20, bytes: res.token_contract_address_hash_or_native}),
                     token_id: res.token_id,

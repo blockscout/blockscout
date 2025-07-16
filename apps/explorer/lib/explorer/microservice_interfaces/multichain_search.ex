@@ -464,7 +464,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           params.address_token_balances
           |> Enum.map(fn address_token_balance ->
             %{
-              address_hash: address_token_balance.address_hash,
+              address_hash: "0x" <> Base.encode16(address_token_balance.address_hash),
               token_address_hash: address_token_balance.token_contract_address_hash,
               token_id: address_token_balance.token_id,
               value: address_token_balance.value
