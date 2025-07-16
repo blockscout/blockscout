@@ -1167,10 +1167,19 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         block_index: transaction.index
       )
 
-      assert %{"result" => [%{"contractFactory" => ""}]} =
+      assert %{
+               "result" => [
+                 %{
+                   "contractFactory" => "",
+                   "contractCreator" => contract_creator
+                 }
+               ]
+             } =
                conn
                |> get("/api", Map.put(params, "contractaddresses", to_string(contract_address)))
                |> json_response(200)
+
+      assert contract_creator == to_string(transaction.from_address_hash)
     end
   end
 

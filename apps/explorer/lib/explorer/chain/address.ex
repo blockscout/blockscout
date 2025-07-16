@@ -787,7 +787,7 @@ defmodule Explorer.Chain.Address do
   @doc """
   Creates a query for preloading contract creation internal transactions.
 
-  This query sorts internal transactions by:
+  This query filters for internal transactions with index > 0, sorts them by:
 
   1. error (ascending with nulls first)
   2. block number (descending)
@@ -797,7 +797,8 @@ defmodule Explorer.Chain.Address do
 
   ## Returns
 
-  A `Ecto.Query` that can be used to preload the contract creation internal transaction.
+  A `Ecto.Query` that can be used to preload the contract creation internal
+  transaction.
   """
   @spec contract_creation_internal_transaction_preload_query() :: Ecto.Query.t()
   def contract_creation_internal_transaction_preload_query do
