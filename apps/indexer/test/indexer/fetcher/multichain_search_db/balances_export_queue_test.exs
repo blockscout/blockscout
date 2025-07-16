@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueueTest do
+defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
   use ExUnit.Case
   use Explorer.DataCase
 
@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueueTest do
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.TestHelper
 
-  alias Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue,
+  alias Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue,
     as: MultichainSearchDbExportBalancesExportQueue
 
   alias Plug.Conn
@@ -182,7 +182,6 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueueTest do
       address_3 = insert(:address)
       address_3_hash_string = to_string(address_3) |> String.downcase()
       address_4 = insert(:address)
-      address_4_hash_string = to_string(address_4) |> String.downcase()
       address_4_hash_string_checksummed = Address.checksum(address_4)
       address_5 = insert(:address)
       address_5_hash_string = to_string(address_5) |> String.downcase()
@@ -251,7 +250,7 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueueTest do
                   %{
                     address_coin_balances: [
                       %{
-                        address_hash: ^address_4_hash_string,
+                        address_hash: ^address_4_hash_string_checksummed,
                         token_contract_address_hash_or_native: "native",
                         value: ^val3
                       }

@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue do
+defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
   @moduledoc """
   Exports token and coin balances to Multichain Search DB service from the queue.
   """
@@ -108,7 +108,6 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue do
           )
       }
     end)
-    |> Enum.reject(&is_nil/1)
   end
 
   defp prepare_coin_balances_for_db_query(coin_balances) do
@@ -125,7 +124,6 @@ defmodule Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue do
           )
       }
     end)
-    |> Enum.reject(&is_nil(&1.address_hash))
   end
 
   @doc """

@@ -1037,7 +1037,7 @@ config :indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor,
     ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_FETCHER") ||
       is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
 
-config :indexer, Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue.Supervisor,
+config :indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue.Supervisor,
   disabled?:
     ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_FETCHER") ||
       is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
@@ -1137,7 +1137,7 @@ config :indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue,
 config :indexer, Indexer.Fetcher.SignedAuthorizationStatus,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_SIGNED_AUTHORIZATION_STATUS_BATCH_SIZE", 10)
 
-config :indexer, Indexer.Fetcher.MultichainSearchDbExport.BalancesExportQueue,
+config :indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_CONCURRENCY", 10),
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_BATCH_SIZE", 1000),
   enqueue_busy_waiting_timeout:

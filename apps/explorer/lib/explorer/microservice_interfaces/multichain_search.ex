@@ -94,11 +94,13 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
             {:ok, {:chunks_processed, _}} ->
               {:error, export_body}
 
-            {:error, data_to_retry} ->
+            {:error, error} ->
               merged_data_to_retry = %{
-                addresses: data_to_retry.data_to_retry.addresses ++ export_body.addresses,
-                block_ranges: data_to_retry.data_to_retry.block_ranges ++ export_body.block_ranges,
-                hashes: data_to_retry.data_to_retry.hashes ++ export_body.hashes
+                addresses: error.data_to_retry.addresses ++ export_body.addresses,
+                block_ranges: error.data_to_retry.block_ranges ++ export_body.block_ranges,
+                hashes: error.data_to_retry.hashes ++ export_body.hashes,
+                address_coin_balances: error.data_to_retry.address_coin_balances ++ export_body.address_coin_balances,
+                address_token_balances: error.data_to_retry.address_token_balances ++ export_body.address_token_balances
               }
 
               {:error, merged_data_to_retry}

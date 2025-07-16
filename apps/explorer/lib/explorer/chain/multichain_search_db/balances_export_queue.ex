@@ -88,6 +88,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
     )
   end
 
+  # sobelow_skip ["DOS.StringToAtom"]
   @spec delete_elements_from_queue_by_params([map()]) :: list()
   def delete_elements_from_queue_by_params(balances) do
     q =
