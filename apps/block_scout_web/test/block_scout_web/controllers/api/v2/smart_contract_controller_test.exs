@@ -34,6 +34,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   end
 
   describe "/smart-contracts/{address_hash}" do
+    setup do
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      on_exit(fn ->
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+    end
+
     test "get 404 on non existing SC", %{conn: conn} do
       address = build(:address)
 
@@ -591,6 +599,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   end
 
   test "doesn't get smart-contract implementation for 'Clones with immutable arguments' pattern", %{conn: conn} do
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
     implementation_contract =
       insert(:smart_contract,
         external_libraries: [],
@@ -671,6 +681,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
     response = json_response(request, 200)
 
+    Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+
     result_props = correct_response |> Map.keys()
 
     for prop <- result_props do
@@ -691,6 +703,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         bypass = Bypass.open()
 
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
         Application.put_env(:block_scout_web, :chain_id, 5)
 
         Application.put_env(
@@ -709,6 +723,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_fetcher_env)
           Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_verifier_env)
           Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
           Bypass.down(bypass)
         end)
 

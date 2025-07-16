@@ -21,8 +21,11 @@ defmodule Explorer.Market.Source.CryptoRankTest do
       )
     )
 
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
     on_exit(fn ->
       Application.put_env(:explorer, CryptoRank, old_env)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
     end)
 
     {:ok, old_env: old_env, bypass: bypass}

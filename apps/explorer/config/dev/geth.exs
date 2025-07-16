@@ -4,14 +4,11 @@ import Config
 |> Path.join()
 |> Code.eval_file()
 
-hackney_opts = ConfigHelper.hackney_options()
-timeout = ConfigHelper.timeout(1)
-
 config :explorer,
   json_rpc_named_arguments: [
     transport: EthereumJSONRPC.HTTP,
     transport_options: [
-      http: EthereumJSONRPC.HTTP.HTTPoison,
+      http: EthereumJSONRPC.HTTP.Tesla,
       urls: ConfigHelper.parse_urls_list(:http),
       trace_urls: ConfigHelper.parse_urls_list(:trace),
       eth_call_urls: ConfigHelper.parse_urls_list(:eth_call),
@@ -23,7 +20,7 @@ config :explorer,
         debug_traceTransaction: :trace,
         debug_traceBlockByNumber: :trace
       ],
-      http_options: [recv_timeout: timeout, timeout: timeout, hackney: hackney_opts]
+      http_options: ConfigHelper.http_options(1)
     ],
     variant: EthereumJSONRPC.Geth
   ],

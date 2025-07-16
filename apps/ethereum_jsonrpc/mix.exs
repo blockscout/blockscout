@@ -31,7 +31,7 @@ defmodule EthereumJSONRPC.MixProject do
   def application do
     [
       mod: {EthereumJSONRPC.Application, []},
-      extra_applications: [:logger]
+      extra_applications: [:logger, :tesla]
     ]
   end
 
@@ -74,6 +74,7 @@ defmodule EthereumJSONRPC.MixProject do
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 1.0"},
+      {:tesla, "~> 1.14.2"},
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.7.1"},
       # Encode/decode function names and arguments

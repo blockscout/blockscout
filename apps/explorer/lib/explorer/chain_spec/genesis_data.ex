@@ -14,8 +14,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   alias Explorer.Chain.SmartContract
   alias Explorer.ChainSpec.Geth.Importer, as: GethImporter
   alias Explorer.ChainSpec.Parity.Importer
-  alias Explorer.Helper
-  alias HTTPoison.Response
+  alias Explorer.{Helper, HttpClient}
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -172,10 +171,10 @@ defmodule Explorer.ChainSpec.GenesisData do
   end
 
   # Fetches JSON data from a provided URL.
-  @spec fetch_from_url(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t() | HTTPoison.Error.t()}
+  @spec fetch_from_url(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t() | any()}
   defp fetch_from_url(url) do
-    case HTTPoison.get(url) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.get(url) do
+      {:ok, %{body: body, status_code: 200}} ->
         {:ok, Jason.decode!(body)}
 
       reason ->

@@ -81,6 +81,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
 
       on_exit(fn ->
         Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
         Bypass.down(bypass)
       end)
 
@@ -104,6 +105,8 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
 
       TestHelper.get_chain_id_mock()
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       Bypass.expect_once(bypass, "POST", "/api/v1/import:batch", fn conn ->
         Conn.resp(
           conn,
@@ -124,11 +127,8 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
         addresses_chunk_size: 1
       )
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
       on_exit(fn ->
         Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
-        Application.put_env(:explorer, :http_adapter, HTTPoison)
       end)
 
       address_1 = insert(:address)
@@ -156,24 +156,21 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
 
       TestHelper.get_chain_id_mock()
 
-      for _ <- 0..2 do
-        Explorer.Mox.HTTPoison
-        |> expect(:post, fn "http://localhost:1234/api/v1/import:batch",
-                            body,
-                            [{"Content-Type", "application/json"}],
-                            _options ->
+      Tesla.Test.expect_tesla_call(
+        times: 3,
+        returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
           case Jason.decode(body) do
             {:ok, %{"block_ranges" => [%{"max_block_number" => _, "min_block_number" => _}]}} ->
-              {:ok, %HTTPoison.Response{status_code: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
+              {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
 
             {:ok, %{"addresses" => [%{"hash" => ^address_2_hash_string}]}} ->
-              {:ok, %HTTPoison.Response{status_code: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
+              {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
 
             _ ->
-              {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"status" => "ok"})}}
+              {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"status" => "ok"})}}
           end
-        end)
-      end
+        end
+      )
 
       log =
         capture_log(fn ->
@@ -229,21 +226,18 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
 
       TestHelper.get_chain_id_mock()
 
-      for _ <- 0..1 do
-        Explorer.Mox.HTTPoison
-        |> expect(:post, fn "http://localhost:1234/api/v1/import:batch",
-                            body,
-                            [{"Content-Type", "application/json"}],
-                            _options ->
+      Tesla.Test.expect_tesla_call(
+        times: 2,
+        returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
           case Jason.decode(body) do
             {:ok, %{"block_ranges" => [%{"max_block_number" => _, "min_block_number" => _}]}} ->
-              {:ok, %HTTPoison.Response{status_code: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
+              {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
 
             _ ->
-              {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"status" => "ok"})}}
+              {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"status" => "ok"})}}
           end
-        end)
-      end
+        end
+      )
 
       MultichainSearchDbMainExportQueue.run(export_data_2, nil)
 

@@ -70,6 +70,7 @@
 - Support multiple interop messages view on transaction page ([#12455](https://github.com/blockscout/blockscout/issues/12455))
 - Remove `is_self_destructed` field in `/api/v2/smart-contracts/{address_hash}` response ([#12239](https://github.com/blockscout/blockscout/issues/12239))
 - Set home directory for blockscout user ([#12337](https://github.com/blockscout/blockscout/issues/12337))
+- Migrate from HTTPoison to Tesla.Mint ([#12699](https://github.com/blockscout/blockscout/pull/12699))
 
 
 | Variable              | Description                                                                                                                                                      | Parameters                                                                                      |

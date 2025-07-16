@@ -459,6 +459,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       metadata_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
       bens_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
       old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
       chain_id = 1
       Application.put_env(:block_scout_web, :chain_id, chain_id)
       old_hide_scam_addresses = Application.get_env(:block_scout_web, :hide_scam_addresses)
@@ -470,6 +471,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
         Application.put_env(:block_scout_web, :chain_id, old_chain_id)
         Application.put_env(:block_scout_web, :hide_scam_addresses, old_hide_scam_addresses)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
@@ -773,12 +775,14 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       old_chain_id = Application.get_env(:block_scout_web, :chain_id)
       chain_id = 1
       Application.put_env(:block_scout_web, :chain_id, chain_id)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, metadata_envs)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
         Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
@@ -1127,9 +1131,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
@@ -1186,9 +1193,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
@@ -1227,9 +1237,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       transaction = insert(:transaction) |> with_block()
@@ -1293,9 +1306,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       transaction = insert(:transaction) |> with_block()
@@ -1361,9 +1377,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       address_hash = Address.checksum(insert(:address).hash)
@@ -1472,9 +1491,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       tac_response = """
@@ -1646,9 +1668,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
@@ -1870,12 +1895,14 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       old_chain_id = Application.get_env(:block_scout_web, :chain_id)
       chain_id = 1
       Application.put_env(:block_scout_web, :chain_id, chain_id)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, metadata_envs)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
         Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
@@ -2023,9 +2050,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
@@ -2079,9 +2109,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       transaction = insert(:transaction) |> with_block()
@@ -2145,9 +2178,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       transaction = insert(:transaction) |> with_block()
@@ -2213,9 +2249,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       address_hash = Address.checksum(insert(:address).hash)
@@ -2294,9 +2333,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       tac_response = """
@@ -2478,9 +2520,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         enabled: true
       )
 
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
 
       transaction =

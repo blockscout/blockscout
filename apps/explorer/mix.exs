@@ -115,7 +115,7 @@ defmodule Explorer.Mixfile do
       # `Timex.Duration` for `Explorer.Chain.Cache.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.14.1"},
+      {:tesla, "~> 1.14.2"},
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
@@ -134,7 +134,8 @@ defmodule Explorer.Mixfile do
       {:dns, "~> 2.4.0"},
       {:inet_cidr, "~> 1.0.0"},
       {:hammer, "~> 7.0"},
-      {:ton, "~> 0.5.0"}
+      {:ton, "~> 0.5.0"},
+      {:mint, "~> 1.0"}
     ]
   end
 

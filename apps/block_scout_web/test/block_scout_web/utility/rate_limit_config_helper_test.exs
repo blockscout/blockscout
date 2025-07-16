@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
 
       on_exit(fn ->
         Application.put_env(:block_scout_web, :api_rate_limit, original_config)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
         :persistent_term.put(:rate_limit_config, original_config_from_persistent_term)
       end)
     end
@@ -24,6 +25,9 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       }
 
       bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
       Application.put_env(:block_scout_web, :api_rate_limit, config_url: "http://localhost:#{bypass.port}/config")
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
@@ -48,6 +52,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
     test "falls back to local config when URL fetch fails" do
       bypass = Bypass.open()
       Application.put_env(:block_scout_web, :api_rate_limit, config_url: "http://localhost:#{bypass.port}/config")
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
         Plug.Conn.resp(conn, 500, "Internal Server Error")
@@ -73,6 +78,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
 
       bypass = Bypass.open()
       Application.put_env(:block_scout_web, :api_rate_limit, config_url: "http://localhost:#{bypass.port}/config")
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
@@ -106,6 +112,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
 
       bypass = Bypass.open()
       Application.put_env(:block_scout_web, :api_rate_limit, config_url: "http://localhost:#{bypass.port}/config")
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
@@ -127,6 +134,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
 
       bypass = Bypass.open()
       Application.put_env(:block_scout_web, :api_rate_limit, config_url: "http://localhost:#{bypass.port}/config")
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
@@ -152,6 +160,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
 
       bypass = Bypass.open()
       Application.put_env(:block_scout_web, :api_rate_limit, config_url: "http://localhost:#{bypass.port}/config")
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
@@ -182,6 +191,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
 
       bypass = Bypass.open()
       Application.put_env(:block_scout_web, :api_rate_limit, config_url: "http://localhost:#{bypass.port}/config")
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
@@ -228,6 +238,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
 
       bypass = Bypass.open()
       Application.put_env(:block_scout_web, :api_rate_limit, config_url: "http://localhost:#{bypass.port}/config")
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
         Plug.Conn.resp(conn, 200, Jason.encode!(config))
@@ -270,6 +281,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
 
       bypass = Bypass.open()
       Application.put_env(:block_scout_web, :api_rate_limit, config_url: "http://localhost:#{bypass.port}/config")
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
         Plug.Conn.resp(conn, 200, Jason.encode!(config))

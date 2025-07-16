@@ -5,7 +5,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   require Logger
 
   alias Explorer.Account.Identity
-  alias Explorer.{Account, Helper}
+  alias Explorer.{Account, Helper, HttpClient}
   alias Explorer.ThirdPartyIntegrations.Auth0.Internal
   alias Ueberauth.Auth
   alias Ueberauth.Strategy.Auth0.OAuth
@@ -42,8 +42,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       "grant_type" => "client_credentials"
     }
 
-    case HTTPoison.post("https://#{config[:domain]}/oauth/token", Jason.encode!(body), @json_content_type, []) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+    case HttpClient.post("https://#{config[:domain]}/oauth/token", Jason.encode!(body), @json_content_type) do
+      {:ok, %{status_code: 200, body: body}} ->
         case Jason.decode!(body) do
           %{"access_token" => token, "expires_in" => ttl} ->
             cache_token(token, ttl - 1)

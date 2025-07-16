@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelper do
   """
   require Logger
 
+  alias Explorer.HttpClient
   alias Utils.ConfigHelper
 
   @doc """
@@ -48,16 +49,16 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelper do
 
   defp download_config(url) when is_binary(url) do
     url
-    |> HTTPoison.get([], follow_redirect: true)
+    |> HttpClient.get([], follow_redirect: true)
     |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+      {:ok, %{status_code: 200, body: body}} ->
         decode_config(body)
 
-      {:ok, %HTTPoison.Response{status_code: status}} ->
+      {:ok, %{status_code: status}} ->
         Logger.error("Failed to fetch config from #{url}: #{status}")
         {:error, status}
 
-      {:error, %HTTPoison.Error{reason: reason}} ->
+      {:error, reason} ->
         {:error, reason}
     end
   end

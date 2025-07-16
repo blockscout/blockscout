@@ -20,6 +20,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
   ## Examples
 
+      iex(1)> Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
       iex(1)> Explorer.SmartContract.Solidity.CodeCompiler.run([
       ...>      name: "SimpleStorage",
       ...>      compiler_version: "v0.4.24+commit.e67f0147",
