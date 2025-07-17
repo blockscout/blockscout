@@ -1,6 +1,7 @@
 defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
   @moduledoc """
-  Tracks data pending for export to the Multichain Service database.
+  Tracks main blockchain data: block, transaction hashes, addresses with the metadata and block ranges,
+  pending for export to the Multichain Service database.
   """
 
   use Explorer.Schema
@@ -9,6 +10,8 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
   alias Explorer.Chain.Block.Range
 
   @required_attrs ~w(hash hash_type)a
+  @optional_attrs ~w(block_range retries_number)a
+  @allowed_attrs @optional_attrs ++ @required_attrs
 
   @primary_key false
   typed_schema "multichain_search_db_main_export_queue" do
@@ -31,7 +34,7 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
 
   def changeset(%__MODULE__{} = pending_ops, attrs) do
     pending_ops
-    |> cast(attrs, @required_attrs)
+    |> cast(attrs, @allowed_attrs)
     |> validate_required(@required_attrs)
   end
 

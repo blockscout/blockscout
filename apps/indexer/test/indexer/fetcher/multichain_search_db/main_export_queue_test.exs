@@ -3,7 +3,6 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
   use Explorer.DataCase
 
   import ExUnit.CaptureLog, only: [capture_log: 1]
-  import Mox
 
   alias Explorer.Chain.MultichainSearchDb.MainExportQueue
   alias Explorer.Chain.Block.Range
@@ -132,10 +131,10 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
       end)
 
       address_1 = insert(:address)
+      address_1_hash_string = to_string(address_1) |> String.downcase()
       address_2 = insert(:address)
       address_2_hash_string = to_string(address_2) |> String.downcase()
       address_3 = insert(:address)
-      address_3_hash_string = to_string(address_3) |> String.downcase()
       block = insert(:block, number: 1)
       block_number_string = to_string(block.number)
       block_hash_string = to_string(block.hash)
@@ -188,7 +187,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
                         is_verified_contract: false
                       },
                       %{
-                        hash: ^address_3_hash_string,
+                        hash: ^address_1_hash_string,
                         token_type: "UNSPECIFIED",
                         is_contract: false,
                         token_name: nil,
@@ -215,7 +214,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
 
       export_data_2 = [
         %{hash: address_2.hash.bytes, hash_type: :address, block_range: %Range{from: block.number, to: block.number}},
-        %{hash: address_3.hash.bytes, hash_type: :address, block_range: %Range{from: block.number, to: block.number}},
+        %{hash: address_1.hash.bytes, hash_type: :address, block_range: %Range{from: block.number, to: block.number}},
         %{hash: block.hash.bytes, hash_type: :block, block_range: %Range{from: block.number, to: block.number}},
         %{
           hash: transaction.hash.bytes,

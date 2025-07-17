@@ -166,7 +166,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueue do
 
   A map with prepared export data, including addresses, transactions, block ranges, and block hashes.
   """
-  @spec prepare_export_data([%{hash: binary, hash_type: atom, block_range: any()}]) :: %{
+  @spec prepare_export_data([%{hash: binary(), hash_type: atom(), block_range: any()}]) :: %{
           addresses: [Address.t()],
           transactions: [Transaction.t() | %{hash: String.t(), hash_type: String.t()}],
           block_ranges: [%{min_block_number: String.t(), max_block_number: String.t()}],

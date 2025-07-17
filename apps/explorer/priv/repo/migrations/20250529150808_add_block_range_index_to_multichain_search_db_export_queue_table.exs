@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddBlockRangeIndexToMultichainSearchDbExportQueueTable do
+defmodule Explorer.Repo.Migrations.AddBlockRangeIndexToMultichainSearchDbMainExportQueueTable do
   use Ecto.Migration
 
   def change do
