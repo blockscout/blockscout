@@ -56,6 +56,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Migrate from HTTPoison to Tesla.Mint ([#12699](https://github.com/blockscout/blockscout/pull/12699))
 - Merge adjacent missing block ranges ([#12778](https://github.com/blockscout/blockscout/issues/12778))
 - Optimize missing block ranges operations ([#12705](https://github.com/blockscout/blockscout/issues/12705))
 - Hold parity with Etherscan APIv1 for `getcontractcreation` and `getblocknobytime` endpoints ([#12721](https://github.com/blockscout/blockscout/issues/12721))
@@ -72,7 +73,6 @@
 - Support multiple interop messages view on transaction page ([#12455](https://github.com/blockscout/blockscout/issues/12455))
 - Remove `is_self_destructed` field in `/api/v2/smart-contracts/{address_hash}` response ([#12239](https://github.com/blockscout/blockscout/issues/12239))
 - Set home directory for blockscout user ([#12337](https://github.com/blockscout/blockscout/issues/12337))
-- Migrate from HTTPoison to Tesla.Mint ([#12699](https://github.com/blockscout/blockscout/pull/12699))
 
 
 | Variable              | Description                                                                                                                                                      | Parameters                                                                                      |
