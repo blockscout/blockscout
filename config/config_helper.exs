@@ -45,7 +45,11 @@ defmodule ConfigHelper do
   end
 
   @doc """
-  TODO
+  Returns the list of logger backends to be used by the application.
+
+  If the DISABLE_FILE_LOGGING environment variable is set to true, only base
+  logger backends (:console and LoggerJSON) are returned. Otherwise, returns
+  both base and file logger backends.
   """
   @spec logger_backends() :: list()
   def logger_backends do
