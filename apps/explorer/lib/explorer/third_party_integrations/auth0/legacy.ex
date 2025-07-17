@@ -144,7 +144,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Legacy do
 
   defp maybe_link_email(%{"email" => email, "user_id" => "email|" <> identity_id = user_id} = user) do
     case Internal.find_users(
-           ~s(email:"#{URI.encode(email)}" AND NOT user_id:"#{URI.encode(user_id)}"),
+           ~s(email:"#{email}" AND NOT user_id:"#{user_id}"),
            "Failed to find legacy users by email"
          ) do
       {:ok, []} ->
