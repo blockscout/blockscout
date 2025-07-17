@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Export balances to Multichain DB([#12726](https://github.com/blockscout/blockscout/pull/12726))
 - Add eip7702 authorization status fetcher ([#12451](https://github.com/blockscout/blockscout/issues/12451))
 - Add token1155tx token404tx api v1 endpoints ([#12720](https://github.com/blockscout/blockscout/issues/12720))
 - Async multichain data export ([#12490](https://github.com/blockscout/blockscout/issues/12490))
