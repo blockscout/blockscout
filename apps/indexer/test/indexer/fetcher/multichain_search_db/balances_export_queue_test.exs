@@ -5,7 +5,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
   import ExUnit.CaptureLog, only: [capture_log: 1]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.Wei
   alias Explorer.Chain.MultichainSearchDb.BalancesExportQueue
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.TestHelper
@@ -186,13 +186,16 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
       address_1 = insert(:address)
       address_2 = insert(:address)
       address_2_hash = address_2.hash
+      address_2_hash_string = to_string(address_2_hash)
       address_3 = insert(:address)
       address_3_hash = address_3.hash
+      address_3_hash_string = to_string(address_3_hash)
       address_4 = insert(:address)
       address_4_hash = address_4.hash
-      address_4_hash_string_checksummed = Address.checksum(address_4)
+      address_4_hash_string = to_string(address_4_hash)
       address_5 = insert(:address)
       address_5_hash = address_5.hash
+      address_5_hash_string = to_string(address_5_hash)
       token_address_1 = insert(:address)
       token_address_1_hash_string = to_string(token_address_1) |> String.downcase()
       token_address_2 = insert(:address)
@@ -235,7 +238,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
         times: 2,
         returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
           case Jason.decode(body) do
-            {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_4_hash_string_checksummed}]}} ->
+            {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_4_hash_string}]}} ->
               {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
 
             _ ->
@@ -255,26 +258,26 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
                   %{
                     address_coin_balances: [
                       %{
-                        address_hash: ^address_4_hash,
+                        address_hash: ^address_4_hash_string,
                         token_contract_address_hash_or_native: "native",
                         value: ^val3
                       }
                     ],
                     address_token_balances: [
                       %{
-                        address_hash: ^address_5_hash,
+                        address_hash: ^address_5_hash_string,
                         token_address_hash: ^token_address_1_hash_string,
                         value: ^val4,
                         token_id: nil
                       },
                       %{
-                        address_hash: ^address_3_hash,
+                        address_hash: ^address_3_hash_string,
                         token_address_hash: ^token_address_2_hash_string,
                         value: ^val2,
                         token_id: nil
                       },
                       %{
-                        address_hash: ^address_2_hash,
+                        address_hash: ^address_2_hash_string,
                         token_address_hash: ^token_address_1_hash_string,
                         value: ^val1,
                         token_id: nil
