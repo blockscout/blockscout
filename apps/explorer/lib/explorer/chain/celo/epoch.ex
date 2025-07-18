@@ -329,4 +329,39 @@ defmodule Explorer.Chain.Celo.Epoch do
       limit: 1
     )
   end
+
+  @doc """
+  Converts a block number range to epoch number range by finding epochs whose
+  end block numbers fall within the specified block range.
+
+  ## Parameters
+    - `from_block` (`integer()`): The starting block number.
+    - `to_block` (`integer()`): The ending block number.
+    - `options` (`Keyword.t()`): Options for selecting the repository.
+
+  ## Returns
+    - `{integer(), integer()} | nil`: A tuple containing the minimum and maximum
+      epoch numbers or nil.
+
+  ## Examples
+
+      iex> Explorer.Chain.Celo.Epoch.block_range_to_epoch_range(123400, 125000)
+      {42, 43}
+
+      iex> Explorer.Chain.Celo.Epoch.block_range_to_epoch_range(999999, 1000000)
+      nil
+  """
+  @spec block_range_to_epoch_range(integer(), integer(), Keyword.t()) :: {integer(), integer()} | nil
+  def block_range_to_epoch_range(from_block, to_block, options \\ []) do
+    query =
+      from(e in __MODULE__,
+        where: e.end_block_number >= ^from_block and e.end_block_number < ^to_block,
+        select: %{min: min(e.number), max: max(e.number)}
+      )
+
+    case Chain.select_repo(options).one(query) do
+      %{min: nil, max: nil} -> nil
+      %{min: min_epoch, max: max_epoch} -> {min_epoch, max_epoch}
+    end
+  end
 end

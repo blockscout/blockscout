@@ -318,9 +318,12 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, default_paging_options())
     sorting_options = Keyword.get(options, :sorting, [])
+    from_epoch = Keyword.get(options, :from_epoch)
+    to_epoch = Keyword.get(options, :to_epoch)
 
     address_hash
     |> address_hash_to_rewards_query()
+    |> where_epoch_number_in_period(from_epoch, to_epoch)
     |> join_token()
     |> SortingHelper.apply_sorting(sorting_options, default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
@@ -395,34 +398,19 @@ defmodule Explorer.Chain.Celo.ElectionReward do
 
   @doc """
   Custom filter for `ElectionReward`, inspired by
-  `Chain.where_block_number_in_period/3`.
-
-  TODO: Consider reusing `Chain.where_block_number_in_period/3`. This would
-  require storing or making `merge_select` of `block_number`.
+  `Explorer.Chain.Block.Reader.General.where_block_number_in_period/3`
   """
-  @spec where_block_number_in_period(
+  @spec where_epoch_number_in_period(
           Ecto.Query.t(),
-          String.t() | integer() | nil,
-          String.t() | integer() | nil
+          String.t() | integer(),
+          String.t() | integer()
         ) :: Ecto.Query.t()
-  def where_block_number_in_period(base_query, from_block, to_block)
-      when is_nil(from_block) and not is_nil(to_block),
-      do: where(base_query, [_, block], block.number <= ^to_block)
-
-  def where_block_number_in_period(base_query, from_block, to_block)
-      when not is_nil(from_block) and is_nil(to_block),
-      do: where(base_query, [_, block], block.number > ^from_block)
-
-  def where_block_number_in_period(base_query, from_block, to_block)
-      when is_nil(from_block) and is_nil(to_block),
-      do: base_query
-
-  def where_block_number_in_period(base_query, from_block, to_block),
+  def where_epoch_number_in_period(base_query, from_epoch, to_epoch),
     do:
       where(
         base_query,
-        [_, block],
-        block.number > ^from_block and
-          block.number <= ^to_block
+        [reward],
+        reward.epoch_number >= ^from_epoch and
+          reward.epoch_number < ^to_epoch
       )
 end
