@@ -212,11 +212,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/arbitrum-batch/:batch_number", V2.BlockController, :arbitrum_batch)
       end
 
-      if @chain_type == :celo do
-        get("/:block_hash_or_number/epoch", V2.BlockController, :celo_epoch)
-        get("/:block_hash_or_number/election-rewards/:reward_type", V2.BlockController, :celo_election_rewards)
-      end
-
       chain_scope :optimism do
         get("/optimism-batch/:batch_number", V2.BlockController, :optimism_batch)
       end
@@ -315,13 +310,11 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
-    scope "/celo" do
-      chain_scope :celo do
-        scope "/epochs" do
-          get("/", V2.CeloController, :epochs)
-          get("/:number", V2.CeloController, :epoch)
-          get("/:number/election-rewards/:type", V2.CeloController, :election_rewards)
-        end
+    chain_scope :celo do
+      scope "/celo/epochs" do
+        get("/", V2.CeloController, :epochs)
+        get("/:number", V2.CeloController, :epoch)
+        get("/:number/election-rewards/:type", V2.CeloController, :election_rewards)
       end
     end
 
@@ -532,10 +525,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
-
-    if @chain_type == :celo do
-      get("/celo-election-rewards-csv", V2.CsvExportController, :celo_election_rewards_csv)
-    end
 
     get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)
 
