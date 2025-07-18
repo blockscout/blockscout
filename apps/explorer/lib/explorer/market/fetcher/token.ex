@@ -9,6 +9,7 @@ defmodule Explorer.Market.Fetcher.Token do
   alias Explorer.Chain
   alias Explorer.Chain.Import.Runner.Tokens
   alias Explorer.Market.Source
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
 
   defstruct [
     :source,
@@ -60,7 +61,7 @@ defmodule Explorer.Market.Fetcher.Token do
       {:ok, source_state, fetch_finished?, tokens_data} ->
         case update_tokens(tokens_data) do
           {:ok, _imported} ->
-            :ok
+            enqueue_to_multichain(tokens_data)
 
           {:error, err} ->
             Logger.error("Error while importing tokens market data: #{inspect(err)}")
@@ -102,6 +103,20 @@ defmodule Explorer.Market.Fetcher.Token do
   @impl GenServer
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
     {:noreply, state}
+  end
+
+  defp enqueue_to_multichain(tokens_data) do
+    tokens_data
+    |> Enum.reduce(%{}, fn token, acc ->
+      data_for_multichain = MultichainSearch.prepare_token_market_data_for_queue(token)
+
+      if data_for_multichain == %{} do
+        acc
+      else
+        Map.put(acc, token.contract_address_hash.bytes, data_for_multichain)
+      end
+    end)
+    |> MultichainSearch.send_token_info_to_queue(:market_data)
   end
 
   defp update_tokens(token_params) do
