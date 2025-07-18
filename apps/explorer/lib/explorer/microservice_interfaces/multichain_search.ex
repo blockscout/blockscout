@@ -252,16 +252,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       }
 
     data
-    |> token_metadata_optional_field(token, :icon_url)
-    |> token_metadata_optional_field(metadata, :decimals)
-    |> token_metadata_optional_field(metadata, :total_supply)
-  end
-
-  defp token_metadata_optional_field(data, metadata, key) do
-    case Map.get(metadata, key) do
-      nil -> data
-      value -> Map.put(data, key, value)
-    end
+    |> token_optional_field(token, :icon_url)
+    |> token_optional_field(metadata, :decimals)
+    |> token_optional_field(metadata, :total_supply)
   end
 
   @spec prepare_token_total_supply_for_queue(non_neg_integer() | nil) :: %{:total_supply => non_neg_integer()} | nil
@@ -269,6 +262,24 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   def prepare_token_total_supply_for_queue(total_supply) do
     %{total_supply: total_supply}
+  end
+
+  @spec prepare_token_market_data_for_queue(map()) :: map()
+  def prepare_token_market_data_for_queue(token) do
+    %{}
+    |> token_optional_field(token, :fiat_value)
+    |> token_optional_field(token, :circulating_market_cap)
+    |> Enum.map(fn {key, value} ->
+      {key, Decimal.to_string(value, :normal)}
+    end)
+    |> Enum.into(%{})
+  end
+
+  defp token_optional_field(data, metadata, key) do
+    case Map.get(metadata, key) do
+      nil -> data
+      value -> Map.put(data, key, value)
+    end
   end
 
   @spec send_token_info_to_queue([%{binary() => map()}], :metadata | :total_supply | :counters | :market_data) ::
