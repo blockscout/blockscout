@@ -20,6 +20,9 @@
 
 ### 🐛 Bug Fixes
 
+- Sanitize empty block_ranges payload before sending HTTP request to Multichain service([#12816](https://github.com/blockscout/blockscout/pull/12816))
+- Disable Indexer.Fetcher.Optimism.Interop.MultichainExport for non-OP chains ([#12814](https://github.com/blockscout/blockscout/pull/12814))
+- Fix flaky test for exporting balances to Multichain DB ([#12813](https://github.com/blockscout/blockscout/pull/12813))
 - Filter out creation internal transaction with `index == 0` ([#12777](https://github.com/blockscout/blockscout/issues/12777))
 - Filter out scilla transactions in internal transactions fetcher ([#12793](https://github.com/blockscout/blockscout/issues/12793))
 - Change default ordering in `/api/v2/smart-contracts` ([#12767](https://github.com/blockscout/blockscout/issues/12767))
@@ -56,6 +59,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- migrate Auth0 to mint as well ([#12807](https://github.com/blockscout/blockscout/pull/12807))
 - Migrate from HTTPoison to Tesla.Mint ([#12699](https://github.com/blockscout/blockscout/pull/12699))
 - Merge adjacent missing block ranges ([#12778](https://github.com/blockscout/blockscout/issues/12778))
 - Optimize missing block ranges operations ([#12705](https://github.com/blockscout/blockscout/issues/12705))
