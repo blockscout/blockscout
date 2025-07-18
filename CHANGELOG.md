@@ -20,6 +20,7 @@
 
 ### 🐛 Bug Fixes
 
+- Remove token_id parameter from coin balance payload to Multichain service API endpoint ([#12817](https://github.com/blockscout/blockscout/pull/12817))
 - Sanitize empty block_ranges payload before sending HTTP request to Multichain service([#12816](https://github.com/blockscout/blockscout/pull/12816))
 - Disable Indexer.Fetcher.Optimism.Interop.MultichainExport for non-OP chains ([#12814](https://github.com/blockscout/blockscout/pull/12814))
 - Fix flaky test for exporting balances to Multichain DB ([#12813](https://github.com/blockscout/blockscout/pull/12813))
