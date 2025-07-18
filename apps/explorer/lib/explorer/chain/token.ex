@@ -33,6 +33,7 @@ defmodule Explorer.Chain.Token.Schema do
         field(:icon_url, :string)
         field(:is_verified_via_admin_panel, :boolean)
         field(:volume_24h, :decimal)
+        field(:transfer_count, :integer)
 
         belongs_to(
           :contract_address,
@@ -129,6 +130,7 @@ defmodule Explorer.Chain.Token do
   * `contract_address_hash` - Address hash foreign key
   * `holder_count` - the number of `t:Explorer.Chain.Address.t/0` (except the burn address) that have a
     `t:Explorer.Chain.CurrentTokenBalance.t/0` `value > 0`.  Can be `nil` when data not migrated.
+  * `transfer_count` - the number of token transfers for `t:Explorer.Chain.Address.t/0` token
   * `fiat_value` - The price of a token in a configured currency (USD by default).
   * `circulating_market_cap` - The circulating market cap of a token in a configured currency (USD by default).
   * `icon_url` - URL of the token's icon.
@@ -414,6 +416,24 @@ defmodule Explorer.Chain.Token do
       from(t in __MODULE__,
         where: t.contract_address_hash == ^contract_address_hash,
         update: [set: [holder_count: ^holder_count, updated_at: ^now]]
+      ),
+      [],
+      timeout: @timeout
+    )
+  end
+
+  @doc """
+    Updates token_transfer_count for a given contract_address_hash.
+    It used by Explorer.Chain.Cache.Counters.TokenTransfersCount module.
+  """
+  @spec update_token_transfer_count(Hash.Address.t(), integer()) :: {non_neg_integer(), nil}
+  def update_token_transfer_count(contract_address_hash, transfer_count) when not is_nil(transfer_count) do
+    now = DateTime.utc_now()
+
+    Repo.update_all(
+      from(t in __MODULE__,
+        where: t.contract_address_hash == ^contract_address_hash,
+        update: [set: [transfer_count: ^transfer_count, updated_at: ^now]]
       ),
       [],
       timeout: @timeout

@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Cache.Counters.TokenHoldersCount do
     put_into_db_cache(address_hash, new_data)
   end
 
-  def fetch_count_from_cache(address_hash) do
+  defp fetch_count_from_cache(address_hash) do
     address_hash_string = to_string(address_hash)
     key = "hash_#{address_hash_string}"
 
@@ -85,12 +85,12 @@ defmodule Explorer.Chain.Cache.Counters.TokenHoldersCount do
     Helper.fetch_from_ets_cache(cache_name, key)
   end
 
-  def fetch_from_db_cache(address_hash) do
+  defp fetch_from_db_cache(address_hash) do
     token = Token.get_by_contract_address_hash(address_hash, @api_true)
     token.holder_count || 0
   end
 
-  def put_into_db_cache(address_hash, count) do
+  defp put_into_db_cache(address_hash, count) do
     Token.update_token_holder_count(address_hash, count)
   end
 
