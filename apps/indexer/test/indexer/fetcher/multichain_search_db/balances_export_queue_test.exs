@@ -5,7 +5,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
   import ExUnit.CaptureLog, only: [capture_log: 1]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.Wei
   alias Explorer.Chain.MultichainSearchDb.BalancesExportQueue
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.TestHelper
@@ -190,7 +190,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
       address_3_hash = address_3.hash
       address_4 = insert(:address)
       address_4_hash = address_4.hash
-      address_4_hash_string_checksummed = Address.checksum(address_4)
+      address_4_hash_string = to_string(address_4_hash)
       address_5 = insert(:address)
       address_5_hash = address_5.hash
       token_address_1 = insert(:address)
@@ -235,7 +235,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
         times: 2,
         returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
           case Jason.decode(body) do
-            {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_4_hash_string_checksummed}]}} ->
+            {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_4_hash_string}]}} ->
               {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
 
             _ ->
