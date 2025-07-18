@@ -401,7 +401,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           %{
             address_hash: Hash.to_string(address_coin_balance.address_hash),
             token_contract_address_hash_or_native: "native",
-            token_id: nil,
             value: address_coin_balance.value
           }
         end)
