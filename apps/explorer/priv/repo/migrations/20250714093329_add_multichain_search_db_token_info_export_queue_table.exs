@@ -15,5 +15,9 @@ defmodule Explorer.Repo.Migrations.AddMultichainSearchDbTokenInfoExportQueueTabl
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
+
+    alter table(:tokens) do
+      add(:transfer_count, :integer, null: true)
+    end
   end
 end
