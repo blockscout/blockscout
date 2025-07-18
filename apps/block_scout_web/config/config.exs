@@ -118,6 +118,8 @@ config :ueberauth, Ueberauth,
     }
   ]
 
+config :oauth2, adapter: Tesla.Adapter.Mint
+
 config :tesla, adapter: Tesla.Adapter.Mint
 
 # Import environment specific config. This must remain at the bottom
