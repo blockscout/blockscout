@@ -226,6 +226,16 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueue do
     pre_prepared_export_data
     |> Map.put(:addresses, addresses)
     |> Map.drop([:address_hashes])
+    |> (&if(
+          Map.get(&1, :block_ranges) == [
+            %{
+              max_block_number: nil,
+              min_block_number: nil
+            }
+          ],
+          do: Map.drop(&1, [:block_ranges]),
+          else: &1
+        )).()
   end
 
   defp defaults do
