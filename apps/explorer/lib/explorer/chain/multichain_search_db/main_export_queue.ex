@@ -6,8 +6,8 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
 
   use Explorer.Schema
   import Ecto.Query
-  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.Range
+  alias Explorer.Repo
 
   @required_attrs ~w(hash hash_type)a
   @optional_attrs ~w(block_range retries_number)a
@@ -53,8 +53,17 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
       block_range: export.block_range
     })
     |> order_by([export], fragment("upper(?) DESC", export.block_range))
-    |> Chain.add_fetcher_limit(limited?)
+    |> add_main_queue_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
+  end
+
+  defp add_main_queue_fetcher_limit(query, false), do: query
+
+  defp add_main_queue_fetcher_limit(query, true) do
+    main_queue_fetcher_limit =
+      Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue)[:init_limit]
+
+    limit(query, ^main_queue_fetcher_limit)
   end
 
   @doc """

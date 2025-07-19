@@ -446,6 +446,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
               value: address_token_balance.value
             }
           end)
+          |> Enum.reject(&(is_nil(&1.value) && is_nil(&1.token_id)))
 
         true ->
           []

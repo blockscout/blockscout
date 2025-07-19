@@ -287,7 +287,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
         end)
 
       assert Repo.aggregate(BalancesExportQueue, :count, :id) == 4
-      assert log =~ "Batch export retry to the Multichain Search DB failed"
+      assert log =~ "Batch balances export retry to the Multichain Search DB failed"
 
       export_data_2 = [
         %{
