@@ -210,7 +210,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
 
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 4
 
-      assert log =~ "Batch export retry to the Multichain Search DB failed"
+      assert log =~ "Batch main export retry to the Multichain Search DB failed"
 
       export_data_2 = [
         %{hash: address_2.hash.bytes, hash_type: :address, block_range: %Range{from: block.number, to: block.number}},

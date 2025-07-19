@@ -6,7 +6,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
   use Explorer.Schema
   import Ecto.Query
   alias Ecto.Multi
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
   alias Explorer.Chain.{Hash, Wei}
 
   @required_attrs ~w(address_hash token_contract_address_hash_or_native)a
@@ -46,13 +46,13 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
 
     - `{:ok, accumulator}`: A tuple containing `:ok` and the final accumulator after processing the stream.
   """
-  @spec stream_multichain_db_balances_batch_to_retry_export(
+  @spec stream_multichain_db_balances_batch(
           initial :: accumulator,
           reducer :: (entry :: map(), accumulator -> accumulator),
           limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_multichain_db_balances_batch_to_retry_export(initial, reducer, limited? \\ false)
+  def stream_multichain_db_balances_batch(initial, reducer, limited? \\ false)
       when is_function(reducer, 2) do
     __MODULE__
     |> select([export], %{
@@ -61,8 +61,17 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
       value: export.value,
       token_id: export.token_id
     })
-    |> Chain.add_fetcher_limit(limited?)
+    |> add_balances_queue_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
+  end
+
+  defp add_balances_queue_fetcher_limit(query, false), do: query
+
+  defp add_balances_queue_fetcher_limit(query, true) do
+    balances_queue_fetcher_limit =
+      Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue)[:init_limit]
+
+    limit(query, ^balances_queue_fetcher_limit)
   end
 
   @doc """
