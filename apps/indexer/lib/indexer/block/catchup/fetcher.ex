@@ -254,7 +254,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   end
 
   defp timeout_exception?(%{message: message}) when is_binary(message) do
-    String.match?(message, ~r/due to a timeout/)
+    String.match?(message, ~r/due to a timeout/) or String.match?(message, ~r/due to user request/)
   end
 
   defp timeout_exception?(_exception), do: false
