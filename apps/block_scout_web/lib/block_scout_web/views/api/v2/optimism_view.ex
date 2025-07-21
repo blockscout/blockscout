@@ -5,9 +5,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Block, Transaction}
-  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
+  alias Explorer.Chain.Optimism.{DisputeGame, FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
 
   @doc """
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
@@ -121,7 +120,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               2 -> "Defender wins"
             end
 
-          [l2_block_number] = ExplorerHelper.decode_data(g.extra_data, [{:uint, 256}])
+          l2_block_number = DisputeGame.l2_block_number_from_extra_data(g.extra_data.bytes)
 
           %{
             "index" => g.index,
