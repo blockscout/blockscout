@@ -95,8 +95,10 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
     ## Returns
     - L2 block number of the dispute game.
   """
-  @spec l2_block_number_from_extra_data(binary()) :: non_neg_integer()
-  def l2_block_number_from_extra_data(extra_data) do
+  @spec l2_block_number_from_extra_data(Data.t() | nil) :: non_neg_integer()
+  def l2_block_number_from_extra_data(nil), do: 0
+
+  def l2_block_number_from_extra_data(%Data{bytes: extra_data}) do
     current_chain_id =
       case ChainId.get_id() do
         nil -> Application.get_env(:block_scout_web, :chain_id)

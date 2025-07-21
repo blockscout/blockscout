@@ -120,7 +120,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               2 -> "Defender wins"
             end
 
-          l2_block_number = DisputeGame.l2_block_number_from_extra_data(g.extra_data.bytes)
+          l2_block_number = DisputeGame.l2_block_number_from_extra_data(g.extra_data)
 
           %{
             "index" => g.index,
