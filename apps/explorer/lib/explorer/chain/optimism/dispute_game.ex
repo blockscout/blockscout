@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
   @required_attrs ~w(index game_type address_hash created_at)a
   @optional_attrs ~w(extra_data resolved_at status)a
 
-  @chain_id_bob_mainnet 60808
+  @chain_id_bob_mainnet 60_808
   @chain_id_bob_sepolia 808_813
 
   @typedoc """
