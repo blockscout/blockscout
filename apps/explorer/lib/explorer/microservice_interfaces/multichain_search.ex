@@ -275,6 +275,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     |> Enum.into(%{})
   end
 
+  @spec prepare_token_counters_for_queue(non_neg_integer(), non_neg_integer()) :: %{
+          :transfers_count => non_neg_integer(),
+          :holders_count => non_neg_integer()
+        }
+  def prepare_token_counters_for_queue(transfer_count, holder_count) do
+    %{transfers_count: transfer_count, holders_count: holder_count}
+  end
+
   defp token_optional_field(data, metadata, key) do
     case Map.get(metadata, key) do
       nil -> data

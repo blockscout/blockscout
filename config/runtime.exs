@@ -912,6 +912,7 @@ trace_block_ranges =
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
   metadata_updater_milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_METADATA_UPDATE_INTERVAL", "48h"),
+  token_counters_updater_milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_COUNTERS_UPDATE_INTERVAL", "3h"),
   block_ranges: block_ranges,
   first_block: first_block,
   last_block: last_block,
