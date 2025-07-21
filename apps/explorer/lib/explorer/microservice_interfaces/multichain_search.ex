@@ -446,11 +446,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
               value: address_token_balance.value
             }
           end)
-          |> Enum.reject(&(is_nil(&1.value) && is_nil(&1.token_id)))
 
         true ->
           []
       end
+
+    sanitized_address_token_balances =
+      address_token_balances
+      |> Enum.reject(&(is_nil(&1.value) && is_nil(&1.token_id)))
 
     api_key = api_key()
     chain_id = ChainId.get_id()
@@ -469,7 +472,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     prepare_chunk(indexed_addresses_chunks, indexed_address_coin_balances_chunks, base_data_chunk, %{
       block_transaction_hashes: block_transaction_hashes,
       block_ranges: block_ranges,
-      address_token_balances: address_token_balances
+      address_token_balances: sanitized_address_token_balances
     })
   end
 
