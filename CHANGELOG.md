@@ -20,6 +20,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix: Reject empty token_id and value in export of token balances to the Multichain DB ([#12829](https://github.com/blockscout/blockscout/pull/12829))
 - Fix multichain export queues processing ([#12822](https://github.com/blockscout/blockscout/pull/12822))
 - Remove token_id parameter from coin balance payload to Multichain service API endpoint ([#12817](https://github.com/blockscout/blockscout/pull/12817))
 - Sanitize empty block_ranges payload before sending HTTP request to Multichain service([#12816](https://github.com/blockscout/blockscout/pull/12816))
