@@ -172,7 +172,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
     proxy_type = implementations && implementations.proxy_type
 
-    minimal_proxy? = proxy_type in ["eip1167", "clone_with_immutable_arguments", "erc7760"]
+    minimal_proxy? = proxy_type in [:eip1167, :eip7702, :clone_with_immutable_arguments, :erc7760]
 
     target_contract =
       if smart_contract_verified, do: smart_contract, else: bytecode_twin_contract
@@ -195,6 +195,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_verified_via_verifier_alliance" => smart_contract.verified_via_verifier_alliance,
       "proxy_type" => proxy_type,
       "implementations" => Proxy.proxy_object_info(implementations),
+      "alternative_implementations" => Proxy.alternative_implementations_info(implementations),
       "sourcify_repo_url" =>
         if(smart_contract_verified_via_sourcify,
           do: AddressContractView.sourcify_repo_url(address.hash, smart_contract.partially_verified)
@@ -237,7 +238,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_smart_contract(%Address{proxy_implementations: implementations} = address, _conn) do
     %{
       "proxy_type" => implementations && implementations.proxy_type,
-      "implementations" => Proxy.proxy_object_info(implementations)
+      "implementations" => Proxy.proxy_object_info(implementations),
+      "alternative_implementations" => Proxy.alternative_implementations_info(implementations)
     }
     |> Map.merge(bytecode_info(address))
   end

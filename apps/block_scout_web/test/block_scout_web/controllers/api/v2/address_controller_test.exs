@@ -400,14 +400,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       "0x" <> owner_address_hash_string_without_0x = to_string(owner_address.hash)
 
-      proxy_smart_contract =
-        insert(:smart_contract,
-          abi: ResolvedDelegateProxy.resolved_delegate_proxy_abi(),
-          constructor_arguments:
-            "0x000000000000000000000000" <>
-              address_manager_address_hash_string_without_0x <>
-              "0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000001a4f564d5f4c3143726f7373446f6d61696e4d657373656e676572000000000000"
-        )
+      proxy_smart_contract = insert(:smart_contract)
 
       transaction =
         insert(:transaction,

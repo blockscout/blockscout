@@ -613,8 +613,8 @@ defmodule Explorer.Chain.Address do
     - `nil` if the contract code hasn't been loaded
   """
   @spec eoa_with_code?(any()) :: boolean() | nil
-  def eoa_with_code?(%__MODULE__{contract_code: %Data{bytes: code}}) do
-    EIP7702.get_delegate_address(code) != nil
+  def eoa_with_code?(%__MODULE__{} = address) do
+    !is_nil(EIP7702.match_bytecode_and_resolve_implementation(address))
   end
 
   def eoa_with_code?(%NotLoaded{}), do: nil

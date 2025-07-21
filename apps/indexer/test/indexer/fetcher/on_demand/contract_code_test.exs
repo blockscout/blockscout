@@ -260,11 +260,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
         if Data.empty?(code) do
           assert is_nil(proxy_implementations)
         else
-          implementations = [EIP7702.get_delegate_address(code.bytes) |> Hash.Address.cast() |> elem(1)]
-
           assert proxy_implementations.proxy_address_hash == address_hash
           assert proxy_implementations.proxy_type == :eip7702
-          assert proxy_implementations.address_hashes == implementations
+          assert proxy_implementations.address_hashes == [EIP7702.match_bytecode_and_resolve_implementation(address)]
           assert proxy_implementations.names == [nil]
         end
       end)
