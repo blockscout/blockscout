@@ -1,5 +1,11 @@
 # Changelog
 
+## 8.1.2
+
+### ⚙️ Miscellaneous Tasks
+
+- Parsing L2 block number of OP Dispute Game on BOB chain ([#12831](https://github.com/blockscout/blockscout/pull/12831))
+
 ## 8.1.1
 
 ### 🐛 Bug Fixes
