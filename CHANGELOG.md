@@ -114,6 +114,11 @@
 | `CELO_VALIDATORS_CONTRACT`          | The address[^1] of the `Validators` core contract. Implemented in [#12373](https://github.com/blockscout/blockscout/pull/12373).             | <p>Version: v9.0.0+<br>Default: (empty)<br>Applications: Indexer</p> |
 | `CELO_EPOCH_MANAGER_CONTRACT`       | The address[^1] of the `EpochManager` core contract. Implemented in [#12373](https://github.com/blockscout/blockscout/pull/12373).           | <p>Version: v9.0.0+<br>Default: (empty)<br>Applications: Indexer</p> |
 
+## 8.1.2
+
+### ⚙️ Miscellaneous Tasks
+
+- Parsing L2 block number of OP Dispute Game on BOB chain ([#12831](https://github.com/blockscout/blockscout/pull/12831))
 
 ## 8.1.1
 
