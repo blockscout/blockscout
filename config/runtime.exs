@@ -1006,6 +1006,12 @@ config :indexer, Indexer.Fetcher.CoinBalance.Realtime.Supervisor, disabled?: dis
 config :indexer, Indexer.Fetcher.TokenUpdater.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
 
+config :indexer, Indexer.Fetcher.TokenTotalSupplyUpdater.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
+
+config :indexer, Indexer.Fetcher.TokenCountersUpdater.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
+
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_EMPTY_BLOCKS_SANITIZER")
 
