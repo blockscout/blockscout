@@ -1,4 +1,4 @@
-name: Blockscout
+name: Generate Swagger
 
 on:
   push:
