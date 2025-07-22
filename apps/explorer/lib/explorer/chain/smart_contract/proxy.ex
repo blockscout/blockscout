@@ -12,6 +12,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   alias Explorer.Chain.{Address, Data, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Chain.SmartContract.Proxy.ResolverBehaviour
 
   alias Explorer.Chain.SmartContract.Proxy.{
     BasicImplementationGetter,
@@ -29,8 +30,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   import Explorer.Chain,
     only: [
       join_associations: 2,
-      select_repo: 1,
-      string_to_address_hash: 1
+      select_repo: 1
     ]
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
@@ -40,33 +40,30 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       save_implementation_data: 2
     ]
 
-  @bytecode_matching_proxy_types [
+  @proxy_resolvers [
+    # bytecode-matching proxy types
     {EIP1167, :eip1167},
     {EIP7702, :eip7702},
+    {MasterCopy, :master_copy},
+    {ERC7760, :erc7760},
     {CloneWithImmutableArguments, :clone_with_immutable_arguments},
     {ResolvedDelegateProxy, :resolved_delegate_proxy},
-    {MasterCopy, :master_copy},
-    {ERC7760, :erc7760}
-  ]
 
-  @generic_proxy_types [
+    # generic proxy types
     {EIP1967, :eip1967},
-    {EIP1967, :eip1967_oz},
-    {EIP1967, :eip1967_beacon},
     {EIP1822, :eip1822},
+    {EIP1967, :eip1967_beacon},
     {EIP2535, :eip2535},
-    {BasicImplementationGetter, :implementation},
-    {BasicImplementationGetter, :get_implementation},
-    {BasicImplementationGetter, :comptroller_implementation}
+    {EIP1967, :eip1967_oz},
+    {BasicImplementationGetter, :basic_implementation},
+    {BasicImplementationGetter, :basic_get_implementation},
+    {BasicImplementationGetter, :comptroller}
   ]
 
   @zero_address_hash_string "0x0000000000000000000000000000000000000000"
   @zero_bytes32_string "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   @type options :: [{:api?, true | false}]
-
-  @type prefetch_requirement :: {:storage | :call, String.t()}
-  @type prefetched_values :: %{prefetch_requirement() => String.t() | nil}
 
   @spec zero_hex_string?(any()) :: boolean()
   defp zero_hex_string?(term), do: term in ["0x", "0x0", @zero_address_hash_string, @zero_bytes32_string]
@@ -128,90 +125,172 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   @doc """
   Tries to get implementation address from known proxy patterns
+
+  ## Parameters
+  - `proxy_address`: The address to try to detect implementations for.
+
+  ## Returns
+  - Pre-filled `proxy_implementations` if the result should be saved to the database.
+  - `:error` if the implementation detection failed, nothing should be saved to the database.
+  - `:empty` if the address is empty or not a smart contract, nothing should be saved to the database.
   """
   @spec try_to_get_implementation_from_known_proxy_patterns(Address.t()) ::
           %{
             proxy_address_hash: Hash.Address.t(),
             address_hashes: [Hash.Address.t()],
             proxy_type: atom() | nil,
-            alternative_proxy_types: [atom()] | nil,
-            alternative_address_hashes: [[Hash.Address.t()]] | nil
+            conflicting_proxy_types: [atom()] | nil,
+            conflicting_address_hashes: [[Hash.Address.t()]] | nil
           }
           | :error
           | :empty
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def try_to_get_implementation_from_known_proxy_patterns(proxy_address) do
     with true <- Address.smart_contract?(proxy_address),
-         bytecode_matching_result =
-           Enum.find_value(@bytecode_matching_proxy_types, fn {module, proxy_type} ->
-             case module.match_bytecode_and_resolve_implementation(proxy_address) do
-               nil ->
-                 nil
+         # first, we try to immediately resolve proxy types by matching bytecodes,
+         # while collecting fetch requirements for all other proxy types
+         resolvers_and_requirements when is_list(resolvers_and_requirements) <-
+           Enum.reduce_while(@proxy_resolvers, [], fn {module, proxy_type}, acc ->
+             case module.quick_resolve_implementations(proxy_address, proxy_type) do
+               {:ok, address_hashes} ->
+                 filtered_address_hashes = address_hashes |> Enum.reject(&(&1 == proxy_address.hash))
+
+                 if Enum.empty?(filtered_address_hashes) do
+                   {:halt,
+                    %{
+                      proxy_address_hash: proxy_address.hash,
+                      address_hashes: []
+                    }}
+                 else
+                   {:halt,
+                    %{
+                      proxy_address_hash: proxy_address.hash,
+                      address_hashes: filtered_address_hashes,
+                      proxy_type: proxy_type
+                    }}
+                 end
+
+               {:cont, requirements} ->
+                 {:cont, [{{module, proxy_type}, requirements} | acc]}
 
                :error ->
-                 :error
+                 Logger.error(
+                   "Failed to quick resolve implementations for proxy address #{proxy_address.hash} and proxy type #{proxy_type}"
+                 )
 
-               implementation_address_hash ->
-                 %{
-                   proxy_address_hash: proxy_address.hash,
-                   address_hashes: [implementation_address_hash],
-                   proxy_type: proxy_type,
-                   alternative_proxy_types: nil,
-                   alternative_address_hashes: nil
-                 }
+                 {:halt, :error}
+
+               _ ->
+                 {:cont, acc}
              end
            end),
-         {:bytecode_matching_result, nil} <- {:bytecode_matching_result, bytecode_matching_result},
-         {:ok, prefetched_values} <- prefetch_values(proxy_address),
-         [{main_proxy_type, main_implementation_address_hashes} | rest] <-
-           @generic_proxy_types
-           |> Enum.map(fn {module, proxy_type} ->
-             case module.resolve_implementations(proxy_address, proxy_type, prefetched_values) do
-               nil ->
-                 nil
+         # didn't match any known bytecode pattern, proceed with fetching required values
+         {:ok, resolvers_and_fetched_values} <- prefetch_values(resolvers_and_requirements, proxy_address.hash),
+         generic_results when is_list(generic_results) <-
+           Enum.reduce_while(resolvers_and_fetched_values, [], fn {{module, proxy_type}, values}, acc ->
+             case module.resolve_implementations(proxy_address, proxy_type, values) do
+               {:ok, implementation_address_hashes} ->
+                 filtered_address_hashes = implementation_address_hashes |> Enum.reject(&(&1 == proxy_address.hash))
+
+                 # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+                 if Enum.empty?(filtered_address_hashes) do
+                   {:cont, acc}
+                 else
+                   {:cont, [{proxy_type, filtered_address_hashes} | acc]}
+                 end
 
                :error ->
-                 Logger.warning(
+                 Logger.error(
                    "Failed to resolve implementations for proxy address #{proxy_address.hash} and proxy type #{proxy_type}"
                  )
 
-                 nil
+                 {:halt, :error}
 
-               implementation_address_hashes ->
-                 {proxy_type, implementation_address_hashes}
+               _ ->
+                 {:cont, acc}
              end
-           end)
-           |> Enum.reject(&is_nil/1) do
-      main_implementation_address_hashes_sorted = main_implementation_address_hashes |> Enum.sort()
+           end) do
+      {address_hashes, proxy_type, conflicting_proxy_types, conflicting_address_hashes} =
+        case generic_results do
+          [] ->
+            {[], nil, nil, nil}
 
-      {alternative_proxy_types, alternative_address_hashes} =
-        if rest |> Enum.all?(&(&1 |> elem(1) |> Enum.sort() == main_implementation_address_hashes_sorted)) do
-          {nil, nil}
-        else
-          Enum.unzip(rest)
+          [{proxy_type, address_hashes}] ->
+            {address_hashes, proxy_type, nil, nil}
+
+          # order of proxy resolvers was reversed in both reduce_while, now it's the correct order
+          [{proxy_type, address_hashes} | rest] ->
+            address_hashes_sorted = address_hashes |> Enum.sort()
+
+            if Enum.all?(rest, &(&1 |> elem(1) |> Enum.sort() == address_hashes_sorted)) do
+              {address_hashes, proxy_type, nil, nil}
+            else
+              {conflicting_proxy_types, conflicting_address_hashes} = Enum.unzip(rest)
+              {address_hashes, proxy_type, conflicting_proxy_types, conflicting_address_hashes}
+            end
         end
 
       %{
         proxy_address_hash: proxy_address.hash,
-        address_hashes: main_implementation_address_hashes,
-        proxy_type: main_proxy_type,
-        alternative_proxy_types: alternative_proxy_types,
-        alternative_address_hashes: alternative_address_hashes
+        address_hashes: address_hashes,
+        proxy_type: proxy_type,
+        conflicting_proxy_types: conflicting_proxy_types,
+        conflicting_address_hashes: conflicting_address_hashes
       }
     else
-      {:bytecode_matching_result, %{} = result} -> result
+      %{proxy_type: _} = result -> result
       :error -> :error
       _ -> :empty
     end
   end
 
-  @spec prefetch_values(Address.t()) :: {:ok, prefetched_values()} | :error
-  defp prefetch_values(proxy_address) do
-    @generic_proxy_types
-    |> Enum.flat_map(fn {module, proxy_type} -> module.get_prefetch_requirements(proxy_address, proxy_type) end)
-    |> fetch_values(proxy_address.hash)
+  @doc """
+  Fetches all required eth_getStorageAt and eth_call results for given proxy resolvers and requirements.
+
+  ## Parameters
+  - `resolvers_and_requirements`: The list of proxy resolvers and their requirements.
+  - `address_hash`: The address hash to fetch the values for.
+
+  ## Returns
+  - `{:ok, [{any(), ResolverBehaviour.fetched_values()}]}` if all of the values are fetched successfully,
+    map can contain nil values for failed/reverted eth_call requests.
+  - `:error` if the prefetching failed.
+  """
+  @spec prefetch_values([{any(), ResolverBehaviour.fetch_requirements()}], Hash.Address.t()) ::
+          {:ok, [{any(), ResolverBehaviour.fetched_values()}]} | :error
+  def prefetch_values(resolvers_and_requirements, address_hash) do
+    with {:ok, fetched_values} <-
+           resolvers_and_requirements
+           |> Enum.flat_map(fn {_, reqs} -> Map.values(reqs) end)
+           |> fetch_values(address_hash),
+         resolvers_and_fetched_values when is_list(resolvers_and_fetched_values) <-
+           Enum.reduce_while(resolvers_and_requirements, [], fn {resolver, reqs}, acc ->
+             values = Enum.into(reqs, %{}, fn {name, req} -> {name, Map.get(fetched_values, req, :error)} end)
+
+             if Enum.any?(values, &(elem(&1, 1) == :error)) do
+               {:halt, :error}
+             else
+               {:cont, [{resolver, values} | acc]}
+             end
+           end) do
+      {:ok, Enum.reverse(resolvers_and_fetched_values)}
+    end
   end
 
-  @spec fetch_values([prefetch_requirement()], Hash.Address.t()) :: {:ok, prefetched_values()} | :error
+  @doc """
+  Fetches values for given eth_getStorageAt and eth_call requirements for a given address hash.
+
+  ## Parameters
+  - `reqs`: The list of eth_getStorageAt and eth_call requirements to fetch the values for.
+  - `address_hash`: The address hash to fetch the values for.
+
+  ## Returns
+  - `{:ok, prefetched_values()}` if all of the values are fetched successfully,
+    map can contain nil values for failed/reverted eth_call requests.
+  - `:error` if the prefetching failed.
+  """
+  @spec fetch_values([ResolverBehaviour.fetch_requirement()], Hash.Address.t()) ::
+          {:ok, %{ResolverBehaviour.fetch_requirement() => String.t() | nil}} | :error
   def fetch_values(reqs, address_hash) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
@@ -222,12 +301,15 @@ defmodule Explorer.Chain.SmartContract.Proxy do
            |> Enum.map(fn {index, req} -> encode_request(req, address_hash, index) end)
            |> json_rpc(json_rpc_named_arguments),
          fetched_values when is_map(fetched_values) <-
-           Enum.reduce_while(responses, %{}, fn
-             %{id: id} = result, acc ->
-               {:cont, Map.put(acc, id_to_params[id], Map.get(result, :result))}
-
-             _, _ ->
-               {:halt, :error}
+           Enum.reduce_while(responses, %{}, fn result, acc ->
+             with %{id: id} <- result,
+                  {:ok, req} = Map.fetch(id_to_params, id),
+                  {:ok, value} <- handle_response(req, result) do
+               {:cont, Map.put(acc, req, value)}
+             else
+               _ ->
+                 {:halt, :error}
+             end
            end) do
       {:ok, fetched_values}
     else
@@ -235,21 +317,27 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end
   end
 
-  @spec fetch_value(prefetch_requirement(), Hash.Address.t(), prefetched_values() | nil) ::
-          {:ok, String.t() | nil} | :error
-  def fetch_value(req, address_hash, prefetch_values \\ nil)
+  @doc """
+  Fetches value for the given eth_getStorageAt or eth_call request for a given address hash.
 
-  def fetch_value(req, address_hash, nil) do
+  The eth_call request is allowed to fail/revert, nil will be returned in such case.
+
+  ## Parameters
+  - `req`: The eth_getStorageAt or eth_call request to fetch the value for.
+  - `address_hash`: The address hash to fetch the value for.
+
+  ## Returns
+  - `{:ok, String.t() | nil}` if the value is fetched successfully.
+  - `:error` if the fetch request failed.
+  """
+  @spec fetch_value(ResolverBehaviour.fetch_requirement(), Hash.Address.t()) :: {:ok, String.t() | nil} | :error
+  def fetch_value(req, address_hash) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     case req |> encode_request(address_hash, 0) |> json_rpc(json_rpc_named_arguments) do
-      {:ok, response} -> {:ok, response}
-      _ -> :error
+      {:ok, response} -> handle_response(req, %{result: response})
+      {:error, error} -> handle_response(req, %{error: error})
     end
-  end
-
-  def fetch_value(req, _address_hash, prefetch_values) do
-    prefetch_values |> Map.fetch(req)
   end
 
   defp encode_request({:storage, value}, address_hash, index),
@@ -257,6 +345,12 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   defp encode_request({:call, value}, address_hash, index),
     do: Contract.eth_call_request(value, address_hash, index, nil, nil)
+
+  defp handle_response({:storage, _}, %{result: result}) when is_binary(result), do: {:ok, result}
+  defp handle_response({:call, _}, %{result: result}) when is_binary(result), do: {:ok, result}
+  # TODO: it'll be better to return nil only for the revert-related errors
+  defp handle_response({:call, _}, %{error: _}), do: {:ok, nil}
+  defp handle_response(_, _), do: :error
 
   @doc """
   Returns combined ABI from proxy and implementation smart-contracts
@@ -326,30 +420,12 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
     implementation_addresses
     |> Enum.zip(implementation_names)
-    |> Enum.reduce([], fn {address, name}, acc ->
-      case address do
-        %Hash{} = address_hash ->
-          [
-            %{
-              "address_hash" => Address.checksum(address_hash),
-              "name" => name
-            }
-            |> chain_type_fields(implementations_info)
-            | acc
-          ]
-
-        _ ->
-          with {:ok, address_hash} <- string_to_address_hash(address),
-               checksummed_address <- Address.checksum(address_hash) do
-            [
-              %{"address_hash" => checksummed_address, "name" => name}
-              |> chain_type_fields(implementations_info)
-              | acc
-            ]
-          else
-            _ -> acc
-          end
-      end
+    |> Enum.map(fn {address_hash, name} ->
+      %{
+        "address_hash" => Address.checksum(address_hash),
+        "name" => name
+      }
+      |> chain_type_fields(implementations_info)
     end)
   end
 
@@ -375,18 +451,28 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end
   end
 
-  def alternative_implementations_info(proxy_implementation) do
+  def conflicting_implementations_info(proxy_implementation) do
     if proxy_implementation &&
-         proxy_implementation.alternative_proxy_types &&
-         proxy_implementation.alternative_address_hashes do
-      proxy_implementation.alternative_proxy_types
-      |> Enum.zip(proxy_implementation.alternative_address_hashes)
-      |> Enum.map(fn {proxy_type, address_hashes} ->
+         proxy_implementation.proxy_type &&
+         proxy_implementation.conflicting_proxy_types &&
+         proxy_implementation.conflicting_address_hashes do
+      conflicting_implementations =
+        proxy_implementation.conflicting_proxy_types
+        |> Enum.zip(proxy_implementation.conflicting_address_hashes)
+        |> Enum.map(fn {proxy_type, address_hashes} ->
+          %{
+            "proxy_type" => proxy_type,
+            "implementations" => Enum.map(address_hashes, &%{"address_hash" => Address.checksum(&1)})
+          }
+        end)
+
+      [
         %{
-          "proxy_type" => proxy_type,
-          "address_hashes" => Enum.map(address_hashes, &Address.checksum/1)
+          "proxy_type" => proxy_implementation.proxy_type,
+          "implementations" => proxy_object_info(proxy_implementation)
         }
-      end)
+        | conflicting_implementations
+      ]
     else
       nil
     end

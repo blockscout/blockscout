@@ -260,9 +260,11 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
         if Data.empty?(code) do
           assert is_nil(proxy_implementations)
         else
+          {:ok, address_hashes} = EIP7702.quick_resolve_implementations(address, :eip7702)
+
           assert proxy_implementations.proxy_address_hash == address_hash
           assert proxy_implementations.proxy_type == :eip7702
-          assert proxy_implementations.address_hashes == [EIP7702.match_bytecode_and_resolve_implementation(address)]
+          assert proxy_implementations.address_hashes == address_hashes
           assert proxy_implementations.names == [nil]
         end
       end)

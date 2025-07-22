@@ -614,7 +614,7 @@ defmodule Explorer.Chain.Address do
   """
   @spec eoa_with_code?(any()) :: boolean() | nil
   def eoa_with_code?(%__MODULE__{} = address) do
-    !is_nil(EIP7702.match_bytecode_and_resolve_implementation(address))
+    !is_nil(EIP7702.quick_resolve_implementations(address, :eip7702))
   end
 
   def eoa_with_code?(%NotLoaded{}), do: nil

@@ -12,8 +12,8 @@ defmodule Explorer.Repo.Migrations.RefactorProxyImplementations do
     """)
 
     alter table(:proxy_implementations) do
-      add(:alternative_proxy_types, {:array, :proxy_type})
-      add(:alternative_address_hashes, {:array, {:array, :bytea}})
+      add(:conflicting_proxy_types, {:array, :proxy_type})
+      add(:conflicting_address_hashes, {:array, {:array, :bytea}})
     end
 
     execute(

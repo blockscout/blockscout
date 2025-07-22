@@ -2,8 +2,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   @moduledoc """
   Module for fetching proxy implementation from https://eips.ethereum.org/EIPS/eip-1967 (Proxy Storage Slots)
   """
-  alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.ResolverBehaviour
+
+  @behaviour ResolverBehaviour
 
   # 0x5c60da1b = keccak256(implementation())
   @implementation_signature "0x5c60da1b"
@@ -18,29 +20,35 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   # This is the keccak-256 hash of "org.zeppelinos.proxy.implementation"
   @storage_slot_openzeppelin_contract_address "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3"
 
-  @spec get_prefetch_requirements(Address.t(), :eip1967 | :eip1967_oz | :eip1967_beacon) ::
-          [Proxy.prefetch_requirement()]
-  def get_prefetch_requirements(_, :eip1967), do: [storage: @storage_slot_logic_contract_address]
-  def get_prefetch_requirements(_, :eip1967_oz), do: [storage: @storage_slot_openzeppelin_contract_address]
-  def get_prefetch_requirements(_, :eip1967_beacon), do: [storage: @storage_slot_beacon_contract_address]
+  def quick_resolve_implementations(_proxy_address, proxy_type) do
+    storage_slot =
+      case proxy_type do
+        :eip1967 -> @storage_slot_logic_contract_address
+        :eip1967_oz -> @storage_slot_openzeppelin_contract_address
+        :eip1967_beacon -> @storage_slot_beacon_contract_address
+        _ -> nil
+      end
 
-  @doc """
-  Get implementation address hash following EIP-1967.
-  """
-  @spec resolve_implementations(Address.t(), :eip1967 | :eip1967_oz | :eip1967_beacon, Proxy.prefetched_values() | nil) ::
-          [Hash.Address.t()] | :error | nil
-  def resolve_implementations(proxy_address, proxy_type, prefetched_values \\ nil) do
-    req = proxy_address |> get_prefetch_requirements(proxy_type) |> Enum.at(0)
+    if is_nil(storage_slot) do
+      nil
+    else
+      {:cont,
+       %{
+         implementation_slot: {:storage, storage_slot}
+       }}
+    end
+  end
 
-    with {:ok, value} <- Proxy.fetch_value(req, proxy_address.hash, prefetched_values),
+  def resolve_implementations(_proxy_address, proxy_type, prefetched_values) do
+    with {:ok, value} <- Map.fetch(prefetched_values, :implementation_slot),
          {:ok, stored_address_hash} <- Proxy.extract_address_hash(value) do
       if proxy_type == :eip1967_beacon do
         with {:ok, value} <- Proxy.fetch_value({:call, @implementation_signature}, stored_address_hash),
              {:ok, implementation_address_hash} <- Proxy.extract_address_hash(value) do
-          [implementation_address_hash]
+          {:ok, [implementation_address_hash]}
         end
       else
-        [stored_address_hash]
+        {:ok, [stored_address_hash]}
       end
     else
       :error -> :error

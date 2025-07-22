@@ -195,7 +195,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_verified_via_verifier_alliance" => smart_contract.verified_via_verifier_alliance,
       "proxy_type" => proxy_type,
       "implementations" => Proxy.proxy_object_info(implementations),
-      "alternative_implementations" => Proxy.alternative_implementations_info(implementations),
+      "conflicting_implementations" => Proxy.conflicting_implementations_info(implementations),
       "sourcify_repo_url" =>
         if(smart_contract_verified_via_sourcify,
           do: AddressContractView.sourcify_repo_url(address.hash, smart_contract.partially_verified)
@@ -239,7 +239,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     %{
       "proxy_type" => implementations && implementations.proxy_type,
       "implementations" => Proxy.proxy_object_info(implementations),
-      "alternative_implementations" => Proxy.alternative_implementations_info(implementations)
+      "conflicting_implementations" => Proxy.conflicting_implementations_info(implementations)
     }
     |> Map.merge(bytecode_info(address))
   end
