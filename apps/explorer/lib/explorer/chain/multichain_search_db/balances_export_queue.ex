@@ -15,9 +15,9 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
 
   @primary_key false
   typed_schema "multichain_search_db_export_balances_queue" do
-    field(:id, :integer, primary_key: false, null: false)
-    field(:address_hash, Hash.Address, null: false, primary_key: true)
-    field(:token_contract_address_hash_or_native, :binary, null: false, primary_key: true)
+    field(:id, :integer, primary_key: true, null: false)
+    field(:address_hash, Hash.Address, null: false)
+    field(:token_contract_address_hash_or_native, :binary, null: false)
     field(:value, Wei)
     field(:token_id, :decimal)
     field(:retries_number, :integer)
@@ -105,9 +105,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
         balance_address_hash = balance.address_hash
         balance_token_contract_address_hash_or_native = balance.token_contract_address_hash_or_native
 
-        balance_token_id = balance.token_id
-
-        query =
+        intermediate_query =
           from(
             b in __MODULE__,
             where: b.address_hash == ^balance_address_hash,
@@ -119,9 +117,12 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
                 ^balance_token_contract_address_hash_or_native,
                 ^balance_token_contract_address_hash_or_native,
                 ^balance_token_contract_address_hash_or_native
-              ),
-            where: fragment("COALESCE(?, -1) = COALESCE(?, -1)", b.token_id, ^balance_token_id)
+              )
           )
+
+        query =
+          intermediate_query
+          |> where_token_id(balance.token_id)
 
         if is_nil(acc) do
           query
@@ -142,5 +143,14 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
       end)
 
     Repo.transact(delete_elements)
+  end
+
+  defp where_token_id(query, nil) do
+    where(query, [q], is_nil(q.token_id))
+  end
+
+  defp where_token_id(query, token_id) do
+    balance_token_id_string = to_string(token_id)
+    where(query, [q], fragment("?::text = ?", q.token_id, ^balance_token_id_string))
   end
 end
