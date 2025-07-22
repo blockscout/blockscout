@@ -104,8 +104,9 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
       Enum.reduce(balances, nil, fn balance, acc ->
         balance_address_hash = balance.address_hash
         balance_token_contract_address_hash_or_native = balance.token_contract_address_hash_or_native
+        balance_token_id = balance.token_id
 
-        intermediate_query =
+        query =
           from(
             b in __MODULE__,
             where: b.address_hash == ^balance_address_hash,
@@ -117,12 +118,14 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
                 ^balance_token_contract_address_hash_or_native,
                 ^balance_token_contract_address_hash_or_native,
                 ^balance_token_contract_address_hash_or_native
+              ),
+            where:
+              fragment(
+                "COALESCE(?::numeric, -1::numeric) = COALESCE(?::numeric, -1::numeric)",
+                b.token_id,
+                ^balance_token_id
               )
           )
-
-        query =
-          intermediate_query
-          |> where_token_id(balance.token_id)
 
         if is_nil(acc) do
           query
@@ -143,14 +146,5 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
       end)
 
     Repo.transact(delete_elements)
-  end
-
-  defp where_token_id(query, nil) do
-    where(query, [q], is_nil(q.token_id))
-  end
-
-  defp where_token_id(query, token_id) do
-    balance_token_id_string = to_string(token_id)
-    where(query, [q], fragment("?::text = ?", q.token_id, ^balance_token_id_string))
   end
 end
