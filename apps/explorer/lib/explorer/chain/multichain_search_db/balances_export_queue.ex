@@ -103,26 +103,29 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
     q =
       Enum.reduce(balances, nil, fn balance, acc ->
         balance_address_hash = balance.address_hash
-        balance_token_contract_address_hash_or_native = balance.token_contract_address_hash_or_native
 
-        intermediate_query =
+        balance_token_contract_address_hash_or_native_binary =
+          if byte_size(balance.token_contract_address_hash_or_native) == 6 do
+            balance.token_contract_address_hash_or_native
+          else
+            "0x" <> hex = balance.token_contract_address_hash_or_native
+            hex |> Base.decode16(case: :lower) |> elem(1)
+          end
+
+        balance_token_id = balance.token_id
+
+        query =
           from(
             b in __MODULE__,
             where: b.address_hash == ^balance_address_hash,
-            # \x6e6174697665 == hex('native')
+            where: b.token_contract_address_hash_or_native == ^balance_token_contract_address_hash_or_native_binary,
             where:
               fragment(
-                "?::text = (CASE WHEN LENGTH(?) = 42 THEN '\\' || SUBSTRING(?, 2, LENGTH(?) - 1) ELSE '\\x6e6174697665' END)",
-                b.token_contract_address_hash_or_native,
-                ^balance_token_contract_address_hash_or_native,
-                ^balance_token_contract_address_hash_or_native,
-                ^balance_token_contract_address_hash_or_native
+                "COALESCE(?, -1::numeric) = COALESCE(?::numeric, -1::numeric)",
+                b.token_id,
+                ^balance_token_id
               )
           )
-
-        query =
-          intermediate_query
-          |> where_token_id(balance.token_id)
 
         if is_nil(acc) do
           query
@@ -143,14 +146,5 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
       end)
 
     Repo.transact(delete_elements)
-  end
-
-  defp where_token_id(query, nil) do
-    where(query, [q], is_nil(q.token_id))
-  end
-
-  defp where_token_id(query, token_id) do
-    balance_token_id_string = to_string(token_id)
-    where(query, [q], fragment("?::text = ?", q.token_id, ^balance_token_id_string))
   end
 end
