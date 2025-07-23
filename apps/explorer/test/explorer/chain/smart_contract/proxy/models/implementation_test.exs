@@ -304,6 +304,89 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
     end
   end
 
+  test "get_implementation/1 with conflicting implementations" do
+    smart_contract = insert(:smart_contract)
+    implementation_smart_contract1 = insert(:smart_contract, name: "implementation1")
+    implementation_smart_contract2 = insert(:smart_contract, name: "implementation2")
+    implementation_smart_contract3 = insert(:smart_contract, name: "implementation3")
+
+    implementation_address_hash1 = implementation_smart_contract1.address_hash
+    implementation_address_hash2 = implementation_smart_contract2.address_hash
+    implementation_address_hash3 = implementation_smart_contract3.address_hash
+
+    EthereumJSONRPC.Mox
+    |> TestHelper.mock_generic_proxy_requests(
+      eip1967: implementation_address_hash1,
+      eip1967_oz: implementation_address_hash1,
+      eip1822: implementation_address_hash1
+    )
+
+    assert %Implementation{
+             address_hashes: [^implementation_address_hash1],
+             names: ["implementation1"],
+             proxy_type: :eip1967,
+             conflicting_proxy_types: nil,
+             conflicting_address_hashes: nil
+           } = Implementation.get_implementation(smart_contract)
+
+    verify!(EthereumJSONRPC.Mox)
+
+    assert_exact_name_and_address(
+      smart_contract.address_hash,
+      implementation_address_hash1,
+      implementation_smart_contract1.name
+    )
+
+    assert %Implementation{
+             conflicting_proxy_types: nil,
+             conflicting_address_hashes: nil
+           } = Implementation.get_proxy_implementations(smart_contract.address_hash)
+
+    proxy =
+      :explorer
+      |> Application.get_env(:proxy)
+      |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(0))
+      |> Keyword.replace(:implementation_data_fetching_timeout, :timer.seconds(20))
+
+    Application.put_env(:explorer, :proxy, proxy)
+
+    EthereumJSONRPC.Mox
+    |> TestHelper.mock_generic_proxy_requests(
+      eip1967: implementation_address_hash1,
+      eip1967_oz: implementation_address_hash2,
+      eip1822: implementation_address_hash3
+    )
+
+    assert %Implementation{
+             address_hashes: [^implementation_address_hash1],
+             names: ["implementation1"],
+             proxy_type: :eip1967,
+             conflicting_proxy_types: [:eip1822, :eip1967_oz],
+             conflicting_address_hashes: [[^implementation_address_hash3], [^implementation_address_hash2]]
+           } = Implementation.get_implementation(smart_contract)
+
+    verify!(EthereumJSONRPC.Mox)
+
+    proxy =
+      :explorer
+      |> Application.get_env(:proxy)
+      |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+      |> Keyword.replace(:implementation_data_fetching_timeout, :timer.seconds(20))
+
+    Application.put_env(:explorer, :proxy, proxy)
+
+    assert_exact_name_and_address(
+      smart_contract.address_hash,
+      implementation_address_hash1,
+      implementation_smart_contract1.name
+    )
+
+    assert %Implementation{
+             conflicting_proxy_types: [:eip1822, :eip1967_oz],
+             conflicting_address_hashes: [[^implementation_address_hash3], [^implementation_address_hash2]]
+           } = Implementation.get_proxy_implementations(smart_contract.address_hash)
+  end
+
   def assert_exact_name_and_address(address_hash, implementation_address_hash, implementation_name) do
     implementation = Implementation.get_proxy_implementations(address_hash)
     assert implementation.proxy_type
@@ -332,5 +415,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
     assert implementation.updated_at
     assert implementation.names == []
     assert implementation.address_hashes == []
+    assert is_nil(implementation.conflicting_proxy_types)
+    assert is_nil(implementation.conflicting_address_hashes)
   end
 end

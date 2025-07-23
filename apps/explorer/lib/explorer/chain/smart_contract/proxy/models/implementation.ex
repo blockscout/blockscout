@@ -380,8 +380,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         fragment("EXCLUDED.proxy_type <> ?", proxy_implementations.proxy_type) or
           fragment("EXCLUDED.address_hashes <> ?", proxy_implementations.address_hashes) or
           fragment("EXCLUDED.names <> ?", proxy_implementations.names) or
-          fragment("EXCLUDED.conflicting_proxy_types <> ?", proxy_implementations.conflicting_proxy_types) or
-          fragment("EXCLUDED.conflicting_address_hashes <> ?", proxy_implementations.conflicting_address_hashes)
+          fragment("EXCLUDED.conflicting_proxy_types IS DISTINCT FROM ?", proxy_implementations.conflicting_proxy_types) or
+          fragment(
+            "EXCLUDED.conflicting_address_hashes IS DISTINCT FROM ?",
+            proxy_implementations.conflicting_address_hashes
+          )
     )
   end
 
@@ -474,8 +477,14 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         fragment("EXCLUDED.proxy_type = ?", proxy_implementations.proxy_type) and
           (fragment("EXCLUDED.address_hashes <> ?", proxy_implementations.address_hashes) or
              fragment("EXCLUDED.names <> ?", proxy_implementations.names) or
-             fragment("EXCLUDED.conflicting_proxy_types <> ?", proxy_implementations.conflicting_proxy_types) or
-             fragment("EXCLUDED.conflicting_address_hashes <> ?", proxy_implementations.conflicting_address_hashes))
+             fragment(
+               "EXCLUDED.conflicting_proxy_types IS DISTINCT FROM ?",
+               proxy_implementations.conflicting_proxy_types
+             ) or
+             fragment(
+               "EXCLUDED.conflicting_address_hashes IS DISTINCT FROM ?",
+               proxy_implementations.conflicting_address_hashes
+             ))
     )
   end
 

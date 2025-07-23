@@ -696,6 +696,70 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
   end
 
+  test "returns smart-contract with conflicting implementations", %{conn: conn} do
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+    proxy_smart_contract = insert(:smart_contract)
+    implementation_smart_contract1 = insert(:smart_contract, name: "implementation1")
+    implementation_smart_contract2 = insert(:smart_contract, name: "implementation2")
+    implementation_smart_contract3 = insert(:smart_contract, name: "implementation3")
+
+    correct_response = %{
+      "proxy_type" => "eip1967",
+      "implementations" => [
+        %{
+          "address_hash" => implementation_smart_contract1.address_hash |> Address.checksum() |> to_string(),
+          "name" => implementation_smart_contract1.name
+        }
+      ],
+      "conflicting_implementations" => [
+        %{
+          "proxy_type" => "eip1967",
+          "implementations" => [
+            %{
+              "address_hash" => implementation_smart_contract1.address_hash |> Address.checksum() |> to_string(),
+              "name" => implementation_smart_contract1.name
+            }
+          ]
+        },
+        %{
+          "proxy_type" => "eip1822",
+          "implementations" => [
+            %{
+              "address_hash" => implementation_smart_contract3.address_hash |> Address.checksum() |> to_string()
+            }
+          ]
+        },
+        %{
+          "proxy_type" => "eip1967_oz",
+          "implementations" => [
+            %{
+              "address_hash" => implementation_smart_contract2.address_hash |> Address.checksum() |> to_string()
+            }
+          ]
+        }
+      ]
+    }
+
+    EthereumJSONRPC.Mox
+    |> TestHelper.mock_generic_proxy_requests(
+      eip1967: implementation_smart_contract1.address_hash,
+      eip1967_oz: implementation_smart_contract2.address_hash,
+      eip1822: implementation_smart_contract3.address_hash
+    )
+
+    request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_smart_contract.address_hash)}")
+    response = json_response(request, 200)
+
+    Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+
+    result_props = correct_response |> Map.keys()
+
+    for prop <- result_props do
+      assert prepare_implementation(correct_response[prop]) == response[prop]
+    end
+  end
+
   if Application.compile_env(:explorer, :chain_type) !== :zksync do
     describe "/smart-contracts/{address_hash} <> eth_bytecode_db" do
       setup do
