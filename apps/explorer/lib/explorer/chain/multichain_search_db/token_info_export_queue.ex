@@ -53,14 +53,13 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
   ## Returns
     - `{:ok, accumulator}`: A tuple containing `:ok` and the final accumulator after processing the stream.
   """
-  @spec stream_multichain_db_token_info_batch_to_retry_export(
+  @spec stream_multichain_db_token_info_batch(
           initial :: accumulator,
           reducer :: (entry :: map(), accumulator -> accumulator),
           limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_multichain_db_token_info_batch_to_retry_export(initial, reducer, limited? \\ false)
-      when is_function(reducer, 2) do
+  def stream_multichain_db_token_info_batch(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
     __MODULE__
     |> select([export], %{
       address_hash: export.address_hash,
@@ -86,7 +85,7 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
       q in __MODULE__,
       update: [
         set: [
-          retries_number: fragment("COALESCE(EXCLUDED.retries_number, 0) + 1"),
+          retries_number: fragment("COALESCE(?, 0) + 1", q.retries_number),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", q.updated_at)
         ]
       ]

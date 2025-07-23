@@ -112,6 +112,92 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
+  @doc """
+    Processes a batch import of token info by splitting the items from db queue into chunks and sending each chunk as an HTTP POST request to a configured microservice endpoint.
+
+    If the microservice is enabled, the function:
+    - Splits the input `items_from_db_queue` into manageable chunks.
+    - Sends each chunk concurrently using `Task.async_stream/5` with a maximum concurrency and timeout.
+    - Collects the results, merging any errors and accumulating data that needs to be retried.
+    - Returns `{:ok, {:chunks_processed, chunks}}` if all chunks are processed successfully.
+    - Returns `{:error, data_to_retry}` if any chunk fails, where `data_to_retry` contains tokens that need to be retried.
+
+    If the microservice is disabled, returns `{:ok, :service_disabled}`.
+
+    ## Parameters
+    - `items_from_db_queue`: The queue items to be imported, which will be split into chunks for processing.
+
+    ## Returns
+    - `{:ok, any()}`: If all chunks are processed successfully or the service is disabled.
+    - `{:error, map()}`: If one or more chunks fail, with details about the data that needs to be retried.
+  """
+  @spec batch_import_token_info([
+          %{
+            :address_hash => binary(),
+            :data_type => :metadata | :total_supply | :counters | :market_data,
+            :data => map()
+          }
+        ]) :: {:ok, any()} | {:error, map()}
+  def batch_import_token_info(items_from_db_queue) do
+    if enabled?() do
+      url = batch_import_url()
+      api_key = api_key()
+      chain_id = to_string(ChainId.get_id())
+
+      chunks =
+        items_from_db_queue
+        |> Enum.chunk_every(token_info_chunk_size())
+        |> Enum.map(fn chunk_items ->
+          %{
+            api_key: api_key,
+            chain_id: chain_id,
+            tokens: Enum.map(chunk_items, &token_info_queue_item_to_http_item(&1))
+          }
+        end)
+
+      chunks
+      |> Task.async_stream(
+        fn export_body -> http_post_request(url, export_body) end,
+        max_concurrency: @max_concurrency,
+        timeout: @post_timeout,
+        zip_input_on_exit: true
+      )
+      |> Enum.reduce({:ok, {:chunks_processed, chunks}}, fn
+        {:ok, {:ok, _result}}, acc ->
+          acc
+
+        {:ok, {:error, error}}, acc ->
+          on_error_token_info(error)
+
+          case acc do
+            {:ok, {:chunks_processed, _}} ->
+              {:error, %{tokens: error.data_to_retry.tokens}}
+
+            {:error, data_to_retry} ->
+              {:error, %{tokens: data_to_retry.tokens ++ error.data_to_retry.tokens}}
+          end
+
+        {:exit, {export_body, reason}}, acc ->
+          on_error_token_info(%{
+            url: url,
+            data_to_retry: export_body,
+            reason: reason
+          })
+
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          case acc do
+            {:ok, {:chunks_processed, _}} ->
+              {:error, %{tokens: export_body.tokens}}
+
+            {:error, data_to_retry} ->
+              {:error, %{tokens: data_to_retry.tokens ++ export_body.tokens}}
+          end
+      end)
+    else
+      {:ok, :service_disabled}
+    end
+  end
+
   defp log_error(%{
          url: url,
          data_to_retry: data_to_retry,
@@ -180,6 +266,73 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp on_error(_), do: :ignore
 
+  @spec on_error_token_info(map()) :: any()
+  defp on_error_token_info(%{data_to_retry: data_to_retry} = error) do
+    log_error(error)
+
+    prepared_token_info_data =
+      data_to_retry.tokens
+      |> Enum.map(&token_info_http_item_to_queue_item(&1))
+      |> Helper.add_timestamps()
+
+    Repo.insert_all(
+      TokenInfoExportQueue,
+      prepared_token_info_data,
+      on_conflict: TokenInfoExportQueue.default_on_conflict(),
+      conflict_target: [:address_hash, :data_type]
+    )
+  end
+
+  defp on_error_token_info(_), do: :ignore
+
+  @spec token_info_queue_item_to_http_item(%{
+          :address_hash => binary,
+          :data_type => :metadata | :total_supply | :counters | :market_data,
+          :data => map()
+        }) :: map()
+  defp token_info_queue_item_to_http_item(item_from_db_queue) do
+    token = %{address_hash: "0x" <> Base.encode16(item_from_db_queue.address_hash, case: :lower)}
+
+    case item_from_db_queue.data_type do
+      :metadata -> Map.put(token, :metadata, item_from_db_queue.data)
+      :total_supply -> Map.put(token, :metadata, item_from_db_queue.data)
+      :counters -> Map.put(token, :counters, item_from_db_queue.data)
+      :market_data -> Map.put(token, :price_data, item_from_db_queue.data)
+    end
+  end
+
+  @spec token_info_http_item_to_queue_item(map()) :: %{
+          :address_hash => binary,
+          :data_type => :metadata | :total_supply | :counters | :market_data,
+          :data => map()
+        }
+  defp token_info_http_item_to_queue_item(%{address_hash: "0x" <> address_string} = http_item) do
+    {:ok, address_hash} = Base.decode16(address_string, case: :mixed)
+
+    metadata = Map.get(http_item, :metadata)
+
+    {data_type, data} =
+      cond do
+        !is_nil(metadata) and (!is_nil(Map.get(metadata, :token_type)) or !is_nil(Map.get(metadata, "token_type"))) ->
+          {:metadata, http_item[:metadata]}
+
+        !is_nil(metadata) ->
+          {:total_supply, http_item[:metadata]}
+
+        !is_nil(Map.get(http_item, :counters)) ->
+          {:counters, http_item[:counters]}
+
+        !is_nil(Map.get(http_item, :price_data)) ->
+          {:market_data, http_item[:price_data]}
+      end
+
+    %{
+      address_hash: address_hash,
+      data_type: data_type,
+      data: data
+    }
+  end
+
   @doc """
   Sends provided blockchain data to the appropriate export queues for further processing.
 
@@ -239,8 +392,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           :token_type => String.t(),
           :name => String.t(),
           :symbol => String.t(),
-          :decimals => non_neg_integer(),
-          :total_supply => non_neg_integer(),
+          optional(:decimals) => String.t(),
+          optional(:total_supply) => String.t(),
           optional(:icon_url) => String.t()
         }
   def prepare_token_metadata_for_queue(%Token{} = token, metadata) do
@@ -253,15 +406,15 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     data
     |> token_optional_field(token, :icon_url)
-    |> token_optional_field(metadata, :decimals)
-    |> token_optional_field(metadata, :total_supply)
+    |> token_optional_field(metadata, :decimals, true)
+    |> token_optional_field(metadata, :total_supply, true)
   end
 
-  @spec prepare_token_total_supply_for_queue(non_neg_integer() | nil) :: %{:total_supply => non_neg_integer()} | nil
+  @spec prepare_token_total_supply_for_queue(non_neg_integer() | nil) :: %{:total_supply => String.t()} | nil
   def prepare_token_total_supply_for_queue(nil), do: nil
 
   def prepare_token_total_supply_for_queue(total_supply) do
-    %{total_supply: total_supply}
+    %{total_supply: to_string(total_supply)}
   end
 
   @spec prepare_token_market_data_for_queue(map()) :: map()
@@ -276,17 +429,24 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   end
 
   @spec prepare_token_counters_for_queue(non_neg_integer(), non_neg_integer()) :: %{
-          :transfers_count => non_neg_integer(),
-          :holders_count => non_neg_integer()
+          :transfers_count => String.t(),
+          :holders_count => String.t()
         }
   def prepare_token_counters_for_queue(transfer_count, holder_count) do
-    %{transfers_count: transfer_count, holders_count: holder_count}
+    %{transfers_count: to_string(transfer_count), holders_count: to_string(holder_count)}
   end
 
-  defp token_optional_field(data, metadata, key) do
+  defp token_optional_field(data, metadata, key, convert_to_string \\ false) do
     case Map.get(metadata, key) do
-      nil -> data
-      value -> Map.put(data, key, value)
+      nil ->
+        data
+
+      value ->
+        if convert_to_string do
+          Map.put(data, key, to_string(value))
+        else
+          Map.put(data, key, value)
+        end
     end
   end
 
