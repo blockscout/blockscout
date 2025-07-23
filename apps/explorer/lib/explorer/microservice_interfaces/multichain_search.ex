@@ -174,8 +174,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       Helper.add_timestamps(prepared_balances_data),
       on_conflict: BalancesExportQueue.default_on_conflict(),
       conflict_target:
-        {:unsafe_fragment,
-         ~s<(address_hash, token_contract_address_hash_or_native, COALESCE(token_id::numeric, -1::numeric))>}
+        {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash_or_native, COALESCE(token_id, -1))>}
     )
   end
 
