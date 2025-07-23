@@ -209,6 +209,8 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
         end)
 
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 4
+      results = Repo.all(MainExportQueue)
+      assert Enum.all?(results, &(&1.retries_number == nil))
 
       assert log =~ "Batch main export retry to the Multichain Search DB failed"
 
@@ -241,6 +243,31 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueueTest do
       MultichainSearchDbMainExportQueue.run(export_data_2, nil)
 
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 3
+      results = Repo.all(MainExportQueue)
+      assert Enum.all?(results, &(&1.retries_number == 1))
+
+      # Check, that `retries_number` is incrementing
+
+      TestHelper.get_chain_id_mock()
+
+      Tesla.Test.expect_tesla_call(
+        times: 2,
+        returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
+          case Jason.decode(body) do
+            {:ok, %{"block_ranges" => [%{"max_block_number" => _, "min_block_number" => _}]}} ->
+              {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
+
+            _ ->
+              {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"status" => "ok"})}}
+          end
+        end
+      )
+
+      MultichainSearchDbMainExportQueue.run(export_data_2, nil)
+
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 3
+      results = Repo.all(MainExportQueue)
+      assert Enum.all?(results, &(&1.retries_number == 2))
     end
   end
 end

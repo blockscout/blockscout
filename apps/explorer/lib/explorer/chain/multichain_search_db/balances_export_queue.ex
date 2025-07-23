@@ -89,7 +89,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
       multichain_search_db_export_balances_queue in __MODULE__,
       update: [
         set: [
-          retries_number: fragment("COALESCE(EXCLUDED.retries_number, 0) + 1"),
+          retries_number: fragment("COALESCE(?, 0) + 1", multichain_search_db_export_balances_queue.retries_number),
           updated_at:
             fragment("GREATEST(?, EXCLUDED.updated_at)", multichain_search_db_export_balances_queue.updated_at)
         ]

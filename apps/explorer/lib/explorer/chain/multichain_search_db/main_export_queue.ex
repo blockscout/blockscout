@@ -99,7 +99,7 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
       multichain_search_db_main_export_queue in __MODULE__,
       update: [
         set: [
-          retries_number: fragment("COALESCE(EXCLUDED.retries_number, 0) + 1"),
+          retries_number: fragment("COALESCE(?, 0) + 1", multichain_search_db_main_export_queue.retries_number),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", multichain_search_db_main_export_queue.updated_at)
         ]
       ]
