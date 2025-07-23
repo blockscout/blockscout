@@ -75,13 +75,14 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
   end
 
   @doc """
-  Returns an Ecto query that defines the default conflict resolution strategy for the
-  `multichain_search_db_export_balances_queue` table. On conflict, it increments the `retries_number`
-  (by using the value from `EXCLUDED.retries_number` or 0 if not present) and updates the
-  `updated_at` field to the greatest value between the current and the new timestamp.
+  Returns an Ecto query that defines the default behavior for handling conflicts
+  when inserting into the `multichain_search_db_export_balances_queue` table.
 
-  This is typically used in upsert operations to ensure retry counts are tracked and
-  timestamps are properly updated.
+  On conflict, this query:
+    - Increments the `retries_number` field by 1 (or sets it to 1 if it was `nil`).
+    - Sets the `updated_at` field to the greatest value between the current and the excluded `updated_at`.
+
+  This is typically used with `on_conflict: default_on_conflict()` in Ecto insert operations.
   """
   @spec default_on_conflict :: Ecto.Query.t()
   def default_on_conflict do

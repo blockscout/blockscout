@@ -234,18 +234,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
 
       TestHelper.get_chain_id_mock()
 
-      Tesla.Test.expect_tesla_call(
-        times: 2,
-        returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
-          case Jason.decode(body) do
-            {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_4_hash_string}]}} ->
-              {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
-
-            _ ->
-              {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"status" => "ok"})}}
-          end
-        end
-      )
+      tesla_expectations(address_4_hash_string)
 
       val1 = Decimal.new(200) |> Wei.cast() |> elem(1)
       val2 = Decimal.new(300) |> Wei.cast() |> elem(1)
@@ -293,18 +282,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
 
       TestHelper.get_chain_id_mock()
 
-      Tesla.Test.expect_tesla_call(
-        times: 2,
-        returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
-          case Jason.decode(body) do
-            {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_4_hash_string}]}} ->
-              {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
-
-            _ ->
-              {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"status" => "ok"})}}
-          end
-        end
-      )
+      tesla_expectations(address_4_hash_string)
 
       MultichainSearchDbExportBalancesExportQueue.run(export_data, nil)
 
@@ -316,18 +294,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
 
       TestHelper.get_chain_id_mock()
 
-      Tesla.Test.expect_tesla_call(
-        times: 2,
-        returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
-          case Jason.decode(body) do
-            {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_4_hash_string}]}} ->
-              {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
-
-            _ ->
-              {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"status" => "ok"})}}
-          end
-        end
-      )
+      tesla_expectations(address_4_hash_string)
 
       MultichainSearchDbExportBalancesExportQueue.run(export_data, nil)
 
@@ -377,5 +344,20 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
 
       Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
     end
+  end
+
+  defp tesla_expectations(address_4_hash_string) do
+    Tesla.Test.expect_tesla_call(
+      times: 2,
+      returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
+        case Jason.decode(body) do
+          {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_4_hash_string}]}} ->
+            {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
+
+          _ ->
+            {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"status" => "ok"})}}
+        end
+      end
+    )
   end
 end
