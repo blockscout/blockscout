@@ -185,7 +185,10 @@ defmodule Explorer.Chain.SmartContract.Proxy do
              end
            end),
          # didn't match any known bytecode pattern, proceed with fetching required values
-         {:ok, resolvers_and_fetched_values} <- prefetch_values(resolvers_and_requirements, proxy_address.hash),
+         {:ok, resolvers_and_fetched_values} <-
+           resolvers_and_requirements
+           |> Enum.reverse()
+           |> prefetch_values(proxy_address.hash),
          generic_results when is_list(generic_results) <-
            Enum.reduce_while(resolvers_and_fetched_values, [], fn {{module, proxy_type}, values}, acc ->
              case module.resolve_implementations(proxy_address, proxy_type, values) do
@@ -211,14 +214,13 @@ defmodule Explorer.Chain.SmartContract.Proxy do
              end
            end) do
       {address_hashes, proxy_type, conflicting_proxy_types, conflicting_address_hashes} =
-        case generic_results do
+        case Enum.reverse(generic_results) do
           [] ->
             {[], nil, nil, nil}
 
           [{proxy_type, address_hashes}] ->
             {address_hashes, proxy_type, nil, nil}
 
-          # order of proxy resolvers was reversed in both reduce_while, now it's the correct order
           [{proxy_type, address_hashes} | rest] ->
             address_hashes_sorted = address_hashes |> Enum.sort()
 
@@ -341,10 +343,10 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   end
 
   defp encode_request({:storage, value}, address_hash, index),
-    do: Contract.eth_get_storage_at_request(address_hash, value, index)
+    do: Contract.eth_get_storage_at_request(to_string(address_hash), value, index)
 
   defp encode_request({:call, value}, address_hash, index),
-    do: Contract.eth_call_request(value, address_hash, index, nil, nil)
+    do: Contract.eth_call_request(value, to_string(address_hash), index, nil, nil)
 
   defp handle_response({:storage, _}, %{result: result}) when is_binary(result), do: {:ok, result}
   defp handle_response({:call, _}, %{result: result}) when is_binary(result), do: {:ok, result}

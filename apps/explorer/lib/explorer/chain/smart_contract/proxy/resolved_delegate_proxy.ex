@@ -3,7 +3,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
   Module for fetching proxy implementation from ResolvedDelegateProxy https://github.com/ethereum-optimism/optimism/blob/9580179013a04b15e6213ae8aa8d43c3f559ed9a/packages/contracts-bedrock/src/legacy/ResolvedDelegateProxy.sol
   """
 
-  alias Explorer.Chain.{Address, Data}
+  alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.ResolverBehaviour
 
@@ -14,7 +14,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
   def quick_resolve_implementations(proxy_address, _proxy_type) do
     with {:match, @resolved_delegate_proxy} <-
            {:match, proxy_address.contract_code && proxy_address.contract_code.bytes},
-         reqs = get_fetch_requirements(proxy_address),
+         reqs = get_fetch_requirements(proxy_address.hash),
          {:ok, values} <- Proxy.fetch_values(reqs, proxy_address.hash),
          {:ok, implementation_name} <- extract_short_string(values[reqs |> Enum.at(0)]),
          {:ok, address_manager_address_hash} <- Proxy.extract_address_hash(values[reqs |> Enum.at(1)]),
@@ -34,15 +34,15 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
     end
   end
 
-  @spec get_fetch_requirements(Address.t()) :: [ResolverBehaviour.fetch_requirement()]
-  defp get_fetch_requirements(proxy_address) do
+  @spec get_fetch_requirements(Hash.Address.t()) :: [ResolverBehaviour.fetch_requirement()]
+  def get_fetch_requirements(proxy_address_hash) do
     # slot 0
     # mapping(address => string) private implementationName;
-    implementation_name_slot = ExKeccak.hash_256(<<0::96, proxy_address.hash.bytes::binary, 0::256>>)
+    implementation_name_slot = ExKeccak.hash_256(<<0::96, proxy_address_hash.bytes::binary, 0::256>>)
 
     # slot 1
     # mapping(address => AddressManager) private addressManager;
-    address_manager_slot = ExKeccak.hash_256(<<0::96, proxy_address.hash.bytes::binary, 1::256>>)
+    address_manager_slot = ExKeccak.hash_256(<<0::96, proxy_address_hash.bytes::binary, 1::256>>)
 
     [
       storage: "0x" <> Base.encode16(implementation_name_slot, case: :lower),

@@ -426,7 +426,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       addresses
       |> Repo.preload(:smart_contract)
       |> Enum.flat_map(fn address ->
-        case EIP7702.quick_resolve_implementations(address, :eip7702) do
+        case EIP7702.quick_resolve_implementations(address) do
           {:ok, [delegate_address_hash]} ->
             # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
             name =

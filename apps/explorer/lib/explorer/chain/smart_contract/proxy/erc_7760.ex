@@ -22,7 +22,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.ERC7760 do
   @beacon_i_variant <<0x363D3D373D3D363D602036600436635C60DA1B60E01B36527FA3F0AD74E5423AEBFD80D3EF4346578335A9A72AEAEE59FF6CB3582B35133D50545AFA361460525736515AF43D600060013E6052573D6001FD5B3D6001F3::696>>
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
-  def quick_resolve_implementations(proxy_address, _proxy_type) do
+  def quick_resolve_implementations(proxy_address, _proxy_type \\ :erc7760) do
     eip1967_proxy_type =
       case proxy_address.contract_code && proxy_address.contract_code.bytes do
         <<@transparent_basic_variant_20_left, _::20-bytes, @transparent_basic_variant_20_right, _::binary>> ->

@@ -340,7 +340,8 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
                        :timer.seconds(300)
 
         # Assert that the `is_blueprint=true` is stored in the database after verification
-        TestHelper.get_all_proxies_implementation_zero_addresses()
+        EthereumJSONRPC.Mox
+        |> TestHelper.mock_generic_proxy_requests()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(contract_address.hash)}")
         response = json_response(request, 200)

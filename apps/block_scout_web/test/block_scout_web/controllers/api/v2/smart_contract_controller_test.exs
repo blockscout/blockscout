@@ -59,7 +59,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     test "get unverified smart-contract info", %{conn: conn} do
       address = insert(:contract_address)
 
-      TestHelper.get_eip1967_implementation_error_response()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
@@ -70,7 +71,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "implementations" => [],
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" => nil,
-                 "creation_status" => "success"
+                 "creation_status" => "success",
+                 "conflicting_implementations" => nil
                }
 
       insert(:transaction,
@@ -79,8 +81,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
       )
       |> with_block(status: :ok)
-
-      TestHelper.get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
@@ -92,7 +92,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" =>
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                 "creation_status" => "success"
+                 "creation_status" => "success",
+                 "conflicting_implementations" => nil
                }
     end
 
@@ -108,7 +109,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       )
       |> with_block(status: :error)
 
-      TestHelper.get_eip1967_implementation_error_response()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
@@ -119,7 +121,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "implementations" => [],
                  "deployed_bytecode" => "0x",
                  "creation_bytecode" => creation_bytecode,
-                 "creation_status" => "failed"
+                 "creation_status" => "failed",
+                 "conflicting_implementations" => nil
                }
     end
 
@@ -166,8 +169,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       |> with_block(status: :ok)
 
       implementation_address = insert(:address)
-      implementation_address_hash_string = to_string(implementation_address.hash)
-      formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
 
       correct_response = %{
         "verified_twin_address_hash" => nil,
@@ -203,7 +204,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "proxy_type" => "eip1967",
         "implementations" => [
           %{
-            "address_hash" => formatted_implementation_address_hash_string,
+            "address_hash" => implementation_address.hash |> Address.checksum() |> to_string(),
             "name" => nil
           }
         ],
@@ -213,10 +214,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "license_type" => "none",
         "certified" => false,
         "is_blueprint" => false,
-        "creation_status" => "success"
+        "creation_status" => "success",
+        "conflicting_implementations" => nil
       }
 
-      TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests(eip1967: implementation_address.hash)
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
@@ -318,10 +321,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "language" => target_contract |> SmartContract.language() |> to_string(),
         "license_type" => "gnu_agpl_v3",
         "certified" => false,
-        "is_blueprint" => false
+        "is_blueprint" => false,
+        "conflicting_implementations" => nil
       }
 
-      TestHelper.get_eip1967_implementation_error_response()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
@@ -422,10 +427,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "language" => target_contract |> SmartContract.language() |> to_string(),
         "license_type" => "none",
         "certified" => false,
-        "is_blueprint" => false
+        "is_blueprint" => false,
+        "conflicting_implementations" => nil
       }
 
-      TestHelper.get_all_proxies_implementation_zero_addresses()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
@@ -515,7 +522,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
             "address_hash" => Address.checksum(implementation_contract.address_hash),
             "name" => implementation_contract.name
           }
-        ]
+        ],
+        "conflicting_implementations" => nil
       }
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
@@ -580,10 +588,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "license_type" => "none",
         "certified" => false,
         "is_blueprint" => true,
-        "creation_status" => "success"
+        "creation_status" => "success",
+        "conflicting_implementations" => nil
       }
 
-      TestHelper.get_all_proxies_implementation_zero_addresses()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
@@ -661,18 +671,17 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     )
     |> with_block(status: :ok)
 
-    formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_contract.address_hash))
-
     correct_response = %{
       "proxy_type" => "clone_with_immutable_arguments",
       "implementations" => [
         %{
-          "address_hash" => formatted_implementation_address_hash_string,
+          "address_hash" => implementation_contract.address_hash |> Address.checksum() |> to_string(),
           "name" => implementation_contract.name
         }
       ],
       "deployed_bytecode" => proxy_deployed_bytecode,
-      "creation_bytecode" => proxy_transaction_input
+      "creation_bytecode" => proxy_transaction_input,
+      "conflicting_implementations" => nil
     }
 
     request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
@@ -750,7 +759,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           Conn.resp(conn, 200, eth_bytecode_response)
         end)
 
-        TestHelper.get_eip1967_implementation_error_response()
+        EthereumJSONRPC.Mox
+        |> TestHelper.mock_generic_proxy_requests()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -777,10 +787,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "creation_status" => "success"
+                   "creation_status" => "success",
+                   "conflicting_implementations" => nil
                  }
-
-        TestHelper.get_all_proxies_implementation_zero_addresses()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
         assert response = json_response(request, 200)
@@ -817,7 +826,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           Conn.resp(conn, 200, eth_bytecode_response)
         end)
 
-        TestHelper.get_eip1967_implementation_error_response()
+        EthereumJSONRPC.Mox
+        |> TestHelper.mock_generic_proxy_requests()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -844,10 +854,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "creation_status" => "success"
+                   "creation_status" => "success",
+                   "conflicting_implementations" => nil
                  }
-
-        TestHelper.get_all_proxies_implementation_zero_addresses()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
         assert response = json_response(request, 200)
@@ -928,7 +937,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           Conn.resp(conn, 200, eth_bytecode_response)
         end)
 
-        TestHelper.get_all_proxies_implementation_zero_addresses()
+        EthereumJSONRPC.Mox
+        |> TestHelper.mock_generic_proxy_requests()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -950,12 +960,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         assert response ==
                  %{
-                   "proxy_type" => "unknown",
+                   "proxy_type" => nil,
                    "implementations" => [],
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "creation_status" => "success"
+                   "creation_status" => "success",
+                   "conflicting_implementations" => nil
                  }
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
@@ -997,7 +1008,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           Conn.resp(conn, 200, eth_bytecode_response)
         end)
 
-        TestHelper.get_eip1967_implementation_error_response()
+        EthereumJSONRPC.Mox
+        |> TestHelper.mock_generic_proxy_requests()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -1024,10 +1036,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "creation_status" => "success"
+                   "creation_status" => "success",
+                   "conflicting_implementations" => nil
                  }
-
-        TestHelper.get_all_proxies_implementation_zero_addresses()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
         assert response = json_response(request, 200)
@@ -1088,9 +1099,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         end)
 
         implementation_address = insert(:address)
-        implementation_address_hash_string = to_string(implementation_address.hash)
-        formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
-        TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
+        formatted_implementation_address_hash_string = implementation_address.hash |> Address.checksum() |> to_string()
+
+        EthereumJSONRPC.Mox
+        |> TestHelper.mock_generic_proxy_requests(eip1967: implementation_address.hash)
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -1122,7 +1134,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "creation_status" => "success"
+                   "creation_status" => "success",
+                   "conflicting_implementations" => nil
                  }
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
@@ -1205,9 +1218,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         end)
 
         implementation_address = insert(:address)
-        implementation_address_hash_string = to_string(implementation_address.hash)
-        formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
-        TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
+        formatted_implementation_address_hash_string = implementation_address.hash |> Address.checksum() |> to_string()
+
+        EthereumJSONRPC.Mox
+        |> TestHelper.mock_generic_proxy_requests(eip1967: implementation_address.hash)
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -1239,7 +1253,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "creation_status" => "success"
+                   "creation_status" => "success",
+                   "conflicting_implementations" => nil
                  }
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
@@ -1322,9 +1337,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         end)
 
         implementation_address = insert(:address)
-        implementation_address_hash_string = to_string(implementation_address.hash)
-        formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
-        TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
+        formatted_implementation_address_hash_string = implementation_address.hash |> Address.checksum() |> to_string()
+
+        EthereumJSONRPC.Mox
+        |> TestHelper.mock_generic_proxy_requests(eip1967: implementation_address.hash)
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -1356,7 +1372,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "creation_status" => "success"
+                   "creation_status" => "success",
+                   "conflicting_implementations" => nil
                  }
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
@@ -1433,7 +1450,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           Conn.resp(conn, 200, "{\"sources\": []}")
         end)
 
-        TestHelper.get_all_proxies_implementation_zero_addresses()
+        EthereumJSONRPC.Mox
+        |> TestHelper.mock_generic_proxy_requests()
 
         _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 

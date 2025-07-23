@@ -8,7 +8,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
 
   @behaviour ResolverBehaviour
 
-  def quick_resolve_implementations(proxy_address, _proxy_type) do
+  def quick_resolve_implementations(proxy_address, _proxy_type \\ :eip7702) do
     case proxy_address.contract_code && proxy_address.contract_code.bytes do
       <<0xEF0100::3-unit(8), template_address::20-bytes>> ->
         {:ok, template_address_hash} = Hash.Address.cast(template_address)

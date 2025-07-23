@@ -8,11 +8,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.BasicImplementationGetter do
 
   @behaviour ResolverBehaviour
 
-  # 5c60da1b = keccak256(implementation())
+  # 0x5c60da1b = keccak256(implementation())
   @implementation_signature <<0x5C60DA1B::4-unit(8)>>
-  # aaf10f42 = keccak256(getImplementation())
+  # 0xaaf10f42 = keccak256(getImplementation())
   @get_implementation_signature <<0xAAF10F42::4-unit(8)>>
-  # bb82aa5e = keccak256(comptrollerImplementation())
+  # 0xbb82aa5e = keccak256(comptrollerImplementation())
   @comptroller_implementation_signature <<0xBB82AA5E::4-unit(8)>>
 
   def quick_resolve_implementations(address, proxy_type) do

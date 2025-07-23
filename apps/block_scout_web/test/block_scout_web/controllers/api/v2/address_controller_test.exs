@@ -34,6 +34,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
   @instances_amount_in_collection 9
+  @resolved_delegate_proxy "0x608060408181523060009081526001602090815282822054908290529181207FBF40FAC1000000000000000000000000000000000000000000000000000000009093529173FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF9091169063BF40FAC19061006D9060846101E2565B602060405180830381865AFA15801561008A573D6000803E3D6000FD5B505050506040513D601F19601F820116820180604052508101906100AE91906102C5565B905073FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF8116610157576040517F08C379A000000000000000000000000000000000000000000000000000000000815260206004820152603960248201527F5265736F6C76656444656C656761746550726F78793A2074617267657420616460448201527F6472657373206D75737420626520696E697469616C697A656400000000000000606482015260840160405180910390FD5B6000808273FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF16600036604051610182929190610302565B600060405180830381855AF49150503D80600081146101BD576040519150601F19603F3D011682016040523D82523D6000602084013E6101C2565B606091505B5090925090508115156001036101DA57805160208201F35B805160208201FD5B600060208083526000845481600182811C91508083168061020457607F831692505B858310810361023A577F4E487B710000000000000000000000000000000000000000000000000000000085526022600452602485FD5B878601838152602001818015610257576001811461028B576102B6565B7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF008616825284151560051B820196506102B6565B60008B81526020902060005B868110156102B057815484820152908501908901610297565B83019750505B50949998505050505050505050565B6000602082840312156102D757600080FD5B815173FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF811681146102FB57600080FD5B9392505050565B818382376000910190815291905056FEA164736F6C634300080F000A"
 
   setup :set_mox_global
 
@@ -362,7 +363,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       implementation_address = insert(:address)
       implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
-      TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
+
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests(eip1967: implementation_address.hash)
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(smart_contract.address_hash)}")
 
@@ -392,15 +395,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
 
     test "get Resolved Delegate Proxy contract info", %{conn: conn} do
-      address_manager_address = insert(:address)
-
-      "0x" <> address_manager_address_hash_string_without_0x = to_string(address_manager_address.hash)
-
-      owner_address = insert(:address)
-
-      "0x" <> owner_address_hash_string_without_0x = to_string(owner_address.hash)
-
-      proxy_smart_contract = insert(:smart_contract)
+      proxy_address = insert(:address, contract_code: @resolved_delegate_proxy)
+      proxy_smart_contract = insert(:smart_contract, address_hash: proxy_address.hash)
 
       transaction =
         insert(:transaction,
@@ -421,17 +417,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       from = Address.checksum(transaction.from_address_hash)
       transaction_hash = to_string(transaction.hash)
       checksummed_proxy_address_hash = Address.checksum(proxy_smart_contract.address_hash)
-      "0x" <> proxy_address_hash_string_without_0x = to_string(proxy_smart_contract.address_hash)
 
       implementation_address = insert(:address)
+      implementation_address_hash_string = implementation_address.hash |> Address.checksum() |> to_string()
 
-      "0x" <> implementation_address_hash_string_without_0x = to_string(implementation_address.hash)
-      implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
-
-      TestHelper.get_resolved_delegate_proxy_implementation_non_zero_address(
-        owner_address_hash_string_without_0x,
-        implementation_address_hash_string_without_0x,
-        proxy_address_hash_string_without_0x
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_resolved_delegate_proxy_requests(
+        proxy_smart_contract.address_hash,
+        implementation_address.hash
       )
 
       request = get(conn, "/api/v2/addresses/#{checksummed_proxy_address_hash}")
