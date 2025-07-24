@@ -113,7 +113,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   end
 
   @doc """
-    Processes a batch import of token info by splitting the items from db queue into chunks and sending each chunk as an HTTP POST request to a configured microservice endpoint.
+    Processes a batch export of token info by splitting the items from db queue into chunks and sending each chunk as an HTTP POST request to a configured microservice endpoint.
 
     If the microservice is enabled, the function:
     - Splits the input `items_from_db_queue` into manageable chunks.
@@ -125,20 +125,20 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     If the microservice is disabled, returns `{:ok, :service_disabled}`.
 
     ## Parameters
-    - `items_from_db_queue`: The queue items to be imported, which will be split into chunks for processing.
+    - `items_from_db_queue`: The queue items to be exported, which will be split into chunks for processing.
 
     ## Returns
     - `{:ok, any()}`: If all chunks are processed successfully or the service is disabled.
     - `{:error, map()}`: If one or more chunks fail, with details about the data that needs to be retried.
   """
-  @spec batch_import_token_info([
+  @spec batch_export_token_info([
           %{
             :address_hash => binary(),
             :data_type => :metadata | :total_supply | :counters | :market_data,
             :data => map()
           }
         ]) :: {:ok, any()} | {:error, map()}
-  def batch_import_token_info(items_from_db_queue) do
+  def batch_export_token_info(items_from_db_queue) do
     if enabled?() do
       url = batch_import_url()
       api_key = api_key()
@@ -167,7 +167,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           acc
 
         {:ok, {:error, error}}, acc ->
-          on_error_token_info(error)
+          token_info_on_error(error)
 
           case acc do
             {:ok, {:chunks_processed, _}} ->
@@ -178,7 +178,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           end
 
         {:exit, {export_body, reason}}, acc ->
-          on_error_token_info(%{
+          token_info_on_error(%{
             url: url,
             data_to_retry: export_body,
             reason: reason
@@ -266,8 +266,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp on_error(_), do: :ignore
 
-  @spec on_error_token_info(map()) :: any()
-  defp on_error_token_info(%{data_to_retry: data_to_retry} = error) do
+  @spec token_info_on_error(map()) :: any()
+  defp token_info_on_error(%{data_to_retry: data_to_retry} = error) do
     log_error(error)
 
     prepared_token_info_data =
@@ -283,7 +283,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     )
   end
 
-  defp on_error_token_info(_), do: :ignore
+  defp token_info_on_error(_), do: :ignore
 
   @spec token_info_queue_item_to_http_item(%{
           :address_hash => binary,
@@ -306,7 +306,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           :data_type => :metadata | :total_supply | :counters | :market_data,
           :data => map()
         }
-  defp token_info_http_item_to_queue_item(%{address_hash: "0x" <> address_string} = http_item) do
+  def token_info_http_item_to_queue_item(%{address_hash: "0x" <> address_string} = http_item) do
     {:ok, address_hash} = Base.decode16(address_string, case: :mixed)
 
     metadata = Map.get(http_item, :metadata)

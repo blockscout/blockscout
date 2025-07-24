@@ -7,6 +7,7 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
 
   import Ecto.Query
 
+  alias Ecto.Multi
   alias Explorer.{Chain, Repo}
 
   @required_attrs ~w(address_hash data_type data)a
@@ -66,8 +67,29 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
       data_type: export.data_type,
       data: export.data
     })
-    |> Chain.add_fetcher_limit(limited?)
+    |> add_queue_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
+  end
+
+  defp add_queue_fetcher_limit(query, false), do: query
+
+  defp add_queue_fetcher_limit(query, true) do
+    limit = Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue)[:init_limit]
+    limit(query, ^limit)
+  end
+
+  @spec delete_query([%{:address_hash => binary(), :data_type => atom(), optional(:data) => map()}]) :: Multi.t()
+  def delete_query(queue_items) do
+    queue_items
+    |> Enum.reduce(Multi.new(), fn queue_item, multi_acc ->
+      Multi.delete_all(
+        multi_acc,
+        {queue_item.address_hash, queue_item.data_type},
+        from(q in __MODULE__,
+          where: q.address_hash == ^queue_item.address_hash and q.data_type == ^queue_item.data_type
+        )
+      )
+    end)
   end
 
   @doc """
