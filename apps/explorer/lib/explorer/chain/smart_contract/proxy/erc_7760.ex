@@ -64,7 +64,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.ERC7760 do
       # proceed to other proxy types only if bytecode doesn't match
       true -> nil
       # if bytecode matches but resolution fails, we should halt
-      _ -> :halt
+      _ -> {:ok, []}
     end
   end
 end

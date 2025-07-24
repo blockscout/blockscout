@@ -30,7 +30,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
       # proceed to other proxy types only if bytecode doesn't match
       {:match, _} -> nil
       # if bytecode matches but resolution fails, we should halt
-      _ -> :halt
+      _ -> {:ok, []}
     end
   end
 
