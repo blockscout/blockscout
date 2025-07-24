@@ -7,6 +7,7 @@ defmodule Explorer.Market.Fetcher.Token do
   require Logger
 
   alias Explorer.Chain
+  alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Import.Runner.Tokens
   alias Explorer.Market.Source
   alias Explorer.MicroserviceInterfaces.MultichainSearch
@@ -105,6 +106,22 @@ defmodule Explorer.Market.Fetcher.Token do
     {:noreply, state}
   end
 
+  # Adds market data of the token (such as price and market cap) to the queue to send that to Multichain service.
+  #
+  # ## Parameters
+  # - `tokens_data`: A list of token data.
+  #
+  # ## Returns
+  # - `:ok` if the data is accepted for insertion.
+  # - `:ignore` if the Multichain service is not used.
+  @spec enqueue_to_multichain([
+          %{
+            :contract_address_hash => Address.t(),
+            optional(:fiat_value) => Decimal.t(),
+            optional(:circulating_market_cap) => Decimal.t(),
+            optional(any()) => any()
+          }
+        ]) :: :ok | :ignore
   defp enqueue_to_multichain(tokens_data) do
     tokens_data
     |> Enum.reduce(%{}, fn token, acc ->

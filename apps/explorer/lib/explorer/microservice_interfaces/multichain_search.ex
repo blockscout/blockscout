@@ -266,7 +266,18 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp on_error(_), do: :ignore
 
-  @spec token_info_on_error(map()) :: any()
+  # Logs error when trying to send token info from the queue to Multichain service
+  # and increments `retries_number` counter of the corresponding queue items.
+  #
+  # ## Parameters
+  # - `error`: A map with the queue items.
+  #
+  # ## Returns
+  # - Nothing.
+  @spec token_info_on_error(%{
+          :data_to_retry => %{:tokens => [map()], optional(any()) => any()},
+          optional(any()) => any()
+        }) :: any()
   defp token_info_on_error(%{data_to_retry: data_to_retry} = error) do
     log_error(error)
 
@@ -285,11 +296,21 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp token_info_on_error(_), do: :ignore
 
+  # Converts database queue item with token info to the item ready to send to Multichain service via HTTP.
+  #
+  # ## Parameters
+  # - `item_from_db_queue`: The queue item map from database.
+  #
+  # ## Returns
+  # - A map ready to send to Multichain service via HTTP.
   @spec token_info_queue_item_to_http_item(%{
-          :address_hash => binary,
+          :address_hash => binary(),
           :data_type => :metadata | :total_supply | :counters | :market_data,
           :data => map()
-        }) :: map()
+        }) ::
+          %{:address_hash => String.t(), :metadata => map()}
+          | %{:address_hash => String.t(), :counters => map()}
+          | %{:address_hash => String.t(), :price_data => map()}
   defp token_info_queue_item_to_http_item(item_from_db_queue) do
     token = %{address_hash: "0x" <> Base.encode16(item_from_db_queue.address_hash, case: :lower)}
 
@@ -301,8 +322,20 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
-  @spec token_info_http_item_to_queue_item(map()) :: %{
-          :address_hash => binary,
+  # Converts queue item (containing token info) ready to send to Multichain service via HTTP
+  # to the queue item ready to be written to the database.
+  #
+  # ## Parameters
+  # - `http_item`: The queue item for HTTP.
+  #
+  # ## Returns
+  # - A map ready to write to the database.
+  @spec token_info_http_item_to_queue_item(
+          %{:address_hash => String.t(), :metadata => map()}
+          | %{:address_hash => String.t(), :counters => map()}
+          | %{:address_hash => String.t(), :price_data => map()}
+        ) :: %{
+          :address_hash => binary(),
           :data_type => :metadata | :total_supply | :counters | :market_data,
           :data => map()
         }
@@ -381,12 +414,22 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
+  @doc """
+    Prepares token metadata for writing to database queue and subsequent sending to Multichain service.
+
+    ## Parameters
+    - `token`: An instance of `Token.t()` containing token type and probably `icon_url`.
+    - `metadata`: A map with token metadata.
+
+    ## Returns
+    - A map containing token type and its metadata in the format approved on Multichain service.
+  """
   @spec prepare_token_metadata_for_queue(Token.t(), %{
           :token_type => String.t(),
           :name => String.t(),
           :symbol => String.t(),
-          :decimals => non_neg_integer(),
-          :total_supply => non_neg_integer(),
+          optional(:decimals) => non_neg_integer(),
+          optional(:total_supply) => non_neg_integer(),
           optional(any()) => any()
         }) :: %{
           :token_type => String.t(),
@@ -410,6 +453,16 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     |> token_optional_field(metadata, :total_supply, true)
   end
 
+  @doc """
+    Prepares token total supply for writing to database queue and subsequent sending to Multichain service.
+
+    ## Parameters
+    - `total_supply`: The total supply value. Can be `nil`.
+
+    ## Returns
+    - A map containing total supply in the format approved on Multichain service.
+    - `nil` if the `total_supply` parameter is `nil`.
+  """
   @spec prepare_token_total_supply_for_queue(non_neg_integer() | nil) :: %{:total_supply => String.t()} | nil
   def prepare_token_total_supply_for_queue(nil), do: nil
 
@@ -417,7 +470,21 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     %{total_supply: to_string(total_supply)}
   end
 
-  @spec prepare_token_market_data_for_queue(map()) :: map()
+  @doc """
+    Prepares token market data (such as price and market cap) for writing to database queue
+    and subsequent sending to Multichain service.
+
+    ## Parameters
+    - `token`: A token map containing the market data.
+
+    ## Returns
+    - A map containing the market data in the format approved on Multichain service.
+  """
+  @spec prepare_token_market_data_for_queue(%{
+          optional(:fiat_value) => Decimal.t(),
+          optional(:circulating_market_cap) => Decimal.t(),
+          optional(any()) => any()
+        }) :: map()
   def prepare_token_market_data_for_queue(token) do
     %{}
     |> token_optional_field(token, :fiat_value)
@@ -428,6 +495,16 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     |> Enum.into(%{})
   end
 
+  @doc """
+    Prepares token counters for writing to database queue and subsequent sending to Multichain service.
+
+    ## Parameters
+    - `transfer_count`: The number of the token transfers count.
+    - `holder_count`: The number of the token holders count.
+
+    ## Returns
+    - A map containing the counters in the format approved on Multichain service.
+  """
   @spec prepare_token_counters_for_queue(non_neg_integer(), non_neg_integer()) :: %{
           :transfers_count => String.t(),
           :holders_count => String.t()
@@ -450,6 +527,17 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
+  @doc """
+    Writes token info to database queue to send that to Multichain service later.
+
+    ## Parameters
+    - `entries`: A list of token entries prepared with one of the `prepare_token_*` functions.
+    - `entries_type`: A type of the token entries.
+
+    ## Returns
+    # - `:ok` if the data is accepted for insertion.
+    # - `:ignore` if the Multichain service is not used.
+  """
   @spec send_token_info_to_queue([%{binary() => map()}], :metadata | :total_supply | :counters | :market_data) ::
           :ok | :ignore
   def send_token_info_to_queue(entries, entries_type) do

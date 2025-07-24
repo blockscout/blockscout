@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
   @moduledoc """
-  Tracks token data, pending for export to the Multichain Service database.
+    Tracks token data, pending for export to the Multichain Service database.
   """
 
   use Explorer.Schema
@@ -8,7 +8,7 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
 
   @required_attrs ~w(address_hash data_type data)a
   @optional_attrs ~w(retries_number)a
@@ -42,16 +42,16 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
   end
 
   @doc """
-  Streams a batch of multichain database token info entries that need to be retried for export.
+    Streams a batch of multichain database token info entries that need to be retried for export.
 
-  This function selects specific fields from the export records and applies a reducer function to each entry in the stream, accumulating the result. Optionally, the stream can be limited based on the `limited?` flag.
+    This function selects specific fields from the export records and applies a reducer function to each entry in the stream, accumulating the result. Optionally, the stream can be limited based on the `limited?` flag.
 
-  ## Parameters
+    ## Parameters
     - `initial`: The initial accumulator value.
     - `reducer`: A function that takes an entry (as a map) and the current accumulator, returning the updated accumulator.
     - `limited?` (optional): A boolean indicating whether to apply a fetch limit to the stream. Defaults to `false`.
 
-  ## Returns
+    ## Returns
     - `{:ok, accumulator}`: A tuple containing `:ok` and the final accumulator after processing the stream.
   """
   @spec stream_multichain_db_token_info_batch(
@@ -78,6 +78,15 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
     limit(query, ^limit)
   end
 
+  @doc """
+    Constructs DELETE FROM queries for the token info items to be deleted from the queue.
+
+    ## Parameters
+    - `queue_items`: A list of items to be deleted from the queue. Each item is identified by its primary key.
+
+    ## Returns
+    - An `Ecto.Multi` struct containing the delete operations.
+  """
   @spec delete_query([%{:address_hash => binary(), :data_type => atom(), optional(:data) => map()}]) :: Multi.t()
   def delete_query(queue_items) do
     queue_items
@@ -93,13 +102,13 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
   end
 
   @doc """
-  Returns an Ecto query that defines the default conflict resolution strategy for the
-  `multichain_search_db_export_token_info_queue` table. On conflict, it increments the `retries_number`
-  (by using the value from `EXCLUDED.retries_number` or 0 if not present) and updates the
-  `updated_at` field to the greatest value between the current and the new timestamp.
+    Returns an Ecto query that defines the default conflict resolution strategy for the
+    `multichain_search_db_export_token_info_queue` table. On conflict, it increments the `retries_number`
+    (by using the db stored value or 0 if not present) and updates the
+    `updated_at` field to the greatest value between the current and the new timestamp.
 
-  This is typically used in upsert operations to ensure retry counts are tracked and
-  timestamps are properly updated.
+    This is typically used in upsert operations to ensure retry counts are tracked and
+    timestamps are properly updated.
   """
   @spec default_on_conflict :: Ecto.Query.t()
   def default_on_conflict do

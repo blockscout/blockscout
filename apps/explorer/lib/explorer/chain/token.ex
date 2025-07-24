@@ -423,10 +423,17 @@ defmodule Explorer.Chain.Token do
   end
 
   @doc """
-    Updates token_transfer_count for a given contract_address_hash.
-    It used by Explorer.Chain.Cache.Counters.TokenTransfersCount module.
+    Updates `transfer_count` field for a given `contract_address_hash`.
+    Used by the `Explorer.Chain.Cache.Counters.TokenTransfersCount` module.
+
+    ## Parameters
+    - `contract_address_hash`: The address of the token contract.
+    - `transfer_count`: The updated counter value.
+
+    ## Returns
+    - `{updated_count, nil}` tuple where `updated_count` is the number of updated rows in the db table.
   """
-  @spec update_token_transfer_count(Hash.Address.t(), integer()) :: {non_neg_integer(), nil}
+  @spec update_token_transfer_count(Hash.Address.t(), non_neg_integer()) :: {non_neg_integer(), nil}
   def update_token_transfer_count(contract_address_hash, transfer_count) when not is_nil(transfer_count) do
     now = DateTime.utc_now()
 
