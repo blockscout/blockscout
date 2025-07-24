@@ -32,7 +32,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
   def get_implementation_smart_contract(address_hash, options \\ []) do
     address = Chain.select_repo(options).get(Address, address_hash)
 
-    case quick_resolve_implementations(address, :eip1167) do
+    case address && quick_resolve_implementations(address, :eip1167) do
       {:ok, [address_hash]} -> Proxy.implementation_to_smart_contract(address_hash, options)
       _ -> nil
     end
