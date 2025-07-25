@@ -426,31 +426,30 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   """
   @spec prepare_token_metadata_for_queue(Token.t(), %{
           :token_type => String.t(),
-          :name => String.t(),
-          :symbol => String.t(),
+          optional(:name) => String.t(),
+          optional(:symbol) => String.t(),
           optional(:decimals) => non_neg_integer(),
           optional(:total_supply) => non_neg_integer(),
           optional(any()) => any()
         }) :: %{
-          :token_type => String.t(),
-          :name => String.t(),
-          :symbol => String.t(),
+          optional(:token_type) => String.t(),
+          optional(:name) => String.t(),
+          optional(:symbol) => String.t(),
           optional(:decimals) => String.t(),
           optional(:total_supply) => String.t(),
           optional(:icon_url) => String.t()
         }
   def prepare_token_metadata_for_queue(%Token{} = token, metadata) do
-    data =
-      %{
-        token_type: token.type,
-        name: metadata.name,
-        symbol: metadata.symbol
-      }
-
-    data
-    |> token_optional_field(token, :icon_url)
-    |> token_optional_field(metadata, :decimals, true)
-    |> token_optional_field(metadata, :total_supply, true)
+    if enabled?() do
+      %{token_type: token.type}
+      |> token_optional_field(metadata, :name)
+      |> token_optional_field(metadata, :symbol)
+      |> token_optional_field(token, :icon_url)
+      |> token_optional_field(metadata, :decimals, true)
+      |> token_optional_field(metadata, :total_supply, true)
+    else
+      %{}
+    end
   end
 
   @doc """
@@ -467,7 +466,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   def prepare_token_total_supply_for_queue(nil), do: nil
 
   def prepare_token_total_supply_for_queue(total_supply) do
-    %{total_supply: to_string(total_supply)}
+    if enabled?() do
+      %{total_supply: to_string(total_supply)}
+    end
   end
 
   @doc """
@@ -486,13 +487,17 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           optional(any()) => any()
         }) :: map()
   def prepare_token_market_data_for_queue(token) do
-    %{}
-    |> token_optional_field(token, :fiat_value)
-    |> token_optional_field(token, :circulating_market_cap)
-    |> Enum.map(fn {key, value} ->
-      {key, Decimal.to_string(value, :normal)}
-    end)
-    |> Enum.into(%{})
+    if enabled?() do
+      %{}
+      |> token_optional_field(token, :fiat_value)
+      |> token_optional_field(token, :circulating_market_cap)
+      |> Enum.map(fn {key, value} ->
+        {key, Decimal.to_string(value, :normal)}
+      end)
+      |> Enum.into(%{})
+    else
+      %{}
+    end
   end
 
   @doc """
@@ -510,7 +515,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           :holders_count => String.t()
         }
   def prepare_token_counters_for_queue(transfer_count, holder_count) do
-    %{transfers_count: to_string(transfer_count), holders_count: to_string(holder_count)}
+    if enabled?() do
+      %{transfers_count: to_string(transfer_count), holders_count: to_string(holder_count)}
+    else
+      %{}
+    end
   end
 
   defp token_optional_field(data, metadata, key, convert_to_string \\ false) do
