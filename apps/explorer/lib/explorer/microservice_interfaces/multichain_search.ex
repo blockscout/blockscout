@@ -531,14 +531,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     Writes token info to database queue to send that to Multichain service later.
 
     ## Parameters
-    - `entries`: A list of token entries prepared with one of the `prepare_token_*` functions.
+    - `entries`: A map of token entries with data prepared with one of the `prepare_token_*` functions.
     - `entries_type`: A type of the token entries.
 
     ## Returns
     # - `:ok` if the data is accepted for insertion.
     # - `:ignore` if the Multichain service is not used.
   """
-  @spec send_token_info_to_queue([%{binary() => map()}], :metadata | :total_supply | :counters | :market_data) ::
+  @spec send_token_info_to_queue(%{binary() => map()}, :metadata | :total_supply | :counters | :market_data) ::
           :ok | :ignore
   def send_token_info_to_queue(entries, entries_type) do
     if enabled?() do
@@ -555,7 +555,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   end
 
   @spec extract_token_info_entries_into_chunks(
-          [%{binary() => map()}],
+          %{binary() => map()},
           :metadata | :total_supply | :counters | :market_data
         ) :: list()
   defp extract_token_info_entries_into_chunks(entries, entries_type) do
