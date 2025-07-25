@@ -16,6 +16,7 @@ defmodule Explorer.Chain.Import do
       Import.Stage.Blocks
     ],
     [
+      Import.Stage.Addresses,
       Import.Stage.Main
     ],
     [
