@@ -445,7 +445,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       |> token_optional_field(metadata, :name)
       |> token_optional_field(metadata, :symbol)
       |> token_optional_field(token, :icon_url)
-      |> token_optional_field(metadata, :decimals, true)
+      |> token_optional_field(metadata, :decimals)
       |> token_optional_field(metadata, :total_supply, true)
     else
       %{}
@@ -556,6 +556,19 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       |> Enum.each(fn chunk ->
         Repo.insert_all(TokenInfoExportQueue, Helper.add_timestamps(chunk), on_conflict: :nothing)
       end)
+
+      # todo: this is emulation of token's market data and should be removed
+      # if entries_type == :metadata do
+      #   entries
+      #   |> Enum.map(fn {contract_address, _} ->
+      #     {contract_address, %{fiat_value: "123.456", circulating_market_cap: "10.01"}}
+      #   end)
+      #   |> Enum.into(%{})
+      #   |> extract_token_info_entries_into_chunks(:market_data)
+      #   |> Enum.each(fn chunk ->
+      #     Repo.insert_all(TokenInfoExportQueue, Helper.add_timestamps(chunk), on_conflict: :nothing)
+      #   end)
+      # end
 
       :ok
     else

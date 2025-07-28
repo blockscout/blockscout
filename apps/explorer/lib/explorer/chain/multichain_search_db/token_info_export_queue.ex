@@ -102,6 +102,17 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
   end
 
   @doc """
+    Returns the current number of items in the queue.
+
+    ## Returns
+    - The current number of items in the queue.
+  """
+  @spec queue_size() :: non_neg_integer()
+  def queue_size do
+    Repo.aggregate(__MODULE__, :count)
+  end
+
+  @doc """
     Returns an Ecto query that defines the default conflict resolution strategy for the
     `multichain_search_db_export_token_info_queue` table. On conflict, it increments the `retries_number`
     (by using the db stored value or 0 if not present) and updates the

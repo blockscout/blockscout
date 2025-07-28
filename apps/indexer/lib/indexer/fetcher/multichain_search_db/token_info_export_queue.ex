@@ -19,6 +19,9 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
   @default_max_batch_size 1000
   @default_max_concurrency 10
   @failed_to_export_data_error "Batch token info export attempt to the Multichain Search DB failed"
+  @fetcher_name :multichain_search_db_token_info_export_queue
+  @queue_size_info "Queue size"
+  @successfully_sent_info "Successfully sent"
 
   @doc false
   def child_spec([init_options, gen_server_options]) do
@@ -48,14 +51,17 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
   def run(items_from_db_queue, _) when is_list(items_from_db_queue) do
     case MultichainSearch.batch_export_token_info(items_from_db_queue) do
       {:ok, {:chunks_processed, chunks}} ->
-        chunks
-        |> Enum.map(fn chunk -> chunk.tokens end)
-        |> List.flatten()
+        items =
+          chunks
+          |> Enum.map(fn chunk -> chunk.tokens end)
+          |> List.flatten()
+
+        items
         |> Enum.map(&MultichainSearch.token_info_http_item_to_queue_item(&1))
         |> TokenInfoExportQueue.delete_query()
         |> Repo.transaction()
 
-        :ok
+        log_queue_size(items)
 
       {:error, data_to_retry} ->
         Logger.error(fn ->
@@ -66,18 +72,45 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
           data_to_retry.tokens
           |> Enum.map(&MultichainSearch.token_info_http_item_to_queue_item(&1))
 
-        items_from_db_queue
-        |> Enum.reject(fn item_to_export ->
-          Enum.any?(
-            queue_items_to_retry,
-            &(&1.address_hash == item_to_export.address_hash and &1.data_type == item_to_export.data_type)
-          )
-        end)
+        items_successful =
+          items_from_db_queue
+          |> Enum.reject(fn item_to_export ->
+            Enum.any?(
+              queue_items_to_retry,
+              &(&1.address_hash == item_to_export.address_hash and &1.data_type == item_to_export.data_type)
+            )
+          end)
+
+        items_successful
         |> TokenInfoExportQueue.delete_query()
         |> Repo.transaction()
 
+        log_queue_size(items_successful)
+
         {:retry, queue_items_to_retry}
     end
+  end
+
+  # Logs the number of the current queue size and the number of successfully sent items.
+  #
+  # ## Parameters
+  # - `items_successful`: The list of items successfully sent to Multichain service.
+  #
+  # ## Returns
+  # - `:ok`
+  @spec log_queue_size(list()) :: any()
+  defp log_queue_size(items_successful) do
+    Logger.info(
+      fn ->
+        [
+          "#{@queue_size_info}: ",
+          "#{TokenInfoExportQueue.queue_size()}, ",
+          "#{@successfully_sent_info}: ",
+          "#{Enum.count(items_successful)}"
+        ]
+      end,
+      fetcher: @fetcher_name
+    )
   end
 
   defp defaults do
