@@ -101,6 +101,13 @@
     "ip": true,
     "temporary_token": true
   },
+  "api/account/v2/*": {
+    "static_api_key": true,
+    "account_api_key": true,
+    "whitelisted_ip": true,
+    "ip": true,
+    "temporary_token": true
+  },
   "default": {
     "static_api_key": true,
     "account_api_key": true,
