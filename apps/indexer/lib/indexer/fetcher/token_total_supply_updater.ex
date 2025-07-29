@@ -34,13 +34,13 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
 
   def handle_info(:update, contract_address_hashes) do
     contract_address_hashes
-    |> Enum.reject(&is_nil(&1))
     |> Enum.reduce(%{}, fn contract_address_hash, acc ->
-      {:ok, address_hash} = Chain.string_to_address_hash(contract_address_hash)
-
-      case update_token(address_hash) do
-        nil -> acc
-        data_for_multichain -> Map.put(acc, address_hash.bytes, data_for_multichain)
+      with {:ok, address_hash} <- Chain.string_to_address_hash(contract_address_hash),
+           data_for_multichain = update_token(address_hash),
+           false <- is_nil(data_for_multichain) do
+        Map.put(acc, address_hash.bytes, data_for_multichain)
+      else
+        _ -> acc
       end
     end)
     |> MultichainSearch.send_token_info_to_queue(:total_supply)

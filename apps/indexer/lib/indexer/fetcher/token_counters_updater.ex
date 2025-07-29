@@ -44,8 +44,7 @@ defmodule Indexer.Fetcher.TokenCountersUpdater do
 
   @impl BufferedTask
   def init(initial, reducer, _) do
-    counters_updater_milliseconds_interval =
-      Application.get_env(:indexer, :token_counters_updater_milliseconds_interval)
+    counters_updater_milliseconds_interval = Application.get_env(:indexer, __MODULE__)[:milliseconds_interval]
 
     interval_in_minutes =
       counters_updater_milliseconds_interval

@@ -85,7 +85,7 @@ defmodule Explorer.Chain.Cache.Counters.TokenTransfersCount do
 
   defp fetch_from_db_cache(address_hash) do
     token = Token.get_by_contract_address_hash(address_hash, @api_true)
-    token.transfer_count || 0
+    (token && token.transfer_count) || 0
   end
 
   defp put_into_db_cache(address_hash, count) do

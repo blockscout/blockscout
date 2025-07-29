@@ -289,7 +289,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     Repo.insert_all(
       TokenInfoExportQueue,
       prepared_token_info_data,
-      on_conflict: TokenInfoExportQueue.default_on_conflict(),
+      on_conflict: TokenInfoExportQueue.increase_retries_on_conflict(),
       conflict_target: [:address_hash, :data_type]
     )
   end
@@ -554,21 +554,13 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       entries
       |> extract_token_info_entries_into_chunks(entries_type)
       |> Enum.each(fn chunk ->
-        Repo.insert_all(TokenInfoExportQueue, Helper.add_timestamps(chunk), on_conflict: :nothing)
+        Repo.insert_all(
+          TokenInfoExportQueue,
+          Helper.add_timestamps(chunk),
+          on_conflict: TokenInfoExportQueue.default_on_conflict(),
+          conflict_target: [:address_hash, :data_type]
+        )
       end)
-
-      # todo: this is emulation of token's market data and should be removed
-      # if entries_type == :metadata do
-      #   entries
-      #   |> Enum.map(fn {contract_address, _} ->
-      #     {contract_address, %{fiat_value: "123.456", circulating_market_cap: "10.01"}}
-      #   end)
-      #   |> Enum.into(%{})
-      #   |> extract_token_info_entries_into_chunks(:market_data)
-      #   |> Enum.each(fn chunk ->
-      #     Repo.insert_all(TokenInfoExportQueue, Helper.add_timestamps(chunk), on_conflict: :nothing)
-      #   end)
-      # end
 
       :ok
     else

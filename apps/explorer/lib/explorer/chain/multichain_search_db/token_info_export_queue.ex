@@ -113,7 +113,7 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
   end
 
   @doc """
-    Returns an Ecto query that defines the default conflict resolution strategy for the
+    Returns an Ecto query that defines the conflict resolution strategy for the
     `multichain_search_db_export_token_info_queue` table. On conflict, it increments the `retries_number`
     (by using the db stored value or 0 if not present) and updates the
     `updated_at` field to the greatest value between the current and the new timestamp.
@@ -121,13 +121,33 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
     This is typically used in upsert operations to ensure retry counts are tracked and
     timestamps are properly updated.
   """
+  @spec increase_retries_on_conflict :: Ecto.Query.t()
+  def increase_retries_on_conflict do
+    from(
+      q in __MODULE__,
+      update: [
+        set: [
+          retries_number: fragment("COALESCE(?, 0) + 1", q.retries_number),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", q.updated_at)
+        ]
+      ]
+    )
+  end
+
+  @doc """
+    Returns an Ecto query that defines the default conflict resolution strategy for the
+    `multichain_search_db_export_token_info_queue` table. On conflict, it updates the `data` field
+    and the `updated_at` field to the greatest value between the current and the new timestamp.
+
+    This is typically used in upsert operations to ensure data and timestamps are properly updated.
+  """
   @spec default_on_conflict :: Ecto.Query.t()
   def default_on_conflict do
     from(
       q in __MODULE__,
       update: [
         set: [
-          retries_number: fragment("COALESCE(?, 0) + 1", q.retries_number),
+          data: fragment("EXCLUDED.data"),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", q.updated_at)
         ]
       ]
