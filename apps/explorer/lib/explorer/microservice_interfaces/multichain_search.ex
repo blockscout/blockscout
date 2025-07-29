@@ -3,6 +3,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   Module to interact with Multichain search microservice
   """
   alias Ecto.Association.NotLoaded
+  alias Explorer.Chain
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Block.Range
@@ -293,7 +294,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       address_coin_balances
       |> Enum.map(fn %{address_hash: address_hash, value: value} ->
         %{
-          address_hash: address_hash,
+          address_hash: address_hash |> Chain.string_to_address_hash() |> elem(1),
           token_contract_address_hash_or_native: "native",
           value: value
         }
@@ -308,7 +309,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
                        token_id: token_id
                      } ->
         %{
-          address_hash: address_hash,
+          address_hash: address_hash |> Chain.string_to_address_hash() |> elem(1),
           token_contract_address_hash_or_native: Helper.hash_to_binary(token_address_hash),
           # value is of Wei type in Explorer.Chain.Address.CoinBalance
           # value is of Decimal type in Explorer.Chain.Address.TokenBalance
@@ -398,9 +399,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         params.address_coin_balances
         |> Enum.map(fn address_coin_balance ->
           %{
-            address_hash: address_coin_balance.address_hash,
+            address_hash: Hash.to_string(address_coin_balance.address_hash),
             token_contract_address_hash_or_native: "native",
-            token_id: nil,
             value: address_coin_balance.value
           }
         end)
@@ -440,7 +440,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           params.address_token_balances
           |> Enum.map(fn address_token_balance ->
             %{
-              address_hash: address_token_balance.address_hash,
+              address_hash: Hash.to_string(address_token_balance.address_hash),
               token_address_hash: address_token_balance.token_contract_address_hash,
               token_id: address_token_balance.token_id,
               value: address_token_balance.value
@@ -450,6 +450,10 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         true ->
           []
       end
+
+    sanitized_address_token_balances =
+      address_token_balances
+      |> Enum.reject(&(is_nil(&1.value) && is_nil(&1.token_id)))
 
     api_key = api_key()
     chain_id = ChainId.get_id()
@@ -468,7 +472,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     prepare_chunk(indexed_addresses_chunks, indexed_address_coin_balances_chunks, base_data_chunk, %{
       block_transaction_hashes: block_transaction_hashes,
       block_ranges: block_ranges,
-      address_token_balances: address_token_balances
+      address_token_balances: sanitized_address_token_balances
     })
   end
 
@@ -547,14 +551,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp format_address_coin_balance(address) do
     %{
-      address_hash: address.hash,
+      address_hash: Hash.to_string(address.hash),
       value: address.fetched_coin_balance
     }
   end
 
   defp format_address_token_balance(address_current_token_balance) do
     %{
-      address_hash: address_current_token_balance.address_hash,
+      address_hash: Hash.to_string(address_current_token_balance.address_hash),
       token_address_hash: Hash.to_string(address_current_token_balance.token_contract_address_hash),
       token_id: address_current_token_balance.token_id,
       value: address_current_token_balance.value

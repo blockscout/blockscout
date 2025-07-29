@@ -6,8 +6,8 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
 
   use Explorer.Schema
   import Ecto.Query
-  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.Range
+  alias Explorer.Repo
 
   @required_attrs ~w(hash hash_type)a
   @optional_attrs ~w(block_range retries_number)a
@@ -53,8 +53,17 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
       block_range: export.block_range
     })
     |> order_by([export], fragment("upper(?) DESC", export.block_range))
-    |> Chain.add_fetcher_limit(limited?)
+    |> add_main_queue_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
+  end
+
+  defp add_main_queue_fetcher_limit(query, false), do: query
+
+  defp add_main_queue_fetcher_limit(query, true) do
+    main_queue_fetcher_limit =
+      Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue)[:init_limit]
+
+    limit(query, ^main_queue_fetcher_limit)
   end
 
   @doc """
@@ -76,13 +85,14 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
   end
 
   @doc """
-  Returns an Ecto query that defines the default conflict resolution strategy for the
-  `multichain_search_db_main_export_queue` table. On conflict, it increments the `retries_number`
-  (by using the value from `EXCLUDED.retries_number` or 0 if not present) and updates the
-  `updated_at` field to the greatest value between the current and the new timestamp.
+  Returns an Ecto query that defines the default behavior for handling conflicts
+  when inserting into the `multichain_search_db_main_export_queue` table.
 
-  This is typically used in upsert operations to ensure retry counts are tracked and
-  timestamps are properly updated.
+  On conflict, this query:
+    - Increments the `retries_number` field by 1 (or sets it to 1 if it was `nil`).
+    - Sets the `updated_at` field to the greatest value between the current and the excluded `updated_at`.
+
+  This is typically used with `on_conflict` options in Ecto insert operations.
   """
   @spec default_on_conflict :: Ecto.Query.t()
   def default_on_conflict do
@@ -90,7 +100,7 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
       multichain_search_db_main_export_queue in __MODULE__,
       update: [
         set: [
-          retries_number: fragment("COALESCE(EXCLUDED.retries_number, 0) + 1"),
+          retries_number: fragment("COALESCE(?, 0) + 1", multichain_search_db_main_export_queue.retries_number),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", multichain_search_db_main_export_queue.updated_at)
         ]
       ]

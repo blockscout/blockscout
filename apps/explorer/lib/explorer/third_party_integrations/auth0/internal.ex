@@ -92,7 +92,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Internal do
     with token when is_binary(token) <- Auth0.get_m2m_jwt(),
          client = OAuth.client(token: token),
          {:ok, %OAuth2.Response{status_code: 200, body: users}} when is_list(users) <-
-           Client.get(client, @users_path, [], params: %{"q" => q}) do
+           Client.get(client, @users_path, [], params: [q: q]) do
       {:ok, users}
     else
       error -> handle_common_errors(error, error_message)

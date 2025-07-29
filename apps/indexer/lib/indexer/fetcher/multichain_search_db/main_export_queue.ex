@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueue do
 
   @default_max_batch_size 1000
   @default_max_concurrency 10
-  @failed_to_re_export_data_error "Batch export retry to the Multichain Search DB failed"
+  @failed_to_re_export_data_error "Batch main export retry to the Multichain Search DB failed"
 
   @doc false
   def child_spec([init_options, gen_server_options]) do
@@ -226,6 +226,16 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueue do
     pre_prepared_export_data
     |> Map.put(:addresses, addresses)
     |> Map.drop([:address_hashes])
+    |> (&if(
+          Map.get(&1, :block_ranges) == [
+            %{
+              max_block_number: nil,
+              min_block_number: nil
+            }
+          ],
+          do: Map.drop(&1, [:block_ranges]),
+          else: &1
+        )).()
   end
 
   defp defaults do

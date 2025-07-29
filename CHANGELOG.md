@@ -20,6 +20,14 @@
 
 ### 🐛 Bug Fixes
 
+- Fix increment of retries_number in exporting data to Multichain DB ([#12847](https://github.com/blockscout/blockscout/pull/12847))
+- Fix various errors on export of balances to Multichain DB ([#12837](https://github.com/blockscout/blockscout/pull/12837))
+- Reject empty token_id and value in export of token balances to the Multichain DB ([#12829](https://github.com/blockscout/blockscout/pull/12829))
+- Fix multichain export queues processing ([#12822](https://github.com/blockscout/blockscout/pull/12822))
+- Remove token_id parameter from coin balance payload to Multichain service API endpoint ([#12817](https://github.com/blockscout/blockscout/pull/12817))
+- Sanitize empty block_ranges payload before sending HTTP request to Multichain service([#12816](https://github.com/blockscout/blockscout/pull/12816))
+- Disable Indexer.Fetcher.Optimism.Interop.MultichainExport for non-OP chains ([#12814](https://github.com/blockscout/blockscout/pull/12814))
+- Fix flaky test for exporting balances to Multichain DB ([#12813](https://github.com/blockscout/blockscout/pull/12813))
 - Filter out creation internal transaction with `index == 0` ([#12777](https://github.com/blockscout/blockscout/issues/12777))
 - Filter out scilla transactions in internal transactions fetcher ([#12793](https://github.com/blockscout/blockscout/issues/12793))
 - Change default ordering in `/api/v2/smart-contracts` ([#12767](https://github.com/blockscout/blockscout/issues/12767))
@@ -56,6 +64,9 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Balances Multichain export: Refactor rows acquisition for deletion query ([#12839](https://github.com/blockscout/blockscout/pull/12839))
+- Change name of Swagger generation workflow ([#12840](https://github.com/blockscout/blockscout/pull/12840))
+- migrate Auth0 to mint as well ([#12807](https://github.com/blockscout/blockscout/pull/12807))
 - Migrate from HTTPoison to Tesla.Mint ([#12699](https://github.com/blockscout/blockscout/pull/12699))
 - Merge adjacent missing block ranges ([#12778](https://github.com/blockscout/blockscout/issues/12778))
 - Optimize missing block ranges operations ([#12705](https://github.com/blockscout/blockscout/issues/12705))
@@ -108,6 +119,11 @@
 | `CELO_VALIDATORS_CONTRACT`          | The address[^1] of the `Validators` core contract. Implemented in [#12373](https://github.com/blockscout/blockscout/pull/12373).             | <p>Version: v9.0.0+<br>Default: (empty)<br>Applications: Indexer</p> |
 | `CELO_EPOCH_MANAGER_CONTRACT`       | The address[^1] of the `EpochManager` core contract. Implemented in [#12373](https://github.com/blockscout/blockscout/pull/12373).           | <p>Version: v9.0.0+<br>Default: (empty)<br>Applications: Indexer</p> |
 
+## 8.1.2
+
+### ⚙️ Miscellaneous Tasks
+
+- Parsing L2 block number of OP Dispute Game on BOB chain ([#12831](https://github.com/blockscout/blockscout/pull/12831))
 
 ## 8.1.1
 

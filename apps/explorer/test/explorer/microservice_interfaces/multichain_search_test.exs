@@ -448,32 +448,32 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       assert chunk[:hashes] == [
                %{
-                 hash: "0x" <> Base.encode16(block_1.hash.bytes, case: :lower),
+                 hash: to_string(block_1.hash),
                  hash_type: "BLOCK"
                },
                %{
-                 hash: "0x" <> Base.encode16(block_2.hash.bytes, case: :lower),
+                 hash: to_string(block_2.hash),
                  hash_type: "BLOCK"
                },
                %{
-                 hash: "0x" <> Base.encode16(transaction_1.hash.bytes, case: :lower),
+                 hash: to_string(transaction_1.hash),
                  hash_type: "TRANSACTION"
                },
                %{
-                 hash: "0x" <> Base.encode16(transaction_2.hash.bytes, case: :lower),
+                 hash: to_string(transaction_2.hash),
                  hash_type: "TRANSACTION"
                }
              ]
 
       assert chunk[:address_coin_balances] == [
-               %{value: %Wei{value: Decimal.new("200")}, address_hash: address_2.hash},
-               %{value: %Wei{value: Decimal.new("100")}, address_hash: address_1.hash}
+               %{value: %Wei{value: Decimal.new("200")}, address_hash: to_string(address_2.hash)},
+               %{value: %Wei{value: Decimal.new("100")}, address_hash: to_string(address_1.hash)}
              ]
 
       assert chunk[:address_token_balances] == [
                %{
                  value: Decimal.new("30000"),
-                 address_hash: address_1.hash,
+                 address_hash: to_string(address_1.hash),
                  token_id: nil,
                  token_address_hash: to_string(token.contract_address_hash)
                }

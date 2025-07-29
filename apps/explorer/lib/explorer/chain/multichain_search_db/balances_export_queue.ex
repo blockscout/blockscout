@@ -6,7 +6,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
   use Explorer.Schema
   import Ecto.Query
   alias Ecto.Multi
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
   alias Explorer.Chain.{Hash, Wei}
 
   @required_attrs ~w(address_hash token_contract_address_hash_or_native)a
@@ -15,9 +15,9 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
 
   @primary_key false
   typed_schema "multichain_search_db_export_balances_queue" do
-    field(:id, :integer, primary_key: false, null: false)
-    field(:address_hash, Hash.Address, null: false, primary_key: true)
-    field(:token_contract_address_hash_or_native, :binary, null: false, primary_key: true)
+    field(:id, :integer, primary_key: true, null: false)
+    field(:address_hash, Hash.Address, null: false)
+    field(:token_contract_address_hash_or_native, :binary, null: false)
     field(:value, Wei)
     field(:token_id, :decimal)
     field(:retries_number, :integer)
@@ -46,13 +46,13 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
 
     - `{:ok, accumulator}`: A tuple containing `:ok` and the final accumulator after processing the stream.
   """
-  @spec stream_multichain_db_balances_batch_to_retry_export(
+  @spec stream_multichain_db_balances_batch(
           initial :: accumulator,
           reducer :: (entry :: map(), accumulator -> accumulator),
           limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_multichain_db_balances_batch_to_retry_export(initial, reducer, limited? \\ false)
+  def stream_multichain_db_balances_batch(initial, reducer, limited? \\ false)
       when is_function(reducer, 2) do
     __MODULE__
     |> select([export], %{
@@ -61,18 +61,28 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
       value: export.value,
       token_id: export.token_id
     })
-    |> Chain.add_fetcher_limit(limited?)
+    |> add_balances_queue_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
 
-  @doc """
-  Returns an Ecto query that defines the default conflict resolution strategy for the
-  `multichain_search_db_export_balances_queue` table. On conflict, it increments the `retries_number`
-  (by using the value from `EXCLUDED.retries_number` or 0 if not present) and updates the
-  `updated_at` field to the greatest value between the current and the new timestamp.
+  defp add_balances_queue_fetcher_limit(query, false), do: query
 
-  This is typically used in upsert operations to ensure retry counts are tracked and
-  timestamps are properly updated.
+  defp add_balances_queue_fetcher_limit(query, true) do
+    balances_queue_fetcher_limit =
+      Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue)[:init_limit]
+
+    limit(query, ^balances_queue_fetcher_limit)
+  end
+
+  @doc """
+  Returns an Ecto query that defines the default behavior for handling conflicts
+  when inserting into the `multichain_search_db_export_balances_queue` table.
+
+  On conflict, this query:
+    - Increments the `retries_number` field by 1 (or sets it to 1 if it was `nil`).
+    - Sets the `updated_at` field to the greatest value between the current and the excluded `updated_at`.
+
+  This is typically used with `on_conflict: default_on_conflict()` in Ecto insert operations.
   """
   @spec default_on_conflict :: Ecto.Query.t()
   def default_on_conflict do
@@ -80,7 +90,7 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
       multichain_search_db_export_balances_queue in __MODULE__,
       update: [
         set: [
-          retries_number: fragment("COALESCE(EXCLUDED.retries_number, 0) + 1"),
+          retries_number: fragment("COALESCE(?, 0) + 1", multichain_search_db_export_balances_queue.retries_number),
           updated_at:
             fragment("GREATEST(?, EXCLUDED.updated_at)", multichain_search_db_export_balances_queue.updated_at)
         ]
@@ -94,7 +104,14 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
     q =
       Enum.reduce(balances, nil, fn balance, acc ->
         balance_address_hash = balance.address_hash
-        balance_token_contract_address_hash_or_native = balance.token_contract_address_hash_or_native
+
+        balance_token_contract_address_hash_or_native_binary =
+          if byte_size(balance.token_contract_address_hash_or_native) == 6 do
+            balance.token_contract_address_hash_or_native
+          else
+            "0x" <> hex = balance.token_contract_address_hash_or_native
+            hex |> Base.decode16(case: :lower) |> elem(1)
+          end
 
         balance_token_id = balance.token_id
 
@@ -102,16 +119,13 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
           from(
             b in __MODULE__,
             where: b.address_hash == ^balance_address_hash,
-            # \x6e6174697665 == hex('native')
+            where: b.token_contract_address_hash_or_native == ^balance_token_contract_address_hash_or_native_binary,
             where:
               fragment(
-                "?::text = (CASE WHEN LENGTH(?) = 42 THEN '\\' || SUBSTRING(?, 2, LENGTH(?) - 1) ELSE '\\x6e6174697665' END)",
-                b.token_contract_address_hash_or_native,
-                ^balance_token_contract_address_hash_or_native,
-                ^balance_token_contract_address_hash_or_native,
-                ^balance_token_contract_address_hash_or_native
-              ),
-            where: fragment("COALESCE(?, -1) = COALESCE(?, -1)", b.token_id, ^balance_token_id)
+                "COALESCE(?, -1::numeric) = COALESCE(?::numeric, -1::numeric)",
+                b.token_id,
+                ^balance_token_id
+              )
           )
 
         if is_nil(acc) do

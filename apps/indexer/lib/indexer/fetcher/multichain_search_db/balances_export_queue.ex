@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
 
   @default_max_batch_size 1000
   @default_max_concurrency 10
-  @failed_to_re_export_data_error "Batch export retry to the Multichain Search DB failed"
+  @failed_to_re_export_data_error "Batch balances export retry to the Multichain Search DB failed"
 
   @doc false
   def child_spec([init_options, gen_server_options]) do
@@ -34,7 +34,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
   @impl BufferedTask
   def init(initial_acc, reducer, _) do
     {:ok, acc} =
-      BalancesExportQueue.stream_multichain_db_balances_batch_to_retry_export(
+      BalancesExportQueue.stream_multichain_db_balances_batch(
         initial_acc,
         fn data, acc ->
           IndexerHelper.reduce_if_queue_is_not_full(data, acc, reducer, __MODULE__)
