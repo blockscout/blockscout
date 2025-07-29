@@ -18,6 +18,13 @@
     },
     "isolate_rate_limit?": true
   },
+  "api/account/v2/user/info": {
+    "static_api_key": true,
+    "whitelisted_ip": true,
+    "ip": true,
+    "temporary_token": true,
+    "isolate_rate_limit?": true
+  },
   "api/v2/tokens/:param/instances/:param/refetch-metadata": {
     "recaptcha_to_bypass_429": true,
     "ip": {
@@ -103,7 +110,6 @@
   },
   "api/account/v2/*": {
     "static_api_key": true,
-    "account_api_key": true,
     "whitelisted_ip": true,
     "ip": true,
     "temporary_token": true
