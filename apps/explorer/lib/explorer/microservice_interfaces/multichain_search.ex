@@ -296,13 +296,15 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp token_info_on_error(_), do: :ignore
 
-  # Converts database queue item with token info to the item ready to send to Multichain service via HTTP.
-  #
-  # ## Parameters
-  # - `item_from_db_queue`: The queue item map from database.
-  #
-  # ## Returns
-  # - A map ready to send to Multichain service via HTTP.
+  @doc """
+    Converts database queue item with token info to the item ready to send to Multichain service via HTTP.
+
+    ## Parameters
+    - `item_from_db_queue`: The queue item map from database.
+
+    ## Returns
+    - A map ready to send to Multichain service via HTTP.
+  """
   @spec token_info_queue_item_to_http_item(%{
           :address_hash => binary(),
           :data_type => :metadata | :total_supply | :counters | :market_data,
@@ -311,7 +313,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           %{:address_hash => String.t(), :metadata => map()}
           | %{:address_hash => String.t(), :counters => map()}
           | %{:address_hash => String.t(), :price_data => map()}
-  defp token_info_queue_item_to_http_item(item_from_db_queue) do
+  def token_info_queue_item_to_http_item(item_from_db_queue) do
     token = %{address_hash: "0x" <> Base.encode16(item_from_db_queue.address_hash, case: :lower)}
 
     case item_from_db_queue.data_type do
@@ -322,14 +324,16 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
-  # Converts queue item (containing token info) ready to send to Multichain service via HTTP
-  # to the queue item ready to be written to the database.
-  #
-  # ## Parameters
-  # - `http_item`: The queue item for HTTP.
-  #
-  # ## Returns
-  # - A map ready to write to the database.
+  @doc """
+    Converts queue item (containing token info) ready to send to Multichain service via HTTP
+    to the queue item ready to be written to the database.
+
+    ## Parameters
+    - `http_item`: The queue item for HTTP.
+
+    ## Returns
+    - A map ready to write to the database.
+  """
   @spec token_info_http_item_to_queue_item(
           %{:address_hash => String.t(), :metadata => map()}
           | %{:address_hash => String.t(), :counters => map()}
