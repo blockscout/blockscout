@@ -26,12 +26,15 @@ defmodule Explorer.ChainTest do
   }
 
   alias Explorer.{Chain, Etherscan}
-  alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.Cache.Counters.{BlocksCount, TransactionsCount, PendingBlockOperationCount}
   alias Explorer.Chain.InternalTransaction.Type
+  alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue}
 
   alias Explorer.Chain.Supply.ProofOfAuthority
   alias Explorer.Chain.Cache.Counters.AddressesCount
+
+  alias Explorer.TestHelper
 
   @first_topic_hex_string "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
   @second_topic_hex_string "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
@@ -1425,6 +1428,98 @@ defmodule Explorer.ChainTest do
                   }
                 ]
               }} = Chain.import(@import_data)
+
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
+    end
+
+    test "populates main multichain export queue, if the multichain service is enabled" do
+      Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
+      multichain_configuration = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, multichain_configuration)
+      end)
+
+      bypass = Bypass.open()
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        addresses_chunk_size: 7_000
+      )
+
+      TestHelper.get_chain_id_mock()
+      Chain.import(@import_data)
+
+      # 3 addresses + 1 block + 1 transaction
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 5
+    end
+
+    test "populates balances multichain export queue and updates it, if the multichain service is enabled" do
+      Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
+      multichain_configuration = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, multichain_configuration)
+      end)
+
+      bypass = Bypass.open()
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        addresses_chunk_size: 7_000
+      )
+
+      import_data_1 = %{
+        address_current_token_balances: %{
+          params: [
+            %{
+              address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+              token_contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+              block_number: "37",
+              value: 200,
+              value_fetched_at: DateTime.utc_now(),
+              token_type: "ERC-20",
+              token_id: nil
+            }
+          ]
+        }
+      }
+
+      TestHelper.get_chain_id_mock()
+      Chain.import(import_data_1)
+
+      # 1 token balance
+      assert Repo.aggregate(BalancesExportQueue, :count, :id) == 1
+
+      [token_balance_export_item] = Repo.all(BalancesExportQueue)
+      assert token_balance_export_item.value == %Explorer.Chain.Wei{value: Decimal.new(200)}
+
+      import_data_2 = %{
+        address_current_token_balances: %{
+          params: [
+            %{
+              address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+              token_contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+              block_number: "40",
+              value: 500,
+              value_fetched_at: DateTime.utc_now(),
+              token_type: "ERC-20",
+              token_id: nil
+            }
+          ]
+        }
+      }
+
+      Chain.import(import_data_2)
+
+      # 1 token balance
+      assert Repo.aggregate(BalancesExportQueue, :count, :id) == 1
+
+      [token_balance_export_item] = Repo.all(BalancesExportQueue)
+      # token balance value has been updated
+      assert token_balance_export_item.value == %Explorer.Chain.Wei{value: Decimal.new(500)}
     end
   end
 
