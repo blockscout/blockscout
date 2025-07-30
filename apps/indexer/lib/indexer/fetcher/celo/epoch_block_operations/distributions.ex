@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.Distributions do
   use Utils.RuntimeEnvHelper,
     celo_unreleased_treasury_contract_address: [
       :explorer,
-      [:celo, :celo_unreleased_treasury_contract_address]
+      [:celo, :unreleased_treasury_contract_address]
     ]
 
   import Ecto.Query, only: [from: 2, subquery: 1]

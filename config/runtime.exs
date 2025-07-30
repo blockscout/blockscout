@@ -589,8 +589,9 @@ celo_epoch_manager_contract_address = System.get_env("CELO_EPOCH_MANAGER_CONTRAC
 config :explorer, :celo,
   l2_migration_block: celo_l2_migration_block,
   epoch_manager_contract_address: celo_epoch_manager_contract_address,
-  celo_unreleased_treasury_contract_address: System.get_env("CELO_UNRELEASED_TREASURY_CONTRACT"),
+  unreleased_treasury_contract_address: System.get_env("CELO_UNRELEASED_TREASURY_CONTRACT"),
   validators_contract_address: System.get_env("CELO_VALIDATORS_CONTRACT")
+
 
 config :explorer, Explorer.Chain.Cache.CeloCoreContracts,
   contracts: ConfigHelper.parse_json_env_var("CELO_CORE_CONTRACTS")
