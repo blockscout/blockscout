@@ -219,7 +219,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
         Repo.insert_all(MainExportQueue, Helper.add_timestamps(prepared_main_data), on_conflict: :nothing)
 
-        Repo.insert_all(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data), on_conflict: :nothing)
+        Repo.insert_all(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data), on_conflict: :replace_all)
       end)
 
       :ok
