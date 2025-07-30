@@ -201,12 +201,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     - `:ok` if the data was successfully sent to the queues.
     - `:ignore` if the data is empty or the export functionality is disabled.
   """
-  @spec send_data_to_queue(%{
-          addresses: list(),
-          blocks: list(),
-          transactions: list(),
-          address_current_token_balances: list()
-        }) :: :ignore | :ok
+  @spec send_data_to_queue(map()) :: :ignore | :ok
   def send_data_to_queue(%{addresses: [], blocks: [], transactions: [], address_current_token_balances: []}),
     do: :ignore
 
@@ -219,7 +214,12 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
         Repo.insert_all(MainExportQueue, Helper.add_timestamps(prepared_main_data), on_conflict: :nothing)
 
-        Repo.insert_all(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data), on_conflict: :replace_all)
+        Repo.insert_all(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data),
+          on_conflict: :replace_all,
+          conflict_target:
+            {:unsafe_fragment,
+             ~s<(address_hash, token_contract_address_hash_or_native, COALESCE(token_id, -1::integer::numeric))>}
+        )
       end)
 
       :ok
@@ -432,11 +432,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     address_token_balances =
       cond do
-        Map.has_key?(params, :address_current_token_balances) == true ->
+        Map.has_key?(params, :address_current_token_balances) ->
           params.address_current_token_balances
           |> Enum.map(&format_address_token_balance/1)
 
-        Map.has_key?(params, :address_token_balances) == true ->
+        Map.has_key?(params, :address_token_balances) ->
           params.address_token_balances
           |> Enum.map(fn address_token_balance ->
             %{
