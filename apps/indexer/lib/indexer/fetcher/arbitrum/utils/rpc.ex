@@ -647,6 +647,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     - addSequencerL2BatchFromBlobsDelayProof
     - addSequencerL2BatchFromOriginDelayProof
     - addSequencerL2BatchDelayProof
+    - addSequencerL2BatchFromEigenDA
 
     ## Parameters
     - `calldata`: The raw calldata from the transaction as a binary string starting with "0x"
@@ -764,6 +765,23 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           )
 
         {sequence_number, prev_message_count, new_message_count, data}
+
+      "0x283d8225" <> encoded_params ->
+        # addSequencerL2BatchFromEigenDA(uint256 sequenceNumber, EigenDACert calldata cert, IGasRefunder gasRefunder, uint256 afterDelayedMessagesRead, uint256 prevMessageCount, uint256 newMessageCount)
+        [
+          sequence_number,
+          _cert,
+          _gas_refunder,
+          _after_delayed_messages_read,
+          prev_message_count,
+          new_message_count
+        ] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_eigen_da_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, nil}
     end
   end
 

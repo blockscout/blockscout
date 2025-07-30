@@ -546,4 +546,29 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
          ]}
       ]
     }
+
+  @doc """
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchFromEigenDA(
+        uint256 sequenceNumber,
+        EigenDACert calldata cert,
+        IGasRefunder gasRefunder,
+        uint256 afterDelayedMessagesRead,
+        uint256 prevMessageCount,
+        uint256 newMessageCount
+      )
+  """
+  def add_sequencer_l2_batch_from_eigen_da_selector_with_abi,
+    do: %ABI.FunctionSelector{
+      function: "addSequencerL2BatchFromEigenDA",
+      types: [
+        {:uint, 256},
+        :bytes,
+        :address,
+        {:uint, 256},
+        {:uint, 256},
+        {:uint, 256}
+      ]
+    }
 end
