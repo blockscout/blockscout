@@ -21,6 +21,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
       "holders" => nil,
       "exchange_rate" => nil,
+      "volume_24h" => nil,
       "total_supply" => nil,
       "icon_url" => nil,
       "circulating_market_cap" => nil

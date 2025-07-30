@@ -1,6 +1,9 @@
 defmodule Explorer.Chain.TokenTransferTest do
   use Explorer.DataCase
 
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type]
+
   import Explorer.Factory
 
   alias Explorer.PagingOptions
@@ -347,6 +350,53 @@ defmodule Explorer.Chain.TokenTransferTest do
 
       block_number = log.block_number
       assert {:ok, [^block_number]} = TokenTransfer.uncataloged_token_transfer_block_numbers()
+    end
+  end
+
+  if @chain_type == :celo do
+    test "returns block numbers for Celo epoch blocks with nil transaction_hash" do
+      log =
+        insert(:token_transfer_log,
+          transaction: nil,
+          transaction_hash: nil
+        )
+
+      block_number = log.block_number
+      assert {:ok, [^block_number]} = TokenTransfer.uncataloged_token_transfer_block_numbers()
+    end
+
+    test "does not return block numbers when matching token transfer exists for Celo epoch blocks" do
+      log =
+        insert(:token_transfer_log,
+          transaction: nil,
+          transaction_hash: nil
+        )
+
+      from_address_hash =
+        log.second_topic
+        |> to_string()
+        |> String.replace_prefix("0x000000000000000000000000", "0x")
+
+      to_address_hash =
+        log.third_topic
+        |> to_string()
+        |> String.replace_prefix("0x000000000000000000000000", "0x")
+
+      token_contract_address = insert(:address, hash: log.address_hash)
+      to_address = insert(:address, hash: to_address_hash)
+      from_address = insert(:address, hash: from_address_hash)
+
+      insert(:token_transfer,
+        transaction: nil,
+        transaction_hash: nil,
+        block: log.block,
+        log_index: log.index,
+        token_contract_address: token_contract_address,
+        from_address: from_address,
+        to_address: to_address
+      )
+
+      assert {:ok, []} = TokenTransfer.uncataloged_token_transfer_block_numbers()
     end
   end
 end

@@ -6,14 +6,14 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   require Logger
 
   import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
-  import Explorer.Helper, only: [add_0x_prefix: 1]
 
-  alias Explorer.Chain.Hash
+  alias ABI.{FunctionSelector, TypeDecoder}
+  alias Explorer.Chain.{Data, Hash}
   alias Explorer.{PagingOptions, Repo}
   alias Indexer.Fetcher.Optimism.Interop.MessageQueue, as: InteropMessageQueue
 
   @required_attrs ~w(nonce init_chain_id relay_chain_id)a
-  @optional_attrs ~w(sender_address_hash target_address_hash init_transaction_hash block_number timestamp relay_transaction_hash payload failed)a
+  @optional_attrs ~w(sender_address_hash target_address_hash init_transaction_hash block_number timestamp relay_transaction_hash payload failed transfer_token_address_hash transfer_from_address_hash transfer_to_address_hash transfer_amount sent_to_multichain)a
   @interop_instance_api_url_to_public_key_cache :interop_instance_api_url_to_public_key_cache
   @interop_chain_id_to_instance_info_cache :interop_chain_id_to_instance_info_cache
 
@@ -29,6 +29,11 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     * `relay_transaction_hash` - Transaction hash (on the target chain) associated with the message relay transaction. Can be `nil` (when relay transaction is not indexed yet).
     * `payload` - Message payload to call target with. Can be `nil` (when SentMessage event is not indexed yet).
     * `failed` - Fail status of the relay transaction. Can be `nil` (when relay transaction is not indexed yet).
+    * `transfer_token_address_hash` - Address of SuperchainERC20 token transferred within this message. Can be `nil` (if this is ETH transfer or not transfer operation at all).
+    * `transfer_from_address_hash` - The cross-chain transfer `from` address. Can be `nil` (if this is not transfer operation).
+    * `transfer_to_address_hash` - The cross-chain transfer `to` address. Can be `nil` (if this is not transfer operation).
+    * `transfer_amount` - The cross-chain transfer amount. Can be `nil` (if this is not transfer operation).
+    * `sent_to_multichain` - Equals to `true` if message details are sent to multichain service. Defaults to `nil`.
   """
   @primary_key false
   typed_schema "op_interop_messages" do
@@ -41,8 +46,13 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
     field(:timestamp, :utc_datetime_usec)
     field(:relay_chain_id, :integer)
     field(:relay_transaction_hash, Hash.Full)
-    field(:payload, :binary)
+    field(:payload, Data)
     field(:failed, :boolean)
+    field(:transfer_token_address_hash, Hash.Address)
+    field(:transfer_from_address_hash, Hash.Address)
+    field(:transfer_to_address_hash, Hash.Address)
+    field(:transfer_amount, :decimal)
+    field(:sent_to_multichain, :boolean)
 
     timestamps()
   end
@@ -125,27 +135,109 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   end
 
   @doc """
+    Retrieves some statistics for the list of the last incomplete messages: min block number, max block number, and message count.
+    An incomplete message is the message for which an init transaction or relay transaction is unknown.
+    The selection is limited by a minimum block number (set to zero when the stats is needed for all messages).
+
+    ## Parameters
+    - `current_chain_id`: The current chain ID to make correct query to the database.
+    - `start_block_number`: The block number starting from which the messages should be considered.
+
+    ## Returns
+    - A map with `min`, `max`, and `count` fields.
+    - `%{min: nil, max: nil, count: 0}` map if there are no messages.
+  """
+  @spec get_incomplete_messages_stats(non_neg_integer(), non_neg_integer()) ::
+          %{min: non_neg_integer() | nil, max: non_neg_integer() | nil, count: non_neg_integer()}
+  def get_incomplete_messages_stats(current_chain_id, start_block_number)
+      when is_integer(current_chain_id) and is_integer(start_block_number) do
+    Repo.one(
+      from(
+        m in __MODULE__,
+        select: %{min: min(m.block_number), max: max(m.block_number), count: fragment("COUNT(*)")},
+        where:
+          ((is_nil(m.relay_transaction_hash) and m.init_chain_id == ^current_chain_id) or
+             (is_nil(m.init_transaction_hash) and m.relay_chain_id == ^current_chain_id)) and
+            m.block_number >= ^start_block_number
+      )
+    )
+  end
+
+  @doc """
     Returns a list of incomplete messages from the `op_interop_messages` table.
     An incomplete message is the message for which an init transaction or relay transaction is unknown.
-    The selection is limited by a min block number.
+    The selection is limited by a block range.
 
     ## Parameters
     - `current_chain_id`: The current chain ID to make correct query to the database.
     - `min_block_number`: The block number starting from which the messages should be considered.
+    - `max_block_number`: The max block number before which (including) the messages should be considered.
+    - `limit`: Max number of retrieved items.
+    - `offset`: An offset within SQL query to retrieve items from.
 
     ## Returns
     - A list of the incomplete messages. Returns an empty list if they are not found.
   """
-  @spec get_incomplete_messages(non_neg_integer(), non_neg_integer()) :: list()
-  def get_incomplete_messages(current_chain_id, min_block_number) do
+  @spec get_incomplete_messages(
+          non_neg_integer(),
+          non_neg_integer() | nil,
+          non_neg_integer() | nil,
+          non_neg_integer(),
+          non_neg_integer()
+        ) :: list()
+  def get_incomplete_messages(_current_chain_id, nil, nil, _limit, _offset), do: []
+
+  def get_incomplete_messages(current_chain_id, min_block_number, max_block_number, limit, offset) do
     Repo.all(
       from(m in __MODULE__,
         where:
           ((is_nil(m.relay_transaction_hash) and m.init_chain_id == ^current_chain_id) or
              (is_nil(m.init_transaction_hash) and m.relay_chain_id == ^current_chain_id)) and
-            m.block_number >= ^min_block_number
+            m.block_number >= ^min_block_number and m.block_number <= ^max_block_number,
+        order_by: [asc: m.nonce, asc: m.init_chain_id],
+        limit: ^limit,
+        offset: ^offset
       )
     )
+  end
+
+  @doc """
+    Retrieves messages to be exported to the multichain service.
+
+    ## Parameters
+    - `current_chain_id`: The current chain ID to make correct query to the database.
+    - `limit`: The max number of retrieved items at once.
+  """
+  @spec get_messages_for_multichain_export(non_neg_integer(), non_neg_integer()) :: list()
+  def get_messages_for_multichain_export(current_chain_id, limit) do
+    Repo.all(
+      from(m in __MODULE__,
+        where:
+          ((not is_nil(m.init_transaction_hash) and m.init_chain_id == ^current_chain_id) or
+             (not is_nil(m.relay_transaction_hash) and m.relay_chain_id == ^current_chain_id)) and
+            (is_nil(m.sent_to_multichain) or m.sent_to_multichain == false),
+        order_by: [desc: m.block_number],
+        limit: ^limit
+      )
+    )
+  end
+
+  @doc """
+    Retrieves message fields by its primary key (`init_chain_id` and `nonce`).
+
+    ## Parameters
+    - `init_chain_id`: The chain ID of the init transaction.
+    - `nonce`: The message nonce.
+  """
+  @spec get_message(non_neg_integer(), non_neg_integer()) :: __MODULE__.t() | nil
+  def get_message(init_chain_id, nonce) do
+    query =
+      from(m in __MODULE__,
+        where: m.init_chain_id == ^init_chain_id and m.nonce == ^nonce
+      )
+
+    query
+    |> Repo.one()
   end
 
   @doc """
@@ -242,6 +334,53 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
         |> page_messages(paging_options)
         |> limit(^paging_options.page_size)
         |> select_repo(options).all(timeout: :infinity)
+    end
+  end
+
+  @doc """
+    Decodes message payload to get cross-chain transfer details (such as token address, from, to addresses, and amount).
+    If the message doesn't encode cross-chain transfer, the function returns nils.
+
+    ## Parameters
+    - `payload`: The payload to decode.
+
+    ## Returns
+    - A list consisting of the following elements: `[token_address, from_address, to_address, amount]`.
+    - A list with nils if the message doesn't encode a cross-chain transfer: `[nil, nil, nil, nil]`.
+  """
+  @spec decode_payload(binary() | nil) :: list()
+  def decode_payload(payload) do
+    case payload do
+      # relayERC20(address _token, address _from, address _to, uint256 _amount)
+      <<0x7C, 0xFD, 0x6D, 0xBC>> <> encoded_params ->
+        TypeDecoder.decode(
+          encoded_params,
+          %FunctionSelector{
+            function: "relayERC20",
+            types: [
+              :address,
+              :address,
+              :address,
+              {:uint, 256}
+            ]
+          }
+        )
+
+      # relayETH(address _from, address _to, uint256 _amount)
+      <<0x4F, 0x0E, 0xDC, 0xC9>> <> encoded_params ->
+        encoded_params
+        |> TypeDecoder.decode(%FunctionSelector{
+          function: "relayETH",
+          types: [
+            :address,
+            :address,
+            {:uint, 256}
+          ]
+        })
+        |> List.insert_at(0, nil)
+
+      _ ->
+        List.duplicate(nil, 4)
     end
   end
 
@@ -557,31 +696,28 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   end
 
   @doc """
-    Finds a message by transaction hash and prepares to display the message details on transaction page.
+    Finds messages by transaction hash and prepares to display the message details on transaction page.
     Used by `BlockScoutWeb.API.V2.OptimismView.add_optimism_fields` function.
 
     ## Parameters
-    - `transaction_hash`: The transaction hash we need to find the corresponding message for.
+    - `transaction_hash`: The transaction hash we need to find the corresponding messages for.
 
     ## Returns
-    - A map with message details ready to be displayed on transaction page.
-    - `nil` if the message not found.
+    - A list with maps containing message details ready to be displayed on transaction page. The list can be empty.
   """
-  @spec message_by_transaction(Hash.t()) :: map() | nil
-  def message_by_transaction(transaction_hash) do
+  @spec messages_by_transaction(Hash.t()) :: [map()]
+  def messages_by_transaction(transaction_hash) do
     query =
       from(
         m in __MODULE__,
-        where: m.init_transaction_hash == ^transaction_hash or m.relay_transaction_hash == ^transaction_hash,
-        limit: 1
+        where: m.init_transaction_hash == ^transaction_hash or m.relay_transaction_hash == ^transaction_hash
       )
 
-    message =
-      query
-      |> Repo.replica().one()
-      |> extend_with_status()
+    query
+    |> Repo.replica().all()
+    |> Enum.map(fn msg ->
+      message = extend_with_status(msg)
 
-    if not is_nil(message) do
       chain_info =
         if message.init_transaction_hash == transaction_hash do
           %{
@@ -597,6 +733,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
       Map.merge(
         %{
+          "unique_id" => message_unique_id(message),
           "nonce" => message.nonce,
           "status" => message.status,
           "sender_address_hash" => message.sender_address_hash,
@@ -605,11 +742,36 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
           "target_address_hash" => message.target_address_hash,
           # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `target_address_hash` property
           "target" => message.target_address_hash,
-          "payload" => add_0x_prefix(message.payload)
+          "payload" => message.payload
         },
         chain_info
       )
-    end
+    end)
+  end
+
+  @doc """
+    Constructs message id string for using in URLs on frontend. Concatenates hex representations of the `init_chain_id`
+    and `nonce` field (both consisting of 8 hex symbols and padded with leading zeroes).
+
+    ## Parameters
+    - `message`: The message map containing `init_chain_id` and `nonce` keys.
+
+    ## Returns
+    - The message id. Example for `init_chain_id` = 100 and `nonce` = 4000: "0000006400000FA0"
+  """
+  @spec message_unique_id(map()) :: String.t()
+  def message_unique_id(%{init_chain_id: init_chain_id, nonce: nonce} = _message) do
+    init_chain_id_string =
+      init_chain_id
+      |> Integer.to_string(16)
+      |> String.pad_leading(8, "0")
+
+    nonce_string =
+      nonce
+      |> Integer.to_string(16)
+      |> String.pad_leading(8, "0")
+
+    init_chain_id_string <> nonce_string
   end
 
   @doc """

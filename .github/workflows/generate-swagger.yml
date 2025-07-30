@@ -1,0 +1,210 @@
+name: Generate Swagger
+
+on:
+  push:
+    branches:
+      - master
+      - np-integrate-open-api-spex
+    paths-ignore:
+      - "CHANGELOG.md"
+      - "**/README.md"
+      - "docker/*"
+      - "docker-compose/*"
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  OTP_VERSION: ${{ vars.OTP_VERSION }}
+  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
+  RELEASE_VERSION: 8.1.0
+
+jobs:
+  matrix-builder:
+    name: Build matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          echo "matrix=$(node -e '
+
+            // Add/remove CI matrix chain types here
+            const defaultChainTypes = ["default"];
+
+            const chainTypes = [
+              "arbitrum",
+              "blackfort",
+              "celo",
+              "ethereum",
+              "filecoin",
+              "optimism",
+              "polygon_zkevm",
+              "rsk",
+              "scroll",
+              "shibarium",
+              "stability",
+              "zetachain",
+              "zilliqa",
+              "zksync",
+              "neon"
+            ];
+
+            const extraChainTypes = ["suave", "polygon_edge"];
+
+            // Chain type matrix we use in master branch
+            const allChainTypes = [].concat(defaultChainTypes, chainTypes, extraChainTypes);
+
+            const matrix = { "chain-type": ${{ 'allChainTypes' }} };
+            console.log(JSON.stringify(matrix));
+          ')" >> $GITHUB_OUTPUT
+
+  build-and-cache:
+    name: Build and Cache deps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          hexpm-mirrors: |
+            https://builds.hex.pm
+            https://cdn.jsdelivr.net/hex
+
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
+
+      - name: Restore Mix Deps Cache
+        uses: actions/cache@v4
+        id: deps-cache
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
+
+      - name: Conditionally build Mix deps cache
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+          mix deps.compile --skip-umbrella-children
+
+  generate-swagger:
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.matrix-builder.outputs.matrix) }}
+    name: Generate Open API spec
+    runs-on: ubuntu-latest
+    needs:
+      - build-and-cache
+      - matrix-builder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          hexpm-mirrors: |
+            https://builds.hex.pm
+            https://cdn.jsdelivr.net/hex
+
+      - name: Mix Deps Cache
+        uses: actions/cache/restore@v4
+        id: deps-cache
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
+
+      - name: mix openapi.spec.yaml
+        run: |
+          mix openapi.spec.yaml --spec BlockScoutWeb.ApiSpec openapi.${{ matrix.chain-type }}.yaml --start-app=false
+        env:
+          CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+
+      - name: Upload OpenAPI spec
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec-${{ matrix.chain-type }}
+          path: openapi.${{ matrix.chain-type }}.yaml
+          retention-days: 1
+
+  push-specs:
+    needs: 
+      - generate-swagger
+      - matrix-builder
+    runs-on: ubuntu-latest
+    name: Push all OpenAPI specs
+    steps:
+      - name: Validate required secrets
+        run: |
+          if [ -z "${{ secrets.API_SPECS_PAT }}" ]; then
+            echo "Error: API_SPECS_PAT secret is not set"
+            exit 1
+          fi
+
+      - name: Checkout specs repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.API_SPECS_REPOSITORY }}
+          token: ${{ secrets.API_SPECS_PAT }}
+          path: api-specs
+
+      - name: Download all swagger specs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: openapi-spec-*
+          merge-multiple: true
+          path: temp-specs
+
+      - name: Create specs directory structure
+        run: |
+          VERSION=${{ github.event_name == 'release' && env.RELEASE_VERSION || 'master' }}
+
+          for SPEC_FILE in temp-specs/*; do
+            if [ -f "$SPEC_FILE" ]; then
+              # Extract chain type from filename
+              CHAIN_TYPE=$(echo $SPEC_FILE | cut -d'.' -f2)
+              
+              # Create directory
+              mkdir -p "api-specs/blockscout/${VERSION}/${CHAIN_TYPE}"
+              
+              # Copy spec files
+              cp "$SPEC_FILE" "api-specs/blockscout/${VERSION}/${CHAIN_TYPE}/swagger.yaml"
+            fi
+          done
+
+
+      - name: Commit and push changes
+        working-directory: api-specs
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          git add .
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "[SKIP-GH-PAGES] create OpenAPI specs for Blockscout ${{ github.event_name == 'release' && env.RELEASE_VERSION || github.sha }}"
+            git push
+          fi
+
+      - name: Clean up
+        if: always()
+        run: |
+          rm -rf temp-specs
+          rm -rf api-specs

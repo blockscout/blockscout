@@ -76,6 +76,7 @@ When contributing to the codebase, please adhere to the following naming convent
   - Instead of "tx" or "txn", use "transaction".
   - Instead of "txs", use "transactions".
   - Instead of "tx_hash" or "txn_hash", use "transaction_hash".
+  - Instead of "address", use "address_hash".
   - Instead of "block_num", use "block_number".
 - Ensure that variable names are descriptive and convey the purpose or content clearly.
 - Consistent naming helps in maintaining readability and understanding of the code, especially for new contributors.

@@ -14,7 +14,7 @@ defmodule Indexer.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "8.0.2",
+      version: "9.0.0",
       xref: [
         exclude: [
           Explorer.Chain.Optimism.Deposit,
@@ -63,7 +63,7 @@ defmodule Indexer.MixProject do
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       # Mocking `EthereumJSONRPC.Transport`, so we avoid hitting real chains for local testing
-      {:mox, "~> 1.0"},
+      {:mox, "~> 1.1.0"},
       {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
       # Tracing
       {:spandex, "~> 3.0"},

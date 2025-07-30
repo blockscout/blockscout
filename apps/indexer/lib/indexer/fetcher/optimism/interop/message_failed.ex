@@ -33,14 +33,9 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageFailed do
   alias Indexer.Helper
 
   @fetcher_name :optimism_interop_messages_failed
-  @l2tol2_cross_domain_messenger "0x4200000000000000000000000000000000000023"
-  @max_int32 2_147_483_647
 
   # 4-byte signature of the method relayMessage((address origin, uint256 blockNumber, uint256 logIndex, uint256 timestamp, uint256 chainId), bytes _sentMessage)
   @relay_message_method "0x8d1d298f"
-
-  # 32-byte signature of the event SentMessage(uint256 indexed destination, address indexed target, uint256 indexed messageNonce, address sender, bytes message)
-  @sent_message_event "0x382409ac69001e11931a28435afef442cbfd20d9891907e8fa373ba7d351f320"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -59,8 +54,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageFailed do
 
   @impl GenServer
   def init(args) do
-    json_rpc_named_arguments = args[:json_rpc_named_arguments]
-    {:ok, %{}, {:continue, json_rpc_named_arguments}}
+    {:ok, %{}, {:continue, args[:json_rpc_named_arguments]}}
   end
 
   # Initialization function which is used instead of `init` to avoid Supervisor's stop in case of any critical issues
@@ -312,6 +306,8 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageFailed do
       ]
     }
 
+    sent_message_event_signature = InteropMessageFetcher.sent_message_event_signature()
+
     messages =
       transactions_params
       |> Enum.map(fn transaction ->
@@ -319,7 +315,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageFailed do
 
         [
           {_origin, _block_number, _log_index, _timestamp, init_chain_id},
-          @sent_message_event <> sent_message_topics_and_data
+          ^sent_message_event_signature <> sent_message_topics_and_data
         ] =
           TypeDecoder.decode(
             Base.decode16!(encoded_params, case: :lower),
@@ -339,7 +335,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageFailed do
         }
       end)
       |> Enum.filter(&(&1.relay_chain_id == current_chain_id))
-      |> Enum.reject(&(&1.init_chain_id > @max_int32))
+      |> Enum.reject(&(&1.init_chain_id > InteropMessageFetcher.max_int32()))
 
     {:ok, _} =
       Chain.import(%{
@@ -378,7 +374,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageFailed do
           |> String.downcase()
           |> String.starts_with?(@relay_message_method)
 
-        to_address == @l2tol2_cross_domain_messenger and is_relay_message_method
+        to_address == InteropMessageFetcher.l2tol2_cross_domain_messenger() and is_relay_message_method
       end)
 
     case fetch_transaction_receipts(relay_message_transactions, json_rpc_named_arguments) do

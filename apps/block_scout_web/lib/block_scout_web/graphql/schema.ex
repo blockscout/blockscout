@@ -50,16 +50,16 @@ defmodule BlockScoutWeb.GraphQL.Schema do
       resolve(fn
         %{type: :internal_transaction, id: id}, resolution ->
           %{"transaction_hash" => transaction_hash_string, "index" => index} = Jason.decode!(id)
-          {:ok, transaction_hash} = Chain.string_to_transaction_hash(transaction_hash_string)
+          {:ok, transaction_hash} = Chain.string_to_full_hash(transaction_hash_string)
           InternalTransaction.get_by(%{transaction_hash: transaction_hash, index: index}, resolution)
 
         %{type: :token_transfer, id: id}, resolution ->
           %{"transaction_hash" => transaction_hash_string, "log_index" => log_index} = Jason.decode!(id)
-          {:ok, transaction_hash} = Chain.string_to_transaction_hash(transaction_hash_string)
+          {:ok, transaction_hash} = Chain.string_to_full_hash(transaction_hash_string)
           TokenTransfer.get_by(%{transaction_hash: transaction_hash, log_index: log_index}, resolution)
 
         %{type: :transaction, id: transaction_hash_string}, resolution ->
-          {:ok, hash} = Chain.string_to_transaction_hash(transaction_hash_string)
+          {:ok, hash} = Chain.string_to_full_hash(transaction_hash_string)
           Transaction.get_by(%{}, %{hash: hash}, resolution)
 
         _, _ ->

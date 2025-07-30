@@ -192,7 +192,7 @@ defmodule Indexer.Fetcher.BlockReward do
       |> Chain.timestamp_by_block_hash()
 
     Enum.map(beneficiaries_params, fn %{block_hash: block_hash_str} = beneficiary ->
-      {:ok, block_hash} = Chain.string_to_block_hash(block_hash_str)
+      {:ok, block_hash} = Chain.string_to_full_hash(block_hash_str)
 
       case timestamp_by_block_hash do
         %{^block_hash => block_timestamp} ->

@@ -269,7 +269,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   """
   @spec external_transactions(Plug.Conn.t(), %{required(String.t()) => String.t()}) :: Plug.Conn.t()
   def external_transactions(conn, %{"transaction_hash_param" => transaction_hash} = _params) do
-    with {:format, {:ok, hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash)} do
+    with {:format, {:ok, hash}} <- {:format, Chain.string_to_full_hash(transaction_hash)} do
       case NeonSolanaTransactions.maybe_fetch(hash) do
         {:ok, linked_transactions} ->
           conn
@@ -539,7 +539,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       full_options =
         [
           necessity_by_association: %{
-            [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+            [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
           }
         ]
         |> Keyword.merge(paging_options(params))
@@ -717,7 +717,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           | {:restricted_access, true}
           | {:ok, Transaction.t(), Hash.t()}
   def validate_transaction(transaction_hash_string, params, options \\ @api_true) do
-    with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash_string)},
+    with {:format, {:ok, transaction_hash}} <- {:format, Chain.string_to_full_hash(transaction_hash_string)},
          {:not_found, {:ok, transaction}} <-
            {:not_found, Chain.hash_to_transaction(transaction_hash, options)},
          {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),

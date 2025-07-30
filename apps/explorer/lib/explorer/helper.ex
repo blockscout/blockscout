@@ -5,7 +5,7 @@ defmodule Explorer.Helper do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain
-  alias Explorer.Chain.{Data, Hash}
+  alias Explorer.Chain.{Data, Hash, Wei}
 
   import Ecto.Query, only: [where: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -133,11 +133,13 @@ defmodule Explorer.Helper do
         iex> safe_parse_non_negative_integer("27606393966689717254124294199939478533331961967491413693980084341759630764504")
         {:error, :too_big_integer}
   """
-  def safe_parse_non_negative_integer(string) do
+  @spec safe_parse_non_negative_integer(String.t(), integer()) ::
+          {:ok, integer()} | {:error, :negative_integer | :too_big_integer | :invalid_integer}
+  def safe_parse_non_negative_integer(string, max_safe_integer \\ @max_safe_integer) do
     case Integer.parse(string) do
       {num, ""} ->
         case num do
-          _ when num > @max_safe_integer -> {:error, :too_big_integer}
+          _ when num > max_safe_integer -> {:error, :too_big_integer}
           _ when num < 0 -> {:error, :negative_integer}
           _ -> {:ok, num}
         end
@@ -353,7 +355,7 @@ defmodule Explorer.Helper do
   end
 
   def add_0x_prefix(binary_hash) when is_binary(binary_hash) do
-    if String.starts_with?(binary_hash, "0x") do
+    if String.starts_with?(binary_hash, "0x") and String.printable?(binary_hash) do
       binary_hash
     else
       "0x" <> Base.encode16(binary_hash, case: :lower)
@@ -485,4 +487,75 @@ defmodule Explorer.Helper do
     |> DateTime.from_unix!(unit)
     |> DateTime.to_date()
   end
+
+  @doc """
+  Extracts the method ID from an ABI specification.
+
+  ## Parameters
+  - `method` ([map()] | map()): The ABI specification, either as a single map
+    or a list containing one map.
+
+  ## Returns
+  - `binary()`: The method ID extracted from the ABI specification.
+
+  ## Examples
+
+      iex> Indexer.Fetcher.Celo.Helper.abi_to_method_id([%{"name" => "transfer", "type" => "function", "inputs" => [%{"name" => "to", "type" => "address"}]}])
+      <<26, 105, 82, 48>>
+
+  """
+  @spec abi_to_method_id([map()] | map()) :: binary()
+  def abi_to_method_id([method]), do: abi_to_method_id(method)
+
+  def abi_to_method_id(method) when is_map(method) do
+    [parsed_method] = ABI.parse_specification([method])
+    parsed_method.method_id
+  end
+
+  @doc """
+  Adds `inserted_at` and `updated_at` timestamps to a list of maps.
+
+  This function takes a list of maps (`params`) and adds the current UTC
+  timestamp (`DateTime.utc_now/0`) as the values for the `:inserted_at` and
+  `:updated_at` keys in each map.
+
+  ## Parameters
+
+    - `params` - A list of maps to which the timestamps will be added.
+
+  ## Returns
+
+    - A list of maps, each containing the original keys and values along with
+      the `:inserted_at` and `:updated_at` keys set to the current UTC timestamp.
+  """
+  @spec add_timestamps([map()]) :: [map()]
+  def add_timestamps(params) do
+    now = DateTime.utc_now()
+
+    Enum.map(params, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
+  end
+
+  @doc """
+  Converts various value types to a Decimal type.
+
+  This function handles multiple input types and ensures they are properly
+  converted to a Decimal representation.
+
+  ## Parameters
+  - `value`: The value to convert, which can be:
+    - `nil`: Converted to Decimal 0
+    - `%Wei{}`: The Decimal value is extracted from the struct
+    - `float`: Converted using Decimal.from_float/1
+    - `String.t()` or `integer()`: Converted using Decimal.new/1
+    - `Decimal.t()`: Returned unchanged
+
+  ## Returns
+  - A Decimal representation of the input value
+  """
+  @spec number_to_decimal(nil | Wei.t() | integer() | float() | String.t() | Decimal.t()) :: Decimal.t()
+  def number_to_decimal(nil), do: Decimal.new(0)
+  def number_to_decimal(%Wei{value: value}), do: value
+  def number_to_decimal(value) when is_float(value), do: Decimal.from_float(value)
+  def number_to_decimal(value) when is_binary(value) or is_integer(value), do: Decimal.new(value)
+  def number_to_decimal(%Decimal{} = value), do: value
 end

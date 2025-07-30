@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
-  alias BlockScoutWeb.AddressView
+  alias BlockScoutWeb.{AddressContractView, AddressView}
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
@@ -113,6 +113,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       Map.merge(base_info, %{
         "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
         "creation_transaction_hash" => creation_transaction_hash,
+        "creation_status" => creation_status(address),
         "token" => token,
         "coin_balance" => balance,
         "exchange_rate" => exchange_rate,
@@ -253,6 +254,20 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       token_instance: token_instance,
       token: token
     })
+  end
+
+  @spec creation_status(Address.t()) :: :success | :failed | :selfdestructed | nil
+  defp creation_status(address) do
+    with true <- Address.smart_contract?(address),
+         {status, _bytecode} <- AddressContractView.contract_creation_code(address) do
+      case status do
+        :ok -> :success
+        :failed -> :failed
+        :selfdestructed -> :selfdestructed
+      end
+    else
+      _ -> nil
+    end
   end
 
   @spec chain_type_fields(

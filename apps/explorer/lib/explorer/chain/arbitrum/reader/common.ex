@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
   """
 
   import Ecto.Query, only: [from: 2]
-  import Explorer.Chain, only: [select_repo: 1, string_to_block_hash: 1]
+  import Explorer.Chain, only: [select_repo: 1, string_to_full_hash: 1]
 
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
@@ -76,7 +76,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
   """
   @spec get_anytrust_keyset(binary(), api?: boolean()) :: map()
   def get_anytrust_keyset("0x" <> <<_::binary-size(64)>> = keyset_hash, options) do
-    get_anytrust_keyset(keyset_hash |> string_to_block_hash() |> Kernel.elem(1) |> Map.get(:bytes), options)
+    get_anytrust_keyset(keyset_hash |> string_to_full_hash() |> Kernel.elem(1) |> Map.get(:bytes), options)
   end
 
   def get_anytrust_keyset(keyset_hash, options) do

@@ -32,12 +32,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
   describe "refetch token instance metadata behaviour" do
     setup do
       Subscriber.to(:fetched_token_instance_metadata, :on_demand)
-
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
-      on_exit(fn ->
-        Application.put_env(:explorer, :http_adapter, HTTPoison)
-      end)
+      Subscriber.to(:not_fetched_token_instance_metadata, :on_demand)
 
       :ok
     end
@@ -60,10 +55,16 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(metadata)
+           }}
+        end
+      )
 
       assert TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance) == :ok
 
@@ -107,10 +108,16 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(metadata)
+           }}
+        end
+      )
 
       assert TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance) == :ok
 
@@ -153,10 +160,16 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: nil}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: nil
+           }}
+        end
+      )
 
       assert TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance) == :ok
 
@@ -181,6 +194,11 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
       refute_receive(
         {:chain_event, :fetched_token_instance_metadata, :on_demand,
          [^token_contract_address_hash_string, ^token_id, %{metadata: ^metadata}]}
+      )
+
+      assert_receive(
+        {:chain_event, :not_fetched_token_instance_metadata, :on_demand,
+         [^token_contract_address_hash_string, ^token_id, "error"]}
       )
     end
   end

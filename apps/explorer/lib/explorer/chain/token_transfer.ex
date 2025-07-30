@@ -135,6 +135,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
   use Explorer.Schema
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Explorer.Chain.TokenTransfer.Schema
 
@@ -319,7 +320,38 @@ defmodule Explorer.Chain.TokenTransfer do
     end
   end
 
-  defp maybe_filter_by_token_type(query, token_types) do
+  @doc """
+  Conditionally filters token transfers by token type based on denormalization status.
+
+  This function applies token type filtering to the query using either the
+  denormalized `token_type` field or by joining with the tokens table,
+  depending on whether the token transfer denormalization process has been
+  completed. When denormalization is finished, it filters directly on
+  `tt.token_type`. Otherwise, it joins with the associated token and filters
+  on `token.type`.
+
+  ## Parameters
+  - `query`: An Ecto query for token transfers
+  - `token_type`: Either a binary token type (e.g., "ERC-20") or a list of
+    token types to filter by
+
+  ## Returns
+  - The modified query with token type filtering applied
+  - For empty token type lists, returns the original query unchanged
+  """
+  @spec maybe_filter_by_token_type(Ecto.Query.t(), binary() | [binary()]) :: Ecto.Query.t()
+  def maybe_filter_by_token_type(query, token_type) when is_binary(token_type) do
+    if DenormalizationHelper.tt_denormalization_finished?() do
+      query
+      |> where([tt], tt.token_type == ^token_type)
+    else
+      query
+      |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+      |> where([tt, block, token], token.type == ^token_type)
+    end
+  end
+
+  def maybe_filter_by_token_type(query, token_types) do
     if Enum.empty?(token_types) do
       query
     else
@@ -633,13 +665,7 @@ defmodule Explorer.Chain.TokenTransfer do
           l.first_topic == ^@constant or
             l.first_topic == ^@erc1155_single_transfer_signature or
             l.first_topic == ^@erc1155_batch_transfer_signature,
-        where:
-          not exists(
-            from(tf in TokenTransfer,
-              where: tf.transaction_hash == parent_as(:log).transaction_hash,
-              where: tf.log_index == parent_as(:log).index
-            )
-          ),
+        where: not exists(token_transfer_exists_query()),
         select: l.block_number,
         distinct: l.block_number
       )
@@ -647,15 +673,37 @@ defmodule Explorer.Chain.TokenTransfer do
     Repo.stream_reduce(query, [], &[&1 | &2])
   end
 
-  @doc """
-    Returns ecto query to fetch consensus token transfers with ERC-721 token type
-  """
-  @spec erc_721_token_transfers_query() :: Ecto.Query.t()
-  def erc_721_token_transfers_query do
-    only_consensus_transfers_query()
-    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
-    |> where([tt, token: token], token.type == "ERC-721")
-    |> preload([tt, token: token], [{:token, token}])
+  # Builds a query to check if a token transfer exists for a given log. Handles
+  # chain-specific logic for transaction_hash comparison.
+  #
+  # For Celo epoch blocks, `transaction_hash` can be `nil` in both `Log` and
+  # `TokenTransfer`. A direct SQL comparison `NULL = NULL` evaluates to
+  # `UNKNOWN` (effectively false in this context). Therefore, we need a
+  # NULL-safe comparison for `transaction_hash`. Additionally, `block_hash` is
+  # included in the join condition to uniquely identify the token transfer, as
+  # `transaction_hash` (when nil) and `log_index` alone are insufficient.
+  @spec token_transfer_exists_query() :: Ecto.Query.t()
+  defp token_transfer_exists_query do
+    query =
+      from(tt in TokenTransfer,
+        where: tt.block_hash == parent_as(:log).block_hash,
+        where: tt.log_index == parent_as(:log).index
+      )
+
+    chain_type()
+    |> case do
+      :celo ->
+        query
+        |> where(
+          [tt],
+          tt.transaction_hash == parent_as(:log).transaction_hash or
+            (is_nil(parent_as(:log).transaction_hash) and is_nil(tt.transaction_hash))
+        )
+
+      _ ->
+        query
+        |> where([tt], tt.transaction_hash == parent_as(:log).transaction_hash)
+    end
   end
 
   @doc """

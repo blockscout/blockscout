@@ -29,6 +29,8 @@ config :logger, :ethereum_jsonrpc,
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :ethereum_jsonrpc]
 
+config :tesla, adapter: Tesla.Adapter.Mint
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

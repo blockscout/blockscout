@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   require Ecto.Query
 
-  import Ecto.Query, only: [from: 2, where: 3, subquery: 1]
+  import Ecto.Query, only: [dynamic: 1, dynamic: 2, from: 2, where: 3, subquery: 1]
   import Explorer.Chain.Import.Runner.Helper, only: [chain_type_dependent_import: 3]
 
   alias Ecto.{Changeset, Multi, Repo}
@@ -26,15 +26,17 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     Transaction
   }
 
-  alias Explorer.Chain.Celo.Helper, as: CeloHelper
-  alias Explorer.Chain.Celo.PendingEpochBlockOperation, as: CeloPendingEpochBlockOperation
-
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
   alias Explorer.Prometheus.Instrumenter
+  alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
+
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
+  alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
+  alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
 
   @behaviour Runner
 
@@ -68,11 +70,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     hashes = Enum.map(changes_list, & &1.hash)
 
-    consensus_block_numbers = consensus_block_numbers(changes_list)
-
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     run_func = fn repo ->
-      {:ok, nonconsensus_items} = lose_consensus(repo, hashes, consensus_block_numbers, changes_list, insert_options)
+      {:ok, nonconsensus_items} = process_blocks_consensus(changes_list, repo, insert_options)
 
       {:ok,
        RangesHelper.filter_by_height_range(nonconsensus_items, fn {number, _hash} ->
@@ -233,16 +233,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
     |> chain_type_dependent_import(
       :celo,
-      &Multi.run(&1, :celo_pending_epoch_block_operations, fn repo, %{blocks: blocks} ->
-        Instrumenter.block_import_stage_runner(
-          fn ->
-            celo_pending_epoch_block_operations(repo, blocks, insert_options)
-          end,
-          :address_referencing,
-          :blocks,
-          :celo_pending_epoch_block_operations
-        )
-      end)
+      &Multi.run(
+        &1,
+        :celo_delete_epoch_rewards,
+        fn repo, %{lose_consensus: non_consensus_blocks} ->
+          Instrumenter.block_import_stage_runner(
+            fn -> celo_delete_epoch_rewards(repo, non_consensus_blocks, insert_options) end,
+            :address_referencing,
+            :blocks,
+            :celo_delete_epoch_rewards
+          )
+        end
+      )
     )
   end
 
@@ -359,39 +361,147 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     )
   end
 
-  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp default_on_conflict do
-    from(
-      block in Block,
-      update: [
-        set: [
-          consensus: fragment("EXCLUDED.consensus"),
-          difficulty: fragment("EXCLUDED.difficulty"),
-          gas_limit: fragment("EXCLUDED.gas_limit"),
-          gas_used: fragment("EXCLUDED.gas_used"),
-          miner_hash: fragment("EXCLUDED.miner_hash"),
-          nonce: fragment("EXCLUDED.nonce"),
-          number: fragment("EXCLUDED.number"),
-          parent_hash: fragment("EXCLUDED.parent_hash"),
-          size: fragment("EXCLUDED.size"),
-          timestamp: fragment("EXCLUDED.timestamp"),
-          total_difficulty: fragment("EXCLUDED.total_difficulty"),
-          refetch_needed: fragment("EXCLUDED.refetch_needed"),
-          # Don't update `hash` as it is used for the conflict target
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", block.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", block.updated_at)
-        ]
-      ],
-      where:
-        fragment("EXCLUDED.consensus <> ?", block.consensus) or fragment("EXCLUDED.difficulty <> ?", block.difficulty) or
-          fragment("EXCLUDED.gas_limit <> ?", block.gas_limit) or fragment("EXCLUDED.gas_used <> ?", block.gas_used) or
-          fragment("EXCLUDED.miner_hash <> ?", block.miner_hash) or fragment("EXCLUDED.nonce <> ?", block.nonce) or
-          fragment("EXCLUDED.number <> ?", block.number) or fragment("EXCLUDED.parent_hash <> ?", block.parent_hash) or
-          fragment("EXCLUDED.size <> ?", block.size) or fragment("EXCLUDED.timestamp <> ?", block.timestamp) or
-          fragment("EXCLUDED.total_difficulty <> ?", block.total_difficulty) or
-          fragment("EXCLUDED.refetch_needed <> ?", block.refetch_needed)
-    )
+    chain_type = Application.get_env(:explorer, :chain_type)
+
+    base_fields = [
+      consensus: dynamic(fragment("EXCLUDED.consensus")),
+      difficulty: dynamic(fragment("EXCLUDED.difficulty")),
+      gas_limit: dynamic(fragment("EXCLUDED.gas_limit")),
+      gas_used: dynamic(fragment("EXCLUDED.gas_used")),
+      miner_hash: dynamic(fragment("EXCLUDED.miner_hash")),
+      nonce: dynamic(fragment("EXCLUDED.nonce")),
+      number: dynamic(fragment("EXCLUDED.number")),
+      parent_hash: dynamic(fragment("EXCLUDED.parent_hash")),
+      size: dynamic(fragment("EXCLUDED.size")),
+      timestamp: dynamic(fragment("EXCLUDED.timestamp")),
+      total_difficulty: dynamic(fragment("EXCLUDED.total_difficulty")),
+      refetch_needed: dynamic(fragment("EXCLUDED.refetch_needed")),
+      base_fee_per_gas: dynamic(fragment("EXCLUDED.base_fee_per_gas")),
+      is_empty: dynamic(fragment("EXCLUDED.is_empty")),
+      # Don't update `hash` as it is used for the conflict target
+      inserted_at: dynamic([block], fragment("LEAST(?, EXCLUDED.inserted_at)", block.inserted_at)),
+      updated_at: dynamic([block], fragment("GREATEST(?, EXCLUDED.updated_at)", block.updated_at))
+    ]
+
+    base_condition =
+      dynamic(
+        [block],
+        fragment(
+          "(EXCLUDED.consensus, EXCLUDED.difficulty, EXCLUDED.gas_limit, EXCLUDED.gas_used, EXCLUDED.miner_hash, EXCLUDED.nonce, EXCLUDED.number, EXCLUDED.parent_hash, EXCLUDED.size, EXCLUDED.timestamp, EXCLUDED.total_difficulty, EXCLUDED.refetch_needed, EXCLUDED.base_fee_per_gas, EXCLUDED.is_empty) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          block.consensus,
+          block.difficulty,
+          block.gas_limit,
+          block.gas_used,
+          block.miner_hash,
+          block.nonce,
+          block.number,
+          block.parent_hash,
+          block.size,
+          block.timestamp,
+          block.total_difficulty,
+          block.refetch_needed,
+          block.base_fee_per_gas,
+          block.is_empty
+        )
+      )
+
+    case on_conflict_chain_type_extension(chain_type) do
+      {chain_type_fields, chain_type_condition} ->
+        base_with_chain_type_fields = Keyword.merge(base_fields, chain_type_fields)
+        base_with_chain_type_condition = dynamic(^base_condition or ^chain_type_condition)
+
+        from(
+          block in Block,
+          update: ^[set: base_with_chain_type_fields],
+          where: ^base_with_chain_type_condition
+        )
+
+      _ ->
+        from(
+          block in Block,
+          update: ^[set: base_fields],
+          where: ^base_condition
+        )
+    end
   end
+
+  defp on_conflict_chain_type_extension(:ethereum) do
+    {
+      [
+        blob_gas_used: dynamic(fragment("EXCLUDED.blob_gas_used")),
+        excess_blob_gas: dynamic(fragment("EXCLUDED.excess_blob_gas"))
+      ],
+      dynamic(
+        [block],
+        fragment(
+          "(EXCLUDED.blob_gas_used, EXCLUDED.excess_blob_gas) IS DISTINCT FROM (?, ?)",
+          block.blob_gas_used,
+          block.excess_blob_gas
+        )
+      )
+    }
+  end
+
+  defp on_conflict_chain_type_extension(:rsk) do
+    {
+      [
+        bitcoin_merged_mining_header: dynamic(fragment("EXCLUDED.bitcoin_merged_mining_header")),
+        bitcoin_merged_mining_coinbase_transaction:
+          dynamic(fragment("EXCLUDED.bitcoin_merged_mining_coinbase_transaction")),
+        bitcoin_merged_mining_merkle_proof: dynamic(fragment("EXCLUDED.bitcoin_merged_mining_merkle_proof")),
+        hash_for_merged_mining: dynamic(fragment("EXCLUDED.hash_for_merged_mining")),
+        minimum_gas_price: dynamic(fragment("EXCLUDED.minimum_gas_price"))
+      ],
+      dynamic(
+        [block],
+        fragment(
+          "(EXCLUDED.bitcoin_merged_mining_header, EXCLUDED.bitcoin_merged_mining_coinbase_transaction, EXCLUDED.bitcoin_merged_mining_merkle_proof, EXCLUDED.hash_for_merged_mining, EXCLUDED.minimum_gas_price) IS DISTINCT FROM (?, ?, ?, ?, ?)",
+          block.bitcoin_merged_mining_header,
+          block.bitcoin_merged_mining_coinbase_transaction,
+          block.bitcoin_merged_mining_merkle_proof,
+          block.hash_for_merged_mining,
+          block.minimum_gas_price
+        )
+      )
+    }
+  end
+
+  defp on_conflict_chain_type_extension(:arbitrum) do
+    {
+      [
+        send_count: dynamic(fragment("EXCLUDED.send_count")),
+        send_root: dynamic(fragment("EXCLUDED.send_root")),
+        l1_block_number: dynamic(fragment("EXCLUDED.l1_block_number"))
+      ],
+      dynamic(
+        [block],
+        fragment(
+          "(EXCLUDED.send_count, EXCLUDED.send_root, EXCLUDED.l1_block_number) IS DISTINCT FROM (?, ?, ?)",
+          block.send_count,
+          block.send_root,
+          block.l1_block_number
+        )
+      )
+    }
+  end
+
+  defp on_conflict_chain_type_extension(:zilliqa) do
+    {
+      [
+        zilliqa_view: dynamic(fragment("EXCLUDED.zilliqa_view"))
+      ],
+      dynamic(
+        [block],
+        fragment(
+          "EXCLUDED.zilliqa_view IS DISTINCT FROM ?",
+          block.zilliqa_view
+        )
+      )
+    }
+  end
+
+  defp on_conflict_chain_type_extension(_), do: nil
 
   defp consensus_block_numbers(blocks_changes) when is_list(blocks_changes) do
     blocks_changes
@@ -399,10 +509,13 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     |> Enum.map(& &1.number)
   end
 
-  def lose_consensus(repo, hashes, consensus_block_numbers, changes_list, %{
-        timeout: timeout,
-        timestamps: %{updated_at: updated_at}
-      }) do
+  defp lose_consensus(repo, changes_list, %{
+         timeout: timeout,
+         timestamps: %{updated_at: updated_at}
+       }) do
+    hashes = Enum.map(changes_list, & &1.hash)
+    consensus_block_numbers = consensus_block_numbers(changes_list)
+
     acquire_query =
       from(
         block in where_invalid_neighbor(changes_list),
@@ -415,7 +528,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         lock: "FOR NO KEY UPDATE"
       )
 
-    {_, removed_consensus_block_hashes} =
+    {_, removed_consensus_blocks} =
       repo.update_all(
         from(
           block in Block,
@@ -453,15 +566,41 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       timeout: timeout
     )
 
-    removed_consensus_block_hashes
+    removed_consensus_blocks
     |> Enum.map(fn {number, _hash} -> number end)
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
     |> MissingRangesManipulator.add_ranges_by_block_numbers()
 
-    {:ok, removed_consensus_block_hashes}
+    {:ok, removed_consensus_blocks}
   rescue
     postgrex_error in Postgrex.Error ->
-      {:error, %{exception: postgrex_error, consensus_block_numbers: consensus_block_numbers}}
+      {:error, %{exception: postgrex_error}}
+  end
+
+  @doc """
+    Processes consensus for blocks that failed to import completely.
+
+    This function handles the consistency updates needed when a block import fails,
+    ensuring that the chain's consensus state remains valid.
+
+    ## Parameters
+    - `blocks_changes`: List of block changes to process
+
+    ## Returns
+    - `{:ok, removed_consensus_blocks}`: List of tuples {number, hash} for blocks that lost consensus
+    - `{:error, reason}`: The error encountered during processing
+  """
+  @spec process_blocks_consensus([map()], module(), map() | nil) ::
+          {:ok, [{non_neg_integer(), binary()}]} | {:error, map()}
+  def process_blocks_consensus(blocks_changes, repo \\ ExplorerRepo, insert_options \\ nil) do
+    opts =
+      insert_options ||
+        %{
+          timeout: @timeout,
+          timestamps: %{updated_at: DateTime.utc_now()}
+        }
+
+    lose_consensus(repo, blocks_changes, opts)
   end
 
   defp new_pending_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
@@ -1040,23 +1179,49 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     where(invalid_neighbors_query, [block], block.consensus)
   end
 
-  defp celo_pending_epoch_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
-    ordered_epoch_blocks =
-      inserted_blocks
-      |> Enum.filter(fn block -> CeloHelper.epoch_block_number?(block.number) && block.consensus end)
-      |> Enum.map(&%{block_hash: &1.hash})
-      |> Enum.sort_by(& &1.block_hash)
-      |> Enum.dedup_by(& &1.block_hash)
+  defp celo_delete_epoch_rewards(_repo, [], _options), do: {:ok, []}
 
-    Import.insert_changes_list(
-      repo,
-      ordered_epoch_blocks,
-      conflict_target: :block_hash,
-      on_conflict: :nothing,
-      for: CeloPendingEpochBlockOperation,
-      returning: true,
-      timeout: timeout,
-      timestamps: timestamps
-    )
+  defp celo_delete_epoch_rewards(repo, non_consensus_blocks, %{timeout: timeout}) do
+    non_consensus_block_hashes = Enum.map(non_consensus_blocks, fn {_number, hash} -> hash end)
+
+    ordered_query =
+      from(epoch in CeloEpoch,
+        where:
+          epoch.start_processing_block_hash in ^non_consensus_block_hashes or
+            epoch.end_processing_block_hash in ^non_consensus_block_hashes,
+        # Enforce Epoch ShareLocks order (see docs: sharelocks.md)
+        order_by: epoch.number,
+        lock: "FOR UPDATE"
+      )
+
+    repo.all(ordered_query, timeout: timeout)
+
+    epoch_rewards_query =
+      from(reward in CeloEpochReward,
+        join: epoch in subquery(ordered_query),
+        on: reward.epoch_number == epoch.number
+      )
+
+    election_rewards_query =
+      from(reward in CeloElectionReward,
+        join: epoch in subquery(ordered_query),
+        on: reward.epoch_number == epoch.number
+      )
+
+    repo.delete_all(epoch_rewards_query, timeout: timeout)
+    repo.delete_all(election_rewards_query, timeout: timeout)
+
+    {_count, updated_epochs} =
+      repo.update_all(
+        from(epoch in CeloEpoch,
+          join: ordered_epoch in subquery(ordered_query),
+          on: epoch.number == ordered_epoch.number,
+          select: epoch
+        ),
+        [set: [fetched?: false]],
+        timeout: timeout
+      )
+
+    {:ok, updated_epochs}
   end
 end

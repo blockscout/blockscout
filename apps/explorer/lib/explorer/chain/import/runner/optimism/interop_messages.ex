@@ -96,13 +96,21 @@ defmodule Explorer.Chain.Import.Runner.Optimism.InteropMessages do
             fragment("COALESCE(EXCLUDED.relay_transaction_hash, ?)", message.relay_transaction_hash),
           payload: fragment("COALESCE(EXCLUDED.payload, ?)", message.payload),
           failed: fragment("COALESCE(EXCLUDED.failed, ?)", message.failed),
+          transfer_token_address_hash:
+            fragment("COALESCE(EXCLUDED.transfer_token_address_hash, ?)", message.transfer_token_address_hash),
+          transfer_from_address_hash:
+            fragment("COALESCE(EXCLUDED.transfer_from_address_hash, ?)", message.transfer_from_address_hash),
+          transfer_to_address_hash:
+            fragment("COALESCE(EXCLUDED.transfer_to_address_hash, ?)", message.transfer_to_address_hash),
+          transfer_amount: fragment("COALESCE(EXCLUDED.transfer_amount, ?)", message.transfer_amount),
+          sent_to_multichain: fragment("COALESCE(EXCLUDED.sent_to_multichain, ?)", message.sent_to_multichain),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", message.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", message.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.sender_address_hash, EXCLUDED.target_address_hash, EXCLUDED.init_transaction_hash, EXCLUDED.block_number, EXCLUDED.timestamp, EXCLUDED.relay_chain_id, EXCLUDED.relay_transaction_hash, EXCLUDED.payload, EXCLUDED.failed) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.sender_address_hash, EXCLUDED.target_address_hash, EXCLUDED.init_transaction_hash, EXCLUDED.block_number, EXCLUDED.timestamp, EXCLUDED.relay_chain_id, EXCLUDED.relay_transaction_hash, EXCLUDED.payload, EXCLUDED.failed, EXCLUDED.transfer_token_address_hash, EXCLUDED.transfer_from_address_hash, EXCLUDED.transfer_to_address_hash, EXCLUDED.transfer_amount) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           message.sender_address_hash,
           message.target_address_hash,
           message.init_transaction_hash,
@@ -111,7 +119,11 @@ defmodule Explorer.Chain.Import.Runner.Optimism.InteropMessages do
           message.relay_chain_id,
           message.relay_transaction_hash,
           message.payload,
-          message.failed
+          message.failed,
+          message.transfer_token_address_hash,
+          message.transfer_from_address_hash,
+          message.transfer_to_address_hash,
+          message.transfer_amount
         )
     )
   end

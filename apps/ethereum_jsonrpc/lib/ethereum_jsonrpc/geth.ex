@@ -278,7 +278,7 @@ defmodule EthereumJSONRPC.Geth do
       responses
       |> Enum.map(fn
         %{result: %{"structLogs" => nil}} ->
-          []
+          {:ok, []}
 
         %{id: id, result: %{"structLogs" => _} = result} ->
           debug_trace_transaction_response_to_internal_transactions_params(

@@ -10,10 +10,8 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [id_to_params: 1, json_rpc: 2, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
-  alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.WithdrawalEvent
   alias Explorer.Chain.RollupReorgMonitorQueue
@@ -191,10 +189,19 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     end)
   end
 
+  # Prepares withdrawal events from `eth_getLogs` response to be imported to DB.
+  #
+  # ## Parameters
+  # - `events`: The list of L1 withdrawal events from `eth_getLogs` response.
+  # - `json_rpc_named_arguments`: JSON-RPC configuration containing transport options for L1.
+  #
+  # ## Returns
+  # - A list of `WithdrawalEvent` maps.
+  @spec prepare_events([map()], EthereumJSONRPC.json_rpc_named_arguments()) :: [WithdrawalEvent.to_import()]
   defp prepare_events(events, json_rpc_named_arguments) do
     blocks =
       events
-      |> get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
+      |> Helper.get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number(), true)
 
     transaction_hashes =
       events
@@ -220,16 +227,16 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     |> Enum.map(fn event ->
       transaction_hash = event["transactionHash"]
 
-      {l1_event_type, game_index} =
+      {l1_event_type, game_index, game_address_hash} =
         if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
-          game_index =
+          {game_index, game_address_hash} =
             input_by_hash
             |> Map.get(transaction_hash)
-            |> input_to_game_index()
+            |> input_to_game_index_or_address_hash()
 
-          {"WithdrawalProven", game_index}
+          {:WithdrawalProven, game_index, game_address_hash}
         else
-          {"WithdrawalFinalized", nil}
+          {:WithdrawalFinalized, nil, nil}
         end
 
       l1_block_number = quantity_to_integer(event["blockNumber"])
@@ -240,20 +247,10 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         l1_timestamp: Map.get(timestamps, l1_block_number),
         l1_transaction_hash: transaction_hash,
         l1_block_number: l1_block_number,
-        game_index: game_index
+        game_index: game_index,
+        game_address_hash: game_address_hash
       }
     end)
-    |> Enum.reduce(%{}, fn e, acc ->
-      key = {e.withdrawal_hash, e.l1_event_type}
-      prev_game_index = Map.get(acc, key, %{game_index: 0}).game_index
-
-      if prev_game_index < e.game_index or is_nil(prev_game_index) do
-        Map.put(acc, key, e)
-      else
-        acc
-      end
-    end)
-    |> Map.values()
   end
 
   @doc """
@@ -305,44 +302,68 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     Optimism.requires_l1_reorg_monitor?()
   end
 
-  defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
-    request =
-      events
-      |> Enum.reduce(%{}, fn event, acc ->
-        Map.put(acc, event["blockNumber"], 0)
-      end)
-      |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-      |> id_to_params()
-      |> Blocks.requests(&ByNumber.request(&1, true, false))
+  # Parses input of the prove L1 transaction and retrieves dispute game index or contract address hash
+  # (depending on whether Super Roots are active) from that.
+  #
+  # ## Parameters
+  # - `input`: The L1 transaction input in form of `0x` string.
+  #
+  # ## Returns
+  # - `{game_index, game_address_hash}` tuple where one of the elements is not `nil`, but another one is `nil` (and vice versa).
+  #   Both elements can be `nil` if the input cannot be parsed (or has unsupported format).
+  @spec input_to_game_index_or_address_hash(String.t()) :: {non_neg_integer() | nil, String.t() | nil}
+  defp input_to_game_index_or_address_hash(input) do
+    method_signature = String.slice(input, 0..9)
 
-    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
+    case method_signature do
+      "0x4870496f" ->
+        # the signature of `proveWithdrawalTransaction(tuple _transaction, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
+        {game_index, ""} =
+          method_signature
+          |> slice_game_index_or_address_hash(input)
+          |> Integer.parse(16)
 
-    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
-      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
-      {:error, _} -> []
+        {game_index, nil}
+
+      "0x8c90dd65" ->
+        # the signature of `proveWithdrawalTransaction(tuple _transaction, address _disputeGameProxy, uint256 _outputRootIndex, tuple _superRootProof, tuple _outputRootProof, bytes[] _withdrawalProof)` method
+        game_address_hash =
+          method_signature
+          |> slice_game_index_or_address_hash(input)
+          |> String.trim_leading("000000000000000000000000")
+          |> String.pad_leading(42, "0x")
+
+        {nil, game_address_hash}
+
+      _ ->
+        {nil, nil}
     end
   end
 
-  defp input_to_game_index(input) do
-    method_signature = String.slice(input, 0..9)
+  # Gets (slices) the dispute game index or its address hash from the transaction input represented as `0x` string.
+  #
+  # The input is calldata for either
+  #   `proveWithdrawalTransaction(tuple _transaction, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)`
+  #   or
+  #   `proveWithdrawalTransaction(tuple _transaction, address _disputeGameProxy, uint256 _outputRootIndex, tuple _superRootProof, tuple _outputRootProof, bytes[] _withdrawalProof)`
+  #   method.
+  #
+  # ## Parameters
+  # - `method_signature`: The method signature string (including `0x` prefix).
+  # - `input`: The input string (including `0x` prefix).
+  #
+  # ## Returns
+  # - The slice of the input containing dispute game index or address hash.
+  @spec slice_game_index_or_address_hash(String.t(), String.t()) :: String.t()
+  defp slice_game_index_or_address_hash(method_signature, input) do
+    # to get (slice) the index or address from the transaction input, we need to know its offset in the input string (represented as 0x...):
+    # offset = signature_length (10 symbols including `0x`) + 64 symbols (representing 32 bytes) of the `_transaction` tuple offset, totally is 74
+    offset = String.length(method_signature) + 32 * 2
+    length = 32 * 2
 
-    if method_signature == "0x4870496f" do
-      # the signature of `proveWithdrawalTransaction(tuple _transaction, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
+    range_start = offset
+    range_end = range_start + length - 1
 
-      # to get (slice) `_disputeGameIndex` from the transaction input, we need to know its offset in the input string (represented as 0x...):
-      # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_transaction` tuple offset, totally is 74
-      game_index_offset = String.length(method_signature) + 32 * 2
-      game_index_length = 32 * 2
-
-      game_index_range_start = game_index_offset
-      game_index_range_end = game_index_range_start + game_index_length - 1
-
-      {game_index, ""} =
-        input
-        |> String.slice(game_index_range_start..game_index_range_end)
-        |> Integer.parse(16)
-
-      game_index
-    end
+    String.slice(input, range_start..range_end)
   end
 end

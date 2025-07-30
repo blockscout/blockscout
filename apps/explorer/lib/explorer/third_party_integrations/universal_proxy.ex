@@ -1,14 +1,13 @@
 defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   @moduledoc """
-  Module for universal proxying 3dparty API endpoints
+  Module for universal proxying 3rd party API endpoints
   """
-  use Tesla
 
-  alias Explorer.Helper
+  alias Explorer.{Helper, HttpClient}
 
   @recv_timeout 60_000
 
-  @type api_request :: %{
+  @type api_request_params :: %{
           url: String.t() | nil,
           body: String.t(),
           headers: [{String.t(), String.t()}],
@@ -31,7 +30,6 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   @allowed_methods [:get, :post, :put, :patch, :delete]
   @reserved_param_types ~w(address chain_id chain_id_dependent)
 
-  @config_url "https://raw.githubusercontent.com/blockscout/backend-configs/refs/heads/main/universal-proxy-config.json"
   @cache_name :universal_proxy_config
 
   @doc """
@@ -55,7 +53,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   1. Retrieves the platform-specific configuration based on the `platform_id` key in `proxy_params`.
   2. Constructs the request URL using the `base_url` and `base` endpoint path.
   3. Parses and applies any API key and endpoint parameters.
-  4. Sends the HTTP request using the Tesla library with the specified method, URL, headers, and body.
+  4. Sends the HTTP request using `Explorer.HttpClient` with the specified method, URL, headers, and body.
 
   ## Returns
 
@@ -75,7 +73,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
   ## Notes
 
-    - The function uses the `Tesla` library with the `Tesla.Adapter.Mint` adapter.
+    - The function uses the `Explorer.HttpClient` with pre-configured adapter.
     - A timeout is applied to the request using the `@recv_timeout` module attribute.
   """
   @spec api_request(map()) :: {any(), integer()}
@@ -106,14 +104,8 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
     with {:invalid_config, false} <- {:invalid_config, is_nil(url)},
          {:invalid_config, false} <- {:invalid_config, is_nil(method)},
-         {:ok, %Tesla.Env{status: status, body: body}} <-
-           Tesla.request(
-             method: method,
-             url: url,
-             headers: headers,
-             body: body,
-             opts: [timeout: @recv_timeout, adapter: [protocols: [:http1]]]
-           ) do
+         {:ok, %{status_code: status, body: body}} <-
+           HttpClient.request(method, url, headers, body, timeout: @recv_timeout) do
       {Helper.decode_json(body), status}
     else
       {:invalid_config, true} ->
@@ -154,7 +146,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
     - The function delegates further processing of the API key and endpoint
       parameters to `parse_endpoint_api_key/3` and `parse_endpoint_params/3`.
   """
-  @spec parse_proxy_params(map()) :: api_request()
+  @spec parse_proxy_params(map()) :: api_request_params()
   def parse_proxy_params(proxy_params) do
     config = config()
     platform_id = proxy_params["platform_id"]
@@ -210,7 +202,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
     end
   end
 
-  @spec parse_endpoint_api_key(api_request(), api_key() | nil, String.t() | nil) :: api_request()
+  @spec parse_endpoint_api_key(api_request_params(), api_key() | nil, String.t() | nil) :: api_request_params()
   defp parse_endpoint_api_key(%{url: _url, headers: _headers} = map, nil, _platform_id), do: map
 
   defp parse_endpoint_api_key(
@@ -248,7 +240,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
   defp parse_endpoint_api_key(map, _endpoint_api_key, _platform_id), do: map
 
-  @spec parse_endpoint_params(api_request(), [endpoint_param()], map()) :: api_request()
+  @spec parse_endpoint_params(api_request_params(), [endpoint_param()], map()) :: api_request_params()
   defp parse_endpoint_params(api_request_map, endpoint_params, proxy_params) do
     endpoint_params
     |> Enum.reduce(api_request_map, fn param, map ->
@@ -275,7 +267,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
     end)
   end
 
-  @spec parse_param_location(api_request(), endpoint_param(), String.t()) :: api_request()
+  @spec parse_param_location(api_request_params(), endpoint_param(), String.t()) :: api_request_params()
   defp parse_param_location(
          %{body: body, url: url, headers: headers} = api_request_map,
          %{"location" => location} = params,
@@ -334,8 +326,8 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
         safe_parse_config_string(config_string)
 
       nil ->
-        case Tesla.get(@config_url) do
-          {:ok, %Tesla.Env{status: 200, body: config_string}} ->
+        case HttpClient.get(config_url()) do
+          {:ok, %{status_code: 200, body: config_string}} ->
             safe_parse_config_string(config_string, true)
 
           _ ->
@@ -353,5 +345,9 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
       {:error, _} ->
         %{}
     end
+  end
+
+  defp config_url do
+    Application.get_env(:explorer, __MODULE__)[:config_url]
   end
 end

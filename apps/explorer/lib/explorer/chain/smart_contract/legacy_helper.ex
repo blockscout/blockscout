@@ -36,6 +36,7 @@ defmodule Explorer.Chain.SmartContract.LegacyHelper do
       from(
         address in Address,
         join: contract in SmartContract,
+        as: :smart_contract,
         on: address.hash == contract.address_hash,
         preload: [:smart_contract]
       )

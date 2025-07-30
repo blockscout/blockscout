@@ -308,6 +308,7 @@ defmodule Indexer.Fetcher.Optimism do
     Updates the last handled block hash by a fetcher.
     The new block hash is written to the `last_fetched_counters` table.
     This function accepts the block number for which the block hash must be determined.
+    If RPC node returns `nil` as the successful result, this function doesn't do anything.
 
     ## Parameters
     - `block_number`: The number of the block.
@@ -319,11 +320,16 @@ defmodule Indexer.Fetcher.Optimism do
   """
   @spec set_last_block_hash_by_number(non_neg_integer(), binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: any()
   def set_last_block_hash_by_number(block_number, counter_type, json_rpc_named_arguments) do
-    [block_number]
-    |> get_blocks_by_numbers(json_rpc_named_arguments, Helper.infinite_retries_number())
-    |> List.first()
-    |> Map.get("hash")
-    |> set_last_block_hash(counter_type)
+    block =
+      [block_number]
+      |> get_blocks_by_numbers(json_rpc_named_arguments, Helper.infinite_retries_number())
+      |> List.first()
+
+    if not is_nil(block) do
+      block
+      |> Map.get("hash")
+      |> set_last_block_hash(counter_type)
+    end
   end
 
   @doc """

@@ -21,7 +21,7 @@ defmodule EthereumJSONRPC.HTTP.Case do
   end
 
   def http_options do
-    [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
+    [recv_timeout: 60_000, timeout: 60_000, pool: :ethereum_jsonrpc]
   end
 
   def url do

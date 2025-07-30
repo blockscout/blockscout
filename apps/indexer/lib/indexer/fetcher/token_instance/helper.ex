@@ -13,8 +13,55 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
 
   @cryptokitties_address_hash "0x06012c8cf97bead5deae237070f9587f8e7a266d"
 
-  @spec batch_fetch_instances([%{}]) :: list()
+  @doc """
+  Fetches and upserts a batch of token instances.
+
+  This function takes a list of `token_instances`, prepares the parameters for insertion,
+  and attempts to upsert them into the database. If an error occurs during the upsert,
+  it rescues the exception.
+
+  ## Parameters
+
+    - `token_instances`: A list of token instance maps to be processed.
+
+  ## Returns
+
+    - The result of the upsert operation, which may vary depending on the implementation
+      of `upsert_with_rescue/1`.
+  """
+  @spec batch_fetch_instances([map()]) :: nil | [map()]
   def batch_fetch_instances(token_instances) do
+    token_instances
+    |> batch_prepare_instances_insert_params()
+    |> upsert_with_rescue()
+  end
+
+  @doc """
+  Prepares a batch of token instance insert parameters.
+
+  This function processes a list of token instances, grouping them by contract address hash,
+  and handles special logic for CryptoKitties tokens. It fetches token types for non-CryptoKitties
+  tokens, retrieves metadata, and formats the results for database insertion.
+
+  ## Parameters
+
+    - `token_instances`: A list of maps representing token instances. Each item should
+      contain at least `:contract_address_hash` and `:token_id`.
+
+  ## Returns
+
+    - A list of insert parameters for each token instance, ready for database insertion.
+
+  ## Special Cases
+
+    - CryptoKitties tokens are identified by a specific contract address hash and are handled
+      separately with a fixed API endpoint.
+
+    - Errors during metadata retrieval are truncated and included in the result.
+
+  """
+  @spec batch_prepare_instances_insert_params([map()]) :: [map()]
+  def batch_prepare_instances_insert_params(token_instances) do
     token_instances =
       Enum.map(token_instances, fn
         %{contract_address_hash: hash, token_id: token_id} -> {hash, token_id}
@@ -57,7 +104,6 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
           )
       end
     end)
-    |> upsert_with_rescue()
   end
 
   defp batch_fetch_instances_inner(token_instances, token_types_map, cryptokitties) do

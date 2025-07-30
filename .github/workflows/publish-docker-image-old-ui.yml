@@ -1,0 +1,47 @@
+name: Publish Docker image with an old UI
+
+on:
+  workflow_dispatch:
+
+env:
+  OTP_VERSION: ${{ vars.OTP_VERSION }}
+  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to GitHub Container Registry
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: 9.0.0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup repo
+        uses: ./.github/actions/setup-repo
+        id: setup
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          docker-remote-multi-platform: true
+          docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
+          docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
+
+      - name: Build & Push Docker image with an old UI (indexer + API)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/oldUI.Dockerfile
+          push: true
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}-with-old-ui-postrelease-${{ env.SHORT_SHA }}
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}

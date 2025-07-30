@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   def show(conn, %{"id" => transaction_hash_string, "type" => "JSON"}) do
-    case Chain.string_to_transaction_hash(transaction_hash_string) do
+    case Chain.string_to_full_hash(transaction_hash_string) do
       {:ok, transaction_hash} ->
         if Chain.transaction_has_token_transfers?(transaction_hash) do
           TransactionTokenTransferController.index(conn, %{
@@ -149,7 +149,7 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   def show(conn, %{"id" => id} = params) do
-    with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(id),
+    with {:ok, transaction_hash} <- Chain.string_to_full_hash(id),
          :ok <- Chain.check_transaction_exists(transaction_hash) do
       if Chain.transaction_has_token_transfers?(transaction_hash) do
         with {:ok, transaction} <-

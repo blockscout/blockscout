@@ -41,12 +41,23 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
     chunk_size = config[:chunk_size]
     recheck_interval = config[:recheck_interval]
 
+    ignore_numbers =
+      config[:ignore_numbers]
+      |> String.trim()
+      |> String.split(",")
+      |> Enum.map(fn ignore_number ->
+        ignore_number
+        |> String.trim()
+        |> String.to_integer()
+      end)
+
     # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
     Process.send_after(self(), :continue, 2000)
 
     {:ok,
      %{
        chunk_size: chunk_size,
+       ignore_numbers: ignore_numbers,
        json_rpc_named_arguments: args[:json_rpc_named_arguments],
        prev_latest_batch_number: 0,
        prev_virtual_batch_number: 0,
@@ -60,6 +71,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
         :continue,
         %{
           chunk_size: chunk_size,
+          ignore_numbers: ignore_numbers,
           json_rpc_named_arguments: json_rpc_named_arguments,
           prev_latest_batch_number: prev_latest_batch_number,
           prev_virtual_batch_number: prev_virtual_batch_number,
@@ -86,7 +98,13 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
 
         {handle_duration, _} =
           :timer.tc(fn ->
-            handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments, chunk_size)
+            handle_batch_range(
+              start_batch_number,
+              end_batch_number,
+              json_rpc_named_arguments,
+              chunk_size,
+              ignore_numbers
+            )
           end)
 
         {
@@ -113,7 +131,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
     {:noreply, state}
   end
 
-  defp handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments, chunk_size) do
+  defp handle_batch_range(start_batch_number, end_batch_number, json_rpc_named_arguments, chunk_size, ignore_numbers) do
     start_batch_number..end_batch_number
     |> Enum.chunk_every(chunk_size)
     |> Enum.each(fn chunk ->
@@ -121,7 +139,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
       chunk_end = List.last(chunk)
 
       log_batches_chunk_handling(chunk_start, chunk_end, start_batch_number, end_batch_number)
-      fetch_and_save_batches(chunk_start, chunk_end, json_rpc_named_arguments)
+      fetch_and_save_batches(chunk_start, chunk_end, json_rpc_named_arguments, ignore_numbers)
     end)
   end
 
@@ -156,23 +174,8 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
     end
   end
 
-  defp fetch_and_save_batches(batch_start, batch_end, json_rpc_named_arguments) do
-    # For every batch from batch_start to batch_end request the batch info
-    requests =
-      batch_start
-      |> Range.new(batch_end, 1)
-      |> Enum.map(fn batch_number ->
-        EthereumJSONRPC.request(%{
-          id: batch_number,
-          method: "zkevm_getBatchByNumber",
-          params: [integer_to_quantity(batch_number), false]
-        })
-      end)
-
-    error_message =
-      &"Cannot call zkevm_getBatchByNumber for the batch range #{batch_start}..#{batch_end}. Error: #{inspect(&1)}"
-
-    {:ok, responses} = Helper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
+  defp fetch_and_save_batches(batch_start, batch_end, json_rpc_named_arguments, ignore_numbers) do
+    {:ok, responses} = perform_jsonrpc_requests(batch_start, batch_end, json_rpc_named_arguments, ignore_numbers)
 
     # For every batch info extract batches' L1 sequence transaction and L1 verify transaction
     {sequence_hashes, verify_hashes} =
@@ -289,6 +292,37 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
     # Publish update for open batches Views in BS app with the new confirmed batches
     if not Enum.empty?(confirmed_batches) do
       Publisher.broadcast([{:zkevm_confirmed_batches, confirmed_batches}], :realtime)
+    end
+  end
+
+  defp perform_jsonrpc_requests(batch_start, batch_end, json_rpc_named_arguments, ignore_numbers) do
+    # For every batch from batch_start to batch_end request the batch info
+    requests =
+      batch_start
+      |> Range.new(batch_end, 1)
+      |> Enum.reject(fn batch_number ->
+        if Enum.member?(ignore_numbers, batch_number) do
+          Logger.warning("The batch #{batch_number} will be ignored.")
+          true
+        else
+          false
+        end
+      end)
+      |> Enum.map(fn batch_number ->
+        EthereumJSONRPC.request(%{
+          id: batch_number,
+          method: "zkevm_getBatchByNumber",
+          params: [integer_to_quantity(batch_number), false]
+        })
+      end)
+
+    if requests == [] do
+      {:ok, []}
+    else
+      error_message =
+        &"Cannot call zkevm_getBatchByNumber for the batch range #{batch_start}..#{batch_end}. Error: #{inspect(&1)}"
+
+      Helper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
     end
   end
 

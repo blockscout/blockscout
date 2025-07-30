@@ -27,17 +27,20 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
 
   require Logger
 
-  import Explorer.Helper, only: [add_0x_prefix: 1, hash_to_binary: 1]
+  import Explorer.Helper, only: [hash_to_binary: 1]
   import Indexer.Fetcher.Optimism.Interop.Helper, only: [log_cant_get_chain_id_from_rpc: 0]
 
   alias Explorer.Chain
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
+  alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Optimism.InteropMessage
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
+  @counter_type "optimism_interop_messages_queue_iteration"
   @fetcher_name :optimism_interop_messages_queue
   @api_endpoint_import "/api/v2/import/optimism/interop/"
+  @chunk_size 1000
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -56,8 +59,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
 
   @impl GenServer
   def init(args) do
-    json_rpc_named_arguments = args[:json_rpc_named_arguments]
-    {:ok, %{}, {:continue, json_rpc_named_arguments}}
+    {:ok, %{}, {:continue, args[:json_rpc_named_arguments]}}
   end
 
   # Initialization function which is used instead of `init` to avoid Supervisor's stop in case of any critical issues
@@ -111,6 +113,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
          timeout: :timer.seconds(env[:connect_timeout]),
          recv_timeout: :timer.seconds(env[:recv_timeout]),
          export_expiration_blocks: div(env[:export_expiration] * 24 * 3600, block_duration),
+         iterations_done: Decimal.to_integer(LastFetchedCounter.get(@counter_type)),
          json_rpc_named_arguments: json_rpc_named_arguments
        }}
     else
@@ -162,60 +165,90 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
           timeout: timeout,
           recv_timeout: recv_timeout,
           export_expiration_blocks: export_expiration_blocks,
+          iterations_done: iterations_done,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
-    {:ok, latest_block_number} =
-      Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
-
     private_key = hash_to_binary(Application.get_all_env(:indexer)[__MODULE__][:private_key])
 
+    LastFetchedCounter.upsert(%{
+      counter_type: @counter_type,
+      value: iterations_done
+    })
+
+    # the first three iterations scan all incomplete messages,
+    # but subsequent scans are limited by INDEXER_OPTIMISM_INTEROP_EXPORT_EXPIRATION_DAYS env
+    start_block_number =
+      if iterations_done < 3 do
+        0
+      else
+        {:ok, latest_block_number} =
+          Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+
+        max(latest_block_number - export_expiration_blocks, 0)
+      end
+
+    %{min: min_block_number, max: max_block_number, count: message_count} =
+      InteropMessage.get_incomplete_messages_stats(current_chain_id, start_block_number)
+
+    chunks_number = ceil(message_count / @chunk_size)
+    chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
+
     updated_chainscout_map =
-      current_chain_id
-      |> InteropMessage.get_incomplete_messages(max(latest_block_number - export_expiration_blocks, 0))
-      |> Enum.reduce(chainscout_map, fn message, chainscout_map_acc ->
-        {instance_chain_id, post_data_signed} = prepare_post_data(message, private_key)
+      chunk_range
+      |> Enum.reduce(chainscout_map, fn current_chunk, chainscout_map_acc ->
+        current_chain_id
+        |> InteropMessage.get_incomplete_messages(
+          min_block_number,
+          max_block_number,
+          @chunk_size,
+          current_chunk * @chunk_size
+        )
+        |> Enum.reduce(chainscout_map_acc, fn message, chainscout_map_acc_internal ->
+          {instance_chain_id, post_data_signed} = prepare_post_data(message, private_key)
 
-        url_from_map = Map.get(chainscout_map_acc, instance_chain_id)
+          url_from_map = Map.get(chainscout_map_acc_internal, instance_chain_id)
 
-        instance_url =
-          with {:url_from_map_is_nil, true, _} <- {:url_from_map_is_nil, is_nil(url_from_map), url_from_map},
-               info = InteropMessage.get_instance_info_by_chain_id(instance_chain_id, chainscout_api_url),
-               {:url_from_chainscout_avail, true} <- {:url_from_chainscout_avail, not is_nil(info)} do
-            info.instance_url
-          else
-            {:url_from_map_is_nil, false, url_from_map} ->
-              url_from_map
+          instance_url =
+            with {:url_from_map_is_nil, true, _} <- {:url_from_map_is_nil, is_nil(url_from_map), url_from_map},
+                 info = InteropMessage.get_instance_info_by_chain_id(instance_chain_id, chainscout_api_url),
+                 {:url_from_chainscout_avail, true} <- {:url_from_chainscout_avail, not is_nil(info)} do
+              info.instance_url
+            else
+              {:url_from_map_is_nil, false, url_from_map} ->
+                url_from_map
 
-            {:url_from_chainscout_avail, false} ->
-              nil
+              {:url_from_chainscout_avail, false} ->
+                nil
+            end
+
+          with false <- is_nil(instance_url),
+               endpoint_url = instance_url <> @api_endpoint_import,
+               response = post_json_request(endpoint_url, post_data_signed, timeout, recv_timeout),
+               false <- is_nil(response) do
+            {:ok, _} =
+              Chain.import(%{
+                optimism_interop_messages: %{params: [prepare_import(message, response)]},
+                timeout: :infinity
+              })
+
+            Logger.info(
+              "Message details successfully sent to #{endpoint_url}. Request body: #{inspect(post_data_signed)}. Response body: #{inspect(response)}"
+            )
           end
 
-        with false <- is_nil(instance_url),
-             endpoint_url = instance_url <> @api_endpoint_import,
-             response = post_json_request(endpoint_url, post_data_signed, timeout, recv_timeout),
-             false <- is_nil(response) do
-          {:ok, _} =
-            Chain.import(%{
-              optimism_interop_messages: %{params: [prepare_import(message, response)]},
-              timeout: :infinity
-            })
-
-          Logger.info(
-            "Message details successfully sent to #{endpoint_url}. Request body: #{inspect(post_data_signed)}. Response body: #{inspect(response)}"
-          )
-        end
-
-        if is_nil(instance_url) do
-          chainscout_map_acc
-        else
-          Map.put(chainscout_map_acc, instance_chain_id, instance_url)
-        end
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if is_nil(instance_url) do
+            chainscout_map_acc_internal
+          else
+            Map.put(chainscout_map_acc_internal, instance_chain_id, instance_url)
+          end
+        end)
       end)
 
     Process.send_after(self(), :continue, :timer.seconds(3))
 
-    {:noreply, %{state | chainscout_map: updated_chainscout_map}}
+    {:noreply, %{state | chainscout_map: updated_chainscout_map, iterations_done: iterations_done + 1}}
   end
 
   @impl GenServer
@@ -237,7 +270,6 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
   @spec prepare_post_data(map(), binary()) :: {non_neg_integer(), map()}
   defp prepare_post_data(message, private_key) when is_nil(message.relay_transaction_hash) do
     timestamp = DateTime.to_unix(message.timestamp)
-    payload = add_0x_prefix(message.payload)
 
     data = %{
       sender_address_hash: Hash.to_string(message.sender_address_hash),
@@ -247,7 +279,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
       init_transaction_hash: Hash.to_string(message.init_transaction_hash),
       timestamp: timestamp,
       relay_chain_id: message.relay_chain_id,
-      payload: payload,
+      payload: message.payload,
       signature: nil
     }
 
@@ -257,7 +289,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
         Integer.to_string(message.nonce) <>
         Integer.to_string(message.init_chain_id) <>
         data.init_transaction_hash <>
-        Integer.to_string(timestamp) <> Integer.to_string(message.relay_chain_id) <> payload
+        Integer.to_string(timestamp) <> Integer.to_string(message.relay_chain_id) <> to_string(message.payload)
 
     {:ok, {signature, _}} =
       data_to_sign
@@ -301,9 +333,10 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
   # - `{chain_id, post_data_signed}` tuple where
   #   `chain_id` is the chain id from the input parameter.
   #   `post_data_signed` is the `data` map with the `signature` field.
+  @doc false
   @spec set_post_data_signature(non_neg_integer(), map(), binary()) :: {non_neg_integer(), map()}
-  defp set_post_data_signature(chain_id, data, signature) do
-    {chain_id, %{data | signature: add_0x_prefix(signature)}}
+  def set_post_data_signature(chain_id, data, signature) do
+    {chain_id, %{data | signature: %Data{bytes: signature} |> to_string()}}
   end
 
   # Prepares a map to import to the `op_interop_messages` table based on the current handling message and
@@ -343,6 +376,9 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
           pl -> hash_to_binary(pl)
         end
 
+      [transfer_token_address_hash, transfer_from_address_hash, transfer_to_address_hash, transfer_amount] =
+        InteropMessage.decode_payload(payload)
+
       %{
         sender_address_hash: Map.get(response, "sender_address_hash"),
         target_address_hash: Map.get(response, "target_address_hash"),
@@ -351,7 +387,11 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
         init_transaction_hash: Map.get(response, "init_transaction_hash"),
         relay_chain_id: message.relay_chain_id,
         timestamp: timestamp,
-        payload: payload
+        payload: payload,
+        transfer_token_address_hash: transfer_token_address_hash,
+        transfer_from_address_hash: transfer_from_address_hash,
+        transfer_to_address_hash: transfer_to_address_hash,
+        transfer_amount: transfer_amount
       }
     end
   end

@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
 
   defp transaction_hash_from_params(params) do
     with transaction_hash_string when not is_nil(transaction_hash_string) <- params["transaction_hash"],
-         {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string) do
+         {:ok, transaction_hash} <- Chain.string_to_full_hash(transaction_hash_string) do
       transaction_hash
     else
       nil -> nil

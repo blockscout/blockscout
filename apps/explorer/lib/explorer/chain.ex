@@ -954,7 +954,7 @@ defmodule Explorer.Chain do
 
   Returns `{:error, :not_found}` if not found
 
-      iex> {:ok, hash} = Explorer.Chain.string_to_block_hash(
+      iex> {:ok, hash} = Explorer.Chain.string_to_full_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       iex> Explorer.Chain.hash_to_block(hash)
@@ -1025,7 +1025,7 @@ defmodule Explorer.Chain do
 
   Returns `{:error, :not_found}` if not found
 
-      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      iex> {:ok, hash} = Explorer.Chain.string_to_full_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       iex> Explorer.Chain.hash_to_transaction(hash)
@@ -1106,7 +1106,7 @@ defmodule Explorer.Chain do
 
   Returns `[]` if not found
 
-      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      iex> {:ok, hash} = Explorer.Chain.string_to_full_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       iex> Explorer.Chain.hashes_to_transactions([hash])
@@ -1158,22 +1158,12 @@ defmodule Explorer.Chain do
         assets_to_import = %{
           addresses: imported[:addresses] || [],
           blocks: imported[:blocks] || [],
-          transactions: imported[:transactions] || []
+          transactions: imported[:transactions] || [],
+          address_current_token_balances: imported[:address_current_token_balances] || []
         }
 
-        if assets_to_import == %{
-             addresses: [],
-             blocks: [],
-             transactions: []
-           } do
-          result
-        else
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          case MultichainSearch.batch_import(assets_to_import) do
-            {:ok, _} -> result
-            _ -> {:error, :insert_to_multichain_search_db_failed}
-          end
-        end
+        MultichainSearch.send_data_to_queue(assets_to_import)
+        result
 
       other_result ->
         other_result
@@ -1502,7 +1492,7 @@ defmodule Explorer.Chain do
   @spec get_transactions_by_hashes([Hash.t()]) :: [Transaction.t()]
   def get_transactions_by_hashes(transaction_hashes) do
     transaction_hashes
-    |> Transaction.transactions_by_hashes()
+    |> Transaction.by_hashes_query()
     |> Repo.all()
   end
 
@@ -1559,50 +1549,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of unfetched `t:Explorer.Chain.Address.CoinBalance.t/0`.
-
-  When there are addresses, the `reducer` is called for each `t:Explorer.Chain.Address.t/0` `hash` and all
-  `t:Explorer.Chain.Block.t/0` `block_number` that address is mentioned.
-
-  | Address Hash Schema                        | Address Hash Field              | Block Number Schema                | Block Number Field |
-  |--------------------------------------------|---------------------------------|------------------------------------|--------------------|
-  | `t:Explorer.Chain.Block.t/0`               | `miner_hash`                    | `t:Explorer.Chain.Block.t/0`       | `number`           |
-  | `t:Explorer.Chain.Transaction.t/0`         | `from_address_hash`             | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-  | `t:Explorer.Chain.Transaction.t/0`         | `to_address_hash`               | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-  | `t:Explorer.Chain.Log.t/0`                 | `address_hash`                  | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-  | `t:Explorer.Chain.InternalTransaction.t/0` | `created_contract_address_hash` | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-  | `t:Explorer.Chain.InternalTransaction.t/0` | `from_address_hash`             | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-  | `t:Explorer.Chain.InternalTransaction.t/0` | `to_address_hash`               | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-
-  Pending `t:Explorer.Chain.Transaction.t/0` `from_address_hash` and `to_address_hash` aren't returned because they
-  don't have an associated block number.
-
-  When there are no addresses, the `reducer` is never called and the `initial` is returned in an `:ok` tuple.
-
-  When an `t:Explorer.Chain.Address.t/0` `hash` is used multiple times, all unique `t:Explorer.Chain.Block.t/0` `number`
-  will be returned.
-  """
-  @spec stream_unfetched_balances(
-          initial :: accumulator,
-          reducer ::
-            (entry :: %{address_hash: Hash.Address.t(), block_number: Block.block_number()}, accumulator -> accumulator),
-          limited? :: boolean()
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_unfetched_balances(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
-    query =
-      from(
-        balance in CoinBalance,
-        where: is_nil(balance.value_fetched_at),
-        select: %{address_hash: balance.address_hash, block_number: balance.block_number}
-      )
-
-    query
-    |> add_coin_balances_fetcher_limit(limited?)
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @doc """
   Returns a stream of all token balances that weren't fetched values.
   """
   @spec stream_unfetched_token_balances(
@@ -1621,10 +1567,7 @@ defmodule Explorer.Chain do
     query =
       case PendingOperationsHelper.pending_operations_type() do
         "blocks" ->
-          from(
-            pbo in PendingBlockOperation,
-            where: pbo.block_hash in ^block_hashes
-          )
+          PendingOperationsHelper.block_hash_in_query(block_hashes)
 
         "transactions" ->
           from(
@@ -2249,6 +2192,7 @@ defmodule Explorer.Chain do
   def pending_transactions_list do
     Transaction
     |> pending_transactions_query()
+    |> where([t], t.inserted_at < ago(1, "day"))
     |> Repo.all(timeout: :infinity)
   end
 
@@ -2302,34 +2246,7 @@ defmodule Explorer.Chain do
   @doc """
   The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.t/0`.
 
-      iex> Explorer.Chain.string_to_block_hash(
-      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
-      ...> )
-      {
-        :ok,
-        %Explorer.Chain.Hash{
-          byte_count: 32,
-          bytes: <<0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b :: big-integer-size(32)-unit(8)>>
-        }
-      }
-
-  `String.t` format must always have 64 hexadecimal digits after the `0x` base prefix.
-
-      iex> Explorer.Chain.string_to_block_hash("0x0")
-      :error
-
-  """
-  @spec string_to_block_hash(String.t()) :: {:ok, Hash.t()} | :error
-  def string_to_block_hash(string) when is_binary(string) do
-    Hash.Full.cast(string)
-  end
-
-  def string_to_block_hash(_), do: :error
-
-  @doc """
-  The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.t/0`.
-
-      iex> Explorer.Chain.string_to_transaction_hash(
+      iex> Explorer.Chain.string_to_full_hash(
       ...>  "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       {
@@ -2342,16 +2259,16 @@ defmodule Explorer.Chain do
 
   `String.t` format must always have 64 hexadecimal digits after the `0x` base prefix.
 
-      iex> Explorer.Chain.string_to_transaction_hash("0x0")
+      iex> Explorer.Chain.string_to_full_hash("0x0")
       :error
 
   """
-  @spec string_to_transaction_hash(String.t()) :: {:ok, Hash.t()} | :error
-  def string_to_transaction_hash(string) when is_binary(string) do
+  @spec string_to_full_hash(String.t()) :: {:ok, Hash.t()} | :error
+  def string_to_full_hash(string) when is_binary(string) do
     Hash.Full.cast(string)
   end
 
-  def string_to_transaction_hash(_), do: :error
+  def string_to_full_hash(_), do: :error
 
   @doc """
   Constructs the base query `Ecto.Query.t()/0` to create requests to the transaction logs
@@ -2897,12 +2814,6 @@ defmodule Explorer.Chain do
     where(query, [block], block.number < ^block_number)
   end
 
-  defp page_coin_balances(query, %PagingOptions{key: nil}), do: query
-
-  defp page_coin_balances(query, %PagingOptions{key: {block_number}}) do
-    where(query, [coin_balance], coin_balance.block_number < ^block_number)
-  end
-
   defp page_logs(query, %PagingOptions{key: nil}), do: query
 
   defp page_logs(query, %PagingOptions{key: {index}}) do
@@ -3236,11 +3147,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp fetch_coin_balances(address, paging_options) do
-    address.hash
-    |> CoinBalance.fetch_coin_balances(paging_options)
-  end
-
   @spec fetch_last_token_balance(Hash.Address.t(), Hash.Address.t()) :: Decimal.t()
   def fetch_last_token_balance(address_hash, token_contract_address_hash) do
     if address_hash !== %{} do
@@ -3261,157 +3167,8 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec address_to_coin_balances(Address.t(), [paging_options | api?]) :: []
-  def address_to_coin_balances(address, options) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    case paging_options do
-      %PagingOptions{key: {0}} ->
-        []
-
-      _ ->
-        address_to_coin_balances_internal(address, options, paging_options)
-    end
-  end
-
-  defp address_to_coin_balances_internal(address, options, paging_options) do
-    balances_raw =
-      address
-      |> fetch_coin_balances(paging_options)
-      |> page_coin_balances(paging_options)
-      |> select_repo(options).all()
-      |> preload_transactions(options)
-
-    if Enum.empty?(balances_raw) do
-      balances_raw
-    else
-      balances_raw_filtered =
-        balances_raw
-        |> Enum.filter(fn balance -> balance.value end)
-
-      min_block_number =
-        balances_raw_filtered
-        |> Enum.min_by(fn balance -> balance.block_number end, fn -> %{} end)
-        |> Map.get(:block_number)
-
-      max_block_number =
-        balances_raw_filtered
-        |> Enum.max_by(fn balance -> balance.block_number end, fn -> %{} end)
-        |> Map.get(:block_number)
-
-      min_block_timestamp = find_block_timestamp(min_block_number, options)
-      max_block_timestamp = find_block_timestamp(max_block_number, options)
-
-      min_block_unix_timestamp =
-        min_block_timestamp
-        |> Timex.to_unix()
-
-      max_block_unix_timestamp =
-        max_block_timestamp
-        |> Timex.to_unix()
-
-      blocks_delta = max_block_number - min_block_number
-
-      balances_with_dates =
-        if blocks_delta > 0 do
-          add_block_timestamp_to_balances(
-            balances_raw_filtered,
-            min_block_number,
-            min_block_unix_timestamp,
-            max_block_unix_timestamp,
-            blocks_delta
-          )
-        else
-          add_min_block_timestamp_to_balances(balances_raw_filtered, min_block_unix_timestamp)
-        end
-
-      balances_with_dates
-      |> Enum.sort(fn balance1, balance2 -> balance1.block_number >= balance2.block_number end)
-    end
-  end
-
-  # Here we fetch from DB one transaction per one coin balance. It's much more faster than LEFT OUTER JOIN which was before.
-  defp preload_transactions(balances, options) do
-    tasks =
-      Enum.map(balances, fn balance ->
-        Task.async(fn ->
-          Transaction
-          |> where(
-            [transaction],
-            transaction.block_number == ^balance.block_number and
-              (transaction.value > ^0 or (transaction.gas_price > ^0 and transaction.gas_used > ^0)) and
-              (transaction.to_address_hash == ^balance.address_hash or
-                 transaction.from_address_hash == ^balance.address_hash)
-          )
-          |> select([transaction], transaction.hash)
-          |> limit(1)
-          |> select_repo(options).one()
-        end)
-      end)
-
-    tasks
-    |> Task.yield_many(120_000)
-    |> Enum.zip(balances)
-    |> Enum.map(fn {{task, res}, balance} ->
-      case res do
-        {:ok, hash} ->
-          put_transaction_hash(hash, balance)
-
-        {:exit, _reason} ->
-          balance
-
-        nil ->
-          Task.shutdown(task, :brutal_kill)
-          balance
-      end
-    end)
-  end
-
-  defp put_transaction_hash(hash, coin_balance),
-    do: if(hash, do: %CoinBalance{coin_balance | transaction_hash: hash}, else: coin_balance)
-
-  defp add_block_timestamp_to_balances(
-         balances_raw_filtered,
-         min_block_number,
-         min_block_unix_timestamp,
-         max_block_unix_timestamp,
-         blocks_delta
-       ) do
-    balances_raw_filtered
-    |> Enum.map(fn balance ->
-      date =
-        trunc(
-          min_block_unix_timestamp +
-            (balance.block_number - min_block_number) * (max_block_unix_timestamp - min_block_unix_timestamp) /
-              blocks_delta
-        )
-
-      add_date_to_balance(balance, date)
-    end)
-  end
-
-  defp add_min_block_timestamp_to_balances(balances_raw_filtered, min_block_unix_timestamp) do
-    balances_raw_filtered
-    |> Enum.map(fn balance ->
-      date = min_block_unix_timestamp
-
-      add_date_to_balance(balance, date)
-    end)
-  end
-
-  defp add_date_to_balance(balance, date) do
-    formatted_date = Timex.from_unix(date)
-    %{balance | block_timestamp: formatted_date}
-  end
-
   def get_token_balance(address_hash, token_contract_address_hash, block_number, token_id \\ nil, options \\ []) do
     query = TokenBalance.fetch_token_balance(address_hash, token_contract_address_hash, block_number, token_id)
-
-    select_repo(options).one(query)
-  end
-
-  def get_coin_balance(address_hash, block_number, options \\ []) do
-    query = CoinBalance.fetch_coin_balance(address_hash, block_number)
 
     select_repo(options).one(query)
   end
@@ -3721,7 +3478,7 @@ defmodule Explorer.Chain do
 
   Returns `:not_found` if not found
 
-      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      iex> {:ok, hash} = Explorer.Chain.string_to_full_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       iex> Explorer.Chain.check_transaction_exists(hash)
@@ -3745,7 +3502,7 @@ defmodule Explorer.Chain do
 
   Returns `false` if not found
 
-      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      iex> {:ok, hash} = Explorer.Chain.string_to_full_hash(
       ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
       ...> )
       iex> Explorer.Chain.transaction_exists?(hash)
@@ -3849,7 +3606,7 @@ defmodule Explorer.Chain do
         {:ok, nil}
       end
 
-    {:ok, transaction_hash} = Chain.string_to_transaction_hash(first_trace.transaction_hash)
+    {:ok, transaction_hash} = Chain.string_to_full_hash(first_trace.transaction_hash)
 
     {:ok, call_type} =
       if Map.has_key?(first_trace, :call_type) do
@@ -3945,14 +3702,6 @@ defmodule Explorer.Chain do
 
       block_index
     end
-  end
-
-  defp find_block_timestamp(number, options) do
-    Block
-    |> where([block], block.number == ^number)
-    |> select([block], block.timestamp)
-    |> limit(1)
-    |> select_repo(options).one()
   end
 
   @spec get_token_transfer_type(TokenTransfer.t()) ::
@@ -4433,14 +4182,6 @@ defmodule Explorer.Chain do
     token_balances_fetcher_limit = Application.get_env(:indexer, :token_balances_fetcher_init_limit)
 
     limit(query, ^token_balances_fetcher_limit)
-  end
-
-  defp add_coin_balances_fetcher_limit(query, false), do: query
-
-  defp add_coin_balances_fetcher_limit(query, true) do
-    coin_balances_fetcher_limit = Application.get_env(:indexer, :coin_balances_fetcher_init_limit)
-
-    limit(query, ^coin_balances_fetcher_limit)
   end
 
   @spec default_paging_options() :: map()

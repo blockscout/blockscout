@@ -288,9 +288,11 @@ defmodule Indexer.Block.FetcherTest do
     } do
       block_number = @first_full_block_number
 
-      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
-        json_rpc_named_arguments: json_rpc_named_arguments
-      )
+      if Application.get_env(:explorer, :chain_type) == :filecoin do
+        Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
+          json_rpc_named_arguments: json_rpc_named_arguments
+        )
+      end
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
@@ -812,6 +814,7 @@ defmodule Indexer.Block.FetcherTest do
         Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         ReplacedTransaction.Supervisor.Case.start_supervised!()
+        {:ok, _pid} = ContractCreatorOnDemand.start_link([[], []])
 
         UncleBlock.Supervisor.Case.start_supervised!(
           block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}

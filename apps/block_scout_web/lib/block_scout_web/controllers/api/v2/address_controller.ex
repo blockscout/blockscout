@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
   use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
@@ -24,21 +25,22 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       nft_types_options: 1
     ]
 
+  import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
+
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
-  alias Explorer.{Chain, Market}
+  alias Explorer.{Chain, Market, PagingOptions}
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction}
-  alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Address.{CoinBalance, Counters}
 
   alias Explorer.Chain.Token.Instance
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
   alias BlockScoutWeb.API.V2.CeloView
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
-  alias Explorer.Chain.Celo.Reader, as: CeloReader
 
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
@@ -112,7 +114,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           :smart_contract,
           proxy_implementations_association()
         ]
-      ] => :optional
+      ] => :optional,
+      [epoch: [:end_processing_block]] => :optional
     },
     api?: true
   ]
@@ -130,12 +133,27 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags ["addresses"]
+
+  operation :address,
+    summary: "Retrieve detailed information about a specific address or contract",
+    description:
+      "Retrieves detailed information for a specific address, including balance, transaction count, and metadata.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok: {"Detailed information about the specified address.", "application/json", Schemas.Address.Response},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/addresses/:address_hash_param` endpoint.
   Returns 200 on any valid address_hash, even if the address is not found in the database.
   """
   @spec address(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def address(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def address(conn, %{address_hash_param: address_hash_string} = params) do
     ip = AccessHelper.conn_to_ip_string(conn)
 
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
@@ -179,6 +197,17 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :counters,
+    summary: "Get activity count stats for a specific address",
+    description:
+      "Retrieves count statistics for an address, including transactions, token transfers, gas usage, and validations.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok: {"Count statistics for the specified address", "application/json", Schemas.Address.Counters},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/counters` endpoint.
 
@@ -192,7 +221,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   - `Plug.Conn.t()` if the operation is successful.
   """
   @spec counters(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def counters(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def counters(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, address} ->
@@ -220,6 +249,19 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :token_balances,
+    summary: "List all token balances held by a specific address",
+    description:
+      "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155 and ERC-404 tokens.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok:
+        {"All token balances for the specified address.", "application/json",
+         %Schema{title: "AddressTokenBalances", type: :array, items: Schemas.Address.TokenBalance}},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/token-balances` endpoint (retrieves the token balances for a given address)
 
@@ -235,7 +277,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     - `Plug.Conn.t()` if the request is successful.
   """
   @spec token_balances(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def token_balances(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def token_balances(conn, %{address_hash_param: address_hash_string} = params) do
     ip = AccessHelper.conn_to_ip_string(conn)
 
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
@@ -259,6 +301,47 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :transactions,
+    summary: "List transactions involving a specific address with to-from filtering",
+    description:
+      "Retrieves transactions involving a specific address, with optional filtering for transactions sent from or to the address.",
+    parameters:
+      base_params() ++
+        [
+          address_hash_param(),
+          direction_filter_param(),
+          sort_param(["block_number", "value", "fee"]),
+          order_param()
+        ] ++
+        define_paging_params([
+          "block_number_nullable",
+          "index_nullable",
+          "inserted_at",
+          "hash",
+          "value",
+          "fee",
+          "items_count"
+        ]),
+    responses: [
+      ok:
+        {"All transactions for the specified address.", "application/json",
+         paginated_response(
+           items: Schemas.Transaction,
+           next_page_params_example: %{
+             "block_number" => 22_566_361,
+             "fee" => "19206937428000",
+             "hash" => "0xe38d616dade747097354b0731b5560f581536dacf22121feb4bb4a0b776018aa",
+             "index" => 103,
+             "inserted_at" => "2025-05-26T10:26:51.474448Z",
+             "items_count" => 50,
+             "value" => "24741049597737"
+           },
+           title_prefix: "AddressTransactions"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/transactions` endpoint (retrieves transactions for a given address)
 
@@ -274,7 +357,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     - `Plug.Conn.t()` if the request is successful.
   """
   @spec transactions(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def transactions(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def transactions(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, _address} ->
@@ -315,6 +398,38 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :token_transfers,
+    summary: "List token transfers involving a specific address with filtering options",
+    description:
+      "Retrieves token transfers involving a specific address, with optional filtering by token type, direction, and specific token.",
+    parameters:
+      base_params() ++
+        [address_hash_param(), direction_filter_param(), token_type_param(), token_filter_param()] ++
+        define_paging_params([
+          "block_number",
+          "index",
+          "items_count",
+          "batch_log_index",
+          "batch_block_hash",
+          "batch_transaction_hash",
+          "index_in_batch"
+        ]),
+    responses: [
+      ok:
+        {"All token transfers for the specified address.", "application/json",
+         paginated_response(
+           items: Schemas.TokenTransfer,
+           next_page_params_example: %{
+             "block_number" => 12_345_678,
+             "index" => 0,
+             "items_count" => 50
+           },
+           title_prefix: "AddressTokenTransfers"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/token-transfers` endpoint (retrieves token transfers for a given address)
 
@@ -335,9 +450,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           | {:not_found, {:error, :not_found}}
           | {:restricted_access, true}
           | Plug.Conn.t()
-  def token_transfers(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def token_transfers(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params),
-         {:ok, token_address_hash} <- validate_optional_address_hash(params["token"], params),
+         {:ok, token_address_hash} <- validate_optional_address_hash(params[:token], params),
          token_address_exists <- (token_address_hash && Chain.check_token_exists(token_address_hash)) || :ok do
       case {Chain.hash_to_address(address_hash, @address_options), token_address_exists} do
         {{:ok, _address}, :ok} ->
@@ -384,6 +499,31 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :internal_transactions,
+    summary: "List all internal transactions involving a specific address",
+    description:
+      "Retrieves all internal transactions involving a specific address, with optional filtering for internal transactions sent from or to the address.",
+    parameters:
+      base_params() ++
+        [address_hash_param(), direction_filter_param()] ++
+        define_paging_params(["block_number", "index", "items_count", "transaction_index"]),
+    responses: [
+      ok:
+        {"All internal transactions for the specified address.", "application/json",
+         paginated_response(
+           items: Schemas.InternalTransaction,
+           next_page_params_example: %{
+             "block_number" => 22_530_770,
+             "index" => 8,
+             "items_count" => 50,
+             "transaction_index" => 8
+           },
+           title_prefix: "AddressInternalTransactions"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/internal-transactions` endpoint (retrieves internal transactions for a given address)
 
@@ -399,7 +539,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     - `Plug.Conn.t()` if the request is successful.
   """
   @spec internal_transactions(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def internal_transactions(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def internal_transactions(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, _address} ->
@@ -443,6 +583,24 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :logs,
+    summary: "List event logs emitted by or involving a specific address",
+    description: "Retrieves event logs emitted by or involving a specific address.",
+    parameters:
+      base_params() ++
+        [address_hash_param(), topic_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
+    responses: [
+      ok:
+        {"Event logs for the specified address, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Log,
+           next_page_params_example: %{"block_number" => 22_546_398, "index" => 268, "items_count" => 50},
+           title_prefix: "AddressLogs"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/logs` endpoint (retrieves logs for a given address)
 
@@ -458,25 +616,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     - `Plug.Conn.t()` if the request is successful.
   """
   @spec logs(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def logs(conn, %{"address_hash_param" => address_hash_string, "topic" => topic} = params) do
-    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
-      case Chain.hash_to_address(address_hash, @address_options) do
+  def logs(conn, %{address_hash_param: address_hash_string} = params) do
+    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params),
+         {:ok, topic} <- validate_optional_topic(params[:topic]) do
+      case Chain.hash_to_address(address_hash, @api_true) do
         {:ok, _address} ->
-          prepared_topic = String.trim(topic)
-
-          formatted_topic =
-            if String.starts_with?(prepared_topic, "0x"), do: prepared_topic, else: "0x" <> prepared_topic
-
           options =
             params
             |> paging_options()
-            |> Keyword.merge(topic: formatted_topic)
             |> Keyword.merge(
               necessity_by_association: %{
-                [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+                [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
               }
             )
             |> Keyword.merge(@api_true)
+            |> Keyword.put(:topic, topic)
 
           results_plus_one = Chain.address_to_logs(address_hash, false, options)
 
@@ -504,37 +658,22 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
-  def logs(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
-      case Chain.hash_to_address(address_hash, @address_options) do
-        {:ok, _address} ->
-          options = params |> paging_options() |> Keyword.merge(@api_true)
-
-          results_plus_one = Chain.address_to_logs(address_hash, false, options)
-
-          {logs, next_page} = split_list_by_page(results_plus_one)
-
-          next_page_params = next_page |> next_page_params(logs, delete_parameters_from_next_page_params(params))
-
-          conn
-          |> put_status(200)
-          |> put_view(TransactionView)
-          |> render(:logs, %{
-            logs: logs |> maybe_preload_ens() |> maybe_preload_metadata(),
-            next_page_params: next_page_params
-          })
-
-        _ ->
-          conn
-          |> put_status(200)
-          |> put_view(TransactionView)
-          |> render(:logs, %{
-            logs: [],
-            next_page_params: nil
-          })
-      end
-    end
-  end
+  operation :blocks_validated,
+    summary: "List blocks validated (mined) by a specific validator/miner address",
+    description:
+      "Retrieves blocks that were validated (mined) by a specific address. Useful for tracking validator/miner performance.",
+    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["block_number", "items_count"]),
+    responses: [
+      ok:
+        {"Blocks validated by the specified address, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Block,
+           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50},
+           title_prefix: "AddressBlocksValidated"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
 
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/blocks-validated` endpoint (retrieves validated by a given address blocks)
@@ -551,7 +690,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     - `Plug.Conn.t()` if the request is successful.
   """
   @spec blocks_validated(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def blocks_validated(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def blocks_validated(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, _address} ->
@@ -587,6 +726,23 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :coin_balance_history,
+    summary: "Get native coin balance history for an address showing all balance changes",
+    description:
+      "Retrieves historical native coin balance changes for a specific address, tracking how an address's balance has changed over time.",
+    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["block_number", "items_count"]),
+    responses: [
+      ok:
+        {"Historical coin balance changes for the specified address, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.CoinBalance,
+           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50},
+           title_prefix: "AddressCoinBalanceHistory"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/coin-balance-history` endpoint (retrieves coin balance history for given address)
 
@@ -602,13 +758,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     - `Plug.Conn.t()` if the request is successful.
   """
   @spec coin_balance_history(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def coin_balance_history(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def coin_balance_history(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, address} ->
           full_options = params |> paging_options() |> Keyword.merge(@api_true)
 
-          results_plus_one = Chain.address_to_coin_balances(address, full_options)
+          results_plus_one = CoinBalance.address_to_coin_balances(address, full_options)
 
           {coin_balances, next_page} = split_list_by_page(results_plus_one)
 
@@ -627,6 +783,27 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :coin_balance_history_by_day,
+    summary: "Get daily native coin balance snapshots for an address from previous 10 days",
+    description:
+      "Retrieves daily snapshots of native coin balance for a specific address. Useful for generating balance-over-time charts.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok:
+        {"Daily coin balance history for the specified address.", "application/json",
+         %Schema{
+           title: "AddressCoinBalanceHistoryByDay",
+           type: :object,
+           properties: %{
+             days: %Schema{type: :integer, nullable: false},
+             items: %Schema{type: :array, items: Schemas.CoinBalanceByDay}
+           },
+           nullable: false
+         }},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/coin-balance-history-by-day` endpoint (retrieves coin balance history by day for given address)
 
@@ -643,7 +820,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   """
   @spec coin_balance_history_by_day(Plug.Conn.t(), map()) ::
           {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def coin_balance_history_by_day(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def coin_balance_history_by_day(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, _address} ->
@@ -663,6 +840,31 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :tokens,
+    summary: "List token balances for an address with pagination and type filtering",
+    description:
+      "Retrieves token balances for a specific address with pagination and filtering by token type. Useful for displaying large token portfolios.",
+    parameters:
+      base_params() ++
+        [address_hash_param(), token_type_param()] ++
+        define_paging_params(["fiat_value_nullable", "id", "items_count", "value"]),
+    responses: [
+      ok:
+        {"Token balances for the specified address with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Address.TokenBalance,
+           next_page_params_example: %{
+             "fiat_value" => nil,
+             "id" => 12_519_063_346,
+             "items_count" => 50,
+             "value" => "3750000000000000000000"
+           },
+           title_prefix: "AddressTokens"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/tokens` endpoint (retrieves token balances for given address)
 
@@ -678,7 +880,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     - `Plug.Conn.t()` if the request is successful.
   """
   @spec tokens(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def tokens(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def tokens(conn, %{address_hash_param: address_hash_string} = params) do
     ip = AccessHelper.conn_to_ip_string(conn)
 
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
@@ -718,6 +920,24 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :withdrawals,
+    summary: "List validator withdrawals involving a specific address",
+    description:
+      "Retrieves withdrawals involving a specific address, typically for proof-of-stake networks supporting validator withdrawals.",
+    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["index", "items_count"]),
+    responses: [
+      ok:
+        {"Withdrawals for the specified address, with pagination. Note that receiver field is not included in this endpoint.",
+         "application/json",
+         paginated_response(
+           items: Schemas.Withdrawal,
+           next_page_params_example: %{"index" => 88_192_653, "items_count" => 50},
+           title_prefix: "AddressWithdrawals"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/withdrawals` endpoint (retrieves withdrawals for given address)
 
@@ -733,7 +953,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     - `Plug.Conn.t()` if the request is successful.
   """
   @spec withdrawals(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def withdrawals(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def withdrawals(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, _address} ->
@@ -762,6 +982,41 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       end
     end
   end
+
+  operation :addresses_list,
+    summary: "List addresses holding native coins sorted by balance - top accounts",
+    description: "Retrieves a paginated list of addresses holding the native coin, sorted by balance.",
+    parameters:
+      base_params() ++
+        [sort_param(["balance", "transactions_count"]), order_param()] ++
+        define_paging_params(["fetched_coin_balance", "address_hash", "items_count", "transactions_count"]),
+    responses: [
+      ok:
+        {"List of native coin holders with their balances, with pagination.", "application/json",
+         %Schema{
+           title: "AddressesList",
+           allOf: [
+             paginated_response(
+               items: Schemas.Address,
+               next_page_params_example: %{
+                 "fetched_coin_balance" => "124355417998347240251800",
+                 "hash" => "0x59708733fbbf64378d9293ec56b977c011a08fd2",
+                 "items_count" => 50,
+                 "transactions_count" => nil
+               },
+               title_prefix: "AddressList"
+             ),
+             %Schema{
+               properties: %{
+                 exchange_rate: Schemas.General.FloatStringNullable,
+                 total_supply: Schemas.General.FloatStringNullable
+               },
+               required: [:exchange_rate, :total_supply]
+             }
+           ]
+         }},
+      forbidden: ForbiddenResponse.response()
+    ]
 
   @doc """
   Handles GET requests to `/api/v2/addresses` endpoint (retrieves addresses list)
@@ -800,6 +1055,16 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     })
   end
 
+  operation :tabs_counters,
+    summary: "Get counters for address tabs",
+    description: "Retrieves counters for various address-related entities (max counter value is 51).",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok: {"Counters for address tabs.", "application/json", Schemas.Address.TabsCounters},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
   Handles GET requests to `/api/v2/addresses/:address_hash_param/tabs-counters` endpoint (retrieves counter for each entity (max counter value is 51) for given address)
 
@@ -815,7 +1080,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     - `Plug.Conn.t()` if the request is successful.
   """
   @spec tabs_counters(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def tabs_counters(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def tabs_counters(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       counter_name_to_json_field_name = %{
         validations: :validations_count,
@@ -864,8 +1129,33 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :nft_list,
+    summary: "List NFTs owned by a specific address with optional type filtering",
+    description:
+      "Retrieves a list of NFTs (non-fungible tokens) owned by a specific address, with optional filtering by token type.",
+    parameters:
+      base_params() ++
+        [address_hash_param(), nft_token_type_param()] ++
+        define_paging_params(["items_count", "token_contract_address_hash", "token_id", "token_type"]),
+    responses: [
+      ok:
+        {"NFTs owned by the specified address, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.TokenInstanceInList,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
+             "token_id" => "24950",
+             "token_type" => "ERC-721"
+           },
+           title_prefix: "AddressNFTs"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
-  Handles GET requests to `/api/v2/addresses/:address_hash_param/nft-list` endpoint (retrieves NFTs for given address)
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/nft` endpoint (retrieves NFTs for given address)
 
   ## Parameters
 
@@ -879,7 +1169,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     - `Plug.Conn.t()` if the request is successful.
   """
   @spec nft_list(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def nft_list(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def nft_list(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, _address} ->
@@ -916,8 +1206,32 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :nft_collections,
+    summary: "List NFTs owned by an address grouped by collection/project",
+    description:
+      "Retrieves NFTs owned by a specific address, organized by collection. Useful for displaying an address's NFT portfolio grouped by project.",
+    parameters:
+      base_params() ++
+        [address_hash_param(), nft_token_type_param()] ++
+        define_paging_params(["items_count", "token_contract_address_hash", "token_type"]),
+    responses: [
+      ok:
+        {"NFTs owned by the specified address, grouped by collection, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.NFTCollection,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
+             "token_type" => "ERC-721"
+           },
+           title_prefix: "AddressNFTCollections"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
-  Handles GET requests to `/api/v2/addresses/:address_hash_param/nft-collections` endpoint (retrieves NFTs grouped by collections for given address)
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/nft/collections` endpoint (retrieves NFTs grouped by collections for given address)
 
   ## Parameters
 
@@ -931,7 +1245,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     - `Plug.Conn.t()` if the request is successful.
   """
   @spec nft_collections(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def nft_collections(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def nft_collections(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, _address} ->
@@ -968,47 +1282,110 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  operation :celo_election_rewards,
+    summary: "List Celo election rewards for a specific address",
+    description: "Retrieves Celo election rewards for a specific address.",
+    parameters:
+      base_params() ++
+        [address_hash_param()] ++
+        define_paging_params(["epoch_number", "amount", "associated_account_address_hash", "type"]),
+    responses: [
+      ok:
+        {"Celo election rewards for the specified address.", "application/json",
+         paginated_response(
+           items: Schemas.Celo.ElectionReward,
+           next_page_params_example: %{
+             "block_number" => 100,
+             "amount" => "1000000000000000000",
+             "associated_account_address_hash" => "0x1234567890123456789012345678901234567890",
+             "type" => "validator"
+           },
+           title_prefix: "AddressCeloElectionRewards"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
   @doc """
-  Function to handle GET requests to `/api/v2/addresses/:address_hash_param/election-rewards` endpoint.
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/election-rewards` endpoint.
   """
   @spec celo_election_rewards(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
-  def celo_election_rewards(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
-      case Chain.hash_to_address(address_hash, @address_options) do
-        {:ok, _address} ->
-          full_options =
-            @celo_election_rewards_options
-            |> Keyword.merge(CeloElectionReward.address_paging_options(params))
+  def celo_election_rewards(conn, %{address_hash_param: address_hash_string} = params) do
+    with {:ok, address_hash} <- validate_address_hash(address_hash_string, params),
+         {:ok, _address} <- Chain.hash_to_address(address_hash, api?: true) do
+      full_options =
+        @celo_election_rewards_options
+        |> Keyword.put(
+          :paging_options,
+          celo_election_rewards_paging_options(params)
+        )
 
-          results_plus_one = CeloReader.address_hash_to_election_rewards(address_hash, full_options)
+      results_plus_one = CeloElectionReward.address_hash_to_rewards(address_hash, full_options)
 
-          {rewards, next_page} = split_list_by_page(results_plus_one)
+      {rewards, next_page} = split_list_by_page(results_plus_one)
 
-          next_page_params =
-            next_page_params(
-              next_page,
-              rewards,
-              delete_parameters_from_next_page_params(params),
-              &CeloElectionReward.to_address_paging_params/1
-            )
+      filtered_params =
+        params
+        |> delete_parameters_from_next_page_params()
+        |> Map.drop([
+          "epoch_number",
+          "amount",
+          "associated_account_address_hash",
+          "type"
+        ])
 
-          conn
-          |> put_status(200)
-          |> put_view(CeloView)
-          |> render(:celo_election_rewards, %{
-            rewards: rewards,
-            next_page_params: next_page_params
-          })
+      next_page_params =
+        next_page_params(
+          next_page,
+          rewards,
+          filtered_params,
+          &%{
+            epoch_number: &1.epoch_number,
+            amount: &1.amount,
+            associated_account_address_hash: &1.associated_account_address_hash,
+            type: &1.type
+          }
+        )
 
-        _ ->
-          conn
-          |> put_status(200)
-          |> put_view(CeloView)
-          |> render(:celo_election_rewards, %{
-            rewards: [],
-            next_page_params: nil
-          })
-      end
+      conn
+      |> put_status(200)
+      |> put_view(CeloView)
+      |> render(:celo_address_election_rewards, %{
+        rewards: rewards,
+        next_page_params: next_page_params
+      })
+    end
+  end
+
+  @spec celo_election_rewards_paging_options(map()) :: PagingOptions.t()
+  defp celo_election_rewards_paging_options(params) do
+    with %{
+           epoch_number: epoch_number_string,
+           amount: amount_string,
+           associated_account_address_hash: associated_account_address_hash_string,
+           type: type_string
+         }
+         when is_binary(epoch_number_string) and
+                is_binary(amount_string) and
+                is_binary(associated_account_address_hash_string) and
+                is_binary(type_string) <- params,
+         {:ok, epoch_number} <- safe_parse_non_negative_integer(epoch_number_string),
+         {amount, ""} <- Decimal.parse(amount_string),
+         {:ok, associated_account_address_hash} <-
+           Hash.Address.cast(associated_account_address_hash_string),
+         {:ok, type} <- CeloElectionReward.type_from_string(type_string) do
+      %{
+        PagingOptions.default_paging_options()
+        | key: %{
+            epoch_number: epoch_number,
+            amount: amount,
+            associated_account_address_hash: associated_account_address_hash,
+            type: type
+          }
+      }
+    else
+      _ ->
+        PagingOptions.default_paging_options()
     end
   end
 
@@ -1041,6 +1418,27 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       _ ->
         validate_address_hash(address_hash_string, params)
+    end
+  end
+
+  @spec validate_optional_topic(nil | String.t()) :: {:ok, nil | Hash.Full.t()} | {:format, :error}
+  defp validate_optional_topic(topic) do
+    topic = if is_binary(topic), do: String.trim(topic), else: topic
+
+    case topic do
+      nil ->
+        {:ok, nil}
+
+      "" ->
+        {:ok, nil}
+
+      "null" ->
+        {:ok, nil}
+
+      _ ->
+        with {:format, {:ok, topic}} <- {:format, Chain.string_to_full_hash(topic)} do
+          {:ok, topic}
+        end
     end
   end
 end

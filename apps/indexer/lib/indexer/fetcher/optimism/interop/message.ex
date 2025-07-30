@@ -29,6 +29,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
 
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
+  alias Explorer.Chain.Data
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.InteropMessage
   alias Indexer.Fetcher.Optimism
@@ -62,8 +63,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
 
   @impl GenServer
   def init(args) do
-    json_rpc_named_arguments = args[:json_rpc_named_arguments]
-    {:ok, %{}, {:continue, json_rpc_named_arguments}}
+    {:ok, %{}, {:continue, args[:json_rpc_named_arguments]}}
   end
 
   # Initialization function which is used instead of `init` to avoid Supervisor's stop in case of any critical issues
@@ -320,6 +320,9 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
         if Enum.at(event["topics"], 0) == @sent_message_event do
           [sender_address_hash, payload] = decode_data(event["data"], [:address, :bytes])
 
+          [transfer_token_address_hash, transfer_from_address_hash, transfer_to_address_hash, transfer_amount] =
+            InteropMessage.decode_payload(payload)
+
           %{
             sender_address_hash: sender_address_hash,
             target_address_hash: truncate_address_hash(Enum.at(event["topics"], 2)),
@@ -329,7 +332,12 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
             block_number: block_number,
             timestamp: Map.get(timestamps, block_number),
             relay_chain_id: quantity_to_integer(Enum.at(event["topics"], 1)),
-            payload: payload
+            payload: %Data{bytes: payload},
+            transfer_token_address_hash: transfer_token_address_hash,
+            transfer_from_address_hash: transfer_from_address_hash,
+            transfer_to_address_hash: transfer_to_address_hash,
+            transfer_amount: transfer_amount,
+            sent_to_multichain: false
           }
         else
           %{
@@ -432,4 +440,31 @@ defmodule Indexer.Fetcher.Optimism.Interop.Message do
   end
 
   def fetcher_name, do: @fetcher_name
+
+  @doc """
+    Returns a constant address of L2ToL2CrossDomainMessenger predeploy.
+
+    ## Returns
+    - An address of L2ToL2CrossDomainMessenger predeploy.
+  """
+  @spec l2tol2_cross_domain_messenger() :: String.t()
+  def l2tol2_cross_domain_messenger, do: @l2tol2_cross_domain_messenger
+
+  @doc """
+    Returns a max possible value for 32-bit signed integer.
+
+    ## Returns
+    - A max possible value for 32-bit signed integer.
+  """
+  @spec max_int32() :: non_neg_integer()
+  def max_int32, do: @max_int32
+
+  @doc """
+    Returns a 32-byte signature of the `SentMessage` event: `SentMessage(uint256 indexed destination, address indexed target, uint256 indexed messageNonce, address sender, bytes message)`.
+
+    ## Returns
+    - 32-byte signature of the `SentMessage` event.
+  """
+  @spec sent_message_event_signature() :: String.t()
+  def sent_message_event_signature, do: @sent_message_event
 end

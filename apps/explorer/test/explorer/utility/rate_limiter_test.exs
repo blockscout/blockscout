@@ -32,7 +32,8 @@ defmodule Explorer.Utility.RateLimiterTest do
     assert RateLimiter.check_rate("test", :on_demand) == :deny
 
     expected_ban_data = "#{now + 1}:1"
-    assert [{"test_on_demand", ^expected_ban_data}] = :ets.lookup(:rate_limiter, "test_on_demand")
+    key = add_chain_id_prefix("test_on_demand")
+    assert [{^key, ^expected_ban_data}] = :ets.lookup(:rate_limiter, key)
 
     Process.sleep(2000)
 
@@ -42,6 +43,10 @@ defmodule Explorer.Utility.RateLimiterTest do
     assert RateLimiter.check_rate("test", :on_demand) == :deny
 
     expected_ban_data = "#{now + 2}:2"
-    assert [{"test_on_demand", ^expected_ban_data}] = :ets.lookup(:rate_limiter, "test_on_demand")
+    assert [{^key, ^expected_ban_data}] = :ets.lookup(:rate_limiter, key)
+  end
+
+  defp add_chain_id_prefix(key) do
+    "#{Application.get_env(:block_scout_web, :chain_id)}_#{key}"
   end
 end

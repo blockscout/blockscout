@@ -30,7 +30,7 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
 
   @spec fetch(block_number :: EthereumJSONRPC.block_number()) :: :ok
   def fetch(block_number) do
-    GenServer.call(__MODULE__, {:fetch, block_number})
+    GenServer.call(__MODULE__, {:fetch, block_number}, 60_000)
   end
 
   def child_spec(start_link_arguments) do

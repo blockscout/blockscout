@@ -290,21 +290,21 @@ defmodule Explorer.Chain.Token.Instance do
   @doc """
     Function to be used in BlockScoutWeb.Chain.next_page_params/4
   """
-  @spec nft_list_next_page_params(__MODULE__.t()) :: %{binary() => any}
+  @spec nft_list_next_page_params(__MODULE__.t()) :: %{atom() => any}
   def nft_list_next_page_params(%__MODULE__{
         current_token_balance: %CurrentTokenBalance{},
         token_contract_address_hash: token_contract_address_hash,
         token_id: token_id,
         token: token
       }) do
-    %{"token_contract_address_hash" => token_contract_address_hash, "token_id" => token_id, "token_type" => token.type}
+    %{token_contract_address_hash: token_contract_address_hash, token_id: token_id, token_type: token.type}
   end
 
   def nft_list_next_page_params(%__MODULE__{
         token_contract_address_hash: token_contract_address_hash,
         token_id: token_id
       }) do
-    %{"token_contract_address_hash" => token_contract_address_hash, "token_id" => token_id, "token_type" => "ERC-721"}
+    %{token_contract_address_hash: token_contract_address_hash, token_id: token_id, token_type: "ERC-721"}
   end
 
   @preloaded_nfts_limit 9
@@ -488,20 +488,20 @@ defmodule Explorer.Chain.Token.Instance do
     Function to be used in BlockScoutWeb.Chain.next_page_params/4
   """
   @spec nft_collections_next_page_params(%{:token_contract_address_hash => any, optional(any) => any}) :: %{
-          binary() => any
+          atom() => any
         }
   def nft_collections_next_page_params(%{
         token_contract_address_hash: token_contract_address_hash,
         token: %Token{type: token_type}
       }) do
-    %{"token_contract_address_hash" => token_contract_address_hash, "token_type" => token_type}
+    %{token_contract_address_hash: token_contract_address_hash, token_type: token_type}
   end
 
   def nft_collections_next_page_params(%{
         token_contract_address_hash: token_contract_address_hash,
         token_type: token_type
       }) do
-    %{"token_contract_address_hash" => token_contract_address_hash, "token_type" => token_type}
+    %{token_contract_address_hash: token_contract_address_hash, token_type: token_type}
   end
 
   @spec token_instances_by_holder_address_hash(Token.t(), binary() | Hash.Address.t(), keyword) :: [__MODULE__.t()]
@@ -658,7 +658,8 @@ defmodule Explorer.Chain.Token.Instance do
   Sets metadata for the given Explorer.Chain.Token.Instance
   """
   @spec set_metadata(t(), map()) :: {non_neg_integer(), nil}
-  def set_metadata(token_instance, metadata) when is_map(metadata) do
+  def set_metadata(token_instance, %{metadata: metadata, skip_metadata_url: skip_metadata_url} = result)
+      when is_map(metadata) do
     now = DateTime.utc_now()
 
     Repo.update_all(
@@ -666,7 +667,18 @@ defmodule Explorer.Chain.Token.Instance do
         where: instance.token_contract_address_hash == ^token_instance.token_contract_address_hash,
         where: instance.token_id == ^token_instance.token_id
       ),
-      [set: [metadata: metadata, error: nil, updated_at: now, thumbnails: nil, media_type: nil, cdn_upload_error: nil]],
+      [
+        set: [
+          metadata: metadata,
+          error: nil,
+          updated_at: now,
+          thumbnails: nil,
+          media_type: nil,
+          cdn_upload_error: nil,
+          skip_metadata_url: skip_metadata_url,
+          metadata_url: result[:metadata_url]
+        ]
+      ],
       timeout: @timeout
     )
   end

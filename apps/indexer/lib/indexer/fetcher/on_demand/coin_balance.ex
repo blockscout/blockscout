@@ -184,7 +184,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
 
       {:stale, latest_block_number}
     else
-      case Repo.one(query_balances) do
+      case Repo.replica().one(query_balances) do
         nil ->
           # There is no recent coin balance to fetch, so we check to see how old the
           # balance is on the address. If it is too old, we check again, just to be safe.
@@ -206,7 +206,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
   end
 
   defp do_trigger_balance_daily_fetch_query(address, latest_block_number, query) do
-    if Repo.one(query) == nil do
+    if Repo.replica().one(query) == nil do
       BufferedTask.buffer(
         __MODULE__,
         [{:fetch_and_import_daily_balances, latest_block_number, to_string(address.hash)}],

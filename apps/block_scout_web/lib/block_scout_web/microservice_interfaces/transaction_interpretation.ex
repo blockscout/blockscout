@@ -5,12 +5,13 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
   alias BlockScoutWeb.API.V2.{Helper, InternalTransactionView, TokenTransferView, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain
+  alias Explorer.{Chain, HttpClient}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
-  alias HTTPoison.Response
 
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
+    only: [proxy_implementations_association: 0, proxy_implementations_smart_contracts_association: 0]
+
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Utility.Microservice, only: [base_url: 2, check_enabled: 2]
   require Logger
@@ -83,8 +84,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+      {:ok, %{body: body, status_code: 200}} ->
         body |> Jason.decode() |> preload_template_variables()
 
       error ->
@@ -104,7 +105,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   end
 
   defp try_get_cached_value(hash) do
-    with {:ok, %Response{body: body, status_code: 200}} <- HTTPoison.get(cache_url(hash)),
+    with {:ok, %{body: body, status_code: 200}} <- HttpClient.get(cache_url(hash)),
          {:ok, json} <- body |> Jason.decode() do
       {:ok, json} |> preload_template_variables()
     else
@@ -113,7 +114,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     end
   end
 
-  defp http_response_code({:ok, %Response{status_code: status_code}}), do: status_code
+  defp http_response_code({:ok, %{status_code: status_code}}), do: status_code
   defp http_response_code(_), do: 500
 
   def enabled?, do: check_enabled(:block_scout_web, __MODULE__) == :ok
@@ -233,7 +234,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     full_options =
       [
         necessity_by_association: %{
-          [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+          [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
         }
       ]
       |> Keyword.merge(@api_true)
@@ -255,7 +256,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     log_options =
       [
         necessity_by_association: %{
-          [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+          [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
         },
         limit: @items_limit
       ]
@@ -308,7 +309,14 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
   defp preload_template_variables(error), do: error
 
+  # TODO: remove this once we have updated the transaction interpretation service
   defp preload_template_variable(%{"type" => "token", "value" => %{"address" => address_hash_string} = value}),
+    do: %{
+      "type" => "token",
+      "value" => address_hash_string |> Chain.token_from_address_hash(@api_true) |> token_from_db() |> Map.merge(value)
+    }
+
+  defp preload_template_variable(%{"type" => "token", "value" => %{"address_hash" => address_hash_string} = value}),
     do: %{
       "type" => "token",
       "value" => address_hash_string |> Chain.token_from_address_hash(@api_true) |> token_from_db() |> Map.merge(value)
@@ -394,7 +402,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   def decode_user_op_calldata(user_op_hash, call_data) do
     {:ok, input} = Data.cast(call_data)
 
-    {:ok, op_hash} = Chain.string_to_transaction_hash(user_op_hash)
+    {:ok, op_hash} = Chain.string_to_full_hash(user_op_hash)
 
     mock_transaction = %Transaction{
       to_address: %NotLoaded{},

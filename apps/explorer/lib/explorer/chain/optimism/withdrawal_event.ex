@@ -6,7 +6,29 @@ defmodule Explorer.Chain.Optimism.WithdrawalEvent do
   alias Explorer.Chain.Hash
 
   @required_attrs ~w(withdrawal_hash l1_event_type l1_timestamp l1_transaction_hash l1_block_number)a
-  @optional_attrs ~w(game_index)a
+  @optional_attrs ~w(game_index game_address_hash)a
+
+  @typedoc """
+    Descriptor of the withdrawal event:
+    * `withdrawal_hash` - A withdrawal hash.
+    * `l1_event_type` - A type of withdrawal event: `WithdrawalProven` or `WithdrawalFinalized`.
+    * `l1_timestamp` - A timestamp of when the withdrawal event appeared.
+    * `l1_transaction_hash` - An hash of L1 transaction that contains the event.
+    * `l1_block_number` - An L1 block number of the L1 transaction.
+    * `game_index` - An index of a dispute game (if available in L1 transaction input) when
+      the withdrawal is proven. Equals to `nil` if not available.
+    * `game_address_hash` - Contract address of a dispute game (if available in L1 transaction input) when
+      the withdrawal is proven. Equals to `nil` if not available.
+  """
+  @type to_import :: %{
+          withdrawal_hash: Hash.t(),
+          l1_event_type: String.t(),
+          l1_timestamp: DateTime.t(),
+          l1_transaction_hash: Hash.t(),
+          l1_block_number: non_neg_integer(),
+          game_index: non_neg_integer(),
+          game_address_hash: Hash.t()
+        }
 
   @typedoc """
     * `withdrawal_hash` - A withdrawal hash.
@@ -15,6 +37,8 @@ defmodule Explorer.Chain.Optimism.WithdrawalEvent do
     * `l1_transaction_hash` - An hash of L1 transaction that contains the event.
     * `l1_block_number` - An L1 block number of the L1 transaction.
     * `game_index` - An index of a dispute game (if available in L1 transaction input) when
+      the withdrawal is proven. Equals to `nil` if not available.
+    * `game_address_hash` - Contract address of a dispute game (if available in L1 transaction input) when
       the withdrawal is proven. Equals to `nil` if not available.
   """
   @primary_key false
@@ -25,6 +49,7 @@ defmodule Explorer.Chain.Optimism.WithdrawalEvent do
     field(:l1_transaction_hash, Hash.Full, primary_key: true)
     field(:l1_block_number, :integer)
     field(:game_index, :integer)
+    field(:game_address_hash, Hash.Address)
 
     timestamps()
   end

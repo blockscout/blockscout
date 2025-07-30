@@ -25,7 +25,6 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.Beacon.{Blob, BlobTransaction}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
-  alias Explorer.Chain.Celo.PendingEpochBlockOperation, as: CeloPendingEpochBlockOperation
 
   alias Explorer.Chain.{
     Address,
@@ -39,8 +38,10 @@ defmodule Explorer.Factory do
     Hash,
     InternalTransaction,
     Log,
+    MultichainSearchDb,
     PendingBlockOperation,
     PendingTransactionOperation,
+    SignedAuthorization,
     SmartContract,
     SmartContractAdditionalSource,
     Token,
@@ -50,7 +51,7 @@ defmodule Explorer.Factory do
     Withdrawal
   }
 
-  alias Explorer.Chain.Optimism.OutputRoot
+  alias Explorer.Chain.Optimism.{InteropMessage, OutputRoot}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ZilliqaStaker
@@ -62,7 +63,7 @@ defmodule Explorer.Factory do
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
-  alias Explorer.Utility.{MissingBalanceOfToken, MissingBlockRange}
+  alias Explorer.Utility.{EventNotification, MissingBalanceOfToken, MissingBlockRange}
 
   alias Ueberauth.Strategy.Auth0
   alias Ueberauth.Auth.{Extra, Info}
@@ -744,6 +745,14 @@ defmodule Explorer.Factory do
     %PendingTransactionOperation{}
   end
 
+  def multichain_search_db_main_export_queue_factory do
+    %MultichainSearchDb.MainExportQueue{}
+  end
+
+  def multichain_search_db_export_balances_queue_factory do
+    %MultichainSearchDb.BalancesExportQueue{}
+  end
+
   def internal_transaction_factory() do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
@@ -1003,6 +1012,21 @@ defmodule Explorer.Factory do
       hash: transaction_hash(),
       index: 0,
       uncle_hash: block_hash()
+    }
+  end
+
+  def signed_authorization_factory do
+    %SignedAuthorization{
+      transaction: build(:transaction),
+      index: 0,
+      chain_id: 0,
+      address: address_hash(),
+      nonce: 0,
+      r: 0,
+      s: 0,
+      v: 0,
+      authority: address_hash(),
+      status: nil
     }
   end
 
@@ -1272,6 +1296,22 @@ defmodule Explorer.Factory do
     }
   end
 
+  def op_interop_message_factory do
+    %InteropMessage{
+      sender_address_hash: insert(:address).hash,
+      target_address_hash: insert(:address).hash,
+      nonce: sequence("op_interop_message_nonce", & &1),
+      init_chain_id: 1,
+      init_transaction_hash: insert(:transaction).hash,
+      block_number: insert(:block).number,
+      timestamp: DateTime.utc_now(),
+      relay_chain_id: 2,
+      relay_transaction_hash: transaction_hash(),
+      payload: "0x123123",
+      failed: random_bool()
+    }
+  end
+
   def op_output_root_factory do
     %OutputRoot{
       l2_output_index: op_output_root_l2_output_index(),
@@ -1315,7 +1355,8 @@ defmodule Explorer.Factory do
 
     %ValidatorStability{
       address_hash: address.hash,
-      state: Enum.random(0..2)
+      state: Enum.random(0..2),
+      blocks_validated: Enum.random(0..100)
     }
   end
 
@@ -1347,10 +1388,6 @@ defmodule Explorer.Factory do
     to_string(bls_public_key)
   end
 
-  def celo_pending_epoch_block_operation_factory do
-    %CeloPendingEpochBlockOperation{}
-  end
-
   def withdrawal_log_factory(params) do
     weth_log(TokenTransfer.weth_withdrawal_signature(), params)
   end
@@ -1380,6 +1417,13 @@ defmodule Explorer.Factory do
       fourth_topic: nil,
       index: sequence("log_index", & &1),
       transaction: transaction
+    }
+  end
+
+  def event_notification_factory do
+    %EventNotification{
+      data: "test_data",
+      inserted_at: DateTime.utc_now()
     }
   end
 end
