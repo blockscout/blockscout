@@ -561,7 +561,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         Repo.insert_all(
           TokenInfoExportQueue,
           Helper.add_timestamps(chunk),
-          on_conflict: TokenInfoExportQueue.default_on_conflict(),
+          on_conflict: {:replace, [:data, :updated_at]},
           conflict_target: [:address_hash, :data_type]
         )
       end)
