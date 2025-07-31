@@ -770,7 +770,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
         # addSequencerL2BatchFromEigenDA(uint256 sequenceNumber, EigenDACert calldata cert, IGasRefunder gasRefunder, uint256 afterDelayedMessagesRead, uint256 prevMessageCount, uint256 newMessageCount)
         [
           sequence_number,
-          _cert,
+          cert,
           _gas_refunder,
           _after_delayed_messages_read,
           prev_message_count,
@@ -781,7 +781,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
             ArbitrumContracts.add_sequencer_l2_batch_from_eigen_da_selector_with_abi()
           )
 
-        {sequence_number, prev_message_count, new_message_count, nil}
+        {sequence_number, prev_message_count, new_message_count, <<237>> <> cert}
     end
   end
 

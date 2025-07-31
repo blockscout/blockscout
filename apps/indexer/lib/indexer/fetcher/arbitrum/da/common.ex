@@ -23,15 +23,16 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
 
     ## Returns
     - `{status, da_type, da_info}` where `da_type` is one of `:in_blob4844`,
-      `:in_calldata`, `:in_celestia`, `:in_anytrust`, or `nil` if the accompanying
-      data cannot be parsed or is of an unsupported type. `da_info` contains the DA
-      info descriptor for Celestia or Anytrust.
+      `:in_calldata`, `:in_celestia`, `:in_anytrust`, `:in_eigenda`, or `nil` if
+      the accompanying data cannot be parsed or is of an unsupported type.
+      `da_info` contains the DA info descriptor for Celestia or Anytrust.
   """
   @spec examine_batch_accompanying_data(non_neg_integer(), binary()) ::
           {:ok, :in_blob4844, nil}
           | {:ok, :in_calldata, nil}
           | {:ok, :in_celestia, Celestia.t()}
           | {:ok, :in_anytrust, Anytrust.t()}
+          | {:ok, :in_eigenda, nil}
           | {:error, nil, nil}
   def examine_batch_accompanying_data(batch_number, batch_accompanying_data) do
     case batch_accompanying_data do
@@ -188,14 +189,14 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
 
     ## Parameters
     - `da_type`: The type of data availability, which can be `:in_blob4844`, `:in_calldata`,
-      `:in_celestia`, `:in_anytrust`, or `nil`.
+      `:in_celestia`, `:in_anytrust`, `:in_eigenda`, or `nil`.
 
     ## Returns
     - `true` if the DA type is `:in_celestia` or `:in_anytrust`, indicating that the data
       requires import.
     - `false` for all other DA types, indicating that the data does not require import.
   """
-  @spec required_import?(:in_blob4844 | :in_calldata | :in_celestia | :in_anytrust | nil) :: boolean()
+  @spec required_import?(:in_blob4844 | :in_calldata | :in_celestia | :in_anytrust | :in_eigenda | nil) :: boolean()
   def required_import?(da_type) do
     da_type in [:in_celestia, :in_anytrust]
   end
@@ -205,6 +206,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
           {:ok, :in_calldata, nil}
           | {:ok, :in_celestia, Celestia.t()}
           | {:ok, :in_anytrust, Anytrust.t()}
+          | {:ok, :in_eigenda, nil}
           | {:error, nil, nil}
   defp parse_data_availability_info(batch_number, <<
          header_flag::size(8),
@@ -227,6 +229,9 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
 
       136 ->
         Anytrust.parse_batch_accompanying_data(batch_number, rest)
+
+      237 ->
+        {:ok, :in_eigenda, nil}
 
       _ ->
         log_error("Unknown header flag found during an attempt to parse DA data: #{header_flag}")
