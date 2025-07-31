@@ -731,30 +731,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "token_contract_address_from_token_name/1" do
-    test "return not found if token doesn't exist" do
-      name = "AYR"
-
-      assert {:error, :not_found} = Chain.token_contract_address_from_token_name(name)
-    end
-
-    test "return the correct token if it exists" do
-      name = "AYR"
-      insert(:token, symbol: name)
-
-      assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
-    end
-
-    test "return not found if multiple records are in the results" do
-      name = "TOKEN"
-
-      insert(:token, symbol: name)
-      insert(:token, symbol: name)
-
-      assert {:error, :not_found} = Chain.token_contract_address_from_token_name(name)
-    end
-  end
-
   describe "find_or_insert_address_from_hash/1" do
     test "returns an address if it already exists" do
       address = insert(:address)
@@ -2784,70 +2760,6 @@ defmodule Explorer.ChainTest do
       )
 
       assert :erc20 = Chain.transaction_token_transfer_type(Repo.preload(transaction, token_transfers: :token))
-    end
-  end
-
-  describe "contract_address?/2" do
-    test "returns true if address has contract code" do
-      code = %Data{
-        bytes: <<1, 2, 3, 4, 5>>
-      }
-
-      address = insert(:address, contract_code: code)
-
-      assert Chain.contract_address?(to_string(address.hash), 1)
-    end
-
-    test "returns false if address has not contract code" do
-      address = insert(:address)
-
-      refute Chain.contract_address?(to_string(address.hash), 1)
-    end
-
-    @tag :no_nethermind
-    @tag :no_geth
-    test "returns true if fetched code from json rpc", %{
-      json_rpc_named_arguments: json_rpc_named_arguments
-    } do
-      hash = "0x71300d93a8CdF93385Af9635388cF2D00b95a480"
-
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        EthereumJSONRPC.Mox
-        |> expect(:json_rpc, fn _arguments, _options ->
-          {:ok,
-           [
-             %{
-               id: 0,
-               result: "0x0102030405"
-             }
-           ]}
-        end)
-      end
-
-      assert Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
-    end
-
-    @tag :no_nethermind
-    @tag :no_geth
-    test "returns false if no fetched code from json rpc", %{
-      json_rpc_named_arguments: json_rpc_named_arguments
-    } do
-      hash = "0x71300d93a8CdF93385Af9635388cF2D00b95a480"
-
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        EthereumJSONRPC.Mox
-        |> expect(:json_rpc, fn _arguments, _options ->
-          {:ok,
-           [
-             %{
-               id: 0,
-               result: "0x"
-             }
-           ]}
-        end)
-      end
-
-      refute Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
     end
   end
 
