@@ -295,7 +295,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
                 timeout: :infinity
               })
 
-            remove_prev_frame_sequences(inserted)
+            removed_sequence_ids = remove_prev_frame_sequences(inserted)
+            sequences = Enum.reject(sequences, fn s -> s.id in removed_sequence_ids end)
             set_frame_sequences_view_ready(sequences)
 
             last_batch =
@@ -1343,6 +1344,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       # can still reference to the `op_frame_sequences` table
       _ -> nil
     end
+
+    ids
   end
 
   defp set_frame_sequences_view_ready(sequences) do
