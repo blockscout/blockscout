@@ -66,13 +66,16 @@ defmodule Indexer.Fetcher.Token do
   end
 
   defp catalog_token(token) do
-    token_params =
-      token
-      |> MetadataRetriever.get_functions_of()
-      |> (&if(&1 == %{}, do: &1, else: Map.put(&1, :cataloged, true))).()
+    token
+    |> MetadataRetriever.get_functions_of(set_skip_metadata: true)
+    |> case do
+      %{skip_metadata: false} ->
+        :ok
 
-    {:ok, _} = Token.update(token, token_params)
-    :ok
+      token_params ->
+        {:ok, _} = Token.update(token, Map.put(token_params, :cataloged, true))
+        :ok
+    end
   end
 
   defp defaults do
