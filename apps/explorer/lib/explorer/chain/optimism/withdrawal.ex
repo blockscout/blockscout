@@ -234,7 +234,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
             limit: 100
           )
 
-        Repo.all(query, timeout: :infinity)
+        Repo.replica().all(query, timeout: :infinity)
     end
   end
 

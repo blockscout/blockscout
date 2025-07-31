@@ -24,7 +24,7 @@ defmodule Explorer.Chain do
       where: 3
     ]
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
+  import EthereumJSONRPC, only: [fetch_block_internal_transactions: 2]
 
   require Logger
 
@@ -784,30 +784,6 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
-    end
-  end
-
-  @spec token_contract_address_from_token_name(String.t()) :: {:ok, Hash.Address.t()} | {:error, :not_found}
-  def token_contract_address_from_token_name(name) when is_binary(name) do
-    query =
-      from(token in Token,
-        where: ilike(token.symbol, ^name),
-        or_where: ilike(token.name, ^name),
-        select: token.contract_address_hash
-      )
-
-    query
-    |> Repo.all()
-    |> case do
-      [] ->
-        {:error, :not_found}
-
-      hashes ->
-        if Enum.count(hashes) == 1 do
-          {:ok, List.first(hashes)}
-        else
-          {:error, :not_found}
-        end
     end
   end
 
@@ -2608,42 +2584,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks if an address is a contract
-  """
-  @spec contract_address?(String.t(), non_neg_integer(), Keyword.t()) :: boolean() | :json_rpc_error
-  def contract_address?(address_hash, block_number, json_rpc_named_arguments \\ []) do
-    {:ok, binary_hash} = Explorer.Chain.Hash.Address.cast(address_hash)
-
-    query = Address.address_query(binary_hash)
-
-    address = Repo.one(query)
-
-    cond do
-      is_nil(address) ->
-        block_quantity = integer_to_quantity(block_number)
-
-        case EthereumJSONRPC.fetch_codes(
-               [%{block_quantity: block_quantity, address: address_hash}],
-               json_rpc_named_arguments
-             ) do
-          {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
-            result = List.first(fetched_codes)
-
-            result && !(is_nil(result[:code]) || result[:code] == "" || result[:code] == "0x")
-
-          _ ->
-            :json_rpc_error
-        end
-
-      is_nil(address.contract_code) ->
-        false
-
-      true ->
-        true
-    end
-  end
-
-  @doc """
   Fetches contract creation input data from the transaction (not internal transaction).
   """
   @spec contract_creation_input_data_from_transaction(String.t()) :: nil | binary()
@@ -3025,13 +2965,6 @@ defmodule Explorer.Chain do
     Repo.exists?(query)
   end
 
-  @spec address_tokens_with_balance(Hash.Address.t(), [any()]) :: []
-  def address_tokens_with_balance(address_hash, paging_options \\ []) do
-    address_hash
-    |> Address.Token.list_address_tokens_with_balance(paging_options)
-    |> Repo.all()
-  end
-
   @spec find_and_update_replaced_transactions([
           %{
             required(:nonce) => non_neg_integer,
@@ -3250,12 +3183,6 @@ defmodule Explorer.Chain do
     else
       false
     end
-  end
-
-  def get_token_ids_1155(contract_address_hash) do
-    contract_address_hash
-    |> CurrentTokenBalance.token_ids_query()
-    |> Repo.all()
   end
 
   @spec data() :: Dataloader.Ecto.t()
