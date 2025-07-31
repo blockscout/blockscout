@@ -20,6 +20,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Celo.EpochBlockOperations, as: CeloEpochBlockOperations
   alias Indexer.Fetcher.Celo.EpochLogs, as: CeloEpochLogs
+  alias Indexer.Fetcher.Celo.Legacy.Account, as: CeloAccount
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.Filecoin.AddressInfo, as: FilecoinAddressInfo
@@ -560,6 +561,10 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_celo_epoch_block_operations(_, _), do: :ok
+
+  def async_import_celo_accounts(%{logs: logs}, realtime?) do
+    CeloAccount.async_fetch(logs, realtime?)
+  end
 
   def async_import_filecoin_addresses_info(%{addresses: addresses}, realtime?) do
     addresses
