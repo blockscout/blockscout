@@ -215,7 +215,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         Repo.insert_all(MainExportQueue, Helper.add_timestamps(prepared_main_data), on_conflict: :nothing)
 
         Repo.insert_all(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data),
-          on_conflict: :replace_all,
+          on_conflict: {:replace, [:value, :updated_at]},
           conflict_target:
             {:unsafe_fragment,
              ~s<(address_hash, token_contract_address_hash_or_native, COALESCE(token_id, -1::integer::numeric))>}
