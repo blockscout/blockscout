@@ -55,8 +55,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         )
       end)
 
-      assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
-
       token_info_item_1 = insert(:multichain_search_db_export_token_info_queue)
       token_info_item_2 = insert(:multichain_search_db_export_token_info_queue)
       items_from_db_queue = [token_info_item_1, token_info_item_2]
@@ -65,6 +63,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       |> TokenInfoExportQueue.delete_query()
       |> Repo.transaction()
 
+      assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
       assert {:ok, {:chunks_processed, _}} = MultichainSearch.batch_export_token_info(items_from_db_queue)
       assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
     end
@@ -95,8 +94,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         )
       end)
 
-      assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
-
       token_info_item_1 = insert(:multichain_search_db_export_token_info_queue)
       token_info_item_2 = insert(:multichain_search_db_export_token_info_queue)
       items_from_db_queue = [token_info_item_1, token_info_item_2]
@@ -104,6 +101,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       items_from_db_queue
       |> TokenInfoExportQueue.delete_query()
       |> Repo.transaction()
+
+      assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
 
       assert {:error,
               %{
@@ -122,9 +121,138 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                     record.data_type == token_info_item_2.data_type)
              end)
     end
+
+    test "returns {:error, data_to_retry} when at least one chunk is failed" do
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:1234",
+        api_key: "12345",
+        token_info_chunk_size: 1000
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, token_info_chunk_size: 1000)
+      end)
+
+      TestHelper.get_chain_id_mock()
+
+      # 1002 addresses (1000 in the first chunk and 2 in the second)
+      items_from_db_queue =
+        for _ <- 0..1001 do
+          insert(:multichain_search_db_export_token_info_queue)
+        end
+
+      items_from_db_queue
+      |> TokenInfoExportQueue.delete_query()
+      |> Repo.transaction()
+
+      assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
+
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: "http://localhost:1234/api/v1/import:batch"}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(%{"status" => "ok"})
+           }}
+        end
+      )
+
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: "http://localhost:1234/api/v1/import:batch", headers: [{"Content-Type", "application/json"}]},
+                    _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 500,
+             body: Jason.encode!(%{"code" => 0, "message" => "Error"})
+           }}
+        end
+      )
+
+      assert {:error, results} = MultichainSearch.batch_export_token_info(items_from_db_queue)
+      assert Enum.count(results.tokens) == 1000
+      assert Repo.aggregate(TokenInfoExportQueue, :count) == 1000
+    end
+
+    test "returns {:error, data_to_retry} when an error occurs in all chunks during processing and 'multichain_search_db_export_token_info_queue' table is populated with all the input data" do
+      bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        api_key: "12345",
+        token_info_chunk_size: 2
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, token_info_chunk_size: 1000)
+        Bypass.down(bypass)
+      end)
+
+      TestHelper.get_chain_id_mock()
+
+      Bypass.expect(bypass, "POST", "/api/v1/import:batch", fn conn ->
+        Conn.resp(
+          conn,
+          500,
+          Jason.encode!(%{"code" => 0, "message" => "Error"})
+        )
+      end)
+
+      items_from_db_queue = 10 |> insert_list(:multichain_search_db_export_token_info_queue)
+
+      items_from_db_queue
+      |> TokenInfoExportQueue.delete_query()
+      |> Repo.transaction()
+
+      assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
+      assert {:error, results} = MultichainSearch.batch_export_token_info(items_from_db_queue)
+      assert Enum.count(results.tokens) == 10
+      assert Repo.aggregate(TokenInfoExportQueue, :count) == 10
+    end
+
+    test "returns {:error, data_to_retry} when an error occurs in all chunks (and number of chunks more than @max_concurrency) during processing and 'multichain_search_db_export_token_info_queue' table is populated" do
+      bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        api_key: "12345",
+        token_info_chunk_size: 2
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, token_info_chunk_size: 1000)
+        Bypass.down(bypass)
+      end)
+
+      TestHelper.get_chain_id_mock()
+
+      Bypass.expect(bypass, "POST", "/api/v1/import:batch", fn conn ->
+        Conn.resp(
+          conn,
+          500,
+          Jason.encode!(%{"code" => 0, "message" => "Error"})
+        )
+      end)
+
+      items_from_db_queue = 15 |> insert_list(:multichain_search_db_export_token_info_queue)
+
+      items_from_db_queue
+      |> TokenInfoExportQueue.delete_query()
+      |> Repo.transaction()
+
+      assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
+      assert {:error, results} = MultichainSearch.batch_export_token_info(items_from_db_queue)
+      assert Enum.count(results.tokens) == 15
+      assert Repo.aggregate(TokenInfoExportQueue, :count) == 15
+    end
   end
 
-  describe "batch_import/2" do
+  describe "batch_import/1" do
     setup do
       Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
       Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
