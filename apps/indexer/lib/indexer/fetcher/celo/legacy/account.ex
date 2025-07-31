@@ -88,8 +88,8 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
   def entry(%{address: address}, requested, fulfilled) do
     %{
       address: address,
-      attestations_fulfilled: Enum.count(Enum.filter(fulfilled, fn a -> a.address == address end)),
-      attestations_requested: Enum.count(Enum.filter(requested, fn a -> a.address == address end))
+      attestations_fulfilled: Enum.count(fulfilled, &(&1.address == address)),
+      attestations_requested: Enum.count(requested, &(&1.address == address))
     }
   end
 
@@ -161,15 +161,14 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
 
     case Chain.import(import_params) do
       {:ok, accounts} ->
-        Logger.debug(fn -> ["Imported Celo accounts: ", inspect(accounts)] end,
-          success_count: Enum.count(success),
+        Logger.info(fn -> ["Imported #{length(accounts)} Celo accounts."] end,
           error_count: Enum.count(failed)
         )
 
         failed
 
       {:error, reason} ->
-        Logger.debug(fn -> ["failed to import Celo account data: ", inspect(reason)] end,
+        Logger.error(fn -> ["failed to import Celo account data: ", inspect(reason)] end,
           error_count: Enum.count(accounts)
         )
 

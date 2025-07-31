@@ -141,14 +141,14 @@ defmodule Indexer.Transform.Celo.Legacy.Accounts do
   end
 
   # defp do_parse_rate(log, rates) do
-  #   {numerator, denumerator, stamp} = parse_rate_params(log.data)
+  #   {numerator, denominator, stamp} = parse_rate_params(log.data)
   #   numerator = Decimal.new(numerator)
-  #   denumerator = Decimal.new(denumerator)
+  #   denominator = Decimal.new(denominator)
 
-  #   if Decimal.new(0) == denumerator do
+  #   if Decimal.new(0) == denominator do
   #     rates
   #   else
-  #     rate = Decimal.to_float(Decimal.div(denumerator, numerator))
+  #     rate = Decimal.to_float(Decimal.div(denominator, numerator))
   #     res = %{token: truncate_address_hash(log.second_topic), rate: rate, stamp: stamp}
   #     [res | rates]
   #   end

@@ -100,6 +100,7 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
   @spec fetch(String.t()) :: {:ok, map()} | :error
   def fetch(account_address) do
     dbg(account_address)
+
     with {:ok, data} <- do_fetch(account_address),
          {:ok, [name]} <- data.get_name,
          {:ok, [url]} <- data.get_metadata_url,
@@ -186,8 +187,8 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
 
     abis = Enum.map(requests, & &1.abi)
 
-    read_contracts_with_retries(
-      requests,
+    requests
+    |> read_contracts_with_retries(
       abis,
       json_rpc_named_arguments(),
       @repeated_request_max_retries
@@ -195,8 +196,14 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
     |> case do
       {responses, []} ->
         data =
-          Enum.zip(requests, responses)
-          |> Enum.into(%{}, fn {request, response} -> {request.name, response} end)
+          requests
+          |> Enum.zip(responses)
+          |> Enum.into(
+            %{},
+            fn {request, response} ->
+              {request.name, response}
+            end
+          )
 
         {:ok, data}
 
