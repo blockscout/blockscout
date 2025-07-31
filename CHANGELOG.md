@@ -20,6 +20,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix naming for apikey param in OpenAPI spec ([#12891](https://github.com/blockscout/blockscout/pull/12891))
 - Balances export queue to multichain replace do_nothing with replace_all on insertion to the queue ([#12888](https://github.com/blockscout/blockscout/pull/12888))
 - Allow using temporary token for api/account/v2 by default ([#12869](https://github.com/blockscout/blockscout/pull/12869))
 - Fix increment of retries_number in exporting data to Multichain DB ([#12847](https://github.com/blockscout/blockscout/pull/12847))
