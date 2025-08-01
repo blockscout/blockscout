@@ -1,5 +1,6 @@
 defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
   @moduledoc false
+  require Logger
 
   use Utils.RuntimeEnvHelper,
     accounts_contract_address_hash: [:explorer, [:celo, :accounts_contract_address]],
@@ -99,93 +100,87 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
   """
   @spec fetch(String.t()) :: {:ok, map()} | :error
   def fetch(account_address) do
-    dbg(account_address)
+    account_address
+    |> do_fetch()
+    |> case do
+      {:ok,
+       [
+         {:ok, [name]},
+         {:ok, [url]},
+         {:ok, [locked_gold]},
+         {:ok, [nonvoting_locked_gold]},
+         {:ok, [is_validator]},
+         {:ok, [is_validator_group]}
+       ]} ->
+        type =
+          cond do
+            is_validator ->
+              :validator
 
-    with {:ok, data} <- do_fetch(account_address),
-         {:ok, [name]} <- data.get_name,
-         {:ok, [url]} <- data.get_metadata_url,
-         {:ok, [account_address]} <- data.get_name,
-         {:ok, [locked_gold]} <- data.get_account_total_locked_gold,
-         {:ok, [nonvoting_locked_gold]} <- data.get_account_nonvoting_locked_gold,
-         {:ok, [is_validator]} <- data.is_validator,
-         {:ok, [is_validator_group]} <- data.is_validator_group do
-      type =
-        cond do
-          is_validator ->
-            :validator
+            is_validator_group ->
+              :group
 
-          is_validator_group ->
-            :group
+            true ->
+              :regular
+          end
 
-          true ->
-            :regular
-        end
-
-      {
-        :ok,
-        %{
-          address: account_address,
-          name: name,
-          url: url,
-          locked_gold: locked_gold,
-          nonvoting_locked_gold: nonvoting_locked_gold,
-          type: type
+        {
+          :ok,
+          %{
+            address_hash: account_address,
+            name: name,
+            metadata_url: url,
+            locked_celo: locked_gold,
+            nonvoting_locked_celo: nonvoting_locked_gold,
+            type: type
+          }
         }
-      }
-    else
-      _ ->
+
+      {:error, errors} ->
+        Logger.error(fn ->
+          ["Failed to fetch Celo account data for ", account_address, ": ", inspect(errors)]
+        end)
+
         :error
     end
   end
 
-  @spec do_fetch(String.t()) :: {:ok, map()} | {:error, any()}
+  @spec do_fetch(String.t()) :: {:ok, keyword()} | {:error, any()}
   defp do_fetch(account_address) do
     requests = [
       %{
         contract_address: accounts_contract_address_hash(),
         method_id: abi_to_method_id(@abi.accounts.get_name),
-        args: [account_address],
-        abi: @abi.accounts.get_name,
-        name: :get_name
+        args: [account_address]
       },
       %{
         contract_address: accounts_contract_address_hash(),
         method_id: abi_to_method_id(@abi.accounts.get_metadata_url),
-        args: [account_address],
-        abi: @abi.accounts.get_metadata_url,
-        name: :get_metadata_url
+        args: [account_address]
       },
       %{
         contract_address: locked_gold_contract_address_hash(),
         method_id: abi_to_method_id(@abi.locked_gold.get_account_total_locked_gold),
-        args: [account_address],
-        abi: @abi.locked_gold.get_account_total_locked_gold,
-        name: :get_account_total_locked_gold
+        args: [account_address]
       },
       %{
         contract_address: locked_gold_contract_address_hash(),
         method_id: abi_to_method_id(@abi.locked_gold.get_account_nonvoting_locked_gold),
-        args: [account_address],
-        abi: @abi.locked_gold.get_account_nonvoting_locked_gold,
-        name: :get_account_nonvoting_locked_gold
+        args: [account_address]
       },
       %{
         contract_address: validators_contract_address_hash(),
         method_id: abi_to_method_id(@abi.validators.is_validator),
-        args: [account_address],
-        abi: @abi.validators.is_validator,
-        name: :is_validator
+        args: [account_address]
       },
       %{
         contract_address: validators_contract_address_hash(),
         method_id: abi_to_method_id(@abi.validators.is_validator_group),
-        args: [account_address],
-        abi: @abi.validators.is_validator_group,
-        name: :is_validator_group
+        args: [account_address]
       }
     ]
 
-    abis = Enum.map(requests, & &1.abi)
+    abis = @abi |> Map.values() |> Enum.flat_map(&Map.values/1)
 
     requests
     |> read_contracts_with_retries(
@@ -195,17 +190,7 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
     )
     |> case do
       {responses, []} ->
-        data =
-          requests
-          |> Enum.zip(responses)
-          |> Enum.into(
-            %{},
-            fn {request, response} ->
-              {request.name, response}
-            end
-          )
-
-        {:ok, data}
+        {:ok, responses}
 
       {_responses, errors} ->
         {:error, errors}

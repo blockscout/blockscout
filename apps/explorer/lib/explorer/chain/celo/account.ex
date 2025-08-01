@@ -17,11 +17,14 @@ defmodule Explorer.Chain.Celo.Account do
   * `rewards` - rewards in CELO
   """
 
-  @required_attrs ~w(address_hash type name metadata_url nonvoting_locked_celo locked_celo attestations_requested attestations_fulfilled)a
+  @required_attrs ~w(address_hash type)a
+  @optional_attrs ~w(name metadata_url nonvoting_locked_celo locked_celo attestations_requested attestations_fulfilled)a
+  @allowed_attrs @required_attrs ++ @optional_attrs
 
-  typed_schema "celo_account" do
+  @primary_key false
+  typed_schema "celo_accounts" do
     field(:type, Ecto.Enum,
-      values: [:regular, :validator, :validator_group],
+      values: [:regular, :validator, :group],
       default: :regular
     )
 
@@ -47,7 +50,7 @@ defmodule Explorer.Chain.Celo.Account do
 
   def changeset(%__MODULE__{} = celo_account, attrs) do
     celo_account
-    |> cast(attrs, @required_attrs)
+    |> cast(attrs, @allowed_attrs)
     |> validate_required(@required_attrs)
   end
 end

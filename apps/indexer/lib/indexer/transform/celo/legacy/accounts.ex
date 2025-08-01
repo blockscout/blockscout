@@ -1,6 +1,9 @@
 defmodule Indexer.Transform.Celo.Legacy.Accounts do
   @moduledoc """
   Helper functions for transforming data for Celo accounts.
+
+  TODO: this implementation is ported from the celo's fork of blockscout and
+  could be improved in the future.
   """
 
   require Logger
@@ -97,11 +100,6 @@ defmodule Indexer.Transform.Celo.Legacy.Accounts do
 
   defp do_parse(log, accounts, get_topic) do
     account_address = parse_params(log, get_topic)
-
-    if not String.starts_with?(account_address, "0x") do
-      dbg(account_address)
-      dbg(log)
-    end
 
     if Enum.member?(accounts, account_address) do
       accounts

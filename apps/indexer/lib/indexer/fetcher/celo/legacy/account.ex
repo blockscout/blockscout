@@ -1,6 +1,9 @@
 defmodule Indexer.Fetcher.Celo.Legacy.Account do
   @moduledoc """
   Fetches Celo accounts.
+
+  TODO: this implementation is ported from the celo's fork of blockscout and
+  could be improved in the future.
   """
 
   alias Explorer.Chain
@@ -17,7 +20,7 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
 
   @behaviour BufferedTask
 
-  @default_max_batch_size 1
+  @default_max_batch_size 10
   @default_max_concurrency 1
 
   @doc false
@@ -59,15 +62,7 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
         attestations_requested: attestations_requested
       } = AccountsTransform.parse(logs)
 
-      dbg(logs)
-
-      dbg(attestations_fulfilled)
-      dbg(attestations_requested)
-
-      dbg(accounts |> Enum.reject(&String.starts_with?(&1.address, "0x")))
-
       accounts = Enum.uniq(accounts ++ attestations_fulfilled ++ attestations_requested)
-      dbg(accounts |> Enum.reject(&String.starts_with?(&1.address, "0x")))
 
       params =
         accounts
@@ -78,8 +73,6 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
             attestations_requested
           )
         end)
-
-      dbg(params |> Enum.reject(&String.starts_with?(&1.address, "0x")))
 
       BufferedTask.buffer(__MODULE__, params, realtime?, timeout)
     end
@@ -116,7 +109,6 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
     if failed_list == [] do
       :ok
     else
-      dbg(failed_list)
       {:retry, failed_list}
     end
   end
@@ -132,8 +124,8 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
           {:ok, data} ->
             Map.merge(account, data)
 
-          error ->
-            Map.put(account, :error, error)
+          _ ->
+            nil
         end
     end)
   end
@@ -160,8 +152,8 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
     }
 
     case Chain.import(import_params) do
-      {:ok, accounts} ->
-        Logger.info(fn -> ["Imported #{length(accounts)} Celo accounts."] end,
+      {:ok, _imported} ->
+        Logger.info(fn -> ["Imported Celo accounts."] end,
           error_count: Enum.count(failed)
         )
 
