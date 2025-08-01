@@ -44,9 +44,9 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
   @doc """
     Prepares data availability (DA) information for import.
 
-    This function processes a list of DA information, either from Celestia or Anytrust,
-    preparing it for database import. It handles deduplication of records within the same
-    processing chunk and against existing database records.
+    This function processes a list of DA information, either from Celestia, Anytrust, or
+    EigenDA, preparing it for database import. It handles deduplication of records
+    within the same processing chunk and against existing database records.
 
     ## Parameters
     - `da_info`: A list of DA information structs.
@@ -59,7 +59,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
         the current batch and against existing database records.
       - A list of batch-to-blob associations (`BatchToDaBlob`) ready for import.
   """
-  @spec prepare_for_import([Celestia.t() | Anytrust.t() | map()], %{
+  @spec prepare_for_import([Celestia.t() | Anytrust.t() | Eigenda.t() | map()], %{
           :sequencer_inbox_address => String.t(),
           :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
         }) :: {[Arbitrum.DaMultiPurposeRecord.to_import()], [Arbitrum.BatchToDaBlob.to_import()]}
@@ -205,8 +205,8 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
       `:in_celestia`, `:in_anytrust`, `:in_eigenda`, or `nil`.
 
     ## Returns
-    - `true` if the DA type is `:in_celestia`, `:in_anytrust`, or `:in_eigenda`, indicating that the data
-      requires import.
+    - `true` if the DA type is `:in_celestia`, `:in_anytrust`, or `:in_eigenda`, indicating
+      that the data requires import.
     - `false` for all other DA types, indicating that the data does not require import.
   """
   @spec required_import?(:in_blob4844 | :in_calldata | :in_celestia | :in_anytrust | :in_eigenda | nil) :: boolean()

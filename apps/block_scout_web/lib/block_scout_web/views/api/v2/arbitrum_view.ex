@@ -389,8 +389,9 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   # Adds data availability (DA) information to the given output JSON based on the batch container type.
   #
   # This function enriches the output JSON with data availability information based on
-  # the type of batch container. It handles different DA types, including AnyTrust and
-  # Celestia, and generates the appropriate DA data for inclusion in the output.
+  # the type of batch container. It handles different DA types, including AnyTrust,
+  # Celestia, and EigenDA, and generates the appropriate DA data for inclusion in the
+  # output.
   #
   # ## Parameters
   # - `out_json`: The initial JSON map to be enriched with DA information.
