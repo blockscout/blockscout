@@ -5,7 +5,7 @@ services:
     image: ghcr.io/blockscout/frontend:${FRONTEND_DOCKER_TAG:-latest}
     pull_policy: always
     platform: linux/amd64
-    restart: always
-    container_name: 'frontend'
+    restart: unless-stopped
+    container_name: 'blockscout-frontend'
     env_file:
       -  ../envs/common-frontend.env

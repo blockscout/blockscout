@@ -1,17 +1,26 @@
-version: '3.9'
+#version: '3.9'
 
 services:
   redis-db:
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.121
     extends:
       file: ./services/redis.yml
       service: redis-db
 
   db-init:
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.122
     extends:
       file: ./services/db.yml
       service: db-init
 
   db:
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.123
     depends_on:
       db-init:
         condition: service_completed_successfully
@@ -38,20 +47,29 @@ services:
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
         ADMIN_PANEL_ENABLED: ""
         RELEASE_VERSION: 6.8.0
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.124
     links:
       - db:database
     environment:
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
+        ETHEREUM_JSONRPC_HTTP_URL: http://rpcnode:8545/
+        ETHEREUM_JSONRPC_TRACE_URL: http://rpcnode:8545/
+        ETHEREUM_JSONRPC_WS_URL: ws://rpcnode:8546/
         CHAIN_ID: '1337'
 
   visualizer:
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.125
     extends:
       file: ./services/visualizer.yml
       service: visualizer
 
   sig-provider:
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.126
     extends:
       file: ./services/sig-provider.yml
       service: sig-provider
@@ -59,16 +77,25 @@ services:
   frontend:
     depends_on:
       - backend
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.127
     extends:
       file: ./services/frontend.yml
       service: frontend
 
   stats-db-init:
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.128
     extends:
       file: ./services/stats.yml
       service: stats-db-init
 
   stats-db:
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.129
     depends_on:
       stats-db-init:
         condition: service_completed_successfully
@@ -77,6 +104,9 @@ services:
       service: stats-db
 
   stats:
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.130
     depends_on:
       - stats-db
       - backend
@@ -85,6 +115,9 @@ services:
       service: stats
 
   user-ops-indexer:
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.131
     depends_on:
       - db
       - backend
@@ -93,6 +126,9 @@ services:
       service: user-ops-indexer
 
   proxy:
+    networks:
+      besu-quorum-network:
+        ipv4_address: 172.16.239.132
     depends_on:
       - backend
       - frontend
@@ -100,3 +136,8 @@ services:
     extends:
       file: ./services/nginx.yml
       service: proxy
+
+networks:
+  besu-quorum-network:
+    name: besu-quorum-network
+    external: true
