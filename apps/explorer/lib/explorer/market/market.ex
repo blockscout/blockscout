@@ -3,11 +3,8 @@ defmodule Explorer.Market do
   Context for data related to the cryptocurrency market.
   """
 
-  alias Explorer.ExchangeRates.Token
-  alias Explorer.Market.{MarketHistory, MarketHistoryCache}
-  alias Explorer.{ExchangeRates, Repo}
-
-  import Ecto.Query, only: [from: 2]
+  alias Explorer.Market.Fetcher.Coin
+  alias Explorer.Market.{MarketHistory, MarketHistoryCache, Token}
 
   @doc """
   Retrieves the history for the recent specified amount of days.
@@ -24,30 +21,10 @@ defmodule Explorer.Market do
   """
   @spec get_native_coin_exchange_rate_from_db(boolean()) :: Token.t()
   def get_native_coin_exchange_rate_from_db(secondary_coin? \\ false) do
-    today =
-      case fetch_recent_history(secondary_coin?) do
-        [today | _the_rest] -> today
-        _ -> nil
-      end
-
-    if today do
-      %Token{
-        usd_value: Map.get(today, :closing_price),
-        market_cap_usd: Map.get(today, :market_cap),
-        tvl_usd: Map.get(today, :tvl),
-        available_supply: nil,
-        total_supply: nil,
-        btc_value: nil,
-        id: nil,
-        last_updated: nil,
-        name: nil,
-        symbol: nil,
-        volume_24h_usd: nil,
-        image_url: nil
-      }
-    else
-      Token.null()
-    end
+    secondary_coin?
+    |> fetch_recent_history()
+    |> List.first()
+    |> MarketHistory.to_token()
   end
 
   @doc """
@@ -55,7 +32,7 @@ defmodule Explorer.Market do
   """
   @spec get_coin_exchange_rate() :: Token.t()
   def get_coin_exchange_rate do
-    ExchangeRates.get_coin_exchange_rate() || get_native_coin_exchange_rate_from_db() || Token.null()
+    Coin.get_coin_exchange_rate() || get_native_coin_exchange_rate_from_db()
   end
 
   @doc """
@@ -63,87 +40,34 @@ defmodule Explorer.Market do
   """
   @spec get_secondary_coin_exchange_rate() :: Token.t()
   def get_secondary_coin_exchange_rate do
-    ExchangeRates.get_secondary_coin_exchange_rate() || get_native_coin_exchange_rate_from_db(true)
+    Coin.get_secondary_coin_exchange_rate() || get_native_coin_exchange_rate_from_db(true)
   end
 
-  @doc false
-  def bulk_insert_history(records) do
-    records_without_zeroes =
-      records
-      |> Enum.reject(fn item ->
-        Map.has_key?(item, :opening_price) && Map.has_key?(item, :closing_price) &&
-          Decimal.equal?(item.closing_price, 0) &&
-          Decimal.equal?(item.opening_price, 0)
-      end)
-      # Enforce MarketHistory ShareLocks order (see docs: sharelocks.md)
-      |> Enum.sort_by(& &1.date)
+  @doc """
+  Retrieves the token exchange rate information for a specific date.
 
-    Repo.insert_all(MarketHistory, records_without_zeroes,
-      on_conflict: market_history_on_conflict(),
-      conflict_target: [:date, :secondary_coin]
-    )
-  end
+  This function fetches historical market data for a given datetime and constructs
+  a token record with price information. If the datetime is nil or no market
+  history exists for the specified date, returns a null token record.
 
-  defp market_history_on_conflict do
-    from(
-      market_history in MarketHistory,
-      update: [
-        set: [
-          opening_price:
-            fragment(
-              """
-              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.opening_price IS NOT NULL AND EXCLUDED.opening_price > 0
-              THEN EXCLUDED.opening_price
-              ELSE ?
-              END
-              """,
-              market_history.opening_price,
-              market_history.opening_price,
-              market_history.opening_price
-            ),
-          closing_price:
-            fragment(
-              """
-              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.closing_price IS NOT NULL AND EXCLUDED.closing_price > 0
-              THEN EXCLUDED.closing_price
-              ELSE ?
-              END
-              """,
-              market_history.closing_price,
-              market_history.closing_price,
-              market_history.closing_price
-            ),
-          market_cap:
-            fragment(
-              """
-              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.market_cap IS NOT NULL AND EXCLUDED.market_cap > 0
-              THEN EXCLUDED.market_cap
-              ELSE ?
-              END
-              """,
-              market_history.market_cap,
-              market_history.market_cap,
-              market_history.market_cap
-            ),
-          tvl:
-            fragment(
-              """
-              CASE WHEN (? IS NULL OR ? = 0) AND EXCLUDED.tvl IS NOT NULL AND EXCLUDED.tvl > 0
-              THEN EXCLUDED.tvl
-              ELSE ?
-              END
-              """,
-              market_history.tvl,
-              market_history.tvl,
-              market_history.tvl
-            )
-        ]
-      ],
-      where:
-        is_nil(market_history.tvl) or market_history.tvl == 0 or is_nil(market_history.market_cap) or
-          market_history.market_cap == 0 or is_nil(market_history.opening_price) or
-          market_history.opening_price == 0 or is_nil(market_history.closing_price) or
-          market_history.closing_price == 0
-    )
+  ## Parameters
+  - `datetime`: The datetime for which to retrieve the exchange rate. If nil,
+    returns a null token record.
+  - `options`: Additional options for retrieving market history data.
+
+  ## Returns
+  - A `Token` struct containing the closing price as fiat value, market cap, and
+    TVL from the market history. All other token fields are set to nil.
+  - A null token record if datetime is nil or no market history exists for the
+    specified date.
+  """
+  @spec get_coin_exchange_rate_at_date(DateTime.t() | nil, Keyword.t()) :: Token.t()
+  def get_coin_exchange_rate_at_date(nil, _options), do: Token.null()
+
+  def get_coin_exchange_rate_at_date(datetime, options) do
+    datetime
+    |> DateTime.to_date()
+    |> MarketHistory.price_at_date(false, options)
+    |> MarketHistory.to_token()
   end
 end

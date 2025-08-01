@@ -87,7 +87,7 @@
         <% address = if address_status == :ok, do: render_to_string(BlockScoutWeb.AddressView, "_link.html", address: address, contract: Address.smart_contract?(address), use_custom_tooltip: false, trimmed: false), else: render_to_string(BlockScoutWeb.TransactionView, "_actions_address.html", address_string: address_string, action: @action) %>
         <% to_address = Map.get(@action.data, "to") %>
         <% to_content = raw(render_to_string BlockScoutWeb.TransactionView, "_actions_to.html", address: to_address) %>
-        <% to = link to: address_path(BlockScoutWeb.Endpoint, :show, to_address), "data-test": "address_hash_link", do: to_content %>
+        <% to = link(to_content, to: address_path(BlockScoutWeb.Endpoint, :show, to_address), "data-test": "address_hash_link") %>
 
         <%= gettext("Mint of %{address} <span class=\"text-muted\">To</span> %{to}", address: address, to: safe_to_string(to)) |> raw() %>
       </span>

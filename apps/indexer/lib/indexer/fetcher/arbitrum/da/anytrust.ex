@@ -4,12 +4,15 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     within the Arbitrum rollup context.
   """
 
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
+
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1, log_info: 1, log_debug: 1]
 
   import Explorer.Helper, only: [decode_data: 2]
 
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: Db
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain.Arbitrum
@@ -83,10 +86,6 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
           :pubkeys => [signer()]
         }
 
-  # keccak256("SetValidKeyset(bytes32,bytes)")
-  @set_valid_keyset_event "0xabca9b7986bc22ad0160eb0cb88ae75411eacfba4052af0b457a9335ef655722"
-  @set_valid_keyset_event_unindexed_params [:bytes]
-
   @doc """
     Parses batch accompanying data to extract AnyTrust data availability information.
 
@@ -124,37 +123,61 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
      }}
   end
 
+  def parse_batch_accompanying_data(batch_number, <<
+        keyset_hash::binary-size(32),
+        data_hash::binary-size(32),
+        timeout::big-unsigned-integer-size(64),
+        signers_mask::big-unsigned-integer-size(64),
+        bls_signature::binary-size(96)
+      >>) do
+    # https://github.com/OffchainLabs/nitro/blob/ad9ab00723e13cf98307b9b65774ad455594ef7b/arbstate/das_reader.go#L95-L151
+    {:ok, :in_anytrust,
+     %__MODULE__{
+       batch_number: batch_number,
+       keyset_hash: keyset_hash,
+       data_hash: data_hash,
+       timeout: IndexerHelper.timestamp_to_datetime(timeout),
+       signers_mask: signers_mask,
+       bls_signature: bls_signature
+     }}
+  end
+
   def parse_batch_accompanying_data(_, _) do
     log_error("Can not parse Anytrust DA message.")
     {:error, nil, nil}
   end
 
   @doc """
-    Prepares AnyTrust data availability information for import.
+    Transforms AnyTrust data availability information into database-ready records.
 
-    This function prepares a list of data structures for import into the database,
-    ensuring that AnyTrust DA information and related keysets are included. It
-    verifies if the keyset associated with the AnyTrust DA certificate is already
-    known or needs to be fetched from L1.
+    Creates database records for both the DA certificate and its association with a batch
+    number. Additionally checks if the certificate's keyset is already known or needs to
+    be fetched from L1.
 
-    To avoid fetching the same keyset multiple times, the function uses a cache.
+    When encountering duplicate data keys within the same processing chunk, the function
+    compares timeout values and keeps only the record with the highest timeout, which
+    ensures longer data availability without database constraint violations.
 
     ## Parameters
-    - `source`: The initial list of data to be imported.
-    - `da_info`: The AnyTrust DA info struct containing details about the data blob.
-    - `l1_connection_config`: A map containing the address of the Sequencer Inbox contract
-      and configuration parameters for the JSON RPC connection.
-    - `cache`: A set of unique elements used to cache the checked keysets.
+    - A tuple containing:
+      - A map of already prepared DA records, where `data_key` maps to `DaMultiPurposeRecord.to_import()`
+      - A list of already prepared batch-to-blob associations
+    - `da_info`: The AnyTrust DA info struct containing the certificate data
+    - `l1_connection_config`: Configuration for L1 connection, including:
+      - `:sequencer_inbox_address`: Address of the Sequencer Inbox contract
+      - `:json_rpc_named_arguments`: JSON RPC connection parameters
+    - `cache`: A set of previously processed keyset hashes
 
     ## Returns
     - A tuple containing:
-      - An updated list of data structures ready for import, including the DA
-        certificate (`data_type` is `0`) and potentially a new keyset (`data_type`
-        is `1`) if required.
-      - The updated cache with the checked keysets.
+      - A tuple of updated record collections:
+        - A map of DA records where `data_key` maps to the record, including the new
+          certificate (`data_type: 0`) and possibly a new keyset (`data_type: 1`)
+        - Batch-to-blob associations list with the new mapping
+      - Updated keyset cache
   """
   @spec prepare_for_import(
-          list(),
+          {%{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}, [Arbitrum.BatchToDaBlob.to_import()]},
           __MODULE__.t(),
           %{
             :sequencer_inbox_address => String.t(),
@@ -162,8 +185,8 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
           },
           MapSet.t()
         ) ::
-          {[Arbitrum.DaMultiPurposeRecord.to_import()], MapSet.t()}
-  def prepare_for_import(source, %__MODULE__{} = da_info, l1_connection_config, cache) do
+          {{%{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}, [Arbitrum.BatchToDaBlob.to_import()]}, MapSet.t()}
+  def prepare_for_import({da_records_acc, batch_to_blob_acc}, %__MODULE__{} = da_info, l1_connection_config, cache) do
     data = %{
       keyset_hash: ArbitrumHelper.bytes_to_hex_str(da_info.keyset_hash),
       data_hash: ArbitrumHelper.bytes_to_hex_str(da_info.data_hash),
@@ -172,35 +195,66 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
       bls_signature: ArbitrumHelper.bytes_to_hex_str(da_info.bls_signature)
     }
 
-    res = [
-      %{
-        data_type: 0,
-        data_key: da_info.data_hash,
-        data: data,
-        batch_number: da_info.batch_number
-      }
-    ]
+    # Create `DaMultiPurposeRecord` record
+    da_record = %{
+      data_type: 0,
+      data_key: da_info.data_hash,
+      data: data,
+      # This field must be removed as soon as migration to a separate table for Batch-to-DA-record associations is completed.
+      batch_number: nil
+    }
+
+    # Create `BatchToDaBlob` record
+    batch_to_blob_record = %{
+      batch_number: da_info.batch_number,
+      data_blob_id: da_info.data_hash
+    }
+
+    # Check if a record with the same data_key already exists
+    updated_da_records =
+      case Map.get(da_records_acc, da_info.data_hash) do
+        nil ->
+          # No duplicate, add the new record
+          Map.put(da_records_acc, da_info.data_hash, da_record)
+
+        duplicate_record ->
+          log_info("Found duplicate DA record #{ArbitrumHelper.bytes_to_hex_str(da_info.data_hash)}")
+          # Found duplicate, compare timeout values
+          timeout_in_duplicate = duplicate_record.data.timeout
+          timeout_in_candidate = da_record.data.timeout
+
+          if DateTime.compare(timeout_in_candidate, timeout_in_duplicate) == :gt do
+            # New record has higher timeout, replace the existing one
+            Map.put(da_records_acc, da_info.data_hash, da_record)
+          else
+            # Existing record has higher or equal timeout, keep it
+            da_records_acc
+          end
+      end
 
     {check_result, keyset_map, updated_cache} = check_if_new_keyset(da_info.keyset_hash, l1_connection_config, cache)
 
-    updated_res =
+    # Add keyset record if it's new
+    final_da_records =
       case check_result do
         :new_keyset ->
-          [
-            %{
-              data_type: 1,
-              data_key: da_info.keyset_hash,
-              data: keyset_map,
-              batch_number: nil
-            }
-            | res
-          ]
+          # If the keyset is new, add a new keyset record to the DA records list.
+          # As per the nature of `DaMultiPurposeRecord` it can contain not only DA
+          # certificates but also keysets.
+          keyset_record = %{
+            data_type: 1,
+            data_key: da_info.keyset_hash,
+            data: keyset_map,
+            batch_number: nil
+          }
+
+          Map.put(updated_da_records, da_info.keyset_hash, keyset_record)
 
         _ ->
-          res
+          updated_da_records
       end
 
-    {updated_res ++ source, updated_cache}
+    {{final_da_records, [batch_to_blob_record | batch_to_blob_acc]}, updated_cache}
   end
 
   # Verifies the existence of an AnyTrust committee keyset in the database and fetches it from L1 if not found.
@@ -304,7 +358,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
         block_number,
         block_number,
         sequencer_inbox_address,
-        [@set_valid_keyset_event, ArbitrumHelper.bytes_to_hex_str(keyset_hash)],
+        [ArbitrumEvents.set_valid_keyset(), ArbitrumHelper.bytes_to_hex_str(keyset_hash)],
         json_rpc_named_arguments
       )
 
@@ -319,7 +373,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
   end
 
   defp set_valid_keyset_event_parse(event) do
-    [keyset_data] = decode_data(event["data"], @set_valid_keyset_event_unindexed_params)
+    [keyset_data] = decode_data(event["data"], ArbitrumEvents.set_valid_keyset_unindexed_params())
 
     keyset_data
   end
@@ -409,6 +463,87 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
         proof: ArbitrumHelper.bytes_to_hex_str(proof_bytes),
         key: ArbitrumHelper.bytes_to_hex_str(key_bytes)
       }
+    end
+  end
+
+  @doc """
+    Resolves conflicts between existing database records and candidate DA records.
+
+    This function compares the timeout values of existing database records with candidate
+    records that have the same data_key. It keeps only candidate records with higher timeout
+    values than their corresponding database records, or those without matching database records.
+
+    ## Parameters
+    - `db_records`: A list of `Arbitrum.DaMultiPurposeRecord` retrieved from the database
+    - `candidate_records`: A map where `data_key` maps to `Arbitrum.DaMultiPurposeRecord.to_import()`
+
+    ## Returns
+    - A list of `Arbitrum.DaMultiPurposeRecord.to_import()` after resolving conflicts
+  """
+  @spec resolve_conflict(
+          [Arbitrum.DaMultiPurposeRecord.t()],
+          %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}
+        ) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
+
+  def resolve_conflict([], candidate_records) do
+    Map.values(candidate_records)
+  end
+
+  def resolve_conflict(db_records, candidate_records) do
+    # Create a set of keys to exclude (those where DB record has equal or higher timeout)
+    keys_to_exclude =
+      Enum.reduce(db_records, MapSet.new(), fn db_record, acc ->
+        data_key = db_record.data_key
+
+        case Map.get(candidate_records, data_key) do
+          nil ->
+            # No matching candidate record, nothing to exclude
+            acc
+
+          candidate_record ->
+            # Convert string timeout from DB to DateTime and compare with candidate timeout
+            db_timeout = string_to_datetime(db_record.data["timeout"])
+            candidate_timeout = candidate_record.data.timeout
+
+            # credo:disable-for-lines:1 Credo.Check.Refactor.Nesting
+            if DateTime.compare(candidate_timeout, db_timeout) == :gt do
+              log_info(
+                "Candidate DA record #{ArbitrumHelper.bytes_to_hex_str(data_key)} has higher timeout than DB record"
+              )
+
+              # Candidate has higher timeout, don't exclude
+              acc
+            else
+              # DB record has higher or equal timeout, exclude this key
+              log_info(
+                "DA record #{ArbitrumHelper.bytes_to_hex_str(data_key)} already exists in DB with higher or equal timeout"
+              )
+
+              MapSet.put(acc, data_key)
+            end
+        end
+      end)
+
+    # Return only candidate records not in the exclude set
+    candidate_records
+    |> Enum.reject(fn {data_key, _record} -> MapSet.member?(keys_to_exclude, data_key) end)
+    |> Enum.map(fn {_data_key, record} -> record end)
+  end
+
+  # Converts a string representation of a DateTime to a DateTime struct.
+  # The string is expected to be in ISO 8601 format.
+  #
+  # ## Parameters
+  # - `datetime_str`: A string representing a DateTime in ISO 8601 format
+  #
+  # ## Returns
+  # - A DateTime struct if the conversion is successful
+  # - Raises an error if the string cannot be parsed
+  @spec string_to_datetime(String.t()) :: DateTime.t()
+  defp string_to_datetime(datetime_str) when is_binary(datetime_str) do
+    case DateTime.from_iso8601(datetime_str) do
+      {:ok, datetime, _offset} -> datetime
+      {:error, reason} -> raise "Failed to parse datetime string: #{datetime_str}, reason: #{reason}"
     end
   end
 end

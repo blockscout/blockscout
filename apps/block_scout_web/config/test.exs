@@ -24,7 +24,7 @@ config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: f
 
 config :block_scout_web, BlockScoutWeb.Counters.InternalTransactionsIndexedCounter, enabled: false
 
-config :block_scout_web, :captcha_helper, BlockScoutWeb.TestCaptchaHelper
+config :tesla, adapter: Explorer.Mock.TeslaAdapter
 
 config :ueberauth, Ueberauth,
   providers: [

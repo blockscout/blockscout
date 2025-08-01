@@ -165,24 +165,6 @@ defmodule BlockScoutWeb.SmartContractView do
     end)
   end
 
-  def binary_to_utf_string(item) do
-    case Integer.parse(to_string(item)) do
-      {item_integer, ""} ->
-        to_string(item_integer)
-
-      _ ->
-        if is_binary(item) do
-          add_0x(item)
-        else
-          to_string(item)
-        end
-    end
-  end
-
-  defp add_0x(item) do
-    "0x" <> Base.encode16(item, case: :lower)
-  end
-
   defp render_type_value(type, value, type) do
     "<div class=\"pl-3\"><i>(#{Helper.sanitize_input(type)})</i> : #{value}</div>"
   end
@@ -226,11 +208,14 @@ defmodule BlockScoutWeb.SmartContractView do
   def cut_rpc_url(error) do
     transport_options = Application.get_env(:explorer, :json_rpc_named_arguments)[:transport_options]
 
-    error
-    |> String.replace(transport_options[:url], "rpc_url")
-    |> (&if(transport_options[:fallback_url],
-          do: String.replace(&1, transport_options[:fallback_url], "rpc_url"),
-          else: &1
-        )).()
+    all_urls =
+      (transport_options[:urls] || []) ++
+        (transport_options[:trace_urls] || []) ++
+        (transport_options[:eth_call_urls] || []) ++
+        (transport_options[:fallback_urls] || []) ++
+        (transport_options[:fallback_trace_urls] || []) ++
+        (transport_options[:fallback_eth_call_urls] || [])
+
+    String.replace(error, Enum.reject(all_urls, &(&1 in [nil, ""])), "rpc_url")
   end
 end

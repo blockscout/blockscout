@@ -117,10 +117,10 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
   end
 
   defp vyper_verify_multipart(params, evm_version, files, address_hash) do
-    {creation_tx_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
+    {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
 
     %{}
-    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
     |> Map.put("evmVersion", evm_version)
     |> Map.put("sourceFiles", files)
     |> Map.put("compilerVersion", params["compiler_version"])
@@ -129,10 +129,10 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
   end
 
   defp vyper_verify_standard_json(params, address_hash) do
-    {creation_tx_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
+    {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
 
     %{}
-    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
     |> Map.put("compilerVersion", params["compiler_version"])
     |> Map.put("input", params["input"])
     |> RustVerifierInterface.vyper_verify_standard_json(verifier_metadata)

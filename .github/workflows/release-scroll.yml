@@ -1,0 +1,61 @@
+name: Release for Scroll
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  OTP_VERSION: ${{ vars.OTP_VERSION }}
+  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to GitHub Container Registry
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: 9.0.0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup repo
+        uses: ./.github/actions/setup-repo
+        id: setup
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          docker-remote-multi-platform: true
+          docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
+          docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
+
+      - name: Build and push Docker image for Scroll (indexer + API)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: ghcr.io/blockscout/blockscout-scroll:latest, ghcr.io/blockscout/blockscout-scroll:${{ env.RELEASE_VERSION }}
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=scroll
+
+      - name: Build and push Docker image for Scroll (indexer)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: ghcr.io/blockscout/blockscout-scroll:${{ env.RELEASE_VERSION }}-indexer
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            DISABLE_API=true
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=scroll
+

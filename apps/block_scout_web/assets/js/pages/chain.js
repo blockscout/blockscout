@@ -314,7 +314,7 @@ if ($chainDetailsPage.length) {
   loadBlocks(store)
   bindBlockErrorMessage(store)
 
-  const exchangeRateChannel = socket.channel('exchange_rate:new_rate')
+  const exchangeRateChannel = socket.channel('exchange_rate_old:new_rate')
   exchangeRateChannel.join()
   exchangeRateChannel.on('new_rate', (msg) => {
     updateAllCalculatedUsdValues(humps.camelizeKeys(msg).exchangeRate.usdValue)
@@ -324,28 +324,28 @@ if ($chainDetailsPage.length) {
     })
   })
 
-  const addressesChannel = socket.channel('addresses:new_address')
+  const addressesChannel = socket.channel('addresses_old:new_address')
   addressesChannel.join()
   addressesChannel.on('count', msg => store.dispatch({
     type: 'RECEIVED_NEW_ADDRESS_COUNT',
     msg: humps.camelizeKeys(msg)
   }))
 
-  const blocksChannel = socket.channel('blocks:new_block')
+  const blocksChannel = socket.channel('blocks_old:new_block')
   blocksChannel.join()
   blocksChannel.on('new_block', msg => store.dispatch({
     type: 'RECEIVED_NEW_BLOCK',
     msg: humps.camelizeKeys(msg)
   }))
 
-  const transactionsChannel = socket.channel('transactions:new_transaction')
+  const transactionsChannel = socket.channel('transactions_old:new_transaction')
   transactionsChannel.join()
   transactionsChannel.on('transaction', batchChannel((msgs) => store.dispatch({
     type: 'RECEIVED_NEW_TRANSACTION_BATCH',
     msgs: humps.camelizeKeys(msgs)
   })))
 
-  const transactionStatsChannel = socket.channel('transactions:stats')
+  const transactionStatsChannel = socket.channel('transactions_old:stats')
   transactionStatsChannel.join()
   transactionStatsChannel.on('update', msg => store.dispatch({
     type: 'RECEIVED_UPDATED_TRANSACTION_STATS',

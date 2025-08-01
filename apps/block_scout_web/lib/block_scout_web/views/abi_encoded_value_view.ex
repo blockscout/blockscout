@@ -7,8 +7,11 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   """
   use BlockScoutWeb, :view
 
+  import Phoenix.LiveView.Helpers, only: [sigil_H: 2]
+
   alias ABI.FunctionSelector
   alias Phoenix.HTML
+  alias Phoenix.HTML.Safe
 
   require Logger
 
@@ -27,19 +30,6 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       :error
   end
 
-  def value_json(type, value) do
-    decoded_type = FunctionSelector.decode_type(type)
-
-    do_value_json(decoded_type, value)
-  rescue
-    exception ->
-      Logger.warning(fn ->
-        ["Error determining value json for #{inspect(type)}: ", Exception.format(:error, exception, __STACKTRACE__)]
-      end)
-
-      nil
-  end
-
   def copy_text(type, value) do
     decoded_type = FunctionSelector.decode_type(type)
 
@@ -54,7 +44,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   end
 
   defp do_copy_text({:bytes, _type}, value) do
-    hex(value)
+    "0x" <> Base.encode16(value, case: :lower)
   end
 
   defp do_copy_text({:array, type, _}, value) do
@@ -67,15 +57,19 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       |> Enum.map(&do_copy_text(type, &1))
       |> Enum.intersperse(", ")
 
-    ~E|[<%= values %>]|
+    assigns = %{values: values}
+
+    ~H|[<%= @values %>]|
+    |> Safe.to_iodata()
+    |> List.to_string()
   end
 
   defp do_copy_text(_, {:dynamic, value}) do
-    hex(value)
+    "0x" <> Base.encode16(value, case: :lower)
   end
 
   defp do_copy_text(type, value) when type in [:bytes, :address] do
-    hex(value)
+    "0x" <> Base.encode16(value, case: :lower)
   end
 
   defp do_copy_text({:tuple, types}, value) do
@@ -86,7 +80,11 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       |> Enum.map(fn {val, ind} -> do_copy_text(Enum.at(types, ind), val) end)
       |> Enum.intersperse(", ")
 
-    ~E|(<%= values %>)|
+    assigns = %{values: values}
+
+    ~H|(<%= @values %>)|
+    |> Safe.to_iodata()
+    |> List.to_string()
   end
 
   defp do_copy_text(_type, value) do
@@ -112,7 +110,23 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     spacing = String.duplicate(" ", depth * 2)
     delimited = Enum.intersperse(values, ",\n")
 
-    ~E|<%= spacing %>[<%= "\n" %><%= delimited %><%= "\n" %><%= spacing %>]|
+    assigns = %{spacing: spacing, delimited: delimited}
+
+    elements =
+      Enum.reduce(delimited, "", fn value, acc ->
+        assigns = %{value: value}
+
+        html = ~H|<%= raw(@value) %>| |> Safe.to_iodata() |> List.to_string()
+        acc <> html
+      end)
+
+    (~H|<%= @spacing %>[<%= "\n" %>|
+     |> Safe.to_iodata()
+     |> List.to_string()) <>
+      elements <>
+      (~H|<%= "\n" %><%= @spacing %>]|
+       |> Safe.to_iodata()
+       |> List.to_string())
   end
 
   defp do_value_html({:tuple, types}, values, no_links, _) do
@@ -125,88 +139,54 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       end)
 
     delimited = Enum.intersperse(values_list, ",")
-    ~E|(<%= delimited %>)|
+    assigns = %{delimited: delimited}
+
+    ~H|(<%= for value <- @delimited, do: raw(value) %>)|
+    |> Safe.to_iodata()
+    |> List.to_string()
   end
 
   defp do_value_html(type, value, no_links, depth) do
     spacing = String.duplicate(" ", depth * 2)
-    ~E|<%= spacing %><%=base_value_html(type, value, no_links)%>|
-    [spacing, base_value_html(type, value, no_links)]
+    html = base_value_html(type, value, no_links)
+
+    assigns = %{html: html, spacing: spacing}
+
+    ~H|<%= @spacing %><%= @html %>|
+    |> Safe.to_iodata()
+    |> List.to_string()
   end
 
   defp base_value_html(_, {:dynamic, value}, _no_links) do
-    ~E|<%= hex(value) %>|
+    assigns = %{value: value}
+
+    ~H|<%= "0x" <> Base.encode16(@value, case: :lower) %>|
   end
 
   defp base_value_html(:address, value, no_links) do
     if no_links do
       base_value_html(:address_text, value, no_links)
     else
-      address = hex(value)
+      address = "0x" <> Base.encode16(value, case: :lower)
+      path = address_path(BlockScoutWeb.Endpoint, :show, address)
 
-      ~E|<a href="<%= address_path(BlockScoutWeb.Endpoint, :show, address) %>" target="_blank"><%= address %></a>|
+      assigns = %{address: address, path: path}
+
+      ~H|<a href={@path} target="_blank"><%= @address %></a>|
     end
   end
 
   defp base_value_html(:address_text, value, _no_links) do
-    ~E|<%= hex(value) %>|
+    assigns = %{value: value}
+
+    ~H|<%= "0x" <> Base.encode16(@value, case: :lower) %>|
   end
 
   defp base_value_html(:bytes, value, _no_links) do
-    ~E|<%= hex(value) %>|
+    assigns = %{value: value}
+
+    ~H|<%= "0x" <> Base.encode16(@value, case: :lower) %>|
   end
 
   defp base_value_html(_, value, _no_links), do: HTML.html_escape(value)
-
-  defp do_value_json({:bytes, _}, value) do
-    do_value_json(:bytes, value)
-  end
-
-  defp do_value_json({:array, type, _}, value) do
-    do_value_json({:array, type}, value)
-  end
-
-  defp do_value_json({:array, type}, value) do
-    values =
-      Enum.map(value, fn inner_value ->
-        do_value_json(type, inner_value)
-      end)
-
-    values
-  end
-
-  defp do_value_json({:tuple, types}, values) do
-    values_list =
-      values
-      |> Tuple.to_list()
-      |> Enum.with_index()
-      |> Enum.map(fn {value, i} ->
-        do_value_json(Enum.at(types, i), value)
-      end)
-
-    values_list
-  end
-
-  defp do_value_json(type, value) do
-    base_value_json(type, value)
-  end
-
-  defp base_value_json(_, {:dynamic, value}) do
-    hex_for_json(value)
-  end
-
-  defp base_value_json(:address, value) do
-    hex_for_json(value)
-  end
-
-  defp base_value_json(:bytes, value) do
-    hex_for_json(value)
-  end
-
-  defp base_value_json(_, value), do: to_string(value)
-
-  defp hex("0x" <> value), do: "0x" <> value
-  defp hex(value), do: "0x" <> Base.encode16(value, case: :lower)
-
-  defp hex_for_json(value), do: "0x" <> Base.encode16(value, case: :lower)
 end

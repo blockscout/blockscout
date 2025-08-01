@@ -2,9 +2,10 @@ defmodule BlockScoutWeb.API.V2.Helper do
   @moduledoc """
     API V2 helper
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.Transaction.History.TransactionStats
 
@@ -64,32 +65,30 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def address_with_info(%Address{} = address, _address_hash) do
     smart_contract? = Address.smart_contract?(address)
 
-    {proxy_implementations, implementation_address_hashes, implementation_names, proxy_type} =
+    proxy_implementations =
       case address.proxy_implementations do
         %NotLoaded{} ->
-          {nil, [], [], nil}
+          nil
 
         nil ->
-          {nil, [], [], nil}
+          nil
 
         proxy_implementations ->
-          address_hashes = proxy_implementations.address_hashes
-          names = proxy_implementations.names
-          proxy_type = proxy_implementations.proxy_type
-
-          {proxy_implementations, address_hashes, names, proxy_type}
+          proxy_implementations
       end
 
     %{
       "hash" => Address.checksum(address),
       "is_contract" => smart_contract?,
       "name" => address_name(address),
-      "proxy_type" => proxy_type,
-      "implementations" => Proxy.proxy_object_info(implementation_address_hashes, implementation_names),
-      "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),
+      "is_scam" => address_marked_as_scam?(address),
+      "proxy_type" => proxy_implementations && proxy_implementations.proxy_type,
+      "implementations" => Proxy.proxy_object_info(proxy_implementations),
+      "is_verified" => smart_contract_verified?(address) || verified_as_proxy?(proxy_implementations),
       "ens_domain_name" => address.ens_domain_name,
       "metadata" => address.metadata
     }
+    |> address_chain_type_fields(address)
   end
 
   def address_with_info(%NotLoaded{}, address_hash) do
@@ -112,6 +111,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "hash" => Address.checksum(address_hash),
       "is_contract" => false,
       "name" => nil,
+      "is_scam" => false,
       "proxy_type" => nil,
       "implementations" => [],
       "is_verified" => nil,
@@ -120,21 +120,32 @@ defmodule BlockScoutWeb.API.V2.Helper do
     }
   end
 
-  defp minimal_proxy_pattern?(proxy_implementations) do
-    proxy_implementations.proxy_type == :eip1167
+  case @chain_type do
+    :filecoin ->
+      defp address_chain_type_fields(result, address) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.extend_address_json_response(result, address)
+      end
+
+    _ ->
+      defp address_chain_type_fields(result, _address) do
+        result
+      end
   end
 
-  defp verified_minimal_proxy?(nil), do: false
-
-  defp verified_minimal_proxy?(proxy_implementations) do
-    (minimal_proxy_pattern?(proxy_implementations) &&
-       Enum.any?(proxy_implementations.names, fn name -> !is_nil(name) end)) || false
+  # We treat contracts with minimal proxy or similar standards as verified if all their implementations are verified
+  defp verified_as_proxy?(%{proxy_type: proxy_type, names: names})
+       when proxy_type in [:eip1167, :eip7702, :clone_with_immutable_arguments, :erc7760] do
+    !Enum.empty?(names) && Enum.all?(names)
   end
+
+  defp verified_as_proxy?(_), do: false
 
   def address_name(%Address{names: [_ | _] = address_names}) do
     case Enum.find(address_names, &(&1.primary == true)) do
       nil ->
-        %Address.Name{name: name} = Enum.at(address_names, 0)
+        # take last created address name, if there is no `primary` one.
+        %Address.Name{name: name} = Enum.max_by(address_names, & &1.id)
         name
 
       %Address.Name{name: name} ->
@@ -144,18 +155,41 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   def address_name(_), do: nil
 
-  def verified?(%Address{smart_contract: nil}), do: false
-  def verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
-  def verified?(%Address{smart_contract: %NotLoaded{}}), do: nil
-  def verified?(%Address{smart_contract: _}), do: true
-
-  def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value, market_cap_usd: market_cap_usd})
-      when is_nil(available_supply) or is_nil(usd_value) do
-    max(Decimal.new(0), market_cap_usd)
+  def address_marked_as_scam?(%Address{scam_badge: %Ecto.Association.NotLoaded{}}) do
+    false
   end
 
-  def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value}) do
-    Decimal.mult(available_supply, usd_value)
+  def address_marked_as_scam?(%Address{scam_badge: scam_badge}) when not is_nil(scam_badge) do
+    true
+  end
+
+  def address_marked_as_scam?(_), do: false
+
+  @doc """
+  Determines if a smart contract is verified.
+
+  ## Parameters
+    - address: An `%Address{}` struct containing smart contract information.
+
+  ## Returns
+    - `false` if the smart contract has metadata from a verified bytecode twin.
+    - `false` if the smart contract is `nil`.
+    - `false` if the smart contract is `NotLoaded`.
+    - `true` if the smart contract is present and does not have metadata from a verified bytecode twin.
+  """
+  @spec smart_contract_verified?(Address.t()) :: boolean()
+  def smart_contract_verified?(%Address{smart_contract: nil}), do: false
+  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
+  def smart_contract_verified?(%Address{smart_contract: %NotLoaded{}}), do: nil
+  def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
+
+  def market_cap(:standard, %{available_supply: available_supply, fiat_value: fiat_value, market_cap: market_cap})
+      when is_nil(available_supply) or is_nil(fiat_value) do
+    max(Decimal.new(0), market_cap)
+  end
+
+  def market_cap(:standard, %{available_supply: available_supply, fiat_value: fiat_value}) do
+    Decimal.mult(available_supply, fiat_value)
   end
 
   def market_cap(module, exchange_rate) do

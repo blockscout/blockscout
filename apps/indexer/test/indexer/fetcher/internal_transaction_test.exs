@@ -7,7 +7,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
   alias Ecto.Multi
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, PendingBlockOperation}
+  alias Explorer.Chain.{Block, PendingBlockOperation, PendingTransactionOperation}
   alias Explorer.Chain.Import.Runner.Blocks
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.{InternalTransaction, PendingTransaction, TokenBalance}
@@ -17,6 +17,13 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   setup :set_mox_global
 
   setup :verify_on_exit!
+
+  setup do
+    config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+    on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+  end
 
   @moduletag [capture_log: true, no_geth: true]
 
@@ -515,6 +522,9 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     test "fetches internal transactions from Arbitrum", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, false))
+
       json_rpc_named_arguments =
         json_rpc_named_arguments
         |> Enum.reject(fn {key, _value} -> key == :variant || key == :transport_options end)
@@ -604,14 +614,14 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       assert nil == Repo.get(PendingBlockOperation, block_hash)
 
-      int_txs = Repo.all(from(i in Chain.InternalTransaction, where: i.block_hash == ^block_hash))
+      internal_transactions = Repo.all(from(i in Chain.InternalTransaction, where: i.block_hash == ^block_hash))
 
-      assert Enum.count(int_txs) > 0
+      assert Enum.count(internal_transactions) > 0
 
-      last_int_tx = List.last(int_txs)
+      last_internal_transaction = List.last(internal_transactions)
 
-      assert last_int_tx.type == :call
-      assert last_int_tx.call_type == :invalid
+      assert last_internal_transaction.type == :call
+      assert last_internal_transaction.call_type == :invalid
     end
   end
 

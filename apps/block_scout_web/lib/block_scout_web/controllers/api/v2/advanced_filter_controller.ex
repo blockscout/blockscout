@@ -1,13 +1,13 @@
 defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 4]
+  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 4, fetch_scam_token_toggle: 2]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
-  alias BlockScoutWeb.API.V2.{AdvancedFilterView, CSVExportController}
+  alias BlockScoutWeb.API.V2.{AdvancedFilterView, CsvExportController}
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{AdvancedFilter, ContractMethod, Data, Token, Transaction}
-  alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
+  alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
   alias Plug.Conn
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -51,13 +51,18 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   """
   @spec list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def list(conn, params) do
-    full_options = params |> extract_filters() |> Keyword.merge(paging_options(params)) |> Keyword.merge(@api_true)
+    full_options =
+      params
+      |> extract_filters()
+      |> Keyword.merge(paging_options(params))
+      |> Keyword.merge(@api_true)
+      |> fetch_scam_token_toggle(conn)
 
     advanced_filters_plus_one = AdvancedFilter.list(full_options)
 
     {advanced_filters, next_page} = split_list_by_page(advanced_filters_plus_one)
 
-    {decoded_transactions, _abi_acc, methods_acc} =
+    decoded_transactions =
       advanced_filters
       |> Enum.map(fn af -> %Transaction{to_address: af.to_address, input: af.input, hash: af.hash} end)
       |> Transaction.decode_transactions(true, @api_true)
@@ -69,7 +74,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       advanced_filters: advanced_filters,
       decoded_transactions: decoded_transactions,
       search_params: %{
-        method_ids: method_id_to_name_from_params(full_options[:methods] || [], methods_acc),
+        method_ids: method_id_to_name_from_params(full_options[:methods] || [], decoded_transactions),
         tokens: contract_address_hash_to_token_from_params(full_options[:token_contract_address_hashes])
       },
       next_page_params: next_page_params
@@ -81,32 +86,28 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   """
   @spec list_csv(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def list_csv(conn, params) do
-    with {:recaptcha, true} <-
-           {:recaptcha,
-            Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] ||
-              CSVHelper.captcha_helper().recaptcha_passed?(params["recaptcha_response"])} do
-      full_options =
-        params
-        |> extract_filters()
-        |> Keyword.merge(paging_options(params))
-        |> Keyword.update(:paging_options, %PagingOptions{page_size: CSVHelper.limit()}, fn paging_options ->
-          %PagingOptions{paging_options | page_size: CSVHelper.limit()}
-        end)
-
-      full_options
-      |> AdvancedFilter.list()
-      |> AdvancedFilterView.to_csv_format()
-      |> CSVHelper.dump_to_stream()
-      |> Enum.reduce_while(CSVExportController.put_resp_params(conn), fn chunk, conn ->
-        case Conn.chunk(conn, chunk) do
-          {:ok, conn} ->
-            {:cont, conn}
-
-          {:error, :closed} ->
-            {:halt, conn}
-        end
+    full_options =
+      params
+      |> extract_filters()
+      |> Keyword.merge(paging_options(params))
+      |> Keyword.update(:paging_options, %PagingOptions{page_size: CsvHelper.limit()}, fn paging_options ->
+        %PagingOptions{paging_options | page_size: CsvHelper.limit()}
       end)
-    end
+      |> Keyword.put(:timeout, :timer.minutes(5))
+
+    full_options
+    |> AdvancedFilter.list()
+    |> AdvancedFilterView.to_csv_format()
+    |> CsvHelper.dump_to_stream()
+    |> Enum.reduce_while(CsvExportController.put_resp_params(conn), fn chunk, conn ->
+      case Conn.chunk(conn, chunk) do
+        {:ok, conn} ->
+          {:cont, conn}
+
+        {:error, :closed} ->
+          {:halt, conn}
+      end
+    end)
   end
 
   @doc """
@@ -132,8 +133,12 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
               ContractMethod.find_contract_method_by_name(query, @api_true)
           end
 
-        with {:method, %ContractMethod{abi: %{"name" => name}, identifier: identifier}} <- {:method, mb_contract_method} do
-          render(conn, :methods, methods: [%{method_id: "0x" <> Base.encode16(identifier, case: :lower), name: name}])
+        case mb_contract_method do
+          %ContractMethod{abi: %{"name" => name}, identifier: identifier} ->
+            render(conn, :methods, methods: [%{method_id: identifier, name: name}])
+
+          _ ->
+            render(conn, :methods, methods: [])
         end
     end
   end
@@ -142,22 +147,19 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     render(conn, :methods, methods: @methods)
   end
 
-  defp method_id_to_name_from_params(prepared_method_ids, methods_acc) do
+  defp method_id_to_name_from_params(prepared_method_ids, decoded_transactions) do
     {decoded_method_ids, method_ids_to_find} =
       Enum.reduce(prepared_method_ids, {%{}, []}, fn method_id, {decoded, to_decode} ->
         {:ok, method_id_hash} = Data.cast(method_id)
+        trimmed_method_id = method_id_hash.bytes |> Base.encode16(case: :lower)
 
         case {Map.get(@methods_id_to_name_map, method_id),
-              methods_acc
-              |> Map.get(method_id_hash.bytes, [])
-              |> Enum.find(
-                &match?(%ContractMethod{abi: %{"type" => "function", "name" => name}} when is_binary(name), &1)
-              )} do
+              decoded_transactions |> Enum.find(&match?({:ok, ^trimmed_method_id, _, _}, &1))} do
           {name, _} when is_binary(name) ->
             {Map.put(decoded, method_id, name), to_decode}
 
-          {_, %ContractMethod{abi: %{"type" => "function", "name" => name}}} when is_binary(name) ->
-            {Map.put(decoded, method_id, name), to_decode}
+          {_, {:ok, _, function_signature, _}} when is_binary(function_signature) ->
+            {Map.put(decoded, method_id, function_signature |> String.split("(") |> Enum.at(0)), to_decode}
 
           {nil, nil} ->
             {decoded, [method_id_hash.bytes | to_decode]}
@@ -169,7 +171,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     |> Enum.reduce(%{}, fn contract_method, acc ->
       case contract_method do
         %ContractMethod{abi: %{"name" => name}, identifier: identifier} when is_binary(name) ->
-          Map.put(acc, "0x" <> Base.encode16(identifier, case: :lower), name)
+          Map.put(acc, identifier, name)
 
         _ ->
           acc
@@ -194,7 +196,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp extract_filters(params) do
     [
-      tx_types: prepare_tx_types(params["tx_types"]),
+      transaction_types: prepare_transaction_types(params["transaction_types"]),
       methods: params["methods"] |> prepare_methods(),
       age: prepare_age(params["age_from"], params["age_to"]),
       from_address_hashes:
@@ -224,16 +226,16 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     ]
   end
 
-  @allowed_tx_types ~w(COIN_TRANSFER ERC-20 ERC-404 ERC-721 ERC-1155)
+  @allowed_transaction_types ~w(COIN_TRANSFER ERC-20 ERC-404 ERC-721 ERC-1155)
 
-  defp prepare_tx_types(tx_types) when is_binary(tx_types) do
-    tx_types
+  defp prepare_transaction_types(transaction_types) when is_binary(transaction_types) do
+    transaction_types
     |> String.upcase()
     |> String.split(",")
-    |> Enum.filter(&(&1 in @allowed_tx_types))
+    |> Enum.filter(&(&1 in @allowed_transaction_types))
   end
 
-  defp prepare_tx_types(_), do: nil
+  defp prepare_transaction_types(_), do: nil
 
   defp prepare_methods(methods) when is_binary(methods) do
     methods
@@ -315,14 +317,15 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp paging_options(%{
          "block_number" => block_number_string,
-         "transaction_index" => tx_index_string,
-         "internal_transaction_index" => internal_tx_index_string,
+         "transaction_index" => transaction_index_string,
+         "internal_transaction_index" => internal_transaction_index_string,
          "token_transfer_index" => token_transfer_index_string,
          "token_transfer_batch_index" => token_transfer_batch_index_string
        }) do
     with {block_number, ""} <- block_number_string && Integer.parse(block_number_string),
-         {tx_index, ""} <- tx_index_string && Integer.parse(tx_index_string),
-         {:ok, internal_tx_index} <- parse_nullable_integer_paging_parameter(internal_tx_index_string),
+         {transaction_index, ""} <- transaction_index_string && Integer.parse(transaction_index_string),
+         {:ok, internal_transaction_index} <-
+           parse_nullable_integer_paging_parameter(internal_transaction_index_string),
          {:ok, token_transfer_index} <- parse_nullable_integer_paging_parameter(token_transfer_index_string),
          {:ok, token_transfer_batch_index} <- parse_nullable_integer_paging_parameter(token_transfer_batch_index_string) do
       [
@@ -330,8 +333,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
           default_paging_options()
           | key: %{
               block_number: block_number,
-              transaction_index: tx_index,
-              internal_transaction_index: internal_tx_index,
+              transaction_index: transaction_index,
+              internal_transaction_index: internal_transaction_index,
               token_transfer_index: token_transfer_index,
               token_transfer_batch_index: token_transfer_batch_index
             }
@@ -345,6 +348,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   defp paging_options(_), do: [paging_options: default_paging_options()]
 
   defp parse_nullable_integer_paging_parameter(""), do: {:ok, nil}
+  defp parse_nullable_integer_paging_parameter("null"), do: {:ok, nil}
 
   defp parse_nullable_integer_paging_parameter(string) when is_binary(string) do
     case Integer.parse(string) do
@@ -357,15 +361,15 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp paging_params(%AdvancedFilter{
          block_number: block_number,
-         transaction_index: tx_index,
-         internal_transaction_index: internal_tx_index,
+         transaction_index: transaction_index,
+         internal_transaction_index: internal_transaction_index,
          token_transfer_index: token_transfer_index,
          token_transfer_batch_index: token_transfer_batch_index
        }) do
     %{
       block_number: block_number,
-      transaction_index: tx_index,
-      internal_transaction_index: internal_tx_index,
+      transaction_index: transaction_index,
+      internal_transaction_index: internal_transaction_index,
       token_transfer_index: token_transfer_index,
       token_transfer_batch_index: token_transfer_batch_index
     }

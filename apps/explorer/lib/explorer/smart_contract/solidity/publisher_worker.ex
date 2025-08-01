@@ -74,9 +74,12 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
     Logger.info("Smart-contract #{address_hash} verification: broadcast verification results")
 
     if conn do
-      EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result, conn}}], :on_demand)
+      EventsPublisher.broadcast(
+        [{:contract_verification_result, {String.downcase(address_hash), result, conn}}],
+        :on_demand
+      )
     else
-      EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result}}], :on_demand)
+      EventsPublisher.broadcast([{:contract_verification_result, {String.downcase(address_hash), result}}], :on_demand)
     end
   end
 

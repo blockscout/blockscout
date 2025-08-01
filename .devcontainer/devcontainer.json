@@ -1,0 +1,47 @@
+{
+	"name": "Blockscout Elixir",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "elixir",
+	"workspaceFolder": "/workspace",
+	"postCreateCommand": {
+		"safe-directory": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+		"deps": "mix deps.get",
+		"known_hosts": "sudo chown vscode:vscode /home/vscode/.ssh && ssh-keyscan github.com > /home/vscode/.ssh/known_hosts"
+	},
+	"remoteEnv": {
+		"PATH": "${containerEnv:PATH}:${containerWorkspaceFolder}/.devcontainer/bin"
+	},
+	// Configure tool-specific properties.
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"JakeBecker.elixir-ls",
+				"ckolkman.vscode-postgres",
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				"GitHub.vscode-pull-request-github"
+			]
+		}
+	},
+	"features": {
+		"ghcr.io/stuartleeks/dev-container-features/shell-history:0": {}
+	},
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// This can be used to network with other containers or with the host. 
+	"forwardPorts": [
+		4000,
+		4001,
+		5432
+	],
+	// Uncomment and adjust the private key path to the one you use to authenticate on GitHub
+	// if you want to have ability to push to GitHub from the container.
+	// "mounts": [
+	// 	"source=${localEnv:HOME}/.ssh/config,target=/home/vscode/.ssh/config,type=bind,consistency=cached",
+	// 	// Make sure that the private key can be used to authenticate on GitHub
+	// 	"source=${localEnv:HOME}/.ssh/id_rsa,target=/home/vscode/.ssh/id_rsa,type=bind,consistency=cached"
+	// ],
+	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode"
+}

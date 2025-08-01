@@ -15,11 +15,11 @@ defmodule Explorer.Chain.ZkSync.BatchTransaction do
   alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.ZkSync.TransactionBatch
 
-  @required_attrs ~w(batch_number tx_hash)a
+  @required_attrs ~w(batch_number transaction_hash)a
 
   @typedoc """
-    * `tx_hash` - The hash of the rollup transaction.
-    * `l2_transaction` - An instance of `Explorer.Chain.Transaction` referenced by `tx_hash`.
+    * `transaction_hash` - The hash of the rollup transaction.
+    * `l2_transaction` - An instance of `Explorer.Chain.Transaction` referenced by `transaction_hash`.
     * `batch_number` - The number of the ZkSync batch.
     * `batch` - An instance of `Explorer.Chain.ZkSync.TransactionBatch` referenced by `batch_number`.
   """
@@ -28,7 +28,7 @@ defmodule Explorer.Chain.ZkSync.BatchTransaction do
     belongs_to(:batch, TransactionBatch, foreign_key: :batch_number, references: :number, type: :integer)
 
     belongs_to(:l2_transaction, Transaction,
-      foreign_key: :tx_hash,
+      foreign_key: :transaction_hash,
       primary_key: true,
       references: :hash,
       type: Hash.Full
@@ -46,6 +46,6 @@ defmodule Explorer.Chain.ZkSync.BatchTransaction do
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:batch_number)
-    |> unique_constraint(:tx_hash)
+    |> unique_constraint(:transaction_hash)
   end
 end

@@ -3,8 +3,14 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     Common functions to simplify RPC routines for Indexer.Fetcher.Arbitrum fetchers
   """
 
+  # TODO: Move the module under EthereumJSONRPC.Arbitrum.
+
+  alias ABI.TypeDecoder
+
   import EthereumJSONRPC,
     only: [json_rpc: 2, quantity_to_integer: 1, timestamp_to_datetime: 1]
+
+  alias EthereumJSONRPC.Arbitrum.Constants.Contracts, as: ArbitrumContracts
 
   alias EthereumJSONRPC.Transport
   alias Indexer.Helper, as: IndexerHelper
@@ -14,95 +20,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
   @default_binary_search_threshold 1000
 
-  # outbox()
-  @selector_outbox "ce11e6ab"
-  # sequencerInbox()
-  @selector_sequencer_inbox "ee35f327"
-  # bridge()
-  @selector_bridge "e78cea92"
-  @rollup_contract_abi [
-    %{
-      "inputs" => [],
-      "name" => "outbox",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [],
-      "name" => "sequencerInbox",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [],
-      "name" => "bridge",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
-  # getKeysetCreationBlock(bytes32 ksHash)
-  @selector_get_keyset_creation_block "258f0495"
-  @selector_sequencer_inbox_contract_abi [
-    %{
-      "inputs" => [%{"internalType" => "bytes32", "name" => "ksHash", "type" => "bytes32"}],
-      "name" => "getKeysetCreationBlock",
-      "outputs" => [%{"internalType" => "uint256", "name" => "", "type" => "uint256"}],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
-  # findBatchContainingBlock(uint64 blockNum)
-  @selector_find_batch_containing_block "81f1adaf"
-  @node_interface_contract_abi [
-    %{
-      "inputs" => [
-        %{
-          "internalType" => "uint64",
-          "name" => "blockNum",
-          "type" => "uint64"
-        }
-      ],
-      "name" => "findBatchContainingBlock",
-      "outputs" => [
-        %{
-          "internalType" => "uint64",
-          "name" => "batch",
-          "type" => "uint64"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
   @doc """
     Constructs a JSON RPC request to retrieve a transaction by its hash.
 
     ## Parameters
-    - `%{hash: tx_hash, id: id}`: A map containing the transaction hash (`tx_hash`) and
+    - `%{hash: transaction_hash, id: id}`: A map containing the transaction hash (`transaction_hash`) and
       an identifier (`id`) for the request, which can be used later to establish
       correspondence between requests and responses.
 
@@ -111,48 +33,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       the transaction details associated with the given hash.
   """
   @spec transaction_by_hash_request(%{hash: EthereumJSONRPC.hash(), id: non_neg_integer()}) :: Transport.request()
-  def transaction_by_hash_request(%{id: id, hash: tx_hash})
-      when is_binary(tx_hash) and is_integer(id) do
-    EthereumJSONRPC.request(%{id: id, method: "eth_getTransactionByHash", params: [tx_hash]})
-  end
-
-  @doc """
-    Retrieves specific contract addresses associated with Arbitrum rollup contract.
-
-    This function fetches the addresses of the bridge, sequencer inbox, and outbox
-    contracts related to the specified Arbitrum rollup address. It invokes one of
-    the contract methods `bridge()`, `sequencerInbox()`, or `outbox()` based on
-    the `contracts_set` parameter to obtain the required information.
-
-    ## Parameters
-    - `rollup_address`: The address of the Arbitrum rollup contract from which
-                        information is being retrieved.
-    - `contracts_set`: A symbol indicating the set of contracts to retrieve (`:bridge`
-                       for the bridge contract, `:inbox_outbox` for the sequencer
-                       inbox and outbox contracts).
-    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-
-    ## Returns
-    - A map with keys corresponding to the contract types (`:bridge`, `:sequencer_inbox`,
-      `:outbox`) and values representing the contract addresses.
-  """
-  @spec get_contracts_for_rollup(
-          EthereumJSONRPC.address(),
-          :bridge | :inbox_outbox,
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: %{(:bridge | :sequencer_inbox | :outbox) => binary()}
-  def get_contracts_for_rollup(rollup_address, contracts_set, json_rpc_named_arguments)
-
-  def get_contracts_for_rollup(rollup_address, :bridge, json_rpc_named_arguments) do
-    call_simple_getters_in_rollup_contract(rollup_address, [@selector_bridge], json_rpc_named_arguments)
-  end
-
-  def get_contracts_for_rollup(rollup_address, :inbox_outbox, json_rpc_named_arguments) do
-    call_simple_getters_in_rollup_contract(
-      rollup_address,
-      [@selector_sequencer_inbox, @selector_outbox],
-      json_rpc_named_arguments
-    )
+  def transaction_by_hash_request(%{id: id, hash: transaction_hash})
+      when is_binary(transaction_hash) and is_integer(id) do
+    EthereumJSONRPC.request(%{id: id, method: "eth_getTransactionByHash", params: [transaction_hash]})
   end
 
   @doc """
@@ -177,43 +60,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   def get_block_number_for_keyset(sequencer_inbox_address, keyset_hash, json_rpc_named_arguments) do
     read_contract_and_handle_result_as_integer(
       sequencer_inbox_address,
-      @selector_get_keyset_creation_block,
+      ArbitrumContracts.get_keyset_creation_block_selector(),
       [keyset_hash],
-      @selector_sequencer_inbox_contract_abi,
+      ArbitrumContracts.sequencer_inbox_contract_abi(),
       json_rpc_named_arguments
     )
-  end
-
-  # Calls getter functions on a rollup contract and collects their return values.
-  #
-  # This function is designed to interact with a rollup contract and invoke specified getter methods.
-  # It creates a list of requests for each method ID, executes these requests with retries as needed,
-  # and then maps the results to the corresponding method IDs.
-  #
-  # ## Parameters
-  # - `rollup_address`: The address of the rollup contract to interact with.
-  # - `method_ids`: A list of method identifiers representing the getter functions to be called.
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  #
-  # ## Returns
-  # - A map where each key is a method identifier converted to an atom, and each value is the
-  #   response from calling the respective method on the contract.
-  defp call_simple_getters_in_rollup_contract(rollup_address, method_ids, json_rpc_named_arguments) do
-    method_ids
-    |> Enum.map(fn method_id ->
-      %{
-        contract_address: rollup_address,
-        method_id: method_id,
-        args: []
-      }
-    end)
-    |> IndexerHelper.read_contracts_with_retries(@rollup_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
-    # Extracts the list of responses from the tuple returned by read_contracts_with_retries.
-    |> Kernel.elem(0)
-    |> Enum.zip(method_ids)
-    |> Enum.reduce(%{}, fn {{:ok, [response]}, method_id}, retval ->
-      Map.put(retval, atomized_key(method_id), response)
-    end)
   end
 
   @doc """
@@ -325,7 +176,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     Executes a list of transaction requests and retrieves the sender (from) addresses for each.
 
     ## Parameters
-    - `txs_requests`: A list of `Transport.request()` instances representing the transaction requests.
+    - `transactions_requests`: A list of `Transport.request()` instances representing the transaction requests.
     - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
     - `chunk_size`: The number of requests to be processed in each batch, defining the size of the chunks.
 
@@ -337,9 +188,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           EthereumJSONRPC.json_rpc_named_arguments(),
           non_neg_integer()
         ) :: [%{EthereumJSONRPC.hash() => EthereumJSONRPC.address()}]
-  def execute_transactions_requests_and_get_from(txs_requests, json_rpc_named_arguments, chunk_size)
-      when is_list(txs_requests) and is_integer(chunk_size) do
-    txs_requests
+  def execute_transactions_requests_and_get_from(transactions_requests, json_rpc_named_arguments, chunk_size)
+      when is_list(transactions_requests) and is_integer(chunk_size) do
+    transactions_requests
     |> Enum.chunk_every(chunk_size)
     |> Enum.reduce(%{}, fn chunk, result ->
       chunk
@@ -646,7 +497,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       # inspected block is in the boundary of the required batch: the current batch is the same
       # as one found in the previous iteration or the step is not the smallest possible.
 
-      next_block_to_inspect = max(1, inspected_block - new_step)
+      # it is OK to use the earliest block 0 as since the corresponding batch (0)
+      # will be returned by get_batch_number_for_rollup_block.
+      next_block_to_inspect = max(0, inspected_block - new_step)
 
       do_binary_search_of_opposite_block(
         next_block_to_inspect,
@@ -708,9 +561,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     batch_number =
       read_contract_and_handle_result_as_integer(
         node_interface_address,
-        @selector_find_batch_containing_block,
+        ArbitrumContracts.find_batch_containing_block_selector(),
         [block_number],
-        @node_interface_contract_abi,
+        ArbitrumContracts.node_interface_contract_abi(),
         json_rpc_named_arguments
       )
 
@@ -724,7 +577,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           [term()],
           [map()],
           EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: non_neg_integer()
+        ) :: non_neg_integer() | boolean()
   defp read_contract_and_handle_result_as_integer(
          contract_address,
          method_selector,
@@ -763,13 +616,13 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   @spec string_hash_to_bytes_hash(EthereumJSONRPC.hash() | nil) :: binary()
   def string_hash_to_bytes_hash(hash) do
     hash
-    |> json_tx_id_to_hash()
+    |> json_transaction_id_to_hash()
     |> Base.decode16!(case: :mixed)
   end
 
-  defp json_tx_id_to_hash(hash) do
+  defp json_transaction_id_to_hash(hash) do
     case hash do
-      "0x" <> tx_hash -> tx_hash
+      "0x" <> transaction_hash -> transaction_hash
       nil -> @zero_hash
     end
   end
@@ -785,7 +638,184 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     @rpc_resend_attempts
   end
 
-  defp atomized_key(@selector_outbox), do: :outbox
-  defp atomized_key(@selector_sequencer_inbox), do: :sequencer_inbox
-  defp atomized_key(@selector_bridge), do: :bridge
+  @doc """
+    Parses the calldata of various Arbitrum Sequencer batch submission functions to extract batch information.
+
+    Handles calldata for the following functions:
+    - addSequencerL2BatchFromOrigin
+    - addSequencerL2BatchFromBlobs
+    - addSequencerL2BatchFromBlobsDelayProof
+    - addSequencerL2BatchFromOriginDelayProof
+    - addSequencerL2BatchDelayProof
+
+    ## Parameters
+    - `calldata`: The raw calldata from the transaction as a binary string starting with "0x"
+                 followed by the function selector and encoded parameters
+
+    ## Returns
+    A tuple containing:
+    - `sequence_number`: The batch sequence number
+    - `prev_message_count`: The previous L2-to-L1 message count (nil for some functions)
+    - `new_message_count`: The new L2-to-L1 message count (nil for some functions)
+    - `data`: The batch data as binary (nil for blob-based submissions)
+  """
+  @spec parse_calldata_of_add_sequencer_l2_batch(binary()) ::
+          {non_neg_integer(), non_neg_integer() | nil, non_neg_integer() | nil, binary() | nil}
+  def parse_calldata_of_add_sequencer_l2_batch(calldata) do
+    case calldata do
+      "0x8f111f3c" <> encoded_params ->
+        # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
+        [sequence_number, data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_8f111f3c_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, data}
+
+      "0x37501551" <> encoded_params ->
+        # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, bytes quote)
+        # https://github.com/EspressoSystems/nitro-contracts/blob/a61b9dbd71ca443f8e7a007851071f5f1d219c19/src/bridge/SequencerInbox.sol#L364-L372
+        [
+          sequence_number,
+          data,
+          _after_delayed_messages_read,
+          _gas_refunder,
+          prev_message_count,
+          new_message_count,
+          _quote
+        ] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_37501551_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, data}
+
+      "0x3e5aa082" <> encoded_params ->
+        # addSequencerL2BatchFromBlobs(uint256 sequenceNumber, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
+        [sequence_number, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_blobs_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, nil}
+
+      "0x6f12b0c9" <> encoded_params ->
+        # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder)
+        [sequence_number, data, _after_delayed_messages_read, _gas_refunder] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_6f12b0c9_selector_with_abi()
+          )
+
+        {sequence_number, nil, nil, data}
+
+      "0x917cf8ac" <> encoded_params ->
+        # addSequencerL2BatchFromBlobsDelayProof(uint256 sequenceNumber, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, DelayProof calldata delayProof)
+        [
+          sequence_number,
+          _after_delayed_messages_read,
+          _gas_refunder,
+          prev_message_count,
+          new_message_count,
+          _delay_proof
+        ] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_blobs_delay_proof_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, nil}
+
+      "0x69cacded" <> encoded_params ->
+        # addSequencerL2BatchFromOriginDelayProof(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, DelayProof calldata delayProof)
+        [
+          sequence_number,
+          data,
+          _after_delayed_messages_read,
+          _gas_refunder,
+          prev_message_count,
+          new_message_count,
+          _delay_proof
+        ] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_delay_proof_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, data}
+
+      "0x6e620055" <> encoded_params ->
+        # addSequencerL2BatchDelayProof(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, DelayProof calldata delayProof)
+        [
+          sequence_number,
+          data,
+          _after_delayed_messages_read,
+          _gas_refunder,
+          prev_message_count,
+          new_message_count,
+          _delay_proof
+        ] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_delay_proof_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, data}
+    end
+  end
+
+  @doc """
+    Extracts batch numbers from `SequencerBatchDelivered` event logs.
+
+    Note: This function assumes that all provided logs are SequencerBatchDelivered
+    events. Logs from other events should be filtered out before calling this
+    function.
+
+    ## Parameters
+    - `logs`: A list of event logs, where each log is a map containing event data
+             from the `SequencerBatchDelivered` event.
+
+    ## Returns
+    - A list of non-negative integers representing batch numbers.
+  """
+  @spec extract_batch_numbers_from_logs([%{String.t() => any()}]) :: [non_neg_integer()]
+  def extract_batch_numbers_from_logs(logs) do
+    logs
+    |> Enum.map(fn event ->
+      {batch_num, _, _} = parse_sequencer_batch_delivered_event(event)
+      batch_num
+    end)
+  end
+
+  # Parses SequencerBatchDelivered event to get batch sequence number and associated accumulators
+  @doc """
+    Extracts key information from a `SequencerBatchDelivered` event log.
+
+    The event topics array contains the indexed parameters of the event:
+    - topic[0]: Event signature (not used)
+    - topic[1]: Batch number (indexed parameter)
+    - topic[2]: Before accumulator value (indexed parameter)
+    - topic[3]: After accumulator value (indexed parameter)
+
+    Note: This function does not verify if the event is actually a
+    `SequencerBatchDelivered` event.
+
+    ## Parameters
+    - `event`: A map containing event data with `topics` field.
+
+    ## Returns
+    - A tuple containing:
+      - The batch number as an integer
+      - The before accumulator value as a binary
+      - The after accumulator value as a binary
+  """
+  @spec parse_sequencer_batch_delivered_event(%{String.t() => any()}) :: {non_neg_integer(), binary(), binary()}
+  def parse_sequencer_batch_delivered_event(event) do
+    [_, batch_sequence_number, before_acc, after_acc] = event["topics"]
+
+    {quantity_to_integer(batch_sequence_number), before_acc, after_acc}
+  end
 end

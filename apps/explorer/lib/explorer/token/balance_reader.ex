@@ -54,6 +54,46 @@ defmodule Explorer.Token.BalanceReader do
     |> Enum.map(&format_balance_result/1)
   end
 
+  @doc """
+    Gets the token balances for a list of fungible tokens and a list of non-fungible tokens.
+
+    Processes both lists together by formatting the requests appropriately and
+    querying the contracts for the balances.
+
+    ## Parameters
+    - `ft_token_balances_requests`: List of fungible token balance requests
+    - `nft_token_balances_requests`: List of non-fungible token balance requests
+
+    ## Returns
+    - List of tuples, each being either `{:ok, balance}` or `{:error, error_message}`
+  """
+  @spec get_balances_of_all(
+          [
+            %{
+              token_contract_address_hash: String.t(),
+              address_hash: String.t(),
+              block_number: non_neg_integer(),
+              token_id: non_neg_integer() | nil
+            }
+          ],
+          [
+            %{
+              token_contract_address_hash: String.t(),
+              address_hash: String.t(),
+              block_number: non_neg_integer(),
+              token_id: non_neg_integer() | nil
+            }
+          ]
+        ) :: [{:ok, non_neg_integer()} | {:error, String.t()}]
+  def get_balances_of_all(ft_token_balances_requests, nft_token_balances_requests) do
+    ft_formatted_requests = Enum.map(ft_token_balances_requests, &format_balance_request/1)
+    nft_formatted_requests = Enum.map(nft_token_balances_requests, &format_erc_1155_balance_request/1)
+
+    (ft_formatted_requests ++ nft_formatted_requests)
+    |> Reader.query_contracts(@balance_function_abi ++ @nft_balance_function_abi)
+    |> Enum.map(&format_balance_result/1)
+  end
+
   @spec get_balances_of_with_abi(
           [
             %{

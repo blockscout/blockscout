@@ -33,6 +33,25 @@ defmodule BlockScoutWeb.API.V2.MudView do
   end
 
   @doc """
+    Function to render GET requests to `/api/v2/mud/worlds/:world/systems` endpoint.
+  """
+  def render("systems.json", %{systems: systems}) do
+    %{
+      items: systems |> Enum.map(&prepare_system_for_list/1)
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/mud/worlds/:world/systems/:system` endpoint.
+  """
+  def render("system.json", %{system_id: system_id, abi: abi}) do
+    %{
+      name: system_id |> Table.from() |> Map.get(:table_full_name),
+      abi: abi
+    }
+  end
+
+  @doc """
     Function to render GET requests to `/api/v2/mud/worlds/:world/tables/:table_id/records` endpoint.
   """
   def render("records.json", %{
@@ -63,9 +82,22 @@ defmodule BlockScoutWeb.API.V2.MudView do
 
   defp prepare_world_for_list(%Address{} = address) do
     %{
+      "address_hash" => Helper.address_with_info(address, address.hash),
+      # todo: "address" should be removed in favour `address_hash` property with the next release after 8.0.0
       "address" => Helper.address_with_info(address, address.hash),
-      "tx_count" => address.transactions_count,
+      "transactions_count" => address.transactions_count,
+      # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
+      "transaction_count" => address.transactions_count,
       "coin_balance" => if(address.fetched_coin_balance, do: address.fetched_coin_balance.value)
+    }
+  end
+
+  defp prepare_system_for_list({system_id, system}) do
+    %{
+      name: system_id |> Table.from() |> Map.get(:table_full_name),
+      address_hash: system,
+      # todo: "address" should be removed in favour `address_hash` property with the next release after 8.0.0
+      address: system
     }
   end
 

@@ -83,7 +83,7 @@
               </span>
               <%= gettext("Tokens") %>
             </a>
-            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <div class="dropdown-menu" aria-labelledby="navbarTransactionsDropdown">
               <%= link(
                     gettext("All"),
                     class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
@@ -105,7 +105,7 @@
               </span>
               <%= gettext("APIs") %>
             </a>
-            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <div class="dropdown-menu" aria-labelledby="navbarTransactionsDropdown">
               <%= link(
                     gettext("GraphQL"),
                     class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
@@ -136,7 +136,7 @@
                 <%= gettext("Stakes") %>
               <% end %>
             </a>
-            <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
+            <div class="dropdown-menu" aria-labelledby="navbarAppsDropdown">
               <%= if apps_menu == true do %>
                 <%= for %{url: url, title: title} = app <- apps_list() do %>
                     <%= if Map.has_key?(app, :embedded?) && app.embedded? do %>

@@ -156,10 +156,10 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
     IO.puts("CELO_CORE_CONTRACTS=#{core_contracts_json}")
   end
 
-  defp fetch_logs_by_chunks(from_block..to_block, requests_func, json_rpc_named_arguments) do
+  defp fetch_logs_by_chunks(from_block..to_block//_, requests_func, json_rpc_named_arguments) do
     from_block..to_block
     |> IndexerHelper.range_chunk_every(@chunk_size)
-    |> Enum.reduce([], fn chunk_start..chunk_end, acc ->
+    |> Enum.reduce([], fn chunk_start..chunk_end//_, acc ->
       IndexerHelper.log_blocks_chunk_handling(chunk_start, chunk_end, 0, to_block, nil, :L1)
 
       requests = requests_func.(chunk_start, chunk_end)

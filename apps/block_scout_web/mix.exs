@@ -12,9 +12,9 @@ defmodule BlockScoutWeb.Mixfile do
       description: "Web interface for BlockScout.",
       dialyzer: [
         plt_add_deps: :app_tree,
-        ignore_warnings: "../../.dialyzer-ignore"
+        ignore_warnings: "../../.dialyzer_ignore.exs"
       ],
-      elixir: "~> 1.13",
+      elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env(), Application.get_env(:block_scout_web, :disable_api?)),
       lockfile: "../../mix.lock",
       package: package(),
@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.7.2",
+      version: "9.0.0",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
@@ -49,7 +49,8 @@ defmodule BlockScoutWeb.Mixfile do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test, _), do: ["test/support", "test/block_scout_web/features/pages"] ++ elixirc_paths()
+  defp elixirc_paths(:test, _),
+    do: ["test/support", "test/block_scout_web/features/pages", "benchmarks/support"] ++ elixirc_paths()
 
   defp elixirc_paths(_, true),
     do: [
@@ -58,7 +59,8 @@ defmodule BlockScoutWeb.Mixfile do
       "lib/block_scout_web/application.ex",
       "lib/block_scout_web/endpoint.ex",
       "lib/block_scout_web/health_router.ex",
-      "lib/block_scout_web/controllers/api/v1/health_controller.ex"
+      "lib/block_scout_web/controllers/api/health_controller.ex",
+      "lib/block_scout_web/prometheus/exporter.ex"
     ]
 
   defp elixirc_paths(_, _), do: elixirc_paths()
@@ -84,10 +86,10 @@ defmodule BlockScoutWeb.Mixfile do
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.8", override: true},
       # Absinthe support for the Relay framework
       {:absinthe_relay, "~> 1.5"},
+      {:benchee, "~> 1.4.0", only: :test},
       {:bypass, "~> 2.1", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 3.0"},
-      {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 2.0.0"},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
@@ -107,7 +109,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:floki, "~> 0.31"},
       {:flow, "~> 1.2"},
       {:gettext, "~> 0.26.1"},
-      {:hammer, "~> 6.0"},
+      {:hammer, "~> 7.0"},
+      {:hammer_backend_redis, "~> 7.0"},
       {:httpoison, "~> 2.0"},
       {:indexer, in_umbrella: true, runtime: false},
       # JSON parser and generator
@@ -120,8 +123,9 @@ defmodule BlockScoutWeb.Mixfile do
       {:number, "~> 1.0.1"},
       {:phoenix, "== 1.5.14"},
       {:phoenix_ecto, "~> 4.1"},
-      {:phoenix_html, "== 3.0.4"},
+      {:phoenix_html, "== 3.3.4"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
+      {:phoenix_live_view, "~> 0.17"},
       {:phoenix_pubsub, "~> 2.0"},
       {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
       # use `:cowboy` for WebServer with `:plug`
@@ -153,11 +157,14 @@ defmodule BlockScoutWeb.Mixfile do
       {:timex, "~> 3.7.1"},
       {:wallaby, "~> 0.30", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
-      {:ex_json_schema, "~> 0.10.1"},
+      {:ex_json_schema, "~> 0.11.0"},
       {:ueberauth, "~> 0.7"},
       {:ueberauth_auth0, "~> 2.0"},
+      {:utils, in_umbrella: true},
       {:bureaucrat, "~> 0.2.9", only: :test},
-      {:logger_json, "~> 5.1"}
+      {:logger_json, "~> 5.1"},
+      {:open_api_spex, "~> 3.21"},
+      {:ymlr, "~> 5.1"}
     ]
   end
 

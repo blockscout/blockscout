@@ -8,7 +8,7 @@ defmodule EthereumJSONRPC.Geth.TracerTest do
     test "same as callTracer" do
       struct_logs = File.read!(File.cwd!() <> "/test/support/fixture/geth/trace/struct_logger.json") |> Jason.decode!()
 
-      tx = "0xa0a5c30c5c5ec22b3346e0ae5ce09f8f41faf54f68a2a113eb15e363af90e9ab"
+      transaction = "0xa0a5c30c5c5ec22b3346e0ae5ce09f8f41faf54f68a2a113eb15e363af90e9ab"
 
       sl_calls =
         Tracer.replay(struct_logs["result"], struct_logs["receipt"], struct_logs["tx"])
@@ -18,7 +18,7 @@ defmodule EthereumJSONRPC.Geth.TracerTest do
             "blockNumber" => 0,
             "index" => index,
             "transactionIndex" => 0,
-            "transactionHash" => tx
+            "transactionHash" => transaction
           })
         end)
         |> Calls.to_internal_transactions_params()
@@ -40,7 +40,7 @@ defmodule EthereumJSONRPC.Geth.TracerTest do
             "blockNumber" => 0,
             "index" => index,
             "transactionIndex" => 0,
-            "transactionHash" => tx
+            "transactionHash" => transaction
           })
         end)
         |> Calls.to_internal_transactions_params()

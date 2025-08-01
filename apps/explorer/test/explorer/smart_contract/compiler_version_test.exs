@@ -19,6 +19,11 @@ defmodule Explorer.SmartContract.CompilerVersionTest do
     setup do
       bypass = Bypass.open()
 
+      on_exit(fn ->
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
       Application.put_env(:explorer, :solc_bin_api_url, "http://localhost:#{bypass.port}")
 
       {:ok, bypass: bypass}
@@ -59,7 +64,7 @@ defmodule Explorer.SmartContract.CompilerVersionTest do
     test "returns error when there is server error", %{bypass: bypass} do
       Bypass.down(bypass)
 
-      assert {:error, :econnrefused} = CompilerVersion.fetch_versions(:solc)
+      assert {:error, %{reason: :econnrefused}} = CompilerVersion.fetch_versions(:solc)
     end
   end
 

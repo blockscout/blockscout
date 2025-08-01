@@ -5,6 +5,13 @@ defmodule Indexer.PendingOpsCleanerTest do
   alias Indexer.PendingOpsCleaner
 
   describe "init/1" do
+    setup do
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+    end
+
     test "deletes non-consensus pending ops on init" do
       block = insert(:block, consensus: false)
 

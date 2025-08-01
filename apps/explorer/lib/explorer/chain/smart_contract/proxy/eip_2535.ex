@@ -6,8 +6,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP2535 do
   # 52ef6b2c = keccak256(facetAddresses())
   @facet_addresses_signature "52ef6b2c"
 
+  alias Explorer.Chain
   alias Explorer.Chain.Hash
-  alias Explorer.Chain.SmartContract.Proxy.Basic
+  alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
   @facet_addresses_method_abi [
     %{
@@ -19,21 +20,18 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP2535 do
     }
   ]
 
-  @spec get_implementation_address_hash_strings(Hash.Address.t()) :: nil | :error | [binary]
-  def get_implementation_address_hash_strings(proxy_address_hash) do
+  @spec get_implementation_address_hash_strings(Hash.Address.t(), [Chain.api?()]) :: [binary()]
+  def get_implementation_address_hash_strings(proxy_address_hash, _options \\ []) do
     case @facet_addresses_signature
-         |> Basic.get_implementation_address_hash_string(
+         |> SmartContractHelper.get_binary_string_from_contract_getter(
            to_string(proxy_address_hash),
            @facet_addresses_method_abi
          ) do
       implementation_addresses when is_list(implementation_addresses) ->
         implementation_addresses
 
-      :error ->
-        :error
-
       _ ->
-        nil
+        []
     end
   end
 end

@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  nft_media_handler:
+    image: ghcr.io/blockscout/${DOCKER_REPO:-blockscout}:${DOCKER_TAG:-latest}
+    pull_policy: always
+    restart: always
+    stop_grace_period: 5m
+    container_name: 'nft_media_handler'
+    command: sh -c "bin/blockscout start"
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      -  ../envs/common-nft-media-handler.env
+    volumes:
+      - ./logs/:/app/logs/

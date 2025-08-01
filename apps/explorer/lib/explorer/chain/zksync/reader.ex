@@ -19,6 +19,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
   }
 
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Prometheus.Instrumenter
 
   @doc """
     Receives total amount of batches imported to the `zksync_transaction_batches` table.
@@ -297,18 +298,18 @@ defmodule Explorer.Chain.ZkSync.Reader do
     Reads a list of L1 transactions by their hashes from the `zksync_lifecycle_l1_transactions` table.
 
     ## Parameters
-    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+    - `l1_transaction_hashes`: A list of hashes to retrieve L1 transactions for.
 
     ## Returns
     - A list of `Explorer.Chain.ZkSync.LifecycleTransaction` corresponding to the hashes from the input list. The output list may be smaller than the input list.
   """
   @spec lifecycle_transactions(maybe_improper_list(binary(), [])) :: [Explorer.Chain.ZkSync.LifecycleTransaction]
-  def lifecycle_transactions(l1_tx_hashes) do
+  def lifecycle_transactions(l1_transaction_hashes) do
     query =
       from(
         lt in LifecycleTransaction,
         select: {lt.hash, lt.id},
-        where: lt.hash in ^l1_tx_hashes
+        where: lt.hash in ^l1_transaction_hashes
       )
 
     Repo.all(query, timeout: :infinity)
@@ -341,5 +342,40 @@ defmodule Explorer.Chain.ZkSync.Reader do
 
   defp page_batches(query, %PagingOptions{key: {number}}) do
     from(tb in query, where: tb.number < ^number)
+  end
+
+  @doc """
+    Gets information about the latest batch and calculates average time between commitments.
+
+    ## Parameters
+      - `options`: Options passed to `Chain.select_repo()`. (Optional)
+
+    ## Returns
+    - If batches exist and at least one batch is committed:
+      `{:ok, %{latest_batch_number: integer, latest_batch_timestamp: DateTime.t(), average_batch_time: integer}}`
+      where:
+        * latest_batch_number - number of the latest batch in the database
+        * latest_batch_timestamp - when the latest batch was committed to L1
+        * average_batch_time - average number of seconds between commits for the last 10 batches
+
+    - If no committed batches exist: `{:error, :not_found}`
+  """
+  @spec get_latest_batch_info(keyword()) :: {:ok, map()} | {:error, :not_found}
+  def get_latest_batch_info(options \\ []) do
+    import Ecto.Query
+
+    latest_batches_query =
+      from(batch in TransactionBatch,
+        join: tx in assoc(batch, :commit_transaction),
+        order_by: [desc: batch.number],
+        limit: 10,
+        select: %{
+          number: batch.number,
+          timestamp: tx.timestamp
+        }
+      )
+
+    items = select_repo(options).all(latest_batches_query)
+    Instrumenter.prepare_batch_metric(items)
   end
 end

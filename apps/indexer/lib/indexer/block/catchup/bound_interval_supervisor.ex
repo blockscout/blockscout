@@ -68,7 +68,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
     block_interval = Map.get(named_arguments, :block_interval, @block_interval)
     minimum_interval = div(block_interval, 2)
-    bound_interval = BoundInterval.within(minimum_interval..(minimum_interval * 10))
+    maximum_interval = (minimum_interval + :timer.seconds(1)) * 10
+    bound_interval = BoundInterval.within(minimum_interval..maximum_interval)
 
     %__MODULE__{
       fetcher: %Catchup.Fetcher{block_fetcher: block_fetcher, memory_monitor: Map.get(named_arguments, :memory_monitor)},
@@ -311,7 +312,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
         } = state
       ) do
     Logger.error(fn ->
-      "Catchup index stream exited because the archive node endpoint at #{Keyword.get(options, :url)} is unavailable. Restarting"
+      "Catchup index stream exited because the archive node endpoint at #{Keyword.get(options, :urls)} is unavailable. Restarting"
     end)
 
     send(self(), :catchup_index)

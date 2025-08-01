@@ -4,14 +4,15 @@ defmodule BlockScoutWeb.AddressView do
   require Logger
 
   alias BlockScoutWeb.{AccessHelper, LayoutView}
+  alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
+  alias BlockScoutWeb.API.V2.TransactionView, as: APIV2TransactionView
   alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
+  alias Explorer.Market.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -21,7 +22,6 @@ defmodule BlockScoutWeb.AddressView do
   @tabs [
     "coin-balances",
     "contracts",
-    "decompiled-contracts",
     "internal-transactions",
     "token-transfers",
     "read-contract",
@@ -178,15 +178,10 @@ defmodule BlockScoutWeb.AddressView do
   @doc """
   Returns the primary name of an address if available. If there is no names on address function performs preload of names association.
   """
-  def primary_name(%Address{names: [_ | _] = address_names}) do
-    case Enum.find(address_names, &(&1.primary == true)) do
-      nil ->
-        %Address.Name{name: name} = Enum.at(address_names, 0)
-        name
+  def primary_name(nil), do: nil
 
-      %Address.Name{name: name} ->
-        name
-    end
+  def primary_name(%Address{names: [_ | _]} = address) do
+    APIV2Helper.address_name(address)
   end
 
   def primary_name(%Address{names: %Ecto.Association.NotLoaded{}} = address) do
@@ -194,7 +189,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def primary_name(%Address{names: _} = address) do
-    with false <- is_nil(address.contract_code),
+    with true <- Address.smart_contract_with_nonempty_code?(address),
          bytecode_twin <- SmartContract.get_verified_bytecode_twin_contract(address),
          false <- is_nil(bytecode_twin) do
       bytecode_twin.name
@@ -239,19 +234,13 @@ defmodule BlockScoutWeb.AddressView do
     |> Base.encode64()
   end
 
-  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
-
-  def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
-
-  def smart_contract_verified?(%Address{smart_contract: nil}), do: false
-
   def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
     Enum.any?(address.smart_contract.abi || [], &read_function?(&1))
   end
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: _}), do: false
 
-  def read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
+  def read_function?(function), do: Helper.queryable_method?(function) || Helper.read_with_wallet_method?(function)
 
   def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
     !contract_interaction_disabled?() &&
@@ -262,11 +251,6 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def smart_contract_with_write_functions?(%Address{smart_contract: _}), do: false
-
-  def has_decompiled_code?(address) do
-    address.has_decompiled_code? ||
-      (Ecto.assoc_loaded?(address.decompiled_smart_contracts) && not Enum.empty?(address.decompiled_smart_contracts))
-  end
 
   def token_title(%Token{name: nil, contract_address_hash: contract_address_hash}) do
     short_hash_left_right(contract_address_hash)
@@ -290,20 +274,20 @@ defmodule BlockScoutWeb.AddressView do
     "#{String.slice(string_hash, 0..21)}..."
   end
 
-  def transaction_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction.transaction_hash
+  def transaction_hash(%Address{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contract_creation_internal_transaction.transaction_hash
   end
 
-  def transaction_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
-    address.contracts_creation_transaction.hash
+  def transaction_hash(%Address{contract_creation_transaction: %Transaction{}} = address) do
+    address.contract_creation_transaction.hash
   end
 
-  def from_address_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction.from_address_hash
+  def from_address_hash(%Address{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contract_creation_internal_transaction.from_address_hash
   end
 
-  def from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
-    address.contracts_creation_transaction.from_address_hash
+  def from_address_hash(%Address{contract_creation_transaction: %Transaction{}} = address) do
+    address.contract_creation_transaction.from_address_hash
   end
 
   def from_address_hash(_address), do: nil
@@ -338,6 +322,17 @@ defmodule BlockScoutWeb.AddressView do
     ]
   end
 
+  defp matching_address_check(current_address, nil, contract?, truncate) do
+    [
+      view_module: __MODULE__,
+      partial: "_responsive_hash.html",
+      address: current_address,
+      contract: contract?,
+      truncate: truncate,
+      use_custom_tooltip: false
+    ]
+  end
+
   @doc """
   Get the current tab name/title from the request path and possible tab names.
 
@@ -359,7 +354,6 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["transactions"]), do: gettext("Transactions")
   defp tab_name(["token-transfers"]), do: gettext("Token Transfers")
   defp tab_name(["contracts"]), do: gettext("Code")
-  defp tab_name(["decompiled-contracts"]), do: gettext("Decompiled Code")
   defp tab_name(["read-contract"]), do: gettext("Read Contract")
   defp tab_name(["read-proxy"]), do: gettext("Read Proxy")
   defp tab_name(["write-contract"]), do: gettext("Write Contract")
@@ -432,18 +426,11 @@ defmodule BlockScoutWeb.AddressView do
 
   def address_page_title(address) do
     cond do
-      smart_contract_verified?(address) -> "#{address.smart_contract.name} (#{to_string(address)})"
+      APIV2Helper.smart_contract_verified?(address) -> "#{address.smart_contract.name} (#{to_string(address)})"
       Address.smart_contract?(address) -> "Contract #{to_string(address)}"
       true -> "#{to_string(address)}"
     end
   end
-
-  def smart_contract_is_gnosis_safe_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
-    address.smart_contract.name == "GnosisSafeProxy" &&
-      Proxy.gnosis_safe_contract?(address.smart_contract.abi)
-  end
-
-  def smart_contract_is_gnosis_safe_proxy?(_address), do: false
 
   def tag_name_to_label(tag_name) do
     tag_name
@@ -489,7 +476,12 @@ defmodule BlockScoutWeb.AddressView do
           | {:error, atom(), list()}
           | {{:error, :contract_not_verified, list()}, any()}
   def decode(log, transaction) do
-    {result, _contracts_acc, _events_acc} = Log.decode(log, transaction, [], true)
+    full_abi =
+      (APIV2TransactionView.extract_implementations_abi(log.address.proxy_implementations) ++
+         APIV2TransactionView.try_to_get_abi(log.address.smart_contract))
+      |> Enum.uniq()
+
+    {result, _events_acc} = Log.decode(log, transaction, [], true, false, full_abi)
     result
   end
 end

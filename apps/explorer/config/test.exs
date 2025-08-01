@@ -14,7 +14,7 @@ config :explorer, Explorer.Repo,
   url: database_url,
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
-  ownership_timeout: :timer.minutes(7),
+  ownership_timeout: :timer.minutes(1),
   timeout: :timer.seconds(60),
   queue_target: 1000,
   migration_lock: nil,
@@ -54,21 +54,25 @@ config :explorer, Explorer.Repo.Account,
   log: false
 
 for repo <- [
+      Explorer.Repo.Arbitrum,
       Explorer.Repo.Beacon,
+      Explorer.Repo.Blackfort,
+      Explorer.Repo.BridgedTokens,
+      Explorer.Repo.Celo,
+      Explorer.Repo.Filecoin,
+      Explorer.Repo.Mud,
       Explorer.Repo.Optimism,
       Explorer.Repo.PolygonEdge,
       Explorer.Repo.PolygonZkevm,
-      Explorer.Repo.ZkSync,
-      Explorer.Repo.Celo,
       Explorer.Repo.RSK,
+      Explorer.Repo.Scroll,
       Explorer.Repo.Shibarium,
-      Explorer.Repo.Suave,
-      Explorer.Repo.Arbitrum,
-      Explorer.Repo.BridgedTokens,
-      Explorer.Repo.Filecoin,
+      Explorer.Repo.ShrunkInternalTransactions,
       Explorer.Repo.Stability,
-      Explorer.Repo.Mud,
-      Explorer.Repo.ShrunkInternalTransactions
+      Explorer.Repo.Suave,
+      Explorer.Repo.Zilliqa,
+      Explorer.Repo.ZkSync,
+      Explorer.Repo.Neon
     ] do
   config :explorer, repo,
     database: database,
@@ -97,8 +101,7 @@ config :logger, :explorer,
   level: :warn,
   path: Path.absname("logs/test/explorer.log")
 
-config :explorer, Explorer.ExchangeRates.Source.TransactionAndLog,
-  secondary_source: Explorer.ExchangeRates.Source.OneCoinSource
-
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: false
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: false
+
+config :tesla, adapter: Explorer.Mock.TeslaAdapter

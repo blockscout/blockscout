@@ -2,15 +2,22 @@ defmodule BlockScoutWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :block_scout_web
   use Absinthe.Phoenix.Endpoint
 
-  if Application.compile_env(:block_scout_web, :sql_sandbox) do
+  use Utils.CompileTimeEnvHelper,
+    disable_api?: [:block_scout_web, :disable_api?],
+    sql_sandbox: [:block_scout_web, :sql_sandbox],
+    cookie_domain: [:block_scout_web, :cookie_domain],
+    session_cookie_ttl: [:block_scout_web, :session_cookie_ttl]
+
+  if @sql_sandbox do
     plug(Phoenix.Ecto.SQL.Sandbox, repo: Explorer.Repo)
   end
 
-  if Application.compile_env(:block_scout_web, :disable_api?) do
+  if @disable_api? do
+    plug(BlockScoutWeb.Prometheus.Exporter)
     plug(BlockScoutWeb.HealthRouter)
   else
     socket("/socket", BlockScoutWeb.UserSocket, websocket: [timeout: 45_000])
-    socket("/socket/v2", BlockScoutWeb.UserSocketV2, websocket: [timeout: 45_000])
+    socket("/socket/v2", BlockScoutWeb.V2.UserSocket, websocket: [timeout: 45_000])
 
     # Serve at "/" the static files from "priv/static" directory.
     #
@@ -60,8 +67,8 @@ defmodule BlockScoutWeb.Endpoint do
       signing_salt: "iC2ksJHS",
       same_site: "Lax",
       http_only: false,
-      domain: Application.compile_env(:block_scout_web, :cookie_domain),
-      max_age: Application.compile_env(:block_scout_web, :session_cookie_ttl)
+      domain: @cookie_domain,
+      max_age: @session_cookie_ttl
     )
 
     use SpandexPhoenix
@@ -70,7 +77,18 @@ defmodule BlockScoutWeb.Endpoint do
     plug(BlockScoutWeb.Prometheus.PublicExporter)
 
     # 'x-apollo-tracing' header for https://www.graphqlbin.com to work with our GraphQL endpoint
-    plug(CORSPlug, headers: ["x-apollo-tracing" | CORSPlug.defaults()[:headers]])
+    # 'updated-gas-oracle' header for /api/v2/stats endpoint, added to support cross-origin requests (e.g. multichain search explorer)
+    plug(CORSPlug,
+      headers:
+        [
+          "x-apollo-tracing",
+          "updated-gas-oracle",
+          "recaptcha-v2-response",
+          "recaptcha-v3-response",
+          "recaptcha-bypass-token",
+          "scoped-recaptcha-bypass-token"
+        ] ++ CORSPlug.defaults()[:headers]
+    )
 
     plug(BlockScoutWeb.Router)
   end

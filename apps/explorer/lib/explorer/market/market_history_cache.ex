@@ -5,7 +5,7 @@ defmodule Explorer.Market.MarketHistoryCache do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Counters.Helper
+  alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 

@@ -5,7 +5,7 @@ defmodule Explorer.Helper do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain
-  alias Explorer.Chain.Data
+  alias Explorer.Chain.{Data, Hash, Wei}
 
   import Ecto.Query, only: [where: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -63,6 +63,24 @@ defmodule Explorer.Helper do
     "0x#{truncated_hash}"
   end
 
+  @doc """
+    Safely parses a string or integer into an integer value.
+
+    Handles both string and integer inputs:
+    - For string input: Converts only if the entire string represents a valid integer
+    - For integer input: Returns the integer as is
+    - For any other input: Returns nil
+
+    ## Parameters
+    - `int_or_string`: A binary string containing an integer or an integer value
+
+    ## Returns
+    - The parsed integer if successful
+    - `nil` if the input is invalid or contains non-integer characters
+  """
+  @spec parse_integer(binary() | integer()) :: integer() | nil
+  def parse_integer(int_or_string)
+
   def parse_integer(integer_string) when is_binary(integer_string) do
     case Integer.parse(integer_string) do
       {integer, ""} -> integer
@@ -115,11 +133,13 @@ defmodule Explorer.Helper do
         iex> safe_parse_non_negative_integer("27606393966689717254124294199939478533331961967491413693980084341759630764504")
         {:error, :too_big_integer}
   """
-  def safe_parse_non_negative_integer(string) do
+  @spec safe_parse_non_negative_integer(String.t(), integer()) ::
+          {:ok, integer()} | {:error, :negative_integer | :too_big_integer | :invalid_integer}
+  def safe_parse_non_negative_integer(string, max_safe_integer \\ @max_safe_integer) do
     case Integer.parse(string) do
       {num, ""} ->
         case num do
-          _ when num > @max_safe_integer -> {:error, :too_big_integer}
+          _ when num > max_safe_integer -> {:error, :too_big_integer}
           _ when num < 0 -> {:error, :negative_integer}
           _ -> {:ok, num}
         end
@@ -151,25 +171,25 @@ defmodule Explorer.Helper do
   @doc """
   Decode json
   """
-  @spec decode_json(any()) :: map() | list() | nil
-  def decode_json(data, nft? \\ false)
+  @spec decode_json(any(), boolean()) :: map() | list() | {:error, any()} | nil
+  def decode_json(data, error_as_tuple? \\ false)
 
   def decode_json(nil, _), do: nil
 
-  def decode_json(data, nft?) do
+  def decode_json(data, error_as_tuple?) do
     if String.valid?(data) do
-      safe_decode_json(data, nft?)
+      safe_decode_json(data, error_as_tuple?)
     else
       data
       |> :unicode.characters_to_binary(:latin1)
-      |> safe_decode_json(nft?)
+      |> safe_decode_json(error_as_tuple?)
     end
   end
 
-  defp safe_decode_json(data, nft?) do
+  defp safe_decode_json(data, error_as_tuple?) do
     case Jason.decode(data) do
       {:ok, decoded} -> decoded
-      _ -> if nft?, do: {:error, data}, else: %{error: data}
+      {:error, reason} -> if error_as_tuple?, do: {:error, reason}, else: %{error: data}
     end
   end
 
@@ -212,4 +232,330 @@ defmodule Explorer.Helper do
       true -> :eq
     end
   end
+
+  @doc """
+  Conditionally hides scam addresses in the given query.
+
+  ## Parameters
+
+    - query: The Ecto query to be modified.
+    - address_hash_key: The key used to identify address hash field in the query to join with base query table on.
+
+  ## Returns
+
+  The modified query with scam addresses hidden, if applicable.
+  """
+  @spec maybe_hide_scam_addresses(nil | Ecto.Query.t(), atom(), [
+          Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
+        ]) :: Ecto.Query.t()
+  def maybe_hide_scam_addresses(nil, _address_hash_key, _options), do: nil
+
+  def maybe_hide_scam_addresses(query, address_hash_key, options) do
+    if Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] do
+      query
+      |> where(
+        [q],
+        fragment(
+          "NOT EXISTS (SELECT 1 FROM scam_address_badge_mappings sabm WHERE sabm.address_hash=?)",
+          field(q, ^address_hash_key)
+        )
+      )
+    else
+      query
+    end
+  end
+
+  @doc """
+  Checks if a specified time interval has passed since a given datetime.
+
+  This function compares the given datetime plus the interval against the current
+  time. It returns `true` if the interval has passed, or the number of seconds
+  remaining if it hasn't.
+
+  ## Parameters
+  - `sent_at`: The reference datetime, or `nil`.
+  - `interval`: The time interval in milliseconds.
+
+  ## Returns
+  - `true` if the interval has passed or if `sent_at` is `nil`.
+  - An integer representing the number of seconds remaining in the interval if it
+    hasn't passed yet.
+  """
+  @spec check_time_interval(DateTime.t() | nil, integer()) :: true | integer()
+  def check_time_interval(nil, _interval), do: true
+
+  def check_time_interval(sent_at, interval) do
+    now = DateTime.utc_now()
+
+    if sent_at
+       |> DateTime.add(interval, :millisecond)
+       |> DateTime.compare(now) != :gt do
+      true
+    else
+      sent_at
+      |> DateTime.add(interval, :millisecond)
+      |> DateTime.diff(now, :second)
+    end
+  end
+
+  @doc """
+  Retrieves the host URL for the BlockScoutWeb application.
+
+  This function fetches the host URL from the application's configuration,
+  specifically from the `:block_scout_web` application's `BlockScoutWeb.Endpoint`
+  configuration.
+
+  ## Returns
+  A string containing the host URL for the BlockScoutWeb application.
+  """
+  @spec get_app_host :: String.t()
+  def get_app_host do
+    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+  end
+
+  @doc """
+  Converts `Explorer.Chain.Hash.t()` or string hash to DB-acceptable format.
+  For example "0xabcdef1234567890abcdef1234567890abcdef" -> "\\xabcdef1234567890abcdef1234567890abcdef"
+  """
+  @spec hash_to_query_string(Hash.t() | String.t()) :: String.t()
+  def hash_to_query_string(hash) do
+    s_hash =
+      hash
+      |> to_string()
+      |> String.trim_leading("0")
+
+    "\\#{s_hash}"
+  end
+
+  def parse_boolean("true"), do: true
+  def parse_boolean("false"), do: false
+
+  def parse_boolean(true), do: true
+  def parse_boolean(false), do: false
+
+  def parse_boolean(_), do: false
+
+  @doc """
+  Adds 0x at the beginning of the binary hash, if it is not already there.
+  """
+  @spec add_0x_prefix(input) :: output
+        when input: nil | :error | binary() | Hash.t() | [input],
+             output: nil | :error | binary() | [output]
+  def add_0x_prefix(nil), do: nil
+
+  def add_0x_prefix(:error), do: :error
+
+  def add_0x_prefix(binary_hashes) when is_list(binary_hashes) do
+    binary_hashes
+    |> Enum.map(fn binary_hash -> add_0x_prefix(binary_hash) end)
+  end
+
+  def add_0x_prefix(%Hash{bytes: bytes}) do
+    "0x" <> Base.encode16(bytes, case: :lower)
+  end
+
+  def add_0x_prefix(binary_hash) when is_binary(binary_hash) do
+    if String.starts_with?(binary_hash, "0x") and String.printable?(binary_hash) do
+      binary_hash
+    else
+      "0x" <> Base.encode16(binary_hash, case: :lower)
+    end
+  end
+
+  @doc """
+  Converts an integer to its hexadecimal string representation prefixed with "0x".
+
+  The resulting hexadecimal string is in lowercase.
+
+  ## Parameters
+
+    - `integer` (integer): The integer to be converted to a hexadecimal string.
+
+  ## Returns
+
+    - `binary()`: A string representing the hexadecimal value of the input integer, prefixed with "0x".
+
+  ## Examples
+
+      iex> Explorer.Helper.integer_to_hex(255)
+      "0x00ff"
+
+      iex> Explorer.Helper.integer_to_hex(4096)
+      "0x1000"
+
+  """
+  @spec integer_to_hex(integer()) :: binary()
+  def integer_to_hex(integer), do: "0x" <> String.downcase(Integer.to_string(integer, 16))
+
+  @doc """
+  Converts a `Decimal` value to its hexadecimal representation.
+
+  ## Parameters
+
+    - `decimal` (`Decimal.t()`): The decimal value to be converted.
+
+  ## Returns
+
+    - `binary()`: The hexadecimal representation of the given decimal value.
+    - `nil`: If the conversion fails.
+
+  ## Examples
+
+      iex> decimal_to_hex(Decimal.new(255))
+      "0xff"
+
+      iex> decimal_to_hex(Decimal.new(0))
+      "0x0"
+
+      iex> decimal_to_hex(nil)
+      nil
+  """
+  @spec decimal_to_hex(Decimal.t()) :: binary() | nil
+  def decimal_to_hex(decimal) do
+    decimal
+    |> Decimal.to_integer()
+    |> integer_to_hex()
+  end
+
+  @doc """
+  Converts a `DateTime` struct to its hexadecimal representation.
+
+  If the input is `nil`, the function returns `nil`.
+
+  ## Parameters
+
+    - `datetime`: A `DateTime` struct or `nil`.
+
+  ## Returns
+
+    - A binary string representing the hexadecimal value of the Unix timestamp
+      of the given `DateTime`, or `nil` if the input is `nil`.
+
+  ## Examples
+
+      iex> datetime = ~U[2023-03-15 12:34:56Z]
+      iex> Explorer.Helper.datetime_to_hex(datetime)
+      "0x6411e6b0"
+
+      iex> Explorer.Helper.datetime_to_hex(nil)
+      nil
+  """
+  @spec datetime_to_hex(DateTime.t() | nil) :: binary() | nil
+  def datetime_to_hex(nil), do: nil
+
+  def datetime_to_hex(datetime) do
+    datetime
+    |> DateTime.to_unix()
+    |> integer_to_hex()
+  end
+
+  @doc """
+    Converts `0x` string to the byte sequence (binary). Throws `ArgumentError` exception if
+    the padding is incorrect or a non-alphabet character is present in the string.
+
+    ## Parameters
+    - `hash`: The 0x string of bytes.
+
+    ## Returns
+    - The binary byte sequence.
+  """
+  @spec hash_to_binary(String.t()) :: binary()
+  def hash_to_binary(hash) do
+    hash
+    |> String.trim_leading("0x")
+    |> Base.decode16!(case: :mixed)
+  end
+
+  @doc """
+  Converts a Unix timestamp to a Date struct.
+
+  Takes a non-negative integer representing seconds since Unix epoch (January 1,
+  1970, 00:00:00 UTC) and returns the corresponding date.
+
+  ## Parameters
+  - `unix_timestamp`: Non-negative integer of seconds since Unix epoch
+
+  ## Returns
+  - A Date struct representing the date part of the timestamp
+
+  ## Raises
+  - ArgumentError: If the timestamp is invalid
+  """
+  @spec unix_timestamp_to_date(non_neg_integer(), System.time_unit()) :: Date.t()
+  def unix_timestamp_to_date(unix_timestamp, unit \\ :second) do
+    unix_timestamp
+    |> DateTime.from_unix!(unit)
+    |> DateTime.to_date()
+  end
+
+  @doc """
+  Extracts the method ID from an ABI specification.
+
+  ## Parameters
+  - `method` ([map()] | map()): The ABI specification, either as a single map
+    or a list containing one map.
+
+  ## Returns
+  - `binary()`: The method ID extracted from the ABI specification.
+
+  ## Examples
+
+      iex> Indexer.Fetcher.Celo.Helper.abi_to_method_id([%{"name" => "transfer", "type" => "function", "inputs" => [%{"name" => "to", "type" => "address"}]}])
+      <<26, 105, 82, 48>>
+
+  """
+  @spec abi_to_method_id([map()] | map()) :: binary()
+  def abi_to_method_id([method]), do: abi_to_method_id(method)
+
+  def abi_to_method_id(method) when is_map(method) do
+    [parsed_method] = ABI.parse_specification([method])
+    parsed_method.method_id
+  end
+
+  @doc """
+  Adds `inserted_at` and `updated_at` timestamps to a list of maps.
+
+  This function takes a list of maps (`params`) and adds the current UTC
+  timestamp (`DateTime.utc_now/0`) as the values for the `:inserted_at` and
+  `:updated_at` keys in each map.
+
+  ## Parameters
+
+    - `params` - A list of maps to which the timestamps will be added.
+
+  ## Returns
+
+    - A list of maps, each containing the original keys and values along with
+      the `:inserted_at` and `:updated_at` keys set to the current UTC timestamp.
+  """
+  @spec add_timestamps([map()]) :: [map()]
+  def add_timestamps(params) do
+    now = DateTime.utc_now()
+
+    Enum.map(params, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
+  end
+
+  @doc """
+  Converts various value types to a Decimal type.
+
+  This function handles multiple input types and ensures they are properly
+  converted to a Decimal representation.
+
+  ## Parameters
+  - `value`: The value to convert, which can be:
+    - `nil`: Converted to Decimal 0
+    - `%Wei{}`: The Decimal value is extracted from the struct
+    - `float`: Converted using Decimal.from_float/1
+    - `String.t()` or `integer()`: Converted using Decimal.new/1
+    - `Decimal.t()`: Returned unchanged
+
+  ## Returns
+  - A Decimal representation of the input value
+  """
+  @spec number_to_decimal(nil | Wei.t() | integer() | float() | String.t() | Decimal.t()) :: Decimal.t()
+  def number_to_decimal(nil), do: Decimal.new(0)
+  def number_to_decimal(%Wei{value: value}), do: value
+  def number_to_decimal(value) when is_float(value), do: Decimal.from_float(value)
+  def number_to_decimal(value) when is_binary(value) or is_integer(value), do: Decimal.new(value)
+  def number_to_decimal(%Decimal{} = value), do: value
 end

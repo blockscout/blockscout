@@ -40,7 +40,7 @@ defmodule Explorer.Chain.Events.Listener do
 
   defp expand_payload(payload) do
     case Integer.parse(payload) do
-      {event_notification_id, ""} -> fetch_and_delete_event_notification(event_notification_id)
+      {event_notification_id, ""} -> fetch_event_notification(event_notification_id)
       _ -> payload
     end
   end
@@ -68,18 +68,12 @@ defmodule Explorer.Chain.Events.Listener do
     end)
   end
 
-  defp fetch_and_delete_event_notification(id) do
+  defp fetch_event_notification(id) do
     case Repo.get(EventNotification, id) do
       nil ->
         nil
 
-      %{data: data} = notification ->
-        try do
-          Repo.delete(notification)
-        rescue
-          Ecto.StaleEntryError -> nil
-        end
-
+      %{data: data} ->
         data
     end
   end

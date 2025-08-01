@@ -32,7 +32,7 @@
       <%= BlockScoutWeb.AddressView.trimmed_hash(@address.hash) %>
     <% else %>
       <span class="d-none d-md-none d-xl-inline"><%= @address %></span>
-      <span class="d-md-inline-block d-xl-none"><%= BlockScoutWeb.AddressView.trimmed_hash(@address.hash) %></span>
+      <span class="d-md-inline-block d-xl-none"><%= BlockScoutWeb.AddressView.trimmed_hash(@address && @address.hash) %></span>
     <% end %>
   <% end %>
 </span>

@@ -3,11 +3,12 @@ defmodule EthereumJSONRPC.HTTP do
   JSONRPC over HTTP
   """
 
-  alias EthereumJSONRPC.{DecodeError, Transport, Utility.EndpointAvailabilityObserver}
+  alias EthereumJSONRPC.{DecodeError, Transport}
+  alias EthereumJSONRPC.Utility.{CommonHelper, EndpointAvailabilityObserver}
 
   require Logger
 
-  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [sanitize_id: 1]
 
   @behaviour Transport
 
@@ -27,13 +28,13 @@ defmodule EthereumJSONRPC.HTTP do
     http_options = Keyword.fetch!(options, :http_options)
 
     with {:ok, %{body: body, status_code: code}} <- http.json_rpc(url, json, headers(), http_options),
-         {:ok, json} <- decode_json(request: [url: url, body: json], response: [status_code: code, body: body]),
+         {:ok, json} <-
+           decode_json(request: [url: url, body: json, headers: headers()], response: [status_code: code, body: body]),
          {:ok, response} <- handle_response(json, code) do
       {:ok, response}
     else
       error ->
-        named_arguments = [transport: __MODULE__, transport_options: Keyword.delete(options, :method_to_url)]
-        EndpointAvailabilityObserver.inc_error_count(url, named_arguments, url_type)
+        increment_error_count(url, url_type, options)
         error
     end
   end
@@ -75,17 +76,23 @@ defmodule EthereumJSONRPC.HTTP do
         rechunk_json_rpc(chunks, options, response, decoded_response_bodies)
 
       {:ok, %{body: body, status_code: status_code}} ->
-        with {:ok, decoded_body} <-
-               decode_json(request: [url: url, body: json], response: [status_code: status_code, body: body]) do
-          chunked_json_rpc(tail, options, [decoded_body | decoded_response_bodies])
+        case decode_json(
+               request: [url: url, body: json, headers: headers()],
+               response: [status_code: status_code, body: body]
+             ) do
+          {:ok, decoded_body} ->
+            chunked_json_rpc(tail, options, [decoded_body | decoded_response_bodies])
+
+          error ->
+            increment_error_count(url, url_type, options)
+            error
         end
 
       {:error, :timeout} ->
         rechunk_json_rpc(chunks, options, :timeout, decoded_response_bodies)
 
       {:error, _} = error ->
-        named_arguments = [transport: __MODULE__, transport_options: Keyword.delete(options, :method_to_url)]
-        EndpointAvailabilityObserver.inc_error_count(url, named_arguments, url_type)
+        increment_error_count(url, url_type, options)
         error
     end
   end
@@ -163,6 +170,11 @@ defmodule EthereumJSONRPC.HTTP do
     {:error, resp}
   end
 
+  defp increment_error_count(url, url_type, options) do
+    named_arguments = [transport: __MODULE__, transport_options: Keyword.delete(options, :method_to_url)]
+    EndpointAvailabilityObserver.inc_error_count(url, named_arguments, url_type)
+  end
+
   @doc """
     Standardizes responses to adhere to the JSON-RPC 2.0 standard.
 
@@ -190,7 +202,7 @@ defmodule EthereumJSONRPC.HTTP do
     # argument matching.
 
     # Nethermind return string ids
-    id = quantity_to_integer(unstandardized["id"])
+    id = sanitize_id(unstandardized["id"])
 
     standardized = %{jsonrpc: jsonrpc, id: id}
 
@@ -238,22 +250,11 @@ defmodule EthereumJSONRPC.HTTP do
   defp url(options, method) when is_list(options) and is_binary(method) do
     with {:ok, method_to_url} <- Keyword.fetch(options, :method_to_url),
          {:ok, method_atom} <- to_existing_atom(method),
-         {:ok, url} <- Keyword.fetch(method_to_url, method_atom) do
-      {url_type, fallback_url} =
-        case method_atom do
-          :eth_call -> {:eth_call, options[:fallback_eth_call_url]}
-          _ -> {:trace, options[:fallback_trace_url]}
-        end
-
-      {url_type, EndpointAvailabilityObserver.maybe_replace_url(url, fallback_url, url_type)}
+         {:ok, url_type} <- Keyword.fetch(method_to_url, method_atom) do
+      {url_type, CommonHelper.get_available_url(options, url_type)}
     else
       _ ->
-        url =
-          options
-          |> Keyword.fetch!(:url)
-          |> EndpointAvailabilityObserver.maybe_replace_url(options[:fallback_url], :http)
-
-        {:http, url}
+        {:http, CommonHelper.get_available_url(options, :http)}
     end
   end
 
@@ -265,6 +266,15 @@ defmodule EthereumJSONRPC.HTTP do
   end
 
   defp headers do
-    Application.get_env(:ethereum_jsonrpc, __MODULE__)[:headers]
+    gzip_enabled? = Application.get_env(:ethereum_jsonrpc, __MODULE__)[:gzip_enabled?]
+
+    additional_headers =
+      if gzip_enabled? do
+        [{"Accept-Encoding", "gzip"}]
+      else
+        []
+      end
+
+    Application.get_env(:ethereum_jsonrpc, __MODULE__)[:headers] ++ additional_headers
   end
 end

@@ -4,8 +4,16 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
   import BlockScoutWeb.Routers.WebRouter.Helpers, only: [address_contract_path: 3]
 
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Market.Token
   alias Explorer.{Factory, TestHelper}
+
+  setup do
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+    on_exit(fn ->
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+    end)
+  end
 
   describe "GET index/3" do
     test "returns not found for nonexistent address", %{conn: conn} do
@@ -47,7 +55,7 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
         block_index: 0
       )
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address)))
 

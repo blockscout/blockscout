@@ -48,11 +48,11 @@
           <h1 class="card-title">
             <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
               <%= gettext "Transaction Details" %>
-              <% personal_tx_tag = if assigns[:tx_tags], do: @tx_tags.personal_tx_tag, else: nil %>
-              <%= if personal_tx_tag && personal_tx_tag.name !== :error do %>
-                <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tx_tag.name, additional_classes: [tag_name_to_label(personal_tx_tag.name), "ml-1"] %>
+              <% personal_transaction_tag = if assigns[:transaction_tags], do: @transaction_tags.personal_transaction_tag, else: nil %>
+              <%= if personal_transaction_tag && personal_transaction_tag.name !== :error do %>
+                <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_transaction_tag.name, additional_classes: [tag_name_to_label(personal_transaction_tag.name), "ml-1"] %>
               <% end %>
-              <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @tx_tags %>
+              <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @transaction_tags %>
             </div>
           </h1>
           <%= if status == :pending do %>
@@ -371,7 +371,7 @@
             <dd class="col-sm-9 col-lg-10"> <%= value(@transaction) %>
             <%= if !empty_exchange_rate?(@exchange_rate) do %>
               (<span data-wei-value=<%= @transaction.value.value %>
-                data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
+                data-usd-exchange-rate=<%= @exchange_rate.fiat_value %>>
               </span>)
             <% end %>
             </dd>
@@ -387,7 +387,7 @@
               <%= formatted_fee(@transaction, denomination: :ether) %>
 
               <%= if !empty_exchange_rate?(@exchange_rate) do %>
-                (<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
+                (<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.fiat_value %>></span>)
               <% end %>
             </dd>
           </dl>
@@ -471,7 +471,7 @@
               </dt>
               <dd class="col-sm-9 col-lg-10"><i class="fa-solid fa-fire i-tooltip-2"></i> <%= format_wei_value(burnt_fees, :ether) %>
                 <%= unless empty_exchange_rate?(@exchange_rate) do %>
-                  (<span data-wei-value=<%= burnt_fee_decimal %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
+                  (<span data-wei-value=<%= burnt_fee_decimal %> data-usd-exchange-rate=<%= @exchange_rate.fiat_value %>></span>)
                 <% end %>
               </dd>
             </dl>

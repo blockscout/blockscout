@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.Account.AuthController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Account
+  alias Explorer.Account.Identity
   alias Explorer.Repo.ConfigHelper
   alias Plug.CSRFProtection
 
@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.Account.AuthController do
   end
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, params) do
-    case UserFromAuth.find_or_create(auth) do
+    case Identity.find_or_create(auth) do
       {:ok, %{email_verified: false} = user} ->
         conn
         |> put_session(:current_user, user)

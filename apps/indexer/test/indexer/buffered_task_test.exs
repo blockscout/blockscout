@@ -3,7 +3,8 @@ defmodule Indexer.BufferedTaskTest do
 
   import Mox
 
-  alias Indexer.{BoundQueue, BufferedTask}
+  alias Explorer.BoundQueue
+  alias Indexer.BufferedTask
   alias Indexer.BufferedTaskTest.{RetryableTask, ShrinkableTask}
 
   @max_batch_size 2
@@ -188,6 +189,10 @@ defmodule Indexer.BufferedTaskTest do
 
       refute BoundQueue.shrunk?(bound_queue)
 
+      stub(ShrinkableTask, :run, fn _, _ ->
+        :ok
+      end)
+
       assert {:noreply, %BufferedTask{flush_timer: flush_timer}} =
                BufferedTask.handle_info(:flush, %BufferedTask{
                  callback_module: ShrinkableTask,
@@ -211,6 +216,10 @@ defmodule Indexer.BufferedTaskTest do
       assert BoundQueue.shrunk?(bound_queue)
 
       start_supervised!({Task.Supervisor, name: BufferedTaskSup})
+
+      stub(ShrinkableTask, :run, fn _, _ ->
+        :ok
+      end)
 
       assert {:noreply, %BufferedTask{flush_timer: flush_timer}} =
                BufferedTask.handle_info(:flush, %BufferedTask{

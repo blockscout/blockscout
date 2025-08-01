@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.TabHelper do
       "active"
     else
       case request_path do
-        "/tx/" <> "0x" <> <<_tx_hash::binary-size(64)>> ->
+        "/tx/" <> "0x" <> <<_transaction_hash::binary-size(64)>> ->
           tab_status_selector(tab_name, show_token_transfers)
 
         _ ->

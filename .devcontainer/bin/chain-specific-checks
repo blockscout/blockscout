@@ -1,0 +1,17 @@
+# The script is sourced from the main script, so the unsuccessful check must exit
+# with non-zero code to terminate the main script.
+
+source $(dirname $0)/utils
+
+# Run the appropriate checks based on CHAIN_TYPE
+case "${CHAIN_TYPE}" in
+    "arbitrum")
+        echo "Arbitrum sepcific checks"
+        # if the check is not successful, exit with code 1
+        check_server_availability ${INDEXER_ARBITRUM_L1_RPC}
+        check_server_accessibility ${INDEXER_ARBITRUM_L1_RPC}
+    ;;
+    *)
+        echo "No special checks for CHAIN_TYPE: $CHAIN_TYPE"
+    ;;
+esac

@@ -2,7 +2,7 @@
 <% host = APIDocsView.blockscout_url(true) %>
 <% date = to_string(Date.utc_today()) %>
 <% non_parameterized_urls = ["/", "/txs", "/blocks", "/accounts", "/verified-contracts", "/tokens", "/apps", "/stats", "/api-docs", "/graphiql", "/search-results", "/withdrawals", "/l2-deposits", "/l2-output-roots", "/l2-txn-batches", "/l2-withdrawals"] %>
-<% params = [paging_options: %PagingOptions{page_size: limit()}] %>
+<% params = [paging_options: %PagingOptions{page_size: limit()}, necessity_by_association: %{}] %>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <%= for url <- non_parameterized_urls do %>
     <url>
@@ -19,10 +19,10 @@
     </url>
   <% end %>
 
-  <% txs = Chain.recent_transactions(params, [:validated]) %>
-  <%= for tx <- txs do %>
+  <% transactions = Chain.recent_transactions(params, [:validated]) %>
+  <%= for transaction <- transactions do %>
     <url>
-      <loc><%= host %>/tx/<%= to_string(tx.hash) %></loc>
+      <loc><%= host %>/tx/<%= to_string(transaction.hash) %></loc>
       <lastmod><%= date %></lastmod>
     </url>
   <% end %>

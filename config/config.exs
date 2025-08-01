@@ -72,6 +72,9 @@ config :logger, :error,
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
        block_number step count error_count shrunk import_id transaction_id)a
 
+# todo: migrate from deprecated usages
+config :tesla, disable_deprecated_builder_warning: true
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

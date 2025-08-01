@@ -1,0 +1,29 @@
+name: antiscam
+
+on:
+  issue_comment:
+    types:
+      - created
+      - edited
+
+  discussion_comment:
+    types:
+      - created
+      - edited
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  build:
+    if: ${{ !github.event.issue.pull_request }}
+    name: Antiscam
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: vbaranov/antiscam-action@main
+        with:
+          token: ${{ github.token }}
+        env:
+          SCAM_ACTION_WHITELISTED_LOGINS: ${{ vars.SCAM_ACTION_WHITELISTED_LOGINS }}

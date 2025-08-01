@@ -6,23 +6,12 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
   import Mox
 
   alias Explorer.Chain.{Address, Transaction}
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Market.Token
 
   setup :verify_on_exit!
 
   describe "GET index/2" do
     setup :set_mox_global
-
-    setup do
-      configuration = Application.get_env(:explorer, :checksum_function)
-      Application.put_env(:explorer, :checksum_function, :eth)
-
-      :ok
-
-      on_exit(fn ->
-        Application.put_env(:explorer, :checksum_function, configuration)
-      end)
-    end
 
     test "with invalid address hash", %{conn: conn} do
       conn = get(conn, address_transaction_path(conn, :index, "invalid_address"))
@@ -30,18 +19,20 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       assert html_response(conn, 422)
     end
 
-    test "with valid address hash without address in the DB", %{conn: conn} do
-      conn =
-        get(
-          conn,
-          address_transaction_path(conn, :index, Address.checksum("0x8bf38d4764929064f2d4d3a56520a76ab3df415b"), %{
-            "type" => "JSON"
-          })
-        )
+    if Application.compile_env(:explorer, :chain_type) !== :rsk do
+      test "with valid address hash without address in the DB", %{conn: conn} do
+        conn =
+          get(
+            conn,
+            address_transaction_path(conn, :index, Address.checksum("0x8bf38d4764929064f2d4d3a56520a76ab3df415b"), %{
+              "type" => "JSON"
+            })
+          )
 
-      assert json_response(conn, 200)
-      transaction_tiles = json_response(conn, 200)["items"]
-      assert transaction_tiles |> length() == 0
+        assert json_response(conn, 200)
+        transaction_tiles = json_response(conn, 200)["items"]
+        assert transaction_tiles |> length() == 0
+      end
     end
 
     test "returns transactions for the address", %{conn: conn} do
@@ -157,310 +148,6 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       assert Enum.all?([transaction.hash], fn transaction_hash ->
                Enum.any?(transaction_tiles, &String.contains?(&1, to_string(transaction_hash)))
              end)
-    end
-  end
-
-  describe "GET token-transfers-csv/2" do
-    test "do not export token transfers to csv without recaptcha recaptcha_response provided", %{conn: conn} do
-      address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: address)
-        |> with_block()
-
-      insert(:token_transfer, transaction: transaction, from_address: address, block_number: transaction.block_number)
-      insert(:token_transfer, transaction: transaction, to_address: address, block_number: transaction.block_number)
-
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
-
-      conn =
-        get(conn, "/api/v1/token-transfers-csv", %{
-          "address_id" => Address.checksum(address.hash),
-          "from_period" => from_period,
-          "to_period" => to_period
-        })
-
-      assert conn.status == 404
-    end
-
-    test "do not export token transfers to csv without recaptcha passed", %{conn: conn} do
-      BlockScoutWeb.TestCaptchaHelper
-      |> expect(:recaptcha_passed?, fn _captcha_response -> false end)
-
-      address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: address)
-        |> with_block()
-
-      insert(:token_transfer, transaction: transaction, from_address: address, block_number: transaction.block_number)
-      insert(:token_transfer, transaction: transaction, to_address: address, block_number: transaction.block_number)
-
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
-
-      conn =
-        get(conn, "/api/v1/token-transfers-csv", %{
-          "address_id" => Address.checksum(address.hash),
-          "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
-        })
-
-      assert conn.status == 404
-    end
-
-    test "exports token transfers to csv without recaptcha if recaptcha is disabled", %{conn: conn} do
-      init_config = Application.get_env(:block_scout_web, :recaptcha)
-      Application.put_env(:block_scout_web, :recaptcha, is_disabled: true)
-
-      address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: address)
-        |> with_block()
-
-      insert(:token_transfer, transaction: transaction, from_address: address, block_number: transaction.block_number)
-      insert(:token_transfer, transaction: transaction, to_address: address, block_number: transaction.block_number)
-
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
-
-      conn =
-        get(conn, "/api/v1/token-transfers-csv", %{
-          "address_id" => Address.checksum(address.hash),
-          "from_period" => from_period,
-          "to_period" => to_period
-        })
-
-      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
-
-      Application.put_env(:block_scout_web, :recaptcha, init_config)
-    end
-
-    test "exports token transfers to csv", %{conn: conn} do
-      BlockScoutWeb.TestCaptchaHelper
-      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
-
-      address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: address)
-        |> with_block()
-
-      insert(:token_transfer, transaction: transaction, from_address: address, block_number: transaction.block_number)
-      insert(:token_transfer, transaction: transaction, to_address: address, block_number: transaction.block_number)
-
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
-
-      conn =
-        get(conn, "/api/v1/token-transfers-csv", %{
-          "address_id" => Address.checksum(address.hash),
-          "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
-        })
-
-      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
-    end
-  end
-
-  describe "GET transactions_csv/2" do
-    test "download csv file with transactions", %{conn: conn} do
-      BlockScoutWeb.TestCaptchaHelper
-      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
-
-      address = insert(:address)
-
-      :transaction
-      |> insert(from_address: address)
-      |> with_block()
-
-      :transaction
-      |> insert(from_address: address)
-      |> with_block()
-
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
-
-      conn =
-        get(conn, "/api/v1/transactions-csv", %{
-          "address_id" => Address.checksum(address.hash),
-          "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
-        })
-
-      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
-    end
-  end
-
-  describe "GET internal_transactions_csv/2" do
-    test "download csv file with internal transactions", %{conn: conn} do
-      BlockScoutWeb.TestCaptchaHelper
-      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
-
-      address = insert(:address)
-
-      transaction_1 =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      transaction_2 =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      transaction_3 =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(:internal_transaction,
-        index: 3,
-        transaction: transaction_1,
-        from_address: address,
-        block_number: transaction_1.block_number,
-        block_hash: transaction_1.block_hash,
-        block_index: 0,
-        transaction_index: transaction_1.index
-      )
-
-      insert(:internal_transaction,
-        index: 1,
-        transaction: transaction_2,
-        to_address: address,
-        block_number: transaction_2.block_number,
-        block_hash: transaction_2.block_hash,
-        block_index: 1,
-        transaction_index: transaction_2.index
-      )
-
-      insert(:internal_transaction,
-        index: 2,
-        transaction: transaction_3,
-        created_contract_address: address,
-        block_number: transaction_3.block_number,
-        block_hash: transaction_3.block_hash,
-        block_index: 2,
-        transaction_index: transaction_3.index
-      )
-
-      from_period = Timex.format!(Timex.shift(Timex.now(), years: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
-
-      conn =
-        get(conn, "/api/v1/internal-transactions-csv", %{
-          "address_id" => Address.checksum(address.hash),
-          "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
-        })
-
-      assert conn.resp_body |> String.split("\n") |> Enum.count() == 5
-    end
-  end
-
-  describe "GET logs_csv/2" do
-    test "download csv file with logs", %{conn: conn} do
-      BlockScoutWeb.TestCaptchaHelper
-      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
-
-      address = insert(:address)
-
-      transaction_1 =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(:log,
-        address: address,
-        index: 3,
-        transaction: transaction_1,
-        block: transaction_1.block,
-        block_number: transaction_1.block_number
-      )
-
-      transaction_2 =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(:log,
-        address: address,
-        index: 1,
-        transaction: transaction_2,
-        block: transaction_2.block,
-        block_number: transaction_2.block_number
-      )
-
-      transaction_3 =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(:log,
-        address: address,
-        index: 2,
-        transaction: transaction_3,
-        block: transaction_3.block,
-        block_number: transaction_3.block_number
-      )
-
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
-
-      conn =
-        get(conn, "/api/v1/logs-csv", %{
-          "address_id" => Address.checksum(address.hash),
-          "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
-        })
-
-      assert conn.resp_body |> String.split("\n") |> Enum.count() == 5
-    end
-
-    test "handles null filter", %{conn: conn} do
-      BlockScoutWeb.TestCaptchaHelper
-      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
-
-      address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(:log,
-        address: address,
-        index: 3,
-        transaction: transaction,
-        block: transaction.block,
-        block_number: transaction.block_number
-      )
-
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
-
-      conn =
-        get(conn, "/api/v1/logs-csv", %{
-          "address_id" => Address.checksum(address.hash),
-          "filter_type" => "null",
-          "filter_value" => "null",
-          "from_period" => from_period,
-          "to_period" => to_period,
-          "recaptcha_response" => "123"
-        })
-
-      assert conn.resp_body |> String.split("\n") |> Enum.count() == 3
     end
   end
 end

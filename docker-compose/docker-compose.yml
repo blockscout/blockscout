@@ -46,7 +46,7 @@ services:
         CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
         ADMIN_PANEL_ENABLED: ""
-        RELEASE_VERSION: 6.8.0
+        RELEASE_VERSION: 9.0.0
     networks:
       besu-quorum-network:
         ipv4_address: 172.16.239.124
@@ -57,6 +57,18 @@ services:
         ETHEREUM_JSONRPC_TRACE_URL: http://rpcnode:8545/
         ETHEREUM_JSONRPC_WS_URL: ws://rpcnode:8546/
         CHAIN_ID: '1337'
+
+  nft_media_handler:
+    depends_on:
+      - backend
+    extends:
+      file: ./services/nft_media_handler.yml
+      service: nft_media_handler
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+      args:
+        RELEASE_VERSION: 9.0.0
 
   visualizer:
     networks:

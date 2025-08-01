@@ -6,22 +6,18 @@ defmodule BlockScoutWeb.ChainController do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.{ChainView, Controller}
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.{Address, Block, Transaction}
-  alias Explorer.Chain.Cache.Block, as: BlockCache
-  alias Explorer.Chain.Cache.GasUsage
-  alias Explorer.Chain.Cache.Transaction, as: TransactionCache
+  alias Explorer.Chain.{Address, Block, Hash, Transaction}
+  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime, BlocksCount, GasUsageSum, TransactionsCount}
   alias Explorer.Chain.Search
   alias Explorer.Chain.Supply.RSK
-  alias Explorer.Counters.AverageBlockTime
   alias Explorer.Market
   alias Phoenix.View
 
   def show(conn, _params) do
-    transaction_estimated_count = TransactionCache.estimated_count()
-    total_gas_usage = GasUsage.total()
-    block_count = BlockCache.estimated_count()
-    address_count = Counters.address_estimated_count()
+    transaction_count = TransactionsCount.get()
+    total_gas_usage = GasUsageSum.total()
+    block_count = BlocksCount.get()
+    address_count = AddressesCount.fetch()
 
     market_cap_calculation =
       case Application.get_env(:explorer, :supply) do
@@ -53,7 +49,7 @@ defmodule BlockScoutWeb.ChainController do
       chart_config_json: Jason.encode!(chart_config),
       chart_data_paths: chart_data_paths,
       market_cap_calculation: market_cap_calculation,
-      transaction_estimated_count: transaction_estimated_count,
+      transaction_estimated_count: transaction_count,
       total_gas_usage: total_gas_usage,
       transactions_path: recent_transactions_path(conn, :index),
       transaction_stats: transaction_stats,
@@ -88,22 +84,21 @@ defmodule BlockScoutWeb.ChainController do
 
   def token_autocomplete(conn, %{"q" => term} = params) when is_binary(term) do
     [paging_options: paging_options] = paging_options(params)
-    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
 
-    results =
+    {results, _} =
       paging_options
-      |> Search.joint_search(offset, term)
+      |> Search.joint_search(term)
 
     encoded_results =
       results
       |> Enum.map(fn item ->
-        tx_hash_bytes = Map.get(item, :tx_hash)
+        transaction_hash_bytes = Map.get(item, :transaction_hash)
         block_hash_bytes = Map.get(item, :block_hash)
 
         item =
-          if tx_hash_bytes do
+          if transaction_hash_bytes do
             item
-            |> Map.replace(:tx_hash, "0x" <> Base.encode16(tx_hash_bytes, case: :lower))
+            |> Map.replace(:transaction_hash, full_hash_string(transaction_hash_bytes))
           else
             item
           end
@@ -111,7 +106,7 @@ defmodule BlockScoutWeb.ChainController do
         item =
           if block_hash_bytes do
             item
-            |> Map.replace(:block_hash, "0x" <> Base.encode16(block_hash_bytes, case: :lower))
+            |> Map.replace(:block_hash, full_hash_string(block_hash_bytes))
           else
             item
           end
@@ -179,5 +174,12 @@ defmodule BlockScoutWeb.ChainController do
 
   defp redirect_search_results(conn, _item, search_path) do
     redirect(conn, to: search_path)
+  end
+
+  defp full_hash_string(%Hash{} = hash), do: to_string(hash)
+
+  defp full_hash_string(bytes) when is_binary(bytes) do
+    {:ok, hash} = Hash.Full.cast(bytes)
+    to_string(hash)
   end
 end

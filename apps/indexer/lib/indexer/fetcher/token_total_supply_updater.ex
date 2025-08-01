@@ -6,8 +6,9 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
   use GenServer
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Token
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
+  alias Explorer.Chain.{Hash, Token}
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Token.MetadataRetriever
   alias Timex.Duration
 
@@ -32,7 +33,17 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
   end
 
   def handle_info(:update, contract_address_hashes) do
-    Enum.each(contract_address_hashes, &update_token/1)
+    contract_address_hashes
+    |> Enum.reduce(%{}, fn contract_address_hash, acc ->
+      with {:ok, address_hash} <- Chain.string_to_address_hash(contract_address_hash),
+           data_for_multichain = update_token(address_hash),
+           false <- is_nil(data_for_multichain) do
+        Map.put(acc, address_hash.bytes, data_for_multichain)
+      else
+        _ -> acc
+      end
+    end)
+    |> MultichainSearch.send_token_info_to_queue(:total_supply)
 
     schedule_next_update()
 
@@ -49,21 +60,20 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
     Process.send_after(self(), :update, update_interval)
   end
 
-  defp update_token(nil), do: :ok
-
-  defp update_token(address_hash_string) do
-    {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
-
+  defp update_token(address_hash) do
     token = Repo.get_by(Token, contract_address_hash: address_hash)
 
     if token && !token.skip_metadata do
-      token_params = MetadataRetriever.get_total_supply_of(address_hash_string)
+      token_params =
+        address_hash
+        |> Hash.to_string()
+        |> MetadataRetriever.get_total_supply_of()
 
       if token_params !== %{} do
-        {:ok, _} = Chain.update_token(token, token_params)
+        {:ok, _} = Token.update(token, token_params)
+
+        MultichainSearch.prepare_token_total_supply_for_queue(token_params.total_supply)
       end
     end
-
-    :ok
   end
 end

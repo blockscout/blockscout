@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  redis-db:
+    extends:
+      file: ./services/redis.yml
+      service: redis-db
+
+  db-init:
+    extends:
+      file: ./services/db.yml
+      service: db-init
+
+  db:
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    extends:
+      file: ./services/db.yml
+      service: db
+
+  backend:
+    depends_on:
+      - db
+      - redis-db
+    extends:
+      file: ./services/backend.yml
+      service: backend
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+      args:
+        API_V1_READ_METHODS_DISABLED: "false"
+        DISABLE_WEBAPP: "false"
+        API_V1_WRITE_METHODS_DISABLED: "false"
+        ADMIN_PANEL_ENABLED: ""
+        RELEASE_VERSION: 9.0.0
+    links:
+      - db:database
+    environment:
+        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
+        ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
+        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
+        CHAIN_ID: '1337'
+
+  frontend:
+    depends_on:
+      - backend
+    extends:
+      file: ./services/frontend.yml
+      service: frontend
+    environment:
+      NEXT_PUBLIC_STATS_API_HOST:
+
+  proxy:
+    depends_on:
+      - backend
+      - frontend
+    extends:
+      file: ./services/nginx-explorer.yml
+      service: proxy
+    volumes:
+      - "./proxy/explorer.conf.template:/etc/nginx/templates/default.conf.template"

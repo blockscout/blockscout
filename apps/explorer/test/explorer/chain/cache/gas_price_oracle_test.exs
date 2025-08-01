@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
 
   alias Explorer.Chain.Cache.GasPriceOracle
   alias Explorer.Chain.Wei
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
 
   describe "get_average_gas_price/4" do
     test "returns nil percentile values if no blocks in the DB" do
@@ -28,7 +28,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
                }}, []} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
     end
 
-    test "returns gas prices for blocks with failed txs in the DB" do
+    test "returns gas prices for blocks with failed transactions in the DB" do
       block = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
 
       :transaction
@@ -87,6 +87,115 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
                  slow: nil,
                  average: nil,
                  fast: nil
+               }}, []} = GasPriceOracle.get_average_gas_price(2, 35, 60, 90)
+    end
+
+    test "returns base fee only gas estimation if there is no recent transactions with non-zero gas price" do
+      block1 =
+        insert(:block,
+          number: 100,
+          hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391",
+          base_fee_per_gas: 100
+        )
+
+      block2 =
+        insert(:block,
+          number: 101,
+          hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729",
+          base_fee_per_gas: 100
+        )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 0,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 0,
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+      )
+
+      assert {{:ok,
+               %{
+                 average: %{base_fee: 0.01, priority_fee: +0.0, price: 0.01},
+                 fast: %{base_fee: 0.01, priority_fee: +0.0, price: 0.01},
+                 slow: %{base_fee: 0.01, priority_fee: +0.0, price: 0.01}
+               }}, []} = GasPriceOracle.get_average_gas_price(2, 35, 60, 90)
+    end
+
+    test "returns base fee only gas estimation with average block time if there is no recent transactions with non-zero gas price" do
+      average_block_time_old_env = Application.get_env(:explorer, AverageBlockTime)
+
+      Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
+      start_supervised!(AverageBlockTime)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, AverageBlockTime, average_block_time_old_env)
+      end)
+
+      timestamp = ~U[2023-12-12 12:12:30.000000Z]
+
+      block1 =
+        insert(:block,
+          number: 100,
+          hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391",
+          base_fee_per_gas: 100,
+          timestamp: timestamp
+        )
+
+      block2 =
+        insert(:block,
+          number: 101,
+          hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729",
+          base_fee_per_gas: 100,
+          timestamp: timestamp
+        )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 0,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 0,
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+      )
+
+      AverageBlockTime.refresh()
+
+      assert {{:ok,
+               %{
+                 average: %{base_fee: 0.01, priority_fee: +0.0, price: 0.01, time: +0.0},
+                 fast: %{base_fee: 0.01, priority_fee: +0.0, price: 0.01, time: +0.0},
+                 slow: %{base_fee: 0.01, priority_fee: +0.0, price: 0.01, time: +0.0}
                }}, []} = GasPriceOracle.get_average_gas_price(2, 35, 60, 90)
     end
 
@@ -244,7 +353,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
-        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269",
+        type: 2
       )
 
       :transaction
@@ -258,7 +368,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
-        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03",
+        type: 2
       )
 
       :transaction
@@ -272,7 +383,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 3_000_000_000,
         max_priority_fee_per_gas: 3_000_000_000,
         max_fee_per_gas: 3_000_000_000,
-        hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016"
+        hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016",
+        type: 2
       )
 
       assert {{:ok,
@@ -314,7 +426,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
         hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269",
-        earliest_processing_start: ~U[2023-12-12 12:12:00.000000Z]
+        earliest_processing_start: ~U[2023-12-12 12:12:00.000000Z],
+        type: 2
       )
 
       :transaction
@@ -330,7 +443,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
         hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03",
-        earliest_processing_start: ~U[2023-12-12 12:12:00.000000Z]
+        earliest_processing_start: ~U[2023-12-12 12:12:00.000000Z],
+        type: 2
       )
 
       :transaction
@@ -346,7 +460,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         max_priority_fee_per_gas: 3_000_000_000,
         max_fee_per_gas: 3_000_000_000,
         hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016",
-        earliest_processing_start: ~U[2023-12-12 12:12:55.000000Z]
+        earliest_processing_start: ~U[2023-12-12 12:12:55.000000Z],
+        type: 2
       )
 
       assert {{
@@ -418,7 +533,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
-        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269",
+        type: 2
       )
 
       :transaction
@@ -432,7 +548,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
         max_fee_per_gas: 1_000_000_000,
-        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03",
+        type: 2
       )
 
       :transaction
@@ -446,7 +563,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         gas_price: 3_000_000_000,
         max_priority_fee_per_gas: 3_000_000_000,
         max_fee_per_gas: 3_000_000_000,
-        hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016"
+        hash: "0x906b80861b4a0921acfbb91a7b527227b0d32adabc88bc73e8c52ff714e55016",
+        type: 2
       )
 
       AverageBlockTime.refresh()
@@ -486,7 +604,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         index: 0,
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
-        max_fee_per_gas: 1_000_000_000
+        max_fee_per_gas: 1_000_000_000,
+        type: 2
       )
 
       :transaction
@@ -499,7 +618,8 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         index: 0,
         gas_price: 1_000_000_000,
         max_priority_fee_per_gas: 1_000_000_000,
-        max_fee_per_gas: 1_000_000_000
+        max_fee_per_gas: 1_000_000_000,
+        type: 2
       )
 
       :transaction
@@ -530,6 +650,58 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
       )
 
       assert {{:ok, %{average: nil, fast: nil, slow: nil}}, _} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
+    end
+
+    test "does take into account EIP_1559_BASE_FEE_LOWER_BOUND_WEI env" do
+      old_config = Application.get_env(:explorer, :base_fee_lower_bound)
+
+      Application.put_env(:explorer, :base_fee_lower_bound, 1_000_000_000)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :base_fee_lower_bound, old_config)
+      end)
+
+      insert(:block,
+        number: 1,
+        base_fee_per_gas: Wei.from(Decimal.new(1), :gwei),
+        gas_used: Decimal.new(0),
+        gas_limit: Decimal.new(1000)
+      )
+
+      assert {{:ok, %{average: %{price: 1.0}, fast: %{base_fee: 1.0}, slow: %{base_fee: 1.0}}}, _} =
+               GasPriceOracle.get_average_gas_price(1, 35, 60, 90)
+    end
+
+    if Application.compile_env(:explorer, :chain_type) == :celo do
+      test "ignores transactions with unsupported types" do
+        block =
+          insert(:block,
+            number: 200,
+            hash: "0xfeedface00000000000000000000000000000000000000000000000000000000",
+            base_fee_per_gas: nil
+          )
+
+        :transaction
+        |> insert(
+          status: :ok,
+          block_hash: block.hash,
+          block_number: block.number,
+          index: 0,
+          # 1 Gwei
+          gas_price: 1_000_000_000,
+          type: 123,
+          hash: "0xcafe010000000000000000000000000000000000000000000000000000000000",
+          cumulative_gas_used: 884_322,
+          gas_used: 106_025
+        )
+
+        assert {{:ok,
+                 %{
+                   slow: nil,
+                   average: nil,
+                   fast: nil
+                 }}, []} = GasPriceOracle.get_average_gas_price(1, 35, 60, 90)
+      end
     end
   end
 end

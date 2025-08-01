@@ -8,8 +8,6 @@ defmodule Explorer.Chain.SmartContractAdditionalSource do
 
   use Explorer.Schema
 
-  import Explorer.Chain, only: [select_repo: 1]
-
   alias Explorer.Chain.{Hash, SmartContract}
 
   @typedoc """
@@ -55,25 +53,6 @@ defmodule Explorer.Chain.SmartContractAdditionalSource do
       |> validate_required([:file_name, :address_hash])
 
     add_error(validated, :contract_source_code, error_message(error))
-  end
-
-  @doc """
-  Returns all additional sources for the given smart-contract address hash
-  """
-  @spec get_contract_additional_sources(SmartContract.t() | nil, Keyword.t()) :: [__MODULE__.t()]
-  def get_contract_additional_sources(smart_contract, options) do
-    if smart_contract do
-      all_additional_sources_query =
-        from(
-          s in __MODULE__,
-          where: s.address_hash == ^smart_contract.address_hash
-        )
-
-      all_additional_sources_query
-      |> select_repo(options).all()
-    else
-      []
-    end
   end
 
   defp error_message(_), do: "There was an error validating your contract, please try again."

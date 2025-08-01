@@ -58,7 +58,11 @@ defmodule Indexer.Fetcher.Stability.Validator do
             |> ValidatorStability.append_timestamps()
           end)
 
-        ValidatorStability.insert_validators(active ++ inactive)
+        ValidatorStability.insert_validators(
+          (active ++ inactive)
+          |> add_blocks_validated(validators_from_db)
+        )
+
         ValidatorStability.delete_validators_by_address_hashes(address_hashes_to_drop_from_db)
 
       _ ->
@@ -66,5 +70,35 @@ defmodule Indexer.Fetcher.Stability.Validator do
     end
 
     {:noreply, state}
+  end
+
+  defp add_blocks_validated([_ | _] = validators, validators_from_db) do
+    validators_from_db_map =
+      Enum.reduce(validators_from_db, %{}, fn validator, map -> Map.put(map, validator.address_hash, true) end)
+
+    address_hashes_to_fetch_blocks_validated =
+      Enum.flat_map(validators, fn validator ->
+        if validators_from_db_map[validator.address_hash] do
+          []
+        else
+          [validator.address_hash]
+        end
+      end)
+
+    blocks_validated_map =
+      address_hashes_to_fetch_blocks_validated
+      |> ValidatorStability.fetch_blocks_validated()
+      |> Enum.into(%{})
+
+    Enum.map(validators, fn validator ->
+      Map.put(validator, :blocks_validated, blocks_validated_map[validator.address_hash] || 0)
+    end)
+  end
+
+  defp add_blocks_validated(validators, _), do: validators
+
+  @spec trigger_update_validators_list() :: :ok
+  def trigger_update_validators_list do
+    GenServer.cast(__MODULE__, :update_validators_list)
   end
 end

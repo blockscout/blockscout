@@ -4,6 +4,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
   """
 
   alias Indexer.Fetcher.ZkSync.Utils.Db
+  alias Indexer.Prometheus.Instrumenter
 
   import Indexer.Fetcher.ZkSync.Discovery.BatchesData,
     only: [
@@ -40,7 +41,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
              is_integer(end_batch_number) and
              (is_map(config) and is_map_key(config, :json_rpc_named_arguments) and
                 is_map_key(config, :chunk_size)) do
-    {batches_to_import, l2_blocks_to_import, l2_txs_to_import} =
+    {batches_to_import, l2_blocks_to_import, l2_transactions_to_import} =
       extract_data_from_batches({start_batch_number, end_batch_number}, config)
 
     batches_list_to_import =
@@ -53,9 +54,18 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
     Db.import_to_db(
       batches_list_to_import,
       [],
-      l2_txs_to_import,
+      l2_transactions_to_import,
       l2_blocks_to_import
     )
+
+    last_batch =
+      batches_list_to_import
+      |> Enum.max_by(& &1.number, fn -> nil end)
+
+    # credo:disable-for-next-line
+    if last_batch do
+      Instrumenter.set_latest_batch(last_batch.number, last_batch.timestamp)
+    end
 
     :ok
   end
@@ -82,10 +92,11 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
              (is_map(config) and is_map_key(config, :json_rpc_named_arguments) and
                 is_map_key(config, :chunk_size)) do
     # Collect batches and linked L2 blocks and transaction
-    {batches_to_import, l2_blocks_to_import, l2_txs_to_import} = extract_data_from_batches(batches_numbers_list, config)
+    {batches_to_import, l2_blocks_to_import, l2_transactions_to_import} =
+      extract_data_from_batches(batches_numbers_list, config)
 
     # Collect L1 transactions associated with batches
-    l1_txs =
+    l1_transactions =
       batches_to_import
       |> Map.values()
       |> collect_l1_transactions()
@@ -98,9 +109,9 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
       |> Enum.reduce([], fn batch, batches ->
         [
           batch
-          |> Map.put(:commit_id, get_l1_tx_id_by_hash(l1_txs, batch.commit_tx_hash))
-          |> Map.put(:prove_id, get_l1_tx_id_by_hash(l1_txs, batch.prove_tx_hash))
-          |> Map.put(:execute_id, get_l1_tx_id_by_hash(l1_txs, batch.executed_tx_hash))
+          |> Map.put(:commit_id, get_l1_transaction_id_by_hash(l1_transactions, batch.commit_transaction_hash))
+          |> Map.put(:prove_id, get_l1_transaction_id_by_hash(l1_transactions, batch.prove_transaction_hash))
+          |> Map.put(:execute_id, get_l1_transaction_id_by_hash(l1_transactions, batch.executed_transaction_hash))
           |> Db.prune_json_batch()
           | batches
         ]
@@ -108,8 +119,8 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
 
     Db.import_to_db(
       batches_list_to_import,
-      Map.values(l1_txs),
-      l2_txs_to_import,
+      Map.values(l1_transactions),
+      l2_transactions_to_import,
       l2_blocks_to_import
     )
 
@@ -154,8 +165,8 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
     :ok
   end
 
-  defp get_l1_tx_id_by_hash(l1_txs, hash) do
-    l1_txs
+  defp get_l1_transaction_id_by_hash(l1_transactions, hash) do
+    l1_transactions
     |> Map.get(hash)
     |> Kernel.||(%{id: nil})
     |> Map.get(:id)

@@ -273,6 +273,40 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       assert current_token_balance.value == Decimal.new(200)
     end
 
+    test "updates NFT when the new block number is greater", %{
+      address: address,
+      token: token,
+      options: options
+    } do
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 123,
+        token_type: "ERC-1155",
+        value: 100
+      )
+
+      run_changes(
+        %{
+          address_hash: address.hash,
+          block_number: 2,
+          token_contract_address_hash: token.contract_address_hash,
+          token_id: 123,
+          token_type: "ERC-1155",
+          value: Decimal.new(200),
+          value_fetched_at: DateTime.utc_now()
+        },
+        options
+      )
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
+
+      assert current_token_balance.block_number == 2
+      assert current_token_balance.value == Decimal.new(200)
+    end
+
     test "ignores when the new block number is lesser", %{
       address: %Address{hash: address_hash} = address,
       token: %Token{contract_address_hash: token_contract_address_hash},

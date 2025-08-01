@@ -8,21 +8,39 @@ defmodule Indexer.Helper do
   import EthereumJSONRPC,
     only: [
       fetch_block_number_by_tag: 2,
+      id_to_params: 1,
+      integer_to_quantity: 1,
       json_rpc: 2,
       quantity_to_integer: 1,
-      integer_to_quantity: 1,
       request: 1
     ]
 
-  alias EthereumJSONRPC.Block.ByNumber
+  import Explorer.Helper, only: [hash_to_binary: 1]
+
+  alias EthereumJSONRPC.Block.{ByNumber, ByTag}
   alias EthereumJSONRPC.{Blocks, Transport}
+  alias Explorer.Chain.Beacon.Blob, as: BeaconBlob
+  alias Explorer.Chain.Cache.LatestL1BlockNumber
   alias Explorer.Chain.Hash
   alias Explorer.SmartContract.Reader, as: ContractReader
+  alias Indexer.Fetcher.Beacon.Blob, as: BeaconBlobFetcher
+  alias Indexer.Fetcher.Beacon.Client, as: BeaconClient
 
   @finite_retries_number 3
   @infinite_retries_number 100_000_000
   @block_check_interval_range_size 100
   @block_by_number_chunk_size 50
+
+  @beacon_blob_fetcher_reference_slot_eth 8_500_000
+  @beacon_blob_fetcher_reference_timestamp_eth 1_708_824_023
+  @beacon_blob_fetcher_reference_slot_sepolia 4_400_000
+  @beacon_blob_fetcher_reference_timestamp_sepolia 1_708_533_600
+  @beacon_blob_fetcher_reference_slot_holesky 1_000_000
+  @beacon_blob_fetcher_reference_timestamp_holesky 1_707_902_400
+  @beacon_blob_fetcher_slot_duration 12
+  @chain_id_eth 1
+  @chain_id_sepolia 11_155_111
+  @chain_id_holesky 17000
 
   @doc """
   Checks whether the given Ethereum address looks correct.
@@ -108,9 +126,9 @@ defmodule Indexer.Helper do
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
     with {:ok, first_block_timestamp} <-
-           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
+           get_block_timestamp_by_number_or_tag(first_block, json_rpc_named_arguments, @infinite_retries_number),
          {:ok, last_safe_block_timestamp} <-
-           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
+           get_block_timestamp_by_number_or_tag(last_safe_block, json_rpc_named_arguments, @infinite_retries_number) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
@@ -129,9 +147,9 @@ defmodule Indexer.Helper do
     - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
 
     ## Returns
-    `{block_num, latest}`: A tuple where
-    - `block_num` is the safe or latest block number.
-    - `latest` is a boolean, where `true` indicates that `block_num` is the latest block number fetched using the tag `latest`.
+    `{block_number, latest}`: A tuple where
+    - `block_number` is the safe or latest block number.
+    - `latest` is a boolean, where `true` indicates that `block_number` is the latest block number fetched using the tag `latest`.
   """
   @spec get_safe_block(EthereumJSONRPC.json_rpc_named_arguments()) :: {non_neg_integer(), boolean()}
   def get_safe_block(json_rpc_named_arguments) do
@@ -139,8 +157,9 @@ defmodule Indexer.Helper do
       {:ok, safe_block} ->
         {safe_block, false}
 
-      {:error, :not_found} ->
-        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+      {:error, _} ->
+        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, @infinite_retries_number)
+
         {latest_block, true}
     end
   end
@@ -177,6 +196,21 @@ defmodule Indexer.Helper do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
+  @doc """
+    Returns a number of attempts for RPC requests sending by indexer modules.
+    The number is defined by @finite_retries_number attribute.
+  """
+  @spec finite_retries_number() :: non_neg_integer()
+  def finite_retries_number do
+    @finite_retries_number
+  end
+
+  @doc """
+    Returns a big number of attempts for RPC requests sending by indexer modules
+    (simulating an infinite number of attempts). The number is defined by
+    @infinite_retries_number attribute.
+  """
+  @spec infinite_retries_number() :: non_neg_integer()
   def infinite_retries_number do
     @infinite_retries_number
   end
@@ -189,12 +223,12 @@ defmodule Indexer.Helper do
     [
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
-        http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: rpc_url,
+        http: EthereumJSONRPC.HTTP.Tesla,
+        urls: [rpc_url],
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),
-          hackney: [pool: :ethereum_jsonrpc]
+          pool: :ethereum_jsonrpc
         ]
       ]
     ]
@@ -219,7 +253,7 @@ defmodule Indexer.Helper do
       [1..3, 4..6, 7..9, 10..10]
   """
   @spec range_chunk_every(Range.t(), non_neg_integer()) :: Enum.t()
-  def range_chunk_every(from..to, chunk_size) do
+  def range_chunk_every(from..to//_, chunk_size) do
     chunks_number = floor((to - from + 1) / chunk_size)
 
     0..chunks_number
@@ -238,7 +272,10 @@ defmodule Indexer.Helper do
     - `from_block`: The starting block number (integer or hexadecimal string) for the log search.
     - `to_block`: The ending block number (integer or hexadecimal string) for the log search.
     - `address`: The address of the contract to filter logs from.
-    - `topics`: List of topics to filter the logs.
+    - `topics`: List of topics to filter the logs. The list represents each topic as follows:
+                [topic0, topic1, topic2, topic3]. The `topicN` can be either some value or
+                a list of possible values, e.g.: [[topic0_1, topic0_2], topic1, topic2, topic3].
+                If a topic is omitted or `nil`, it doesn't take part in the logs filtering.
     - `json_rpc_named_arguments`: Configuration for the JSON-RPC call.
     - `id`: (optional) JSON-RPC request identifier, defaults to 0.
     - `retries`: (optional) Number of retry attempts if the request fails, defaults to 3.
@@ -251,14 +288,14 @@ defmodule Indexer.Helper do
           non_neg_integer() | binary(),
           non_neg_integer() | binary(),
           binary(),
-          [binary()],
+          [binary()] | [list()],
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: {:error, atom() | binary() | map()} | {:ok, any()}
   @spec get_logs(
           non_neg_integer() | binary(),
           non_neg_integer() | binary(),
           binary(),
-          [binary()],
+          [binary()] | [list()],
           EthereumJSONRPC.json_rpc_named_arguments(),
           integer()
         ) :: {:error, atom() | binary() | map()} | {:ok, any()}
@@ -266,7 +303,7 @@ defmodule Indexer.Helper do
           non_neg_integer() | binary(),
           non_neg_integer() | binary(),
           binary(),
-          [binary()],
+          [binary()] | [list()],
           EthereumJSONRPC.json_rpc_named_arguments(),
           integer(),
           non_neg_integer()
@@ -344,6 +381,53 @@ defmodule Indexer.Helper do
   end
 
   @doc """
+  Processes a large batch of contract calls by splitting them into smaller
+  chunks for efficiency and resiliency.
+
+  This function takes a potentially large list of contract call requests,
+  divides them into manageable chunks, applies the provided reader function to
+  each chunk, and then consolidates the results.
+
+  The chunking approach helps prevent timeouts that can occur when making too
+  many simultaneous RPC calls.
+
+  ## Parameters
+  - `requests`: A list of `EthereumJSONRPC.Contract.call()` instances
+    representing contract calls to execute.
+  - `chunk_size`: The maximum number of contract calls to include in each chunk.
+  - `reader`: A function that takes a chunk of contract call requests and
+           returns `{responses, errors}` tuple.
+
+  ## Returns
+  - A tuple `{responses, errors}` where:
+  - `responses`: A concatenated list of all response tuples `{:ok, result}` or
+                `{:error, reason}` from all chunks, maintaining the original
+                order.
+  - `errors`: A deduplicated list of all error messages encountered across all
+    chunks.
+  """
+  @spec read_contracts_with_retries_by_chunks(
+          [EthereumJSONRPC.Contract.call()],
+          integer(),
+          ([EthereumJSONRPC.Contract.call()] ->
+             {[{:ok | :error, any()}], list()})
+        ) ::
+          {[{:ok | :error, any()}], list()}
+  def read_contracts_with_retries_by_chunks(requests, chunk_size, reader)
+      when is_list(requests) and is_integer(chunk_size) and chunk_size > 0 do
+    {responses_lists, errors_lists} =
+      requests
+      |> Enum.chunk_every(chunk_size)
+      |> Enum.map(reader)
+      |> Enum.unzip()
+
+    {
+      Enum.concat(responses_lists),
+      errors_lists |> Enum.concat() |> Enum.uniq()
+    }
+  end
+
+  @doc """
     Retrieves decoded results of `eth_call` requests to contracts, with retry
     logic for handling errors.
 
@@ -378,7 +462,8 @@ defmodule Indexer.Helper do
           [EthereumJSONRPC.Contract.call()],
           [map()],
           EthereumJSONRPC.json_rpc_named_arguments(),
-          integer()
+          integer(),
+          boolean()
         ) :: {[{:ok | :error, any()}], list()}
   def read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, log_error? \\ true)
       when is_list(requests) and is_list(abi) and is_integer(retries_left) do
@@ -461,7 +546,9 @@ defmodule Indexer.Helper do
          retries_left,
          retries_done
        ) do
-    case json_rpc(requests, json_rpc_named_arguments) do
+    requests
+    |> json_rpc(json_rpc_named_arguments)
+    |> case do
       {:ok, responses_list} = batch_responses ->
         standardized_error =
           Enum.reduce_while(responses_list, %{}, fn one_response, acc ->
@@ -481,7 +568,6 @@ defmodule Indexer.Helper do
         {:error, message, err}
     end
     |> case do
-      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
       {:ok, responses, _} ->
         responses
 
@@ -548,20 +634,30 @@ defmodule Indexer.Helper do
   end
 
   @doc """
-  Fetches blocks info from the given list of events (logs).
-  Performs a specified number of retries (up to) if the first attempt returns error.
+    Fetches blocks info from the given list of events (logs).
+    Performs a specified number of retries (up to) if the first attempt returns error.
+
+    ## Parameters
+    - `events`: The list of events to retrieve block numbers from.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+    - `retries`: Number of retry attempts if the request fails.
+    - `transaction_details`: Whether to include transaction details into the resulting list of blocks.
+
+    ## Returns
+    - The list of blocks. The list is empty if the HTTP response returns error.
   """
-  @spec get_blocks_by_events(list(), list(), non_neg_integer()) :: list()
-  def get_blocks_by_events(events, json_rpc_named_arguments, retries) do
+  @spec get_blocks_by_events(list(), EthereumJSONRPC.json_rpc_named_arguments(), non_neg_integer(), boolean()) :: [
+          %{String.t() => any()}
+        ]
+  def get_blocks_by_events(events, json_rpc_named_arguments, retries, transaction_details \\ false) do
     events
     |> Enum.reduce(%{}, fn event, acc ->
       block_number = Map.get(event, :block_number, event["blockNumber"])
       Map.put(acc, block_number, 0)
     end)
     |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-    |> Stream.with_index()
-    |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-    |> Blocks.requests(&ByNumber.request(&1, false, false))
+    |> id_to_params()
+    |> Blocks.requests(&ByNumber.request(&1, transaction_details, false))
     |> Enum.chunk_every(@block_by_number_chunk_size)
     |> Enum.reduce([], fn current_requests, results_acc ->
       error_message =
@@ -580,22 +676,36 @@ defmodule Indexer.Helper do
 
   @doc """
   Fetches block timestamp by its number using RPC request.
+  The number can be `:latest`.
   Performs a specified number of retries (up to) if the first attempt returns error.
+
+  ## Parameters
+  - `number`: Block number or `:latest` to fetch the latest block.
+  - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  - `retries`: Number of retry attempts if the request fails.
+
+  ## Returns
+  - `{:ok, timestamp}` where `timestamp` is the block timestamp as a Unix timestamp.
+  - `{:error, reason}` if the request fails after all retries.
   """
-  @spec get_block_timestamp_by_number(non_neg_integer(), list(), non_neg_integer()) ::
+  @spec get_block_timestamp_by_number_or_tag(non_neg_integer() | :latest, list(), non_neg_integer()) ::
           {:ok, non_neg_integer()} | {:error, any()}
-  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
-    func = &get_block_timestamp_by_number_inner/2
+  def get_block_timestamp_by_number_or_tag(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
+    func = &get_block_timestamp_inner/2
     args = [number, json_rpc_named_arguments]
     error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
     repeated_call(func, args, error_message, retries)
   end
 
-  defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do
-    result =
-      %{id: 0, number: number}
-      |> ByNumber.request(false)
-      |> json_rpc(json_rpc_named_arguments)
+  defp get_block_timestamp_inner(number, json_rpc_named_arguments) do
+    request =
+      if number == :latest do
+        ByTag.request(%{id: 0, tag: "latest"})
+      else
+        ByNumber.request(%{id: 0, number: number}, false)
+      end
+
+    result = json_rpc(request, json_rpc_named_arguments)
 
     with {:ok, block} <- result,
          false <- is_nil(block),
@@ -623,8 +733,246 @@ defmodule Indexer.Helper do
     end
   end
 
-  # Pauses the process, incrementally increasing the sleep time up to a maximum of 20 minutes.
-  defp pause_before_retry(retries_done) do
+  @doc """
+  Pauses the process, incrementally increasing the sleep time up to a maximum of 20 minutes.
+
+  ## Parameters
+  - `retries_done`: How many retries have already been done.
+
+  ## Returns
+  - Nothing.
+  """
+  @spec pause_before_retry(non_neg_integer()) :: :ok
+  def pause_before_retry(retries_done) do
     :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
+  end
+
+  @doc """
+    Fetches the `latest` block number from L1. If the block number is cached in `Explorer.Chain.Cache.LatestL1BlockNumber`,
+    the cached value is used. The cached value is updated in `Indexer.Fetcher.RollupL1ReorgMonitor` module.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection on L1.
+
+    ## Returns
+    - The block number.
+  """
+  @spec fetch_latest_l1_block_number(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer()
+  def fetch_latest_l1_block_number(json_rpc_named_arguments) do
+    case LatestL1BlockNumber.get_block_number() do
+      nil ->
+        {:ok, latest} =
+          get_block_number_by_tag("latest", json_rpc_named_arguments, @infinite_retries_number)
+
+        latest
+
+      latest_from_cache ->
+        latest_from_cache
+    end
+  end
+
+  @doc """
+    Sends HTTP GET request to the given URL and returns JSON response. Makes max 10 attempts and then returns an error in case of failure.
+    There is a timeout between attempts (increasing from 3 seconds to 20 minutes max as the number of attempts increases).
+
+    ## Parameters
+    - `url`: The URL which needs to be requested.
+    - `attempts_done`: The number of attempts done. Incremented by the function itself.
+
+    ## Returns
+    - `{:ok, response}` where `response` is a map decoded from a JSON object.
+    - `{:error, reason}` in case of failure (after three unsuccessful attempts).
+  """
+  @spec http_get_request(String.t(), non_neg_integer()) :: {:ok, map()} | {:error, any()}
+  def http_get_request(url, attempts_done \\ 0) do
+    recv_timeout = 5_000
+    connect_timeout = 8_000
+    client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
+
+    case Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: connect_timeout]]]) do
+      {:ok, %{body: body, status: 200}} ->
+        Jason.decode(body)
+
+      {:ok, %{body: body, status: _}} ->
+        http_get_request_error(url, body, attempts_done)
+
+      {:error, error} ->
+        http_get_request_error(url, error, attempts_done)
+    end
+  end
+
+  # Handles HTTP GET error and tries to re-call the `http_get_request` function after sleep.
+  #
+  # ## Parameters
+  # - `url`: The URL which needs to be requested.
+  # - `error`: The error description for logging purposes.
+  # - `attempts_done`: The number of attempts done. Incremented by the function itself.
+  #
+  # ## Returns
+  # - `{:ok, response}` tuple if the re-call was successful.
+  # - `{:error, reason}` if all attempts were failed.
+  @spec http_get_request_error(String.t(), any(), non_neg_integer()) :: {:ok, map()} | {:error, any()}
+  defp http_get_request_error(url, error, attempts_done) do
+    old_truncate = Application.get_env(:logger, :truncate)
+    Logger.configure(truncate: :infinity)
+
+    Logger.error(fn ->
+      [
+        "Error while sending request to #{url}: ",
+        inspect(error, limit: :infinity, printable_limit: :infinity)
+      ]
+    end)
+
+    Logger.configure(truncate: old_truncate)
+
+    # retry to send the request
+    attempts_done = attempts_done + 1
+
+    if attempts_done < 10 do
+      # wait up to 20 minutes and then retry
+      :timer.sleep(min(3000 * Integer.pow(2, attempts_done - 1), 1_200_000))
+      Logger.info("Retry to send the request to #{url} ...")
+      http_get_request(url, attempts_done)
+    else
+      {:error, "Error while sending request to #{url}"}
+    end
+  end
+
+  @doc """
+    Sends an HTTP request to Beacon Node to get EIP-4844 blob data by blob's versioned hash.
+
+    ## Parameters
+    - `blob_hash`: The blob versioned hash in form of `0x` string.
+    - `l1_block_timestamp`: Timestamp of L1 block to convert it to beacon slot.
+    - `l1_chain_id`: ID of L1 chain to automatically define parameters for calculating beacon slot.
+      If ID is `nil` or unknown, the parameters are taken from the fallback INDEXER_BEACON_BLOB_FETCHER_REFERENCE_SLOT,
+      INDEXER_BEACON_BLOB_FETCHER_REFERENCE_TIMESTAMP, INDEXER_BEACON_BLOB_FETCHER_SLOT_DURATION env variables.
+
+    ## Returns
+    - A binary with the blob data in case of success.
+    - `nil` in case of failure.
+  """
+  @spec get_eip4844_blob_from_beacon_node(String.t(), DateTime.t(), non_neg_integer() | nil) :: binary() | nil
+  def get_eip4844_blob_from_beacon_node(blob_hash, l1_block_timestamp, l1_chain_id) do
+    beacon_config =
+      case l1_chain_id do
+        @chain_id_eth ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_eth,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_eth,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        @chain_id_sepolia ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_sepolia,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_sepolia,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        @chain_id_holesky ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_holesky,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_holesky,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        _ ->
+          :indexer
+          |> Application.get_env(BeaconBlobFetcher)
+          |> Keyword.take([:reference_slot, :reference_timestamp, :slot_duration])
+          |> Enum.into(%{})
+      end
+
+    sidecars_url =
+      l1_block_timestamp
+      |> DateTime.to_unix()
+      |> BeaconBlobFetcher.timestamp_to_slot(beacon_config)
+      |> BeaconClient.blob_sidecars_url()
+
+    {:ok, fetched_blobs} = http_get_request(sidecars_url)
+
+    blobs = Map.get(fetched_blobs, "data", [])
+
+    if Enum.empty?(blobs) do
+      raise "Empty data"
+    end
+
+    blobs
+    |> Enum.find(fn b ->
+      b
+      |> Map.get("kzg_commitment", "0x")
+      |> hash_to_binary()
+      |> BeaconBlob.hash()
+      |> Hash.to_string()
+      |> Kernel.==(blob_hash)
+    end)
+    |> Map.get("blob")
+    |> hash_to_binary()
+  rescue
+    reason ->
+      Logger.warning("Cannot get the blob #{blob_hash} from the Beacon Node. Reason: #{inspect(reason)}")
+      nil
+  end
+
+  @doc """
+    Removes leading and trailing whitespaces and trailing slash (/) from URL string to prepare it
+    for concatenation with another part of URL.
+
+    ## Parameters
+    - `url`: The source URL to be trimmed.
+
+    ## Returns
+    - Clear URL without trailing slash and leading and trailing whitespaces.
+  """
+  @spec trim_url(String.t()) :: String.t()
+  def trim_url(url) do
+    url
+    |> String.trim()
+    |> String.trim_trailing("/")
+  end
+
+  @max_queue_size 5000
+  @enqueue_busy_waiting_timeout 500
+  @doc """
+  Reduces the given `data` into an accumulator `acc` using the provided `reducer` function,
+  but only if the queue is not full. This function ensures that the processing respects
+  the queue's size constraints.
+
+  If the queue is full (i.e., its size is greater than or equal to `@max_queue_size` or
+  its `maximum_size`), the function will pause for a duration defined by `@busy_waiting_timeout`
+  and retry until the queue has available space.
+
+  ## Parameters
+
+    - `data`: The data to be processed by the `reducer` function.
+    - `acc`: The accumulator that will be passed to the `reducer` function.
+    - `reducer`: A function that takes `data` and `acc` as arguments and returns the updated accumulator.
+
+  ## Returns
+
+  The result of applying the `reducer` function to the `data` and `acc`.
+
+  ## Notes
+
+  This function uses a recursive approach to wait for the queue to have available space.
+  Ensure that the `@busy_waiting_timeout` is set to an appropriate value to avoid excessive delays.
+  """
+  @spec reduce_if_queue_is_not_full(any(), any(), (any(), any() -> any()), module()) :: any()
+  def reduce_if_queue_is_not_full(data, acc, reducer, module) do
+    bound_queue = GenServer.call(module, :state).bound_queue
+
+    max_queue_size = Application.get_env(:indexer, module)[:max_queue_size] || @max_queue_size
+
+    enqueue_busy_waiting_timeout =
+      Application.get_env(:indexer, module)[:enqueue_busy_waiting_timeout] || @enqueue_busy_waiting_timeout
+
+    if bound_queue.size >= max_queue_size or (bound_queue.maximum_size && bound_queue.size >= bound_queue.maximum_size) do
+      :timer.sleep(enqueue_busy_waiting_timeout)
+
+      reduce_if_queue_is_not_full(data, acc, reducer, module)
+    else
+      reducer.(data, acc)
+    end
   end
 end

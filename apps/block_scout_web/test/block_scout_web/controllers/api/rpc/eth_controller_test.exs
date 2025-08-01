@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.EthControllerTest do
   use BlockScoutWeb.ConnCase, async: false
 
-  alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
+  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
   alias Explorer.Repo
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
@@ -19,8 +19,12 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
     start_supervised!(AverageBlockTime)
-    start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
-    start_supervised!(AddressesCounter)
+
+    Indexer.Fetcher.OnDemand.CoinBalance.Supervisor.Case.start_supervised!(
+      json_rpc_named_arguments: mocked_json_rpc_named_arguments
+    )
+
+    start_supervised!(AddressesCount)
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
@@ -36,6 +40,19 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
   defp topic(topic_hex_string) do
     {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
     topic
+  end
+
+  test "handles request without params if possible", %{conn: conn} do
+    assert response =
+             conn
+             |> post("/api/eth-rpc", %{
+               "method" => "eth_blockNumber",
+               "jsonrpc" => "2.0",
+               "id" => 0
+             })
+             |> json_response(200)
+
+    assert %{"id" => 0, "jsonrpc" => "2.0", "result" => "0x0"} == response
   end
 
   describe "eth_get_logs" do

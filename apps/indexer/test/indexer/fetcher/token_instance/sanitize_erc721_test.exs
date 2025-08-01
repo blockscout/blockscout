@@ -3,21 +3,20 @@ defmodule Indexer.Fetcher.TokenInstance.SanitizeERC721Test do
 
   alias Explorer.Repo
   alias Explorer.Chain.Token.Instance
-  alias EthereumJSONRPC.Encoder
 
   describe "sanitizer test" do
     test "imports token instances" do
       for x <- 0..3 do
         erc_721_token = insert(:token, type: "ERC-721")
 
-        tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+        transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
         address = insert(:address)
 
         insert(:token_transfer,
-          transaction: tx,
-          block: tx.block,
-          block_number: tx.block_number,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
           from_address: address,
           token_contract_address: erc_721_token.contract_address,
           token_ids: [x]
@@ -27,6 +26,7 @@ defmodule Indexer.Fetcher.TokenInstance.SanitizeERC721Test do
       assert [] = Repo.all(Instance)
 
       start_supervised!({Indexer.Fetcher.TokenInstance.SanitizeERC721, []})
+      start_supervised!({Indexer.Fetcher.TokenInstance.Sanitize.Supervisor, [[flush_interval: 1]]})
 
       :timer.sleep(500)
 

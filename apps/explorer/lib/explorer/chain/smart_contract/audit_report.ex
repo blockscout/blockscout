@@ -39,7 +39,7 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
     waste_fields = association_fields ++ @local_fields
 
     chain =
-      Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host] <>
+      Helper.get_app_host() <>
         Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path]
 
     request |> Map.from_struct() |> Map.drop(waste_fields) |> Map.put(:chain, chain)

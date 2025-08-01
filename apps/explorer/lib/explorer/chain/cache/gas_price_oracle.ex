@@ -7,13 +7,14 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   import Ecto.Query,
     only: [
-      from: 2
+      from: 2,
+      where: 3
     ]
 
   alias Explorer.Chain.{Block, Wei}
 
   alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.{Market, Repo}
   alias Timex.Duration
 
@@ -92,16 +93,13 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
     from_block_query = max(from_block_acc, from_block_actual)
 
-    average_block_time =
-      case AverageBlockTime.average_block_time() do
-        {:error, _} -> nil
-        average_block_time -> average_block_time |> Duration.to_milliseconds()
-      end
+    average_block_time = get_average_block_time()
 
     fee_query =
       from(
         block in Block,
         left_join: transaction in assoc(block, :transactions),
+        as: :transaction,
         where: block.consensus == true,
         where: is_nil(transaction.gas_price) or transaction.gas_price > ^0,
         where: transaction.block_number > ^from_block_query,
@@ -172,7 +170,11 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
         }
       )
 
-    new_acc = fee_query |> Repo.all(timeout: :infinity) |> merge_gas_prices(acc, from_block_actual)
+    new_acc =
+      fee_query
+      |> filter_unknown_transaction_types(Application.get_env(:explorer, :chain_type))
+      |> Repo.all(timeout: :infinity)
+      |> merge_gas_prices(acc, from_block_actual)
 
     gas_prices = new_acc |> process_fee_data_from_db()
 
@@ -183,14 +185,38 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       {{:error, error}, get_gas_prices_acc()}
   end
 
+  defp filter_unknown_transaction_types(query, :celo) do
+    query |> where([transaction: t], is_nil(t.type) or t.type != 123)
+  end
+
+  defp filter_unknown_transaction_types(query, _chain_type) do
+    query
+  end
+
   defp merge_gas_prices(new, acc, from_block), do: Enum.take_while(new ++ acc, &(&1.block_number > from_block))
 
   defp process_fee_data_from_db([]) do
-    %{
-      slow: nil,
-      average: nil,
-      fast: nil
-    }
+    case Block.next_block_base_fee_per_gas() do
+      %Decimal{} = base_fee ->
+        base_fee_wei = base_fee |> Wei.from(:wei)
+        exchange_rate = Market.get_coin_exchange_rate()
+        average_block_time = get_average_block_time()
+
+        gas_prices = compose_gas_price(base_fee_wei, average_block_time, exchange_rate, base_fee_wei, 0)
+
+        %{
+          slow: gas_prices,
+          average: gas_prices,
+          fast: gas_prices
+        }
+
+      _ ->
+        %{
+          slow: nil,
+          average: nil,
+          fast: nil
+        }
+    end
   end
 
   defp process_fee_data_from_db(fees) do
@@ -223,13 +249,12 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
           {gas_price(slow_gas_price), gas_price(average_gas_price), gas_price(fast_gas_price), nil}
       end
 
-    exchange_rate_from_db = Market.get_coin_exchange_rate()
+    exchange_rate = Market.get_coin_exchange_rate()
 
     %{
-      slow: compose_gas_price(slow_fee, slow_time, exchange_rate_from_db, base_fee_wei, slow_priority_fee_per_gas),
-      average:
-        compose_gas_price(average_fee, average_time, exchange_rate_from_db, base_fee_wei, average_priority_fee_per_gas),
-      fast: compose_gas_price(fast_fee, fast_time, exchange_rate_from_db, base_fee_wei, fast_priority_fee_per_gas)
+      slow: compose_gas_price(slow_fee, slow_time, exchange_rate, base_fee_wei, slow_priority_fee_per_gas),
+      average: compose_gas_price(average_fee, average_time, exchange_rate, base_fee_wei, average_priority_fee_per_gas),
+      fast: compose_gas_price(fast_fee, fast_time, exchange_rate, base_fee_wei, fast_priority_fee_per_gas)
     }
   end
 
@@ -251,15 +276,32 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       {key, value} ->
         value = if is_list(value), do: value, else: [value]
         count = Enum.count(value)
-        {key, value |> Enum.reduce(Decimal.new(0), &Decimal.add/2) |> Decimal.div(count)}
+
+        value =
+          value
+          |> Enum.reduce(Decimal.new(0), fn
+            fee, sum when is_float(fee) ->
+              fee |> Decimal.from_float() |> Decimal.add(sum)
+
+            fee, sum ->
+              Decimal.add(sum, fee)
+          end)
+          |> Decimal.div(count)
+
+        {key, value}
     end)
   end
 
-  defp compose_gas_price(fee, time, exchange_rate_from_db, base_fee, priority_fee) do
+  defp compose_gas_price(fee, time, exchange_rate, base_fee, priority_fee) do
     %{
       price: fee |> format_wei(),
-      time: time && time |> Decimal.to_float(),
-      fiat_price: fiat_fee(fee, exchange_rate_from_db),
+      time:
+        case time do
+          time when is_float(time) -> time
+          %Decimal{} = time -> Decimal.to_float(time)
+          _ -> nil
+        end,
+      fiat_price: fiat_fee(fee, exchange_rate),
       base_fee: base_fee |> format_wei(),
       priority_fee: base_fee && priority_fee && priority_fee |> Decimal.new() |> Wei.from(:wei) |> format_wei(),
       priority_fee_wei: base_fee && priority_fee && priority_fee |> Decimal.new() |> Decimal.round(),
@@ -269,10 +311,10 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   defp fiat_fee(fee, exchange_rate) do
     fee &&
-      exchange_rate.usd_value && simple_transaction_gas() &&
+      exchange_rate.fiat_value && simple_transaction_gas() &&
       fee
       |> Wei.to(:ether)
-      |> Decimal.mult(exchange_rate.usd_value)
+      |> Decimal.mult(exchange_rate.fiat_value)
       |> Decimal.mult(simple_transaction_gas())
       |> Decimal.round(2)
   end
@@ -310,9 +352,10 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
   defp fast_time_coefficient, do: Application.get_env(:explorer, __MODULE__)[:fast_time_coefficient]
 
   defp handle_fallback(:gas_prices) do
-    # This will get the task PID if one exists and launch a new task if not
+    # This will get the task PID if one exists, check if it's running and launch
+    # a new task if task doesn't exist or it's not running.
     # See next `handle_fallback` definition
-    get_async_task()
+    safe_get_async_task()
 
     {:return, get_old_gas_prices()}
   end
@@ -353,8 +396,15 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
   # `gas_prices` expires (unless there is one already running)
   defp async_task_on_deletion({:delete, _, :gas_prices}) do
     set_old_gas_prices(get_gas_prices())
-    get_async_task()
+    safe_get_async_task()
   end
 
   defp async_task_on_deletion(_data), do: nil
+
+  defp get_average_block_time do
+    case AverageBlockTime.average_block_time() do
+      {:error, :disabled} -> nil
+      average_block_time -> average_block_time |> Duration.to_milliseconds()
+    end
+  end
 end

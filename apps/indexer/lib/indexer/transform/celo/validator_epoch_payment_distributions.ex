@@ -55,16 +55,19 @@ defmodule Indexer.Transform.Celo.ValidatorEpochPaymentDistributions do
     |> Enum.map(fn log ->
       {:ok, %FunctionSelector{},
        [
-         {"validator", "address", true, validator_address},
+         {"validator", "address", true, validator_address_bytes},
          {"validatorPayment", "uint256", false, validator_payment},
-         {"group", "address", true, group_address},
+         {"group", "address", true, group_address_bytes},
          {"groupPayment", "uint256", false, group_payment}
        ]} = Log.find_and_decode(@event_abi, log, log.block_hash)
 
+      {:ok, validator_address} = Hash.Address.cast(validator_address_bytes)
+      {:ok, group_address} = Hash.Address.cast(group_address_bytes)
+
       %{
-        validator_address: "0x" <> Base.encode16(validator_address, case: :lower),
+        validator_address: validator_address,
         validator_payment: validator_payment,
-        group_address: "0x" <> Base.encode16(group_address, case: :lower),
+        group_address: group_address,
         group_payment: group_payment
       }
     end)

@@ -6,23 +6,13 @@ defmodule EthereumJSONRPC.ReceiptTest do
   doctest Receipt
 
   describe "to_elixir/1" do
-    test "with new key raise ArgumentError with full receipt" do
-      assert_raise ArgumentError,
-                   """
-                   Could not convert receipt to elixir
-
-                   Receipt:
-                     %{"new_key" => "new_value", "transactionHash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"}
-
-                   Errors:
-                     {:unknown_key, %{value: "new_value", key: "new_key"}}
-                   """,
-                   fn ->
-                     Receipt.to_elixir(%{
-                       "new_key" => "new_value",
-                       "transactionHash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"
-                     })
-                   end
+    test "ignores new key" do
+      assert Receipt.to_elixir(%{
+               "new_key" => "new_value",
+               "transactionHash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"
+             }) == %{
+               "transactionHash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"
+             }
     end
 
     # Regression test for https://github.com/poanetwork/blockscout/issues/638

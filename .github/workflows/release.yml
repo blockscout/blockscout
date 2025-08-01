@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
@@ -10,198 +11,88 @@ env:
 
 jobs:
   push_to_registry:
-    name: Push Docker image to Docker Hub
+    name: Push Docker image to GitHub Container Registry
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: ${{ vars.RELEASE_VERSION }}
+      RELEASE_VERSION: 9.0.0
     steps:
       - uses: actions/checkout@v4
       - name: Setup repo
         uses: ./.github/actions/setup-repo
         id: setup
         with:
-          docker-username: ${{ secrets.DOCKER_USERNAME }}
-          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           docker-remote-multi-platform: true
           docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - name: Build & Push Core Docker image (indexer + API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout:latest, ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
-            DISABLE_WEBAPP=false
-            API_V1_READ_METHODS_DISABLED=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
             AMPLITUDE_URL=
             AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
       - name: Build & Push Core Docker image (indexer)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-indexer
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
             DISABLE_API=true
-            DISABLE_WEBAPP=true
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
             AMPLITUDE_URL=
             AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
-      - name: Build & Push Core Docker image (API)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-api
-          labels: ${{ steps.setup.outputs.docker-labels }}
-          platforms: |
-            linux/amd64
-            linux/arm64/v8
-          build-args: |
-            DISABLE_INDEXER=true
-            DISABLE_WEBAPP=true
-            API_V1_READ_METHODS_DISABLED=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
-            DECODE_NOT_A_CONTRACT_CALLS=false
-            MIXPANEL_URL=
-            MIXPANEL_TOKEN=
-            AMPLITUDE_URL=
-            AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
-      - name: Build & Push Core Docker image (indexer + API + shrink internal transactions)
-        uses: docker/build-push-action@v5
+      - name: Build & Push Docker image with an old UI (indexer + API)
+        uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/Dockerfile
+          file: ./docker/oldUI.Dockerfile
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-shrink-internal-txs
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}-with-old-ui
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
-            DISABLE_WEBAPP=false
-            API_V1_READ_METHODS_DISABLED=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
             AMPLITUDE_URL=
             AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
-    
-      - name: Build & Push Core Docker image (indexer + shrink internal transactions)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-shrink-internal-txs-indexer
-          labels: ${{ steps.setup.outputs.docker-labels }}
-          platforms: |
-            linux/amd64
-            linux/arm64/v8
-          build-args: |
-            DISABLE_API=true
-            DISABLE_WEBAPP=true
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
-            DECODE_NOT_A_CONTRACT_CALLS=false
-            MIXPANEL_URL=
-            MIXPANEL_TOKEN=
-            AMPLITUDE_URL=
-            AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
-
-      - name: Build & Push Core Docker image (API + shrink internal transactions)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-shrink-internal-txs-api
-          labels: ${{ steps.setup.outputs.docker-labels }}
-          platforms: |
-            linux/amd64
-            linux/arm64/v8
-          build-args: |
-            DISABLE_INDEXER=true
-            DISABLE_WEBAPP=true
-            API_V1_READ_METHODS_DISABLED=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
-            DECODE_NOT_A_CONTRACT_CALLS=false
-            MIXPANEL_URL=
-            MIXPANEL_TOKEN=
-            AMPLITUDE_URL=
-            AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
       # - name: Send release announcement to Slack workflow
       #   id: slack
@@ -210,7 +101,7 @@ jobs:
       #     payload: |
       #       {
       #         "release-version": "${{ env.RELEASE_VERSION }}",
-      #         "release-link": "https://github.com/blockscout/blockscout/releases/tag/v${{ env.RELEASE_VERSION }}-beta"
+      #         "release-link": "https://github.com/blockscout/blockscout/releases/tag/v${{ env.RELEASE_VERSION }}"
       #       }
       #   env:
       #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

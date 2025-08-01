@@ -7,11 +7,11 @@ defmodule BlockScoutWeb.TransactionView do
   alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
-  alias Explorer.Counters.AverageBlockTime
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
+  alias Explorer.Market.Token
   alias Timex.Duration
 
-  import BlockScoutWeb.Gettext
+  use Gettext, backend: BlockScoutWeb.Gettext
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1, short_token_id: 2, tag_name_to_label: 1]
   import BlockScoutWeb.Tokens.Helper
 
@@ -277,7 +277,7 @@ defmodule BlockScoutWeb.TransactionView do
     left
     |> Timex.diff(right, :milliseconds)
     |> Duration.from_milliseconds()
-    |> Timex.format_duration(Explorer.Counters.AverageBlockTimeDurationFormat)
+    |> Timex.format_duration(Explorer.Chain.Cache.Counters.Helper.AverageBlockTimeDurationFormat)
     |> case do
       {:error, _} = error -> error
       duration -> {:ok, duration}
@@ -395,8 +395,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def decoded_input_data(transaction) do
-    {result, _, _} = Transaction.decoded_input_data(transaction, [])
-    result
+    Transaction.decoded_input_data(transaction, [])
   end
 
   def decoded_revert_reason(revert_reason, transaction, options) do
@@ -598,14 +597,6 @@ defmodule BlockScoutWeb.TransactionView do
 
   def trim(length, string) do
     %{show: String.slice(string, 0..length), hide: String.slice(string, (length + 1)..-1//1)}
-  end
-
-  defp template_to_string(template) when is_list(template) do
-    template_to_string(Enum.at(template, 1))
-  end
-
-  defp template_to_string(template) when is_tuple(template) do
-    safe_to_string(template)
   end
 
   # Function decodes revert reason of the transaction

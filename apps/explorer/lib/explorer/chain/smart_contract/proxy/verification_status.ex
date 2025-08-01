@@ -8,6 +8,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.VerificationStatus do
   import Ecto.Changeset
 
   alias Explorer.Chain.Hash
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{Chain, Repo}
 
   @typep status :: integer() | atom()
@@ -109,13 +110,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.VerificationStatus do
   @doc """
     Sets proxy verification result
   """
-  @spec set_proxy_verification_result({[String.t()] | :empty | :error, [String.t()] | :empty | :error}, String.t()) ::
-          __MODULE__.t()
-  def set_proxy_verification_result({empty_or_error, _}, uid) when empty_or_error in [:empty, :error],
-    do: update_status(uid, :fail)
+  @spec set_proxy_verification_result(Implementation.t() | :empty | :error, String.t()) :: __MODULE__.t()
+  def set_proxy_verification_result(%Implementation{}, uid), do: update_status(uid, :pass)
 
-  def set_proxy_verification_result({[], _}, uid),
-    do: update_status(uid, :fail)
-
-  def set_proxy_verification_result({_, _}, uid), do: update_status(uid, :pass)
+  def set_proxy_verification_result(_empty_or_error, uid), do: update_status(uid, :fail)
 end

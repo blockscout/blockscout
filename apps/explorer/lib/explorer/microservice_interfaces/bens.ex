@@ -3,13 +3,12 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     Interface to interact with Blockscout ENS microservice
   """
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, HttpClient}
   alias Explorer.Chain.Address.MetadataPreloader
 
   alias Explorer.Chain.{Address, Transaction}
 
   alias Explorer.Utility.Microservice
-  alias HTTPoison.Response
 
   require Logger
 
@@ -84,7 +83,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     Request for ENS name via GET {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
   @spec ens_domain_name_lookup(binary()) ::
-          nil | %{address_hash: binary(), expiry_date: any(), name: any(), names_count: integer()}
+          nil | %{address_hash: binary(), expiry_date: any(), name: any(), names_count: integer(), protocol: any()}
   def ens_domain_name_lookup(domain) do
     domain |> ens_domain_lookup() |> parse_lookup_response()
   end
@@ -92,8 +91,8 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+      {:ok, %{body: body, status_code: 200}} ->
         Jason.decode(body)
 
       {_, error} ->
@@ -113,8 +112,8 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   defp http_get_request(url, query_params) do
-    case HTTPoison.get(url, [], params: query_params) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.get(url, [], params: query_params) do
+      {:ok, %{body: body, status_code: 200}} ->
         Jason.decode(body)
 
       {_, error} ->
@@ -154,7 +153,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   defp domain_lookup_url do
-    "#{domains_url()}:lookup"
+    "#{domains_url()}%3Alookup"
   end
 
   defp addresses_url do
@@ -175,7 +174,12 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
           %{
             "items" =>
               [
-                %{"name" => name, "expiry_date" => expiry_date, "resolved_address" => %{"hash" => address_hash_string}}
+                %{
+                  "name" => name,
+                  "expiry_date" => expiry_date,
+                  "resolved_address" => %{"hash" => address_hash_string},
+                  "protocol" => protocol
+                }
                 | _other
               ] = items
           }}
@@ -186,7 +190,8 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
       name: name,
       expiry_date: expiry_date,
       names_count: Enum.count(items),
-      address_hash: Address.checksum(hash)
+      address_hash: Address.checksum(hash),
+      protocol: protocol
     }
   end
 

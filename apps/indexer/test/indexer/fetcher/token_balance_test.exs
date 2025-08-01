@@ -28,6 +28,22 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
                {address_hash_bytes, token_contract_address_hash_bytes, 1000, "ERC-20", nil, 0}
              ]
     end
+
+    test "omits failed balances with refetch_after in future" do
+      %Address.TokenBalance{
+        address_hash: %Hash{bytes: address_hash_bytes},
+        token_contract_address_hash: %Hash{bytes: token_contract_address_hash_bytes},
+        block_number: block_number
+      } = insert(:token_balance, value_fetched_at: nil)
+
+      insert(:token_balance, value_fetched_at: DateTime.utc_now())
+
+      insert(:token_balance, refetch_after: Timex.shift(Timex.now(), hours: 1))
+
+      assert TokenBalance.init([], &[&1 | &2], nil) == [
+               {address_hash_bytes, token_contract_address_hash_bytes, block_number, "ERC-20", nil, 0}
+             ]
+    end
   end
 
   describe "run/3" do
@@ -68,86 +84,6 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
 
       assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
       assert token_balance_updated.value_fetched_at != nil
-    end
-
-    test "imports the given token balances from 2nd retry" do
-      %Address.TokenBalance{
-        address_hash: %Hash{bytes: address_hash_bytes} = address_hash,
-        token_contract_address_hash: %Hash{bytes: token_contract_address_hash_bytes},
-        block_number: block_number
-      } = insert(:token_balance, value_fetched_at: nil, value: nil)
-
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               error: %{code: -32015, message: "VM execution error.", data: ""}
-             }
-           ]}
-        end
-      )
-
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
-             }
-           ]}
-        end
-      )
-
-      assert TokenBalance.run(
-               [{address_hash_bytes, token_contract_address_hash_bytes, block_number, "ERC-20", nil, 0}],
-               nil
-             ) == :ok
-
-      token_balance_updated = Repo.get_by(Address.TokenBalance, address_hash: address_hash)
-
-      assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
-      assert token_balance_updated.value_fetched_at != nil
-    end
-
-    test "does not try to fetch the token balance again if the retry is over" do
-      max_retries = 3
-
-      Application.put_env(:indexer, :token_balance_max_retries, max_retries)
-
-      token_balance_a = insert(:token_balance, value_fetched_at: nil, value: nil)
-      token_balance_b = insert(:token_balance, value_fetched_at: nil, value: nil)
-
-      token_balances = [
-        {
-          token_balance_a.address_hash.bytes,
-          token_balance_a.token_contract_address_hash.bytes,
-          "ERC-20",
-          nil,
-          token_balance_a.block_number,
-          # this token balance must be ignored
-          max_retries
-        },
-        {
-          token_balance_b.address_hash.bytes,
-          token_balance_b.token_contract_address_hash.bytes,
-          "ERC-20",
-          nil,
-          token_balance_b.block_number,
-          # this token balance still have to be retried
-          max_retries - 2
-        }
-      ]
-
-      assert TokenBalance.run(token_balances, nil) == :ok
     end
 
     test "fetches duplicate params only once" do
@@ -233,7 +169,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
       assert %{currently_implemented: true} = Repo.one(MissingBalanceOfToken)
     end
 
-    test "in case of error deletes token balance placeholders below the given number and inserts new missing balanceOf tokens" do
+    test "in case of execution reverted error deletes token balance placeholders below the given number and inserts new missing balanceOf tokens" do
       address = insert(:address)
       %{contract_address_hash: token_contract_address_hash} = insert(:token)
 
@@ -271,6 +207,46 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
                Repo.one(MissingBalanceOfToken)
 
       assert Repo.all(Address.TokenBalance) == []
+    end
+
+    test "in case of other error updates the refetch_after and retries_count of token balance" do
+      address = insert(:address)
+      %{contract_address_hash: token_contract_address_hash} = insert(:token)
+
+      insert(:token_balance,
+        token_contract_address_hash: token_contract_address_hash,
+        address: address,
+        block_number: 1,
+        value_fetched_at: nil,
+        value: nil,
+        refetch_after: nil,
+        retries_count: nil
+      )
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               error: %{code: "-32000", message: "other error"}
+             }
+           ]}
+        end
+      )
+
+      assert TokenBalance.run(
+               [
+                 {address.hash.bytes, token_contract_address_hash.bytes, 1, "ERC-20", nil, 0}
+               ],
+               nil
+             ) == :ok
+
+      assert %{retries_count: 1, refetch_after: refetch_after} = Repo.one(Address.TokenBalance)
+      refute is_nil(refetch_after)
     end
   end
 

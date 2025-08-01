@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Transaction.History.TransactionStats do
   @moduledoc """
-  Represents daily transaction numbers.
+  Represents daily chain performance stats
   """
 
   import Ecto.Query, only: [from: 2]
@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
            ]}
 
   @typedoc """
-  The recorded values of the number of transactions for a single day.
+  The recorded values of the chain performance stats for a single day.
    * `:date` - The date in UTC.
    * `:number_of_transactions` - Number of transactions processed by the vm for a given date.
    * `:gas_used` - Gas used in transactions per single day
@@ -28,7 +28,25 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
     field(:total_fee, :decimal)
   end
 
-  @spec by_date_range(Date.t(), Date.t()) :: [__MODULE__]
+  @doc """
+    Retrieves transaction statistics within a specified date range.
+
+    This function queries the database for transaction statistics recorded between
+    the given earliest and latest dates, inclusive. The results are ordered by
+    date in descending order.
+
+    ## Parameters
+    - `earliest`: The start date of the range to query (inclusive).
+    - `latest`: The end date of the range to query (inclusive).
+    - `options`: Optional keyword list of options used to select the repo for the
+      query.
+
+    ## Returns
+    A list of `Explorer.Chain.Transaction.History.TransactionStats` structs,
+    each representing the transaction statistics for a single day within the
+    specified range.
+  """
+  @spec by_date_range(Date.t(), Date.t(), keyword()) :: [__MODULE__]
   def by_date_range(earliest, latest, options \\ []) do
     # Create a query
     query =

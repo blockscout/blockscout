@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
       price_history_data =
         case recent_market_history do
           [today | the_rest] ->
-            [%{today | closing_price: exchange_rate.usd_value} | the_rest]
+            [%{today | closing_price: exchange_rate.fiat_value} | the_rest]
 
           data ->
             data

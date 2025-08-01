@@ -58,7 +58,7 @@ defmodule Explorer.Chain.Optimism.OutputRoot do
         base_query
         |> page_output_roots(paging_options)
         |> limit(^paging_options.page_size)
-        |> select_repo(options).all()
+        |> select_repo(options).all(timeout: :infinity)
     end
   end
 
@@ -66,5 +66,37 @@ defmodule Explorer.Chain.Optimism.OutputRoot do
 
   defp page_output_roots(query, %PagingOptions{key: {index}}) do
     from(r in query, where: r.l2_output_index < ^index)
+  end
+
+  @doc """
+    Forms a query to find the last Output Root's L1 block number and transaction hash.
+    Used by the `Indexer.Fetcher.Optimism.OutputRoot` module.
+
+    ## Returns
+    - A query which can be used by the `Repo.one` function.
+  """
+  @spec last_root_l1_block_number_query() :: Ecto.Queryable.t()
+  def last_root_l1_block_number_query do
+    from(root in __MODULE__,
+      select: {root.l1_block_number, root.l1_transaction_hash},
+      order_by: [desc: root.l2_output_index],
+      limit: 1
+    )
+  end
+
+  @doc """
+    Forms a query to remove all Output Roots related to the specified L1 block number.
+    Used by the `Indexer.Fetcher.Optimism.OutputRoot` module.
+
+    ## Parameters
+    - `l1_block_number`: The L1 block number for which the Output Roots should be removed
+                         from the `op_output_roots` database table.
+
+    ## Returns
+    - A query which can be used by the `delete_all` function.
+  """
+  @spec remove_roots_query(non_neg_integer()) :: Ecto.Queryable.t()
+  def remove_roots_query(l1_block_number) do
+    from(root in __MODULE__, where: root.l1_block_number == ^l1_block_number)
   end
 end

@@ -1,9 +1,10 @@
 defmodule Explorer.Chain.Token.Schema do
   @moduledoc false
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias Explorer.Chain.{Address, Hash}
 
-  if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+  if @bridged_tokens_enabled do
     @bridged_field [
       quote do
         field(:bridged, :boolean)
@@ -26,11 +27,13 @@ defmodule Explorer.Chain.Token.Schema do
         field(:holder_count, :integer)
         field(:skip_metadata, :boolean)
         field(:total_supply_updated_at_block, :integer)
+        field(:metadata_updated_at, :utc_datetime_usec)
         field(:fiat_value, :decimal)
         field(:circulating_market_cap, :decimal)
         field(:icon_url, :string)
         field(:is_verified_via_admin_panel, :boolean)
         field(:volume_24h, :decimal)
+        field(:transfer_count, :integer)
 
         belongs_to(
           :contract_address,
@@ -78,9 +81,12 @@ defmodule Explorer.Chain.Token do
 
   import Ecto.{Changeset, Query}
 
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.{Chain, SortingHelper}
-  alias Explorer.Chain.{BridgedToken, Hash, Search, Token}
+  alias Explorer.Chain.{Address, BridgedToken, Hash, Search, Token}
+  alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Import.Runner
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Repo
   alias Explorer.SmartContract.Helper
 
@@ -100,7 +106,8 @@ defmodule Explorer.Chain.Token do
              :__meta__,
              :contract_address,
              :inserted_at,
-             :updated_at
+             :updated_at,
+             :metadata_updated_at
            ]}
 
   @derive {Jason.Encoder,
@@ -108,7 +115,8 @@ defmodule Explorer.Chain.Token do
              :__meta__,
              :contract_address,
              :inserted_at,
-             :updated_at
+             :updated_at,
+             :metadata_updated_at
            ]}
 
   @typedoc """
@@ -122,6 +130,7 @@ defmodule Explorer.Chain.Token do
   * `contract_address_hash` - Address hash foreign key
   * `holder_count` - the number of `t:Explorer.Chain.Address.t/0` (except the burn address) that have a
     `t:Explorer.Chain.CurrentTokenBalance.t/0` `value > 0`.  Can be `nil` when data not migrated.
+  * `transfer_count` - the number of token transfers for `t:Explorer.Chain.Address.t/0` token
   * `fiat_value` - The price of a token in a configured currency (USD by default).
   * `circulating_market_cap` - The circulating market cap of a token in a configured currency (USD by default).
   * `icon_url` - URL of the token's icon.
@@ -130,7 +139,7 @@ defmodule Explorer.Chain.Token do
   Explorer.Chain.Token.Schema.generate()
 
   @required_attrs ~w(contract_address_hash type)a
-  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel volume_24h)a
+  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block metadata_updated_at updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel volume_24h)a
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do
@@ -169,7 +178,7 @@ defmodule Explorer.Chain.Token do
   @doc """
   Builds an `Ecto.Query` to fetch the cataloged tokens.
 
-  These are tokens with cataloged field set to true and updated_at is earlier or equal than an hour ago.
+  These are tokens with cataloged field set to true, skip_metadata is not true and metadata_updated_at is earlier or equal than 48 hours ago.
   """
   def cataloged_tokens(minutes \\ 2880) do
     date_now = DateTime.utc_now()
@@ -177,7 +186,134 @@ defmodule Explorer.Chain.Token do
 
     from(
       token in __MODULE__,
-      where: token.cataloged == true and token.updated_at <= ^some_time_ago_date
+      where: token.cataloged == true,
+      where: is_nil(token.metadata_updated_at) or token.metadata_updated_at <= ^some_time_ago_date,
+      where: is_nil(token.skip_metadata) or token.skip_metadata == false
+    )
+  end
+
+  @doc """
+  Streams a list of tokens that have been cataloged for their metadata update.
+  """
+  @spec stream_cataloged_tokens(
+          initial :: accumulator,
+          reducer :: (entry :: Token.t(), accumulator -> accumulator),
+          some_time_ago_updated :: integer(),
+          limited? :: boolean()
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_cataloged_tokens(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
+      when is_function(reducer, 2) do
+    some_time_ago_updated
+    |> Token.cataloged_tokens()
+    |> Chain.add_fetcher_limit(limited?)
+    |> order_by(asc_nulls_first: :metadata_updated_at)
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
+  Update a new `t:Token.t/0` record.
+
+  As part of updating token, an additional record is inserted for
+  naming the address for reference if a name is provided for a token.
+  """
+  @spec update(Token.t(), map(), boolean(), :base | :metadata_update) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
+  def update(
+        %Token{contract_address_hash: address_hash} = token,
+        params \\ %{},
+        info_from_admin_panel? \\ false,
+        operation_type \\ :base
+      ) do
+    params =
+      if Map.has_key?(params, :total_supply) do
+        Map.put(params, :total_supply_updated_at_block, BlockNumber.get_max())
+      else
+        params
+      end
+
+    filtered_params = for({key, value} <- params, value !== "" && !is_nil(value), do: {key, value}) |> Enum.into(%{})
+
+    token_changeset =
+      token
+      |> Token.changeset(
+        filtered_params
+        |> Map.put(:updated_at, DateTime.utc_now())
+      )
+      |> (&if(token.is_verified_via_admin_panel && !info_from_admin_panel?,
+            do: &1 |> Changeset.delete_change(:symbol) |> Changeset.delete_change(:name),
+            else: &1
+          )).()
+
+    address_name_changeset =
+      Address.Name.changeset(%Address.Name{}, Map.put(filtered_params, :address_hash, address_hash))
+
+    stale_error_field = :contract_address_hash
+    stale_error_message = "is up to date"
+
+    on_conflict =
+      if operation_type == :metadata_update do
+        token_metadata_update_on_conflict()
+      else
+        Runner.Tokens.default_on_conflict()
+      end
+
+    token_opts = [
+      on_conflict: on_conflict,
+      conflict_target: :contract_address_hash,
+      stale_error_field: stale_error_field,
+      stale_error_message: stale_error_message
+    ]
+
+    address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
+
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    insert_result =
+      Multi.new()
+      |> Multi.run(
+        :address_name,
+        fn repo, _ ->
+          {:ok, repo.insert(address_name_changeset, address_name_opts)}
+        end
+      )
+      |> Multi.run(:token, fn repo, _ ->
+        with {:error, %Changeset{errors: [{^stale_error_field, {^stale_error_message, [_]}}]}} <-
+               repo.update(token_changeset, token_opts) do
+          # the original token passed into `update/2` as stale error means it is unchanged
+          {:ok, token}
+        end
+      end)
+      |> Repo.transaction()
+
+    case insert_result do
+      {:ok, %{token: token}} ->
+        {:ok, token}
+
+      {:error, :token, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  defp token_metadata_update_on_conflict do
+    from(
+      token in Token,
+      update: [
+        set: [
+          name: fragment("COALESCE(EXCLUDED.name, ?)", token.name),
+          symbol: fragment("COALESCE(EXCLUDED.symbol, ?)", token.symbol),
+          total_supply: fragment("COALESCE(EXCLUDED.total_supply, ?)", token.total_supply),
+          decimals: fragment("COALESCE(EXCLUDED.decimals, ?)", token.decimals),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at),
+          metadata_updated_at: fragment("GREATEST(?, EXCLUDED.metadata_updated_at)", token.metadata_updated_at)
+        ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals) IS DISTINCT FROM (?, ?, ?, ?)",
+          token.name,
+          token.symbol,
+          token.total_supply,
+          token.decimals
+        )
     )
   end
 
@@ -200,16 +336,23 @@ defmodule Explorer.Chain.Token do
           Chain.paging_options()
           | {:sorting, SortingHelper.sorting_params()}
           | {:token_type, [String.t()]}
+          | {:necessity_by_association, map()}
+          | Chain.show_scam_tokens?()
         ]) :: [Token.t()]
   def list_top(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     token_type = Keyword.get(options, :token_type, nil)
     sorting = Keyword.get(options, :sorting, [])
 
-    query = from(t in Token, preload: [:contract_address])
+    necessity_by_association =
+      Keyword.get(options, :necessity_by_association, %{
+        :contract_address => :optional
+      })
 
     sorted_paginated_query =
-      query
+      Token
+      |> Chain.join_associations(necessity_by_association)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
       |> apply_filter(token_type)
       |> SortingHelper.apply_sorting(sorting, @default_sorting)
       |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
@@ -247,7 +390,7 @@ defmodule Explorer.Chain.Token do
   end
 
   @doc """
-    For usage in Indexer.Fetcher.TokenInstance.LegacySanitizeERC721
+    For usage in Indexer.Fetcher.TokenInstance.SanitizeERC721
   """
   @spec ordered_erc_721_token_address_hashes_list_query(integer(), Hash.Address.t() | nil) :: Ecto.Query.t()
   def ordered_erc_721_token_address_hashes_list_query(limit, last_address_hash \\ nil) do
@@ -263,7 +406,7 @@ defmodule Explorer.Chain.Token do
 
   @doc """
     Updates token_holder_count for a given contract_address_hash.
-    It used by Explorer.Counters.TokenHoldersCounter module.
+    It used by Explorer.Chain.Cache.Counters.TokenHoldersCount module.
   """
   @spec update_token_holder_count(Hash.Address.t(), integer()) :: {non_neg_integer(), nil}
   def update_token_holder_count(contract_address_hash, holder_count) when not is_nil(holder_count) do
@@ -273,6 +416,31 @@ defmodule Explorer.Chain.Token do
       from(t in __MODULE__,
         where: t.contract_address_hash == ^contract_address_hash,
         update: [set: [holder_count: ^holder_count, updated_at: ^now]]
+      ),
+      [],
+      timeout: @timeout
+    )
+  end
+
+  @doc """
+    Updates `transfer_count` field for a given `contract_address_hash`.
+    Used by the `Explorer.Chain.Cache.Counters.TokenTransfersCount` module.
+
+    ## Parameters
+    - `contract_address_hash`: The address of the token contract.
+    - `transfer_count`: The updated counter value.
+
+    ## Returns
+    - `{updated_count, nil}` tuple where `updated_count` is the number of updated rows in the db table.
+  """
+  @spec update_token_transfer_count(Hash.Address.t(), non_neg_integer()) :: {non_neg_integer(), nil}
+  def update_token_transfer_count(contract_address_hash, transfer_count) when not is_nil(transfer_count) do
+    now = DateTime.utc_now()
+
+    Repo.update_all(
+      from(t in __MODULE__,
+        where: t.contract_address_hash == ^contract_address_hash,
+        update: [set: [transfer_count: ^transfer_count, updated_at: ^now]]
       ),
       [],
       timeout: @timeout
@@ -298,5 +466,29 @@ defmodule Explorer.Chain.Token do
   def token_by_contract_address_hash_query(contract_address_hash) do
     __MODULE__
     |> where([token], token.contract_address_hash == ^contract_address_hash)
+  end
+
+  @doc """
+  Checks if a token with the given contract address hash exists.
+
+  ## Parameters
+
+    - hash: The contract address hash to check for.
+    - options: Options to select the repository.
+
+  ## Returns
+
+  - `true` if a token with the given contract address hash exists.
+  - `false` otherwise.
+  """
+  @spec by_contract_address_hash_exists?(Hash.Address.t() | String.t(), [Chain.api?()]) :: boolean()
+  def by_contract_address_hash_exists?(hash, options) do
+    query =
+      from(
+        t in __MODULE__,
+        where: t.contract_address_hash == ^hash
+      )
+
+    Chain.select_repo(options).exists?(query)
   end
 end

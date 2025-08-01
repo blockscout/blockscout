@@ -7,10 +7,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   import EthereumJSONRPC,
     only: [
-      integer_to_quantity: 1,
-      json_rpc: 2,
       quantity_to_integer: 1,
-      request: 1,
       timestamp_to_datetime: 1
     ]
 
@@ -20,6 +17,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.PolygonZkevm.Reader
   alias Indexer.Helper, as: IndexerHelper
   alias Indexer.Transform.Addresses
@@ -82,38 +80,17 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   @spec get_logs_all({non_neg_integer(), non_neg_integer()}, binary(), list()) :: list()
   def get_logs_all({chunk_start, chunk_end}, bridge_contract, json_rpc_named_arguments) do
     {:ok, result} =
-      get_logs(
+      IndexerHelper.get_logs(
         chunk_start,
         chunk_end,
         bridge_contract,
         [[@bridge_event, @claim_event_v1, @claim_event_v2]],
-        json_rpc_named_arguments
+        json_rpc_named_arguments,
+        0,
+        IndexerHelper.infinite_retries_number()
       )
 
     Logs.elixir_to_params(result)
-  end
-
-  defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries \\ 100_000_000) do
-    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
-    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
-
-    req =
-      request(%{
-        id: 0,
-        method: "eth_getLogs",
-        params: [
-          %{
-            :fromBlock => processed_from_block,
-            :toBlock => processed_to_block,
-            :address => address,
-            :topics => topics
-          }
-        ]
-      })
-
-    error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
-
-    IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   @doc """
@@ -241,7 +218,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   defp blocks_to_timestamps(events, json_rpc_named_arguments) do
     events
-    |> IndexerHelper.get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+    |> IndexerHelper.get_blocks_by_events(json_rpc_named_arguments, IndexerHelper.infinite_retries_number())
     |> Enum.reduce(%{}, fn block, acc ->
       block_number = quantity_to_integer(Map.get(block, "number"))
       timestamp = timestamp_to_datetime(Map.get(block, "timestamp"))
@@ -253,7 +230,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     [
       leaf_type,
       origin_network,
-      origin_address,
+      origin_address_bytes,
       destination_network,
       _destination_address,
       amount,
@@ -261,7 +238,9 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
       deposit_count
     ] = decode_data(event.data, @bridge_event_params)
 
-    {token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id_l2), amount,
+    {:ok, origin_address_hash} = Hash.Address.cast(origin_address_bytes)
+
+    {token_address_by_origin_address(origin_address_hash, origin_network, leaf_type, rollup_network_id_l2), amount,
      deposit_count, destination_network}
   end
 
@@ -402,7 +381,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   defp token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id_l2) do
     with true <- leaf_type != 1,
-         token_address = "0x" <> Base.encode16(origin_address, case: :lower),
+         token_address = to_string(origin_address),
          true <- token_address != burn_address_hash_string() do
       if origin_network != rollup_network_id_l2 do
         # this is L1 address

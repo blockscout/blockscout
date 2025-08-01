@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
   alias Phoenix.View
 
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do
-    with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
+    with {:ok, transaction_hash} <- Chain.string_to_full_hash(transaction_hash_string),
          :ok <- Chain.check_transaction_exists(transaction_hash),
          {:ok, transaction} <- Chain.hash_to_transaction(transaction_hash, []),
          {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
@@ -84,7 +84,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
   end
 
   def index(conn, %{"transaction_id" => transaction_hash_string} = params) do
-    with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
+    with {:ok, transaction_hash} <- Chain.string_to_full_hash(transaction_hash_string),
          {:ok, transaction} <-
            Chain.hash_to_transaction(
              transaction_hash,
@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
         transaction: transaction,
         from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
         to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
-        tx_tags:
+        transaction_tags:
           get_transaction_with_addresses_tags(
             transaction,
             current_user(conn)

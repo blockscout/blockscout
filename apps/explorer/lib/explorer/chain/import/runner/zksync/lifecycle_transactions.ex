@@ -83,20 +83,20 @@ defmodule Explorer.Chain.Import.Runner.ZkSync.LifecycleTransactions do
 
   defp default_on_conflict do
     from(
-      tx in LifecycleTransaction,
+      transaction in LifecycleTransaction,
       update: [
         set: [
           # don't update `id` as it is a primary key
           # don't update `hash` as it is a unique index and used for the conflict target
           timestamp: fragment("EXCLUDED.timestamp"),
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tx.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tx.updated_at)
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", transaction.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", transaction.updated_at)
         ]
       ],
       where:
         fragment(
           "(EXCLUDED.timestamp) IS DISTINCT FROM (?)",
-          tx.timestamp
+          transaction.timestamp
         )
     )
   end

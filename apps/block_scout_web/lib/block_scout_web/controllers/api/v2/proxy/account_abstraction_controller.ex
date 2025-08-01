@@ -24,9 +24,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/operations/:user_operation_hash_param/summary` endpoint.
   """
   @spec summary(Plug.Conn.t(), map()) ::
-          {:error | :format | :tx_interpreter_enabled | non_neg_integer(), any()} | Plug.Conn.t()
+          {:error | :format | :transaction_interpreter_enabled | non_neg_integer(), any()} | Plug.Conn.t()
   def summary(conn, %{"operation_hash_param" => operation_hash_string, "just_request_body" => "true"}) do
-    with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_transaction_hash(operation_hash_string)},
+    with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_full_hash(operation_hash_string)},
          {200, %{"hash" => _} = user_op} <- AccountAbstraction.get_user_ops_by_hash(operation_hash_string) do
       conn
       |> json(TransactionInterpretationService.get_user_op_request_body(user_op))
@@ -34,13 +34,14 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   end
 
   def summary(conn, %{"operation_hash_param" => operation_hash_string}) do
-    with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_transaction_hash(operation_hash_string)},
-         {:tx_interpreter_enabled, true} <- {:tx_interpreter_enabled, TransactionInterpretationService.enabled?()},
+    with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_full_hash(operation_hash_string)},
+         {:transaction_interpreter_enabled, true} <-
+           {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
          {200, %{"hash" => _} = user_op} <- AccountAbstraction.get_user_ops_by_hash(operation_hash_string) do
       {response, code} =
         case TransactionInterpretationService.interpret_user_operation(user_op) do
           {:ok, response} -> {response, 200}
-          {:error, %Jason.DecodeError{}} -> {%{error: "Error while tx interpreter response decoding"}, 500}
+          {:error, %Jason.DecodeError{}} -> {%{error: "Error while transaction interpreter response decoding"}, 500}
           {{:error, error}, code} -> {%{error: error}, code}
         end
 
@@ -150,6 +151,16 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> process_response(conn)
   end
 
+  @doc """
+    Function to handle GET requests to `/api/v2/proxy/account-abstraction/status` endpoint.
+  """
+  @spec status(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
+  def status(conn, params) do
+    params
+    |> AccountAbstraction.get_status()
+    |> process_response(conn)
+  end
+
   defp extended_info(response) do
     address_hashes =
       response
@@ -158,7 +169,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
         necessity_by_association: %{
           :names => :optional,
           :smart_contract => :optional,
-          :proxy_implementations => :optional
+          proxy_implementations_association() => :optional
         },
         api?: true
       )
@@ -180,12 +191,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     address_hash_strings
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
-    |> Enum.map(fn hash_string ->
-      case Chain.string_to_address_hash(hash_string) do
-        {:ok, hash} -> hash
-        _ -> nil
-      end
-    end)
+    |> Enum.map(&Chain.string_to_address_hash_or_nil/1)
     |> Enum.reject(&is_nil/1)
   end
 
@@ -233,10 +239,10 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   defp try_to_decode_call_data(%{"call_data" => _call_data} = user_op) do
     user_op_hash = user_op["hash"]
 
-    {_mock_tx, _decoded_call_data, decoded_call_data_json} =
+    {_mock_transaction, _decoded_call_data, decoded_call_data_json} =
       TransactionInterpretationService.decode_user_op_calldata(user_op_hash, user_op["call_data"])
 
-    {_mock_tx, _decoded_execute_call_data, decoded_execute_call_data_json} =
+    {_mock_transaction, _decoded_execute_call_data, decoded_execute_call_data_json} =
       TransactionInterpretationService.decode_user_op_calldata(user_op_hash, user_op["execute_call_data"])
 
     user_op

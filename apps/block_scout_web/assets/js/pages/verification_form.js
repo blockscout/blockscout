@@ -110,7 +110,7 @@ if ($contractVerificationPage.length) {
   })
   connectElements({ store, elements })
 
-  const addressChannel = subscribeChannel(`addresses:${addressHash}`)
+  const addressChannel = subscribeChannel(`addresses_old:${addressHash}`)
 
   addressChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'

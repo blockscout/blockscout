@@ -1,14 +1,14 @@
-defmodule BlockScoutWeb.Account.Api.V2.TagsController do
+defmodule BlockScoutWeb.Account.API.V2.TagsController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
-  alias BlockScoutWeb.Models.{GetAddressTags, GetTransactionTags, UserFromAuth}
+  alias BlockScoutWeb.Models.{GetAddressTags, GetTransactionTags}
   alias Explorer.Account.Identity
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Hash.{Address, Full}
 
-  action_fallback(BlockScoutWeb.Account.Api.V2.FallbackController)
+  action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
 
   def tags_address(conn, %{"address_hash" => address_hash}) do
     personal_tags =
@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Account.Api.V2.TagsController do
       else
         uid = current_user(conn).id
 
-        with {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
+        with {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)},
              {:watchlist, %{watchlists: [watchlist | _]}} <-
                {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
              {:address_hash, {:ok, address_hash}} <- {:address_hash, Address.cast(address_hash)} do
@@ -54,11 +54,11 @@ defmodule BlockScoutWeb.Account.Api.V2.TagsController do
 
     personal_tags =
       if is_nil(current_user(conn)) do
-        %{personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
+        %{personal_tags: [], watchlist_names: [], personal_transaction_tag: nil}
       else
         uid = current_user(conn).id
 
-        with {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
+        with {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)},
              {:watchlist, %{watchlists: [watchlist | _]}} <-
                {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
              false <- is_nil(transaction) do
@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.Account.Api.V2.TagsController do
           })
         else
           _ ->
-            %{personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
+            %{personal_tags: [], watchlist_names: [], personal_transaction_tag: nil}
         end
       end
 

@@ -81,7 +81,7 @@ body:
     attributes:
       label: Elixir & Erlang/OTP versions
       description: Elixir & Erlang/OTP versions.
-      placeholder: Elixir 1.16.3 (compiled with Erlang/OTP 26)
+      placeholder: Elixir 1.17.3 (compiled with Erlang/OTP 27)
     validations:
       required: true
 

@@ -8,9 +8,10 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Wei
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   @moduletag :capture_log
@@ -26,11 +27,18 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
 
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
     start_supervised!(AverageBlockTime)
-    start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
+
+    configuration = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.CoinBalance.Supervisor)
+    Application.put_env(:indexer, Indexer.Fetcher.OnDemand.CoinBalance.Supervisor, disabled?: false)
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
+    Indexer.Fetcher.OnDemand.CoinBalance.Supervisor.Case.start_supervised!(
+      json_rpc_named_arguments: mocked_json_rpc_named_arguments
+    )
+
     on_exit(fn ->
+      Application.put_env(:indexer, Indexer.Fetcher.OnDemand.CoinBalance.Supervisor, configuration)
       Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
     end)
 
@@ -62,24 +70,40 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
     test "treats all addresses as current if the average block time is disabled", %{stale_address: address} do
       Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
 
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, []}
+      end)
+
       assert CoinBalanceOnDemand.trigger_fetch(address) == :current
     end
 
     test "if the address has not been fetched within the last 24 hours of blocks it is considered stale", %{
       stale_address: address
     } do
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, []}
+      end)
+
       assert CoinBalanceOnDemand.trigger_fetch(address) == {:stale, 102}
     end
 
     test "if the address has been fetched within the last 24 hours of blocks it is considered current", %{
       current_address: address
     } do
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, []}
+      end)
+
       assert CoinBalanceOnDemand.trigger_fetch(address) == :current
     end
 
     test "if there is an unfetched balance within the window for an address, it is considered pending", %{
       pending_address: pending_address
     } do
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, []}
+      end)
+
       assert CoinBalanceOnDemand.trigger_fetch(pending_address) == {:pending, 103}
     end
   end
@@ -93,7 +117,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
       block_number = block.number
       string_block_number = integer_to_quantity(block_number)
       balance = 42
-      assert nil == Chain.get_coin_balance(address.hash, block_number)
+      assert nil == CoinBalance.get_coin_balance(address.hash, block_number)
 
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn [
@@ -126,7 +150,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
 
       :timer.sleep(1000)
 
-      assert %{value: ^expected_wei} = Chain.get_coin_balance(address.hash, block_number)
+      assert %{value: ^expected_wei} = CoinBalance.get_coin_balance(address.hash, block_number)
     end
   end
 
@@ -163,21 +187,6 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
                                                    ],
                                                    _options ->
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
-      end)
-
-      res = eth_block_number_fake_response("0x66")
-
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: 0,
-                                  jsonrpc: "2.0",
-                                  method: "eth_getBlockByNumber",
-                                  params: ["0x66", true]
-                                }
-                              ],
-                              _ ->
-        {:ok, [res]}
       end)
 
       assert CoinBalanceOnDemand.trigger_fetch(address) == {:stale, 102}

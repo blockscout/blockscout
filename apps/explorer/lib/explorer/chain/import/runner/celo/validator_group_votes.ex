@@ -78,7 +78,11 @@ defmodule Explorer.Chain.Import.Runner.Celo.ValidatorGroupVotes do
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: :transaction_hash,
+        conflict_target: [
+          :transaction_hash,
+          :account_address_hash,
+          :group_address_hash
+        ],
         on_conflict: :replace_all
       )
 

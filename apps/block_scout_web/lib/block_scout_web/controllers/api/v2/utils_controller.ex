@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.API.V2.UtilsController do
           updated_smart_contract
         end
 
-      {decoded_input, _abi_acc, _methods_acc} =
+      decoded_input =
         Transaction.decoded_input_data(
           %Transaction{
             input: data,

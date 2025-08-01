@@ -10,12 +10,37 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1]
 
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: Db
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
 
   alias Explorer.Chain
 
   require Logger
+
+  @doc """
+    Determines whether settlement transactions finalization should be run based on configuration.
+
+    ## Parameters
+    - A map containing configuration with L1 RPC settings.
+
+    ## Returns
+    - `true` if finalization tracking is enabled in the configuration
+    - `false` otherwise
+  """
+  @spec run_settlement_transactions_finalization?(%{
+          :config => %{
+            :l1_rpc => %{
+              :track_finalization => boolean(),
+              optional(any()) => any()
+            },
+            optional(any()) => any()
+          },
+          optional(any()) => any()
+        }) :: boolean()
+  def run_settlement_transactions_finalization?(%{config: %{l1_rpc: %{track_finalization: track_finalization}}}) do
+    track_finalization
+  end
 
   @doc """
     Monitors and updates the status of lifecycle transactions related an Arbitrum rollup to 'finalized'.
@@ -33,7 +58,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
     ## Returns
     - `:ok`
   """
-  @spec monitor_lifecycle_txs(%{
+  @spec monitor_lifecycle_transactions(%{
           :config => %{
             :l1_rpc => %{
               :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
@@ -43,7 +68,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
           },
           optional(any()) => any()
         }) :: :ok
-  def monitor_lifecycle_txs(%{config: %{l1_rpc: %{json_rpc_named_arguments: json_rpc_named_arguments}}} = _state) do
+  def monitor_lifecycle_transactions(
+        %{config: %{l1_rpc: %{json_rpc_named_arguments: json_rpc_named_arguments}}} = _state
+      ) do
     {:ok, safe_block} =
       IndexerHelper.get_block_number_by_tag(
         "safe",
@@ -51,20 +78,20 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
         Rpc.get_resend_attempts()
       )
 
-    lifecycle_txs = Db.lifecycle_unfinalized_transactions(safe_block)
+    lifecycle_transactions = Db.lifecycle_unfinalized_transactions(safe_block)
 
-    if length(lifecycle_txs) > 0 do
-      log_info("Discovered #{length(lifecycle_txs)} lifecycle transaction to be finalized")
+    if length(lifecycle_transactions) > 0 do
+      log_info("Discovered #{length(lifecycle_transactions)} lifecycle transaction to be finalized")
 
-      updated_lifecycle_txs =
-        lifecycle_txs
-        |> Enum.map(fn tx ->
-          Map.put(tx, :status, :finalized)
+      updated_lifecycle_transactions =
+        lifecycle_transactions
+        |> Enum.map(fn transaction ->
+          Map.put(transaction, :status, :finalized)
         end)
 
       {:ok, _} =
         Chain.import(%{
-          arbitrum_lifecycle_transactions: %{params: updated_lifecycle_txs},
+          arbitrum_lifecycle_transactions: %{params: updated_lifecycle_transactions},
           timeout: :infinity
         })
     end

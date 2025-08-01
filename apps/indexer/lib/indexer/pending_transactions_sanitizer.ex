@@ -15,9 +15,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Transaction}
 
-  @interval :timer.hours(3)
-
-  defstruct interval: @interval,
+  defstruct interval: nil,
             json_rpc_named_arguments: []
 
   def child_spec([init_arguments]) do
@@ -40,7 +38,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
   def init(opts) when is_list(opts) do
     state = %__MODULE__{
       json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
-      interval: opts[:interval] || @interval
+      interval: Application.get_env(:indexer, __MODULE__)[:interval]
     }
 
     Process.send_after(self(), :sanitize_pending_transactions, state.interval)
@@ -75,17 +73,17 @@ defmodule Indexer.PendingTransactionsSanitizer do
            |> json_rpc(json_rpc_named_arguments) do
       Enum.each(responses, fn
         %{id: id, result: result} ->
-          pending_tx = Map.fetch!(id_to_params, id)
+          pending_transaction = Map.fetch!(id_to_params, id)
 
           if result do
-            fetch_block_and_invalidate_wrapper(pending_tx, to_string(pending_tx.hash), result)
+            fetch_block_and_invalidate_wrapper(pending_transaction, to_string(pending_transaction.hash), result)
           else
             Logger.debug(
-              "Transaction with hash #{pending_tx.hash} doesn't exist in the node anymore. We should remove it from Blockscout DB.",
+              "Transaction with hash #{pending_transaction.hash} doesn't exist in the node anymore. We should remove it from Blockscout DB.",
               fetcher: :pending_transactions_to_refetch
             )
 
-            fetch_pending_transaction_and_delete(pending_tx)
+            fetch_pending_transaction_and_delete(pending_transaction)
           end
 
         error ->
@@ -104,48 +102,51 @@ defmodule Indexer.PendingTransactionsSanitizer do
     end)
   end
 
-  defp fetch_block_and_invalidate_wrapper(pending_tx, pending_tx_hash_str, result) do
+  defp fetch_block_and_invalidate_wrapper(pending_transaction, pending_transaction_hash_string, result) do
     block_hash = Map.get(result, "blockHash")
 
     if block_hash do
       Logger.debug(
-        "Transaction with hash #{pending_tx_hash_str} already included into the block #{block_hash}. We should invalidate consensus for it in order to re-fetch transactions",
+        "Transaction with hash #{pending_transaction_hash_string} already included into the block #{block_hash}. We should invalidate consensus for it in order to re-fetch transactions",
         fetcher: :pending_transactions_to_refetch
       )
 
-      fetch_block_and_invalidate(block_hash, pending_tx, result)
+      fetch_block_and_invalidate(block_hash, pending_transaction, result)
     else
       Logger.debug(
-        "Transaction with hash #{pending_tx_hash_str} is still pending. Do nothing.",
+        "Transaction with hash #{pending_transaction_hash_string} is still pending. Do nothing.",
         fetcher: :pending_transactions_to_refetch
       )
     end
   end
 
   defp fetch_pending_transaction_and_delete(transaction) do
-    pending_tx_hash_str = "0x" <> Base.encode16(transaction.hash.bytes, case: :lower)
-
-    case transaction
-         |> Changeset.change()
-         |> Repo.delete() do
-      {:ok, _transaction} ->
-        Logger.debug(
-          "Transaction with hash #{pending_tx_hash_str} successfully deleted from Blockscout DB because it doesn't exist in the archive node anymore",
-          fetcher: :pending_transactions_to_refetch
-        )
-
+    with %{block_hash: nil} <- Repo.reload(transaction),
+         changeset = Changeset.change(transaction),
+         {:ok, _transaction} <- Repo.delete(changeset, timeout: :infinity) do
+      Logger.debug(
+        "Transaction with hash #{transaction.hash} successfully deleted from Blockscout DB because it doesn't exist in the archive node anymore",
+        fetcher: :pending_transactions_to_refetch
+      )
+    else
       {:error, changeset} ->
         Logger.debug(
           [
-            "Deletion of pending transaction with hash #{pending_tx_hash_str} from Blockscout DB failed",
+            "Deletion of pending transaction with hash #{transaction.hash} from Blockscout DB failed",
             inspect(changeset)
           ],
+          fetcher: :pending_transactions_to_refetch
+        )
+
+      _transaction ->
+        Logger.debug(
+          "Transaction with hash #{transaction.hash} is already included in block, cancel deletion",
           fetcher: :pending_transactions_to_refetch
         )
     end
   end
 
-  defp fetch_block_and_invalidate(block_hash, pending_tx, tx) do
+  defp fetch_block_and_invalidate(block_hash, pending_transaction, transaction) do
     case Chain.fetch_block_by_hash(block_hash) do
       %{number: number, consensus: consensus} = block ->
         Logger.debug(
@@ -153,7 +154,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
           fetcher: :pending_transactions_to_refetch
         )
 
-        invalidate_block(block, pending_tx, tx)
+        invalidate_block(block, pending_transaction, transaction)
 
       _ ->
         Logger.debug(
@@ -163,18 +164,18 @@ defmodule Indexer.PendingTransactionsSanitizer do
     end
   end
 
-  defp invalidate_block(block, pending_tx, tx) do
+  defp invalidate_block(block, pending_transaction, transaction) do
     if block.consensus do
       Block.set_refetch_needed(block.number)
     else
-      tx_info = to_elixir(tx)
+      transaction_info = to_elixir(transaction)
 
       changeset =
-        pending_tx
+        pending_transaction
         |> Transaction.changeset()
-        |> Changeset.put_change(:cumulative_gas_used, tx_info["cumulativeGasUsed"])
-        |> Changeset.put_change(:gas_used, tx_info["gasUsed"])
-        |> Changeset.put_change(:index, tx_info["transactionIndex"])
+        |> Changeset.put_change(:cumulative_gas_used, transaction_info["cumulativeGasUsed"])
+        |> Changeset.put_change(:gas_used, transaction_info["gasUsed"])
+        |> Changeset.put_change(:index, transaction_info["transactionIndex"])
         |> Changeset.put_change(:block_number, block.number)
         |> Changeset.put_change(:block_hash, block.hash)
         |> Changeset.put_change(:block_timestamp, block.timestamp)
@@ -183,7 +184,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
       Repo.update(changeset)
 
       Logger.debug(
-        "Pending tx with hash #{"0x" <> Base.encode16(pending_tx.hash.bytes, case: :lower)} assigned to block ##{block.number} with hash #{block.hash}"
+        "Pending transaction with hash #{pending_transaction.hash} assigned to block ##{block.number} with hash #{block.hash}"
       )
     end
   end

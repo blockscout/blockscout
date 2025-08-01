@@ -14,15 +14,19 @@ defmodule EthereumJSONRPC.Application do
 
     rolling_window_opts = Keyword.fetch!(config, :rolling_window_opts)
 
-    [
-      :hackney_pool.child_spec(:ethereum_jsonrpc, recv_timeout: 60_000, timeout: 60_000, max_connections: 1000),
-      Supervisor.child_spec({RollingWindow, [rolling_window_opts]}, id: RollingWindow.ErrorThrottle),
-      {EndpointAvailabilityObserver, []},
-      {EndpointAvailabilityChecker, []}
-    ]
-    |> add_throttle_rolling_window(config)
-    |> add_ipc_client()
-    |> Supervisor.start_link(strategy: :one_for_one, name: EthereumJSONRPC.Supervisor)
+    if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
+      Supervisor.start_link([], strategy: :one_for_one, name: EthereumJSONRPC.Supervisor)
+    else
+      [
+        :hackney_pool.child_spec(:ethereum_jsonrpc, recv_timeout: 60_000, timeout: 60_000, max_connections: 1000),
+        Supervisor.child_spec({RollingWindow, [rolling_window_opts]}, id: RollingWindow.ErrorThrottle),
+        {EndpointAvailabilityObserver, []},
+        {EndpointAvailabilityChecker, []}
+      ]
+      |> add_throttle_rolling_window(config)
+      |> add_ipc_client()
+      |> Supervisor.start_link(strategy: :one_for_one, name: EthereumJSONRPC.Supervisor)
+    end
   end
 
   defp add_throttle_rolling_window(children, config) do

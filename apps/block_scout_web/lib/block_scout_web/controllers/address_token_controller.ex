@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.AddressTokenController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, [], false),
+         {:ok, address} <- Chain.hash_to_address(address_hash, []),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       token_balances_plus_one =
         address_hash
@@ -65,6 +65,8 @@ defmodule BlockScoutWeb.AddressTokenController do
   end
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
+    ip = AccessHelper.conn_to_ip_string(conn)
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
@@ -73,7 +75,7 @@ defmodule BlockScoutWeb.AddressTokenController do
         "index.html",
         address: address,
         current_path: Controller.current_full_path(conn),
-        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
         exchange_rate: Market.get_coin_exchange_rate(),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
         tags: get_address_tags(address_hash, current_user(conn))

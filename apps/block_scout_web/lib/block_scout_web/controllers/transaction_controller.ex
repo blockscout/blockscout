@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.TransactionController do
   }
 
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Cache.Transaction, as: TransactionCache
+  alias Explorer.Chain.Cache.Counters.TransactionsCount
   alias Explorer.Chain.DenormalizationHelper
   alias Phoenix.View
 
@@ -118,7 +118,7 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   def index(conn, _params) do
-    transaction_estimated_count = TransactionCache.estimated_count()
+    transaction_estimated_count = TransactionsCount.get()
 
     render(
       conn,
@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   def show(conn, %{"id" => transaction_hash_string, "type" => "JSON"}) do
-    case Chain.string_to_transaction_hash(transaction_hash_string) do
+    case Chain.string_to_full_hash(transaction_hash_string) do
       {:ok, transaction_hash} ->
         if Chain.transaction_has_token_transfers?(transaction_hash) do
           TransactionTokenTransferController.index(conn, %{
@@ -149,7 +149,7 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   def show(conn, %{"id" => id} = params) do
-    with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(id),
+    with {:ok, transaction_hash} <- Chain.string_to_full_hash(id),
          :ok <- Chain.check_transaction_exists(transaction_hash) do
       if Chain.transaction_has_token_transfers?(transaction_hash) do
         with {:ok, transaction} <-
@@ -167,19 +167,13 @@ defmodule BlockScoutWeb.TransactionController do
             transaction: transaction,
             from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
             to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
-            tx_tags:
+            transaction_tags:
               get_transaction_with_addresses_tags(
                 transaction,
                 current_user(conn)
               )
           )
         else
-          :not_found ->
-            set_not_found_view(conn, id)
-
-          :error ->
-            unprocessable_entity(conn)
-
           {:error, :not_found} ->
             set_not_found_view(conn, id)
 
@@ -202,19 +196,13 @@ defmodule BlockScoutWeb.TransactionController do
             transaction: transaction,
             from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
             to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
-            tx_tags:
+            transaction_tags:
               get_transaction_with_addresses_tags(
                 transaction,
                 current_user(conn)
               )
           )
         else
-          :not_found ->
-            set_not_found_view(conn, id)
-
-          :error ->
-            unprocessable_entity(conn)
-
           {:error, :not_found} ->
             set_not_found_view(conn, id)
 

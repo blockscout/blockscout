@@ -5,6 +5,6 @@ defmodule BlockScoutWeb.RobotsView do
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Token}
 
-  @limit 200
+  @limit 50
   defp limit, do: @limit
 end

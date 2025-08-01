@@ -3,7 +3,7 @@ defmodule Explorer.Repo.Account.Migrations.AddWatchlistIdColumn do
 
   def change do
     execute("""
-    ALTER TABLE public.account_watchlist_notifications
+    ALTER TABLE account_watchlist_notifications
       DROP CONSTRAINT account_watchlist_notifications_watchlist_address_id_fkey;
     """)
 

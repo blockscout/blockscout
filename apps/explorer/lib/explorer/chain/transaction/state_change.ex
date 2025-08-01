@@ -24,55 +24,59 @@ defmodule Explorer.Chain.Transaction.StateChange do
   @zero_wei %Wei{value: Decimal.new(0)}
 
   @spec coin_balances_before(Transaction.t(), [Transaction.t()], coin_balances_map()) :: coin_balances_map()
-  def coin_balances_before(tx, block_txs, coin_balances_before_block) do
-    block = tx.block
+  def coin_balances_before(transaction, block_transactions, coin_balances_before_block) do
+    block = transaction.block
 
-    block_txs
+    block_transactions
     |> Enum.reduce_while(
       coin_balances_before_block,
-      fn block_tx, acc ->
-        if block_tx.index < tx.index do
-          {:cont, update_coin_balances_from_tx(acc, block_tx, block)}
+      fn block_transaction, acc ->
+        if block_transaction.index < transaction.index do
+          {:cont, update_coin_balances_from_transaction(acc, block_transaction, block)}
         else
-          # txs ordered by index ascending, so we can halt after facing index greater or equal than index of our tx
+          # transactions ordered by index ascending, so we can halt after facing index greater or equal than index of our transaction
           {:halt, acc}
         end
       end
     )
   end
 
-  @spec update_coin_balances_from_tx(coin_balances_map(), Transaction.t(), Block.t()) :: coin_balances_map()
-  def update_coin_balances_from_tx(coin_balances, tx, block) do
+  @spec update_coin_balances_from_transaction(coin_balances_map(), Transaction.t(), Block.t()) :: coin_balances_map()
+  def update_coin_balances_from_transaction(coin_balances, transaction, block) do
     coin_balances =
       coin_balances
-      |> update_balance(tx.from_address_hash, &Wei.sub(&1, from_loss(tx)))
-      |> update_balance(tx.to_address_hash, &Wei.sum(&1, to_profit(tx)))
-      |> update_balance(block.miner_hash, &Wei.sum(&1, miner_profit(tx, block)))
+      |> update_balance(transaction.from_address_hash, &Wei.sub(&1, from_loss(transaction)))
+      |> update_balance(transaction.to_address_hash, &Wei.sum(&1, to_profit(transaction)))
+      |> update_balance(block.miner_hash, &Wei.sum(&1, miner_profit(transaction, block)))
 
-    if error?(tx) do
+    if error?(transaction) do
       coin_balances
     else
-      tx.internal_transactions |> Enum.reduce(coin_balances, &update_coin_balances_from_internal_tx(&1, &2))
+      transaction.internal_transactions
+      |> Enum.reduce(coin_balances, &update_coin_balances_from_internal_transaction(&1, &2))
     end
   end
 
-  defp update_coin_balances_from_internal_tx(%InternalTransaction{index: 0}, coin_balances), do: coin_balances
+  defp update_coin_balances_from_internal_transaction(%InternalTransaction{call_type: :delegatecall}, coin_balances),
+    do: coin_balances
 
-  defp update_coin_balances_from_internal_tx(internal_tx, coin_balances) do
+  defp update_coin_balances_from_internal_transaction(%InternalTransaction{index: 0}, coin_balances), do: coin_balances
+
+  defp update_coin_balances_from_internal_transaction(internal_transaction, coin_balances) do
     coin_balances
-    |> update_balance(internal_tx.from_address_hash, &Wei.sub(&1, from_loss(internal_tx)))
-    |> update_balance(internal_tx.to_address_hash, &Wei.sum(&1, to_profit(internal_tx)))
+    |> update_balance(internal_transaction.from_address_hash, &Wei.sub(&1, from_loss(internal_transaction)))
+    |> update_balance(internal_transaction.to_address_hash, &Wei.sum(&1, to_profit(internal_transaction)))
   end
 
-  def token_balances_before(balances_before, tx, block_txs) do
-    block_txs
+  def token_balances_before(balances_before, transaction, block_transactions) do
+    block_transactions
     |> Enum.reduce_while(
       balances_before,
-      fn block_tx, state ->
-        if block_tx.index < tx.index do
-          {:cont, do_update_token_balances_from_token_transfers(block_tx.token_transfers, state)}
+      fn block_transaction, state ->
+        if block_transaction.index < transaction.index do
+          {:cont, do_update_token_balances_from_token_transfers(block_transaction.token_transfers, state)}
         else
-          # txs ordered by index ascending, so we can halt after facing index greater or equal than index of our tx
+          # transactions ordered by index ascending, so we can halt after facing index greater or equal than index of our transaction
           {:halt, state}
         end
       end
@@ -158,18 +162,18 @@ defmodule Explorer.Chain.Transaction.StateChange do
   or an internal transaction.
   """
   @spec from_loss(Transaction.t() | InternalTransaction.t()) :: Wei.t()
-  def from_loss(%Transaction{} = tx) do
-    {_, fee} = Transaction.fee(tx, :wei)
+  def from_loss(%Transaction{} = transaction) do
+    {_, fee} = Transaction.fee(transaction, :wei)
 
-    if error?(tx) do
+    if error?(transaction) do
       %Wei{value: fee}
     else
-      Wei.sum(tx.value, %Wei{value: fee})
+      Wei.sum(transaction.value, %Wei{value: fee})
     end
   end
 
-  def from_loss(%InternalTransaction{} = tx) do
-    tx.value
+  def from_loss(%InternalTransaction{} = transaction) do
+    transaction.value
   end
 
   @doc """
@@ -177,33 +181,33 @@ defmodule Explorer.Chain.Transaction.StateChange do
   or an internal transaction.
   """
   @spec to_profit(Transaction.t() | InternalTransaction.t()) :: Wei.t()
-  def to_profit(%Transaction{} = tx) do
-    if error?(tx) do
+  def to_profit(%Transaction{} = transaction) do
+    if error?(transaction) do
       %Wei{value: 0}
     else
-      tx.value
+      transaction.value
     end
   end
 
-  def to_profit(%InternalTransaction{} = tx) do
-    tx.value
+  def to_profit(%InternalTransaction{} = transaction) do
+    transaction.value
   end
 
-  defp miner_profit(tx, block) do
+  defp miner_profit(transaction, block) do
     base_fee_per_gas = block.base_fee_per_gas || %Wei{value: Decimal.new(0)}
-    max_priority_fee_per_gas = tx.max_priority_fee_per_gas || tx.gas_price
-    max_fee_per_gas = tx.max_fee_per_gas || tx.gas_price
+    max_priority_fee_per_gas = transaction.max_priority_fee_per_gas || transaction.gas_price
+    max_fee_per_gas = transaction.max_fee_per_gas || transaction.gas_price
 
     priority_fee_per_gas =
       Enum.min_by([max_priority_fee_per_gas, Wei.sub(max_fee_per_gas, base_fee_per_gas)], fn x ->
         Wei.to(x, :wei)
       end)
 
-    Wei.mult(priority_fee_per_gas, tx.gas_used)
+    Wei.mult(priority_fee_per_gas, transaction.gas_used)
   end
 
-  defp error?(tx) do
-    case Chain.transaction_to_status(tx) do
+  defp error?(transaction) do
+    case Chain.transaction_to_status(transaction) do
       {:error, _} -> true
       _ -> false
     end
@@ -233,14 +237,15 @@ defmodule Explorer.Chain.Transaction.StateChange do
   taking into account state changes from previous transactions in the same block.
   """
   @spec native_coin_entries(Transaction.t(), coin_balances_map()) :: [t()]
-  def native_coin_entries(transaction, coin_balances_before_tx) do
+  def native_coin_entries(transaction, coin_balances_before_transaction) do
     block = transaction.block
 
-    coin_balances_after_tx = update_coin_balances_from_tx(coin_balances_before_tx, transaction, block)
+    coin_balances_after_transaction =
+      update_coin_balances_from_transaction(coin_balances_before_transaction, transaction, block)
 
-    coin_balances_before_tx
+    coin_balances_before_transaction
     |> Enum.reduce([], fn {address_hash, {address, coin_balance_before}}, acc ->
-      {_, coin_balance_after} = coin_balances_after_tx[address_hash]
+      {_, coin_balance_after} = coin_balances_after_transaction[address_hash]
       coin_entry = coin_entry(address, coin_balance_before, coin_balance_after, address_hash == block.miner_hash)
 
       if coin_entry do

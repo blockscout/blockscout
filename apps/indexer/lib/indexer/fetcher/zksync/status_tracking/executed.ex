@@ -52,8 +52,8 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Executed do
       expected_batch_number ->
         log_info("Checking if the batch #{expected_batch_number} was executed")
 
-        {next_action, tx_hash, l1_txs} =
-          check_if_batch_status_changed(expected_batch_number, :execute_tx, json_l2_rpc_named_arguments)
+        {next_action, transaction_hash, l1_transactions} =
+          check_if_batch_status_changed(expected_batch_number, :execute_transaction, json_l2_rpc_named_arguments)
 
         case next_action do
           :skip ->
@@ -61,17 +61,25 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Executed do
 
           :look_for_batches ->
             log_info("The batch #{expected_batch_number} looks like executed")
-            execute_tx_receipt = Rpc.fetch_tx_receipt_by_hash(tx_hash, json_l1_rpc_named_arguments)
-            batches_numbers_from_rpc = get_executed_batches_from_logs(execute_tx_receipt["logs"])
 
-            associate_and_import_or_prepare_for_recovery(batches_numbers_from_rpc, l1_txs, tx_hash, :execute_id)
+            execute_transaction_receipt =
+              Rpc.fetch_transaction_receipt_by_hash(transaction_hash, json_l1_rpc_named_arguments)
+
+            batches_numbers_from_rpc = get_executed_batches_from_logs(execute_transaction_receipt["logs"])
+
+            associate_and_import_or_prepare_for_recovery(
+              batches_numbers_from_rpc,
+              l1_transactions,
+              transaction_hash,
+              :execute_id
+            )
         end
     end
   end
 
   defp get_executed_batches_from_logs(logs) do
     executed_batches = Rpc.filter_logs_and_extract_topic_at(logs, @block_execution_event, 1)
-    log_info("Discovered #{length(executed_batches)} executed batches in the executing tx")
+    log_info("Discovered #{length(executed_batches)} executed batches in the executing transaction")
 
     executed_batches
   end

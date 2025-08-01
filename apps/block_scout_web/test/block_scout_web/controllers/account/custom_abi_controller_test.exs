@@ -1,15 +1,21 @@
 defmodule BlockScoutWeb.Account.CustomABIControllerTest do
   use BlockScoutWeb.ConnCase
 
+  alias Explorer.Account.Identity
   alias Explorer.TestHelper
-  alias BlockScoutWeb.Models.UserFromAuth
 
   @custom_abi "[{\"type\":\"function\",\"outputs\":[{\"type\":\"string\",\"name\":\"\"}],\"name\":\"name\",\"inputs\":[],\"constant\":true}]"
 
   setup %{conn: conn} do
     auth = build(:auth)
 
-    {:ok, user} = UserFromAuth.find_or_create(auth)
+    on_exit(fn ->
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+    end)
+
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+    {:ok, user} = Identity.find_or_create(auth)
 
     {:ok, conn: Plug.Test.init_test_session(conn, current_user: user)}
   end
@@ -165,7 +171,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
           "[{\"type\":\"function\",\"outputs\":[{\"type\":\"string\",\"name\":\"\"}],\"name\":\"name\",\"inputs\":[],\"constant\":true},{\"type\":\"function\",\"outputs\":[{\"type\":\"bool\",\"name\":\"success\"}],\"name\":\"approve\",\"inputs\":[{\"type\":\"address\",\"name\":\"_spender\"},{\"type\":\"uint256\",\"name\":\"_value\"}],\"constant\":false}]"
       }
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       result_conn =
         conn

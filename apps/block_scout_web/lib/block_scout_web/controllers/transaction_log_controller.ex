@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.TransactionLogController do
   alias Phoenix.View
 
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do
-    with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
+    with {:ok, transaction_hash} <- Chain.string_to_full_hash(transaction_hash_string),
          {:ok, transaction} <-
            Chain.hash_to_transaction(transaction_hash,
              necessity_by_association: %{[to_address: :smart_contract] => :optional}
@@ -22,9 +22,7 @@ defmodule BlockScoutWeb.TransactionLogController do
         Keyword.merge(
           [
             necessity_by_association: %{
-              [address: :names] => :optional,
-              [address: :smart_contract] => :optional,
-              address: :optional
+              [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
             }
           ],
           paging_options(params)
@@ -75,7 +73,7 @@ defmodule BlockScoutWeb.TransactionLogController do
   end
 
   def index(conn, %{"transaction_id" => transaction_hash_string} = params) do
-    with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
+    with {:ok, transaction_hash} <- Chain.string_to_full_hash(transaction_hash_string),
          {:ok, transaction} <-
            Chain.hash_to_transaction(
              transaction_hash,
@@ -101,7 +99,7 @@ defmodule BlockScoutWeb.TransactionLogController do
         exchange_rate: Market.get_coin_exchange_rate(),
         from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
         to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
-        tx_tags:
+        transaction_tags:
           get_transaction_with_addresses_tags(
             transaction,
             current_user(conn)

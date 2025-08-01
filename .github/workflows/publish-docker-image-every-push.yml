@@ -11,11 +11,11 @@ on:
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
-  RELEASE_VERSION: ${{ vars.RELEASE_VERSION }}
+  RELEASE_VERSION: 9.0.0
 
 jobs:
   push_to_registry:
-    name: Push Docker image to Docker Hub
+    name: Push Docker image to GitHub Container Registry
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,115 +23,69 @@ jobs:
         uses: ./.github/actions/setup-repo
         id: setup
         with:
-          docker-username: ${{ secrets.DOCKER_USERNAME }}
-          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           docker-remote-multi-platform: true
           docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - name: Build and push Docker image (indexer + API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:master, blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout:master, ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
-            DISABLE_WEBAPP=false
-            API_V1_READ_METHODS_DISABLED=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
             AMPLITUDE_URL=
             AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
       - name: Build and push Docker image (indexer)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}-indexer
+          tags: ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
             DISABLE_API=true
-            DISABLE_WEBAPP=true
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
             AMPLITUDE_URL=
             AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-
-      - name: Build and push Docker image (API)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}-api
-          labels: ${{ steps.setup.outputs.docker-labels }}
-          platforms: |
-            linux/amd64
-            linux/arm64/v8
-          build-args: |
-            DISABLE_INDEXER=true
-            DISABLE_WEBAPP=true
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
-            DECODE_NOT_A_CONTRACT_CALLS=false
-            MIXPANEL_URL=
-            MIXPANEL_TOKEN=
-            AMPLITUDE_URL=
-            AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
       - name: Build and push Docker image for frontend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=blockscout/blockscout:buildcache
-          tags: blockscout/blockscout:frontend-main
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
+          tags: ghcr.io/blockscout/blockscout:frontend-main
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             SESSION_COOKIE_DOMAIN=k8s-dev.blockscout.com
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
   deploy_e2e:
     needs: push_to_registry
@@ -160,7 +114,3 @@ jobs:
           ref: main
           wait_interval: 30
           client_payload: '{ "instance": "dev", "globalEnv": "e2e"}'
-  test:
-    needs: deploy_e2e
-    uses: blockscout/blockscout-ci-cd/.github/workflows/e2e_new.yaml@master
-    secrets: inherit

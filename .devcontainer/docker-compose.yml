@@ -1,0 +1,30 @@
+services:
+  elixir:
+    image: ghcr.io/blockscout/devcontainer-elixir:1.17.3-erlang-27.1
+
+    # Uncomment next lines to use test Dockerfile with new Elixir version
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+
+    volumes:
+      - ..:/workspace:cached
+    # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
+    network_mode: service:db
+
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
+
+  db:
+    image: postgres:17
+    command: postgres -c 'max_connections=250'
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+
+volumes:
+  postgres-data:

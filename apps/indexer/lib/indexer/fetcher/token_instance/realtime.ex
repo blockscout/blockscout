@@ -8,7 +8,6 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
 
   import Indexer.Fetcher.TokenInstance.Helper
 
-  alias Explorer.Chain
   alias Explorer.Chain.Token.Instance
   alias Indexer.BufferedTask
 
@@ -42,7 +41,7 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
 
     token_instances
     |> Enum.filter(fn %{contract_address_hash: hash, token_id: token_id} = instance ->
-      instance[:retry?] || Chain.token_instance_with_unfetched_metadata?(token_id, hash)
+      instance[:retry?] || Instance.token_instance_with_unfetched_metadata?(token_id, hash)
     end)
     |> batch_fetch_instances()
     |> retry_some_instances(retry?, token_instances_retry_map)
@@ -85,7 +84,7 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
   defp retry_some_instances(token_instances, true, token_instances_retry_map) do
     token_instances_to_refetch =
       Enum.flat_map(token_instances, fn
-        {:ok, %Instance{metadata: nil, error: error} = instance}
+        %Instance{metadata: nil, error: error} = instance
         when error in @errors_whitelisted_for_retry ->
           if token_instances_retry_map[{instance.token_contract_address_hash.bytes, instance.token_id}] do
             []

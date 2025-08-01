@@ -11,14 +11,14 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
 
   alias BlockScoutWeb.{AccessHelper, Controller, InternalTransactionView}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.{Address, InternalTransaction, Wei}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <-
-           Chain.hash_to_address(address_hash, [necessity_by_association: %{:smart_contract => :optional}], false),
+           Chain.hash_to_address(address_hash, necessity_by_association: %{:smart_contract => :optional}),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       full_options =
         [
@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      internal_transactions_plus_one = Chain.address_to_internal_transactions(address_hash, full_options)
+      internal_transactions_plus_one = InternalTransaction.address_to_internal_transactions(address_hash, full_options)
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
       next_page_path =
@@ -76,6 +76,8 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   end
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
+    ip = AccessHelper.conn_to_ip_string(conn)
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
@@ -83,7 +85,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         conn,
         "index.html",
         address: address,
-        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
         current_path: Controller.current_full_path(conn),
         exchange_rate: Market.get_coin_exchange_rate(),
         filter: params["filter"],
@@ -111,7 +113,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
               "index.html",
               address: address,
               filter: params["filter"],
-              coin_balance_status: nil,
+              coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
               exchange_rate: Market.get_coin_exchange_rate(),
               counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
               current_path: Controller.current_full_path(conn),

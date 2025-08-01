@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   require Logger
 
-  alias BlockScoutWeb.Account.Api.V2.UserView
+  alias BlockScoutWeb.Account.API.V2.UserView
   alias BlockScoutWeb.API.V2.ApiView
   alias Ecto.Changeset
 
@@ -30,9 +30,10 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @vyper_smart_contract_is_not_supported "Vyper smart-contracts are not supported by SolidityScan"
   @unverified_smart_contract "Smart-contract is unverified"
   @empty_response "Empty response"
-  @tx_interpreter_service_disabled "Transaction Interpretation Service is disabled"
+  @transaction_interpreter_service_disabled "Transaction Interpretation Service is disabled"
   @disabled "API endpoint is disabled"
   @service_disabled "Service is disabled"
+  @not_a_smart_contract "Address is not a smart-contract"
 
   def call(conn, {:format, _params}) do
     Logger.error(fn ->
@@ -131,6 +132,13 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> put_status(:unprocessable_entity)
     |> put_view(UserView)
     |> render(:changeset_errors, changeset: changeset)
+  end
+
+  def call(conn, {:error, :badge_creation_failed}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UserView)
+    |> render(:message, %{message: "Badge creation failed"})
   end
 
   def call(conn, {:restricted_access, true}) do
@@ -261,7 +269,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @address_is_not_smart_contract})
   end
 
-  def call(conn, {:is_vyper_contract, result}) when result == true do
+  def call(conn, {:language, :vyper}) do
     conn
     |> put_status(:not_found)
     |> put_view(ApiView)
@@ -275,13 +283,6 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @unverified_smart_contract})
   end
 
-  def call(conn, {:method, _}) do
-    conn
-    |> put_status(:not_found)
-    |> put_view(ApiView)
-    |> render(:message, %{message: @not_found})
-  end
-
   def call(conn, {:is_empty_response, true}) do
     conn
     |> put_status(500)
@@ -289,11 +290,11 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @empty_response})
   end
 
-  def call(conn, {:tx_interpreter_enabled, false}) do
+  def call(conn, {:transaction_interpreter_enabled, false}) do
     conn
     |> put_status(:forbidden)
     |> put_view(ApiView)
-    |> render(:message, %{message: @tx_interpreter_service_disabled})
+    |> render(:message, %{message: @transaction_interpreter_service_disabled})
   end
 
   def call(conn, {:disabled, _}) do
@@ -308,6 +309,34 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> put_status(501)
     |> put_view(ApiView)
     |> render(:message, %{message: @service_disabled})
+  end
+
+  def call(conn, {:not_a_smart_contract, _}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @not_a_smart_contract})
+  end
+
+  def call(conn, {:average_block_time, {:error, :disabled}}) do
+    conn
+    |> put_status(501)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Average block time calculating is disabled, so getblockcountdown is not available"})
+  end
+
+  def call(conn, {stage, _}) when stage in ~w(max_block average_block_time)a do
+    conn
+    |> put_status(200)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Chain is indexing now, try again later"})
+  end
+
+  def call(conn, {:remaining_blocks, _}) do
+    conn
+    |> put_status(200)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Error! Block number already pass"})
   end
 
   def call(conn, {code, response}) when is_integer(code) do

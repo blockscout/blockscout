@@ -11,13 +11,10 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   require Logger
 
+  alias Explorer.Chain.SmartContract
   alias Explorer.ChainSpec.Geth.Importer, as: GethImporter
   alias Explorer.ChainSpec.Parity.Importer
-  alias Explorer.Helper
-  alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
-  alias HTTPoison.Response
-
-  @interval :timer.minutes(2)
+  alias Explorer.{Helper, HttpClient}
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -25,7 +22,7 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   @impl GenServer
   def init(_) do
-    Process.send_after(self(), :import, @interval)
+    Process.send_after(self(), :import, Application.get_env(:explorer, __MODULE__)[:genesis_processing_delay])
 
     {:ok, %{}}
   end
@@ -86,6 +83,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   @spec fetch_genesis_data() :: Task.t() | :ok
   def fetch_genesis_data do
     chain_spec_path = get_path(:chain_spec_path)
+    Logger.info(fn -> "Fetching chain spec path: #{inspect(chain_spec_path)}." end)
     precompiled_config_path = get_path(:precompiled_config_path)
     Logger.info(fn -> "Fetching precompiled config path: #{inspect(precompiled_config_path)}." end)
 
@@ -173,10 +171,10 @@ defmodule Explorer.ChainSpec.GenesisData do
   end
 
   # Fetches JSON data from a provided URL.
-  @spec fetch_from_url(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t() | HTTPoison.Error.t()}
+  @spec fetch_from_url(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t() | any()}
   defp fetch_from_url(url) do
-    case HTTPoison.get(url) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.get(url) do
+      {:ok, %{body: body, status_code: 200}} ->
         {:ok, Jason.decode!(body)}
 
       reason ->
@@ -206,7 +204,7 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   # Resulting spec will be handled by Explorer.ChainSpec.Geth.Importer
   defp extend_chain_spec(chain_spec, precompiles_config, variant)
-       when is_list(chain_spec) and variant == EthereumJSONRPC.Geth do
+       when is_list(chain_spec) and variant in [EthereumJSONRPC.Geth, EthereumJSONRPC.Besu] do
     precompiles_as_map =
       precompiles_config
       |> Enum.reduce(%{}, fn contract, acc ->
@@ -228,7 +226,7 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   # Resulting spec will be handled by Explorer.ChainSpec.Geth.Importer
   defp extend_chain_spec(%{"genesis" => sub_entity} = chain_spec, precompiles_config, variant)
-       when variant == EthereumJSONRPC.Geth do
+       when variant in [EthereumJSONRPC.Geth, EthereumJSONRPC.Besu] do
     updated_sub_entity = extend_chain_spec(sub_entity, precompiles_config, variant)
 
     Map.put(chain_spec, "genesis", updated_sub_entity)
@@ -236,7 +234,7 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   # Resulting spec will be handled by Explorer.ChainSpec.Geth.Importer
   defp extend_chain_spec(chain_spec, precompiles_config, variant)
-       when is_map(chain_spec) and variant == EthereumJSONRPC.Geth do
+       when is_map(chain_spec) and variant in [EthereumJSONRPC.Geth, EthereumJSONRPC.Besu] do
     accounts =
       case chain_spec["alloc"] do
         nil -> %{}
@@ -276,7 +274,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   defp import_genesis_accounts(chain_spec, variant) do
     if not Enum.empty?(chain_spec) do
       case variant do
-        EthereumJSONRPC.Geth ->
+        variant when variant in [EthereumJSONRPC.Geth, EthereumJSONRPC.Besu] ->
           {:ok, _} = GethImporter.import_genesis_accounts(chain_spec)
 
         _ ->
@@ -310,14 +308,12 @@ defmodule Explorer.ChainSpec.GenesisData do
         verified_via_eth_bytecode_db: false,
         verified_via_verifier_alliance: false,
         partially_verified: false,
-        is_vyper_contract: false,
         autodetect_constructor_args: nil,
-        is_yul: false,
         compiler_settings: nil,
         license_type: :none
       }
 
-      SolidityPublisher.create_or_update_smart_contract(contract["address"], attrs)
+      SmartContract.create_or_update_smart_contract(contract["address"], attrs, false)
     end)
   end
 end

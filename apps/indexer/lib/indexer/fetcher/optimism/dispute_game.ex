@@ -16,6 +16,8 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   alias EthereumJSONRPC.Contract
   alias Explorer.Application.Constants
   alias Explorer.{Chain, Helper, Repo}
+  alias Explorer.Chain.Data
+  alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Optimism.{DisputeGame, Withdrawal}
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper, as: IndexerHelper
@@ -51,6 +53,9 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   @impl GenServer
   def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
+
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+    :timer.sleep(2000)
 
     env = Application.get_all_env(:indexer)[Optimism]
     system_config = env[:optimism_l1_system_config]
@@ -210,7 +215,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     query =
       from(
         game in DisputeGame,
-        select: %{index: game.index, address: game.address},
+        select: %{index: game.index, address_hash: game.address_hash},
         where: is_nil(game.resolved_at),
         order_by: [desc: game.index],
         limit: 1000
@@ -340,7 +345,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
             ]
           })
 
-        calldata = "0x" <> Base.encode16(encoded_call, case: :lower)
+        calldata = %Data{bytes: encoded_call}
 
         Contract.eth_call_request(calldata, dispute_game_factory, index, nil, nil)
       end)
@@ -362,7 +367,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
         [extra_data] = Helper.decode_data(extra_data_by_index[game.index], [:bytes])
 
         game
-        |> Map.put(:extra_data, "0x" <> Base.encode16(extra_data, case: :lower))
+        |> Map.put(:extra_data, %Data{bytes: extra_data})
         |> Map.put(:resolved_at, sanitize_resolved_at(resolved_at_by_index[game.index]))
         |> Map.put(:status, quantity_to_integer(status_by_index[game.index]))
       end)
@@ -381,12 +386,14 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   defp decode_games(responses) do
     responses
     |> Enum.map(fn response ->
-      [game_type, created_at, address] = Helper.decode_data(response.result, [{:uint, 32}, {:uint, 64}, :address])
+      [game_type, created_at, address_hash] = Helper.decode_data(response.result, [{:uint, 32}, {:uint, 64}, :address])
+
+      {:ok, address} = Address.cast(address_hash)
 
       %{
         index: response.id,
         game_type: game_type,
-        address: address,
+        address_hash: address,
         created_at: Timex.from_unix(created_at)
       }
     end)
@@ -395,16 +402,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   defp read_extra_data(method_id, method_name, games, json_rpc_named_arguments, retries \\ 10) do
     requests =
       games
-      |> Enum.map(fn game ->
-        address =
-          if is_binary(game.address) do
-            "0x" <> Base.encode16(game.address, case: :lower)
-          else
-            game.address
-          end
-
-        Contract.eth_call_request(method_id, address, game.index, nil, nil)
-      end)
+      |> Enum.map(&Contract.eth_call_request(method_id, &1.address_hash, &1.index, nil, nil))
 
     error_message = &"Cannot call #{method_name} public getter of FaultDisputeGame. Error: #{inspect(&1)}"
 

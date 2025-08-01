@@ -71,12 +71,15 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
          false <- is_nil(start_block),
          true <- start_block > 0,
          {last_l2_block_number, last_l2_transaction_hash} = Reader.last_l2_item(),
-         {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000),
+         {:ok, latest_block} =
+           Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number()),
          {:start_block_valid, true} <-
            {:start_block_valid,
             (start_block <= last_l2_block_number || last_l2_block_number == 0) && start_block <= latest_block},
-         {:ok, last_l2_tx} <- Helper.get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),
-         {:l2_tx_not_found, false} <- {:l2_tx_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_tx)} do
+         {:ok, last_l2_transaction} <-
+           Helper.get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),
+         {:l2_transaction_not_found, false} <-
+           {:l2_transaction_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_transaction)} do
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -136,7 +139,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
 
         {:stop, :normal, state}
 
-      {:l2_tx_not_found, true} ->
+      {:l2_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L2 transaction from RPC by its hash. Probably, there was a reorg on L2 chain. Please, check polygon_zkevm_bridge table."
         )

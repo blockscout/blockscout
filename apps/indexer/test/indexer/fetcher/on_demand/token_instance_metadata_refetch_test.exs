@@ -32,6 +32,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
   describe "refetch token instance metadata behaviour" do
     setup do
       Subscriber.to(:fetched_token_instance_metadata, :on_demand)
+      Subscriber.to(:not_fetched_token_instance_metadata, :on_demand)
 
       :ok
     end
@@ -54,12 +55,16 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(metadata)
+           }}
+        end
+      )
 
       assert TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance) == :ok
 
@@ -83,11 +88,9 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
         {:chain_event, :fetched_token_instance_metadata, :on_demand,
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
-
-      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
-    test "don't run the update on the token instance with no metadata fetched initially" do
+    test "run the update on the token instance with no metadata fetched initially" do
       token = insert(:token, name: "Super Token", type: "ERC-721")
       token_id = 1
 
@@ -100,9 +103,23 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
         |> Repo.preload(:token)
 
       metadata = %{"name" => "Super Token"}
+      url = "http://metadata.endpoint.com"
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
-      assert TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance) == nil
+      TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
+
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: Jason.encode!(metadata)
+           }}
+        end
+      )
+
+      assert TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance) == :ok
 
       :timer.sleep(100)
 
@@ -110,7 +127,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
         Repo.get_by(TokenInstance, token_id: token_id, token_contract_address_hash: token.contract_address_hash)
 
       assert(token_instance_from_db)
-      assert is_nil(token_instance_from_db.metadata)
+      assert token_instance_from_db.metadata == metadata
 
       assert is_nil(
                Repo.get_by(TokenInstanceMetadataRefetchAttempt,
@@ -119,9 +136,9 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
                )
              )
 
-      refute_receive(
+      assert_receive(
         {:chain_event, :fetched_token_instance_metadata, :on_demand,
-         [^token_contract_address_hash_string, ^token_id, %{metadata: ^metadata}]}
+         [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
     end
 
@@ -143,12 +160,16 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: nil}}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok,
+           %Tesla.Env{
+             status: 200,
+             body: nil
+           }}
+        end
+      )
 
       assert TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance) == :ok
 
@@ -175,7 +196,10 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
          [^token_contract_address_hash_string, ^token_id, %{metadata: ^metadata}]}
       )
 
-      Application.put_env(:explorer, :http_adapter, HTTPoison)
+      assert_receive(
+        {:chain_event, :not_fetched_token_instance_metadata, :on_demand,
+         [^token_contract_address_hash_string, ^token_id, "error"]}
+      )
     end
   end
 end

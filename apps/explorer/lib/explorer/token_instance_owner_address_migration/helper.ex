@@ -11,6 +11,8 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Helper do
   alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.{SmartContract, TokenTransfer}
 
+  require Logger
+
   {:ok, burn_address_hash} = Chain.string_to_address_hash(SmartContract.burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
@@ -71,7 +73,14 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Helper do
       owner_updated_at_log_index: token_transfer.log_index
     }
   rescue
-    DBConnection.ConnectionError ->
+    exception in DBConnection.ConnectionError ->
+      Logger.warning(fn ->
+        [
+          "Error deriving owner address hash for {#{to_string(token_contract_address_hash)}, #{to_string(token_id)}}: ",
+          Exception.format(:error, exception, __STACKTRACE__)
+        ]
+      end)
+
       nil
   end
 

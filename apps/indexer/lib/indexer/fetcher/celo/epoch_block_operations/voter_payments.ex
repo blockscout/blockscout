@@ -2,17 +2,26 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
   @moduledoc """
   Fetches voter payments for the epoch block.
   """
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query, only: [from: 2, select: 3]
 
-  import Explorer.Helper, only: [decode_data: 2]
-  import Indexer.Fetcher.Celo.Helper, only: [abi_to_method_id: 1]
-  import Indexer.Helper, only: [read_contracts_with_retries: 4]
+  import Explorer.Helper,
+    only: [
+      decode_data: 2,
+      abi_to_method_id: 1
+    ]
+
+  import Indexer.Helper,
+    only: [
+      read_contracts_with_retries_by_chunks: 3,
+      read_contracts_with_retries: 4
+    ]
 
   alias Explorer.Repo
   alias Indexer.Fetcher.Celo.ValidatorGroupVotes
 
   alias Explorer.Chain.{
     Cache.CeloCoreContracts,
+    Celo.Epoch,
     Celo.ValidatorGroupVote,
     Hash,
     Log
@@ -21,6 +30,8 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
   require Logger
 
   @repeated_request_max_retries 3
+
+  @requests_chunk_size 100
 
   @epoch_rewards_distributed_to_voters_topic "0x91ba34d62474c14d6c623cd322f4256666c7a45b7fdaa3378e009d39dfcec2a7"
 
@@ -44,38 +55,29 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
   @get_active_votes_for_group_by_account_method_id @get_active_votes_for_group_by_account_abi
                                                    |> abi_to_method_id()
 
-  @spec fetch(
-          %{
-            :block_hash => EthereumJSONRPC.hash(),
-            :block_number => EthereumJSONRPC.block_number()
-          },
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: {:error, list()} | {:ok, list()}
+  @spec fetch(Epoch.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {:error, list()} | {:ok, list()}
   def fetch(
-        %{block_number: block_number, block_hash: block_hash} = pending_operation,
+        %Epoch{start_processing_block: start_block, end_processing_block: end_block} = epoch,
         json_rpc_named_arguments
       ) do
-    :ok = ValidatorGroupVotes.fetch(block_number)
+    :ok = ValidatorGroupVotes.fetch(end_block.number)
 
-    {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, block_number)
+    {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, start_block.number)
 
     elected_groups_query =
-      from(
-        l in Log,
-        where:
-          l.block_hash == ^block_hash and
-            l.address_hash == ^election_contract_address and
-            l.first_topic == ^@epoch_rewards_distributed_to_voters_topic and
-            is_nil(l.transaction_hash),
-        select: fragment("SUBSTRING(? from 13)", l.second_topic)
-      )
+      start_block.number
+      |> epoch_rewards_distributed_to_voters_query(end_block.number)
+      |> select([l], fragment("SUBSTRING(? from 13)", l.second_topic))
+
+    end_block_number = end_block.number
 
     query =
       from(
         v in ValidatorGroupVote,
         where:
           v.group_address_hash in subquery(elected_groups_query) and
-            v.block_number <= ^block_number,
+            v.block_number <= ^end_block_number,
         distinct: true,
         select: {v.account_address_hash, v.group_address_hash}
       )
@@ -94,7 +96,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
     requests =
       accounts_with_activated_votes
       |> Enum.map(fn {account_address_hash, group_address_hash} ->
-        (block_number - 1)..block_number
+        (end_block_number - 1)..end_block_number
         |> Enum.map(fn block_number ->
           %{
             contract_address: election_contract_address,
@@ -110,11 +112,17 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
       |> Enum.concat()
 
     {responses, []} =
-      read_contracts_with_retries(
+      read_contracts_with_retries_by_chunks(
         requests,
-        @get_active_votes_for_group_by_account_abi,
-        json_rpc_named_arguments,
-        @repeated_request_max_retries
+        @requests_chunk_size,
+        fn requests ->
+          read_contracts_with_retries(
+            requests,
+            @get_active_votes_for_group_by_account_abi,
+            json_rpc_named_arguments,
+            @repeated_request_max_retries
+          )
+        end
       )
 
     diffs =
@@ -138,7 +146,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
         diffs,
         fn {account_address_hash, group_address_hash}, diff ->
           %{
-            block_hash: block_hash,
+            epoch_number: epoch.number,
             account_address_hash: account_address_hash,
             amount: diff,
             associated_account_address_hash: group_address_hash,
@@ -147,29 +155,35 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
         end
       )
 
-    ok_or_error = validate_voter_rewards(pending_operation, rewards)
+    ok_or_error = validate_voter_rewards(start_block.number, end_block.number, rewards)
 
     {ok_or_error, rewards}
+  end
+
+  defp epoch_rewards_distributed_to_voters_query(start_block_number, end_block_number) do
+    {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, start_block_number)
+
+    from(
+      l in Log,
+      where:
+        l.block_number >= ^start_block_number and
+          l.block_number <= ^end_block_number and
+          l.address_hash == ^election_contract_address and
+          l.first_topic == ^@epoch_rewards_distributed_to_voters_topic
+    )
   end
 
   # Validates voter rewards by comparing the sum of what we got from the
   # `EpochRewardsDistributedToVoters` event and the sum of what we calculated
   # manually by fetching the votes for each account that has or had an activated
   # vote.
-  defp validate_voter_rewards(pending_operation, voter_rewards) do
+  defp validate_voter_rewards(start_block_number, end_block_number, voter_rewards) do
     manual_voters_total = voter_rewards |> Enum.map(& &1.amount) |> Enum.sum()
-    {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, pending_operation.block_number)
 
     query =
-      from(
-        l in Log,
-        where:
-          l.block_hash == ^pending_operation.block_hash and
-            l.address_hash == ^election_contract_address and
-            l.first_topic == ^@epoch_rewards_distributed_to_voters_topic and
-            is_nil(l.transaction_hash),
-        select: l.data
-      )
+      start_block_number
+      |> epoch_rewards_distributed_to_voters_query(end_block_number)
+      |> select([l], l.data)
 
     voter_rewards_from_event_total =
       query

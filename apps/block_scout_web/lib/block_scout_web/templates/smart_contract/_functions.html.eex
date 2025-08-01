@@ -1,6 +1,6 @@
 <% minimal_proxy_template = if assigns[:custom_abi], do: nil, else: EIP1167.get_implementation_smart_contract(@address.hash) %>
-<% metadata_for_verification = if assigns[:custom_abi], do: nil, else: minimal_proxy_template || SmartContract.get_address_verified_bytecode_twin_contract(@address.hash).verified_contract %>
-<% smart_contract_verified = if assigns[:custom_abi], do: false, else: BlockScoutWeb.AddressView.smart_contract_verified?(@address) %>
+<% metadata_for_verification = if assigns[:custom_abi], do: nil, else: minimal_proxy_template || SmartContract.get_address_verified_bytecode_twin_contract(@address.hash) %>
+<% smart_contract_verified = if assigns[:custom_abi], do: false, else: BlockScoutWeb.API.V2.Helper.smart_contract_verified?(@address) %>
 <%= unless smart_contract_verified do %>
   <%= if metadata_for_verification do %>
     <%= if minimal_proxy_template do %>
