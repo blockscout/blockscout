@@ -4,10 +4,14 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Eigenda do
     associated with Arbitrum rollup batches.
   """
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1, log_info: 1]
+  import Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper, only: [calculate_eigenda_data_key: 1]
 
   alias ABI.{TypeDecoder, TypeEncoder}
   alias EthereumJSONRPC.Arbitrum.Constants.Contracts, as: ArbitrumContracts
+  alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
+
+  alias Explorer.Chain.Arbitrum
 
   @enforce_keys [:batch_number, :blob_verification_proof, :blob_header]
   defstruct @enforce_keys
@@ -85,5 +89,108 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Eigenda do
     exception ->
       log_error("Can not parse EigenDA certificate: #{inspect(exception)}")
       {:error, nil, nil}
+  end
+
+  @doc """
+    Prepares EigenDA certificate data for import.
+
+    ## Parameters
+    - A tuple containing:
+      - A map of already prepared DA records
+      - A list of already prepared batch-to-blob associations
+    - `da_info`: The EigenDA certificate struct containing blob header and verification proof.
+
+    ## Returns
+    - A tuple containing:
+      - An updated map of `DaMultiPurposeRecord` structures ready for import in the DB,
+        where `data_key` maps to the record
+      - An updated list of `BatchToDaBlob` structures ready for import in the DB.
+  """
+  @spec prepare_for_import(
+          {%{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}, [Arbitrum.BatchToDaBlob.to_import()]},
+          __MODULE__.t()
+        ) ::
+          {%{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}, [Arbitrum.BatchToDaBlob.to_import()]}
+  def prepare_for_import({da_records_acc, batch_to_blob_acc}, %__MODULE__{} = da_info) do
+    blob_header_hex = ArbitrumHelper.bytes_to_hex_str(da_info.blob_header)
+    blob_verification_proof_hex = ArbitrumHelper.bytes_to_hex_str(da_info.blob_verification_proof)
+
+    data = %{
+      blob_header: blob_header_hex,
+      blob_verification_proof: blob_verification_proof_hex
+    }
+
+    data_key = calculate_eigenda_data_key(da_info.blob_header)
+
+    # Create record for arbitrum_da_multi_purpose table with batch_number set to nil
+    da_record = %{
+      data_type: 0,
+      data_key: data_key,
+      data: data,
+      # This field must be removed as soon as migration to a separate table for Batch-to-DA-record associations is completed.
+      batch_number: nil
+    }
+
+    # Create record for arbitrum_batches_to_da_blobs table
+    batch_to_blob_record = %{
+      batch_number: da_info.batch_number,
+      data_blob_id: data_key
+    }
+
+    # Only add the DA record if it doesn't already exist in the map
+    updated_da_records =
+      if Map.has_key?(da_records_acc, data_key) do
+        log_info("Found duplicate DA record #{ArbitrumHelper.bytes_to_hex_str(data_key)}")
+        # Record with this data_key already exists, keep existing record
+        da_records_acc
+      else
+        # No duplicate, add the new record
+        Map.put(da_records_acc, data_key, da_record)
+      end
+
+    {updated_da_records, [batch_to_blob_record | batch_to_blob_acc]}
+  end
+
+  @doc """
+    Resolves conflicts between existing database records and candidate DA records.
+
+    This function handles deduplication by comparing EigenDA data keys between database
+    records and candidate records. For EigenDA records, if a record with a matching data_key
+    already exists in the database, the candidate record is excluded from import.
+
+    ## Parameters
+    - `db_records`: A list of `Arbitrum.DaMultiPurposeRecord` retrieved from the database
+    - `candidate_records`: A map where `data_key` maps to `Arbitrum.DaMultiPurposeRecord.to_import()`
+
+    ## Returns
+    - A list of `Arbitrum.DaMultiPurposeRecord.to_import()` after resolving conflicts
+  """
+  @spec resolve_conflict(
+          [Arbitrum.DaMultiPurposeRecord.t()],
+          %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}
+        ) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
+  # When no database records to check against, simply return all candidate records
+  def resolve_conflict([], candidate_records) do
+    Map.values(candidate_records)
+  end
+
+  def resolve_conflict(db_records, candidate_records) do
+    # Create a set of keys to exclude (those already present in DB)
+    keys_to_exclude =
+      Enum.reduce(db_records, MapSet.new(), fn db_record, acc ->
+        # Any key present in both DB and candidates should be excluded
+        if Map.has_key?(candidate_records, db_record.data_key) do
+          log_info("DA record #{ArbitrumHelper.bytes_to_hex_str(db_record.data_key)} already exists in DB")
+
+          MapSet.put(acc, db_record.data_key)
+        else
+          acc
+        end
+      end)
+
+    # Return only candidate records not in the exclude set
+    candidate_records
+    |> Enum.reject(fn {data_key, _record} -> MapSet.member?(keys_to_exclude, data_key) end)
+    |> Enum.map(fn {_data_key, record} -> record end)
   end
 end

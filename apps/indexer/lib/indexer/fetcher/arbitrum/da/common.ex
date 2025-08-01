@@ -70,7 +70,8 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
     initial_acc = {
       %{
         celestia: %{},
-        anytrust: %{}
+        anytrust: %{},
+        eigenda: %{}
       },
       [],
       MapSet.new()
@@ -106,6 +107,16 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
               updated_cache
             }
 
+          %Eigenda{} ->
+            {updated_records, updated_batches} =
+              Eigenda.prepare_for_import({da_records_by_type.eigenda, batch_to_blob_acc}, info)
+
+            {
+              %{da_records_by_type | eigenda: updated_records},
+              updated_batches,
+              cache
+            }
+
           _ ->
             {da_records_by_type, batch_to_blob_acc, cache}
         end
@@ -124,19 +135,21 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
   #
   # ## Parameters
   # - `da_records_by_type`: A map containing candidate records organized by DA type
-  #   (`:celestia` and `:anytrust`), where each type has a map of records keyed by `data_key`.
+  #   (`:celestia`, `:anytrust`, and `:eigenda`), where each type has a map of records keyed by `data_key`.
   #
   # ## Returns
   # - A list of `DaMultiPurposeRecord` records after conflict resolution, ready for import.
   @spec eliminate_conflicts(%{
           celestia: %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()},
-          anytrust: %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}
+          anytrust: %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()},
+          eigenda: %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}
         }) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
   defp eliminate_conflicts(da_records_by_type) do
     # Define the types and their corresponding resolution modules
     type_configs = [
       {:celestia, da_records_by_type.celestia, &Celestia.resolve_conflict/2},
-      {:anytrust, da_records_by_type.anytrust, &Anytrust.resolve_conflict/2}
+      {:anytrust, da_records_by_type.anytrust, &Anytrust.resolve_conflict/2},
+      {:eigenda, da_records_by_type.eigenda, &Eigenda.resolve_conflict/2}
     ]
 
     # Process each type using the same pattern
@@ -149,7 +162,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
   # Processes candidate DA records using a type-specific resolution function.
   #
   # This function takes a map of candidate DA records and a resolution function specific
-  # to the DA type (Celestia or AnyTrust). It fetches any existing records from the
+  # to the DA type (Celestia, AnyTrust, or EigenDA). It fetches any existing records from the
   # database with matching data keys and uses the resolution function to determine
   # which records should be imported.
   #
@@ -192,13 +205,13 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
       `:in_celestia`, `:in_anytrust`, `:in_eigenda`, or `nil`.
 
     ## Returns
-    - `true` if the DA type is `:in_celestia` or `:in_anytrust`, indicating that the data
+    - `true` if the DA type is `:in_celestia`, `:in_anytrust`, or `:in_eigenda`, indicating that the data
       requires import.
     - `false` for all other DA types, indicating that the data does not require import.
   """
   @spec required_import?(:in_blob4844 | :in_calldata | :in_celestia | :in_anytrust | :in_eigenda | nil) :: boolean()
   def required_import?(da_type) do
-    da_type in [:in_celestia, :in_anytrust]
+    da_type in [:in_celestia, :in_anytrust, :in_eigenda]
   end
 
   # Parses data availability information based on the header flag.
