@@ -566,6 +566,8 @@ defmodule Indexer.Block.Fetcher do
     CeloAccount.async_fetch(logs, realtime?)
   end
 
+  def async_import_celo_accounts(_, _), do: :ok
+
   def async_import_filecoin_addresses_info(%{addresses: addresses}, realtime?) do
     addresses
     |> Enum.map(&%FilecoinPendingAddressOperation{address_hash: &1.hash})
