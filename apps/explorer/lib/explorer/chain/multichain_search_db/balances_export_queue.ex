@@ -129,9 +129,9 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
               b.token_id,
               ^balance_token_id
             )
-        ),
-        lock: "FOR NO KEY UPDATE"
+        )
       )
     end)
+    |> Repo.transact()
   end
 end
