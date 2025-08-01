@@ -239,7 +239,6 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
       val0 = Decimal.new(100) |> Wei.cast() |> elem(1)
       val1 = Decimal.new(200) |> Wei.cast() |> elem(1)
       val2 = Decimal.new(300) |> Wei.cast() |> elem(1)
-      val3 = Decimal.new(400) |> Wei.cast() |> elem(1)
       val4 = Decimal.new(500) |> Wei.cast() |> elem(1)
 
       log =
