@@ -62,6 +62,7 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.Scroll.L1FeeParams
     ],
     celo: [
+      Runner.Celo.PendingAccountOperations,
       Runner.Celo.Accounts,
       Runner.Celo.ValidatorGroupVotes,
       Runner.Celo.Epochs,

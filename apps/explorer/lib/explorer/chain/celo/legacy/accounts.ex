@@ -1,4 +1,4 @@
-defmodule Indexer.Transform.Celo.Legacy.Accounts do
+defmodule Explorer.Chain.Celo.Legacy.Accounts do
   @moduledoc """
   Helper functions for transforming data for Celo accounts.
 
@@ -9,14 +9,14 @@ defmodule Indexer.Transform.Celo.Legacy.Accounts do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Indexer.Transform.Celo.Legacy.Events
+  alias Explorer.Chain.Celo.Legacy.Events
 
   @doc """
   Returns a list of account addresses given a list of logs.
   """
-  def parse(db_logs) do
+  def parse(logs) do
     logs =
-      db_logs
+      logs
       |> Enum.map(
         &Map.merge(&1, %{
           first_topic: to_string(&1.first_topic),
@@ -71,7 +71,7 @@ defmodule Indexer.Transform.Celo.Legacy.Accounts do
     logs
     |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
     |> Enum.reduce([], fn log, accounts -> do_parse(log, accounts, get_topic) end)
-    |> Enum.map(fn address -> %{address: address} end)
+    |> Enum.map(fn address -> %{address_hash: address} end)
   end
 
   defp get_withdrawal_events(logs, topics) do

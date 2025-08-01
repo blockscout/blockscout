@@ -1,12 +1,12 @@
-defmodule Explorer.Chain.Import.Runner.Celo.Accounts do
+defmodule Explorer.Chain.Import.Runner.Celo.PendingAccountOperations do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Celo.Account.t/0`.
+  Bulk imports `t:Explorer.Chain.Celo.PendingAccountOperationPendingAccountOperations.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.Celo.Account
+  alias Explorer.Chain.Celo.PendingAccountOperation
   alias Explorer.Chain.Import
   alias Explorer.Prometheus.Instrumenter
 
@@ -15,13 +15,13 @@ defmodule Explorer.Chain.Import.Runner.Celo.Accounts do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [Account.t()]
+  @type imported :: [PendingAccountOperation.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: Account
+  def ecto_schema_module, do: PendingAccountOperation
 
   @impl Import.Runner
-  def option_key, do: :celo_accounts
+  def option_key, do: :celo_pending_account_operations
 
   @impl Import.Runner
   @spec imported_table_row() :: %{:value_description => binary(), :value_type => binary()}
@@ -42,12 +42,12 @@ defmodule Explorer.Chain.Import.Runner.Celo.Accounts do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_celo_accounts, fn repo, _ ->
+    Multi.run(multi, :celo_pending_account_operations, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :address_referencing,
-        :celo_accounts,
-        :celo_accounts
+        :celo_pending_account_operations,
+        :celo_pending_account_operations
       )
     end)
   end
@@ -56,7 +56,7 @@ defmodule Explorer.Chain.Import.Runner.Celo.Accounts do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [Account.t()]}
+          {:ok, [PendingAccountOperation.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = _options) when is_list(changes_list) do
     # Enforce Celo.Epoch.Account ShareLocks order (see docs: sharelock.md)
@@ -69,12 +69,12 @@ defmodule Explorer.Chain.Import.Runner.Celo.Accounts do
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: Account,
+        for: PendingAccountOperation,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
         conflict_target: :address_hash,
-        on_conflict: :replace_all
+        on_conflict: :nothing
       )
 
     {:ok, inserted}

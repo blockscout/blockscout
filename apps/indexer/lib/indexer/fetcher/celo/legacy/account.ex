@@ -7,11 +7,9 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.Celo.Account
-  alias Indexer.Fetcher.Celo.Legacy.Account.Reader, as: AccountReader
-
+  alias Explorer.Chain.Celo.{Account, PendingAccountOperation}
   alias Indexer.BufferedTask
-  alias Indexer.Transform.Celo.Legacy.Accounts, as: AccountsTransform
+  alias Indexer.Fetcher.Celo.Legacy.Account.Reader, as: AccountReader
 
   require Logger
 
@@ -52,51 +50,27 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
     ]
   end
 
-  def async_fetch(logs, realtime?, timeout \\ 5000) when is_list(logs) do
+  @spec async_fetch([PendingAccountOperation.t()], boolean(), timeout()) ::
+          :ok | {:retry, [map()]} | :disabled
+  def async_fetch(operations, realtime?, timeout \\ 5000) when is_list(operations) do
     if __MODULE__.Supervisor.disabled?() do
       :ok
     else
-      %{
-        accounts: accounts,
-        attestations_fulfilled: attestations_fulfilled,
-        attestations_requested: attestations_requested
-      } = AccountsTransform.parse(logs)
-
-      accounts = Enum.uniq(accounts ++ attestations_fulfilled ++ attestations_requested)
-
-      params =
-        accounts
-        |> Enum.map(fn a ->
-          entry(
-            a,
-            attestations_fulfilled,
-            attestations_requested
-          )
-        end)
-
-      BufferedTask.buffer(__MODULE__, params, realtime?, timeout)
+      unique_operations = Enum.uniq_by(operations, & &1.address_hash)
+      BufferedTask.buffer(__MODULE__, unique_operations, realtime?, timeout)
     end
   end
 
-  def entry(%{address: address}, requested, fulfilled) do
-    %{
-      address: address,
-      attestations_fulfilled: Enum.count(fulfilled, &(&1.address == address)),
-      attestations_requested: Enum.count(requested, &(&1.address == address))
-    }
-  end
-
-  def entry(%{voter: address}, _, _) do
-    %{
-      voter: address,
-      attestations_fulfilled: 0,
-      attestations_requested: 0
-    }
-  end
-
   @impl BufferedTask
-  def init(initial, _, _) do
-    initial
+  def init(initial, reducer, _) do
+    {:ok, final} =
+      PendingAccountOperation.stream(
+        initial,
+        reducer,
+        true
+      )
+
+    final
   end
 
   @impl BufferedTask
@@ -113,21 +87,22 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
     end
   end
 
-  defp fetch_from_blockchain(addresses) do
-    addresses
+  defp fetch_from_blockchain(operations) do
+    operations
     |> Enum.map(fn
       %{voter: _} = account ->
         Map.put(account, :error, :unresolved_voter)
 
       account ->
-        case AccountReader.fetch(account.address) do
-          {:ok, data} ->
-            Map.merge(account, data)
-
-          _ ->
-            nil
+        account.address_hash
+        |> to_string()
+        |> AccountReader.fetch()
+        |> case do
+          {:ok, data} -> data
+          _ -> nil
         end
     end)
+    |> Enum.reject(&is_nil/1)
   end
 
   defp import_accounts(accounts) do
@@ -153,9 +128,13 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
 
     case Chain.import(import_params) do
       {:ok, _imported} ->
-        Logger.info(fn -> ["Imported Celo accounts."] end,
+        Logger.info(fn -> ["Imported #{Enum.count(success)} Celo accounts."] end,
           error_count: Enum.count(failed)
         )
+
+        success
+        |> Enum.map(& &1.address_hash)
+        |> PendingAccountOperation.delete_by_address_hashes()
 
         failed
 

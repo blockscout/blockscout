@@ -11,11 +11,12 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.Chain
-  alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-  alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
-  alias Explorer.Chain.Filecoin.PendingAddressOperation, as: FilecoinPendingAddressOperation
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei}
+  alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
+  alias Explorer.Chain.Cache.Blocks, as: BlocksCache
+  alias Explorer.Chain.Celo.Legacy.Accounts, as: CeloAccountsTransform
+  alias Explorer.Chain.Filecoin.PendingAddressOperation, as: FilecoinPendingAddressOperation
   alias Indexer.Block.Fetcher.Receipts
   alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Celo.EpochBlockOperations, as: CeloEpochBlockOperations
@@ -176,6 +177,7 @@ defmodule Indexer.Block.Fetcher do
          token_transfers = token_transfers ++ celo_native_token_transfers,
          celo_l1_epochs = CeloL1Epochs.parse(blocks),
          celo_l2_epochs = CeloL2Epochs.parse(logs),
+         celo_pending_account_operations = parse_celo_pending_account_operations(logs),
          tokens = Enum.uniq(tokens ++ celo_tokens),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
@@ -267,6 +269,7 @@ defmodule Indexer.Block.Fetcher do
              shibarium_bridge_operations: shibarium_bridge_operations,
              celo_gas_tokens: celo_gas_tokens,
              celo_epochs: celo_l1_epochs ++ celo_l2_epochs,
+             celo_pending_account_operations: celo_pending_account_operations,
              arbitrum_messages: arbitrum_xlevel_messages,
              stability_validators: stability_validators
            }
@@ -343,13 +346,18 @@ defmodule Indexer.Block.Fetcher do
     |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
   end
 
-  defp do_import_options(:celo, basic_import_options, %{celo_gas_tokens: celo_gas_tokens, celo_epochs: celo_epochs}) do
+  defp do_import_options(:celo, basic_import_options, %{
+         celo_gas_tokens: celo_gas_tokens,
+         celo_epochs: celo_epochs,
+         celo_pending_account_operations: celo_pending_account_operations
+       }) do
     tokens =
       basic_import_options
       |> Map.get(:tokens, %{})
       |> Map.get(:params, [])
 
     basic_import_options
+    |> Map.put_new(:celo_pending_account_operations, %{params: celo_pending_account_operations})
     |> Map.put_new(:celo_epochs, %{params: celo_epochs})
     |> Map.put(
       :tokens,
@@ -562,8 +570,9 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_celo_epoch_block_operations(_, _), do: :ok
 
-  def async_import_celo_accounts(%{logs: logs}, realtime?) do
-    CeloAccount.async_fetch(logs, realtime?)
+  @spec async_import_celo_accounts(map(), boolean()) :: :ok
+  def async_import_celo_accounts(%{celo_pending_account_operations: celo_pending_account_operations}, realtime?) do
+    CeloAccount.async_fetch(celo_pending_account_operations, realtime?)
   end
 
   def async_import_celo_accounts(_, _), do: :ok
@@ -828,5 +837,14 @@ defmodule Indexer.Block.Fetcher do
       end
     end)
     |> List.flatten()
+  end
+
+  defp parse_celo_pending_account_operations(logs) do
+    logs
+    |> CeloAccountsTransform.parse()
+    |> Map.take([:accounts, :attestations_fulfilled, :attestations_requested])
+    |> Map.values()
+    |> Enum.concat()
+    |> Enum.uniq_by(& &1.address_hash)
   end
 end
