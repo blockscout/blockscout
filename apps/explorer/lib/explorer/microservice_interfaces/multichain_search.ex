@@ -779,12 +779,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     indexed_addresses_chunks =
       addresses
+      |> Enum.sort_by(& &1.hash)
       |> Enum.uniq()
       |> Enum.chunk_every(addresses_chunk_size())
       |> Enum.with_index()
 
     indexed_address_coin_balances_chunks =
       address_coin_balances
+      |> Enum.sort_by(& &1.address_hash)
       |> Enum.uniq()
       |> Enum.reject(&is_nil(&1.value))
       |> Enum.chunk_every(addresses_chunk_size())
