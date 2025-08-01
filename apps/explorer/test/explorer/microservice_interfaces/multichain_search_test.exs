@@ -368,8 +368,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert {:error,
               %{
                 addresses: [
-                  address_export_data(address_2),
-                  address_export_data(address_1)
+                  address_export_data(address_1),
+                  address_export_data(address_2)
                 ],
                 block_ranges: [
                   %{max_block_number: to_string(block_2.number), min_block_number: to_string(block_1.number)}
@@ -706,8 +706,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
              ]
 
       assert chunk[:address_coin_balances] == [
-               %{value: %Wei{value: Decimal.new("200")}, address_hash: to_string(address_2.hash)},
-               %{value: %Wei{value: Decimal.new("100")}, address_hash: to_string(address_1.hash)}
+               %{value: %Wei{value: Decimal.new("100")}, address_hash: to_string(address_1.hash)},
+               %{value: %Wei{value: Decimal.new("200")}, address_hash: to_string(address_2.hash)}
              ]
 
       assert chunk[:address_token_balances] == [
@@ -791,8 +791,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert second_chunk[:hashes] == []
 
       assert Enum.all?(second_chunk[:addresses], fn item ->
-               item.hash == "0x" <> Base.encode16(Enum.at(addresses, 0).hash.bytes, case: :lower) ||
-                 item.hash == "0x" <> Base.encode16(Enum.at(addresses, 1).hash.bytes, case: :lower)
+               item.hash == "0x" <> Base.encode16(Enum.at(addresses, 7000).hash.bytes, case: :lower) ||
+                 item.hash == "0x" <> Base.encode16(Enum.at(addresses, 7001).hash.bytes, case: :lower)
              end)
     end
 
@@ -852,14 +852,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       assert chunk[:addresses] == [
                %{
-                 hash: "0x" <> Base.encode16(address_3.hash.bytes, case: :lower),
-                 is_contract: true,
-                 is_verified_contract: true,
-                 contract_name: "SimpleStorage",
-                 token_name: "Main Token",
-                 token_type: "ERC-721",
-                 is_token: true,
-                 ens_name: nil
+                 hash: "0x" <> Base.encode16(address_1.hash.bytes, case: :lower),
+                 is_contract: false,
+                 is_verified_contract: false,
+                 contract_name: nil,
+                 token_name: nil,
+                 token_type: "UNSPECIFIED",
+                 is_token: false,
+                 ens_name: "te.eth"
                },
                %{
                  hash: "0x" <> Base.encode16(address_2.hash.bytes, case: :lower),
@@ -872,14 +872,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                  ens_name: nil
                },
                %{
-                 hash: "0x" <> Base.encode16(address_1.hash.bytes, case: :lower),
-                 is_contract: false,
-                 is_verified_contract: false,
-                 contract_name: nil,
-                 token_name: nil,
-                 token_type: "UNSPECIFIED",
-                 is_token: false,
-                 ens_name: "te.eth"
+                 hash: "0x" <> Base.encode16(address_3.hash.bytes, case: :lower),
+                 is_contract: true,
+                 is_verified_contract: true,
+                 contract_name: "SimpleStorage",
+                 token_name: "Main Token",
+                 token_type: "ERC-721",
+                 is_token: true,
+                 ens_name: nil
                }
              ]
 
