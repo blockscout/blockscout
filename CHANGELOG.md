@@ -21,6 +21,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix deadlocks in Multichain balances export ([#12898](https://github.com/blockscout/blockscout/pull/12898))
 - Balances export queue: replace replace_all with replace only value and updated_at ([#12892](https://github.com/blockscout/blockscout/pull/12892))
 - Fix naming for apikey param in OpenAPI spec ([#12891](https://github.com/blockscout/blockscout/pull/12891))
 - Balances export queue to multichain replace do_nothing with replace_all on insertion to the queue ([#12888](https://github.com/blockscout/blockscout/pull/12888))
