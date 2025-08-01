@@ -5,7 +5,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
   # TODO: Move the module under EthereumJSONRPC.Arbitrum.
 
-  alias ABI.TypeDecoder
+  alias ABI.{TypeDecoder, TypeEncoder}
 
   import EthereumJSONRPC,
     only: [json_rpc: 2, quantity_to_integer: 1, timestamp_to_datetime: 1]
@@ -781,7 +781,26 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
             ArbitrumContracts.add_sequencer_l2_batch_from_eigen_da_selector_with_abi()
           )
 
-        {sequence_number, prev_message_count, new_message_count, <<237>> <> cert}
+        # Encode the complex EigenDACert structure to bytes for interface compatibility.
+        #
+        # Why this encoding step is necessary:
+        # 1. TypeDecoder.decode() automatically unpacks the complex EigenDACert tuple structure
+        #    into Elixir tuples when using the detailed ABI definition above.
+        # 2. However, the data availability parsing pipeline expects binary data that can be
+        #    prefixed with a header flag (237 for EigenDA) and passed through the common interface.
+        # 3. Alternative approaches don't work:
+        #    - Using :bytes in the function ABI gives ABI-encoded data with offset pointers,
+        #      not the clean tuple encoding needed for later decoding
+        #    - Changing the common interface to handle tuples would break compatibility with
+        #      other DA types (Celestia, AnyTrust) that expect binary data
+        # 4. This encode step converts the decoded Elixir tuples back into clean ABI-encoded
+        #    bytes that can be consistently decoded later in parse_batch_accompanying_data.
+        #
+        # This is not a performance issue as the encoding overhead is negligible compared to
+        # blockchain I/O operations, and it maintains clean separation of concerns.
+        cert_encoded = TypeEncoder.encode([cert], ArbitrumContracts.eigen_da_cert_abi())
+
+        {sequence_number, prev_message_count, new_message_count, <<237>> <> cert_encoded}
     end
   end
 

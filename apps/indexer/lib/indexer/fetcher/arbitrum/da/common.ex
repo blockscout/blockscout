@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1]
 
-  alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
+  alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia, Eigenda}
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: Db
 
   alias Explorer.Chain.Arbitrum
@@ -25,14 +25,14 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
     - `{status, da_type, da_info}` where `da_type` is one of `:in_blob4844`,
       `:in_calldata`, `:in_celestia`, `:in_anytrust`, `:in_eigenda`, or `nil` if
       the accompanying data cannot be parsed or is of an unsupported type.
-      `da_info` contains the DA info descriptor for Celestia or Anytrust.
+      `da_info` contains the DA info descriptor for Celestia, Anytrust, or EigenDA.
   """
   @spec examine_batch_accompanying_data(non_neg_integer(), binary()) ::
           {:ok, :in_blob4844, nil}
           | {:ok, :in_calldata, nil}
           | {:ok, :in_celestia, Celestia.t()}
           | {:ok, :in_anytrust, Anytrust.t()}
-          | {:ok, :in_eigenda, nil}
+          | {:ok, :in_eigenda, Eigenda.t()}
           | {:error, nil, nil}
   def examine_batch_accompanying_data(batch_number, batch_accompanying_data) do
     case batch_accompanying_data do
@@ -206,7 +206,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
           {:ok, :in_calldata, nil}
           | {:ok, :in_celestia, Celestia.t()}
           | {:ok, :in_anytrust, Anytrust.t()}
-          | {:ok, :in_eigenda, nil}
+          | {:ok, :in_eigenda, Eigenda.t()}
           | {:error, nil, nil}
   defp parse_data_availability_info(batch_number, <<
          header_flag::size(8),
@@ -231,7 +231,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
         Anytrust.parse_batch_accompanying_data(batch_number, rest)
 
       237 ->
-        {:ok, :in_eigenda, nil}
+        Eigenda.parse_batch_accompanying_data(batch_number, rest)
 
       _ ->
         log_error("Unknown header flag found during an attempt to parse DA data: #{header_flag}")

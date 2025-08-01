@@ -564,11 +564,231 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
       function: "addSequencerL2BatchFromEigenDA",
       types: [
         {:uint, 256},
-        :bytes,
+        # EigenDACert structure
+        {:tuple,
+         [
+           # BlobVerificationProof
+           {:tuple,
+            [
+              # batchId
+              {:uint, 32},
+              # blobIndex
+              {:uint, 32},
+              # BatchMetadata
+              {:tuple,
+               [
+                 # BatchHeader
+                 {:tuple,
+                  [
+                    # blobHeadersRoot
+                    {:bytes, 32},
+                    # quorumNumbers
+                    :bytes,
+                    # signedStakeForQuorums
+                    :bytes,
+                    # referenceBlockNumber
+                    {:uint, 32}
+                  ]},
+                 # signatoryRecordHash
+                 {:bytes, 32},
+                 # confirmationBlockNumber
+                 {:uint, 32}
+               ]},
+              # inclusionProof
+              :bytes,
+              # quorumIndices
+              :bytes
+            ]},
+           # BlobHeader
+           {:tuple,
+            [
+              # BN254.G1Point commitment
+              {:tuple,
+               [
+                 # X
+                 {:uint, 256},
+                 # Y
+                 {:uint, 256}
+               ]},
+              # dataLength
+              {:uint, 32},
+              # QuorumBlobParam[] quorumBlobParams
+              {:array,
+               {:tuple,
+                [
+                  # quorumNumber
+                  {:uint, 8},
+                  # adversaryThresholdPercentage
+                  {:uint, 8},
+                  # confirmationThresholdPercentage
+                  {:uint, 8},
+                  # chunkLength
+                  {:uint, 32}
+                ]}}
+            ]}
+         ]},
         :address,
         {:uint, 256},
         {:uint, 256},
         {:uint, 256}
+      ]
+    }
+
+  @doc """
+    Returns ABI definition for EigenDACert structure for encoding purposes.
+
+    The EigenDACert contains BlobVerificationProof and BlobHeader with full nested structures.
+  """
+  def eigen_da_cert_abi,
+    do: %ABI.FunctionSelector{
+      function: nil,
+      types: [
+        # EigenDACert structure
+        {:tuple,
+         [
+           # BlobVerificationProof
+           {:tuple,
+            [
+              # batchId
+              {:uint, 32},
+              # blobIndex
+              {:uint, 32},
+              # BatchMetadata
+              {:tuple,
+               [
+                 # BatchHeader
+                 {:tuple,
+                  [
+                    # blobHeadersRoot
+                    {:bytes, 32},
+                    # quorumNumbers
+                    :bytes,
+                    # signedStakeForQuorums
+                    :bytes,
+                    # referenceBlockNumber
+                    {:uint, 32}
+                  ]},
+                 # signatoryRecordHash
+                 {:bytes, 32},
+                 # confirmationBlockNumber
+                 {:uint, 32}
+               ]},
+              # inclusionProof
+              :bytes,
+              # quorumIndices
+              :bytes
+            ]},
+           # BlobHeader
+           {:tuple,
+            [
+              # BN254.G1Point commitment
+              {:tuple,
+               [
+                 # X
+                 {:uint, 256},
+                 # Y
+                 {:uint, 256}
+               ]},
+              # dataLength
+              {:uint, 32},
+              # QuorumBlobParam[] quorumBlobParams
+              {:array,
+               {:tuple,
+                [
+                  # quorumNumber
+                  {:uint, 8},
+                  # adversaryThresholdPercentage
+                  {:uint, 8},
+                  # confirmationThresholdPercentage
+                  {:uint, 8},
+                  # chunkLength
+                  {:uint, 32}
+                ]}}
+            ]}
+         ]}
+      ]
+    }
+
+  @doc """
+    Returns ABI definition for BlobVerificationProof structure for encoding purposes.
+
+    The BlobVerificationProof contains batchId, blobIndex, BatchMetadata, inclusionProof, and quorumIndices.
+  """
+  def eigen_da_blob_verification_proof_abi,
+    do: %ABI.FunctionSelector{
+      function: nil,
+      types: [
+        # BlobVerificationProof
+        {:tuple,
+         [
+           # batchId
+           {:uint, 32},
+           # blobIndex
+           {:uint, 32},
+           # BatchMetadata
+           {:tuple,
+            [
+              # BatchHeader
+              {:tuple,
+               [
+                 # blobHeadersRoot
+                 {:bytes, 32},
+                 # quorumNumbers
+                 :bytes,
+                 # signedStakeForQuorums
+                 :bytes,
+                 # referenceBlockNumber
+                 {:uint, 32}
+               ]},
+              # signatoryRecordHash
+              {:bytes, 32},
+              # confirmationBlockNumber
+              {:uint, 32}
+            ]},
+           # inclusionProof
+           :bytes,
+           # quorumIndices
+           :bytes
+         ]}
+      ]
+    }
+
+  @doc """
+    Returns ABI definition for BlobHeader structure for encoding purposes.
+
+    The BlobHeader contains BN254.G1Point commitment, dataLength, and quorumBlobParams array.
+  """
+  def eigen_da_blob_header_abi,
+    do: %ABI.FunctionSelector{
+      function: nil,
+      types: [
+        # BlobHeader
+        {:tuple,
+         [
+           # BN254.G1Point commitment
+           {:tuple,
+            [
+              # X
+              {:uint, 256},
+              # Y
+              {:uint, 256}
+            ]},
+           # dataLength
+           {:uint, 32},
+           # QuorumBlobParam[] quorumBlobParams
+           {:array,
+            {:tuple,
+             [
+               # quorumNumber
+               {:uint, 8},
+               # adversaryThresholdPercentage
+               {:uint, 8},
+               # confirmationThresholdPercentage
+               {:uint, 8},
+               # chunkLength
+               {:uint, 32}
+             ]}}
+         ]}
       ]
     }
 end
