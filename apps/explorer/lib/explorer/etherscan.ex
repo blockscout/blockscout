@@ -532,11 +532,11 @@ defmodule Explorer.Etherscan do
   end
 
   defp list_erc20_token_transfers(address_hash, contract_address_hash, options) do
-    "ERC-20" |> base_token_transfers_query(address_hash, contract_address_hash, options) |> Repo.all()
+    "ERC-20" |> base_token_transfers_query(address_hash, contract_address_hash, options) |> Repo.replica().all()
   end
 
   defp list_nft_transfers(address_hash, contract_address_hash, options) do
-    "ERC-721" |> base_token_transfers_query(address_hash, contract_address_hash, options) |> Repo.all()
+    "ERC-721" |> base_token_transfers_query(address_hash, contract_address_hash, options) |> Repo.replica().all()
   end
 
   defp list_erc1155_token_transfers(address_hash, contract_address_hash, options) do
@@ -564,11 +564,13 @@ defmodule Explorer.Etherscan do
       [unnest: unnest],
       {^options.order_by_direction, unnest.index_in_batch}
     )
-    |> Repo.all()
+    |> Repo.replica().all()
   end
 
   defp list_erc404_token_transfers(address_hash, contract_address_hash, options) do
-    "ERC-404" |> base_token_transfers_query(address_hash, contract_address_hash, options) |> Repo.all()
+    "ERC-404"
+    |> base_token_transfers_query(address_hash, contract_address_hash, options)
+    |> Repo.replica().all()
   end
 
   defp base_token_transfers_query(transfers_type, address_hash, contract_address_hash, options) do
