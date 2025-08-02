@@ -5,7 +5,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
   The module's primary responsibilities include:
     * Processing `SequencerBatchDelivered` event logs to extract batch information
     * Building comprehensive data structures for batches and associated entities
-    * Handling Data Availability information for AnyTrust and Celestia solutions
+    * Handling Data Availability information for AnyTrust, Celestia, and EigenDA
+      solutions
     * Managing L2-to-L1 message status updates for committed messages
     * Importing discovered data into the database
     * Broadcasting new batch notifications for websocket clients
@@ -22,7 +23,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
   alias Explorer.Chain.Events.Publisher
 
   alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
-  alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
+  alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia, Eigenda}
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
@@ -466,8 +467,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
   # and decodes the calldata from the transactions to obtain batch details. It updates
   # the provided batch map with block ranges for new batches and constructs a map of
   # lifecycle transactions with their timestamps and finalization status. Additionally,
-  # it examines the data availability (DA) information for Anytrust or Celestia and
-  # constructs a list of DA info structs.
+  # it examines the data availability (DA) information for Anytrust, Celestia, or EigenDA
+  # and constructs a list of DA info structs.
   #
   # ## Parameters
   # - `transactions_requests`: The list of RPC requests to fetch transaction data.
@@ -487,7 +488,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
   #     database import and require further processing.
   #   - An updated map of batch descriptions with block ranges and data availability
   #     information.
-  #   - A list of data availability information structs for Anytrust or Celestia.
+  #   - A list of data availability information structs for Anytrust, Celestia, or EigenDA.
   @spec execute_transaction_requests_parse_transactions_calldata(
           [EthereumJSONRPC.Transport.request()],
           non_neg_integer(),
@@ -520,7 +521,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
                :data_available => atom() | nil,
                optional(any()) => any()
              }
-           }, [Anytrust.t() | Celestia.t()]}
+           }, [Anytrust.t() | Celestia.t() | Eigenda.t()]}
   defp execute_transaction_requests_parse_transactions_calldata(
          transactions_requests,
          msg_to_block_shift,
