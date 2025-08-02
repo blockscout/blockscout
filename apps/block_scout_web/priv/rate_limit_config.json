@@ -2,6 +2,12 @@
   "api/v2/key": {
     "ignore": true
   },
+  "api/v2/import/token-info": {
+    "ignore": true
+  },
+  "api/v2/import/smart-contracts/:param": {
+    "ignore": true
+  },
   "api/account/v2/authenticate_via_wallet": {
     "recaptcha_to_bypass_429": true,
     "ip": {
