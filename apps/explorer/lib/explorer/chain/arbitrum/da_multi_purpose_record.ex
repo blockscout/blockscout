@@ -116,6 +116,9 @@ defmodule Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper do
   """
   @spec calculate_eigenda_data_key(binary()) :: binary()
   def calculate_eigenda_data_key(blob_header) when is_binary(blob_header) do
+    # The data key is calculated as the hash of the blob header as per
+    # https://layr-labs.github.io/eigenda/integration/spec/3-data-structs.html#blobheader
+
     ExKeccak.hash_256(blob_header)
   end
 end
