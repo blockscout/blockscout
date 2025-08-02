@@ -5,6 +5,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
   import Mox
 
   alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.Events.Subscriber
   alias Explorer.Repo
   alias Explorer.Utility.MissingBalanceOfToken
   alias Indexer.Fetcher.TokenBalance
@@ -54,9 +55,11 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
     end
 
     test "imports the given token balances" do
+      Subscriber.to(:address_current_token_balances, :realtime)
+
       %Address.TokenBalance{
         address_hash: %Hash{bytes: address_hash_bytes} = address_hash,
-        token_contract_address_hash: %Hash{bytes: token_contract_address_hash_bytes},
+        token_contract_address_hash: %Hash{bytes: token_contract_address_hash_bytes} = token_contract_address_hash,
         block_number: block_number
       } = insert(:token_balance, value_fetched_at: nil, value: nil)
 
@@ -82,8 +85,21 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
 
       token_balance_updated = Repo.get_by(Address.TokenBalance, address_hash: address_hash)
 
-      assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
+      expected_value = Decimal.new(1_000_000_000_000_000_000_000_000)
+      assert token_balance_updated.value == expected_value
       assert token_balance_updated.value_fetched_at != nil
+
+      address_hash_string = to_string(address_hash)
+
+      assert_receive(
+        {:chain_event, :address_current_token_balances, :realtime,
+         %{
+           address_hash: ^address_hash_string,
+           address_current_token_balances: [
+             %{value: ^expected_value, token_contract_address_hash: ^token_contract_address_hash}
+           ]
+         }}
+      )
     end
 
     test "fetches duplicate params only once" do
