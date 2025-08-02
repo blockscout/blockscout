@@ -768,6 +768,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
       "0x283d8225" <> encoded_params ->
         # addSequencerL2BatchFromEigenDA(uint256 sequenceNumber, EigenDACert calldata cert, IGasRefunder gasRefunder, uint256 afterDelayedMessagesRead, uint256 prevMessageCount, uint256 newMessageCount)
+        # https://github.com/Layr-Labs/nitro-contracts/blob/278fdbc39089fa86330f0c23f0a05aee61972c84/src/bridge/SequencerInbox.sol#L505-L512
         [
           sequence_number,
           cert,

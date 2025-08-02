@@ -715,6 +715,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
     The BlobVerificationProof contains batchId, blobIndex, BatchMetadata, inclusionProof, and quorumIndices.
   """
   def eigen_da_blob_verification_proof_abi,
+    # https://github.com/Layr-Labs/eigenda/blob/6c1deb51fced68efb1aaa585dd5ddb6a27f88637/contracts/src/core/libraries/v1/EigenDATypesV1.sol#L36-L55
     do: %ABI.FunctionSelector{
       function: nil,
       types: [
@@ -759,6 +760,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
     The BlobHeader contains BN254.G1Point commitment, dataLength, and quorumBlobParams array.
   """
   def eigen_da_blob_header_abi,
+    # https://github.com/Layr-Labs/eigenda/blob/6c1deb51fced68efb1aaa585dd5ddb6a27f88637/contracts/src/core/libraries/v1/EigenDATypesV1.sol#L18-L29
     do: %ABI.FunctionSelector{
       function: nil,
       types: [
