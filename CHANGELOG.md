@@ -21,6 +21,7 @@
 
 ### 🐛 Bug Fixes
 
+- Ignore rate limit for api/v2/import/token-info and api/v2/import/smart-contracts/:param ([#12917](https://github.com/blockscout/blockscout/pull/12917))
 - Fix deadlocks in Multichain balances export ([#12898](https://github.com/blockscout/blockscout/pull/12898))
 - Balances export queue: replace replace_all with replace only value and updated_at ([#12892](https://github.com/blockscout/blockscout/pull/12892))
 - Fix naming for apikey param in OpenAPI spec ([#12891](https://github.com/blockscout/blockscout/pull/12891))
