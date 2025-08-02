@@ -1,0 +1,35 @@
+defmodule Explorer.Repo.Celo.Migrations.CreateAccount do
+  use Ecto.Migration
+
+  def change do
+    execute(
+      "CREATE TYPE celo_account_type AS ENUM ('regular', 'validator', 'group')",
+      "DROP TYPE celo_account_type"
+    )
+
+    create table(:celo_accounts, primary_key: false) do
+      add(
+        :address_hash,
+        references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea),
+        null: false,
+        primary_key: true
+      )
+
+      add(
+        :type,
+        :celo_account_type,
+        null: false,
+        default: "regular"
+      )
+
+      add(:name, :string)
+      add(:metadata_url, :string)
+      add(:nonvoting_locked_celo, :numeric, precision: 100, null: false)
+      add(:locked_celo, :numeric, precision: 100, null: false)
+      add(:attestations_requested, :integer, null: false, default: 0)
+      add(:attestations_fulfilled, :integer, null: false, default: 0)
+
+      timestamps()
+    end
+  end
+end
