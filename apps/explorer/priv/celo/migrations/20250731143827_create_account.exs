@@ -26,8 +26,8 @@ defmodule Explorer.Repo.Celo.Migrations.CreateAccount do
       add(:metadata_url, :string)
       add(:nonvoting_locked_celo, :numeric, precision: 100, null: false)
       add(:locked_celo, :numeric, precision: 100, null: false)
-      add(:attestations_requested, :integer, null: false, default: 0)
-      add(:attestations_fulfilled, :integer, null: false, default: 0)
+      # add(:attestations_requested, :integer, null: false, default: 0)
+      # add(:attestations_fulfilled, :integer, null: false, default: 0)
 
       timestamps()
     end

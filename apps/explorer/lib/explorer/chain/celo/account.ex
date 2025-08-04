@@ -32,8 +32,8 @@ defmodule Explorer.Chain.Celo.Account do
     field(:metadata_url, :string)
     field(:nonvoting_locked_celo, Wei)
     field(:locked_celo, Wei)
-    field(:attestations_requested, :integer)
-    field(:attestations_fulfilled, :integer)
+    # field(:attestations_requested, :integer)
+    # field(:attestations_fulfilled, :integer)
 
     belongs_to(
       :address,
