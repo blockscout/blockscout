@@ -1,5 +1,11 @@
 defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
-  @moduledoc false
+  @moduledoc """
+  Reads Celo account data from core smart contracts.
+
+  This module provides functionality to fetch account information including
+  name, metadata URL, locked gold amounts, and validator status from the
+  Celo blockchain's core contracts.
+  """
   require Logger
 
   use Utils.RuntimeEnvHelper,
