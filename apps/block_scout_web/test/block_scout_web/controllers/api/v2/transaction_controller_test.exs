@@ -1887,7 +1887,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         |> with_block()
         |> Repo.preload(to_address: :smart_contract)
 
-      TestHelper.get_all_proxies_implementation_zero_addresses()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
 
