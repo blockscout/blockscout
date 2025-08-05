@@ -256,7 +256,7 @@ defmodule Explorer.Helper do
       |> where(
         [q],
         fragment(
-          "NOT EXISTS (SELECT 1 FROM scam_address_badge_mappings sabm WHERE sabm.address_hash=?)",
+          "? NOT IN (SELECT address_hash FROM scam_address_badge_mappings)",
           field(q, ^address_hash_key)
         )
       )
