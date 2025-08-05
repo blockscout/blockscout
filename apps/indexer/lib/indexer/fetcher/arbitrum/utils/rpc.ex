@@ -649,6 +649,14 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     - addSequencerL2BatchDelayProof
     - addSequencerL2BatchFromEigenDA
 
+    Note: Although it is technically possible to implement a basic fallback to
+    avoid raising exceptions for unknown function selectors, this is
+    intentionally not implemented. Such a fallback would obscure issues where
+    batch data is not properly parsed and stored in the database. If this
+    occurred and was discovered later, a backfiller would need to be written to
+    re-process all discovered batches to assign them proper container types and
+    extract DA information correctly.
+
     ## Parameters
     - `calldata`: The raw calldata from the transaction as a binary string starting with "0x"
                  followed by the function selector and encoded parameters

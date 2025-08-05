@@ -91,7 +91,7 @@ To understand why specific files need modification, it's essential to understand
 
 The core batch indexing process follows this flow:
 
-```
+```plaintext
 Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery.perform
   └─ Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery.handle_batches_from_logs
       └─ Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery.execute_transaction_requests_parse_transactions_calldata
@@ -111,7 +111,7 @@ Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery.perform
 
 After parsing, DA information follows this import flow:
 
-```
+```plaintext
 Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery.execute_transaction_requests_parse_transactions_calldata
   └─ Indexer.Fetcher.Arbitrum.DA.Common.required_import?
   └─ Indexer.Fetcher.Arbitrum.DA.Common.prepare_for_import
@@ -144,7 +144,7 @@ Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery.execute_transaction_requests_
 
 When serving batch information via API, the flow varies by DA solution complexity:
 
-```
+```plaintext
 BlockScoutWeb.API.V2.ArbitrumController.batch
   └─ Explorer.Chain.Arbitrum.Reader.API.Settlement.batch
   └─ BlockScoutWeb.API.V2.ArbitrumView.render("arbitrum_batch.json", %{batch: batch})
@@ -174,7 +174,7 @@ BlockScoutWeb.API.V2.ArbitrumController.batch
 DA solutions support different reverse lookup patterns based on their identifier schemes. These endpoints enable **backlink integration** with DA solution explorers (e.g., Celenium for Celestia, EigenDA Blob Explorer) to provide direct links to corresponding batch pages in Blockscout instances.
 
 **Single-Parameter Lookups** (AnyTrust, EigenDA):
-```
+```plaintext
 /api/v2/arbitrum/batches/da/{anytrust|eigenda}/:data_hash
   └─ BlockScoutWeb.API.V2.ArbitrumController.batch_by_data_availability_info
       └─ BlockScoutWeb.API.V2.ArbitrumController.one_batch_by_data_availability_info
@@ -183,7 +183,7 @@ DA solutions support different reverse lookup patterns based on their identifier
 ```
 
 **Multi-Parameter Lookups** (Celestia):
-```
+```plaintext
 /api/v2/arbitrum/batches/da/celestia/:height/:transaction_commitment
   └─ calculate_celestia_data_key(height, transaction_commitment)
   └─ [same lookup flow as above]
@@ -211,7 +211,7 @@ DA solutions support different reverse lookup patterns based on their identifier
 
 The system must decode new contract method calls:
 
-```
+```plaintext
 Smart Contract Method Call (addSequencerL2BatchFrom{DASolution})
   └─ EthereumJSONRPC.Arbitrum.Constants.Contracts.add_sequencer_l2_batch_from_{da_solution}_selector_with_abi
   └─ Indexer.Fetcher.Arbitrum.Utils.Rpc.parse_calldata_of_add_sequencer_l2_batch
@@ -228,7 +228,7 @@ Smart Contract Method Call (addSequencerL2BatchFrom{DASolution})
 
 DA information uses a flexible multi-purpose storage design:
 
-```
+```plaintext
 arbitrum_l1_batches (batch_container field - indicates DA type)
   ├─ arbitrum_da_multi_purpose (main DA storage with type-based records)
   │   ├─ DA Records (data_type = 0): certificates, proofs, blob descriptors
