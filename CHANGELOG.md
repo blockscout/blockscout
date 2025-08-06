@@ -22,7 +22,7 @@
 ### 🐛 Bug Fixes
 
 - Ignore rate limit for api/v2/import/token-info and api/v2/import/smart-contracts/:param ([#12917](https://github.com/blockscout/blockscout/pull/12917))
-- Fix deadlocks in Multichain balances export ([#12898](https://github.com/blockscout/blockscout/pull/12898))
+- Mitigate deadlocks while exporting balances and the main queue to the Multichain DB ([#12898](https://github.com/blockscout/blockscout/pull/12898), [#12928](https://github.com/blockscout/blockscout/pull/12928))
 - Balances export queue: replace replace_all with replace only value and updated_at ([#12892](https://github.com/blockscout/blockscout/pull/12892))
 - Fix naming for apikey param in OpenAPI spec ([#12891](https://github.com/blockscout/blockscout/pull/12891))
 - Don't send coin balances with zero delta via ws ([#12890](https://github.com/blockscout/blockscout/pull/12890))

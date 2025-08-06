@@ -132,6 +132,5 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
         )
       )
     end)
-    |> Repo.transact()
   end
 end
