@@ -231,7 +231,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     filtered_ctbs =
       Enum.filter(changes_list, fn ctb ->
         existing_ctb = existing_ctb_map[{ctb[:address_hash], ctb[:token_contract_address_hash], ctb[:token_id]}]
-        should_update?(ctb, existing_ctb)
+        should_update?(Map.put_new(ctb, :value_fetched_at, nil), existing_ctb)
       end)
 
     {:ok, filtered_ctbs}
