@@ -380,8 +380,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def prepare_signed_authorization(signed_authorization) do
     %{
       "address_hash" => Address.checksum(signed_authorization.address),
-      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
-      "address" => Address.checksum(signed_authorization.address),
       "chain_id" => signed_authorization.chain_id,
       "nonce" => signed_authorization.nonce,
       "r" => signed_authorization.r,

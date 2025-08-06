@@ -518,9 +518,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           :transfers_count => String.t(),
           :holders_count => String.t()
         }
-  def prepare_token_counters_for_queue(transfer_count, holder_count) do
+  def prepare_token_counters_for_queue(transfers_count, holders_count) do
     if enabled?() do
-      %{transfers_count: to_string(transfer_count), holders_count: to_string(holder_count)}
+      %{transfers_count: to_string(transfers_count), holders_count: to_string(holders_count)}
     else
       %{}
     end

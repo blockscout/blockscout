@@ -223,21 +223,19 @@ defmodule BlockScoutWeb.Chain do
   def paging_options(
         %{
           "market_cap" => market_cap_string,
-          "holders_count" => holder_count_string,
-          # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
-          "holder_count" => holder_count_string,
+          "holders_count" => holders_count_string,
           "name" => name_string,
           "contract_address_hash" => contract_address_hash_string,
           "is_name_null" => is_name_null_string
         } = params
       )
-      when is_binary(market_cap_string) and is_binary(holder_count_string) and is_binary(name_string) and
+      when is_binary(market_cap_string) and is_binary(holders_count_string) and is_binary(name_string) and
              is_binary(contract_address_hash_string) and is_binary(is_name_null_string) do
     market_cap_decimal = decimal_parse(market_cap_string)
 
     fiat_value_decimal = decimal_parse(params["fiat_value"])
 
-    holder_count = parse_integer(holder_count_string)
+    holders_count = parse_integer(holders_count_string)
     token_name = if is_name_null_string == "true", do: nil, else: name_string
 
     case Hash.Address.cast(contract_address_hash_string) do
@@ -248,7 +246,7 @@ defmodule BlockScoutWeb.Chain do
             | key: %{
                 fiat_value: fiat_value_decimal,
                 circulating_market_cap: market_cap_decimal,
-                holder_count: holder_count,
+                holder_count: holders_count,
                 name: token_name,
                 contract_address_hash: contract_address_hash
               }
@@ -759,15 +757,13 @@ defmodule BlockScoutWeb.Chain do
   defp paging_params(%Token{
          contract_address_hash: contract_address_hash,
          circulating_market_cap: circulating_market_cap,
-         holder_count: holder_count,
+         holder_count: holders_count,
          name: token_name,
          fiat_value: fiat_value
        }) do
     %{
       "market_cap" => circulating_market_cap,
-      "holders_count" => holder_count,
-      # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
-      "holder_count" => holder_count,
+      "holders_count" => holders_count,
       "contract_address_hash" => contract_address_hash,
       "name" => token_name,
       "is_name_null" => is_nil(token_name),
@@ -862,8 +858,6 @@ defmodule BlockScoutWeb.Chain do
     %{
       "smart_contract_id" => smart_contract.id,
       "transactions_count" => smart_contract.address.transactions_count,
-      # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
-      "transaction_count" => smart_contract.address.transactions_count,
       "coin_balance" =>
         smart_contract.address.fetched_coin_balance && Wei.to(smart_contract.address.fetched_coin_balance, :wei)
     }

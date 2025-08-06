@@ -28,8 +28,6 @@ defmodule BlockScoutWeb.API.V2.EthereumView do
     extended_out_json =
       out_json
       |> Map.put("blob_transactions_count", blob_transaction_count)
-      # todo: It should be removed in favour `blob_transactions_count` property with the next release after 8.0.0
-      |> Map.put("blob_transaction_count", blob_transaction_count)
       |> Map.put("blob_gas_used", blob_gas_used)
       |> Map.put("excess_blob_gas", excess_blob_gas)
 

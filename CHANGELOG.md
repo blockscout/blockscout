@@ -72,6 +72,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Remove obsolete API response props ([#12931](https://github.com/blockscout/blockscout/pull/12931))
 - Balances Multichain export: Refactor rows acquisition for deletion query ([#12839](https://github.com/blockscout/blockscout/pull/12839))
 - Change name of Swagger generation workflow ([#12840](https://github.com/blockscout/blockscout/pull/12840))
 - migrate Auth0 to mint as well ([#12807](https://github.com/blockscout/blockscout/pull/12807))

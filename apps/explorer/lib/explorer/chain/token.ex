@@ -409,13 +409,13 @@ defmodule Explorer.Chain.Token do
     It used by Explorer.Chain.Cache.Counters.TokenHoldersCount module.
   """
   @spec update_token_holder_count(Hash.Address.t(), integer()) :: {non_neg_integer(), nil}
-  def update_token_holder_count(contract_address_hash, holder_count) when not is_nil(holder_count) do
+  def update_token_holder_count(contract_address_hash, holders_count) when not is_nil(holders_count) do
     now = DateTime.utc_now()
 
     Repo.update_all(
       from(t in __MODULE__,
         where: t.contract_address_hash == ^contract_address_hash,
-        update: [set: [holder_count: ^holder_count, updated_at: ^now]]
+        update: [set: [holder_count: ^holders_count, updated_at: ^now]]
       ),
       [],
       timeout: @timeout

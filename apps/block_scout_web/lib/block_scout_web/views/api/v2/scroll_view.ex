@@ -126,13 +126,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
       },
       "start_block_number" => start_block_number,
       "end_block_number" => end_block_number,
-      # todo: It should be removed in favour `start_block_number` property with the next release after 8.0.0
-      "start_block" => start_block_number,
-      # todo: It should be removed in favour `end_block_number` property with the next release after 8.0.0
-      "end_block" => end_block_number,
-      "transactions_count" => transactions_count,
-      # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
-      "transaction_count" => transactions_count
+      "transactions_count" => transactions_count
     }
   end
 
