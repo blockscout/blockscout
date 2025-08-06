@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.ChainController do
   alias Phoenix.View
 
   def show(conn, _params) do
-    transaction_count = TransactionsCount.get()
+    transactions_count = TransactionsCount.get()
     total_gas_usage = GasUsageSum.total()
     block_count = BlocksCount.get()
     address_count = AddressesCount.fetch()
@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.ChainController do
       chart_config_json: Jason.encode!(chart_config),
       chart_data_paths: chart_data_paths,
       market_cap_calculation: market_cap_calculation,
-      transaction_estimated_count: transaction_count,
+      transaction_estimated_count: transactions_count,
       total_gas_usage: total_gas_usage,
       transactions_path: recent_transactions_path(conn, :index),
       transaction_stats: transaction_stats,

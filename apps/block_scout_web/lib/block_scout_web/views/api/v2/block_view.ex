@@ -48,8 +48,6 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "height" => block.number,
       "timestamp" => block.timestamp,
       "transactions_count" => block.transactions_count,
-      # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
-      "transaction_count" => block.transactions_count,
       "internal_transactions_count" => count_internal_transactions(block),
       "miner" => Helper.address_with_info(nil, block.miner, block.miner_hash, false),
       "size" => block.size,

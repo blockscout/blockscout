@@ -249,7 +249,7 @@ defmodule Explorer.Chain.Address.Counters do
       end)
 
     Task.start_link(fn ->
-      transaction_count(address)
+      transactions_count(address)
     end)
 
     Task.start_link(fn ->
@@ -279,7 +279,7 @@ defmodule Explorer.Chain.Address.Counters do
     |> List.to_tuple()
   end
 
-  def transaction_count(address) do
+  def transactions_count(address) do
     AddressTransactionsCount.fetch(address)
   end
 
