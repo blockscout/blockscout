@@ -1,7 +1,6 @@
 defmodule Explorer.Migrator.TransactionsDenormalizationTest do
   use Explorer.DataCase, async: false
 
-  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Transaction
   alias Explorer.Migrator.{MigrationStatus, TransactionsDenormalization}
   alias Explorer.Repo
