@@ -40,6 +40,7 @@ defmodule Explorer.Migrator.EmptyInternalTransactionsTraceAddress do
     )
   end
 
+  # sobelow_skip ["DOS.StringToAtom"]
   @impl FillingMigration
   def update_batch(internal_transactions) do
     update_transaction =
