@@ -1,11 +1,8 @@
 defmodule Explorer.Chain.InternalTransactionTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.{Address, Block, Data, InternalTransaction, Transaction, Wei}
-  alias Explorer.Factory
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction}
   alias Explorer.PagingOptions
-
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   doctest InternalTransaction
 
@@ -1088,53 +1085,5 @@ defmodule Explorer.Chain.InternalTransactionTest do
 
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
-  end
-
-  defp call_type(opts) do
-    defaults = [
-      type: :call,
-      call_type: :call,
-      to_address_hash: Factory.address_hash(),
-      from_address_hash: Factory.address_hash(),
-      input: Factory.transaction_input(),
-      output: Factory.transaction_input(),
-      gas: Decimal.new(50_000),
-      gas_used: Decimal.new(25_000),
-      value: %Wei{value: 100},
-      index: 0,
-      trace_address: []
-    ]
-
-    struct!(InternalTransaction, Keyword.merge(defaults, opts))
-  end
-
-  defp create_type(opts) do
-    defaults = [
-      type: :create,
-      from_address_hash: Factory.address_hash(),
-      gas: Decimal.new(50_000),
-      gas_used: Decimal.new(25_000),
-      value: %Wei{value: 100},
-      index: 0,
-      init: Factory.transaction_input(),
-      trace_address: []
-    ]
-
-    struct!(InternalTransaction, Keyword.merge(defaults, opts))
-  end
-
-  defp selfdestruct_type(opts) do
-    defaults = [
-      type: :selfdestruct,
-      from_address_hash: Factory.address_hash(),
-      to_address_hash: Factory.address_hash(),
-      gas: Decimal.new(50_000),
-      gas_used: Decimal.new(25_000),
-      value: %Wei{value: 100},
-      index: 0,
-      trace_address: []
-    ]
-
-    struct!(InternalTransaction, Keyword.merge(defaults, opts))
   end
 end

@@ -797,7 +797,7 @@ defmodule Explorer.Factory do
       input: %Data{bytes: <<1>>},
       output: %Data{bytes: <<2>>},
       # caller MUST supply `index`
-      trace_address: [],
+      trace_address: nil,
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       # caller MUST supply `block_hash` (usually the same as the transaction's)
@@ -821,7 +821,7 @@ defmodule Explorer.Factory do
       gas_used: gas_used,
       # caller MUST supply `index`
       init: data(:internal_transaction_init),
-      trace_address: [],
+      trace_address: nil,
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       # caller MUST supply `block_hash` (usually the same as the transaction's)
@@ -834,7 +834,7 @@ defmodule Explorer.Factory do
   def internal_transaction_selfdestruct_factory() do
     %InternalTransaction{
       from_address: build(:address),
-      trace_address: [],
+      trace_address: nil,
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       type: :selfdestruct,
