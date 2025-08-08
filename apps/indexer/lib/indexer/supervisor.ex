@@ -38,6 +38,7 @@ defmodule Indexer.Supervisor do
     ContractCode,
     EmptyBlocksSanitizer,
     InternalTransaction,
+    NonceUpdater,
     PendingBlockOperationsSanitizer,
     PendingTransaction,
     ReplacedTransaction,
@@ -266,6 +267,7 @@ defmodule Indexer.Supervisor do
         {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {TokenTotalSupplyUpdater, [[]]},
+        NonceUpdater,
 
         # Notifications cleaner
         configure(EventNotificationsCleaner, [[]]),
