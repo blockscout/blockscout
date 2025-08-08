@@ -17,6 +17,7 @@ The indexer supports multiple data storage mechanisms for batch data:
 - Data Availability (DA) blobs (EIP-4844)
 - AnyTrust solution
 - Celestia DA layer
+- Eigen DA layer
 
 For each batch, the indexer:
 1. Processes the `SequencerBatchDelivered` event

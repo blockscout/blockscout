@@ -214,6 +214,8 @@
         "EDCSA",
         "edhygl",
         "efkuga",
+        "Eigen",
+        "EigenDA",
         "einval",
         "Encryptor",
         "endregion",
