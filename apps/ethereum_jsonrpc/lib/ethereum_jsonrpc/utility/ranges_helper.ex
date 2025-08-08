@@ -167,7 +167,10 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
         _, num ->
           {:halt, num}
       end,
-      fn remainder -> {:cont, remainder, nil} end
+      fn
+        nil -> {:cont, nil}
+        remainder -> {:cont, remainder, nil}
+      end
     )
   end
 
