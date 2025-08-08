@@ -239,7 +239,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
        when is_list(valid_internal_transactions) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    ordered_changes_list = Enum.sort_by(valid_internal_transactions, &{&1.transaction_hash, &1.index})
+    ordered_changes_list =
+      valid_internal_transactions
+      |> Enum.map(fn internal_transaction ->
+        Map.put(internal_transaction, :trace_address, nil)
+      end)
+      |> Enum.sort_by(&{&1.transaction_hash, &1.index})
 
     {:ok, internal_transactions} =
       Import.insert_changes_list(
@@ -274,7 +279,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           input: fragment("EXCLUDED.input"),
           output: fragment("EXCLUDED.output"),
           to_address_hash: fragment("EXCLUDED.to_address_hash"),
-          trace_address: fragment("EXCLUDED.trace_address"),
           transaction_hash: fragment("EXCLUDED.transaction_hash"),
           transaction_index: fragment("EXCLUDED.transaction_index"),
           type: fragment("EXCLUDED.type"),
