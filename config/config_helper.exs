@@ -44,6 +44,47 @@ defmodule ConfigHelper do
     base_repos ++ chain_type_repos ++ ext_repos
   end
 
+  @doc """
+  Returns the list of logger backends to be used by the application.
+
+  If the DISABLE_FILE_LOGGING environment variable is set to true, only base
+  logger backends (:console and LoggerJSON) are returned. Otherwise, returns
+  both base and file logger backends.
+  """
+  @spec logger_backends() :: list()
+  def logger_backends do
+    base_logger_backends = [
+      :console,
+      LoggerJSON
+    ]
+
+    file_logger_backends =
+      [
+        {LoggerFileBackend, :error},
+        {LoggerFileBackend, :ecto},
+        {LoggerFileBackend, :block_scout_web},
+        {LoggerFileBackend, :ethereum_jsonrpc},
+        {LoggerFileBackend, :explorer},
+        {LoggerFileBackend, :indexer},
+        {LoggerFileBackend, :indexer_token_balances},
+        {LoggerFileBackend, :token_instances},
+        {LoggerFileBackend, :reading_token_functions},
+        {LoggerFileBackend, :pending_transactions_to_refetch},
+        {LoggerFileBackend, :empty_blocks_to_refetch},
+        {LoggerFileBackend, :withdrawal},
+        {LoggerFileBackend, :api},
+        {LoggerFileBackend, :block_import_timings},
+        {LoggerFileBackend, :account},
+        {LoggerFileBackend, :api_v2}
+      ]
+
+    if parse_bool_env_var("DISABLE_FILE_LOGGING") do
+      base_logger_backends
+    else
+      base_logger_backends ++ file_logger_backends
+    end
+  end
+
   @spec http_options(non_neg_integer()) :: list()
   def http_options(default_timeout \\ 1) do
     http_timeout = timeout(default_timeout)
