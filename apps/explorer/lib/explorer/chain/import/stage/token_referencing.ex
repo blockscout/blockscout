@@ -7,22 +7,28 @@ defmodule Explorer.Chain.Import.Stage.TokenReferencing do
 
   @behaviour Stage
 
-  @runners [
-    Runner.Address.TokenBalances,
-    Runner.Address.CurrentTokenBalances
+  @ctb_runner Runner.Address.CurrentTokenBalances
+
+  @rest_runners [
+    Runner.Address.TokenBalances
   ]
 
   @impl Stage
-  def runners, do: @runners
+  def runners, do: [@ctb_runner | @rest_runners]
 
   @impl Stage
   def all_runners, do: runners()
 
+  @ctb_chunk_size 50
+
   @impl Stage
   def multis(runner_to_changes_list, options) do
-    {final_multi, final_remaining_runner_to_changes_list} =
-      Stage.single_multi(runners(), runner_to_changes_list, options)
+    {ctb_multis, remaining_runner_to_changes_list} =
+      Stage.chunk_every(runner_to_changes_list, @ctb_runner, @ctb_chunk_size, options)
 
-    {[final_multi], final_remaining_runner_to_changes_list}
+    {final_multi, final_remaining_runner_to_changes_list} =
+      Stage.single_multi(@rest_runners, remaining_runner_to_changes_list, options)
+
+    {[final_multi | ctb_multis], final_remaining_runner_to_changes_list}
   end
 end
