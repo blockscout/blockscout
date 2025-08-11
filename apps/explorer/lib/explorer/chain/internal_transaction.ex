@@ -69,7 +69,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:trace_address, {:array, :integer}, null: false)
     # todo: consider using enum
     field(:type, Type, null: false)
-    field(:value, Wei, null: false)
+    field(:value, Wei)
     field(:block_number, :integer, primary_key: true)
     field(:transaction_index, :integer, primary_key: true, null: false)
     # TODO: remove field after update PK migration is completed
@@ -412,8 +412,8 @@ defmodule Explorer.Chain.InternalTransaction do
     type_changeset(changeset, attrs, type)
   end
 
-  @call_optional_fields ~w(error gas_used output block_number)a
-  @call_required_fields ~w(call_type from_address_hash gas input to_address_hash trace_address transaction_hash value)a
+  @call_optional_fields ~w(error gas_used output block_number value)a
+  @call_required_fields ~w(call_type from_address_hash gas input to_address_hash trace_address transaction_hash)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
   defp type_changeset(changeset, attrs, :call) do
@@ -427,8 +427,8 @@ defmodule Explorer.Chain.InternalTransaction do
     |> foreign_key_constraint(:transaction_hash)
   end
 
-  @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number)a
-  @create_required_fields ~w(from_address_hash gas init trace_address transaction_hash value)a
+  @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number value)a
+  @create_required_fields ~w(from_address_hash gas init trace_address transaction_hash)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
   defp type_changeset(changeset, attrs, type) when type in [:create, :create2] do
@@ -441,8 +441,8 @@ defmodule Explorer.Chain.InternalTransaction do
     |> foreign_key_constraint(:transaction_hash)
   end
 
-  @selfdestruct_optional_fields ~w(block_number)a
-  @selfdestruct_required_fields ~w(from_address_hash to_address_hash trace_address transaction_hash type value)a
+  @selfdestruct_optional_fields ~w(block_number value)a
+  @selfdestruct_required_fields ~w(from_address_hash to_address_hash trace_address transaction_hash type)a
   @selfdestruct_allowed_fields @selfdestruct_optional_fields ++ @selfdestruct_required_fields
 
   defp type_changeset(changeset, attrs, :selfdestruct) do
@@ -451,8 +451,8 @@ defmodule Explorer.Chain.InternalTransaction do
     |> validate_required(@selfdestruct_required_fields)
   end
 
-  @stop_optional_fields ~w(from_address_hash gas gas_used error)a
-  @stop_required_fields ~w(block_number transaction_hash type value trace_address)a
+  @stop_optional_fields ~w(from_address_hash gas gas_used error value)a
+  @stop_required_fields ~w(block_number transaction_hash type trace_address)a
   @stop_allowed_fields @stop_optional_fields ++ @stop_required_fields
 
   defp type_changeset(changeset, attrs, :stop) do
@@ -1168,7 +1168,8 @@ defmodule Explorer.Chain.InternalTransaction do
         {:ok, nil}
       end
 
-    value = %Wei{value: Decimal.new(first_trace.value)}
+    value =
+      if is_nil(first_trace.value), do: %Wei{value: Decimal.new("0")}, else: %Wei{value: Decimal.new(first_trace.value)}
 
     first_trace_formatted =
       first_trace
