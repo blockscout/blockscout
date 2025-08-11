@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.0.1
+
+### ⚙️ Miscellaneous Tasks
+
+- Restore `getblocknobytime` response format to use `blockNumber` key ([#12955](https://github.com/blockscout/blockscout/issues/12955))
+
 ## 9.0.0
 
 ### 🚀 Features
