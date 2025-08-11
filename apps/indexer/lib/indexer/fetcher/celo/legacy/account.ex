@@ -62,19 +62,17 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
   end
 
   @doc """
-  Asynchronously fetches and processes Celo account data from blockchain event
-  logs.
+  Asynchronously enqueues processing of Celo account operations.
 
   ## Parameters
-  - `logs`: List of blockchain event logs to process
+  - `operations`: List of `PendingAccountOperation` structs to process
   - `realtime?`: Boolean indicating if this is realtime processing
   - `timeout`: Timeout for buffering tasks (default: 5000ms)
 
   ## Returns
-  - `:ok` if processing initiated successfully or supervisor is disabled
+  - `:ok` once the operations have been enqueued
   """
-  @spec async_fetch([PendingAccountOperation.t()], boolean(), timeout()) ::
-          :ok | {:retry, [map()]} | :disabled
+  @spec async_fetch([PendingAccountOperation.t()], boolean(), timeout()) :: :ok
   def async_fetch(operations, realtime?, timeout \\ 5000) when is_list(operations) do
     if __MODULE__.Supervisor.disabled?() do
       :ok
@@ -98,15 +96,12 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
 
   @impl BufferedTask
   def run(accounts, _json_rpc_named_arguments) do
-    failed_list =
-      accounts
-      |> fetch_from_blockchain()
-      |> import_accounts()
-
-    if failed_list == [] do
-      :ok
-    else
-      {:retry, failed_list}
+    accounts
+    |> fetch_from_blockchain()
+    |> import_accounts()
+    |> case do
+      :ok -> :ok
+      :error -> {:retry, accounts}
     end
   end
 
@@ -138,12 +133,12 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
       {:ok, _imported} ->
         Logger.info("Imported #{Enum.count(accounts)} Celo accounts.")
 
-        []
+        :ok
 
       {:error, reason} ->
         Logger.error(fn -> ["failed to import Celo account data: ", inspect(reason)] end)
 
-        accounts
+        :error
     end
   end
 end

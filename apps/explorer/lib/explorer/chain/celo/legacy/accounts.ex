@@ -163,7 +163,7 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
     [name] = decode_data(log.data, [:string])
 
     entry = %{
-      name: String.slice(name, 0..@max_name_length),
+      name: String.slice(name, 0, @max_name_length),
       address_hash: truncate_address_hash(log.second_topic),
       primary: true
     }
