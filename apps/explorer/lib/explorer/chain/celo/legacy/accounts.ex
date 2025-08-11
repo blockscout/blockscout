@@ -11,6 +11,8 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
   alias ABI.TypeDecoder
   alias Explorer.Chain.Celo.Legacy.Events
 
+  @max_name_length 30
+
   @doc """
   Returns a list of account addresses given a list of logs.
   """
@@ -127,6 +129,7 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
   rescue
     _ in [FunctionClauseError, MatchError] ->
       Logger.error(fn -> "Unknown account wallet address set event format: #{inspect(log)}" end)
+      wallets
   end
 
   defp do_parse_voters(log, accounts) do
@@ -158,7 +161,13 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
 
   defp do_parse_name(log, names) do
     [name] = decode_data(log.data, [:string])
-    entry = %{name: String.slice(name, 0..30), address_hash: truncate_address_hash(log.second_topic), primary: true}
+
+    entry = %{
+      name: String.slice(name, 0..@max_name_length),
+      address_hash: truncate_address_hash(log.second_topic),
+      primary: true
+    }
+
     [entry | names]
   rescue
     _ in [FunctionClauseError, MatchError] ->
