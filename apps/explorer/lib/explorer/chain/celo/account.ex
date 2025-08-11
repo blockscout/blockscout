@@ -13,17 +13,6 @@ defmodule Explorer.Chain.Celo.Account do
 
   alias Explorer.Chain.{Address, Hash, Wei}
 
-  @type t :: %__MODULE__{
-          address_hash: Hash.Address.t(),
-          type: :regular | :validator | :group,
-          name: String.t() | nil,
-          metadata_url: String.t() | nil,
-          nonvoting_locked_celo: Wei.t() | nil,
-          locked_celo: Wei.t() | nil,
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t()
-        }
-
   @required_attrs ~w(address_hash type)a
   @optional_attrs ~w(name metadata_url nonvoting_locked_celo locked_celo)a
   @allowed_attrs @required_attrs ++ @optional_attrs

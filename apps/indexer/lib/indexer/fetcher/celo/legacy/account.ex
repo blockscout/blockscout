@@ -18,7 +18,7 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.Celo.{Account, PendingAccountOperation}
+  alias Explorer.Chain.Celo.PendingAccountOperation
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Celo.Legacy.Account.Reader, as: AccountReader
 
@@ -129,42 +129,19 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
   end
 
   defp import_accounts(accounts) do
-    {failed, success} =
-      Enum.reduce(accounts, {[], []}, fn
-        %{error: _error} = account, {failed, success} ->
-          {[account | failed], success}
-
-        account, {failed, success} ->
-          changeset = Account.changeset(%Account{}, account)
-
-          if changeset.valid? do
-            {failed, [changeset.changes | success]}
-          else
-            {[account | failed], success}
-          end
-      end)
-
     import_params = %{
-      celo_accounts: %{params: success},
+      celo_accounts: %{params: accounts},
       timeout: :infinity
     }
 
     case Chain.import(import_params) do
       {:ok, _imported} ->
-        Logger.info(fn -> ["Imported #{Enum.count(success)} Celo accounts."] end,
-          error_count: Enum.count(failed)
-        )
+        Logger.info("Imported #{Enum.count(accounts)} Celo accounts.")
 
-        success
-        |> Enum.map(& &1.address_hash)
-        |> PendingAccountOperation.delete_by_address_hashes()
-
-        failed
+        []
 
       {:error, reason} ->
-        Logger.error(fn -> ["failed to import Celo account data: ", inspect(reason)] end,
-          error_count: Enum.count(accounts)
-        )
+        Logger.error(fn -> ["failed to import Celo account data: ", inspect(reason)] end)
 
         accounts
     end
