@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Runner.Celo.PendingAccountOperations do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Celo.PendingAccountOperationPendingAccountOperations.t/0`.
+  Bulk imports `t:Explorer.Chain.Celo.PendingAccountOperation.t/0`.
   """
 
   require Ecto.Query

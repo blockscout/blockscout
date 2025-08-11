@@ -1,9 +1,20 @@
 defmodule Indexer.Fetcher.Celo.Legacy.Account do
   @moduledoc """
-  Fetches Celo accounts.
+  Asynchronously fetches Celo blockchain account data from event logs and
+  imports them into the database.
 
-  TODO: this implementation is ported from the celo's fork of blockscout and
-  could be improved in the future.
+  This fetcher processes blockchain logs to extract account-related events,
+  retrieves detailed account information from Celo smart contracts, and performs
+  bulk imports of account data. It supports batching and concurrency for
+  efficient processing.
+
+  The fetcher integrates with the BufferedTask system to handle asynchronous
+  processing and automatic retry logic for failed operations.
+
+  ## Note
+
+  This implementation is ported from Celo's fork of Blockscout and could be
+  revised in future iterations.
   """
 
   alias Explorer.Chain
@@ -50,6 +61,18 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
     ]
   end
 
+  @doc """
+  Asynchronously fetches and processes Celo account data from blockchain event
+  logs.
+
+  ## Parameters
+  - `logs`: List of blockchain event logs to process
+  - `realtime?`: Boolean indicating if this is realtime processing
+  - `timeout`: Timeout for buffering tasks (default: 5000ms)
+
+  ## Returns
+  - `:ok` if processing initiated successfully or supervisor is disabled
+  """
   @spec async_fetch([PendingAccountOperation.t()], boolean(), timeout()) ::
           :ok | {:retry, [map()]} | :disabled
   def async_fetch(operations, realtime?, timeout \\ 5000) when is_list(operations) do

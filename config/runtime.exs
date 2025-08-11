@@ -1433,9 +1433,6 @@ config :indexer, Indexer.Fetcher.Celo.Legacy.Account.Supervisor,
   enabled: ConfigHelper.chain_type() == :celo,
   disabled?: not (ConfigHelper.chain_type() == :celo)
 
-# enabled: false,
-# disabled?: true
-
 config :indexer, Indexer.Fetcher.Filecoin.BeryxAPI,
   base_url: ConfigHelper.safe_get_env("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3/mainnet"),
   api_token: System.get_env("BERYX_API_TOKEN")

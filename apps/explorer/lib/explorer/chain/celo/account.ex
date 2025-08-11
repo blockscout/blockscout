@@ -1,6 +1,10 @@
 defmodule Explorer.Chain.Celo.Account do
   @moduledoc """
-  Represents a Celo account
+  Represents a Celo blockchain account with associated metadata, and locked gold
+  amounts.
+
+  Celo accounts can be regular accounts, validators, or validator groups, each
+  with different roles in the network governance and consensus mechanisms.
   """
 
   require Logger
@@ -9,18 +13,29 @@ defmodule Explorer.Chain.Celo.Account do
 
   alias Explorer.Chain.{Address, Hash, Wei}
 
-  @typedoc """
-  * `address` - address of the account.
-  * `type` - regular, validator or validator group
-  * `locked_celo` - total locked celo
-  * `nonvoting_locked_celo` - non-voting locked celo
-  * `rewards` - rewards in CELO
-  """
+  @type t :: %__MODULE__{
+          address_hash: Hash.Address.t(),
+          type: :regular | :validator | :group,
+          name: String.t() | nil,
+          metadata_url: String.t() | nil,
+          nonvoting_locked_celo: Wei.t() | nil,
+          locked_celo: Wei.t() | nil,
+          inserted_at: DateTime.t(),
+          updated_at: DateTime.t()
+        }
 
   @required_attrs ~w(address_hash type)a
-  @optional_attrs ~w(name metadata_url nonvoting_locked_celo locked_celo attestations_requested attestations_fulfilled)a
+  @optional_attrs ~w(name metadata_url nonvoting_locked_celo locked_celo)a
   @allowed_attrs @required_attrs ++ @optional_attrs
 
+  @typedoc """
+  * `address_hash` - the hash of the account address
+  * `type` - account type: regular, validator, or validator group
+  * `name` - human-readable name of the account
+  * `metadata_url` - URL to additional account metadata
+  * `locked_celo` - total amount of CELO locked by this account
+  * `nonvoting_locked_celo` - amount of locked CELO that is not used for voting
+  """
   @primary_key false
   typed_schema "celo_accounts" do
     field(:type, Ecto.Enum,
@@ -32,8 +47,6 @@ defmodule Explorer.Chain.Celo.Account do
     field(:metadata_url, :string)
     field(:nonvoting_locked_celo, Wei)
     field(:locked_celo, Wei)
-    # field(:attestations_requested, :integer)
-    # field(:attestations_fulfilled, :integer)
 
     belongs_to(
       :address,
@@ -48,6 +61,17 @@ defmodule Explorer.Chain.Celo.Account do
     timestamps()
   end
 
+  @doc """
+  Creates a changeset for a Celo account with the given attributes.
+
+  ## Parameters
+  - `celo_account`: The Celo account struct to update
+  - `attrs`: A map of attributes to cast and validate
+
+  ## Returns
+  - An Ecto changeset with validation results
+  """
+  @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = celo_account, attrs) do
     celo_account
     |> cast(attrs, @allowed_attrs)
