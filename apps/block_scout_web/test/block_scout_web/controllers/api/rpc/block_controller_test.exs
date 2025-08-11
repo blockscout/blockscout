@@ -321,7 +321,9 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
                })
                |> json_response(200)
 
-      assert response["result"] == "#{block.number}"
+      # TODO: migrate to the following format in the next release
+      # assert response["result"] == "#{block.number}"
+      assert response["result"] == %{"blockNumber" => "#{block.number}"}
       assert response["status"] == "1"
       assert response["message"] == "OK"
       schema = resolve_getblocknobytime_schema()
@@ -349,7 +351,9 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
                })
                |> json_response(200)
 
-      assert response["result"] == "#{block.number}"
+      # TODO: migrate to the following format in the next release
+      # assert response["result"] == "#{block.number}"
+      assert response["result"] == %{"blockNumber" => "#{block.number}"}
       assert response["status"] == "1"
       assert response["message"] == "OK"
       schema = resolve_getblocknobytime_schema()
@@ -377,7 +381,9 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
                })
                |> json_response(200)
 
-      assert response["result"] == "#{block.number}"
+      # TODO: migrate to the following format in the next release
+      # assert response["result"] == "#{block.number}"
+      assert response["result"] == %{"blockNumber" => "#{block.number}"}
       assert response["status"] == "1"
       assert response["message"] == "OK"
       schema = resolve_getblocknobytime_schema()
