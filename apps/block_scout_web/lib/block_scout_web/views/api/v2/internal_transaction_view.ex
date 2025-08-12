@@ -51,7 +51,8 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
       "block_number" => internal_transaction.block_number,
       "timestamp" => (block && block.timestamp) || internal_transaction.block.timestamp,
       "index" => internal_transaction.index,
-      "gas_limit" => internal_transaction.gas
+      "gas_limit" => internal_transaction.gas,
+      "block_index" => internal_transaction.block_index
     }
   end
 end

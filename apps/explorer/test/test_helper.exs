@@ -26,6 +26,8 @@ Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Mud, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.ShrunkInternalTransactions, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.EventNotifications, :auto)
 
+Explorer.TestHelper.run_necessary_background_migrations()
+
 Mox.defmock(Explorer.Market.Source.TestSource, for: Explorer.Market.Source)
 Mox.defmock(Explorer.History.TestHistorian, for: Explorer.History.Historian)
 

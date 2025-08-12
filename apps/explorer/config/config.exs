@@ -113,8 +113,6 @@ config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enable
 
 config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions, enabled: false
 
-config :explorer, Explorer.Migrator.CompletionChecker, enabled: true
-
 for migrator <- [
       # Background migrations
       Explorer.Migrator.TransactionsDenormalization,
@@ -176,7 +174,8 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractAdditionalSourcesUniqueIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropTokenInstancesTokenIdIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenInstancesTokenIdIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
     ] do
   config :explorer, index_operation, enabled: true
 end

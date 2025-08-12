@@ -43,7 +43,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.InternalTransaction do
         description: "The index of this internal transaction inside the transaction.",
         nullable: false
       },
-      gas_limit: General.IntegerStringNullable
+      gas_limit: General.IntegerStringNullable,
+      block_index: %Schema{
+        type: :integer,
+        description: "The index of this internal transaction inside the block.",
+        nullable: false
+      }
     },
     required: [
       :error,
@@ -58,7 +63,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.InternalTransaction do
       :block_number,
       :timestamp,
       :index,
-      :gas_limit
+      :gas_limit,
+      :block_index
     ],
     additionalProperties: false
   })
