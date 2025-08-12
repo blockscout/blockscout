@@ -80,14 +80,26 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     api?: true
   ]
 
+  case @chain_type do
+    :celo ->
+      @chain_type_address_necessity_by_association %{
+        :celo_account => :optional
+      }
+
+    _ ->
+      @chain_type_address_necessity_by_association %{}
+  end
+
   @address_options [
-    necessity_by_association: %{
-      :names => :optional,
-      :scam_badge => :optional,
-      :token => :optional,
-      :signed_authorization => :optional,
-      :smart_contract => :optional
-    },
+    necessity_by_association:
+      %{
+        :names => :optional,
+        :scam_badge => :optional,
+        :token => :optional,
+        :signed_authorization => :optional,
+        :smart_contract => :optional
+      }
+      |> Map.merge(@chain_type_address_necessity_by_association),
     api?: true
   ]
 
