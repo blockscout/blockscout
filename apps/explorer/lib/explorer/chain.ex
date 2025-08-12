@@ -2130,7 +2130,7 @@ defmodule Explorer.Chain do
         |> join_associations(necessity_by_association)
         |> Transaction.put_has_token_transfers_to_transaction(old_ui?)
         |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
-        |> select_repo(options).all()
+        |> Repo.all()
     end
   end
 
@@ -2177,7 +2177,7 @@ defmodule Explorer.Chain do
     |> order_by([transaction], desc: transaction.inserted_at, asc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
-    |> select_repo(options).all()
+    |> Repo.all()
   end
 
   @doc """
