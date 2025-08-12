@@ -10,7 +10,7 @@
     {"lib/explorer/smart_contract/stylus/publisher_worker.ex", :exact_eq, 14},
     {"lib/explorer/smart_contract/stylus/publisher_worker.ex", :pattern_match, 14},
     ~r/lib\/phoenix\/router.ex/,
-    {"lib/explorer/chain/search.ex", :pattern_match, 80},
-    {"lib/explorer/chain/search.ex", :pattern_match, 232},
-    {"lib/explorer/chain/search.ex", :pattern_match, 327}
+    {"lib/explorer/chain/search.ex", :pattern_match, 100},
+    {"lib/explorer/chain/search.ex", :pattern_match, 283},
+    {"lib/explorer/chain/search.ex", :pattern_match, 383}
 ]

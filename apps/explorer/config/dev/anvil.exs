@@ -4,14 +4,11 @@ import Config
 |> Path.join()
 |> Code.eval_file()
 
-hackney_opts = ConfigHelper.hackney_options()
-timeout = ConfigHelper.timeout(1)
-
 config :explorer,
   json_rpc_named_arguments: [
     transport: EthereumJSONRPC.HTTP,
     transport_options: [
-      http: EthereumJSONRPC.HTTP.HTTPoison,
+      http: EthereumJSONRPC.HTTP.Tesla,
       urls: ConfigHelper.parse_urls_list(:http),
       eth_call_urls: ConfigHelper.parse_urls_list(:eth_call),
       fallback_urls: ConfigHelper.parse_urls_list(:fallback_http),
@@ -19,7 +16,7 @@ config :explorer,
       method_to_url: [
         eth_call: :eth_call
       ],
-      http_options: [recv_timeout: timeout, timeout: timeout, hackney: hackney_opts]
+      http_options: ConfigHelper.http_options(1)
     ],
     variant: EthereumJSONRPC.Anvil
   ],

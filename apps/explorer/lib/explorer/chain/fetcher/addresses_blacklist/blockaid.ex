@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Fetcher.AddressesBlacklist.Blockaid do
   @moduledoc """
   Fetcher for addresses blacklist from blockaid provider
   """
-  alias Explorer.Chain
+  alias Explorer.{Chain, HttpClient}
   alias Explorer.Chain.Fetcher.AddressesBlacklist
 
   @behaviour AddressesBlacklist
@@ -12,8 +12,8 @@ defmodule Explorer.Chain.Fetcher.AddressesBlacklist.Blockaid do
 
   @impl AddressesBlacklist
   def fetch_addresses_blacklist do
-    case HTTPoison.get(AddressesBlacklist.url(), [], recv_timeout: @timeout, timeout: @timeout) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+    case HttpClient.get(AddressesBlacklist.url(), [], recv_timeout: @timeout, timeout: @timeout) do
+      {:ok, %{status_code: 200, body: body}} ->
         body
         |> Jason.decode()
         |> parse_blacklist()

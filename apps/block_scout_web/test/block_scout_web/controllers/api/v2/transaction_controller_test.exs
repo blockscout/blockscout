@@ -1,11 +1,13 @@
 defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
+  import Ecto.Query, only: [from: 2]
 
   alias Explorer.Account.{Identity, WatchlistAddress}
-  alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.{Address, Data, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.{Repo, TestHelper}
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
@@ -318,6 +320,60 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = get(conn, "/api/v2/transactions/" <> to_string(transaction.hash))
 
       assert json_response(request, 200)
+    end
+
+    if @chain_type == :suave do
+      test "renders peeker starting with 0x", %{conn: conn} do
+        bid_contract = insert(:address)
+
+        old_env = Application.get_env(:explorer, Transaction, [])
+
+        Application.put_env(
+          :explorer,
+          Transaction,
+          Keyword.merge(old_env, suave_bid_contracts: to_string(bid_contract.hash))
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, Transaction, old_env)
+        end)
+
+        transaction =
+          insert(:transaction,
+            to_address_hash: bid_contract.hash,
+            to_address: bid_contract,
+            execution_node_hash: bid_contract.hash
+          )
+
+        insert(:log,
+          transaction_hash: transaction.hash,
+          transaction: transaction,
+          address: bid_contract,
+          first_topic: "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e",
+          data:
+            "0x11111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000003078505152535455565758595a5b5c5d5e5f6061"
+        )
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+
+        assert %{"allowed_peekers" => ["0x3078505152535455565758595a5b5C5D5E5f6061"]} = json_response(request, 200)
+      end
+    end
+
+    if @chain_type == :optimism do
+      test "returns transaction with interop message", %{conn: conn} do
+        transaction = insert(:transaction)
+
+        insert(:op_interop_message,
+          init_transaction_hash: transaction.hash,
+          payload: "0x30787849009c24f10a91a327a9f2ed94ebc49ee9"
+        )
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+
+        assert %{"op_interop" => %{"payload" => "0x30787849009c24f10a91a327a9f2ed94ebc49ee9"}} =
+                 json_response(request, 200)
+      end
     end
   end
 
@@ -1209,7 +1265,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^token_address_hash,
+                         "address_hash" => ^token_address_hash,
                          "name" => ^token_name,
                          "symbol" => ^token_symbol,
                          "type" => ^token_type
@@ -1224,7 +1280,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "celo" => %{
                    "gas_token" => %{
-                     "address" => ^token_address_hash,
+                     "address_hash" => ^token_address_hash,
                      "name" => ^token_name,
                      "symbol" => ^token_symbol,
                      "type" => ^token_type
@@ -1239,7 +1295,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^token_address_hash,
+                         "address_hash" => ^token_address_hash,
                          "name" => ^token_name,
                          "symbol" => ^token_symbol,
                          "type" => ^token_type
@@ -1255,7 +1311,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  %{
                    "celo" => %{
                      "gas_token" => %{
-                       "address" => ^token_address_hash,
+                       "address_hash" => ^token_address_hash,
                        "name" => ^token_name,
                        "symbol" => ^token_symbol,
                        "type" => ^token_type
@@ -1282,7 +1338,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^unknown_token_address_hash
+                         "address_hash" => ^unknown_token_address_hash
                        }
                      }
                    }
@@ -1294,7 +1350,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "celo" => %{
                    "gas_token" => %{
-                     "address" => ^unknown_token_address_hash
+                     "address_hash" => ^unknown_token_address_hash
                    }
                  }
                } = json_response(request, 200)
@@ -1306,7 +1362,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^unknown_token_address_hash
+                         "address_hash" => ^unknown_token_address_hash
                        }
                      }
                    }
@@ -1319,7 +1375,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  %{
                    "celo" => %{
                      "gas_token" => %{
-                       "address" => ^unknown_token_address_hash
+                       "address_hash" => ^unknown_token_address_hash
                      }
                    }
                  }
@@ -1435,7 +1491,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
@@ -1450,7 +1506,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
         assert %{
                  "stability_fee" => %{
-                   "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                   "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                    "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                    "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                    "total_fee" => "44136000000000",
@@ -1465,7 +1521,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
@@ -1497,7 +1553,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
@@ -1512,7 +1568,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
         assert %{
                  "stability_fee" => %{
-                   "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                   "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                    "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                    "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                    "total_fee" => "44136000000000",
@@ -1527,7 +1583,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
@@ -2019,7 +2075,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    "indexed" => false,
                    "name" => "option",
                    "type" => "address",
-                   "value" => "0xAeB81cbe6b19CeEB0dBE0d230CFFE35Bb40a13a7"
+                   "value" => Address.checksum("0xAeB81cbe6b19CeEB0dBE0d230CFFE35Bb40a13a7")
                  },
                  %{
                    "indexed" => false,
@@ -2090,6 +2146,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   if @chain_type == :neon do
+    import Ecto.Query, only: [from: 2]
+
     describe "neon linked transactions service" do
       test "fetches data from the node and caches in the db", %{conn: conn} do
         transaction = insert(:transaction)

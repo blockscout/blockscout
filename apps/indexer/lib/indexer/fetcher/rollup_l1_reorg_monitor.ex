@@ -106,6 +106,9 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
   def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when RPC issues
+    :timer.sleep(2000)
+
     modules_using_reorg_monitor =
       modules_can_use_reorg_monitor()
       |> Enum.filter(& &1.requires_l1_reorg_monitor?())

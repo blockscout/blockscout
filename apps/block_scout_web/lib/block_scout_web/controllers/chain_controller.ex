@@ -6,16 +6,15 @@ defmodule BlockScoutWeb.ChainController do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.{ChainView, Controller}
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain.{Address, Block, Hash, Transaction}
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime, BlocksCount, GasUsageSum, TransactionsCount}
   alias Explorer.Chain.Search
   alias Explorer.Chain.Supply.RSK
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Market
   alias Phoenix.View
 
   def show(conn, _params) do
-    transaction_count = TransactionsCount.get()
+    transactions_count = TransactionsCount.get()
     total_gas_usage = GasUsageSum.total()
     block_count = BlocksCount.get()
     address_count = AddressesCount.fetch()
@@ -50,7 +49,7 @@ defmodule BlockScoutWeb.ChainController do
       chart_config_json: Jason.encode!(chart_config),
       chart_data_paths: chart_data_paths,
       market_cap_calculation: market_cap_calculation,
-      transaction_estimated_count: transaction_count,
+      transaction_estimated_count: transactions_count,
       total_gas_usage: total_gas_usage,
       transactions_path: recent_transactions_path(conn, :index),
       transaction_stats: transaction_stats,
@@ -99,7 +98,7 @@ defmodule BlockScoutWeb.ChainController do
         item =
           if transaction_hash_bytes do
             item
-            |> Map.replace(:transaction_hash, ExplorerHelper.add_0x_prefix(transaction_hash_bytes))
+            |> Map.replace(:transaction_hash, full_hash_string(transaction_hash_bytes))
           else
             item
           end
@@ -107,7 +106,7 @@ defmodule BlockScoutWeb.ChainController do
         item =
           if block_hash_bytes do
             item
-            |> Map.replace(:block_hash, ExplorerHelper.add_0x_prefix(block_hash_bytes))
+            |> Map.replace(:block_hash, full_hash_string(block_hash_bytes))
           else
             item
           end
@@ -175,5 +174,12 @@ defmodule BlockScoutWeb.ChainController do
 
   defp redirect_search_results(conn, _item, search_path) do
     redirect(conn, to: search_path)
+  end
+
+  defp full_hash_string(%Hash{} = hash), do: to_string(hash)
+
+  defp full_hash_string(bytes) when is_binary(bytes) do
+    {:ok, hash} = Hash.Full.cast(bytes)
+    to_string(hash)
   end
 end

@@ -2,9 +2,8 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   @moduledoc """
   Module for universal proxying 3rd party API endpoints
   """
-  use Tesla
 
-  alias Explorer.Helper
+  alias Explorer.{Helper, HttpClient}
 
   @recv_timeout 60_000
 
@@ -54,7 +53,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   1. Retrieves the platform-specific configuration based on the `platform_id` key in `proxy_params`.
   2. Constructs the request URL using the `base_url` and `base` endpoint path.
   3. Parses and applies any API key and endpoint parameters.
-  4. Sends the HTTP request using the Tesla library with the specified method, URL, headers, and body.
+  4. Sends the HTTP request using `Explorer.HttpClient` with the specified method, URL, headers, and body.
 
   ## Returns
 
@@ -74,7 +73,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
   ## Notes
 
-    - The function uses the `Tesla` library with the `Tesla.Adapter.Mint` adapter.
+    - The function uses the `Explorer.HttpClient` with pre-configured adapter.
     - A timeout is applied to the request using the `@recv_timeout` module attribute.
   """
   @spec api_request(map()) :: {any(), integer()}
@@ -105,14 +104,8 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
     with {:invalid_config, false} <- {:invalid_config, is_nil(url)},
          {:invalid_config, false} <- {:invalid_config, is_nil(method)},
-         {:ok, %Tesla.Env{status: status, body: body}} <-
-           Tesla.request(
-             method: method,
-             url: url,
-             headers: headers,
-             body: body,
-             opts: [timeout: @recv_timeout, adapter: [protocols: [:http1]]]
-           ) do
+         {:ok, %{status_code: status, body: body}} <-
+           HttpClient.request(method, url, headers, body, timeout: @recv_timeout) do
       {Helper.decode_json(body), status}
     else
       {:invalid_config, true} ->
@@ -333,8 +326,8 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
         safe_parse_config_string(config_string)
 
       nil ->
-        case Tesla.get(config_url()) do
-          {:ok, %Tesla.Env{status: 200, body: config_string}} ->
+        case HttpClient.get(config_url()) do
+          {:ok, %{status_code: 200, body: config_string}} ->
             safe_parse_config_string(config_string, true)
 
           _ ->

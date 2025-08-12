@@ -34,6 +34,7 @@ defmodule Indexer.Block.Fetcher do
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
+    SignedAuthorizationStatus,
     Token,
     TokenBalance,
     UncleBlock
@@ -49,6 +50,8 @@ defmodule Indexer.Block.Fetcher do
     TokenTransfers,
     TransactionActions
   }
+
+  alias Indexer.Transform.Stability.Validators, as: StabilityValidators
 
   alias Indexer.Transform.Optimism.Withdrawals, as: OptimismWithdrawals
 
@@ -233,6 +236,7 @@ defmodule Indexer.Block.Fetcher do
          transaction_actions =
            Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
          token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers}),
+         stability_validators = StabilityValidators.parse(blocks),
          basic_import_options = %{
            addresses: %{params: addresses},
            address_coin_balances: %{params: coin_balances_params_set},
@@ -262,7 +266,8 @@ defmodule Indexer.Block.Fetcher do
              shibarium_bridge_operations: shibarium_bridge_operations,
              celo_gas_tokens: celo_gas_tokens,
              celo_epochs: celo_l1_epochs ++ celo_l2_epochs,
-             arbitrum_messages: arbitrum_xlevel_messages
+             arbitrum_messages: arbitrum_xlevel_messages,
+             stability_validators: stability_validators
            }
            |> extend_with_zilliqa_import_options(fetched_blocks),
          {:ok, inserted} <-
@@ -365,6 +370,11 @@ defmodule Indexer.Block.Fetcher do
     |> Map.put_new(:zilliqa_quorum_certificates, %{params: zilliqa_quorum_certificates})
     |> Map.put_new(:zilliqa_aggregate_quorum_certificates, %{params: zilliqa_aggregate_quorum_certificates})
     |> Map.put_new(:zilliqa_nested_quorum_certificates, %{params: zilliqa_nested_quorum_certificates})
+  end
+
+  defp do_import_options(:stability, basic_import_options, %{stability_validators: stability_validators}) do
+    basic_import_options
+    |> Map.put_new(:stability_validators, %{params: stability_validators})
   end
 
   defp do_import_options(_chain_type, basic_import_options, _chain_specific_import_options) do
@@ -558,6 +568,15 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_filecoin_addresses_info(_, _), do: :ok
+
+  def async_import_signed_authorizations_statuses(
+        %{transactions: transactions, signed_authorizations: signed_authorizations},
+        realtime?
+      ) do
+    SignedAuthorizationStatus.async_fetch(transactions, signed_authorizations, realtime?)
+  end
+
+  def async_import_signed_authorizations_statuses(_, _), do: :ok
 
   defp block_reward_errors_to_block_numbers(block_reward_errors) when is_list(block_reward_errors) do
     Enum.map(block_reward_errors, &block_reward_error_to_block_number/1)

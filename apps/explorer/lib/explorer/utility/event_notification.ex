@@ -7,6 +7,8 @@ defmodule Explorer.Utility.EventNotification do
 
   typed_schema "event_notifications" do
     field(:data, :string)
+
+    timestamps()
   end
 
   @doc false

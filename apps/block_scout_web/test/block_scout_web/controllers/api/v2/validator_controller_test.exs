@@ -57,14 +57,15 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
     end
 
     defp compare_item({%ValidatorStability{} = validator, count}, json) do
-      assert json["blocks_validated_count"] == count + 1
       assert compare_item(validator, json)
+      assert json["blocks_validated_count"] == count
     end
 
     describe "/validators/stability" do
       test "get paginated list of the validators", %{conn: conn} do
         validators =
-          insert_list(51, :validator_stability)
+          51
+          |> insert_list(:validator_stability)
           |> Enum.sort_by(
             fn validator ->
               {Keyword.fetch!(ValidatorStability.state_enum(), validator.state), validator.address_hash.bytes}
@@ -84,13 +85,8 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
       test "sort by blocks_validated asc", %{conn: conn} do
         validators =
           for _ <- 0..50 do
-            validator = insert(:validator_stability)
             blocks_count = Enum.random(0..50)
-
-            _ =
-              for _ <- 0..blocks_count do
-                insert(:block, miner_hash: validator.address_hash, miner: nil)
-              end
+            validator = insert(:validator_stability, blocks_validated: blocks_count)
 
             {validator, blocks_count}
           end
@@ -111,13 +107,8 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
       test "sort by blocks_validated desc", %{conn: conn} do
         validators =
           for _ <- 0..50 do
-            validator = insert(:validator_stability)
             blocks_count = Enum.random(0..50)
-
-            _ =
-              for _ <- 0..blocks_count do
-                insert(:block, miner_hash: validator.address_hash, miner: nil)
-              end
+            validator = insert(:validator_stability, blocks_validated: blocks_count)
 
             {validator, blocks_count}
           end
@@ -188,10 +179,10 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
         request = get(conn, "/api/v2/validators/stability/counters")
 
         assert %{
-                 "active_validators_counter" => "3",
+                 "active_validators_count" => "3",
                  "active_validators_percentage" => ^percentage,
-                 "new_validators_counter_24h" => "6",
-                 "validators_counter" => "9"
+                 "new_validators_count_24h" => "6",
+                 "validators_count" => "9"
                } = json_response(request, 200)
       end
     end

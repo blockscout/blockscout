@@ -133,7 +133,8 @@ for migrator <- [
       Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
       Explorer.Migrator.BackfillMetadataURL,
       Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds,
-      Explorer.Migrator.ReindexDuplicatedInternalTransactions
+      Explorer.Migrator.ReindexDuplicatedInternalTransactions,
+      Explorer.Migrator.MergeAdjacentMissingBlockRanges
     ] do
   config :explorer, migrator, enabled: true
 end
@@ -183,6 +184,9 @@ config :explorer, Explorer.SmartContract.CertifiedSmartContractCataloger, enable
 
 config :explorer, Explorer.Utility.RateLimiter, enabled: true
 
+config :explorer, Explorer.Utility.Hammer.Redis, enabled: true
+config :explorer, Explorer.Utility.Hammer.ETS, enabled: true
+
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
 config :explorer, Explorer.Tracer,
@@ -193,7 +197,7 @@ config :explorer, Explorer.Tracer,
 config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org"
 
-config :explorer, :http_adapter, HTTPoison
+config :explorer, :http_client, Explorer.HttpClient.Tesla
 
 config :explorer, Explorer.Chain.BridgedToken, enabled: ConfigHelper.parse_bool_env_var("BRIDGED_TOKENS_ENABLED")
 
@@ -209,6 +213,8 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   service: :ecto,
   tracer: Explorer.Tracer,
   otp_app: :explorer
+
+config :tesla, adapter: Tesla.Adapter.Mint
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

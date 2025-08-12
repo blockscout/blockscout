@@ -260,7 +260,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   @doc """
     Decodes list of logs
   """
-  @spec decode_logs([Log.t()], boolean) :: [tuple]
+  @spec decode_logs([Log.t()], boolean()) :: [tuple() | nil]
   def decode_logs(logs, skip_sig_provider?) do
     full_abi_per_address_hash =
       Enum.reduce(logs, %{}, fn log, acc ->
@@ -294,17 +294,22 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       |> Enum.with_index(fn element, index -> {index, element} end)
 
     %{
-      :already_decoded_logs => already_decoded_logs,
+      :already_decoded_or_ignored_logs => already_decoded_or_ignored_logs,
       :input_for_sig_provider_batched_request => input_for_sig_provider_batched_request
     } =
       all_logs_with_index
       |> Enum.reduce(
         %{
-          :already_decoded_logs => [],
+          :already_decoded_or_ignored_logs => [],
           :input_for_sig_provider_batched_request => []
         },
         fn {index, result}, acc ->
           case result do
+            {:error, :try_with_sig_provider, {log, _transaction_hash}} when is_nil(log.first_topic) ->
+              Map.put(acc, :already_decoded_or_ignored_logs, [
+                {index, {:error, :could_not_decode}} | acc.already_decoded_or_ignored_logs
+              ])
+
             {:error, :try_with_sig_provider, {log, transaction_hash}} ->
               Map.put(acc, :input_for_sig_provider_batched_request, [
                 {index,
@@ -316,7 +321,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
               ])
 
             _ ->
-              Map.put(acc, :already_decoded_logs, [{index, result} | acc.already_decoded_logs])
+              Map.put(acc, :already_decoded_or_ignored_logs, [{index, result} | acc.already_decoded_or_ignored_logs])
           end
         end
       )
@@ -324,7 +329,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     decoded_with_sig_provider_logs =
       Log.decode_events_batch_via_sig_provider(input_for_sig_provider_batched_request, skip_sig_provider?)
 
-    full_logs = already_decoded_logs ++ decoded_with_sig_provider_logs
+    full_logs = already_decoded_or_ignored_logs ++ decoded_with_sig_provider_logs
 
     full_logs
     |> Enum.sort_by(fn {index, _log} -> index end, :asc)
@@ -375,14 +380,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def prepare_signed_authorization(signed_authorization) do
     %{
       "address_hash" => Address.checksum(signed_authorization.address),
-      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
-      "address" => Address.checksum(signed_authorization.address),
       "chain_id" => signed_authorization.chain_id,
       "nonce" => signed_authorization.nonce,
       "r" => signed_authorization.r,
       "s" => signed_authorization.s,
       "v" => signed_authorization.v,
-      "authority" => Address.checksum(signed_authorization.authority)
+      "authority" => Address.checksum(signed_authorization.authority),
+      "status" => signed_authorization.status
     }
   end
 

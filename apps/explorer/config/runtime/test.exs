@@ -44,6 +44,9 @@ config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enable
 
 config :explorer, Explorer.Utility.RateLimiter, enabled: false
 
+config :explorer, Explorer.Utility.Hammer.Redis, enabled: false
+config :explorer, Explorer.Utility.Hammer.ETS, enabled: true
+
 for migrator <- [
       # Background migrations
       Explorer.Migrator.TransactionsDenormalization,
@@ -69,6 +72,7 @@ for migrator <- [
       Explorer.Migrator.BackfillMetadataURL,
       Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds,
       Explorer.Migrator.ReindexDuplicatedInternalTransactions,
+      Explorer.Migrator.MergeAdjacentMissingBlockRanges,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,

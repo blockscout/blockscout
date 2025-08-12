@@ -257,7 +257,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   defp appropriate_games_found(withdrawal_l2_block_number, respected_games) do
     respected_games
     |> Enum.any?(fn game ->
-      [l2_block_number] = Helper.decode_data(game.extra_data, [{:uint, 256}])
+      l2_block_number = DisputeGame.l2_block_number_from_extra_data(game.extra_data)
       withdrawal_l2_block_number <= l2_block_number
     end)
   end

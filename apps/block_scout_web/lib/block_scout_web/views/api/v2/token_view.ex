@@ -11,16 +11,13 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   def render("token.json", %{token: nil = token, contract_address_hash: contract_address_hash}) do
     %{
       "address_hash" => Address.checksum(contract_address_hash),
-      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
-      "address" => Address.checksum(contract_address_hash),
       "symbol" => nil,
       "name" => nil,
       "decimals" => nil,
       "type" => nil,
       "holders_count" => nil,
-      # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
-      "holders" => nil,
       "exchange_rate" => nil,
+      "volume_24h" => nil,
       "total_supply" => nil,
       "icon_url" => nil,
       "circulating_market_cap" => nil
@@ -35,15 +32,11 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   def render("token.json", %{token: token}) do
     %{
       "address_hash" => Address.checksum(token.contract_address_hash),
-      # todo: It should be removed in favour `address_hash` property with the next release after 8.0.0
-      "address" => Address.checksum(token.contract_address_hash),
       "symbol" => token.symbol,
       "name" => token.name,
       "decimals" => token.decimals,
       "type" => token.type,
       "holders_count" => prepare_holders_count(token.holder_count),
-      # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
-      "holders" => prepare_holders_count(token.holder_count),
       "exchange_rate" => exchange_rate(token),
       "volume_24h" => token.volume_24h,
       "total_supply" => token.total_supply,

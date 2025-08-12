@@ -10,10 +10,8 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [id_to_params: 1, json_rpc: 2, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
-  alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.WithdrawalEvent
   alias Explorer.Chain.RollupReorgMonitorQueue
@@ -203,7 +201,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   defp prepare_events(events, json_rpc_named_arguments) do
     blocks =
       events
-      |> get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
+      |> Helper.get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number(), true)
 
     transaction_hashes =
       events
@@ -302,24 +300,6 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   @spec requires_l1_reorg_monitor?() :: boolean()
   def requires_l1_reorg_monitor? do
     Optimism.requires_l1_reorg_monitor?()
-  end
-
-  defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
-    request =
-      events
-      |> Enum.reduce(%{}, fn event, acc ->
-        Map.put(acc, event["blockNumber"], 0)
-      end)
-      |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-      |> id_to_params()
-      |> Blocks.requests(&ByNumber.request(&1, true, false))
-
-    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
-
-    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
-      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
-      {:error, _} -> []
-    end
   end
 
   # Parses input of the prove L1 transaction and retrieves dispute game index or contract address hash

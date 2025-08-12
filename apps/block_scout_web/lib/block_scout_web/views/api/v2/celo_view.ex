@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   alias Explorer.Chain.Cache.{CeloCoreContracts, CeloEpochs}
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
   alias Explorer.Chain.Celo.{Epoch, EpochReward}
-  alias Explorer.Chain.{Block, Token, Transaction, Wei}
+  alias Explorer.Chain.{Block, Token, TokenTransfer, Transaction, Wei}
 
   @address_params [
     necessity_by_association: %{
@@ -43,40 +43,22 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       |> prepare_distribution()
 
     aggregated_election_rewards_json =
-      aggregated_election_rewards
-      |> Map.new(fn {type, %{total: total, count: count, token: token}} ->
-        {type,
-         %{
-           total: total,
-           count: count,
-           token:
-             TokenView.render("token.json", %{
-               token: token,
-               contract_address_hash: token && token.contract_address_hash
-             })
-         }}
-      end)
-      # For L2, delegated payments are implemented differently. They're
-      # distributed on-demand via direct payments rather than through epoch
-      # processing, so we need to handle them separately.
-      |> (&(if CeloHelper.premigration_epoch_number?(epoch.number) do
-              &1
-            else
-              &1
-              |> Map.put(:delegated_payment, nil)
-            end)).()
+      epoch
+      |> prepare_aggregated_election_rewards(aggregated_election_rewards)
 
     %{
       number: epoch.number,
+      type: epoch_type(epoch),
+      is_finalized: epoch.fetched?,
       start_block_number: epoch.start_block_number,
       end_block_number: epoch.end_block_number,
-      timestamp: epoch.end_processing_block.timestamp,
-      start_processing_block_hash: epoch.start_processing_block.hash,
-      start_processing_block_number: epoch.start_processing_block.number,
-      end_processing_block_hash: epoch.end_processing_block.hash,
-      end_processing_block_number: epoch.end_processing_block.number,
       distribution: distribution_json,
-      aggregated_election_rewards: aggregated_election_rewards_json
+      aggregated_election_rewards: aggregated_election_rewards_json,
+      timestamp: epoch.end_processing_block && epoch.end_processing_block.timestamp,
+      start_processing_block_hash: epoch.start_processing_block && epoch.start_processing_block.hash,
+      start_processing_block_number: epoch.start_processing_block && epoch.start_processing_block.number,
+      end_processing_block_hash: epoch.end_processing_block && epoch.end_processing_block.hash,
+      end_processing_block_number: epoch.end_processing_block && epoch.end_processing_block.number
     }
   end
 
@@ -167,6 +149,41 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     }
   end
 
+  defp prepare_aggregated_election_rewards(%Epoch{fetched?: false}, _), do: nil
+
+  defp prepare_aggregated_election_rewards(%Epoch{} = epoch, aggregated_election_rewards) do
+    aggregated_election_rewards
+    |> Map.new(fn {type, %{total: total, count: count, token: token}} ->
+      {type,
+       %{
+         total: total,
+         count: count,
+         token:
+           TokenView.render("token.json", %{
+             token: token,
+             contract_address_hash: token && token.contract_address_hash
+           })
+       }}
+    end)
+    # For L2, delegated payments are implemented differently. They're
+    # distributed on-demand via direct payments rather than through epoch
+    # processing, so we need to handle them separately.
+    |> then(fn rewards ->
+      if CeloHelper.pre_migration_epoch_number?(epoch.number) do
+        rewards
+      else
+        rewards
+        |> Map.put(:delegated_payment, nil)
+      end
+    end)
+  end
+
+  defp epoch_type(epoch) do
+    epoch.number
+    |> CeloHelper.pre_migration_epoch_number?()
+    |> if(do: "L1", else: "L2")
+  end
+
   @doc """
   Extends the JSON output with a sub-map containing information related to Celo,
   such as the epoch number, whether the block is an epoch block, and the routing
@@ -249,29 +266,41 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   @spec prepare_epoch(Epoch.t()) :: map()
   defp prepare_epoch(epoch) do
-    community_transfer =
-      epoch.distribution.community_transfer |> TokenTransferView.prepare_token_transfer_total()
+    distribution_json =
+      if epoch.distribution do
+        community_transfer =
+          epoch.distribution.community_transfer &&
+            epoch.distribution.community_transfer
+            |> TokenTransferView.prepare_token_transfer_total()
 
-    carbon_offsetting_transfer =
-      epoch.distribution.carbon_offsetting_transfer |> TokenTransferView.prepare_token_transfer_total()
+        carbon_offsetting_transfer =
+          epoch.distribution.carbon_offsetting_transfer &&
+            epoch.distribution.carbon_offsetting_transfer
+            |> TokenTransferView.prepare_token_transfer_total()
+
+        reserve_bolster_transfer =
+          epoch.distribution.reserve_bolster_transfer &&
+            epoch.distribution.reserve_bolster_transfer
+            |> TokenTransferView.prepare_token_transfer_total()
+
+        result = calculate_total_epoch_rewards(epoch.distribution)
+
+        %{
+          community_transfer: community_transfer,
+          carbon_offsetting_transfer: carbon_offsetting_transfer,
+          reserve_bolster_transfer: reserve_bolster_transfer,
+          transfers_total: result && result.total
+        }
+      end
 
     %{
       number: epoch.number,
+      type: epoch_type(epoch),
       start_block_number: epoch.start_block_number,
       end_block_number: epoch.end_block_number,
-      timestamp: epoch.end_processing_block.timestamp,
-      distribution: %{
-        community_transfer: community_transfer,
-        carbon_offsetting_transfer: carbon_offsetting_transfer,
-        transfers_total: %{
-          decimals: "18",
-          value:
-            Decimal.add(
-              community_transfer["value"],
-              carbon_offsetting_transfer["value"]
-            )
-        }
-      }
+      timestamp: epoch.end_processing_block && epoch.end_processing_block.timestamp,
+      is_finalized: epoch.fetched?,
+      distribution: distribution_json
     }
   end
 
@@ -302,7 +331,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
         end
       )
 
-    total = calculate_total_epoch_rewards(transfers_json)
+    total = calculate_total_epoch_rewards(distribution)
 
     transfers_json
     |> Map.put(:transfers_total, total)
@@ -329,20 +358,23 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   ## Example
       iex> transfers = %{
-      ...>   reserve_bolster_transfer: %{"token" => %{"address" => "0xABC..."}, "total" => %{"value" => Decimal.new("100")}},
-      ...>   community_transfer: %{"token" => %{"address" => "0xABC..."}, "total" => %{"value" => Decimal.new("200")}}
+      ...>   reserve_bolster_transfer: %{"token" => %{"address_hash" => "0xABC..."}, "total" => %{"value" => Decimal.new("100")}},
+      ...>   community_transfer: %{"token" => %{"address_hash" => "0xABC..."}, "total" => %{"value" => Decimal.new("200")}}
       ...> }
       iex> calculate_total_epoch_rewards(transfers)
       %{
-        token: %{"address" => "0xABC...", ...},
+        token: %{"address_hash" => "0xABC...", ...},
         total: %{decimals: Decimal.new("18"), value: Decimal.new("300")}
       }
   """
   @spec calculate_total_epoch_rewards(map()) :: map() | nil
-  def calculate_total_epoch_rewards(transfers) do
+  def calculate_total_epoch_rewards(distribution) do
     transfers =
-      transfers
-      |> Map.values()
+      [
+        distribution.reserve_bolster_transfer,
+        distribution.community_transfer,
+        distribution.carbon_offsetting_transfer
+      ]
       |> Enum.reject(&is_nil/1)
 
     case transfers do
@@ -350,46 +382,47 @@ defmodule BlockScoutWeb.API.V2.CeloView do
         nil
 
       [first_transfer | rest_transfers] ->
-        token_info = validate_and_extract_token(first_transfer, rest_transfers)
+        case validate_and_extract_token(first_transfer, rest_transfers) do
+          {:ok, token} ->
+            total_value =
+              transfers
+              |> Enum.map(&(&1 |> TokenTransferView.prepare_token_transfer_total() |> Map.get("value")))
+              |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
 
-        total_value =
-          transfers
-          |> Enum.map(fn transfer ->
-            get_in(transfer, ["total", "value"]) || Decimal.new(0)
-          end)
-          |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+            token_json =
+              TokenView.render("token.json", %{
+                token: token,
+                contract_address_hash: token.contract_address_hash
+              })
 
-        %{
-          token: token_info,
-          total: %{
-            decimals: token_info["decimals"],
-            value: total_value
-          }
-        }
+            %{
+              token: token_json,
+              total: %{
+                decimals: token.decimals,
+                value: total_value
+              }
+            }
+
+          :error ->
+            raise ArgumentError,
+                  "All transfers must use the same token, but found different tokens: #{inspect(transfers)}"
+        end
     end
   end
 
-  @spec validate_and_extract_token(map(), [map()]) :: map()
+  @spec validate_and_extract_token(TokenTransfer.t(), [TokenTransfer.t()]) ::
+          {:ok, Token.t()} | :error
   defp validate_and_extract_token(first_transfer, rest_transfers) do
-    first_token = get_in(first_transfer, ["token"])
-    first_token_address = get_in(first_token, ["address"])
-
-    if is_nil(first_token_address) do
-      raise ArgumentError, "Token transfer missing token address information"
+    with token when not is_nil(token) <- first_transfer.token,
+         true <-
+           Enum.all?(
+             rest_transfers,
+             &(&1.token && &1.token.contract_address_hash == token.contract_address_hash)
+           ) do
+      {:ok, token}
+    else
+      _ -> :error
     end
-
-    # Validate all transfers use the same token
-    Enum.each(rest_transfers, fn transfer ->
-      token_address = get_in(transfer, ["token", "address"])
-
-      if token_address != first_token_address do
-        raise ArgumentError,
-              "Inconsistent token addresses found in epoch rewards. " <>
-                "Expected: #{first_token_address}, Found: #{token_address}"
-      end
-    end)
-
-    first_token
   end
 
   # Get the breakdown of the base fee for the case when FeeHandler is a contract
@@ -410,7 +443,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   defp fee_handler_base_fee_breakdown(base_fee, block_number) do
     with {:ok, fee_handler_contract_address_hash} <-
            CeloCoreContracts.get_address(:fee_handler, block_number),
-         {:ok, %{"address" => fee_beneficiary_address_hash}} <-
+         {:ok, %{"address_hash" => fee_beneficiary_address_hash}} <-
            CeloCoreContracts.get_event(:fee_handler, :fee_beneficiary_set, block_number),
          {:ok, %{"value" => burn_fraction_fixidity_lib}} <-
            CeloCoreContracts.get_event(:fee_handler, :burn_fraction_set, block_number),

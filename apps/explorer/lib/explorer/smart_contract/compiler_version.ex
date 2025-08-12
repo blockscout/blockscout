@@ -3,7 +3,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
   Adapter for fetching compiler versions from https://solc-bin.ethereum.org/bin/list.json.
   """
 
-  alias Explorer.Helper
+  alias Explorer.{Helper, HttpClient}
   alias Explorer.SmartContract.{RustVerifierInterface, StylusVerifierInterface}
 
   @unsupported_solc_versions ~w(0.1.1 0.1.2)
@@ -76,15 +76,14 @@ defmodule Explorer.SmartContract.CompilerVersion do
     else
       headers = [{"Content-Type", "application/json"}]
 
-      # credo:disable-for-next-line
-      case HTTPoison.get(source_url(compiler_type), headers) do
+      case HttpClient.get(source_url(compiler_type), headers) do
         {:ok, %{status_code: 200, body: body}} ->
           {:ok, format_data(body, compiler_type)}
 
         {:ok, %{status_code: _status_code, body: body}} ->
           {:error, Helper.decode_json(body)["error"]}
 
-        {:error, %{reason: reason}} ->
+        {:error, reason} ->
           {:error, reason}
       end
     end

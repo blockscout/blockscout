@@ -572,12 +572,12 @@ defmodule Indexer.Fetcher.PolygonEdge do
     [
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
-        http: EthereumJSONRPC.HTTP.HTTPoison,
+        http: EthereumJSONRPC.HTTP.Tesla,
         urls: [polygon_edge_l1_rpc],
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),
-          hackney: [pool: :ethereum_jsonrpc]
+          pool: :ethereum_jsonrpc
         ]
       ]
     ]

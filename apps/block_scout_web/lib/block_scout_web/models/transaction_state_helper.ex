@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
 
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{BlockNumberHelper, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.{Address.CoinBalance, BlockNumberHelper, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Cache.StateChanges
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
@@ -139,7 +139,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   end
 
   defp coin_balance(address_hash, block_number, options) do
-    case Chain.get_coin_balance(address_hash, block_number, options) do
+    case CoinBalance.get_coin_balance(address_hash, block_number, options) do
       %{value: val} when not is_nil(val) ->
         val
 

@@ -4,6 +4,7 @@ defmodule ConfigHelper do
   import Bitwise
   alias Explorer.Market.Source
   alias Indexer.Transform.Blocks
+  alias Utils.ConfigHelper
 
   def repos do
     base_repos = [Explorer.Repo, Explorer.Repo.Account]
@@ -43,13 +44,14 @@ defmodule ConfigHelper do
     base_repos ++ chain_type_repos ++ ext_repos
   end
 
-  @spec hackney_options() :: any()
-  def hackney_options() do
+  @spec http_options(non_neg_integer()) :: list()
+  def http_options(default_timeout \\ 1) do
+    http_timeout = timeout(default_timeout)
     basic_auth_user = System.get_env("ETHEREUM_JSONRPC_USER", "")
     basic_auth_pass = System.get_env("ETHEREUM_JSONRPC_PASSWORD", nil)
 
-    [pool: :ethereum_jsonrpc]
-    |> (&if(System.get_env("ETHEREUM_JSONRPC_HTTP_INSECURE", "") == "true", do: [:insecure] ++ &1, else: &1)).()
+    [pool: :ethereum_jsonrpc, recv_timeout: http_timeout, timeout: http_timeout]
+    |> (&if(System.get_env("ETHEREUM_JSONRPC_HTTP_INSECURE", "") == "true", do: [insecure: true] ++ &1, else: &1)).()
     |> (&if(basic_auth_user != "" && !is_nil(basic_auth_pass),
           do: [basic_auth: {basic_auth_user, basic_auth_pass}] ++ &1,
           else: &1
@@ -105,12 +107,12 @@ defmodule ConfigHelper do
         nil
 
       value ->
-        case value |> String.downcase() |> Integer.parse() do
-          {milliseconds, "ms"} -> milliseconds
-          {hours, "h"} -> :timer.hours(hours)
-          {minutes, "m"} -> :timer.minutes(minutes)
-          {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
-          _ -> raise "Invalid time format in environment variable #{env_var}: #{value}"
+        case ConfigHelper.parse_time_value(value) do
+          :error ->
+            raise "Invalid time format in environment variable #{env_var}: #{value}"
+
+          time ->
+            time
         end
     end
   end

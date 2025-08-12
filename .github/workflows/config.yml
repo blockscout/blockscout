@@ -32,8 +32,8 @@ on:
 
 env:
   MIX_ENV: test
-  OTP_VERSION: ${{ github.ref_name == '10284/merge' && '27.1' || vars.OTP_VERSION }}
-  ELIXIR_VERSION: ${{ github.ref_name == '10284/merge' && '1.17.3' || vars.ELIXIR_VERSION }}
+  OTP_VERSION: ${{ vars.OTP_VERSION }}
+  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
   ACCOUNT_AUTH0_DOMAIN: "blockscoutcom.us.auth0.com"
 
 jobs:
@@ -52,7 +52,6 @@ jobs:
 
             const chainTypes = [
               "arbitrum",
-              "berachain",
               "blackfort",
               "celo",
               "ethereum",
@@ -290,6 +289,7 @@ jobs:
           mix gettext.extract --merge | tee stdout.txt
           grep "Wrote priv/gettext/en/LC_MESSAGES/default.po (0 new messages, 0 removed, " stdout.txt
         working-directory: "apps/block_scout_web"
+
   sobelow:
     name: Sobelow security analysis
     runs-on: ubuntu-latest
@@ -420,6 +420,7 @@ jobs:
 
       - run: ./node_modules/.bin/eslint --format=junit --output-file="test/eslint/junit.xml" js/**
         working-directory: apps/block_scout_web/assets
+
   jest:
     name: JS Tests
     runs-on: ubuntu-latest
@@ -552,6 +553,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+
   test_nethermind_mox_explorer:
     strategy:
       fail-fast: false
@@ -627,6 +629,7 @@ jobs:
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
           WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
+
   test_nethermind_mox_indexer:
     strategy:
       fail-fast: false
@@ -694,6 +697,7 @@ jobs:
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
           WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
+
   test_nethermind_mox_block_scout_web:
     strategy:
       fail-fast: false

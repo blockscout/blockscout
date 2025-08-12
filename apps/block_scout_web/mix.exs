@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "8.1.1",
+      version: "9.0.1",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
@@ -49,7 +49,8 @@ defmodule BlockScoutWeb.Mixfile do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test, _), do: ["test/support", "test/block_scout_web/features/pages"] ++ elixirc_paths()
+  defp elixirc_paths(:test, _),
+    do: ["test/support", "test/block_scout_web/features/pages", "benchmarks/support"] ++ elixirc_paths()
 
   defp elixirc_paths(_, true),
     do: [
@@ -85,6 +86,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.8", override: true},
       # Absinthe support for the Relay framework
       {:absinthe_relay, "~> 1.5"},
+      {:benchee, "~> 1.4.0", only: :test},
       {:bypass, "~> 2.1", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 3.0"},
@@ -107,7 +109,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:floki, "~> 0.31"},
       {:flow, "~> 1.2"},
       {:gettext, "~> 0.26.1"},
-      {:hammer, "~> 6.0"},
+      {:hammer, "~> 7.0"},
+      {:hammer_backend_redis, "~> 7.0"},
       {:httpoison, "~> 2.0"},
       {:indexer, in_umbrella: true, runtime: false},
       # JSON parser and generator
@@ -159,7 +162,9 @@ defmodule BlockScoutWeb.Mixfile do
       {:ueberauth_auth0, "~> 2.0"},
       {:utils, in_umbrella: true},
       {:bureaucrat, "~> 0.2.9", only: :test},
-      {:logger_json, "~> 5.1"}
+      {:logger_json, "~> 5.1"},
+      {:open_api_spex, "~> 3.21"},
+      {:ymlr, "~> 5.1"}
     ]
   end
 

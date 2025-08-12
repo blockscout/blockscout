@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
   alias BlockScoutWeb.{AccessHelper, AddressCoinBalanceView, Controller}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.{Address, Address.CoinBalance, Wei}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       full_options = paging_options(params)
 
-      coin_balances_plus_one = Chain.address_to_coin_balances(address, full_options)
+      coin_balances_plus_one = CoinBalance.address_to_coin_balances(address, full_options)
 
       {coin_balances, next_page} = split_list_by_page(coin_balances_plus_one)
 
