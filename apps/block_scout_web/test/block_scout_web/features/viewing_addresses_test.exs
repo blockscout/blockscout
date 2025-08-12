@@ -221,7 +221,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           transaction_index: transaction.index,
           index: 1,
           block_number: 7000,
-          transaction_index: 1,
           block_hash: transaction.block_hash
         )
 
@@ -231,7 +230,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         transaction_index: transaction.index,
         index: 2,
         block_number: 8000,
-        transaction_index: 2,
         block_hash: transaction.block_hash
       )
 

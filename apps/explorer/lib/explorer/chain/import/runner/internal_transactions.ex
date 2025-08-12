@@ -26,7 +26,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.{InternalTransactionHelper, MissingBlockRange}
 
   import Ecto.Query
 
@@ -241,11 +241,18 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
     ordered_changes_list = Enum.sort_by(valid_internal_transactions, &{&1.transaction_hash, &1.index})
 
+    conflict_target =
+      if InternalTransactionHelper.primary_key_updated?() do
+        [:block_hash, :transaction_index, :index]
+      else
+        [:block_hash, :block_index]
+      end
+
     {:ok, internal_transactions} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        conflict_target: [:block_hash, :transaction_index, :index],
+        conflict_target: conflict_target,
         for: InternalTransaction,
         on_conflict: on_conflict,
         returning: true,
@@ -257,54 +264,108 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp default_on_conflict do
-    from(
-      internal_transaction in InternalTransaction,
-      update: [
-        set: [
-          block_number: fragment("EXCLUDED.block_number"),
-          call_type: fragment("EXCLUDED.call_type"),
-          created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
-          created_contract_code: fragment("EXCLUDED.created_contract_code"),
-          error: fragment("EXCLUDED.error"),
-          from_address_hash: fragment("EXCLUDED.from_address_hash"),
-          gas: fragment("EXCLUDED.gas"),
-          gas_used: fragment("EXCLUDED.gas_used"),
-          init: fragment("EXCLUDED.init"),
-          input: fragment("EXCLUDED.input"),
-          output: fragment("EXCLUDED.output"),
-          to_address_hash: fragment("EXCLUDED.to_address_hash"),
-          trace_address: fragment("EXCLUDED.trace_address"),
-          transaction_hash: fragment("EXCLUDED.transaction_hash"),
-          type: fragment("EXCLUDED.type"),
-          value: fragment("EXCLUDED.value"),
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", internal_transaction.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", internal_transaction.updated_at)
-          # Don't update `block_hash` as it is used for the conflict target
-          # Don't update `transaction_index` as it is used for the conflict target
-          # Don't update `index` as it is used for the conflict target
-        ]
-      ],
-      # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
-      where:
-        fragment(
-          "(EXCLUDED.transaction_hash, EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          internal_transaction.transaction_hash,
-          internal_transaction.call_type,
-          internal_transaction.created_contract_address_hash,
-          internal_transaction.created_contract_code,
-          internal_transaction.error,
-          internal_transaction.from_address_hash,
-          internal_transaction.gas,
-          internal_transaction.gas_used,
-          internal_transaction.init,
-          internal_transaction.input,
-          internal_transaction.output,
-          internal_transaction.to_address_hash,
-          internal_transaction.trace_address,
-          internal_transaction.type,
-          internal_transaction.value
-        )
-    )
+    if InternalTransactionHelper.primary_key_updated?() do
+      from(
+        internal_transaction in InternalTransaction,
+        update: [
+          set: [
+            block_number: fragment("EXCLUDED.block_number"),
+            call_type: fragment("EXCLUDED.call_type"),
+            created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
+            created_contract_code: fragment("EXCLUDED.created_contract_code"),
+            error: fragment("EXCLUDED.error"),
+            from_address_hash: fragment("EXCLUDED.from_address_hash"),
+            gas: fragment("EXCLUDED.gas"),
+            gas_used: fragment("EXCLUDED.gas_used"),
+            init: fragment("EXCLUDED.init"),
+            input: fragment("EXCLUDED.input"),
+            output: fragment("EXCLUDED.output"),
+            to_address_hash: fragment("EXCLUDED.to_address_hash"),
+            trace_address: fragment("EXCLUDED.trace_address"),
+            transaction_hash: fragment("EXCLUDED.transaction_hash"),
+            type: fragment("EXCLUDED.type"),
+            value: fragment("EXCLUDED.value"),
+            inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", internal_transaction.inserted_at),
+            updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", internal_transaction.updated_at)
+            # Don't update `block_hash` as it is used for the conflict target
+            # Don't update `transaction_index` as it is used for the conflict target
+            # Don't update `index` as it is used for the conflict target
+          ]
+        ],
+        # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
+        where:
+          fragment(
+            "(EXCLUDED.transaction_hash, EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            internal_transaction.transaction_hash,
+            internal_transaction.call_type,
+            internal_transaction.created_contract_address_hash,
+            internal_transaction.created_contract_code,
+            internal_transaction.error,
+            internal_transaction.from_address_hash,
+            internal_transaction.gas,
+            internal_transaction.gas_used,
+            internal_transaction.init,
+            internal_transaction.input,
+            internal_transaction.output,
+            internal_transaction.to_address_hash,
+            internal_transaction.trace_address,
+            internal_transaction.type,
+            internal_transaction.value
+          )
+      )
+    else
+      from(
+        internal_transaction in InternalTransaction,
+        update: [
+          set: [
+            block_number: fragment("EXCLUDED.block_number"),
+            call_type: fragment("EXCLUDED.call_type"),
+            created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
+            created_contract_code: fragment("EXCLUDED.created_contract_code"),
+            error: fragment("EXCLUDED.error"),
+            from_address_hash: fragment("EXCLUDED.from_address_hash"),
+            gas: fragment("EXCLUDED.gas"),
+            gas_used: fragment("EXCLUDED.gas_used"),
+            index: fragment("EXCLUDED.index"),
+            init: fragment("EXCLUDED.init"),
+            input: fragment("EXCLUDED.input"),
+            output: fragment("EXCLUDED.output"),
+            to_address_hash: fragment("EXCLUDED.to_address_hash"),
+            trace_address: fragment("EXCLUDED.trace_address"),
+            transaction_hash: fragment("EXCLUDED.transaction_hash"),
+            transaction_index: fragment("EXCLUDED.transaction_index"),
+            type: fragment("EXCLUDED.type"),
+            value: fragment("EXCLUDED.value"),
+            inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", internal_transaction.inserted_at),
+            updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", internal_transaction.updated_at)
+            # Don't update `block_hash` as it is used for the conflict target
+            # Don't update `block_index` as it is used for the conflict target
+          ]
+        ],
+        # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
+        where:
+          fragment(
+            "(EXCLUDED.transaction_hash, EXCLUDED.index, EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            internal_transaction.transaction_hash,
+            internal_transaction.index,
+            internal_transaction.call_type,
+            internal_transaction.created_contract_address_hash,
+            internal_transaction.created_contract_code,
+            internal_transaction.error,
+            internal_transaction.from_address_hash,
+            internal_transaction.gas,
+            internal_transaction.gas_used,
+            internal_transaction.init,
+            internal_transaction.input,
+            internal_transaction.output,
+            internal_transaction.to_address_hash,
+            internal_transaction.trace_address,
+            internal_transaction.transaction_index,
+            internal_transaction.type,
+            internal_transaction.value
+          )
+      )
+    end
   end
 
   defp acquire_blocks(repo, changes_list) do
@@ -459,12 +520,28 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     if Map.has_key?(blocks_map, block_number) do
       block_hash = Map.fetch!(blocks_map, block_number)
 
-      Enum.map(entries, fn entry ->
-        entry
-        |> Map.put(:block_hash, block_hash)
-        |> sanitize_error()
-        |> shift_created_contract_address_hash()
-      end)
+      if InternalTransactionHelper.primary_key_updated?() do
+        Enum.map(entries, fn entry ->
+          entry
+          |> Map.put(:block_hash, block_hash)
+          |> sanitize_error()
+          |> shift_created_contract_address_hash()
+        end)
+      else
+        entries
+        |> Enum.sort_by(
+          &{(Map.has_key?(&1, :transaction_index) && &1.transaction_index) || &1.transaction_hash, &1.index}
+        )
+        |> Enum.with_index()
+        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+        |> Enum.map(fn {entry, index} ->
+          entry
+          |> Map.put(:block_hash, block_hash)
+          |> Map.put(:block_index, index)
+          |> sanitize_error()
+          |> shift_created_contract_address_hash()
+        end)
+      end
     else
       []
     end

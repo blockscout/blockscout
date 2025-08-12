@@ -11,9 +11,7 @@ defmodule Explorer.Chain.InternalTransaction do
     Block,
     Data,
     Hash,
-    PendingBlockOperation,
     PendingOperationsHelper,
-    PendingTransactionOperation,
     Transaction,
     Wei
   }
@@ -24,6 +22,7 @@ defmodule Explorer.Chain.InternalTransaction do
   alias Explorer.Chain.DenormalizationHelper
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
+  alias Explorer.Utility.InternalTransactionHelper
 
   import EthereumJSONRPC, only: [fetch_block_internal_transactions: 2]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
@@ -56,6 +55,7 @@ defmodule Explorer.Chain.InternalTransaction do
    * `value` - value of transferred from `from_address` to `to_address`
    * `block` - block in which this internal transaction occurred
    * `block_hash` - foreign key for `block`
+   * `block_index` - the index of this internal transaction inside the `block`
   """
   @primary_key false
   typed_schema "internal_transactions" do
@@ -75,6 +75,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:value, Wei, null: false)
     field(:block_number, :integer)
     field(:transaction_index, :integer, primary_key: true, null: false)
+    field(:block_index, :integer)
 
     timestamps()
 
@@ -375,9 +376,18 @@ defmodule Explorer.Chain.InternalTransaction do
 
   """
   def changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
+    base_attributes = ~w(block_hash transaction_index index type)a
+
+    all_attributes =
+      if InternalTransactionHelper.primary_key_updated?() do
+        base_attributes
+      else
+        [:block_index | base_attributes]
+      end
+
     internal_transaction
-    |> cast(attrs, ~w(block_hash transaction_index index type)a)
-    |> validate_required(~w(block_hash transaction_index index type)a)
+    |> cast(attrs, all_attributes)
+    |> validate_required(all_attributes)
     |> foreign_key_constraint(:block_hash)
     |> type_changeset(attrs)
   end
@@ -582,20 +592,20 @@ defmodule Explorer.Chain.InternalTransaction do
   def where_nonpending_operation(query \\ __MODULE__) do
     case PendingOperationsHelper.pending_operations_type() do
       "blocks" ->
-        from(
-          it in query,
-          as: :it,
-          where: not exists(from(pbo in PendingBlockOperation, where: pbo.block_hash == parent_as(:it).block_hash))
+        where(
+          query,
+          [it],
+          fragment("(SELECT 1 FROM pending_block_operations WHERE block_hash = ? LIMIT 1) IS NULL", it.block_hash)
         )
 
       "transactions" ->
-        from(
-          it in query,
-          as: :it,
-          where:
-            not exists(
-              from(pto in PendingTransactionOperation, where: pto.transaction_hash == parent_as(:it).transaction_hash)
-            )
+        where(
+          query,
+          [it],
+          fragment(
+            "(SELECT 1 FROM pending_transaction_operations WHERE transaction_hash = ? LIMIT 1) IS NULL",
+            it.transaction_hash
+          )
         )
     end
   end
@@ -1013,6 +1023,11 @@ defmodule Explorer.Chain.InternalTransaction do
     end
   end
 
+  defp page_block_internal_transaction(query, %PagingOptions{key: %{block_index: block_index}}) do
+    query
+    |> where([internal_transaction], internal_transaction.block_index > ^block_index)
+  end
+
   defp page_block_internal_transaction(query, %PagingOptions{key: %{transaction_index: transaction_index, index: index}}) do
     query
     |> where(
@@ -1024,8 +1039,16 @@ defmodule Explorer.Chain.InternalTransaction do
 
   defp page_block_internal_transaction(query, _), do: query
 
-  def internal_transaction_to_block_paging_options(%__MODULE__{transaction_index: transaction_index, index: index}) do
-    %{"transaction_index" => transaction_index, "index" => index}
+  def internal_transaction_to_block_paging_options(%__MODULE__{
+        transaction_index: transaction_index,
+        index: index,
+        block_index: block_index
+      }) do
+    if InternalTransactionHelper.primary_key_updated?() do
+      %{"transaction_index" => transaction_index, "index" => index}
+    else
+      %{"block_index" => block_index}
+    end
   end
 
   defp where_consensus_transactions(query) do

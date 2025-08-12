@@ -115,8 +115,6 @@ config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions, enabled
 
 config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED")
 
-config :explorer, Explorer.Migrator.CompletionChecker, enabled: true
-
 for migrator <- [
       # Background migrations
       Explorer.Migrator.TransactionsDenormalization,
@@ -180,7 +178,8 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractAdditionalSourcesUniqueIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenInstancesTokenIdIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateTokensNamePartialFtsIndex
+      Explorer.Migrator.HeavyDbIndexOperation.CreateTokensNamePartialFtsIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
     ] do
   config :explorer, index_operation, enabled: true
 end

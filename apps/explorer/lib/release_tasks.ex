@@ -4,7 +4,6 @@ defmodule Explorer.ReleaseTasks do
   """
 
   alias Ecto.Migrator
-  alias Explorer.Migrator.CompletionChecker
 
   @start_apps [
     :crypto,
@@ -23,7 +22,6 @@ defmodule Explorer.ReleaseTasks do
     start_services()
 
     create()
-    CompletionChecker.check!()
     run_migrations()
 
     stop_services()
