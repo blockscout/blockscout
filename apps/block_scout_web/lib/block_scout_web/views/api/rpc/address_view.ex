@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
 
   alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
   alias BlockScoutWeb.API.RPC.RPCView
-  alias Explorer.Chain.DenormalizationHelper
+  alias Explorer.Chain.{DenormalizationHelper, Transaction}
 
   def render("listaccounts.json", %{accounts: accounts}) do
     accounts = Enum.map(accounts, &prepare_account/1)
@@ -39,13 +39,16 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: data)
   end
 
-  def render("tokentx.json", %{token_transfers: token_transfers}) do
-    data = Enum.map(token_transfers, &prepare_token_transfer/1)
-    RPCView.render("show.json", data: data)
-  end
+  def render("tokentx.json", %{token_transfers: token_transfers, max_block_number: max_block_number}) do
+    transactions = token_transfers |> Enum.map(& &1.transaction) |> Transaction.decode_transactions(true, api?: true)
 
-  def render("tokennfttx.json", %{token_transfers: token_transfers, max_block_number: max_block_number}) do
-    data = Enum.map(token_transfers, &prepare_nft_transfer(&1, max_block_number))
+    data =
+      token_transfers
+      |> Enum.zip(transactions)
+      |> Enum.map(fn {token_transfer, decoded_input} ->
+        prepare_token_transfer(token_transfer, max_block_number, decoded_input)
+      end)
+
     RPCView.render("show.json", data: data)
   end
 
@@ -150,99 +153,78 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     }
   end
 
-  defp prepare_common_token_transfer(token_transfer) do
-    %{
-      "blockNumber" => to_string(token_transfer.block_number),
-      "timeStamp" => to_string(DateTime.to_unix(token_transfer.block_timestamp)),
-      "hash" => to_string(token_transfer.transaction_hash),
-      "nonce" => to_string(token_transfer.transaction_nonce),
-      "blockHash" => to_string(token_transfer.block_hash),
-      "from" => to_string(token_transfer.from_address_hash),
-      "contractAddress" => to_string(token_transfer.token_contract_address_hash),
-      "to" => to_string(token_transfer.to_address_hash),
-      "logIndex" => to_string(token_transfer.token_log_index),
-      "tokenName" => token_transfer.token_name,
-      "tokenSymbol" => token_transfer.token_symbol,
-      "tokenDecimal" => to_string(token_transfer.token_decimals),
-      "transactionIndex" => to_string(token_transfer.transaction_index),
-      "gas" => to_string(token_transfer.transaction_gas),
-      "gasPrice" => to_string(token_transfer.transaction_gas_price && token_transfer.transaction_gas_price.value),
-      "gasUsed" => to_string(token_transfer.transaction_gas_used),
-      "cumulativeGasUsed" => to_string(token_transfer.transaction_cumulative_gas_used),
-      "input" => to_string(token_transfer.transaction_input),
-      "confirmations" => to_string(token_transfer.confirmations)
-    }
-  end
-
-  defp prepare_token_transfer(%{token_type: "ERC-721"} = token_transfer) do
-    token_transfer
-    |> prepare_common_token_transfer()
-    |> Map.put_new(:tokenID, List.first(token_transfer.token_ids))
-  end
-
-  # todo: Mark tokenID field as deprecated in release notes, and delete it in the next release
-  # when tokenID will be deleted, merge this, and next `prepare_token_transfer/1` clauses
-  defp prepare_token_transfer(%{token_type: "ERC-1155", token_ids: [token_id]} = token_transfer) do
-    token_transfer
-    |> prepare_common_token_transfer()
-    |> Map.put_new(:tokenID, token_id)
-    |> Map.put_new(:tokenIDs, token_transfer.token_ids)
-    |> Map.put_new(:values, token_transfer.amounts)
-  end
-
-  defp prepare_token_transfer(%{token_type: "ERC-1155"} = token_transfer) do
-    token_transfer
-    |> prepare_common_token_transfer()
-    |> Map.put_new(:tokenIDs, token_transfer.token_ids)
-    |> Map.put_new(:values, token_transfer.amounts)
-  end
-
-  defp prepare_token_transfer(%{token_type: "ERC-404"} = token_transfer) do
-    token_transfer
-    |> prepare_common_token_transfer()
-    |> Map.put_new(:tokenIDs, token_transfer.token_ids)
-    |> Map.put_new(:values, token_transfer.amounts)
-  end
-
-  defp prepare_token_transfer(%{token_type: "ERC-20"} = token_transfer) do
-    token_transfer
-    |> prepare_common_token_transfer()
-    |> Map.put_new(:value, to_string(token_transfer.amount))
-  end
-
-  defp prepare_token_transfer(token_transfer) do
-    prepare_common_token_transfer(token_transfer)
-  end
-
-  defp prepare_nft_transfer(token_transfer, max_block_number) do
-    timestamp =
+  defp prepare_common_token_transfer(token_transfer, max_block_number, decoded_input) do
+    tt_denormalization_fields =
       if DenormalizationHelper.tt_denormalization_finished?() do
-        to_string(DateTime.to_unix(token_transfer.transaction.block_timestamp))
+        %{"timeStamp" => to_string(DateTime.to_unix(token_transfer.transaction.block_timestamp))}
       else
-        to_string(DateTime.to_unix(token_transfer.block.timestamp))
+        %{"timeStamp" => to_string(DateTime.to_unix(token_transfer.block.timestamp))}
       end
 
     %{
       "blockNumber" => to_string(token_transfer.block_number),
-      "timeStamp" => timestamp,
       "hash" => to_string(token_transfer.transaction_hash),
       "nonce" => to_string(token_transfer.transaction.nonce),
       "blockHash" => to_string(token_transfer.block_hash),
       "from" => to_string(token_transfer.from_address_hash),
       "contractAddress" => to_string(token_transfer.token_contract_address_hash),
       "to" => to_string(token_transfer.to_address_hash),
-      "tokenID" => to_string(List.first(token_transfer.token_ids)),
-      "logIndex" => to_string(token_transfer.log_index),
       "tokenName" => token_transfer.token.name,
       "tokenSymbol" => token_transfer.token.symbol,
-      "tokenDecimal" => to_string(token_transfer.token.decimals || 0),
+      "tokenDecimal" => to_string(token_transfer.token.decimals),
       "transactionIndex" => to_string(token_transfer.transaction.index),
       "gas" => to_string(token_transfer.transaction.gas),
       "gasPrice" => to_string(token_transfer.transaction.gas_price && token_transfer.transaction.gas_price.value),
       "gasUsed" => to_string(token_transfer.transaction.gas_used),
       "cumulativeGasUsed" => to_string(token_transfer.transaction.cumulative_gas_used),
-      "input" => "deprecated",
+      "input" => to_string(token_transfer.transaction.input),
       "confirmations" => to_string(max_block_number - token_transfer.block_number)
+    }
+    |> Map.merge(tt_denormalization_fields)
+    |> Map.merge(prepare_decoded_input(decoded_input))
+  end
+
+  defp prepare_token_transfer(%{token_type: "ERC-721"} = token_transfer, max_block_number, decoded_input) do
+    token_transfer
+    |> prepare_common_token_transfer(max_block_number, decoded_input)
+    |> Map.put_new(:tokenID, List.first(token_transfer.token_ids))
+  end
+
+  defp prepare_token_transfer(%{token_type: "ERC-1155"} = token_transfer, max_block_number, decoded_input) do
+    token_transfer
+    |> prepare_common_token_transfer(max_block_number, decoded_input)
+    |> Map.put_new(:tokenID, token_transfer.token_id)
+    |> Map.put_new(:tokenValue, token_transfer.amount)
+  end
+
+  defp prepare_token_transfer(%{token_type: "ERC-404"} = token_transfer, max_block_number, decoded_input) do
+    token_transfer
+    |> prepare_common_token_transfer(max_block_number, decoded_input)
+    |> Map.put_new(:tokenID, to_string(List.first(token_transfer.token_ids)))
+    |> Map.put_new(:value, to_string(List.first(token_transfer.amounts)))
+  end
+
+  defp prepare_token_transfer(%{token_type: "ERC-20"} = token_transfer, max_block_number, decoded_input) do
+    token_transfer
+    |> prepare_common_token_transfer(max_block_number, decoded_input)
+    |> Map.put_new(:value, to_string(token_transfer.amount))
+  end
+
+  defp prepare_token_transfer(token_transfer, max_block_number, decoded_input) do
+    prepare_common_token_transfer(token_transfer, max_block_number, decoded_input)
+  end
+
+  defp prepare_decoded_input({:ok, method_id, text, _mapping}) do
+    %{
+      "methodId" => method_id,
+      "functionName" => text
+    }
+  end
+
+  defp prepare_decoded_input(_) do
+    %{
+      "methodId" => "",
+      "functionName" => ""
     }
   end
 

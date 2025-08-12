@@ -8,6 +8,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Wei
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
@@ -116,7 +117,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
       block_number = block.number
       string_block_number = integer_to_quantity(block_number)
       balance = 42
-      assert nil == Chain.get_coin_balance(address.hash, block_number)
+      assert nil == CoinBalance.get_coin_balance(address.hash, block_number)
 
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn [
@@ -149,7 +150,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
 
       :timer.sleep(1000)
 
-      assert %{value: ^expected_wei} = Chain.get_coin_balance(address.hash, block_number)
+      assert %{value: ^expected_wei} = CoinBalance.get_coin_balance(address.hash, block_number)
     end
   end
 

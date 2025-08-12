@@ -6,11 +6,15 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
   import Ecto.Query
   import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
 
+  alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Data, Hash}
   alias Explorer.{PagingOptions, Repo}
 
   @required_attrs ~w(index game_type address_hash created_at)a
   @optional_attrs ~w(extra_data resolved_at status)a
+
+  @chain_id_bob_mainnet 60_808
+  @chain_id_bob_sepolia 808_813
 
   @typedoc """
     * `index` - A unique index of the dispute game.
@@ -79,6 +83,37 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
     |> page_dispute_games(paging_options)
     |> limit(^paging_options.page_size)
     |> select_repo(options).all(timeout: :infinity)
+  end
+
+  @doc """
+    Retrieves L2 block number from the `extraData` field of the dispute game. The L2 block number can be encoded in
+    different ways depending on the chain.
+
+    ## Parameters
+    - `extra_data`: The byte sequence of the extra data to retrieve L2 block number from.
+
+    ## Returns
+    - L2 block number of the dispute game.
+  """
+  @spec l2_block_number_from_extra_data(Data.t() | nil) :: non_neg_integer()
+  def l2_block_number_from_extra_data(nil), do: 0
+
+  def l2_block_number_from_extra_data(%Data{bytes: extra_data}) do
+    current_chain_id =
+      case ChainId.get_id() do
+        nil -> Application.get_env(:block_scout_web, :chain_id)
+        chain_id -> chain_id
+      end
+
+    first_bits =
+      if current_chain_id in [@chain_id_bob_mainnet, @chain_id_bob_sepolia] do
+        64
+      else
+        256
+      end
+
+    <<l2_block_number::size(first_bits), _::binary>> = extra_data
+    l2_block_number
   end
 
   defp page_dispute_games(query, %PagingOptions{key: nil}), do: query

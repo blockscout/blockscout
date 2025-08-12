@@ -71,6 +71,9 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.Zilliqa.AggregateQuorumCertificates,
       Runner.Zilliqa.NestedQuorumCertificates,
       Runner.Zilliqa.QuorumCertificates
+    ],
+    stability: [
+      Runner.Stability.Validators
     ]
   }
 

@@ -26,13 +26,13 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   import EthereumJSONRPC, only: [fetch_blocks_by_range: 2, json_rpc: 2, quantity_to_integer: 1]
 
-  import Explorer.Helper, only: [add_0x_prefix: 1, hash_to_binary: 1, parse_integer: 1]
+  import Explorer.Helper, only: [hash_to_binary: 1, parse_integer: 1]
 
   alias Ecto.Multi
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.{Blocks, Contract}
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, RollupReorgMonitorQueue}
+  alias Explorer.Chain.{Block, Hash, RollupReorgMonitorQueue}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
@@ -295,7 +295,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
                 timeout: :infinity
               })
 
-            remove_prev_frame_sequences(inserted)
+            removed_sequence_ids = remove_prev_frame_sequences(inserted)
+            sequences = Enum.reject(sequences, fn s -> s.id in removed_sequence_ids end)
             set_frame_sequences_view_ready(sequences)
 
             last_batch =
@@ -372,11 +373,12 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     {:noreply, state}
   end
 
-  defp get_block_numbers_by_hashes([], _json_rpc_named_arguments_l2) do
+  @doc false
+  def get_block_numbers_by_hashes([], _json_rpc_named_arguments_l2) do
     %{}
   end
 
-  defp get_block_numbers_by_hashes(hashes, json_rpc_named_arguments_l2) do
+  def get_block_numbers_by_hashes(hashes, json_rpc_named_arguments_l2) do
     query =
       from(
         b in Block,
@@ -396,7 +398,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       |> Enum.filter(fn hash -> is_nil(Map.get(number_by_hash, hash)) end)
       |> Enum.with_index()
       |> Enum.map(fn {hash, id} ->
-        ByHash.request(%{hash: add_0x_prefix(hash), id: id}, false)
+        {:ok, hash} = Hash.Full.cast(hash)
+        ByHash.request(%{hash: hash, id: id}, false)
       end)
 
     chunk_size = 50
@@ -1341,6 +1344,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       # can still reference to the `op_frame_sequences` table
       _ -> nil
     end
+
+    ids
   end
 
   defp set_frame_sequences_view_ready(sequences) do

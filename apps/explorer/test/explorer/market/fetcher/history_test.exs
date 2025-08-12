@@ -57,10 +57,12 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
 
     Application.put_env(:explorer, Source, native_coin_history_source: CryptoCompare)
     Application.put_env(:explorer, CryptoCompare, base_url: "http://localhost:#{bypass.port}", coin_symbol: "TEST")
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
     on_exit(fn ->
       Application.put_env(:explorer, Source, source_configuration)
       Application.put_env(:explorer, CryptoCompare, crypto_compare_configuration)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
     end)
 
     resp =
@@ -190,10 +192,12 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
 
     Application.put_env(:explorer, Source, native_coin_history_source: CryptoCompare)
     Application.put_env(:explorer, CryptoCompare, base_url: "http://localhost:#{bypass.port}", coin_symbol: "TEST")
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
     on_exit(fn ->
       Application.put_env(:explorer, CryptoCompare, crypto_compare_configuration)
       Application.put_env(:explorer, Source, source_configuration)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
     end)
 
     resp =

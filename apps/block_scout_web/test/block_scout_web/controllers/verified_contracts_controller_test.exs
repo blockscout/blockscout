@@ -55,21 +55,18 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
     end
 
     test "next_page_path exist if not on last page", %{conn: conn} do
-      %SmartContract{address_hash: address_hash} =
+      %SmartContract{id: id} =
         60
         |> insert_list(:smart_contract)
-        |> Enum.reverse()
+        |> Enum.sort_by(& &1.id, :asc)
         |> Enum.fetch!(10)
 
       conn = get(conn, verified_contracts_path(conn, :index), %{"type" => "JSON"})
 
       expected_path =
         verified_contracts_path(conn, :index,
-          coin_balance: nil,
-          hash: address_hash,
-          items_count: "50",
-          transaction_count: nil,
-          transactions_count: nil
+          id: id,
+          items_count: "50"
         )
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path

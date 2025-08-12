@@ -10,11 +10,9 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [id_to_params: 1, json_rpc: 2, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Explorer.Helper, only: [decode_data: 2]
 
-  alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Optimism.Deposit
@@ -167,19 +165,51 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
     end
   end
 
+  # Prepares `TransactionDeposited` events to be imported to database.
+  #
+  # ## Parameters
+  # - `events`: The list of `TransactionDeposited` events got from `eth_getLogs` response.
+  # - `transaction_type`: L1 transaction type to correctly calculate the corresponding L2 transaction hash.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #                               Used to get blocks info by their numbers from the RPC node.
+  #
+  # ## Returns
+  # - A list of prepared events. Each list item is a map outlining a deposit event.
+  @spec prepare_events(list(), non_neg_integer(), EthereumJSONRPC.json_rpc_named_arguments()) :: [map()]
   defp prepare_events(events, transaction_type, json_rpc_named_arguments) do
-    timestamps =
+    {timestamps, origins} =
       events
-      |> get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
-      |> Enum.reduce(%{}, fn block, acc ->
+      |> Helper.get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number(), true)
+      |> Enum.reduce({%{}, %{}}, fn block, {timestamps_acc, origins_acc} ->
         block_number = quantity_to_integer(Map.get(block, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
-        Map.put(acc, block_number, timestamp)
+
+        new_timestamps_acc = Map.put(timestamps_acc, block_number, timestamp)
+
+        new_origins_acc =
+          block
+          |> Map.get("transactions", [])
+          |> Enum.reduce(origins_acc, fn transaction, acc ->
+            Map.put(acc, String.downcase(transaction["hash"]), transaction["from"])
+          end)
+
+        {new_timestamps_acc, new_origins_acc}
       end)
 
-    Enum.map(events, &event_to_deposit(&1, timestamps, transaction_type))
+    Enum.map(events, &event_to_deposit(&1, timestamps, origins, transaction_type))
   end
 
+  # Prepares `TransactionDeposited` event to be imported to database.
+  #
+  # ## Parameters
+  # - An event map outlining a `TransactionDeposited` event got from `eth_getLogs` response.
+  # - `timestamps`: A `block_number -> timestamp` map to get the timestamp of the event from its block info.
+  # - `origins`: A `transaction_hash -> origin` map to get the origin address of the event transaction.
+  # - `transaction_type`: L1 transaction type to correctly calculate the corresponding L2 transaction hash.
+  #
+  # ## Returns
+  # - A map with the event info ready to be imported to database.
+  @spec event_to_deposit(map(), map(), map(), non_neg_integer()) :: map()
   defp event_to_deposit(
          %{
            "blockHash" => "0x" <> stripped_block_hash,
@@ -190,6 +220,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
            "data" => opaque_data
          },
          timestamps,
+         origins,
          transaction_type
        ) do
     {_, prefixed_block_hash} = (String.pad_leading("", 64, "0") <> stripped_block_hash) |> String.split_at(-64)
@@ -251,7 +282,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
       l1_block_number: block_number,
       l1_block_timestamp: Map.get(timestamps, block_number),
       l1_transaction_hash: transaction_hash,
-      l1_transaction_origin: "0x" <> from_stripped,
+      l1_transaction_origin: Map.get(origins, String.downcase(transaction_hash)),
       l2_transaction_hash: l2_transaction_hash
     }
   end
@@ -303,23 +334,5 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
   @spec requires_l1_reorg_monitor?() :: boolean()
   def requires_l1_reorg_monitor? do
     Optimism.requires_l1_reorg_monitor?()
-  end
-
-  defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
-    request =
-      events
-      |> Enum.reduce(%{}, fn event, acc ->
-        Map.put(acc, event["blockNumber"], 0)
-      end)
-      |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-      |> id_to_params()
-      |> Blocks.requests(&ByNumber.request(&1, false, false))
-
-    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
-
-    case Helper.repeated_call(&json_rpc/2, [request, json_rpc_named_arguments], error_message, retries) do
-      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
-      {:error, _} -> []
-    end
   end
 end

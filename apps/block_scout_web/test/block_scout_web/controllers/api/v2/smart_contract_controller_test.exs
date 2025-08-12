@@ -34,6 +34,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   end
 
   describe "/smart-contracts/{address_hash}" do
+    setup do
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      on_exit(fn ->
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+    end
+
     test "get 404 on non existing SC", %{conn: conn} do
       address = build(:address)
 
@@ -62,7 +70,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "implementations" => [],
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" => nil,
-                 "status" => "success"
+                 "creation_status" => "success"
                }
 
       insert(:transaction,
@@ -84,7 +92,34 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" =>
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                 "status" => "success"
+                 "creation_status" => "success"
+               }
+    end
+
+    test "get unverified smart-contract with failed creation status", %{conn: conn} do
+      address = insert(:address, contract_code: "0x")
+
+      creation_bytecode =
+        "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+
+      insert(:transaction,
+        created_contract_address_hash: address.hash,
+        input: creation_bytecode
+      )
+      |> with_block(status: :error)
+
+      TestHelper.get_eip1967_implementation_error_response()
+
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+      response = json_response(request, 200)
+
+      assert response ==
+               %{
+                 "proxy_type" => nil,
+                 "implementations" => [],
+                 "deployed_bytecode" => "0x",
+                 "creation_bytecode" => creation_bytecode,
+                 "creation_status" => "failed"
                }
     end
 
@@ -109,7 +144,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert implementation.proxy_type == :eip1967
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
-      response = json_response(request, 200)
+      json_response(request, 200)
     end
 
     test "get smart-contract", %{conn: conn} do
@@ -169,7 +204,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "implementations" => [
           %{
             "address_hash" => formatted_implementation_address_hash_string,
-            "address" => formatted_implementation_address_hash_string,
             "name" => nil
           }
         ],
@@ -179,7 +213,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "license_type" => "none",
         "certified" => false,
         "is_blueprint" => false,
-        "status" => "success"
+        "creation_status" => "success"
       }
 
       TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
@@ -479,7 +513,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "implementations" => [
           %{
             "address_hash" => Address.checksum(implementation_contract.address_hash),
-            "address" => Address.checksum(implementation_contract.address_hash),
             "name" => implementation_contract.name
           }
         ]
@@ -547,7 +580,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "license_type" => "none",
         "certified" => false,
         "is_blueprint" => true,
-        "status" => "success"
+        "creation_status" => "success"
       }
 
       TestHelper.get_all_proxies_implementation_zero_addresses()
@@ -564,6 +597,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   end
 
   test "doesn't get smart-contract implementation for 'Clones with immutable arguments' pattern", %{conn: conn} do
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
     implementation_contract =
       insert(:smart_contract,
         external_libraries: [],
@@ -633,7 +668,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       "implementations" => [
         %{
           "address_hash" => formatted_implementation_address_hash_string,
-          "address" => formatted_implementation_address_hash_string,
           "name" => implementation_contract.name
         }
       ],
@@ -643,6 +677,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
     request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
     response = json_response(request, 200)
+
+    Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
 
     result_props = correct_response |> Map.keys()
 
@@ -654,32 +690,45 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   if Application.compile_env(:explorer, :chain_type) !== :zksync do
     describe "/smart-contracts/{address_hash} <> eth_bytecode_db" do
       setup do
-        old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
+        old_fetcher_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
 
-        :ok
+        old_verifier_env =
+          Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, [])
 
-        on_exit(fn ->
-          Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
-        end)
-      end
-
-      test "automatically verify contract", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+        bypass = Bypass.open()
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
         Application.put_env(:block_scout_web, :chain_id, 5)
 
-        bypass = Bypass.open()
-        eth_bytecode_response = File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_response.json")
-
-        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-          service_url: "http://localhost:#{bypass.port}",
-          enabled: true,
-          type: "eth_bytecode_db",
-          eth_bytecode_db?: true
+        Application.put_env(
+          :explorer,
+          Explorer.SmartContract.RustVerifierInterfaceBehaviour,
+          Keyword.merge(
+            old_verifier_env,
+            service_url: "http://localhost:#{bypass.port}",
+            enabled: true,
+            type: "eth_bytecode_db",
+            eth_bytecode_db?: true
+          )
         )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_fetcher_env)
+          Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_verifier_env)
+          Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+          Bypass.down(bypass)
+        end)
+
+        {:ok, bypass: bypass}
+      end
+
+      test "automatically verify contract", %{conn: conn, bypass: bypass} do
+        eth_bytecode_response = File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_response.json")
 
         address = insert(:contract_address)
 
@@ -728,7 +777,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "status" => "success"
+                   "creation_status" => "success"
                  }
 
         TestHelper.get_all_proxies_implementation_zero_addresses()
@@ -739,32 +788,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert %{"is_verified_via_eth_bytecode_db" => true} = response
         assert %{"is_partially_verified" => true} = response
         assert %{"is_fully_verified" => false} = response
-
-        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-        Bypass.down(bypass)
-        GenServer.stop(pid)
       end
 
-      test "automatically verify contract using search-all (ethBytecodeDbSources) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
-
-        Application.put_env(:block_scout_web, :chain_id, 5)
-
-        bypass = Bypass.open()
-
+      test "automatically verify contract using search-all (ethBytecodeDbSources) endpoint", %{
+        conn: conn,
+        bypass: bypass
+      } do
         eth_bytecode_response =
           File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_all_local_sources_response.json")
-
-        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-          service_url: "http://localhost:#{bypass.port}",
-          enabled: true,
-          type: "eth_bytecode_db",
-          eth_bytecode_db?: true
-        )
 
         address = insert(:contract_address)
 
@@ -813,7 +844,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "status" => "success"
+                   "creation_status" => "success"
                  }
 
         TestHelper.get_all_proxies_implementation_zero_addresses()
@@ -871,32 +902,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
                  additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
-
-        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-        Bypass.down(bypass)
-        GenServer.stop(pid)
       end
 
-      test "automatically verify contract using search-all (sourcifySources) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
-
-        Application.put_env(:block_scout_web, :chain_id, 5)
-
-        bypass = Bypass.open()
-
+      test "automatically verify contract using search-all (sourcifySources) endpoint", %{conn: conn, bypass: bypass} do
         eth_bytecode_response =
           File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_all_sourcify_sources_response.json")
-
-        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-          service_url: "http://localhost:#{bypass.port}",
-          enabled: true,
-          type: "eth_bytecode_db",
-          eth_bytecode_db?: true
-        )
 
         address = insert(:contract_address)
 
@@ -945,7 +955,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "status" => "success"
+                   "creation_status" => "success"
                  }
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
@@ -956,34 +966,16 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert %{"is_partially_verified" => true} = response
         assert %{"is_fully_verified" => false} = response
         assert response["file_path"] == "Test.sol"
-
-        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-        Bypass.down(bypass)
-        GenServer.stop(pid)
       end
 
-      test "automatically verify contract using search-all (sourcifySources with libraries) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
-
-        Application.put_env(:block_scout_web, :chain_id, 5)
-
-        bypass = Bypass.open()
-
+      test "automatically verify contract using search-all (sourcifySources with libraries) endpoint", %{
+        conn: conn,
+        bypass: bypass
+      } do
         eth_bytecode_response =
           File.read!(
             "./test/support/fixture/smart_contract/eth_bytecode_db_search_all_sourcify_sources_with_libs_response.json"
           )
-
-        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-          service_url: "http://localhost:#{bypass.port}",
-          enabled: true,
-          type: "eth_bytecode_db",
-          eth_bytecode_db?: true
-        )
 
         address = insert(:contract_address)
 
@@ -1032,7 +1024,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "status" => "success"
+                   "creation_status" => "success"
                  }
 
         TestHelper.get_all_proxies_implementation_zero_addresses()
@@ -1069,32 +1061,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
                  additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
-
-        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-        Bypass.down(bypass)
-        GenServer.stop(pid)
       end
 
-      test "automatically verify contract using search-all (allianceSources) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
-
-        Application.put_env(:block_scout_web, :chain_id, 5)
-
-        bypass = Bypass.open()
-
+      test "automatically verify contract using search-all (allianceSources) endpoint", %{conn: conn, bypass: bypass} do
         eth_bytecode_response =
           File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_all_alliance_sources_response.json")
-
-        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-          service_url: "http://localhost:#{bypass.port}",
-          enabled: true,
-          type: "eth_bytecode_db",
-          eth_bytecode_db?: true
-        )
 
         address = insert(:contract_address)
 
@@ -1145,14 +1116,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "implementations" => [
                      prepare_implementation(%{
                        "address_hash" => formatted_implementation_address_hash_string,
-                       "address" => formatted_implementation_address_hash_string,
                        "name" => nil
                      })
                    ],
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "status" => "success"
+                   "creation_status" => "success"
                  }
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
@@ -1163,7 +1133,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "implementations" => [
                    %{
                      "address_hash" => ^formatted_implementation_address_hash_string,
-                     "address" => ^formatted_implementation_address_hash_string,
                      "name" => nil
                    }
                  ]
@@ -1204,34 +1173,16 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
                  additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
-
-        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-        Bypass.down(bypass)
-        GenServer.stop(pid)
       end
 
-      test "automatically verify contract using search-all (prefer sourcify FULL match) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
-
-        Application.put_env(:block_scout_web, :chain_id, 5)
-
-        bypass = Bypass.open()
-
+      test "automatically verify contract using search-all (prefer sourcify FULL match) endpoint", %{
+        conn: conn,
+        bypass: bypass
+      } do
         eth_bytecode_response =
           File.read!(
             "./test/support/fixture/smart_contract/eth_bytecode_db_search_all_alliance_sources_partial_response.json"
           )
-
-        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-          service_url: "http://localhost:#{bypass.port}",
-          enabled: true,
-          type: "eth_bytecode_db",
-          eth_bytecode_db?: true
-        )
 
         address = insert(:contract_address)
 
@@ -1282,14 +1233,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "implementations" => [
                      prepare_implementation(%{
                        "address_hash" => formatted_implementation_address_hash_string,
-                       "address" => formatted_implementation_address_hash_string,
                        "name" => nil
                      })
                    ],
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "status" => "success"
+                   "creation_status" => "success"
                  }
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
@@ -1300,7 +1250,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "implementations" => [
                    %{
                      "address_hash" => ^formatted_implementation_address_hash_string,
-                     "address" => ^formatted_implementation_address_hash_string,
                      "name" => nil
                    }
                  ]
@@ -1341,34 +1290,16 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
                  additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
-
-        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-        Bypass.down(bypass)
-        GenServer.stop(pid)
       end
 
-      test "automatically verify contract using search-all (take eth bytecode db FULL match) endpoint", %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
-
-        Application.put_env(:block_scout_web, :chain_id, 5)
-
-        bypass = Bypass.open()
-
+      test "automatically verify contract using search-all (take eth bytecode db FULL match) endpoint", %{
+        conn: conn,
+        bypass: bypass
+      } do
         eth_bytecode_response =
           File.read!(
             "./test/support/fixture/smart_contract/eth_bytecode_db_search_all_alliance_sources_partial_response_eth_bdb_full.json"
           )
-
-        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-          service_url: "http://localhost:#{bypass.port}",
-          enabled: true,
-          type: "eth_bytecode_db",
-          eth_bytecode_db?: true
-        )
 
         address = insert(:contract_address)
 
@@ -1419,14 +1350,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "implementations" => [
                      prepare_implementation(%{
                        "address_hash" => formatted_implementation_address_hash_string,
-                       "address" => formatted_implementation_address_hash_string,
                        "name" => nil
                      })
                    ],
                    "deployed_bytecode" => to_string(address.contract_code),
                    "creation_bytecode" =>
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
-                   "status" => "success"
+                   "creation_status" => "success"
                  }
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
@@ -1437,7 +1367,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "implementations" => [
                    %{
                      "address_hash" => ^formatted_implementation_address_hash_string,
-                     "address" => ^formatted_implementation_address_hash_string,
                      "name" => nil
                    }
                  ]
@@ -1478,21 +1407,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
                  additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
-
-        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-        Bypass.down(bypass)
-        GenServer.stop(pid)
       end
 
       test "check fetch interval for LookUpSmartContractSourcesOnDemand and use sources:search endpoint since chain_id is unset",
-           %{conn: conn} do
-        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
-
+           %{conn: conn, bypass: bypass} do
         Application.put_env(:block_scout_web, :chain_id, nil)
-
-        bypass = Bypass.open()
         address = insert(:contract_address)
         topic = "addresses:#{address.hash}"
 
@@ -1507,17 +1426,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
             "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
         )
         |> with_block(status: :ok)
-
-        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-          service_url: "http://localhost:#{bypass.port}",
-          enabled: true,
-          type: "eth_bytecode_db",
-          eth_bytecode_db?: true
-        )
-
-        old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
 
         Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, fetch_interval: 0)
 
@@ -1613,12 +1521,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                          topic: ^topic
                        },
                        :timer.seconds(1)
-
-        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-        Bypass.down(bypass)
-        GenServer.stop(pid)
       end
     end
   end
@@ -1721,7 +1623,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           for _ <- 0..50 do
             insert(:smart_contract)
           end
-          |> Enum.sort_by(& &1.address_hash.bytes, :desc)
+          |> Enum.sort_by(& &1.id)
 
         request = get(conn, "/api/v2/smart-contracts")
         assert response = json_response(request, 200)
@@ -1738,7 +1640,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           for _ <- 0..50 do
             insert(:smart_contract)
           end
-          |> Enum.sort_by(& &1.address_hash.bytes, :desc)
+          |> Enum.sort_by(& &1.id)
 
         ordering_params = %{"sort" => "foo", "order" => "bar"}
 
@@ -1876,7 +1778,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     Enum.map(items, &prepare_implementation/1)
   end
 
-  defp prepare_implementation(%{"address" => _, "name" => _} = implementation) do
+  defp prepare_implementation(%{"address_hash" => _, "name" => _} = implementation) do
     case Application.get_env(:explorer, :chain_type) do
       :filecoin ->
         Map.put(implementation, "filecoin_robust_address", nil)

@@ -1,4 +1,4 @@
-defmodule Explorer.Utility.TestMissingBlockRange do
+defmodule Explorer.Utility.MissingBlockRangeTest do
   use ExUnit.Case, async: true
 
   alias Explorer.Utility.MissingBlockRange
@@ -82,14 +82,10 @@ defmodule Explorer.Utility.TestMissingBlockRange do
 
       ranges = Repo.all(MissingBlockRange)
 
-      assert length(ranges) == 5
+      assert length(ranges) == 4
 
       assert Enum.any?(ranges, fn range ->
-               range.from_number == 15 and range.to_number == 12 and range.priority == nil
-             end)
-
-      assert Enum.any?(ranges, fn range ->
-               range.from_number == 11 and range.to_number == 11 and range.priority == nil
+               range.from_number == 15 and range.to_number == 11 and range.priority == nil
              end)
 
       assert Enum.any?(ranges, fn range ->
@@ -118,22 +114,14 @@ defmodule Explorer.Utility.TestMissingBlockRange do
 
       ranges = Repo.all(MissingBlockRange)
 
-      assert length(ranges) == 4
+      assert length(ranges) == 2
 
       assert Enum.any?(ranges, fn range ->
                range.from_number == 15 and range.to_number == 14 and range.priority == nil
              end)
 
       assert Enum.any?(ranges, fn range ->
-               range.from_number == 13 and range.to_number == 12 and range.priority == 1
-             end)
-
-      assert Enum.any?(ranges, fn range ->
-               range.from_number == 11 and range.to_number == 7 and range.priority == 1
-             end)
-
-      assert Enum.any?(ranges, fn range ->
-               range.from_number == 6 and range.to_number == 3 and range.priority == 1
+               range.from_number == 13 and range.to_number == 3 and range.priority == 1
              end)
     end
 
@@ -269,14 +257,10 @@ defmodule Explorer.Utility.TestMissingBlockRange do
 
       ranges = Repo.all(MissingBlockRange)
 
-      assert length(ranges) == 4
+      assert length(ranges) == 3
 
       assert Enum.any?(ranges, fn range ->
-               range.from_number == 112 and range.to_number == 86 and range.priority == nil
-             end)
-
-      assert Enum.any?(ranges, fn range ->
-               range.from_number == 85 and range.to_number == 46 and range.priority == nil
+               range.from_number == 112 and range.to_number == 46 and range.priority == nil
              end)
 
       assert Enum.any?(ranges, fn range ->
@@ -331,18 +315,14 @@ defmodule Explorer.Utility.TestMissingBlockRange do
 
       ranges = Repo.all(MissingBlockRange)
 
-      assert length(ranges) == 3
+      assert length(ranges) == 2
 
       assert Enum.any?(ranges, fn range ->
                range.from_number == 112 and range.to_number == 111 and range.priority == nil
              end)
 
       assert Enum.any?(ranges, fn range ->
-               range.from_number == 110 and range.to_number == 86 and range.priority == 1
-             end)
-
-      assert Enum.any?(ranges, fn range ->
-               range.from_number == 85 and range.to_number == 7 and range.priority == 1
+               range.from_number == 110 and range.to_number == 7 and range.priority == 1
              end)
     end
 
@@ -358,14 +338,10 @@ defmodule Explorer.Utility.TestMissingBlockRange do
 
       ranges = Repo.all(MissingBlockRange)
 
-      assert length(ranges) == 2
+      assert length(ranges) == 1
 
       assert Enum.any?(ranges, fn range ->
-               range.from_number == 112 and range.to_number == 86 and range.priority == 1
-             end)
-
-      assert Enum.any?(ranges, fn range ->
-               range.from_number == 85 and range.to_number == 7 and range.priority == 1
+               range.from_number == 112 and range.to_number == 7 and range.priority == 1
              end)
     end
 
@@ -435,18 +411,10 @@ defmodule Explorer.Utility.TestMissingBlockRange do
 
       ranges = Repo.all(MissingBlockRange)
 
-      assert length(ranges) == 4
+      assert length(ranges) == 2
 
       assert Enum.any?(ranges, fn range ->
-               range.from_number == 130 and range.to_number == 46 and range.priority == 1
-             end)
-
-      assert Enum.any?(ranges, fn range ->
-               range.from_number == 45 and range.to_number == 30 and range.priority == 1
-             end)
-
-      assert Enum.any?(ranges, fn range ->
-               range.from_number == 29 and range.to_number == 23 and range.priority == 1
+               range.from_number == 130 and range.to_number == 23 and range.priority == 1
              end)
 
       assert Enum.any?(ranges, fn range ->
@@ -466,18 +434,10 @@ defmodule Explorer.Utility.TestMissingBlockRange do
 
       ranges = Repo.all(MissingBlockRange)
 
-      assert length(ranges) == 3
+      assert length(ranges) == 1
 
       assert Enum.any?(ranges, fn range ->
-               range.from_number == 130 and range.to_number == 46 and range.priority == 1
-             end)
-
-      assert Enum.any?(ranges, fn range ->
-               range.from_number == 45 and range.to_number == 30 and range.priority == 1
-             end)
-
-      assert Enum.any?(ranges, fn range ->
-               range.from_number == 29 and range.to_number == 20 and range.priority == 1
+               range.from_number == 130 and range.to_number == 20 and range.priority == 1
              end)
     end
   end

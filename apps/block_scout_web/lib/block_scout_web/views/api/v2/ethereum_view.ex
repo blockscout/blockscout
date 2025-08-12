@@ -1,12 +1,6 @@
 defmodule BlockScoutWeb.API.V2.EthereumView do
   alias Explorer.Chain.{Block, Transaction}
 
-  defp count_blob_transactions(%Block{transactions: transactions}) when is_list(transactions),
-    # EIP-2718 blob transaction type
-    do: Enum.count(transactions, &(&1.type == 3))
-
-  defp count_blob_transactions(_), do: nil
-
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     case Map.get(transaction, :beacon_blob_transaction) do
       nil ->
@@ -29,13 +23,11 @@ defmodule BlockScoutWeb.API.V2.EthereumView do
     blob_gas_used = Map.get(block, :blob_gas_used)
     excess_blob_gas = Map.get(block, :excess_blob_gas)
 
-    blob_transaction_count = count_blob_transactions(block)
+    blob_transaction_count = block.blob_transactions_count
 
     extended_out_json =
       out_json
       |> Map.put("blob_transactions_count", blob_transaction_count)
-      # todo: It should be removed in favour `blob_transactions_count` property with the next release after 8.0.0
-      |> Map.put("blob_transaction_count", blob_transaction_count)
       |> Map.put("blob_gas_used", blob_gas_used)
       |> Map.put("excess_blob_gas", excess_blob_gas)
 

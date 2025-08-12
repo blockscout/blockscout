@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Blackfort.Validator do
 
   alias Explorer.Chain.{Address, Import}
   alias Explorer.Chain.Hash.Address, as: HashAddress
-  alias Explorer.{Chain, Helper, Repo, SortingHelper}
+  alias Explorer.{Chain, Helper, HttpClient, Repo, SortingHelper}
 
   require Logger
 
@@ -148,8 +148,7 @@ defmodule Explorer.Chain.Blackfort.Validator do
     url = validator_url()
 
     with {:url, true} <- {:url, Helper.valid_url?(url)},
-         {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
-           HTTPoison.get(validator_url(), [], follow_redirect: true) do
+         {:ok, %{status_code: 200, body: body}} <- HttpClient.get(validator_url(), [], follow_redirect: true) do
       body |> Jason.decode() |> parse_validators_info()
     else
       {:url, false} ->
@@ -164,31 +163,35 @@ defmodule Explorer.Chain.Blackfort.Validator do
   defp parse_validators_info({:ok, validators}) do
     {:ok,
      validators
-     |> Enum.map(fn %{
-                      "address" => address_hash_string,
-                      "name" => name,
-                      "commission" => commission,
-                      "self_bonded_amount" => self_bonded_amount,
-                      "delegated_amount" => delegated_amount,
-                      "slashing_status" => %{
-                        "is_slashed" => slashing_status_is_slashed,
-                        "by_block" => slashing_status_by_block,
-                        "multiplier" => slashing_status_multiplier
-                      }
-                    } ->
-       {:ok, address_hash} = HashAddress.cast(address_hash_string)
+     |> Enum.map(
+       # todo: remove it in favour `address_hash` when the frontend is bound to the new filed (create the task to frontend repo).
+       fn %{
+            "address_hash" => address_hash_string,
+            "address" => address_hash_string,
+            "name" => name,
+            "commission" => commission,
+            "self_bonded_amount" => self_bonded_amount,
+            "delegated_amount" => delegated_amount,
+            "slashing_status" => %{
+              "is_slashed" => slashing_status_is_slashed,
+              "by_block" => slashing_status_by_block,
+              "multiplier" => slashing_status_multiplier
+            }
+          } ->
+         {:ok, address_hash} = HashAddress.cast(address_hash_string)
 
-       %{
-         address_hash: address_hash,
-         name: name,
-         commission: parse_number(commission),
-         self_bonded_amount: parse_number(self_bonded_amount),
-         delegated_amount: parse_number(delegated_amount),
-         slashing_status_is_slashed: slashing_status_is_slashed,
-         slashing_status_by_block: slashing_status_by_block,
-         slashing_status_multiplier: slashing_status_multiplier
-       }
-     end)}
+         %{
+           address_hash: address_hash,
+           name: name,
+           commission: parse_number(commission),
+           self_bonded_amount: parse_number(self_bonded_amount),
+           delegated_amount: parse_number(delegated_amount),
+           slashing_status_is_slashed: slashing_status_is_slashed,
+           slashing_status_by_block: slashing_status_by_block,
+           slashing_status_multiplier: slashing_status_multiplier
+         }
+       end
+     )}
   end
 
   defp parse_validators_info({:error, error}) do

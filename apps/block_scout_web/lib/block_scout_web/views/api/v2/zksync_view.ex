@@ -16,19 +16,11 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
       "timestamp" => batch.timestamp,
       "root_hash" => batch.root_hash,
       "l1_transactions_count" => batch.l1_transaction_count,
-      # todo: It should be removed in favour `l1_transactions_count` property with the next release after 8.0.0
-      "l1_transaction_count" => batch.l1_transaction_count,
       "l2_transactions_count" => batch.l2_transaction_count,
-      # todo: It should be removed in favour `l2_transactions_count` property with the next release after 8.0.0
-      "l2_transaction_count" => batch.l2_transaction_count,
       "l1_gas_price" => batch.l1_gas_price,
       "l2_fair_gas_price" => batch.l2_fair_gas_price,
       "start_block_number" => batch.start_block,
-      "end_block_number" => batch.end_block,
-      # todo: It should be removed in favour `start_block_number` property with the next release after 8.0.0
-      "start_block" => batch.start_block,
-      # todo: It should be removed in favour `end_block_number` property with the next release after 8.0.0
-      "end_block" => batch.end_block
+      "end_block_number" => batch.end_block
     }
     |> add_l1_transactions_info_and_status(batch)
   end
@@ -72,9 +64,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
       %{
         "number" => batch.number,
         "timestamp" => batch.timestamp,
-        "transactions_count" => batch.l1_transaction_count + batch.l2_transaction_count,
-        # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
-        "transaction_count" => batch.l1_transaction_count + batch.l2_transaction_count
+        "transactions_count" => batch.l1_transaction_count + batch.l2_transaction_count
       }
       |> add_l1_transactions_info_and_status(batch)
     end)
@@ -203,5 +193,13 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
       not is_nil(zksync_item.batch_number) -> "Sealed on L2"
       true -> "Processed on L2"
     end
+  end
+
+  @doc """
+  Returns a list of possible batch statuses.
+  """
+  @spec batch_status_enum() :: [String.t()]
+  def batch_status_enum do
+    ["Executed on L1", "Validated on L1", "Sent to L1", "Sealed on L2", "Processed on L2"]
   end
 end

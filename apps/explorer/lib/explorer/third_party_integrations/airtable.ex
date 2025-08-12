@@ -7,8 +7,7 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
   alias Ecto.Changeset
   alias Explorer.Account.PublicTagsRequest
   alias Explorer.Chain.SmartContract.AuditReport
-  alias Explorer.Repo
-  alias HTTPoison.Response
+  alias Explorer.{HttpClient, Repo}
 
   @doc """
     Submits a public tags request or audit report to AirTable
@@ -76,10 +75,10 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
       "records" => [%{"fields" => map}]
     }
 
-    request = HTTPoison.post(url, Jason.encode!(body), headers, [])
+    request = HttpClient.post(url, Jason.encode!(body), headers)
 
     case request do
-      {:ok, %Response{body: body, status_code: 200}} ->
+      {:ok, %{body: body, status_code: 200}} ->
         request_id = Enum.at(Jason.decode!(body)["records"], 0)["fields"]["request_id"]
 
         success_callback.(request_id)

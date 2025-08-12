@@ -320,7 +320,38 @@ defmodule Explorer.Chain.TokenTransfer do
     end
   end
 
-  defp maybe_filter_by_token_type(query, token_types) do
+  @doc """
+  Conditionally filters token transfers by token type based on denormalization status.
+
+  This function applies token type filtering to the query using either the
+  denormalized `token_type` field or by joining with the tokens table,
+  depending on whether the token transfer denormalization process has been
+  completed. When denormalization is finished, it filters directly on
+  `tt.token_type`. Otherwise, it joins with the associated token and filters
+  on `token.type`.
+
+  ## Parameters
+  - `query`: An Ecto query for token transfers
+  - `token_type`: Either a binary token type (e.g., "ERC-20") or a list of
+    token types to filter by
+
+  ## Returns
+  - The modified query with token type filtering applied
+  - For empty token type lists, returns the original query unchanged
+  """
+  @spec maybe_filter_by_token_type(Ecto.Query.t(), binary() | [binary()]) :: Ecto.Query.t()
+  def maybe_filter_by_token_type(query, token_type) when is_binary(token_type) do
+    if DenormalizationHelper.tt_denormalization_finished?() do
+      query
+      |> where([tt], tt.token_type == ^token_type)
+    else
+      query
+      |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+      |> where([tt, block, token], token.type == ^token_type)
+    end
+  end
+
+  def maybe_filter_by_token_type(query, token_types) do
     if Enum.empty?(token_types) do
       query
     else
@@ -673,17 +704,6 @@ defmodule Explorer.Chain.TokenTransfer do
         query
         |> where([tt], tt.transaction_hash == parent_as(:log).transaction_hash)
     end
-  end
-
-  @doc """
-    Returns ecto query to fetch consensus token transfers with ERC-721 token type
-  """
-  @spec erc_721_token_transfers_query() :: Ecto.Query.t()
-  def erc_721_token_transfers_query do
-    only_consensus_transfers_query()
-    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
-    |> where([tt, token: token], token.type == "ERC-721")
-    |> preload([tt, token: token], [{:token, token}])
   end
 
   @doc """

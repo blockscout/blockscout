@@ -23,9 +23,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       default_paging_options: 0
     ]
 
-  import Explorer.Helper, only: [parse_integer: 1]
+  import Explorer.Helper,
+    only: [
+      parse_integer: 1,
+      safe_parse_non_negative_integer: 1
+    ]
 
-  alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
+  alias BlockScoutWeb.AccessHelper
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.AuditReport
@@ -124,12 +128,24 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     addresses_plus_one = SmartContract.verified_contract_addresses(full_options)
     {addresses, next_page} = split_list_by_page(addresses_plus_one)
 
+    # If no sorting options are provided, we sort by `id` descending only. If
+    # there are some sorting options supplied, we sort by `:hash` ascending as a
+    # secondary key.
+    pager =
+      full_options
+      |> Keyword.get(:sorting)
+      |> if do
+        &smart_contract_addresses_paging_params/1
+      else
+        &%{smart_contract_id: &1.smart_contract.id}
+      end
+
     next_page_params =
       next_page
       |> next_page_params(
         addresses,
         delete_parameters_from_next_page_params(params),
-        &smart_contract_addresses_paging_params/1
+        pager
       )
 
     conn
@@ -145,20 +161,35 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   parameters.
 
   ## Returns
-  If 'hash', 'transaction_count', and 'coin_balance' parameters are provided,
-  uses them as pagination keys. Otherwise, returns default paging options.
+  If 'hash', 'transactions_count', and 'coin_balance' parameters are provided,
+  uses them as pagination keys for address-based sorting. If 'smart_contract_id'
+  parameter is provided, uses it as pagination key for smart contract ID-based
+  sorting. Otherwise, returns default paging options.
 
   ## Examples
-      iex> smart_contract_addresses_paging_options(%{"hash" => "0x123...", "transaction_count" => "100", "coin_balance" => "1000"})
+      iex> smart_contract_addresses_paging_options(%{"hash" => "0x123...", "transactions_count" => "100", "coin_balance" => "1000"})
       [paging_options: %{key: %{hash: ..., transactions_count: 100, fetched_coin_balance: 1000}}]
+
+      iex> smart_contract_addresses_paging_options(%{"smart_contract_id" => "42"})
+      [paging_options: %{key: %{id: 42}}]
+
+      iex> smart_contract_addresses_paging_options(%{})
+      [paging_options: %{}]
   """
   @spec smart_contract_addresses_paging_options(%{required(String.t()) => String.t()}) ::
           [paging_options: map()]
   def smart_contract_addresses_paging_options(params) do
-    options =
-      with %{"hash" => hash_string} <- params,
-           {:ok, address_hash} <- Chain.string_to_address_hash(hash_string) do
-        transactions_count = parse_integer(params["transaction_count"])
+    options = do_smart_contract_addresses_paging_options(params)
+    [paging_options: default_paging_options() |> Map.merge(options)]
+  end
+
+  @spec do_smart_contract_addresses_paging_options(%{required(String.t()) => String.t()}) :: map()
+  defp do_smart_contract_addresses_paging_options(%{"hash" => hash_string} = params) do
+    hash_string
+    |> Chain.string_to_address_hash()
+    |> case do
+      {:ok, address_hash} ->
+        transactions_count = parse_integer(params["transactions_count"])
         coin_balance = parse_integer(params["coin_balance"])
 
         %{
@@ -168,12 +199,22 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
             fetched_coin_balance: coin_balance
           }
         }
-      else
-        _ -> %{}
-      end
 
-    [paging_options: default_paging_options() |> Map.merge(options)]
+      _ ->
+        %{}
+    end
   end
+
+  defp do_smart_contract_addresses_paging_options(%{"smart_contract_id" => smart_contract_id}) do
+    smart_contract_id
+    |> safe_parse_non_negative_integer()
+    |> case do
+      {:ok, id} -> %{key: %{id: id}}
+      _ -> %{}
+    end
+  end
+
+  defp do_smart_contract_addresses_paging_options(_params), do: %{}
 
   @doc """
   Extracts pagination parameters from an Address struct for use in the next page
@@ -185,7 +226,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   ## Examples
       iex> address = %Explorer.Chain.Address{hash: "0x123...", transactions_count: 100, fetched_coin_balance: 1000}
       iex> smart_contract_addresses_paging_params(address)
-      %{"hash" => "0x123...", "transaction_count" => 100, "coin_balance" => 1000}
+      %{"hash" => "0x123...", "transactions_count" => 100, "coin_balance" => 1000}
   """
   @spec smart_contract_addresses_paging_params(Explorer.Chain.Address.t()) :: %{
           required(String.t()) => any()
@@ -197,8 +238,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       }) do
     %{
       "hash" => address_hash,
-      # todo: It should be removed in favour: transactions_count
-      "transaction_count" => transactions_count,
       "transactions_count" => transactions_count,
       "coin_balance" => coin_balance
     }
@@ -208,16 +247,21 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
           {:sorting, list()}
         ]
   defp smart_contract_addresses_sorting(%{"sort" => sort_field, "order" => order}) do
-    sorting =
-      case {sort_field, order} do
-        {"balance", "asc"} -> [{:asc_nulls_first, :fetched_coin_balance}]
-        {"balance", "desc"} -> [{:desc_nulls_last, :fetched_coin_balance}]
-        {"transactions_count", "asc"} -> [{:asc_nulls_first, :transactions_count}]
-        {"transactions_count", "desc"} -> [{:desc_nulls_last, :transactions_count}]
-        _ -> []
-      end
+    {sort_field, order}
+    |> case do
+      {"balance", "asc"} -> {:ok, [{:asc_nulls_first, :fetched_coin_balance}]}
+      {"balance", "desc"} -> {:ok, [{:desc_nulls_last, :fetched_coin_balance}]}
+      {"transactions_count", "asc"} -> {:ok, [{:asc_nulls_first, :transactions_count}]}
+      {"transactions_count", "desc"} -> {:ok, [{:desc_nulls_last, :transactions_count}]}
+      _ -> :error
+    end
+    |> case do
+      {:ok, sorting_params} ->
+        [sorting: sorting_params]
 
-    [sorting: sorting]
+      :error ->
+        []
+    end
   end
 
   defp smart_contract_addresses_sorting(_), do: []
@@ -235,7 +279,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   def audit_report_submission(conn, %{"address_hash" => address_hash_string} = params) do
     with {:disabled, true} <- {:disabled, Application.get_env(:explorer, :air_table_audit_reports)[:enabled]},
          {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
-         {:recaptcha, _} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)},
          audit_report_params <- %{
            address_hash: address_hash,
            submitter_name: params["submitter_name"],
