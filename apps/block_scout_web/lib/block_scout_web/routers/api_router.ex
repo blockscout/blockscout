@@ -219,6 +219,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if @chain_type == :scroll do
         get("/scroll-batch/:batch_number", V2.BlockController, :scroll_batch)
       end
+
+      chain_scope :ethereum do
+        get("/:block_hash_or_number/beacon/deposits", V2.BlockController, :beacon_deposits)
+      end
     end
 
     scope "/addresses" do
@@ -246,6 +250,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       chain_scope :celo do
         get("/:address_hash_param/celo/election-rewards", V2.AddressController, :celo_election_rewards)
         get("/:address_hash_param/celo/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
+      end
+
+      chain_scope :ethereum do
+        get("/:address_hash_param/beacon/deposits", V2.AddressController, :beacon_deposits)
       end
     end
 
@@ -425,6 +433,13 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
       scope "/metadata" do
         get("/addresses", V2.Proxy.MetadataController, :addresses)
+      end
+    end
+
+    chain_scope :ethereum do
+      scope "/beacon" do
+        get("/deposits", V2.DepositController, :list)
+        get("/deposits/count", V2.DepositController, :count)
       end
     end
 

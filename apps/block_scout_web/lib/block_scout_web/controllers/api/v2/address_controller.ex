@@ -30,9 +30,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias BlockScoutWeb.AccessHelper
-  alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
+  alias BlockScoutWeb.API.V2.{BlockView, DepositController, DepositView, TransactionView, WithdrawalView}
   alias Explorer.{Chain, Market, PagingOptions}
-  alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, Beacon.Deposit, Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Address.{CoinBalance, Counters}
 
   alias Explorer.Chain.Token.Instance
@@ -1384,6 +1384,62 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     else
       _ ->
         PagingOptions.default_paging_options()
+    end
+  end
+
+  operation :beacon_deposits,
+    summary: "List Beacon Deposits for a specific address",
+    description: "Retrieves Beacon deposits for a specific address.",
+    parameters:
+      base_params() ++
+        [address_hash_param()] ++
+        define_paging_params(["deposit_index", "items_count"]),
+    responses: [
+      ok:
+        {"Beacon deposits for the specified address.", "application/json",
+         paginated_response(
+           items: Schemas.Beacon.Deposit,
+           next_page_params_example: %{
+             "index" => 123,
+             "items_count" => 50
+           },
+           title_prefix: "AddressBeaconDeposits"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    ]
+
+  def beacon_deposits(conn, %{address_hash_param: address_hash_param} = params) do
+    with {:ok, address_hash} <- validate_address_hash(address_hash_param, params) do
+      full_options =
+        [
+          necessity_by_association: %{
+            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+            [withdrawal_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
+              :optional
+          },
+          api?: true
+        ]
+        |> Keyword.merge(DepositController.paging_options(params))
+
+      deposit_plus_one = Deposit.from_address_hash(address_hash, full_options)
+      {deposits, next_page} = split_list_by_page(deposit_plus_one)
+
+      next_page_params =
+        next_page
+        |> next_page_params(
+          deposits,
+          delete_parameters_from_next_page_params(params),
+          DepositController.paging_function()
+        )
+
+      conn
+      |> put_status(200)
+      |> put_view(DepositView)
+      |> render(:deposits, %{
+        deposits: deposits |> maybe_preload_ens() |> maybe_preload_metadata(),
+        next_page_params: next_page_params
+      })
     end
   end
 
