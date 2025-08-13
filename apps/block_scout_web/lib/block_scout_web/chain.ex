@@ -147,7 +147,15 @@ defmodule BlockScoutWeb.Chain do
   def next_page_params(_, list, params, paging_function) do
     paging_params = paging_function.(List.last(list))
 
-    next_page_params = Map.merge(params, paging_params)
+    atomized_keys =
+      paging_params
+      |> Map.keys()
+      |> Enum.map(fn
+        key when is_atom(key) -> Atom.to_string(key)
+        key -> key
+      end)
+
+    next_page_params = Map.merge(params |> Map.drop(atomized_keys), paging_params)
     current_items_count_string = Map.get(next_page_params, "items_count")
 
     items_count =
