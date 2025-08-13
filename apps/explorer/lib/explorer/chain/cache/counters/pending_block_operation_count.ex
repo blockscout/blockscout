@@ -59,7 +59,10 @@ defmodule Explorer.Chain.Cache.Counters.PendingBlockOperationCount do
 
           LastFetchedCounter.upsert(params)
 
-          set_count(%ConCache.Item{ttl: CacheCountersHelper.ttl(__MODULE__, "CACHE_PBO_COUNT_PERIOD"), value: result})
+          set_count(%ConCache.Item{
+            ttl: CacheCountersHelper.ttl(__MODULE__, "CACHE_PENDING_OPERATIONS_COUNT_PERIOD"),
+            value: result
+          })
         rescue
           e ->
             Logger.debug([

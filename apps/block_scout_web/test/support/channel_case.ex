@@ -35,8 +35,6 @@ defmodule BlockScoutWeb.ChannelCase do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
     end
 
-    Explorer.TestHelper.run_necessary_background_migrations()
-
     :ok
     # {k:ok, conn: %Plug.Conn{} |> Plug.Conn.put_private(:phoenix_endpoint, BlockScoutWeb.Endpoint)}
   end
