@@ -4,7 +4,8 @@ defmodule Indexer.Fetcher.Beacon.Client do
   """
   require Logger
 
-  alias Explorer.HttpClient
+  alias Explorer.{Chain, HttpClient}
+  alias Explorer.Chain.Hash
 
   @request_error_msg "Error while sending request to beacon rpc"
 
@@ -79,9 +80,39 @@ defmodule Indexer.Fetcher.Beacon.Client do
     http_get_request(header_url(slot))
   end
 
+  @spec get_deposit_contract_address_hash :: {:ok, Hash.Address.t()} | {:error, any()}
+  def get_deposit_contract_address_hash do
+    chain_id = Application.get_env(:indexer, :chain_id)
+
+    with {:ok, %{"data" => %{"chain_id" => ^chain_id, "address" => address_hash_str}}} <-
+           http_get_request(deposit_contract_url()),
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_str) do
+      {:ok, address_hash}
+    else
+      {:ok, %{"data" => _}} = response ->
+        {:error,
+         "Wrong /eth/v1/config/deposit_contract response format or misconfigured CHAIN_ID env #{inspect(response)}"}
+
+      :error ->
+        {:error, "Failed to parse deposit contract address from /eth/v1/config/deposit_contract"}
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  @spec get_pending_deposits(integer() | String.t()) :: {:error, any()} | {:ok, any()}
+  def get_pending_deposits(slot) do
+    http_get_request(pending_deposits_url(slot))
+  end
+
   def blob_sidecars_url(slot), do: "#{base_url()}" <> "/eth/v1/beacon/blob_sidecars/" <> to_string(slot)
 
   def header_url(slot), do: "#{base_url()}" <> "/eth/v1/beacon/headers/" <> to_string(slot)
+
+  defp pending_deposits_url(epoch), do: "#{base_url()}/eth/v1/beacon/states/#{epoch}/pending_deposits"
+
+  defp deposit_contract_url, do: "#{base_url()}/eth/v1/config/deposit_contract"
 
   def base_url do
     Application.get_env(:indexer, Indexer.Fetcher.Beacon)[:beacon_rpc]
