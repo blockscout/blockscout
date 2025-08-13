@@ -256,6 +256,8 @@ defmodule Indexer.Supervisor do
          ]},
         {Indexer.Fetcher.Zilliqa.ScillaSmartContracts.Supervisor, [[memory_monitor: memory_monitor]]},
         {Indexer.Fetcher.Beacon.Blob.Supervisor, [[memory_monitor: memory_monitor]]},
+        {Indexer.Fetcher.Beacon.Deposit.Supervisor, []},
+        {Indexer.Fetcher.Beacon.Deposit.Status.Supervisor, []},
         {Indexer.Fetcher.SignedAuthorizationStatus.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
 

@@ -916,6 +916,7 @@ disable_multichain_search_db_export_counters_queue_fetcher =
 
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
+  chain_id: System.get_env("CHAIN_ID"),
   metadata_updater_milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_METADATA_UPDATE_INTERVAL", "48h"),
   block_ranges: block_ranges,
   first_block: first_block,
@@ -1390,6 +1391,35 @@ config :indexer, Indexer.Fetcher.Beacon.Blob,
     ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_REFERENCE_TIMESTAMP", 1_702_824_023),
   start_block: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_START_BLOCK", 19_200_000),
   end_block: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_BLOB_FETCHER_END_BLOCK", 0)
+
+config :indexer, Indexer.Fetcher.Beacon.Deposit.Supervisor,
+  disabled?:
+    ConfigHelper.chain_type() != :ethereum ||
+      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BEACON_DEPOSIT_FETCHER")
+
+config :indexer, Indexer.Fetcher.Beacon.Deposit,
+  domain_deposit:
+    "INDEXER_BEACON_DEPOSIT_DOMAIN"
+    |> System.get_env("0x03000000")
+    |> String.trim_leading("0x")
+    |> Base.decode16!(case: :mixed),
+  genesis_fork_version:
+    "INDEXER_BEACON_DEPOSIT_GENESIS_FORK_VERSION"
+    |> System.get_env("0x00000000")
+    |> String.trim_leading("0x")
+    |> Base.decode16!(case: :mixed),
+  interval: ConfigHelper.parse_time_env_var("INDEXER_BEACON_DEPOSIT_FETCHER_INTERVAL", "6s"),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_DEPOSIT_FETCHER_BATCH_SIZE", 100)
+
+config :indexer, Indexer.Fetcher.Beacon.Deposit.Status.Supervisor,
+  disabled?:
+    ConfigHelper.chain_type() != :ethereum ||
+      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BEACON_DEPOSIT_STATUS_FETCHER")
+
+config :indexer, Indexer.Fetcher.Beacon.Deposit.Status,
+  epoch_duration: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_DEPOSIT_STATUS_FETCHER_EPOCH_DURATION", 384),
+  reference_timestamp:
+    ConfigHelper.parse_integer_env_var("INDEXER_BEACON_DEPOSIT_STATUS_FETCHER_REFERENCE_TIMESTAMP", 1_722_024_023)
 
 config :indexer, Indexer.Fetcher.Shibarium.L1,
   rpc: System.get_env("INDEXER_SHIBARIUM_L1_RPC"),
