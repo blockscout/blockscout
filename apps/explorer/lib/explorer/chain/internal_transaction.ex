@@ -428,7 +428,6 @@ defmodule Explorer.Chain.InternalTransaction do
     |> check_constraint(:call_type, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
     |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_input)
     |> foreign_key_constraint(:transaction_hash)
-    |> unique_constraint(:index)
   end
 
   @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number)a
@@ -443,7 +442,6 @@ defmodule Explorer.Chain.InternalTransaction do
     |> validate_create_error_or_result()
     |> check_constraint(:init, message: ~S|can't be blank when type is 'create'|, name: :create_has_init)
     |> foreign_key_constraint(:transaction_hash)
-    |> unique_constraint(:index)
   end
 
   @selfdestruct_optional_fields ~w(block_number)a
@@ -454,7 +452,6 @@ defmodule Explorer.Chain.InternalTransaction do
     changeset
     |> cast(attrs, @selfdestruct_allowed_fields)
     |> validate_required(@selfdestruct_required_fields)
-    |> unique_constraint(:index)
   end
 
   @stop_optional_fields ~w(from_address_hash gas gas_used error)a
@@ -465,7 +462,6 @@ defmodule Explorer.Chain.InternalTransaction do
     changeset
     |> cast(attrs, @stop_allowed_fields)
     |> validate_required(@stop_required_fields)
-    |> unique_constraint(:index)
   end
 
   defp type_changeset(changeset, _, nil), do: changeset
@@ -586,9 +582,10 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @doc """
-  Filters out internal_transactions of blocks that are flagged as needing fetching
+  Filters out internal_transactions of blocks or transactions that are flagged as needing fetching
   of internal_transactions
   """
+  @spec where_nonpending_operation(Ecto.Query.t() | module()) :: Ecto.Query.t()
   def where_nonpending_operation(query \\ __MODULE__) do
     case PendingOperationsHelper.pending_operations_type() do
       "blocks" ->
