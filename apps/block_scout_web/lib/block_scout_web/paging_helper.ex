@@ -228,6 +228,8 @@ defmodule BlockScoutWeb.PagingHelper do
     params
     |> Map.drop([
       :address_hash_param,
+      :apikey,
+      "apikey",
       "block_hash_or_number",
       "transaction_hash_param",
       "address_hash_param",
