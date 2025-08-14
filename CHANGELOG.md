@@ -4,6 +4,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix Mud worlds API endpoint ([#12991](https://github.com/blockscout/blockscout/pull/12991))
 - Set 5 RPS for api/health/* ([#12990]https://github.com/blockscout/blockscout/pull/12990)
 - Pagination with atoms in paging_params ([#12986](https://github.com/blockscout/blockscout/issues/12986))
 - Fix RangesHelper.sanitize_ranges for empty list ([#12946](https://github.com/blockscout/blockscout/issues/12946))
