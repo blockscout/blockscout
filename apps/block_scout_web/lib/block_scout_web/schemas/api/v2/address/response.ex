@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
     type: :object,
     properties: %{
       id: %Schema{
-        type: :boolean,
+        type: :string,
         description: "Short f0 Filecoin address that may change during chain reorgs",
         example: "f086971",
         nullable: true
