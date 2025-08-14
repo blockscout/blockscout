@@ -4,6 +4,7 @@
 
 ### 🐛 Bug Fixes
 
+- atoms in token_transfers_next_page_params ([#12992](https://github.com/blockscout/blockscout/pull/12992))
 - Fix Mud worlds API endpoint ([#12991](https://github.com/blockscout/blockscout/pull/12991))
 - Set 5 RPS for api/health/* ([#12990]https://github.com/blockscout/blockscout/pull/12990)
 - Pagination with atoms in paging_params ([#12986](https://github.com/blockscout/blockscout/issues/12986))
