@@ -1,8 +1,80 @@
 defmodule BlockScoutWeb.ChainTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain.{Address, Block, Transaction, TokenTransfer}
   alias BlockScoutWeb.Chain
+
+  describe "next_page_params/4" do
+    # https://github.com/blockscout/blockscout/issues/12984
+    test "does not return duplicated keys" do
+      assert Chain.next_page_params([nil], [%{id: 123}], %{"id" => 178}, fn x -> x end) == %{
+               "items_count" => 1,
+               id: 123
+             }
+    end
+  end
+
+  describe "token_transfers_next_page_params/3" do
+    # https://github.com/blockscout/blockscout/issues/12984
+    test "does not return duplicated keys" do
+      assert Chain.token_transfers_next_page_params(
+               [%TokenTransfer{block_number: 1, log_index: 3}],
+               [%TokenTransfer{block_number: 1, log_index: 2}],
+               %{
+                 "block_number" => 5,
+                 "index" => 4
+               }
+             ) == %{
+               block_number: 1,
+               index: 2
+             }
+    end
+
+    test "does not return duplicated keys with batch transfer" do
+      assert Chain.token_transfers_next_page_params(
+               [
+                 %TokenTransfer{
+                   block_number: 1,
+                   log_index: 2,
+                   block_hash: "0x123",
+                   transaction_hash: "0x456",
+                   index_in_batch: 1
+                 }
+               ],
+               [
+                 %TokenTransfer{
+                   block_number: 1,
+                   log_index: 2,
+                   block_hash: "0xabc",
+                   transaction_hash: "0xdef",
+                   index_in_batch: 3
+                 },
+                 %TokenTransfer{
+                   block_number: 1,
+                   log_index: 2,
+                   block_hash: "0x123",
+                   transaction_hash: "0x456",
+                   index_in_batch: 2
+                 }
+               ],
+               %{
+                 "block_number" => 5,
+                 "index" => 4,
+                 "batch_log_index" => 3,
+                 "batch_block_hash" => "0x789",
+                 "batch_transaction_hash" => "0xabc",
+                 "index_in_batch" => 2
+               }
+             ) == %{
+               :block_number => 1,
+               :index => 2,
+               :batch_block_hash => "0x123",
+               :batch_log_index => 2,
+               :batch_transaction_hash => "0x456",
+               :index_in_batch => 2
+             }
+    end
+  end
 
   describe "current_filter/1" do
     test "sets direction based on to filter" do
