@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
   alias Explorer.Chain.{Block, DenormalizationHelper, Transaction}
   alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.History.Process, as: HistoryProcess
@@ -253,6 +254,12 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
     Logger.info("tx/per day chart: number of inserted #{num_inserted}")
 
+    # we need to store the last timestamp of success to use it in Indexer.Fetcher.MultichainSearchDb.MainPageCountersFetcher
+    LastFetchedCounter.upsert(%{
+      counter_type: transaction_stats_last_save_records_timestamp(),
+      value: DateTime.to_unix(DateTime.utc_now())
+    })
+
     Publisher.broadcast(:transaction_stats)
     num_inserted
   end
@@ -268,5 +275,9 @@ defmodule Explorer.Chain.Transaction.History.Historian do
   @spec date_today() :: Date.t()
   defp date_today do
     HistoryProcess.config_or_default(:utc_today, Date.utc_today(), __MODULE__)
+  end
+
+  def transaction_stats_last_save_records_timestamp do
+    "transaction_stats_last_save_records_timestamp"
   end
 end
