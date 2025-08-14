@@ -13,8 +13,8 @@ defmodule Explorer.Chain.Celo.Account do
 
   alias Explorer.Chain.{Address, Hash, Wei}
 
-  @required_attrs ~w(address_hash type)a
-  @optional_attrs ~w(name metadata_url nonvoting_locked_celo locked_celo)a
+  @required_attrs ~w(address_hash)a
+  @optional_attrs ~w(type name metadata_url nonvoting_locked_celo locked_celo)a
   @allowed_attrs @required_attrs ++ @optional_attrs
 
   @typedoc """
