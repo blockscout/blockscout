@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
   @behaviour BufferedTask
 
   @delete_queries_chunk_size 10
-  @default_max_batch_size 1000
+  @default_max_batch_size 3000
   @default_max_concurrency 10
   @failed_to_re_export_data_error "Batch balances export retry to the Multichain Search DB failed"
 
