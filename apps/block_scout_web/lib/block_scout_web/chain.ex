@@ -147,15 +147,9 @@ defmodule BlockScoutWeb.Chain do
   def next_page_params(_, list, params, paging_function) do
     paging_params = paging_function.(List.last(list))
 
-    atomized_keys =
-      paging_params
-      |> Map.keys()
-      |> Enum.map(fn
-        key when is_atom(key) -> Atom.to_string(key)
-        key -> key
-      end)
+    string_keys = map_to_string_keys(paging_params)
 
-    next_page_params = Map.merge(params |> Map.drop(atomized_keys), paging_params)
+    next_page_params = Map.merge(params |> Map.drop(string_keys), paging_params)
     current_items_count_string = Map.get(next_page_params, "items_count")
 
     items_count =
@@ -980,7 +974,10 @@ defmodule BlockScoutWeb.Chain do
         |> last_token_transfer_before_current(current_token_transfer)
         |> (&if(is_nil(&1), do: %{}, else: paging_params(&1))).()
 
+      string_keys = map_to_string_keys(new_params)
+
       params
+      |> Map.drop(["batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch" | string_keys])
       |> Map.merge(new_params)
       |> Map.merge(%{
         batch_log_index: current_token_transfer.log_index,
@@ -989,7 +986,15 @@ defmodule BlockScoutWeb.Chain do
         index_in_batch: current_token_transfer.index_in_batch
       })
     else
-      Map.merge(params, paging_params(List.last(list)))
+      new_params = paging_params(List.last(list))
+
+      string_keys = map_to_string_keys(new_params)
+
+      Map.merge(
+        params
+        |> Map.drop(["batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch" | string_keys]),
+        new_params
+      )
     end
   end
 
@@ -1040,4 +1045,13 @@ defmodule BlockScoutWeb.Chain do
   @spec fetch_scam_token_toggle(Keyword.t(), Plug.Conn.t()) :: Keyword.t()
   def fetch_scam_token_toggle(params, conn),
     do: Keyword.put(params, :show_scam_tokens?, conn.cookies["show_scam_tokens"] |> parse_boolean())
+
+  defp map_to_string_keys(map) do
+    map
+    |> Map.keys()
+    |> Enum.map(fn
+      key when is_atom(key) -> Atom.to_string(key)
+      key -> key
+    end)
+  end
 end
