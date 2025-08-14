@@ -6,8 +6,55 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
 
   @filecoin_robust_address_schema %Schema{
     type: :string,
+    description: "Robust f0/f1/f2/f3/f4 Filecoin address",
     example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
     nullable: true
+  }
+
+  @filecoin_schema %Schema{
+    type: :object,
+    properties: %{
+      id: %Schema{
+        type: :boolean,
+        description: "Short f0 Filecoin address that may change during chain reorgs",
+        example: "f086971",
+        nullable: true
+      },
+      robust: @filecoin_robust_address_schema,
+      actor_type: %Schema{
+        type: :string,
+        description: "Type of actor associated with the Filecoin address",
+        enum: [
+          "account",
+          "cron",
+          "datacap",
+          "eam",
+          "ethaccount",
+          "evm",
+          "init",
+          "market",
+          "miner",
+          "multisig",
+          "paych",
+          "placeholder",
+          "power",
+          "reward",
+          "system",
+          "verifreg",
+          "paymentchannel"
+        ],
+        nullable: true
+      }
+    },
+    required: [:is_filecoin_robust_address]
+  }
+
+  @zilliqa_schema %Schema{
+    type: :object,
+    properties: %{
+      is_scilla_contract: %Schema{type: :boolean, nullable: false}
+    },
+    required: [:is_scilla_contract]
   }
 
   @doc """
@@ -25,11 +72,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
       :filecoin ->
         schema
         |> put_in([:properties, :creator_filecoin_robust_address], @filecoin_robust_address_schema)
-        |> update_in([:required], &[:creator_filecoin_robust_address | &1])
+        |> put_in([:properties, :filecoin], @filecoin_schema)
+        |> update_in([:required], &[:creator_filecoin_robust_address, :filecoin | &1])
 
       :zilliqa ->
         schema
-        |> put_in([:properties, :is_scilla_contract], %Schema{type: :boolean, nullable: false})
+        |> put_in([:properties, :zilliqa], @zilliqa_schema)
+        |> update_in([:required], &[:zilliqa | &1])
 
       _ ->
         schema
