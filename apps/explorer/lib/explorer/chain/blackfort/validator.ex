@@ -164,7 +164,7 @@ defmodule Explorer.Chain.Blackfort.Validator do
     {:ok,
      validators
      |> Enum.map(
-       # todo: remove it in favour `address_hash` when the frontend is bound to the new filed (create the task to frontend repo).
+       # todo: remove it in favour `address_hash` in 10.0.0 (frontend task https://github.com/blockscout/frontend/issues/2946).
        fn %{
             "address_hash" => address_hash_string,
             "address" => address_hash_string,
