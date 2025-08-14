@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
         nullable: true
       }
     },
-    required: [:is_filecoin_robust_address]
+    required: [:id, :robust, :actor_type]
   }
 
   @zilliqa_schema %Schema{
