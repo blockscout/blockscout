@@ -393,7 +393,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         end
       end
 
-      # deprecate in the next major/minor release after 9.0.0
+      # todo: deprecate in the next major/minor release after 9.0.0
       scope "/3dparty" do
         get("/:platform_id", V2.Proxy.UniversalProxyController, :index)
 
