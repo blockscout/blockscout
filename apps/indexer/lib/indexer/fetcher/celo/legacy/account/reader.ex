@@ -134,8 +134,8 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
           :ok,
           %{
             address_hash: account_address,
-            name: name,
-            metadata_url: url,
+            name: truncate(name),
+            metadata_url: truncate(url),
             locked_celo: locked_gold,
             nonvoting_locked_celo: nonvoting_locked_gold,
             type: type
@@ -149,6 +149,11 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
 
         :error
     end
+  end
+
+  @spec truncate(binary()) :: binary()
+  defp truncate(binary) when is_binary(binary) do
+    String.slice(binary, 0..254)
   end
 
   @spec do_fetch(String.t()) :: {:ok, keyword()} | {:error, any()}

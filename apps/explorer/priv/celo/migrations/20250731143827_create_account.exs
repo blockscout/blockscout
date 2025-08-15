@@ -26,10 +26,14 @@ defmodule Explorer.Repo.Celo.Migrations.CreateAccount do
       add(:metadata_url, :string)
       add(:nonvoting_locked_celo, :numeric, precision: 100, null: false)
       add(:locked_celo, :numeric, precision: 100, null: false)
+
       # add(:attestations_requested, :integer, null: false, default: 0)
       # add(:attestations_fulfilled, :integer, null: false, default: 0)
 
       timestamps()
     end
+
+    create(constraint(:celo_accounts, :nonvoting_locked_celo_nonnegative, check: "nonvoting_locked_celo >= 0"))
+    create(constraint(:celo_accounts, :locked_celo_nonnegative, check: "locked_celo >= 0"))
   end
 end

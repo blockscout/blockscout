@@ -51,7 +51,7 @@ defmodule Explorer.Migrator.CeloAccounts do
     %{accounts: pending_operation_params} = Accounts.parse(logs)
 
     unique_pending_operation_params = Enum.uniq_by(pending_operation_params, & &1.address_hash)
-    address_params = Enum.map(unique_pending_operation_params, &%{hash: &1})
+    address_params = Enum.map(unique_pending_operation_params, &%{hash: &1.address_hash})
 
     Chain.import(%{
       addresses: %{params: address_params},
