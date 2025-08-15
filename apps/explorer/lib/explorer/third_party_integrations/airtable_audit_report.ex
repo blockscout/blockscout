@@ -1,18 +1,18 @@
-defmodule Explorer.ThirdPartyIntegrations.AirTable do
+defmodule Explorer.ThirdPartyIntegrations.AirTableAuditReport do
   @moduledoc """
-    Module is responsible for submitting requests for public tags and audit reports to AirTable
+    Module is responsible for submitting audit reports to AirTable
   """
   require Logger
 
   alias Ecto.Changeset
   alias Explorer.Chain.SmartContract.AuditReport
-  alias Explorer.{HttpClient, Repo}
+  alias Explorer.HttpClient
 
   @doc """
     Submits a public tags request or audit report to AirTable
   """
-  @spec submit({:ok, PublicTagsRequest.t()} | {:error, Changeset.t()} | Changeset.t()) ::
-          {:ok, PublicTagsRequest.t()} | {:error, Changeset.t()} | Changeset.t()
+  @spec submit({:ok, AuditReport.t()} | {:error, Changeset.t()} | Changeset.t()) ::
+          {:ok, AuditReport.t()} | {:error, Changeset.t()} | Changeset.t()
 
   def submit(%Changeset{} = changeset), do: submit(Changeset.apply_action(changeset, :insert), changeset)
 

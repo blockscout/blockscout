@@ -445,11 +445,6 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
     end
   end
 
-
-
-
-
-
   def get_csrf(conn, _) do
     with {:auth, %{id: _}} <- {:auth, current_user(conn)} do
       conn
