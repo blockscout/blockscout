@@ -123,7 +123,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :rewards => :optional,
         :transactions => :optional,
         :withdrawals => :optional,
-        :internal_transactions => :optional
+        :internal_transactions => :optional,
+        :beacon_deposits => :optional
       }
       |> Map.merge(@chain_type_block_necessity_by_association),
     api?: true
