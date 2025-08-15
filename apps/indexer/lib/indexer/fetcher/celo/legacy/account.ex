@@ -133,6 +133,10 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
       {:ok, _imported} ->
         Logger.info("Imported #{Enum.count(accounts)} Celo accounts.")
 
+        accounts
+        |> Enum.map(& &1.address_hash)
+        |> PendingAccountOperation.delete_by_address_hashes()
+
         :ok
 
       {:error, reason} ->
