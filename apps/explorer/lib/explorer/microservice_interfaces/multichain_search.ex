@@ -5,9 +5,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.{Block, Hash, Transaction, Wei}
+  alias Explorer.Chain.{Block, Hash, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Range
-  alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue}
+  alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue, TokenInfoExportQueue}
   alias Explorer.{Helper, HttpClient, Repo}
   alias Explorer.Utility.Microservice
 
@@ -112,6 +112,92 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
+  @doc """
+    Processes a batch export of token info by splitting the items from db queue into chunks and sending each chunk as an HTTP POST request to a configured microservice endpoint.
+
+    If the microservice is enabled, the function:
+    - Splits the input `items_from_db_queue` into manageable chunks.
+    - Sends each chunk concurrently using `Task.async_stream/5` with a maximum concurrency and timeout.
+    - Collects the results, merging any errors and accumulating data that needs to be retried.
+    - Returns `{:ok, {:chunks_processed, chunks}}` if all chunks are processed successfully.
+    - Returns `{:error, data_to_retry}` if any chunk fails, where `data_to_retry` contains tokens that need to be retried.
+
+    If the microservice is disabled, returns `{:ok, :service_disabled}`.
+
+    ## Parameters
+    - `items_from_db_queue`: The queue items to be exported, which will be split into chunks for processing.
+
+    ## Returns
+    - `{:ok, any()}`: If all chunks are processed successfully or the service is disabled.
+    - `{:error, map()}`: If one or more chunks fail, with details about the data that needs to be retried.
+  """
+  @spec batch_export_token_info([
+          %{
+            :address_hash => binary(),
+            :data_type => :metadata | :total_supply | :counters | :market_data,
+            :data => map()
+          }
+        ]) :: {:ok, any()} | {:error, map()}
+  def batch_export_token_info(items_from_db_queue) do
+    if enabled?() do
+      url = batch_import_url()
+      api_key = api_key()
+      chain_id = to_string(ChainId.get_id())
+
+      chunks =
+        items_from_db_queue
+        |> Enum.chunk_every(token_info_chunk_size())
+        |> Enum.map(fn chunk_items ->
+          %{
+            api_key: api_key,
+            chain_id: chain_id,
+            tokens: Enum.map(chunk_items, &token_info_queue_item_to_http_item(&1))
+          }
+        end)
+
+      chunks
+      |> Task.async_stream(
+        fn export_body -> http_post_request(url, export_body) end,
+        max_concurrency: @max_concurrency,
+        timeout: @post_timeout,
+        zip_input_on_exit: true
+      )
+      |> Enum.reduce({:ok, {:chunks_processed, chunks}}, fn
+        {:ok, {:ok, _result}}, acc ->
+          acc
+
+        {:ok, {:error, error}}, acc ->
+          token_info_on_error(error)
+
+          case acc do
+            {:ok, {:chunks_processed, _}} ->
+              {:error, %{tokens: error.data_to_retry.tokens}}
+
+            {:error, data_to_retry} ->
+              {:error, %{tokens: data_to_retry.tokens ++ error.data_to_retry.tokens}}
+          end
+
+        {:exit, {export_body, reason}}, acc ->
+          token_info_on_error(%{
+            url: url,
+            data_to_retry: export_body,
+            reason: reason
+          })
+
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          case acc do
+            {:ok, {:chunks_processed, _}} ->
+              {:error, %{tokens: export_body.tokens}}
+
+            {:error, data_to_retry} ->
+              {:error, %{tokens: data_to_retry.tokens ++ export_body.tokens}}
+          end
+      end)
+    else
+      {:ok, :service_disabled}
+    end
+  end
+
   defp log_error(%{
          url: url,
          data_to_retry: data_to_retry,
@@ -180,6 +266,110 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp on_error(_), do: :ignore
 
+  # Logs error when trying to send token info from the queue to Multichain service
+  # and increments `retries_number` counter of the corresponding queue items.
+  #
+  # ## Parameters
+  # - `error`: A map with the queue items.
+  #
+  # ## Returns
+  # - Nothing.
+  @spec token_info_on_error(%{
+          :data_to_retry => %{:tokens => [map()], optional(any()) => any()},
+          optional(any()) => any()
+        }) :: any()
+  defp token_info_on_error(%{data_to_retry: data_to_retry} = error) do
+    log_error(error)
+
+    prepared_token_info_data =
+      data_to_retry.tokens
+      |> Enum.map(&token_info_http_item_to_queue_item(&1))
+      |> Helper.add_timestamps()
+
+    Repo.insert_all(
+      TokenInfoExportQueue,
+      prepared_token_info_data,
+      on_conflict: TokenInfoExportQueue.increase_retries_on_conflict(),
+      conflict_target: [:address_hash, :data_type]
+    )
+  end
+
+  defp token_info_on_error(_), do: :ignore
+
+  @doc """
+    Converts database queue item with token info to the item ready to send to Multichain service via HTTP.
+
+    ## Parameters
+    - `item_from_db_queue`: The queue item map from database.
+
+    ## Returns
+    - A map ready to send to Multichain service via HTTP.
+  """
+  @spec token_info_queue_item_to_http_item(%{
+          :address_hash => binary(),
+          :data_type => :metadata | :total_supply | :counters | :market_data,
+          :data => map()
+        }) ::
+          %{:address_hash => String.t(), :metadata => map()}
+          | %{:address_hash => String.t(), :counters => map()}
+          | %{:address_hash => String.t(), :price_data => map()}
+  def token_info_queue_item_to_http_item(item_from_db_queue) do
+    token = %{address_hash: "0x" <> Base.encode16(item_from_db_queue.address_hash, case: :lower)}
+
+    case item_from_db_queue.data_type do
+      :metadata -> Map.put(token, :metadata, item_from_db_queue.data)
+      :total_supply -> Map.put(token, :metadata, item_from_db_queue.data)
+      :counters -> Map.put(token, :counters, item_from_db_queue.data)
+      :market_data -> Map.put(token, :price_data, item_from_db_queue.data)
+    end
+  end
+
+  @doc """
+    Converts queue item (containing token info) ready to send to Multichain service via HTTP
+    to the queue item ready to be written to the database.
+
+    ## Parameters
+    - `http_item`: The queue item for HTTP.
+
+    ## Returns
+    - A map ready to write to the database.
+  """
+  @spec token_info_http_item_to_queue_item(
+          %{:address_hash => String.t(), :metadata => map()}
+          | %{:address_hash => String.t(), :counters => map()}
+          | %{:address_hash => String.t(), :price_data => map()}
+        ) :: %{
+          :address_hash => binary(),
+          :data_type => :metadata | :total_supply | :counters | :market_data,
+          :data => map()
+        }
+  def token_info_http_item_to_queue_item(%{address_hash: "0x" <> address_string} = http_item) do
+    {:ok, address_hash} = Base.decode16(address_string, case: :mixed)
+
+    metadata = Map.get(http_item, :metadata)
+
+    {data_type, data} =
+      cond do
+        !is_nil(metadata) and (!is_nil(Map.get(metadata, :token_type)) or !is_nil(Map.get(metadata, "token_type"))) ->
+          {:metadata, http_item[:metadata]}
+
+        !is_nil(metadata) ->
+          {:total_supply, http_item[:metadata]}
+
+        !is_nil(Map.get(http_item, :counters)) ->
+          {:counters, http_item[:counters]}
+
+        !is_nil(Map.get(http_item, :price_data)) ->
+          {:market_data, http_item[:price_data]}
+      end
+
+    %{
+      address_hash: address_hash,
+      data_type: data_type,
+      data: data
+    }
+  end
+
   @doc """
   Sends provided blockchain data to the appropriate export queues for further processing.
 
@@ -201,12 +391,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     - `:ok` if the data was successfully sent to the queues.
     - `:ignore` if the data is empty or the export functionality is disabled.
   """
-  @spec send_data_to_queue(%{
-          addresses: list(),
-          blocks: list(),
-          transactions: list(),
-          address_current_token_balances: list()
-        }) :: :ignore | :ok
+  @spec send_data_to_queue(map()) :: :ignore | :ok
   def send_data_to_queue(%{addresses: [], blocks: [], transactions: [], address_current_token_balances: []}),
     do: :ignore
 
@@ -219,13 +404,188 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
         Repo.insert_all(MainExportQueue, Helper.add_timestamps(prepared_main_data), on_conflict: :nothing)
 
-        Repo.insert_all(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data), on_conflict: :nothing)
+        Repo.insert_all(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data),
+          on_conflict: {:replace, [:value, :updated_at]},
+          conflict_target:
+            {:unsafe_fragment,
+             ~s<(address_hash, token_contract_address_hash_or_native, COALESCE(token_id, -1::integer::numeric))>}
+        )
       end)
 
       :ok
     else
       :ignore
     end
+  end
+
+  @doc """
+    Prepares token metadata for writing to database queue and subsequent sending to Multichain service.
+
+    ## Parameters
+    - `token`: An instance of `Token.t()` containing token type and probably `icon_url`.
+    - `metadata`: A map with token metadata.
+
+    ## Returns
+    - A map containing token type and its metadata in the format approved on Multichain service.
+  """
+  @spec prepare_token_metadata_for_queue(Token.t(), %{
+          :token_type => String.t(),
+          optional(:name) => String.t(),
+          optional(:symbol) => String.t(),
+          optional(:decimals) => non_neg_integer(),
+          optional(:total_supply) => non_neg_integer(),
+          optional(any()) => any()
+        }) :: %{
+          optional(:token_type) => String.t(),
+          optional(:name) => String.t(),
+          optional(:symbol) => String.t(),
+          optional(:decimals) => String.t(),
+          optional(:total_supply) => String.t(),
+          optional(:icon_url) => String.t()
+        }
+  def prepare_token_metadata_for_queue(%Token{} = token, metadata) do
+    if enabled?() do
+      %{token_type: token.type}
+      |> token_optional_field(metadata, :name)
+      |> token_optional_field(metadata, :symbol)
+      |> token_optional_field(token, :icon_url)
+      |> token_optional_field(metadata, :decimals)
+      |> token_optional_field(metadata, :total_supply, true)
+    else
+      %{}
+    end
+  end
+
+  @doc """
+    Prepares token total supply for writing to database queue and subsequent sending to Multichain service.
+
+    ## Parameters
+    - `total_supply`: The total supply value. Can be `nil`.
+
+    ## Returns
+    - A map containing total supply in the format approved on Multichain service.
+    - `nil` if the `total_supply` parameter is `nil`.
+  """
+  @spec prepare_token_total_supply_for_queue(non_neg_integer() | nil) :: %{:total_supply => String.t()} | nil
+  def prepare_token_total_supply_for_queue(nil), do: nil
+
+  def prepare_token_total_supply_for_queue(total_supply) do
+    if enabled?() do
+      %{total_supply: to_string(total_supply)}
+    end
+  end
+
+  @doc """
+    Prepares token market data (such as price and market cap) for writing to database queue
+    and subsequent sending to Multichain service.
+
+    ## Parameters
+    - `token`: A token map containing the market data.
+
+    ## Returns
+    - A map containing the market data in the format approved on Multichain service.
+  """
+  @spec prepare_token_market_data_for_queue(%{
+          optional(:fiat_value) => Decimal.t(),
+          optional(:circulating_market_cap) => Decimal.t(),
+          optional(any()) => any()
+        }) :: map()
+  def prepare_token_market_data_for_queue(token) do
+    if enabled?() do
+      %{}
+      |> token_optional_field(token, :fiat_value)
+      |> token_optional_field(token, :circulating_market_cap)
+      |> Enum.map(fn {key, value} ->
+        {key, Decimal.to_string(value, :normal)}
+      end)
+      |> Enum.into(%{})
+    else
+      %{}
+    end
+  end
+
+  @doc """
+    Prepares token counters for writing to database queue and subsequent sending to Multichain service.
+
+    ## Parameters
+    - `transfer_count`: The number of the token transfers count.
+    - `holder_count`: The number of the token holders count.
+
+    ## Returns
+    - A map containing the counters in the format approved on Multichain service.
+  """
+  @spec prepare_token_counters_for_queue(non_neg_integer(), non_neg_integer()) :: %{
+          :transfers_count => String.t(),
+          :holders_count => String.t()
+        }
+  def prepare_token_counters_for_queue(transfers_count, holders_count) do
+    if enabled?() do
+      %{transfers_count: to_string(transfers_count), holders_count: to_string(holders_count)}
+    else
+      %{}
+    end
+  end
+
+  defp token_optional_field(data, metadata, key, convert_to_string \\ false) do
+    case Map.get(metadata, key) do
+      nil ->
+        data
+
+      value ->
+        if convert_to_string do
+          Map.put(data, key, to_string(value))
+        else
+          Map.put(data, key, value)
+        end
+    end
+  end
+
+  @doc """
+    Writes token info to database queue to send that to Multichain service later.
+
+    ## Parameters
+    - `entries`: A map of token entries with data prepared with one of the `prepare_token_*` functions.
+    - `entries_type`: A type of the token entries.
+
+    ## Returns
+    # - `:ok` if the data is accepted for insertion.
+    # - `:ignore` if the Multichain service is not used.
+  """
+  @spec send_token_info_to_queue(%{binary() => map()}, :metadata | :total_supply | :counters | :market_data) ::
+          :ok | :ignore
+  def send_token_info_to_queue(entries, entries_type) do
+    if enabled?() do
+      entries
+      |> extract_token_info_entries_into_chunks(entries_type)
+      |> Enum.each(fn chunk ->
+        Repo.insert_all(
+          TokenInfoExportQueue,
+          Helper.add_timestamps(chunk),
+          on_conflict: {:replace, [:data, :updated_at]},
+          conflict_target: [:address_hash, :data_type]
+        )
+      end)
+
+      :ok
+    else
+      :ignore
+    end
+  end
+
+  @spec extract_token_info_entries_into_chunks(
+          %{binary() => map()},
+          :metadata | :total_supply | :counters | :market_data
+        ) :: list()
+  defp extract_token_info_entries_into_chunks(entries, entries_type) do
+    entries
+    |> Enum.map(fn {address_hash, data} ->
+      %{
+        address_hash: address_hash,
+        data_type: entries_type,
+        data: data
+      }
+    end)
+    |> Enum.chunk_every(token_info_chunk_size())
   end
 
   # sobelow_skip ["DOS.StringToAtom"]
@@ -419,12 +779,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     indexed_addresses_chunks =
       addresses
+      |> Enum.sort_by(& &1.hash)
       |> Enum.uniq()
       |> Enum.chunk_every(addresses_chunk_size())
       |> Enum.with_index()
 
     indexed_address_coin_balances_chunks =
       address_coin_balances
+      |> Enum.sort_by(& &1.address_hash)
       |> Enum.uniq()
       |> Enum.reject(&is_nil(&1.value))
       |> Enum.chunk_every(addresses_chunk_size())
@@ -432,11 +794,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     address_token_balances =
       cond do
-        Map.has_key?(params, :address_current_token_balances) == true ->
+        Map.has_key?(params, :address_current_token_balances) ->
           params.address_current_token_balances
           |> Enum.map(&format_address_token_balance/1)
 
-        Map.has_key?(params, :address_token_balances) == true ->
+        Map.has_key?(params, :address_token_balances) ->
           params.address_token_balances
           |> Enum.map(fn address_token_balance ->
             %{
@@ -704,5 +1066,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp addresses_chunk_size do
     Application.get_env(:explorer, __MODULE__)[:addresses_chunk_size]
+  end
+
+  defp token_info_chunk_size do
+    Application.get_env(:explorer, __MODULE__)[:token_info_chunk_size]
   end
 end

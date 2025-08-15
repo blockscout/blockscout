@@ -267,6 +267,37 @@ defmodule Explorer.Factory do
     }
   end
 
+  def multichain_search_db_export_token_info_queue_factory do
+    [data_type] = Enum.take_random([:metadata, :total_supply, :counters, :market_data], 1)
+
+    data =
+      case data_type do
+        :metadata ->
+          %{
+            token_type: "ERC-20",
+            name: sequence("TokenName"),
+            symbol: sequence("TS"),
+            decimals: 18,
+            total_supply: "1000"
+          }
+
+        :total_supply ->
+          %{total_supply: "1000"}
+
+        :counters ->
+          %{transfers_count: "456", holders_count: "123"}
+
+        :market_data ->
+          %{fiat_value: "123.456", circulating_market_cap: "1000.0001"}
+      end
+
+    %MultichainSearchDb.TokenInfoExportQueue{
+      address_hash: address_hash().bytes,
+      data_type: data_type,
+      data: data
+    }
+  end
+
   def address_factory do
     %Address{
       hash: address_hash()

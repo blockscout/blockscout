@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       assert item["type"] == "address"
       assert item["name"] == name.name
-      assert item["address"] == Address.checksum(address.hash)
+      assert item["address_hash"] == Address.checksum(address.hash)
       assert item["url"] =~ Address.checksum(address.hash)
       assert item["is_smart_contract_verified"] == address.verified
     end
@@ -120,7 +120,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       assert item["type"] == "contract"
       assert item["name"] == contract.name
-      assert item["address"] == Address.checksum(contract.address_hash)
+      assert item["address_hash"] == Address.checksum(contract.address_hash)
       assert item["url"] =~ Address.checksum(contract.address_hash)
       assert item["is_smart_contract_verified"] == true
     end
@@ -205,7 +205,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(labels_from_api)
              |> Enum.all?(fn {label, item} ->
                label.tag.display_name == item["name"] && item["type"] == "label" &&
-                 item["address"] == Address.checksum(label.address_hash)
+                 item["address_hash"] == Address.checksum(label.address_hash)
              end)
 
       tokens_from_api = Enum.slice(response_2["items"], 1, 49) ++ Enum.slice(response_3["items"], 0, 2)
@@ -214,7 +214,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(tokens_from_api)
              |> Enum.all?(fn {token, item} ->
                token.name == item["name"] && item["type"] == "token" &&
-                 item["address"] == Address.checksum(token.contract_address_hash)
+                 item["address_hash"] == Address.checksum(token.contract_address_hash)
              end)
 
       contracts_from_api = Enum.slice(response_3["items"], 2, 48) ++ response_4["items"]
@@ -223,7 +223,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(contracts_from_api)
              |> Enum.all?(fn {contract, item} ->
                contract.name == item["name"] && item["type"] == "contract" &&
-                 item["address"] == Address.checksum(contract.address_hash)
+                 item["address_hash"] == Address.checksum(contract.address_hash)
              end)
     end
 
@@ -278,7 +278,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(labels_from_api)
              |> Enum.all?(fn {label, item} ->
                label.tag.display_name == item["name"] && item["type"] == "label" &&
-                 item["address"] == Address.checksum(label.address_hash)
+                 item["address_hash"] == Address.checksum(label.address_hash)
              end)
 
       tokens_from_api = Enum.slice(response_2["items"], 1, 49) ++ Enum.slice(response_3["items"], 0, 2)
@@ -287,7 +287,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(tokens_from_api)
              |> Enum.all?(fn {token, item} ->
                token.name == item["name"] && item["type"] == "token" &&
-                 item["address"] == Address.checksum(token.contract_address_hash)
+                 item["address_hash"] == Address.checksum(token.contract_address_hash)
              end)
 
       contracts_from_api = Enum.slice(response_3["items"], 2, 48) ++ response_4["items"]
@@ -296,7 +296,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(contracts_from_api)
              |> Enum.all?(fn {contract, item} ->
                contract.name == item["name"] && item["type"] == "contract" &&
-                 item["address"] == Address.checksum(contract.address_hash)
+                 item["address_hash"] == Address.checksum(contract.address_hash)
              end)
     end
 
@@ -314,7 +314,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["type"] == "token"
       assert item["name"] == token.name
       assert item["symbol"] == token.symbol
-      assert item["address"] == Address.checksum(token.contract_address_hash)
+      assert item["address_hash"] == Address.checksum(token.contract_address_hash)
       assert item["token_url"] =~ Address.checksum(token.contract_address_hash)
       assert item["address_url"] =~ Address.checksum(token.contract_address_hash)
       assert item["token_type"] == token.type
@@ -339,7 +339,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["type"] == "token"
       assert item["name"] == token.name
       assert item["symbol"] == token.symbol
-      assert item["address"] == Address.checksum(token.contract_address_hash)
+      assert item["address_hash"] == Address.checksum(token.contract_address_hash)
       assert item["token_url"] =~ Address.checksum(token.contract_address_hash)
       assert item["address_url"] =~ Address.checksum(token.contract_address_hash)
       assert item["token_type"] == token.type
@@ -410,7 +410,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       item = Enum.at(response["items"], 0)
 
       assert item["type"] == "label"
-      assert item["address"] == Address.checksum(tag.address.hash)
+      assert item["address_hash"] == Address.checksum(tag.address.hash)
       assert item["name"] == tag.tag.display_name
       assert item["url"] =~ Address.checksum(tag.address.hash)
       assert item["is_smart_contract_verified"] == tag.address.verified
@@ -723,7 +723,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(labels_from_api)
              |> Enum.all?(fn {label, item} ->
                label.tag.display_name == item["name"] && item["type"] == "label" &&
-                 item["address"] == Address.checksum(label.address_hash)
+                 item["address_hash"] == Address.checksum(label.address_hash)
              end)
 
       tokens_from_api = Enum.slice(response_2["items"], 2, 48) ++ Enum.slice(response_3["items"], 0, 3)
@@ -732,7 +732,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(tokens_from_api)
              |> Enum.all?(fn {token, item} ->
                token.name == item["name"] && item["type"] == "token" &&
-                 item["address"] == Address.checksum(token.contract_address_hash)
+                 item["address_hash"] == Address.checksum(token.contract_address_hash)
              end)
 
       contracts_from_api = Enum.slice(response_4["items"], 5, 45) ++ response_5["items"]
@@ -741,7 +741,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(contracts_from_api)
              |> Enum.all?(fn {contract, item} ->
                contract.name == item["name"] && item["type"] == "contract" &&
-                 item["address"] == Address.checksum(contract.address_hash)
+                 item["address_hash"] == Address.checksum(contract.address_hash)
              end)
 
       metadata_tags_from_api = Enum.slice(response_3["items"], 3, 47) ++ Enum.slice(response_4["items"], 0, 5)
@@ -760,11 +760,11 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.all?(fn {{address_hash, tag}, api_item} ->
                tag["name"] == api_item["metadata"]["name"] && tag["slug"] == api_item["metadata"]["slug"] &&
                  api_item["type"] == "metadata_tag" &&
-                 api_item["address"] == address_hash
+                 api_item["address_hash"] == address_hash
              end)
 
       ens = Enum.at(response["items"], 0)
-      assert ens["address"] == to_string(ens_address)
+      assert ens["address_hash"] == to_string(ens_address)
       assert ens["ens_info"]["name"] == name
     end
 
@@ -1077,7 +1077,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(labels_from_api)
              |> Enum.all?(fn {label, item} ->
                label.tag.display_name == item["name"] && item["type"] == "label" &&
-                 item["address"] == Address.checksum(label.address_hash)
+                 item["address_hash"] == Address.checksum(label.address_hash)
              end)
 
       tokens_from_api = Enum.slice(response_2["items"], 2, 48) ++ Enum.slice(response_3["items"], 0, 3)
@@ -1086,7 +1086,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(tokens_from_api)
              |> Enum.all?(fn {token, item} ->
                token.name == item["name"] && item["type"] == "token" &&
-                 item["address"] == Address.checksum(token.contract_address_hash)
+                 item["address_hash"] == Address.checksum(token.contract_address_hash)
              end)
 
       contracts_from_api = Enum.slice(response_4["items"], 5, 45) ++ response_5["items"]
@@ -1095,7 +1095,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.zip(contracts_from_api)
              |> Enum.all?(fn {contract, item} ->
                contract.name == item["name"] && item["type"] == "contract" &&
-                 item["address"] == Address.checksum(contract.address_hash)
+                 item["address_hash"] == Address.checksum(contract.address_hash)
              end)
 
       metadata_tags_from_api = Enum.slice(response_3["items"], 3, 47) ++ Enum.slice(response_4["items"], 0, 5)
@@ -1114,11 +1114,11 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.all?(fn {{address_hash, tag}, api_item} ->
                tag["name"] == api_item["metadata"]["name"] && tag["slug"] == api_item["metadata"]["slug"] &&
                  api_item["type"] == "metadata_tag" &&
-                 api_item["address"] == address_hash
+                 api_item["address_hash"] == address_hash
              end)
 
       ens = Enum.at(response["items"], 0)
-      assert ens["address"] == to_string(ens_address)
+      assert ens["address_hash"] == to_string(ens_address)
       assert ens["ens_info"]["name"] == name
     end
 
@@ -1678,7 +1678,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
 
-      transaction = insert(:transaction, hash: operation_id)
+      insert(:transaction, hash: operation_id)
 
       tac_first_response = """
       {
@@ -1863,16 +1863,16 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response) == 50
 
-      assert response |> Enum.filter(fn x -> x["type"] == "label" end) |> Enum.map(fn x -> x["address"] end) ==
+      assert response |> Enum.filter(fn x -> x["type"] == "label" end) |> Enum.map(fn x -> x["address_hash"] end) ==
                tags |> Enum.reverse() |> Enum.take(16) |> Enum.map(fn tag -> Address.checksum(tag.address.hash) end)
 
-      assert response |> Enum.filter(fn x -> x["type"] == "contract" end) |> Enum.map(fn x -> x["address"] end) ==
+      assert response |> Enum.filter(fn x -> x["type"] == "contract" end) |> Enum.map(fn x -> x["address_hash"] end) ==
                contracts
                |> Enum.reverse()
                |> Enum.take(16)
                |> Enum.map(fn contract -> Address.checksum(contract.address_hash) end)
 
-      assert response |> Enum.filter(fn x -> x["type"] == "token" end) |> Enum.map(fn x -> x["address"] end) ==
+      assert response |> Enum.filter(fn x -> x["type"] == "token" end) |> Enum.map(fn x -> x["address_hash"] end) ==
                tokens
                |> Enum.reverse()
                |> Enum.sort_by(fn x -> x.is_verified_via_admin_panel end, :desc)
@@ -2010,25 +2010,26 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response) == 50
 
-      assert response |> Enum.filter(fn x -> x["type"] == "label" end) |> Enum.map(fn x -> x["address"] end) ==
+      assert response |> Enum.filter(fn x -> x["type"] == "label" end) |> Enum.map(fn x -> x["address_hash"] end) ==
                tags |> Enum.reverse() |> Enum.take(12) |> Enum.map(fn tag -> Address.checksum(tag.address.hash) end)
 
-      assert response |> Enum.filter(fn x -> x["type"] == "contract" end) |> Enum.map(fn x -> x["address"] end) ==
+      assert response |> Enum.filter(fn x -> x["type"] == "contract" end) |> Enum.map(fn x -> x["address_hash"] end) ==
                contracts
                |> Enum.reverse()
                |> Enum.take(12)
                |> Enum.map(fn contract -> Address.checksum(contract.address_hash) end)
 
-      assert response |> Enum.filter(fn x -> x["type"] == "token" end) |> Enum.map(fn x -> x["address"] end) ==
+      assert response |> Enum.filter(fn x -> x["type"] == "token" end) |> Enum.map(fn x -> x["address_hash"] end) ==
                tokens
                |> Enum.reverse()
                |> Enum.sort_by(fn x -> x.is_verified_via_admin_panel end, :desc)
                |> Enum.take(13)
                |> Enum.map(fn token -> Address.checksum(token.contract_address_hash) end)
 
-      assert response |> Enum.filter(fn x -> x["type"] == "ens_domain" end) |> Enum.map(fn x -> x["address"] end) == [
-               to_string(ens_address)
-             ]
+      assert response |> Enum.filter(fn x -> x["type"] == "ens_domain" end) |> Enum.map(fn x -> x["address_hash"] end) ==
+               [
+                 to_string(ens_address)
+               ]
 
       metadata_tags = response |> Enum.filter(fn x -> x["type"] == "metadata_tag" end)
 
@@ -2037,7 +2038,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert metadata_tags
              |> Enum.with_index()
              |> Enum.all?(fn {x, index} ->
-               x["address"] == to_string(address_1) && x["metadata"]["name"] == "#{name} #{index}"
+               x["address_hash"] == to_string(address_1) && x["metadata"]["name"] == "#{name} #{index}"
              end)
     end
 
@@ -2296,7 +2297,6 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       correct_response = [
         %{
-          "address" => address_hash,
           "address_hash" => address_hash,
           "certified" => false,
           "ens_info" => nil,

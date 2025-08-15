@@ -1265,7 +1265,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^token_address_hash,
+                         "address_hash" => ^token_address_hash,
                          "name" => ^token_name,
                          "symbol" => ^token_symbol,
                          "type" => ^token_type
@@ -1280,7 +1280,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "celo" => %{
                    "gas_token" => %{
-                     "address" => ^token_address_hash,
+                     "address_hash" => ^token_address_hash,
                      "name" => ^token_name,
                      "symbol" => ^token_symbol,
                      "type" => ^token_type
@@ -1295,7 +1295,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^token_address_hash,
+                         "address_hash" => ^token_address_hash,
                          "name" => ^token_name,
                          "symbol" => ^token_symbol,
                          "type" => ^token_type
@@ -1311,7 +1311,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  %{
                    "celo" => %{
                      "gas_token" => %{
-                       "address" => ^token_address_hash,
+                       "address_hash" => ^token_address_hash,
                        "name" => ^token_name,
                        "symbol" => ^token_symbol,
                        "type" => ^token_type
@@ -1338,7 +1338,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^unknown_token_address_hash
+                         "address_hash" => ^unknown_token_address_hash
                        }
                      }
                    }
@@ -1350,7 +1350,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "celo" => %{
                    "gas_token" => %{
-                     "address" => ^unknown_token_address_hash
+                     "address_hash" => ^unknown_token_address_hash
                    }
                  }
                } = json_response(request, 200)
@@ -1362,7 +1362,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^unknown_token_address_hash
+                         "address_hash" => ^unknown_token_address_hash
                        }
                      }
                    }
@@ -1375,7 +1375,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  %{
                    "celo" => %{
                      "gas_token" => %{
-                       "address" => ^unknown_token_address_hash
+                       "address_hash" => ^unknown_token_address_hash
                      }
                    }
                  }
@@ -1491,7 +1491,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
@@ -1506,7 +1506,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
         assert %{
                  "stability_fee" => %{
-                   "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                   "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                    "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                    "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                    "total_fee" => "44136000000000",
@@ -1521,7 +1521,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
@@ -1553,7 +1553,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
@@ -1568,7 +1568,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
         assert %{
                  "stability_fee" => %{
-                   "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                   "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                    "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                    "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                    "total_fee" => "44136000000000",
@@ -1583,7 +1583,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
