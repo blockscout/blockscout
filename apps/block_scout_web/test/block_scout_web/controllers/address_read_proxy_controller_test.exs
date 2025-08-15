@@ -36,9 +36,9 @@ defmodule BlockScoutWeb.AddressReadProxyControllerTest do
         :internal_transaction_create,
         index: 0,
         transaction: transaction,
+        transaction_index: transaction.index,
         created_contract_address: contract_address,
-        block_hash: transaction.block_hash,
-        block_index: 0
+        block_hash: transaction.block_hash
       )
 
       insert(:smart_contract, address_hash: contract_address.hash, contract_code_md5: "123")
@@ -61,9 +61,9 @@ defmodule BlockScoutWeb.AddressReadProxyControllerTest do
         :internal_transaction_create,
         index: 0,
         transaction: transaction,
+        transaction_index: transaction.index,
         created_contract_address: contract_address,
-        block_hash: transaction.block_hash,
-        block_index: 0
+        block_hash: transaction.block_hash
       )
 
       conn = get(conn, address_read_proxy_path(BlockScoutWeb.Endpoint, :index, Address.checksum(contract_address.hash)))

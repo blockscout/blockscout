@@ -167,7 +167,8 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountDescPartialIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
     ] do
   config :explorer, index_operation, enabled: true
 end
