@@ -2,27 +2,38 @@ defmodule Explorer.Chain.CsvExport.Address.Celo.ElectionRewards do
   @moduledoc """
   Exports Celo election rewards to a csv file.
   """
-  import Explorer.Chain.Celo.Helper,
-    only: [
-      block_number_to_epoch_number: 1
-    ]
-
-  alias Explorer.Chain.Celo.ElectionReward
+  alias Explorer.Chain.Celo.{ElectionReward, Epoch}
   alias Explorer.Chain.CsvExport.Helper
   alias Explorer.Chain.{Hash, Wei}
 
   @spec export(Hash.Address.t(), String.t() | nil, String.t() | nil, Keyword.t(), any(), any()) :: Enumerable.t()
   def export(address_hash, from_period, to_period, _options, _filter_type, _filter_value) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
+    epoch_range = Epoch.block_range_to_epoch_range(from_block, to_block)
 
     options = [
+      necessity_by_association: %{
+        :account_address => :optional,
+        :associated_account_address => :optional,
+        [epoch: [:end_processing_block]] => :optional
+      },
       paging_options: Helper.paging_options(),
-      from_block: from_block,
-      to_block: to_block
+      api?: true
     ]
 
-    address_hash
-    |> ElectionReward.address_hash_to_rewards(options)
+    epoch_range
+    |> case do
+      nil ->
+        []
+
+      {from_epoch, to_epoch} ->
+        full_options =
+          options
+          |> Keyword.put(:from_epoch, from_epoch)
+          |> Keyword.put(:to_epoch, to_epoch)
+
+        address_hash |> ElectionReward.address_hash_to_rewards(full_options)
+    end
     |> to_csv_format()
     |> Helper.dump_to_stream()
   end
@@ -54,13 +65,15 @@ defmodule Explorer.Chain.CsvExport.Address.Celo.ElectionRewards do
     rows =
       election_rewards
       |> Stream.map(fn reward ->
+        block = reward.epoch.end_processing_block
+
         [
           # EpochNumber
-          reward.block.number |> block_number_to_epoch_number(),
+          reward.epoch_number,
           # BlockNumber
-          reward.block.number,
+          block.number,
           # TimestampUTC
-          reward.block.timestamp,
+          block.timestamp,
           # EpochTxType
           Map.get(reward_type_to_human_readable, reward.type, "N/A"),
           # ValidatorAddress
