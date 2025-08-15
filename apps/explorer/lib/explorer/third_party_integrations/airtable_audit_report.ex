@@ -1,49 +1,18 @@
-defmodule Explorer.ThirdPartyIntegrations.AirTable do
+defmodule Explorer.ThirdPartyIntegrations.AirTableAuditReport do
   @moduledoc """
-    Module is responsible for submitting requests for public tags and audit reports to AirTable
+    Module is responsible for submitting audit reports to AirTable
   """
   require Logger
 
   alias Ecto.Changeset
-  alias Explorer.Account.PublicTagsRequest
   alias Explorer.Chain.SmartContract.AuditReport
-  alias Explorer.{HttpClient, Repo}
+  alias Explorer.HttpClient
 
   @doc """
     Submits a public tags request or audit report to AirTable
   """
-  @spec submit({:ok, PublicTagsRequest.t()} | {:error, Changeset.t()} | Changeset.t()) ::
-          {:ok, PublicTagsRequest.t()} | {:error, Changeset.t()} | Changeset.t()
-  def submit({:ok, %PublicTagsRequest{} = new_request} = input) do
-    if Mix.env() == :test do
-      new_request
-      |> PublicTagsRequest.changeset(%{request_id: "123"})
-      |> Repo.account_repo().update()
-
-      input
-    else
-      submit_entry(
-        PublicTagsRequest.to_map(new_request),
-        :air_table_public_tags,
-        fn request_id ->
-          new_request
-          |> PublicTagsRequest.changeset(%{request_id: request_id})
-          |> Repo.account_repo().update()
-
-          input
-        end,
-        fn ->
-          {:error,
-           %{
-             (%PublicTagsRequest{}
-              |> PublicTagsRequest.changeset_without_constraints(PublicTagsRequest.to_map(new_request))
-              |> Changeset.add_error(:full_name, "AirTable error. Please try again later"))
-             | action: :insert
-           }}
-        end
-      )
-    end
-  end
+  @spec submit(Changeset.t()) :: Changeset.t()
+  @spec submit({:ok, AuditReport.t()} | {:error, Changeset.t()}, Changeset.t()) :: Changeset.t()
 
   def submit(%Changeset{} = changeset), do: submit(Changeset.apply_action(changeset, :insert), changeset)
 

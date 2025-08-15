@@ -84,14 +84,6 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
     prepare_custom_abi(custom_abi)
   end
 
-  def render("public_tags_requests.json", %{public_tags_requests: public_tags_requests}) do
-    Enum.map(public_tags_requests, &prepare_public_tags_request/1)
-  end
-
-  def render("public_tags_request.json", %{public_tags_request: public_tags_request}) do
-    prepare_public_tags_request(public_tags_request)
-  end
-
   def render("changeset_errors.json", %{changeset: changeset}) do
     %{
       "errors" =>
@@ -192,29 +184,6 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
       "id" => transaction_tag.id,
       "transaction_hash" => transaction_tag.transaction_hash,
       "name" => transaction_tag.name
-    }
-  end
-
-  defp prepare_public_tags_request(public_tags_request) do
-    addresses = Address.get_addresses_by_hashes(public_tags_request.addresses)
-
-    addresses_with_info =
-      Enum.map(addresses, fn address ->
-        Helper.address_with_info(nil, address, address.hash, false)
-      end)
-
-    %{
-      "id" => public_tags_request.id,
-      "full_name" => public_tags_request.full_name,
-      "email" => public_tags_request.email,
-      "company" => public_tags_request.company,
-      "website" => public_tags_request.website,
-      "tags" => public_tags_request.tags,
-      "addresses" => public_tags_request.addresses,
-      "addresses_with_info" => addresses_with_info,
-      "additional_comment" => public_tags_request.additional_comment,
-      "is_owner" => public_tags_request.is_owner,
-      "submission_date" => public_tags_request.inserted_at
     }
   end
 end

@@ -9,7 +9,6 @@ defmodule Explorer.Account do
   alias Explorer.Account.{
     CustomABI,
     Identity,
-    PublicTagsRequest,
     TagAddress,
     TagTransaction,
     Watchlist,
@@ -72,7 +71,6 @@ defmodule Explorer.Account do
     {Multi.new()
      |> Key.merge(primary_identity_id, identities_to_merge_ids)
      |> CustomABI.merge(primary_identity_id, identities_to_merge_ids)
-     |> PublicTagsRequest.merge(primary_identity_id, identities_to_merge_ids)
      |> TagAddress.merge(primary_identity_id, identities_to_merge_ids)
      |> TagTransaction.merge(primary_identity_id, identities_to_merge_ids)
      |> Watchlist.acquire_for_merge(primary_identity_id, identities_to_merge_ids)
