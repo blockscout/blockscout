@@ -153,7 +153,7 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
 
   @spec truncate(binary()) :: binary()
   defp truncate(binary) when is_binary(binary) do
-    String.slice(binary, 0..254)
+    String.slice(binary, 0,   255)
   end
 
   @spec do_fetch(String.t()) :: {:ok, keyword()} | {:error, any()}
