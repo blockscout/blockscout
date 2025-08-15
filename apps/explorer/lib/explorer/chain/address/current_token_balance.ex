@@ -192,7 +192,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   """
   def last_token_balances(address_hash, type \\ [])
 
-  def last_token_balances(address_hash, [type | _]) do
+  def last_token_balances(address_hash, types) when is_list(types) and types != [] do
     fiat_balance = fiat_value_query()
 
     from(
@@ -202,7 +202,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: [token: t],
-      where: t.type == ^type,
+      where: t.type in ^types,
       select: ctb,
       select_merge: ^%{fiat_value: fiat_balance},
       order_by: ^[desc_nulls_last: fiat_balance],
