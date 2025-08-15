@@ -192,24 +192,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   """
   def last_token_balances(address_hash, type \\ [])
 
-  def last_token_balances(address_hash, []) do
-    fiat_balance = fiat_value_query()
-
-    from(
-      ctb in __MODULE__,
-      where: ctb.address_hash == ^address_hash,
-      where: ctb.value > 0,
-      left_join: t in assoc(ctb, :token),
-      on: ctb.token_contract_address_hash == t.contract_address_hash,
-      preload: [token: t],
-      select: ctb,
-      select_merge: ^%{fiat_value: fiat_balance},
-      order_by: ^[desc_nulls_last: fiat_balance],
-      order_by: [desc: ctb.value, desc: ctb.id]
-    )
-  end
-
-  def last_token_balances(address_hash, types) when is_list(types) do
+  def last_token_balances(address_hash, types) when is_list(types) and types != [] do
     fiat_balance = fiat_value_query()
 
     from(
