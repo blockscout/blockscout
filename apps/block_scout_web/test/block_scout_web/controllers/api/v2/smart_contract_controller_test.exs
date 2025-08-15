@@ -204,7 +204,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "implementations" => [
           %{
             "address_hash" => formatted_implementation_address_hash_string,
-            "address" => formatted_implementation_address_hash_string,
             "name" => nil
           }
         ],
@@ -514,7 +513,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "implementations" => [
           %{
             "address_hash" => Address.checksum(implementation_contract.address_hash),
-            "address" => Address.checksum(implementation_contract.address_hash),
             "name" => implementation_contract.name
           }
         ]
@@ -670,7 +668,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       "implementations" => [
         %{
           "address_hash" => formatted_implementation_address_hash_string,
-          "address" => formatted_implementation_address_hash_string,
           "name" => implementation_contract.name
         }
       ],
@@ -1119,7 +1116,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "implementations" => [
                      prepare_implementation(%{
                        "address_hash" => formatted_implementation_address_hash_string,
-                       "address" => formatted_implementation_address_hash_string,
                        "name" => nil
                      })
                    ],
@@ -1137,7 +1133,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "implementations" => [
                    %{
                      "address_hash" => ^formatted_implementation_address_hash_string,
-                     "address" => ^formatted_implementation_address_hash_string,
                      "name" => nil
                    }
                  ]
@@ -1238,7 +1233,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "implementations" => [
                      prepare_implementation(%{
                        "address_hash" => formatted_implementation_address_hash_string,
-                       "address" => formatted_implementation_address_hash_string,
                        "name" => nil
                      })
                    ],
@@ -1256,7 +1250,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "implementations" => [
                    %{
                      "address_hash" => ^formatted_implementation_address_hash_string,
-                     "address" => ^formatted_implementation_address_hash_string,
                      "name" => nil
                    }
                  ]
@@ -1357,7 +1350,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "implementations" => [
                      prepare_implementation(%{
                        "address_hash" => formatted_implementation_address_hash_string,
-                       "address" => formatted_implementation_address_hash_string,
                        "name" => nil
                      })
                    ],
@@ -1375,7 +1367,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "implementations" => [
                    %{
                      "address_hash" => ^formatted_implementation_address_hash_string,
-                     "address" => ^formatted_implementation_address_hash_string,
                      "name" => nil
                    }
                  ]
@@ -1787,7 +1778,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     Enum.map(items, &prepare_implementation/1)
   end
 
-  defp prepare_implementation(%{"address" => _, "name" => _} = implementation) do
+  defp prepare_implementation(%{"address_hash" => _, "name" => _} = implementation) do
     case Application.get_env(:explorer, :chain_type) do
       :filecoin ->
         Map.put(implementation, "filecoin_robust_address", nil)

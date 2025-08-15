@@ -101,51 +101,36 @@ defmodule Explorer.Chain.MultichainSearchDb.BalancesExportQueue do
   # sobelow_skip ["DOS.StringToAtom"]
   @spec delete_elements_from_queue_by_params([map()]) :: list()
   def delete_elements_from_queue_by_params(balances) do
-    q =
-      Enum.reduce(balances, nil, fn balance, acc ->
-        balance_address_hash = balance.address_hash
+    balances
+    |> Enum.with_index()
+    |> Enum.reduce(Multi.new(), fn {balance, ind}, acc ->
+      balance_address_hash = balance.address_hash
 
-        balance_token_contract_address_hash_or_native_binary =
-          if byte_size(balance.token_contract_address_hash_or_native) == 6 do
-            balance.token_contract_address_hash_or_native
-          else
-            "0x" <> hex = balance.token_contract_address_hash_or_native
-            hex |> Base.decode16(case: :lower) |> elem(1)
-          end
-
-        balance_token_id = balance.token_id
-
-        query =
-          from(
-            b in __MODULE__,
-            where: b.address_hash == ^balance_address_hash,
-            where: b.token_contract_address_hash_or_native == ^balance_token_contract_address_hash_or_native_binary,
-            where:
-              fragment(
-                "COALESCE(?, -1::numeric) = COALESCE(?::numeric, -1::numeric)",
-                b.token_id,
-                ^balance_token_id
-              )
-          )
-
-        if is_nil(acc) do
-          query
+      balance_token_contract_address_hash_or_native_binary =
+        if byte_size(balance.token_contract_address_hash_or_native) == 6 do
+          balance.token_contract_address_hash_or_native
         else
-          acc
-          |> union(^query)
+          "0x" <> hex = balance.token_contract_address_hash_or_native
+          hex |> Base.decode16(case: :lower) |> elem(1)
         end
-      end)
 
-    elements = Repo.all(q)
+      balance_token_id = balance.token_id
 
-    delete_elements =
-      elements
-      |> Enum.with_index()
-      |> Enum.reduce(Multi.new(), fn {elem, ind}, acc ->
-        acc
-        |> Multi.delete(String.to_atom("delete_#{ind}"), elem)
-      end)
-
-    Repo.transact(delete_elements)
+      acc
+      |> Multi.delete_all(
+        String.to_atom("delete_#{ind}"),
+        from(
+          b in __MODULE__,
+          where: b.address_hash == ^balance_address_hash,
+          where: b.token_contract_address_hash_or_native == ^balance_token_contract_address_hash_or_native_binary,
+          where:
+            fragment(
+              "COALESCE(?, -1::numeric) = COALESCE(?::numeric, -1::numeric)",
+              b.token_id,
+              ^balance_token_id
+            )
+        )
+      )
+    end)
   end
 end

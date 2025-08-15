@@ -825,9 +825,7 @@ defmodule Explorer.Chain.Search do
                "circulating_market_cap" => circulating_market_cap,
                "fiat_value" => fiat_value,
                "is_verified_via_admin_panel" => is_verified_via_admin_panel,
-               "holders_count" => holder_count,
-               # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
-               "holder_count" => holder_count,
+               "holder_count" => holders_count,
                "name" => name,
                "inserted_at" => inserted_at
              }
@@ -843,7 +841,7 @@ defmodule Explorer.Chain.Search do
           circulating_market_cap: parse_possible_nil(circulating_market_cap),
           fiat_value: parse_possible_nil(fiat_value),
           is_verified_via_admin_panel: parse_possible_nil(is_verified_via_admin_panel),
-          holder_count: parse_possible_nil(holder_count),
+          holder_count: parse_possible_nil(holders_count),
           name: name,
           inserted_at: inserted_at
         },
@@ -1153,7 +1151,7 @@ defmodule Explorer.Chain.Search do
            circulating_market_cap: circulating_market_cap,
            exchange_rate: exchange_rate,
            is_verified_via_admin_panel: is_verified_via_admin_panel,
-           holder_count: holder_count,
+           holder_count: holders_count,
            name: name,
            inserted_at: inserted_at,
            type: "token"
@@ -1166,9 +1164,7 @@ defmodule Explorer.Chain.Search do
       "circulating_market_cap" => circulating_market_cap,
       "fiat_value" => exchange_rate,
       "is_verified_via_admin_panel" => is_verified_via_admin_panel,
-      "holders_count" => holder_count,
-      # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
-      "holder_count" => holder_count,
+      "holder_count" => holders_count,
       "name" => name,
       "inserted_at" => inserted_at_datetime
     }

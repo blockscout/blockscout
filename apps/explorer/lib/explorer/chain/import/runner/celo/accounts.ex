@@ -38,7 +38,7 @@ defmodule Explorer.Chain.Import.Runner.Celo.Accounts do
     insert_options =
       options
       |> Map.get(option_key(), %{})
-      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.take(~w(timeout)a)
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 

@@ -432,7 +432,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :string},
       required: false,
       description: "API key for rate limiting",
-      name: :api_key
+      name: :apikey
     }
   end
 

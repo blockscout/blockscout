@@ -7,9 +7,11 @@ defmodule Explorer.Chain.Cache.Counters.TokenTransfersCount do
 
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Counters.Helper
+  alias Explorer.Chain.Token
 
+  @api_true [api?: true]
   @cache_name :token_transfers_counter
-  @last_update_key "last_update"
+  @ets_last_update_key "last_update"
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -43,16 +45,14 @@ defmodule Explorer.Chain.Cache.Counters.TokenTransfersCount do
       update_cache(address_hash)
     end
 
-    address_hash_string = to_string(address_hash)
-    fetch_from_cache("hash_#{address_hash_string}")
+    fetch_count_from_cache(address_hash)
   end
 
   def cache_name, do: @cache_name
 
   defp cache_expired?(address_hash) do
     cache_period = Application.get_env(:explorer, __MODULE__)[:cache_period]
-    address_hash_string = to_string(address_hash)
-    updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
+    updated_at = fetch_updated_at_from_cache(address_hash, @cache_name)
 
     cond do
       is_nil(updated_at) -> true
@@ -63,13 +63,33 @@ defmodule Explorer.Chain.Cache.Counters.TokenTransfersCount do
 
   defp update_cache(address_hash) do
     address_hash_string = to_string(address_hash)
-    Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
     new_data = Chain.count_token_transfers_from_token_hash(address_hash)
     Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}", new_data)
+    Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}_#{@ets_last_update_key}", Helper.current_time())
+    put_into_db_cache(address_hash, new_data)
   end
 
-  defp fetch_from_cache(key) do
-    Helper.fetch_from_ets_cache(@cache_name, key)
+  defp fetch_count_from_cache(address_hash) do
+    address_hash_string = to_string(address_hash)
+    key = "hash_#{address_hash_string}"
+
+    Helper.fetch_from_ets_cache(@cache_name, key) || fetch_from_db_cache(address_hash)
+  end
+
+  defp fetch_updated_at_from_cache(address_hash, cache_name) do
+    address_hash_string = to_string(address_hash)
+    key = "hash_#{address_hash_string}_#{@ets_last_update_key}"
+
+    Helper.fetch_from_ets_cache(cache_name, key)
+  end
+
+  defp fetch_from_db_cache(address_hash) do
+    token = Token.get_by_contract_address_hash(address_hash, @api_true)
+    (token && token.transfer_count) || 0
+  end
+
+  defp put_into_db_cache(address_hash, count) do
+    Token.update_token_transfer_count(address_hash, count)
   end
 
   defp enable_consolidation?, do: @enable_consolidation

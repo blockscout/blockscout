@@ -1,9 +1,27 @@
 # Changelog
 
+## 9.0.2
+
+### 🐛 Bug Fixes
+
+- atoms in token_transfers_next_page_params ([#12992](https://github.com/blockscout/blockscout/pull/12992))
+- Fix Mud worlds API endpoint ([#12991](https://github.com/blockscout/blockscout/pull/12991))
+- Set 5 RPS for api/health/* ([#12990]https://github.com/blockscout/blockscout/pull/12990)
+- Pagination with atoms in paging_params ([#12986](https://github.com/blockscout/blockscout/issues/12986))
+- Fix RangesHelper.sanitize_ranges for empty list ([#12946](https://github.com/blockscout/blockscout/issues/12946))
+- Remove apikey from next_page_params ([#12972](https://github.com/blockscout/blockscout/issues/12972))
+
+## 9.0.1
+
+### ⚙️ Miscellaneous Tasks
+
+- Restore `getblocknobytime` response format to use `blockNumber` key ([#12955](https://github.com/blockscout/blockscout/issues/12955))
+
 ## 9.0.0
 
 ### 🚀 Features
 
+- Export token info to Multichain service ([#12867](https://github.com/blockscout/blockscout/pull/12867))
 - Export balances to Multichain DB([#12726](https://github.com/blockscout/blockscout/pull/12726))
 - Add eip7702 authorization status fetcher ([#12451](https://github.com/blockscout/blockscout/issues/12451))
 - Add token1155tx token404tx api v1 endpoints ([#12720](https://github.com/blockscout/blockscout/issues/12720))
@@ -20,6 +38,12 @@
 
 ### 🐛 Bug Fixes
 
+- Ignore rate limit for api/v2/import/token-info and api/v2/import/smart-contracts/:param ([#12917](https://github.com/blockscout/blockscout/pull/12917))
+- Mitigate deadlocks while exporting balances and the main queue to the Multichain DB ([#12898](https://github.com/blockscout/blockscout/pull/12898), [#12928](https://github.com/blockscout/blockscout/pull/12928))
+- Balances export queue: replace replace_all with replace only value and updated_at ([#12892](https://github.com/blockscout/blockscout/pull/12892))
+- Fix naming for apikey param in OpenAPI spec ([#12891](https://github.com/blockscout/blockscout/pull/12891))
+- Don't send coin balances with zero delta via ws ([#12890](https://github.com/blockscout/blockscout/pull/12890))
+- Balances export queue to multichain replace do_nothing with replace_all on insertion to the queue ([#12888](https://github.com/blockscout/blockscout/pull/12888))
 - Allow using temporary token for api/account/v2 by default ([#12869](https://github.com/blockscout/blockscout/pull/12869))
 - Fix increment of retries_number in exporting data to Multichain DB ([#12847](https://github.com/blockscout/blockscout/pull/12847))
 - Fix various errors on export of balances to Multichain DB ([#12837](https://github.com/blockscout/blockscout/pull/12837))
@@ -65,6 +89,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Remove obsolete API response props ([#12931](https://github.com/blockscout/blockscout/pull/12931))
 - Balances Multichain export: Refactor rows acquisition for deletion query ([#12839](https://github.com/blockscout/blockscout/pull/12839))
 - Change name of Swagger generation workflow ([#12840](https://github.com/blockscout/blockscout/pull/12840))
 - migrate Auth0 to mint as well ([#12807](https://github.com/blockscout/blockscout/pull/12807))
@@ -97,7 +122,6 @@
 | `MIGRATION_REINDEX_BLOCKS_WITH_MISSING_TRANSACTIONS_CONCURRENCY` | Number of parallel reindexing block batches processing. Implemented in [#12559](https://github.com/blockscout/blockscout/pull/12559).                                                                                                                                                                                                                                  | <p>Version: v9.0.0+<br>Default: <code>1</code><br>Applications: Indexer</p>           |
 | `MIGRATION_REINDEX_BLOCKS_WITH_MISSING_TRANSACTIONS_TIMEOUT`     | Timeout between reindexing block batches processing. Implemented in [#12559](https://github.com/blockscout/blockscout/pull/12559).                                                                                                                                                                                                                                     | <p>Version: v9.0.0+<br>Default: <code>0</code><br>Applications: Indexer</p>           |
 | `MIGRATION_REINDEX_BLOCKS_WITH_MISSING_TRANSACTIONS_ENABLED`     | Enable reindex blocks with missing transactions migration. Implemented in [#12559](https://github.com/blockscout/blockscout/pull/12559).                                                                                                                                                                                                                               | <p>Version: v9.0.0+<br>Default: <code>false</code><br>Applications: Indexer</p>       |
-| `MIGRATION_RESTORE_OMITTED_WETH_TOKEN_TRANSFERS_BATCH_SIZE`      | Number of logs to process in the batch. Implemented in [#10466](https://github.com/blockscout/blockscout/pull/10466)                                                                                                                                                                                                                                                   | <p>Version: v6.8.0+<br>Default: <code>50</code><br>Applications: API, Indexer</p>    |
 | `MIGRATION_MERGE_ADJACENT_MISSING_BLOCK_RANGES_BATCH_SIZE`         | Specifies the missing block range batch size selected for the merge migration. Implemented in [#12778](https://github.com/blockscout/blockscout/pull/12778).                                                                                                                                                                                                           | <p>Version: v9.0.0+<br>Default: <code>100</code><br>Applications: Indexer</p>         |
 | `API_RATE_LIMIT_CONFIG_URL`                       | URL to fetch API rate limit configuration from external source. Implemented in [#12386](https://github.com/blockscout/blockscout/pull/12386)                                                                                                          | <p>Version: v9.0.0+<br>Default: (empty)<br>Applications: API</p>                         |
 | `API_RATE_LIMIT_BY_KEY_TIME_INTERVAL`             | Time interval for API rate limit by key. [Time format](backend-env-variables.md#time-format). Implemented in [#12386](https://github.com/blockscout/blockscout/pull/12386)                                                                            | <p>Version: v9.0.0+<br>Default: <code>1s</code><br>Applications: API</p>                 |

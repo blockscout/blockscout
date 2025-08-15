@@ -184,6 +184,8 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
       end)
 
       address_1 = insert(:address)
+      address_1_hash = address_1.hash
+      address_1_hash_string = to_string(address_1_hash)
       address_2 = insert(:address)
       address_2_hash = address_2.hash
       address_2_hash_string = to_string(address_2_hash)
@@ -191,8 +193,6 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
       address_3_hash = address_3.hash
       address_3_hash_string = to_string(address_3_hash)
       address_4 = insert(:address)
-      address_4_hash = address_4.hash
-      address_4_hash_string = to_string(address_4_hash)
       address_5 = insert(:address)
       address_5_hash = address_5.hash
       address_5_hash_string = to_string(address_5_hash)
@@ -234,11 +234,11 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
 
       TestHelper.get_chain_id_mock()
 
-      tesla_expectations(address_4_hash_string)
+      tesla_expectations(address_1_hash_string)
 
+      val0 = Decimal.new(100) |> Wei.cast() |> elem(1)
       val1 = Decimal.new(200) |> Wei.cast() |> elem(1)
       val2 = Decimal.new(300) |> Wei.cast() |> elem(1)
-      val3 = Decimal.new(400) |> Wei.cast() |> elem(1)
       val4 = Decimal.new(500) |> Wei.cast() |> elem(1)
 
       log =
@@ -247,9 +247,9 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
                   %{
                     address_coin_balances: [
                       %{
-                        address_hash: ^address_4_hash_string,
+                        address_hash: ^address_1_hash_string,
                         token_contract_address_hash_or_native: "native",
-                        value: ^val3
+                        value: ^val0
                       }
                     ],
                     address_token_balances: [
@@ -282,7 +282,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
 
       TestHelper.get_chain_id_mock()
 
-      tesla_expectations(address_4_hash_string)
+      tesla_expectations(address_1_hash_string)
 
       MultichainSearchDbExportBalancesExportQueue.run(export_data, nil)
 
@@ -294,7 +294,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
 
       TestHelper.get_chain_id_mock()
 
-      tesla_expectations(address_4_hash_string)
+      tesla_expectations(address_1_hash_string)
 
       MultichainSearchDbExportBalancesExportQueue.run(export_data, nil)
 
@@ -316,9 +316,9 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
           token_id: nil
         },
         %{
-          address_hash: address_4.hash,
+          address_hash: address_1.hash,
           token_contract_address_hash_or_native: "native",
-          value: %Wei{value: Decimal.new(400)}
+          value: %Wei{value: Decimal.new(100)}
         },
         %{
           address_hash: address_5.hash,
@@ -346,12 +346,12 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
     end
   end
 
-  defp tesla_expectations(address_4_hash_string) do
+  defp tesla_expectations(address_hash_string) do
     Tesla.Test.expect_tesla_call(
       times: 2,
       returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
         case Jason.decode(body) do
-          {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_4_hash_string}]}} ->
+          {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_hash_string}]}} ->
             {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
 
           _ ->

@@ -291,7 +291,7 @@ config :explorer,
   csv_export_limit: ConfigHelper.parse_integer_env_var("CSV_EXPORT_LIMIT", 10_000),
   shrink_internal_transactions_enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
   replica_max_lag: ConfigHelper.parse_time_env_var("REPLICA_MAX_LAG", "5m"),
-  hackney_default_pool_size: ConfigHelper.parse_integer_env_var("HACKNEY_DEFAULT_POOL_SIZE", 1000)
+  hackney_default_pool_size: ConfigHelper.parse_integer_env_var("HACKNEY_DEFAULT_POOL_SIZE", 1_000)
 
 config :explorer, Explorer.Chain.Health.Monitor,
   check_interval: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_CHECK_INTERVAL", "1m"),
@@ -350,7 +350,7 @@ config :explorer, Explorer.Chain.Cache.Counters.PendingBlockOperationCount,
 
 config :explorer, Explorer.Chain.Cache.GasPriceOracle,
   global_ttl: ConfigHelper.parse_time_env_var("GAS_PRICE_ORACLE_CACHE_PERIOD", "30s"),
-  simple_transaction_gas: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_SIMPLE_TRANSACTION_GAS", 21000),
+  simple_transaction_gas: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_SIMPLE_TRANSACTION_GAS", 21_000),
   num_of_blocks: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_NUM_OF_BLOCKS", 200),
   safelow_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_SAFELOW_PERCENTILE", 35),
   average_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE", 60),
@@ -655,7 +655,10 @@ config :explorer, Explorer.SmartContract.StylusVerifierInterface,
 config :explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
   api_key: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_API_KEY"),
   service_url: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"),
-  addresses_chunk_size: ConfigHelper.parse_integer_env_var("MICROSERVICE_MULTICHAIN_SEARCH_ADDRESSES_CHUNK_SIZE", 7000)
+  addresses_chunk_size:
+    ConfigHelper.parse_integer_env_var("MICROSERVICE_MULTICHAIN_SEARCH_ADDRESSES_CHUNK_SIZE", 7_000),
+  token_info_chunk_size:
+    ConfigHelper.parse_integer_env_var("MICROSERVICE_MULTICHAIN_SEARCH_TOKEN_INFO_CHUNK_SIZE", 1_000)
 
 config :explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_TAC_OPERATION_LIFECYCLE_ENABLED", "true"),
@@ -688,10 +691,10 @@ config :explorer, Explorer.Account,
   verification_email_resend_interval:
     ConfigHelper.parse_time_env_var("ACCOUNT_VERIFICATION_EMAIL_RESEND_INTERVAL", "5m"),
   otp_resend_interval: ConfigHelper.parse_time_env_var("ACCOUNT_OTP_RESEND_INTERVAL", "1m"),
-  private_tags_limit: ConfigHelper.parse_integer_env_var("ACCOUNT_PRIVATE_TAGS_LIMIT", 2000),
+  private_tags_limit: ConfigHelper.parse_integer_env_var("ACCOUNT_PRIVATE_TAGS_LIMIT", 2_000),
   watchlist_addresses_limit: ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_ADDRESSES_LIMIT", 15),
   notifications_limit_for_30_days:
-    ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_NOTIFICATIONS_LIMIT_FOR_30_DAYS", 1000),
+    ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_NOTIFICATIONS_LIMIT_FOR_30_DAYS", 1_000),
   siwe_message: System.get_env("ACCOUNT_SIWE_MESSAGE", "Sign in to Blockscout Account V2")
 
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
@@ -930,7 +933,7 @@ config :indexer,
   token_balances_fetcher_init_limit:
     ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 100_000),
   coin_balances_fetcher_init_limit:
-    ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 2000),
+    ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 2_000),
   graceful_shutdown_period: ConfigHelper.parse_time_env_var("INDEXER_GRACEFUL_SHUTDOWN_PERIOD", "5m"),
   internal_transactions_fetch_order:
     ConfigHelper.parse_catalog_value("INDEXER_INTERNAL_TRANSACTIONS_FETCH_ORDER", ["asc", "desc"], true, "asc")
@@ -978,6 +981,9 @@ config :indexer, Indexer.Fetcher.TokenBalance,
   max_refetch_interval: ConfigHelper.parse_time_env_var("INDEXER_TOKEN_BALANCES_MAX_REFETCH_INTERVAL", "168h"),
   exp_timeout_coeff: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_EXPONENTIAL_TIMEOUT_COEFF", 100)
 
+config :indexer, Indexer.Fetcher.TokenCountersUpdater,
+  milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_COUNTERS_UPDATE_INTERVAL", "3h")
+
 config :indexer, Indexer.Fetcher.OnDemand.TokenBalance,
   threshold: ConfigHelper.parse_time_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),
   fallback_threshold_in_blocks: 500
@@ -1005,6 +1011,12 @@ config :indexer, Indexer.Fetcher.CoinBalance.Catchup.Supervisor, disabled?: disa
 config :indexer, Indexer.Fetcher.CoinBalance.Realtime.Supervisor, disabled?: disable_coin_balances_fetcher?
 
 config :indexer, Indexer.Fetcher.TokenUpdater.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
+
+config :indexer, Indexer.Fetcher.TokenTotalSupplyUpdater.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
+
+config :indexer, Indexer.Fetcher.TokenCountersUpdater.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
@@ -1046,12 +1058,17 @@ config :indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue.Supervis
     ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_FETCHER") ||
       is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
 
+config :indexer, Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue.Supervisor,
+  disabled?:
+    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_TOKEN_INFO_QUEUE_FETCHER") ||
+      is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
+
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE", 10),
   interval: ConfigHelper.parse_time_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_INTERVAL", "10s")
 
 config :indexer, Indexer.Block.Realtime.Fetcher,
-  max_gap: ConfigHelper.parse_integer_env_var("INDEXER_REALTIME_FETCHER_MAX_GAP", 1000),
+  max_gap: ConfigHelper.parse_integer_env_var("INDEXER_REALTIME_FETCHER_MAX_GAP", 1_000),
   polling_period: ConfigHelper.parse_time_env_var("INDEXER_REALTIME_FETCHER_POLLING_PERIOD")
 
 config :indexer, Indexer.Block.Catchup.MissingRangesCollector,
@@ -1106,7 +1123,7 @@ config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", 10),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", 4),
   indexing_finished_threshold:
-    ConfigHelper.parse_integer_env_var("API_INTERNAL_TRANSACTIONS_INDEXING_FINISHED_THRESHOLD", 1000)
+    ConfigHelper.parse_integer_env_var("API_INTERNAL_TRANSACTIONS_INDEXING_FINISHED_THRESHOLD", 1_000)
 
 coin_balances_batch_size = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_BATCH_SIZE", 100)
 coin_balances_concurrency = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_CONCURRENCY", 4)
@@ -1129,20 +1146,21 @@ config :indexer, Indexer.Migrator.RecoveryWETHTokenTransfers,
 
 config :indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_CONCURRENCY", 10),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_BATCH_SIZE", 1000),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_BATCH_SIZE", 3_000),
   enqueue_busy_waiting_timeout:
     ConfigHelper.parse_time_env_var(
       "INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_ENQUEUE_BUSY_WAITING_TIMEOUT",
       "1s"
     ),
   max_queue_size:
-    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_MAX_QUEUE_SIZE", 1000),
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_MAX_QUEUE_SIZE", 3_000),
   init_limit:
-    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_INIT_QUERY_LIMIT", 1_000)
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_INIT_QUERY_LIMIT", 3_000)
 
 config :indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_CONCURRENCY", 10),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_BATCH_SIZE", 1000),
+  batch_size:
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_BATCH_SIZE", 3_000),
   enqueue_busy_waiting_timeout:
     ConfigHelper.parse_time_env_var(
       "INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_ENQUEUE_BUSY_WAITING_TIMEOUT",
@@ -1151,10 +1169,25 @@ config :indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue,
   max_queue_size:
     ConfigHelper.parse_integer_env_var(
       "INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_MAX_QUEUE_SIZE",
-      1000
+      3_000
     ),
   init_limit:
-    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_INIT_QUERY_LIMIT", 1_000)
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_INIT_QUERY_LIMIT", 3_000)
+
+config :indexer, Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue,
+  concurrency:
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_TOKEN_INFO_QUEUE_CONCURRENCY", 10),
+  batch_size:
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_TOKEN_INFO_QUEUE_BATCH_SIZE", 1_000),
+  enqueue_busy_waiting_timeout:
+    ConfigHelper.parse_time_env_var(
+      "INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_TOKEN_INFO_QUEUE_ENQUEUE_BUSY_WAITING_TIMEOUT",
+      "1s"
+    ),
+  max_queue_size:
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_TOKEN_INFO_QUEUE_MAX_QUEUE_SIZE", 1_000),
+  init_limit:
+    ConfigHelper.parse_integer_env_var("INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_TOKEN_INFO_QUEUE_INIT_QUERY_LIMIT", 1_000)
 
 config :indexer, Indexer.Fetcher.SignedAuthorizationStatus,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_SIGNED_AUTHORIZATION_STATUS_BATCH_SIZE", 10)
@@ -1245,7 +1278,7 @@ config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor,
 config :indexer, Indexer.Fetcher.PolygonEdge,
   polygon_edge_l1_rpc: System.get_env("INDEXER_POLYGON_EDGE_L1_RPC"),
   polygon_edge_eth_get_logs_range_size:
-    ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_EDGE_ETH_GET_LOGS_RANGE_SIZE", 1000)
+    ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_EDGE_ETH_GET_LOGS_RANGE_SIZE", 1_000)
 
 config :indexer, Indexer.Fetcher.PolygonEdge.Deposit,
   start_block_l1: System.get_env("INDEXER_POLYGON_EDGE_L1_DEPOSITS_START_BLOCK"),
@@ -1285,11 +1318,11 @@ config :indexer, Indexer.Fetcher.Arbitrum.Messaging,
 config :indexer, Indexer.Fetcher.Arbitrum,
   l1_rpc: System.get_env("INDEXER_ARBITRUM_L1_RPC"),
   l1_rpc_chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_L1_RPC_CHUNK_SIZE", 20),
-  l1_rpc_block_range: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_L1_RPC_HISTORICAL_BLOCKS_RANGE", 1000),
+  l1_rpc_block_range: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_L1_RPC_HISTORICAL_BLOCKS_RANGE", 1_000),
   l1_rollup_address: System.get_env("INDEXER_ARBITRUM_L1_ROLLUP_CONTRACT"),
   l1_rollup_init_block: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_L1_ROLLUP_INIT_BLOCK", 1),
   l1_start_block: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_L1_COMMON_START_BLOCK", 0),
-  l1_finalization_threshold: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_L1_FINALIZATION_THRESHOLD", 1000),
+  l1_finalization_threshold: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_L1_FINALIZATION_THRESHOLD", 1_000),
   rollup_chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_ROLLUP_CHUNK_SIZE", 20)
 
 config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1,
@@ -1308,7 +1341,7 @@ config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses,
   new_batches_limit: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_NEW_BATCHES_LIMIT", 10),
   node_interface_contract:
     ConfigHelper.safe_get_env("INDEXER_ARBITRUM_NODE_INTERFACE_CONTRACT", "0x00000000000000000000000000000000000000C8"),
-  missing_batches_range: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSING_BATCHES_RANGE", 10000),
+  missing_batches_range: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSING_BATCHES_RANGE", 10_000),
   failure_interval_threshold:
     ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_FAILURE_THRESHOLD", "10m")
 
@@ -1318,7 +1351,7 @@ config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses.Supervisor,
 config :indexer, Indexer.Fetcher.Arbitrum.RollupMessagesCatchup,
   recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_RECHECK_INTERVAL", "1h"),
   missed_messages_blocks_depth:
-    ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_BLOCKS_DEPTH", 10000)
+    ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_BLOCKS_DEPTH", 10_000)
 
 config :indexer, Indexer.Fetcher.Arbitrum.RollupMessagesCatchup.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BRIDGE_MESSAGES_TRACKING_ENABLED")
@@ -1450,7 +1483,7 @@ config :indexer, Indexer.Fetcher.Filecoin.AddressInfo,
 
 config :indexer, Indexer.Fetcher.Scroll,
   l1_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L1_ETH_GET_LOGS_RANGE_SIZE", 250),
-  l2_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L2_ETH_GET_LOGS_RANGE_SIZE", 1000),
+  l2_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L2_ETH_GET_LOGS_RANGE_SIZE", 1_000),
   rpc: System.get_env("INDEXER_SCROLL_L1_RPC")
 
 config :indexer, Indexer.Fetcher.Scroll.L1FeeParam, gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT")
@@ -1513,7 +1546,7 @@ config :nft_media_handler,
 
 config :nft_media_handler, Indexer.NFTMediaHandler.Backfiller,
   enabled?: ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_BACKFILL_ENABLED"),
-  queue_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_BACKFILL_QUEUE_SIZE", 1000),
+  queue_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_BACKFILL_QUEUE_SIZE", 1_000),
   enqueue_busy_waiting_timeout:
     ConfigHelper.parse_time_env_var("NFT_MEDIA_HANDLER_BACKFILL_ENQUEUE_BUSY_WAITING_TIMEOUT", "1s")
 
