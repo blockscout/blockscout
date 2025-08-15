@@ -3653,7 +3653,8 @@ defmodule Explorer.Chain do
         json_rpc_named_arguments: json_rpc_named_arguments
       })
 
-    value = %Wei{value: Decimal.new(first_trace.value)}
+    value =
+      if is_nil(first_trace.value), do: %Wei{value: Decimal.new("0")}, else: %Wei{value: Decimal.new(first_trace.value)}
 
     first_trace_formatted =
       first_trace
