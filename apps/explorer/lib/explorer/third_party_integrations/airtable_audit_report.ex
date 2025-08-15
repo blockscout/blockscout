@@ -11,8 +11,8 @@ defmodule Explorer.ThirdPartyIntegrations.AirTableAuditReport do
   @doc """
     Submits a public tags request or audit report to AirTable
   """
-  @spec submit({:ok, AuditReport.t()} | {:error, Changeset.t()} | Changeset.t()) ::
-          {:ok, AuditReport.t()} | {:error, Changeset.t()} | Changeset.t()
+  @spec submit(Changeset.t()) :: Changeset.t()
+  @spec submit({:ok, AuditReport.t()} | {:error, Changeset.t()}, Changeset.t()) :: Changeset.t()
 
   def submit(%Changeset{} = changeset), do: submit(Changeset.apply_action(changeset, :insert), changeset)
 
