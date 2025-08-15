@@ -1089,7 +1089,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         logs: :logs_count,
         withdrawals: :withdrawals_count,
         internal_transactions: :internal_transactions_count,
-        celo_election_rewards: :celo_election_rewards_count
+        celo_election_rewards: :celo_election_rewards_count,
+        beacon_deposits: :beacon_deposits_count
       }
 
       case Chain.hash_to_address(address_hash, @address_options) do

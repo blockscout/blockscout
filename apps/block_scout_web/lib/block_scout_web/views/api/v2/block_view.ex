@@ -71,7 +71,8 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "type" => block |> BlockView.block_type() |> String.downcase(),
       "transaction_fees" => block.transactions_fees,
       "withdrawals_count" => count_withdrawals(block),
-      "is_pending_update" => block.refetch_needed
+      "is_pending_update" => block.refetch_needed,
+      "beacon_deposits_count" => count_beacon_deposits(block)
     }
     |> chain_type_fields(block, single_block?)
   end
@@ -114,6 +115,11 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
   defp count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
   defp count_withdrawals(_), do: nil
+
+  defp count_beacon_deposits(%Block{beacon_deposits: beacon_deposits}) when is_list(beacon_deposits),
+    do: Enum.count(beacon_deposits)
+
+  defp count_beacon_deposits(_), do: nil
 
   case @chain_type do
     :rsk ->
