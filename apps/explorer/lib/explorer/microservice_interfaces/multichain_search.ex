@@ -7,7 +7,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Block, Hash, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Range
-  alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue, TokenInfoExportQueue}
+
+  alias Explorer.Chain.MultichainSearchDb.{
+    BalancesExportQueue,
+    CountersExportQueue,
+    MainExportQueue,
+    TokenInfoExportQueue
+  }
+
   alias Explorer.{Helper, HttpClient, Repo}
   alias Explorer.Utility.Microservice
 
@@ -198,6 +205,93 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
+  @doc """
+    Processes a batch export of counters by splitting the items from db queue into chunks
+    and sending each chunk as an HTTP POST request to a configured microservice endpoint.
+
+    If the microservice is enabled, the function:
+    - Splits the input `items_from_db_queue` into manageable chunks.
+    - Sends each chunk concurrently using `Task.async_stream/5` with a maximum concurrency and timeout.
+    - Collects the results, merging any errors and accumulating data that needs to be retried.
+    - Returns `{:ok, {:chunks_processed, chunks}}` if all chunks are processed successfully.
+    - Returns `{:error, data_to_retry}` if any chunk fails, where `data_to_retry` contains counters that need to be retried.
+
+    If the microservice is disabled, returns `{:ok, :service_disabled}`.
+
+    ## Parameters
+    - `items_from_db_queue`: The queue items to be exported, which will be split into chunks for processing.
+
+    ## Returns
+    - `{:ok, any()}`: If all chunks are processed successfully or the service is disabled.
+    - `{:error, map()}`: If one or more chunks fail, with details about the data that needs to be retried.
+  """
+  @spec batch_export_counters([
+          %{
+            :timestamp => DateTime.t(),
+            :counter_type => :global,
+            :data => map()
+          }
+        ]) :: {:ok, any()} | {:error, map()}
+  def batch_export_counters(items_from_db_queue) do
+    if enabled?() do
+      url = batch_import_url()
+      api_key = api_key()
+      chain_id = to_string(ChainId.get_id())
+
+      chunks =
+        items_from_db_queue
+        |> Enum.chunk_every(counters_chunk_size())
+        |> Enum.map(fn chunk_items ->
+          %{
+            api_key: api_key,
+            chain_id: chain_id,
+            counters: Enum.map(chunk_items, &counter_queue_item_to_http_item(&1))
+          }
+        end)
+
+      chunks
+      |> Task.async_stream(
+        fn export_body -> http_post_request(url, export_body) end,
+        max_concurrency: @max_concurrency,
+        timeout: @post_timeout,
+        zip_input_on_exit: true
+      )
+      |> Enum.reduce({:ok, {:chunks_processed, chunks}}, fn
+        {:ok, {:ok, _result}}, acc ->
+          acc
+
+        {:ok, {:error, error}}, acc ->
+          counter_on_error(error)
+
+          case acc do
+            {:ok, {:chunks_processed, _}} ->
+              {:error, %{counters: error.data_to_retry.counters}}
+
+            {:error, data_to_retry} ->
+              {:error, %{counters: data_to_retry.counters ++ error.data_to_retry.counters}}
+          end
+
+        {:exit, {export_body, reason}}, acc ->
+          counter_on_error(%{
+            url: url,
+            data_to_retry: export_body,
+            reason: reason
+          })
+
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          case acc do
+            {:ok, {:chunks_processed, _}} ->
+              {:error, %{counters: export_body.counters}}
+
+            {:error, data_to_retry} ->
+              {:error, %{counters: data_to_retry.counters ++ export_body.counters}}
+          end
+      end)
+    else
+      {:ok, :service_disabled}
+    end
+  end
+
   defp log_error(%{
          url: url,
          data_to_retry: data_to_retry,
@@ -296,6 +390,36 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp token_info_on_error(_), do: :ignore
 
+  # Logs error when trying to send counter from the queue to Multichain service
+  # and increments `retries_number` counter of the corresponding queue items.
+  #
+  # ## Parameters
+  # - `error`: A map with the queue items.
+  #
+  # ## Returns
+  # - Nothing.
+  @spec counter_on_error(%{
+          :data_to_retry => %{:counters => [map()], optional(any()) => any()},
+          optional(any()) => any()
+        }) :: any()
+  defp counter_on_error(%{data_to_retry: data_to_retry} = error) do
+    log_error(error)
+
+    prepared_counters_data =
+      data_to_retry.counters
+      |> Enum.map(&counter_http_item_to_queue_item(&1))
+      |> Helper.add_timestamps()
+
+    Repo.insert_all(
+      CountersExportQueue,
+      prepared_counters_data,
+      on_conflict: CountersExportQueue.increase_retries_on_conflict(),
+      conflict_target: [:timestamp, :counter_type]
+    )
+  end
+
+  defp counter_on_error(_), do: :ignore
+
   @doc """
     Converts database queue item with token info to the item ready to send to Multichain service via HTTP.
 
@@ -367,6 +491,53 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       address_hash: address_hash,
       data_type: data_type,
       data: data
+    }
+  end
+
+  @doc """
+    Converts database queue item with counters to the item ready to send to Multichain service via HTTP.
+
+    ## Parameters
+    - `item_from_db_queue`: The queue item map from database.
+
+    ## Returns
+    - A map ready to send to Multichain service via HTTP.
+  """
+  @spec counter_queue_item_to_http_item(%{
+          :timestamp => DateTime.t(),
+          :counter_type => :global,
+          :data => map()
+        }) :: %{:timestamp => String.t(), :global_counters => map()}
+  def counter_queue_item_to_http_item(item_from_db_queue) do
+    counter = %{timestamp: to_string(DateTime.to_unix(item_from_db_queue.timestamp))}
+
+    case item_from_db_queue.counter_type do
+      :global -> Map.put(counter, :global_counters, item_from_db_queue.data)
+    end
+  end
+
+  @doc """
+    Converts queue item (containing counter data) ready to send to Multichain service via HTTP
+    to the queue item ready to be written to the database.
+
+    ## Parameters
+    - `http_item`: The queue item for HTTP.
+
+    ## Returns
+    - A map ready to write to the database.
+  """
+  @spec counter_http_item_to_queue_item(%{:timestamp => String.t(), :global_counters => map()}) :: %{
+          :timestamp => DateTime.t(),
+          :counter_type => :global,
+          :data => map()
+        }
+  def counter_http_item_to_queue_item(%{timestamp: timestamp_string} = http_item) do
+    timestamp_integer = String.to_integer(timestamp_string)
+
+    %{
+      timestamp: DateTime.from_unix!(timestamp_integer * 1_000_000, :microsecond),
+      counter_type: :global,
+      data: http_item[:global_counters]
     }
   end
 
@@ -586,6 +757,50 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       }
     end)
     |> Enum.chunk_every(token_info_chunk_size())
+  end
+
+  @doc """
+    Writes counters to database queue to send those to Multichain service later.
+
+    ## Parameters
+    - `entries`: A map of counter entries.
+    - `entries_type`: A type of the counter entries.
+
+    ## Returns
+    # - `:ok` if the data is accepted for insertion.
+    # - `:ignore` if the Multichain service is not used.
+  """
+  @spec send_counters_to_queue(%{DateTime.t() => map()}, :global) :: :ok | :ignore
+  def send_counters_to_queue(entries, entries_type) do
+    if enabled?() do
+      entries
+      |> extract_counter_entries_into_chunks(entries_type)
+      |> Enum.each(fn chunk ->
+        Repo.insert_all(
+          CountersExportQueue,
+          Helper.add_timestamps(chunk),
+          on_conflict: {:replace, [:data, :updated_at]},
+          conflict_target: [:timestamp, :counter_type]
+        )
+      end)
+
+      :ok
+    else
+      :ignore
+    end
+  end
+
+  @spec extract_counter_entries_into_chunks(%{DateTime.t() => map()}, :global) :: list()
+  defp extract_counter_entries_into_chunks(entries, entries_type) do
+    entries
+    |> Enum.map(fn {timestamp, data} ->
+      %{
+        timestamp: timestamp,
+        counter_type: entries_type,
+        data: data
+      }
+    end)
+    |> Enum.chunk_every(counters_chunk_size())
   end
 
   # sobelow_skip ["DOS.StringToAtom"]
@@ -1070,5 +1285,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp token_info_chunk_size do
     Application.get_env(:explorer, __MODULE__)[:token_info_chunk_size]
+  end
+
+  defp counters_chunk_size do
+    Application.get_env(:explorer, __MODULE__)[:counters_chunk_size]
   end
 end

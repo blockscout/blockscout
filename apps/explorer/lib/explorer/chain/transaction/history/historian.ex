@@ -254,7 +254,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
     Logger.info("tx/per day chart: number of inserted #{num_inserted}")
 
-    # we need to store the last timestamp of success to use it in Indexer.Fetcher.MultichainSearchDb.MainPageCountersFetcher
+    # we need to store the last timestamp of success to use it in Indexer.Fetcher.MultichainSearchDb.CountersFetcher
     LastFetchedCounter.upsert(%{
       counter_type: transaction_stats_last_save_records_timestamp(),
       value: DateTime.to_unix(DateTime.utc_now())

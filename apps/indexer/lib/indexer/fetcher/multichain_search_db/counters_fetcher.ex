@@ -1,4 +1,8 @@
-defmodule Indexer.Fetcher.MultichainSearchDb.MainPageCountersFetcher do
+defmodule Indexer.Fetcher.MultichainSearchDb.CountersFetcher do
+  @moduledoc """
+  Fetches counters and adds them to a queue to send to Multichain Search DB service.
+  """
+
   use GenServer
   use Indexer.Fetcher
 
@@ -12,9 +16,10 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainPageCountersFetcher do
   alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Transaction.History.{Historian, TransactionStats}
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Repo
 
-  @fetcher_name :multichain_search_db_main_page_counters_fetcher
+  @fetcher_name :multichain_search_db_counters_fetcher
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -83,7 +88,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainPageCountersFetcher do
 
   @impl GenServer
   def handle_info(:fetch_yesterday_counters, %{number_of_transactions: number_of_transactions, yesterday: yesterday}) do
-    yesterday_dt = DateTime.new!(yesterday, Time.new!(23, 59, 59))
+    yesterday_dt = DateTime.new!(yesterday, Time.new!(23, 59, 59, 0))
 
     daily_transactions_number = number_of_transactions
 
@@ -100,7 +105,16 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainPageCountersFetcher do
     Logger.info("total_transactions_number = #{total_transactions_number}")
     Logger.info("total_addresses_number = #{total_addresses_number}")
 
-    # todo: send to queue
+    MultichainSearch.send_counters_to_queue(
+      %{
+        yesterday_dt => %{
+          daily_transactions_number: to_string(daily_transactions_number),
+          total_transactions_number: to_string(total_transactions_number),
+          total_addresses_number: to_string(total_addresses_number)
+        }
+      },
+      :global
+    )
 
     Logger.info("Waiting for the next day...")
     Process.send_after(self(), :try_to_fetch_yesterday_counters, calculate_delay_until_next_midnight())
