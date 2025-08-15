@@ -84,7 +84,7 @@
 
 ### ⚡ Performance
 
-- Api v1 `txlsit`& `txlistinternal` endpoints ([#12774](https://github.com/blockscout/blockscout/issues/12774))
+- Api v1 `txlist`& `txlistinternal` endpoints ([#12774](https://github.com/blockscout/blockscout/issues/12774))
 - Optimize Explorer.Chain.Cache.Blocks ([#12402](https://github.com/blockscout/blockscout/issues/12402))
 
 ### ⚙️ Miscellaneous Tasks
