@@ -230,6 +230,29 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       compare_item(transaction, response)
     end
 
+    test "includes refetch_needed field in response", %{conn: conn} do
+      block_refetch_needed = insert(:block, refetch_needed: true)
+      block_no_refetch = insert(:block, refetch_needed: false)
+
+      transaction_refetch_needed =
+        :transaction
+        |> insert()
+        |> with_block(block_refetch_needed)
+
+      transaction_no_refetch =
+        :transaction
+        |> insert()
+        |> with_block(block_no_refetch)
+
+      request_1 = get(conn, "/api/v2/transactions/" <> to_string(transaction_refetch_needed.hash))
+      assert response_1 = json_response(request_1, 200)
+      assert response_1["refetch_needed"] == true
+
+      request_2 = get(conn, "/api/v2/transactions/" <> to_string(transaction_no_refetch.hash))
+      assert response_2 = json_response(request_2, 200)
+      assert response_2["refetch_needed"] == false
+    end
+
     test "batch 1155 flattened", %{conn: conn} do
       token = insert(:token, type: "ERC-1155")
 
