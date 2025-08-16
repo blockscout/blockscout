@@ -1323,7 +1323,7 @@ defmodule Explorer.ChainTest do
                           231, 234, 137, 179, 40, 255, 234, 134, 26, 179, 239>>
                     },
                     output: %Explorer.Chain.Data{bytes: ""},
-                    trace_address: [],
+                    trace_address: nil,
                     type: :call,
                     block_number: 37,
                     transaction_index: nil,

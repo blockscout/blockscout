@@ -236,7 +236,7 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
       end
     end)
 
-    {:ok, pid} = History.start_link([])
+    {:ok, _pid} = History.start_link([])
 
     :timer.sleep(500)
 
