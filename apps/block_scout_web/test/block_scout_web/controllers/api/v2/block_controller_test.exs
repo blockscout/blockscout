@@ -247,6 +247,19 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert response_2 == response_1
       compare_item(block, response_2)
     end
+
+    test "includes refetch_needed field in response", %{conn: conn} do
+      block_refetch_needed = insert(:block, refetch_needed: true)
+      block_no_refetch = insert(:block, refetch_needed: false)
+
+      request_1 = get(conn, "/api/v2/blocks/#{block_refetch_needed.hash}")
+      assert response_1 = json_response(request_1, 200)
+      assert response_1["refetch_needed"] == true
+
+      request_2 = get(conn, "/api/v2/blocks/#{block_no_refetch.hash}")
+      assert response_2 = json_response(request_2, 200)
+      assert response_2["refetch_needed"] == false
+    end
   end
 
   describe "/blocks/{block_hash_or_number}/transactions" do
