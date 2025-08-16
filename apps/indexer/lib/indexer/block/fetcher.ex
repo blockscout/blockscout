@@ -33,6 +33,7 @@ defmodule Indexer.Block.Fetcher do
     BlockReward,
     ContractCode,
     InternalTransaction,
+    NonceUpdater,
     ReplacedTransaction,
     SignedAuthorizationStatus,
     Token,
@@ -237,8 +238,9 @@ defmodule Indexer.Block.Fetcher do
            Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
          token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers}),
          stability_validators = StabilityValidators.parse(blocks),
+         addresses_without_nonce = process_addresses_nonce(addresses),
          basic_import_options = %{
-           addresses: %{params: addresses},
+           addresses: %{params: addresses_without_nonce},
            address_coin_balances: %{params: coin_balances_params_set},
            address_token_balances: %{params: address_token_balances},
            address_current_token_balances: %{
@@ -795,6 +797,20 @@ defmodule Indexer.Block.Fetcher do
 
       Map.put(token_transfer, :token, token)
     end)
+  end
+
+  defp process_addresses_nonce(addresses) do
+    {result_addresses, nonce_update_params} =
+      Enum.reduce(addresses, {[], []}, fn address, {addresses_acc, nonce_acc} ->
+        case Map.get(address, :nonce) do
+          nil -> {[address | addresses_acc], nonce_acc}
+          nonce -> {[Map.delete(address, :nonce) | addresses_acc], [%{hash: address.hash, nonce: nonce} | nonce_acc]}
+        end
+      end)
+
+    NonceUpdater.add(nonce_update_params)
+
+    Enum.reverse(result_addresses)
   end
 
   # Asynchronously schedules matching of Arbitrum L1-to-L2 messages where the message ID is hashed.
