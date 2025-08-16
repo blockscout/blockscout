@@ -367,7 +367,7 @@ defmodule Explorer.Chain.Mud do
     Block
     |> where([b], b.number in ^block_numbers)
     |> select([b], {b.number, b.timestamp})
-    |> Repo.all()
+    |> Repo.replica().all()
     |> Enum.into(%{})
   end
 
