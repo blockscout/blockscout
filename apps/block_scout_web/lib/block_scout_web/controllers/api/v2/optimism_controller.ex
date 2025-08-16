@@ -10,11 +10,6 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       split_list_by_page: 1
     ]
 
-  import BlockScoutWeb.PagingHelper,
-    only: [
-      delete_parameters_from_next_page_params: 1
-    ]
-
   import Explorer.Helper, only: [hash_to_binary: 1]
 
   alias BlockScoutWeb.API.V2.ApiView
@@ -54,7 +49,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       |> TransactionBatch.list()
       |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, batches, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page_params(next_page, batches, params)
 
     conn
     |> put_status(200)
