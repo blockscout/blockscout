@@ -39,7 +39,7 @@ defmodule Explorer.Chain.SmartContractAdditionalSource do
       :address_hash
     ])
     |> validate_required([:file_name, :contract_source_code, :address_hash])
-    |> unique_constraint(:address_hash)
+    |> unique_constraint([:file_name, :address_hash])
   end
 
   def invalid_contract_changeset(%__MODULE__{} = smart_contract_additional_source, attrs, error) do
