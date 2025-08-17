@@ -296,7 +296,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
         burnt_fees_percentage: %Schema{type: :number, format: :float, nullable: true},
         type: %Schema{type: :string, nullable: false, enum: ["block", "uncle", "reorg"]},
         transaction_fees: General.IntegerString,
-        withdrawals_count: %Schema{type: :integer, nullable: true}
+        withdrawals_count: %Schema{type: :integer, nullable: true},
+        is_pending_update: %Schema{type: :boolean, nullable: false},
       },
       required: [
         :height,
@@ -322,7 +323,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
         :burnt_fees_percentage,
         :type,
         :transaction_fees,
-        :withdrawals_count
+        :withdrawals_count,
+        :is_pending_update
       ]
     }
     |> ChainTypeCustomizations.chain_type_fields()
