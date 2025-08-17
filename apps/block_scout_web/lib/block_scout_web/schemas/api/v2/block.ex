@@ -297,7 +297,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
         type: %Schema{type: :string, nullable: false, enum: ["block", "uncle", "reorg"]},
         transaction_fees: General.IntegerString,
         withdrawals_count: %Schema{type: :integer, nullable: true},
-        is_pending_update: %Schema{type: :boolean, nullable: false},
+        is_pending_update: %Schema{type: :boolean, nullable: false}
       },
       required: [
         :height,

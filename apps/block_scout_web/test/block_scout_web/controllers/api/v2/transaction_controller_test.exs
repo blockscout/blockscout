@@ -269,11 +269,14 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       request = get(conn, "/api/v2/transactions")
       assert response = json_response(request, 200)
-      
+
       # Find the transactions in the response
-      refetch_tx_response = Enum.find(response["items"], fn item -> item["hash"] == to_string(transaction_refetch_needed.hash) end)
-      no_refetch_tx_response = Enum.find(response["items"], fn item -> item["hash"] == to_string(transaction_no_refetch.hash) end)
-      
+      refetch_tx_response =
+        Enum.find(response["items"], fn item -> item["hash"] == to_string(transaction_refetch_needed.hash) end)
+
+      no_refetch_tx_response =
+        Enum.find(response["items"], fn item -> item["hash"] == to_string(transaction_no_refetch.hash) end)
+
       assert refetch_tx_response["is_pending_update"] == true
       assert no_refetch_tx_response["is_pending_update"] == false
     end

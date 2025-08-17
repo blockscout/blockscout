@@ -267,11 +267,14 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
       request = get(conn, "/api/v2/blocks")
       assert response = json_response(request, 200)
-      
+
       # Find the blocks in the response
-      refetch_block_response = Enum.find(response["items"], fn item -> item["hash"] == to_string(block_refetch_needed.hash) end)
-      no_refetch_block_response = Enum.find(response["items"], fn item -> item["hash"] == to_string(block_no_refetch.hash) end)
-      
+      refetch_block_response =
+        Enum.find(response["items"], fn item -> item["hash"] == to_string(block_refetch_needed.hash) end)
+
+      no_refetch_block_response =
+        Enum.find(response["items"], fn item -> item["hash"] == to_string(block_no_refetch.hash) end)
+
       assert refetch_block_response["is_pending_update"] == true
       assert no_refetch_block_response["is_pending_update"] == false
     end
