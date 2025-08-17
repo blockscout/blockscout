@@ -521,7 +521,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_transaction? && conn)),
       "has_error_in_internal_transactions" => transaction.has_error_in_internal_transactions,
       "authorization_list" => authorization_list(transaction.signed_authorizations),
-      "refetch_needed" => transaction.block && transaction.block.refetch_needed
+      "is_pending_update" => transaction.block && transaction.block.refetch_needed
     }
 
     result

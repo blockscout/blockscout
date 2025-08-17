@@ -71,7 +71,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "type" => block |> BlockView.block_type() |> String.downcase(),
       "transaction_fees" => block.transactions_fees,
       "withdrawals_count" => count_withdrawals(block),
-      "refetch_needed" => block.refetch_needed
+      "is_pending_update" => block.refetch_needed
     }
     |> chain_type_fields(block, single_block?)
   end
