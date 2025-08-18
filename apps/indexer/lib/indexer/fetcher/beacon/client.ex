@@ -4,12 +4,11 @@ defmodule Indexer.Fetcher.Beacon.Client do
   """
   require Logger
 
-  alias Explorer.{Chain, HttpClient}
-  alias Explorer.Chain.Hash
+  alias Explorer.HttpClient
 
   @request_error_msg "Error while sending request to beacon rpc"
 
-  def http_get_request(url) do
+  defp http_get_request(url) do
     case HttpClient.get(url) do
       {:ok, %{body: body, status_code: 200}} ->
         Jason.decode(body)

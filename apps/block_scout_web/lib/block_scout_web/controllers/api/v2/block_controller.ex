@@ -25,8 +25,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias BlockScoutWeb.API.V2.{
-    DepositController,
-    DepositView,
+    Ethereum.DepositController,
+    Ethereum.DepositView,
     TransactionView,
     WithdrawalView
   }
@@ -413,6 +413,37 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
+  @doc """
+  Handles `api/v2/blocks/:block_hash_or_number/beacon/deposits` endpoint.
+  Fetches beacon deposits included in a specific block with pagination support.
+
+  This endpoint retrieves all beacon deposits that were included in the
+  specified block. The block can be identified by either its hash or number.
+  The results include preloaded associations for both the from_address and
+  withdrawal_address, including scam badges, names, smart contracts, and proxy
+  implementations. The response is paginated and may include ENS and metadata
+  enrichment if those services are enabled.
+
+  ## Parameters
+  - `conn`: The Plug connection.
+  - `params`: A map containing:
+    - `"block_hash_or_number"`: The block identifier (hash or number) to fetch
+      deposits from.
+    - Optional pagination parameters (e.g., `index`).
+
+  ## Returns
+  - `{:error, :not_found}` - If the block is not found.
+  - `{:error, {:invalid, :hash | :number}}` - If the block identifier format is
+    invalid.
+  - `{:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}`
+    - If the block has lost consensus in the blockchain.
+  - `Plug.Conn.t()` - A 200 response with rendered deposits and pagination
+    information when successful.
+  """
+  @spec beacon_deposits(Plug.Conn.t(), map()) ::
+          {:error, :not_found | {:invalid, :hash | :number}}
+          | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
+          | Plug.Conn.t()
   def beacon_deposits(conn, %{"block_hash_or_number" => block_hash_or_number} = params) do
     with {:ok, block} <- block_param_to_block(block_hash_or_number) do
       full_options =
