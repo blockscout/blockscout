@@ -1067,7 +1067,7 @@ defmodule Explorer.Chain.SmartContract do
         AddressName.clear_primary_address_names(repo, address_hash)
       end)
       |> Multi.run(
-        :update_smart_contract,
+        :smart_contract,
         fn repo, %{acquire_smart_contract: smart_contract} ->
           smart_contract
           |> __MODULE__.changeset(attrs)
@@ -1077,7 +1077,7 @@ defmodule Explorer.Chain.SmartContract do
       )
       |> Multi.run(
         :set_primary_address_name,
-        fn repo, %{update_smart_contract: %SmartContract{name: name}} ->
+        fn repo, %{smart_contract: %SmartContract{name: name}} ->
           result = AddressName.create_primary_address_name(repo, name, address_hash)
           {:ok, result}
         end
