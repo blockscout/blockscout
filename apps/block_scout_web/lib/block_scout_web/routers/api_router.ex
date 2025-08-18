@@ -575,15 +575,26 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     if @reading_enabled do
       post("/eth-rpc", EthRPC.EthController, :eth_request)
 
-      forward("/", RPCTranslatorForwarder, %{
-        "block" => {RPC.BlockController, []},
-        "account" => {RPC.AddressController, []},
-        "logs" => {RPC.LogsController, []},
-        "token" => {RPC.TokenController, []},
-        "stats" => {RPC.StatsController, []},
-        "contract" => {RPC.ContractController, [:verify]},
-        "transaction" => {RPC.TransactionController, []}
-      })
+      forward(
+        "/",
+        RPCTranslatorForwarder,
+        %{
+          "block" => {RPC.BlockController, []},
+          "account" => {RPC.AddressController, []},
+          "logs" => {RPC.LogsController, []},
+          "token" => {RPC.TokenController, []},
+          "stats" => {RPC.StatsController, []},
+          "contract" => {RPC.ContractController, [:verify]},
+          "transaction" => {RPC.TransactionController, []}
+        }
+        |> then(fn options ->
+          if @chain_type == :celo do
+            Map.put(options, "epoch", {BlockScoutWeb.API.RPC.CeloController, []})
+          else
+            options
+          end
+        end)
+      )
     end
   end
 end
