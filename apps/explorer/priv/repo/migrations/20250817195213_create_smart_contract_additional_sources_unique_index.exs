@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Account.Migrations.CreateSmartContractAdditionalSourcesUniqueIndex do
+defmodule Explorer.Repo.Migrations.CreateSmartContractAdditionalSourcesUniqueIndex do
   use Ecto.Migration
 
   def up do
