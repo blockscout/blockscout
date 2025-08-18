@@ -1,6 +1,9 @@
 defmodule Explorer.Repo.Migrations.CreateSmartContractAdditionalSourcesUniqueIndex do
   use Ecto.Migration
 
+  @disable_ddl_transaction true
+  @disable_migration_lock true
+
   def up do
     # This deletes all duplicate rows except the one with the minimum ID
     # (keeping the earliest inserted record for each address_hash + file_name combination)
@@ -22,7 +25,8 @@ defmodule Explorer.Repo.Migrations.CreateSmartContractAdditionalSourcesUniqueInd
     create(
       unique_index(
         :smart_contracts_additional_sources,
-        [:file_name, :address_hash]
+        [:address_hash, :file_name],
+        concurrently: true
       )
     )
   end
@@ -31,7 +35,7 @@ defmodule Explorer.Repo.Migrations.CreateSmartContractAdditionalSourcesUniqueInd
     drop(
       unique_index(
         :smart_contracts_additional_sources,
-        [:file_name, :address_hash]
+        [:address_hash, :file_name]
       )
     )
   end
