@@ -20,6 +20,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
     :interval,
     :batch_size,
     :deposit_contract_address_hash,
+    :domain_deposit,
+    :genesis_fork_version,
     :deposit_index,
     :last_processed_log_block_number,
     :last_processed_log_index
@@ -38,14 +40,26 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
 
   @impl GenServer
   def handle_continue(nil, _state) do
-    case Client.get_deposit_contract_address_hash() do
-      {:ok, deposit_contract_address_hash} ->
+    chain_id = Application.get_env(:indexer, :chain_id)
+
+    case Client.get_spec() do
+      {:ok,
+       %{
+         "data" => %{
+           "DEPOSIT_CHAIN_ID" => ^chain_id,
+           "DEPOSIT_CONTRACT_ADDRESS" => deposit_contract_address_hash,
+           "DOMAIN_DEPOSIT" => "0x" <> domain_deposit_hex,
+           "GENESIS_FORK_VERSION" => "0x" <> genesis_fork_version_hex
+         }
+       }} ->
         last_processed_deposit = Deposit.get_latest_deposit() || %{index: -1, block_number: -1, log_index: -1}
 
         state = %__MODULE__{
           interval: Application.get_env(:indexer, __MODULE__)[:interval],
           batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size],
           deposit_contract_address_hash: deposit_contract_address_hash,
+          domain_deposit: Base.decode16!(domain_deposit_hex),
+          genesis_fork_version: Base.decode16!(genesis_fork_version_hex),
           deposit_index: last_processed_deposit.index,
           last_processed_log_block_number: last_processed_deposit.block_number,
           last_processed_log_index: last_processed_deposit.log_index
@@ -55,8 +69,25 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
 
         {:noreply, state}
 
+      {:ok,
+       %{
+         "data" => %{
+           "DEPOSIT_CHAIN_ID" => chain_id,
+           "DEPOSIT_CONTRACT_ADDRESS" => _deposit_contract_address_hash,
+           "DOMAIN_DEPOSIT" => "0x" <> _domain_deposit_hex,
+           "GENESIS_FORK_VERSION" => "0x" <> _genesis_fork_version_hex
+         }
+       }} ->
+        Logger.error("Misconfigured CHAIN_ID or INDEXER_BEACON_RPC_URL, CHAIN_ID from the node: #{inspect(chain_id)}")
+        {:stop, :wrong_chain_id, nil}
+
+      {:ok, data} ->
+        Logger.error("Unexpected format on beacon spec endpoint: #{inspect(data)}")
+        {:stop, :unexpected_format, nil}
+
       {:error, reason} ->
-        Logger.error("Failed to fetch deposit contract address hash: #{inspect(reason)}")
+        Logger.error("Failed to fetch beacon spec: #{inspect(reason)}")
+        {:stop, :fetch_failed, nil}
     end
   end
 
@@ -67,6 +98,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
           interval: interval,
           batch_size: batch_size,
           deposit_contract_address_hash: deposit_contract_address_hash,
+          domain_deposit: domain_deposit,
+          genesis_fork_version: genesis_fork_version,
           deposit_index: deposit_index,
           last_processed_log_block_number: last_processed_log_block_number,
           last_processed_log_index: last_processed_log_index
@@ -89,7 +122,7 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
 
       _ ->
         {deposits_count, _} =
-          Repo.insert_all(Deposit, set_status(deposits),
+          Repo.insert_all(Deposit, set_status(deposits, domain_deposit, genesis_fork_version),
             on_conflict: :replace_all,
             conflict_target: [:index]
           )
@@ -205,10 +238,10 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
     end)
   end
 
-  defp set_status(deposits) do
+  defp set_status(deposits, domain_deposit, genesis_fork_version) do
     {deposits_to_query, deposits_acc, _valid_pubkeys_acc} =
       Enum.reduce(deposits, {[], [], MapSet.new()}, fn deposit, {deposit_to_query, deposits_acc, valid_pubkeys_acc} ->
-        valid_signature? = verify(deposit)
+        valid_signature? = verify(deposit, domain_deposit, genesis_fork_version)
 
         new_valid_pubkeys_acc =
           if valid_signature? do
@@ -250,7 +283,7 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
 
   @zero_genesis_validators_root :binary.copy(<<0x00>>, 32)
 
-  def verify(deposit) do
+  def verify(deposit, domain_deposit, genesis_fork_version) do
     deposit_message_root =
       hash_tree_root_deposit_message(
         deposit.pubkey.bytes,
@@ -260,8 +293,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
 
     domain =
       compute_domain(
-        Application.get_env(:indexer, __MODULE__)[:domain_deposit],
-        Application.get_env(:indexer, __MODULE__)[:genesis_fork_version],
+        domain_deposit,
+        genesis_fork_version,
         @zero_genesis_validators_root
       )
 

@@ -1398,18 +1398,8 @@ config :indexer, Indexer.Fetcher.Beacon.Deposit.Supervisor,
       ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BEACON_DEPOSIT_FETCHER")
 
 config :indexer, Indexer.Fetcher.Beacon.Deposit,
-  domain_deposit:
-    "INDEXER_BEACON_DEPOSIT_DOMAIN"
-    |> System.get_env("0x03000000")
-    |> String.trim_leading("0x")
-    |> Base.decode16!(case: :mixed),
-  genesis_fork_version:
-    "INDEXER_BEACON_DEPOSIT_GENESIS_FORK_VERSION"
-    |> System.get_env("0x00000000")
-    |> String.trim_leading("0x")
-    |> Base.decode16!(case: :mixed),
   interval: ConfigHelper.parse_time_env_var("INDEXER_BEACON_DEPOSIT_FETCHER_INTERVAL", "6s"),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_DEPOSIT_FETCHER_BATCH_SIZE", 100)
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_DEPOSIT_FETCHER_BATCH_SIZE", 1000)
 
 config :indexer, Indexer.Fetcher.Beacon.Deposit.Status.Supervisor,
   disabled?:
