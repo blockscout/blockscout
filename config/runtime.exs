@@ -1057,6 +1057,12 @@ config :indexer, Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue.Supervi
     ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_TOKEN_INFO_QUEUE_FETCHER") ||
       is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
 
+config :indexer, Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor,
+  disabled?:
+    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_FETCHER") ||
+      is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")) ||
+      !ConfigHelper.parse_bool_env_var("TXS_STATS_ENABLED", "true")
+
 config :indexer, Indexer.Fetcher.MultichainSearchDb.CountersFetcher.Supervisor,
   disabled?:
     ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_FETCHER") ||
