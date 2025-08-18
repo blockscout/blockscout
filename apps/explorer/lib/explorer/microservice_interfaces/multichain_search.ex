@@ -48,6 +48,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   """
   @spec batch_import(map()) :: {:error, map()} | {:ok, any()}
   def batch_import(params) do
+    # todo: rename this function to `batch_export` (and all related places in code & comments)
     if enabled?() do
       params_chunks = extract_batch_import_params_into_chunks(params)
       url = batch_import_url()
@@ -790,6 +791,15 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
+  # Takes a map of counter entries and makes a list of the entries divided into chunks.
+  # The chunk max size is defined by `MICROSERVICE_MULTICHAIN_SEARCH_COUNTERS_CHUNK_SIZE` env variable.
+  #
+  # ## Parameters
+  # - `entries`: A map of the counter entries.
+  # - `entries_type`: A type of the counter entries.
+  #
+  # ## Returns
+  # - A list of chunks with the entries.
   @spec extract_counter_entries_into_chunks(%{DateTime.t() => map()}, :global) :: list()
   defp extract_counter_entries_into_chunks(entries, entries_type) do
     entries

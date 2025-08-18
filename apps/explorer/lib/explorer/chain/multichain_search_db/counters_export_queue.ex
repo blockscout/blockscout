@@ -14,6 +14,16 @@ defmodule Explorer.Chain.MultichainSearchDb.CountersExportQueue do
   @optional_attrs ~w(retries_number)a
   @allowed_attrs @optional_attrs ++ @required_attrs
 
+  @typedoc """
+    * `timestamp` - The timestamp of the counters. The counters in `data` are only relevant at the moment of the timestamp.
+    * `counter_type` - The type of the counters in `data`. Currently only `global` type is implemented which includes the following counters:
+                       - daily transactions number
+                       - total transactions number
+                       - total addresses number
+    * `data` - The map containing the counters relevant to the timestamp.
+    * `retries_number` - A number of retries to send the counters to Multichain service.
+                         Equals to `nil` if the counters haven't been sent to the service yet.
+  """
   @primary_key false
   typed_schema "multichain_search_db_export_counters_queue" do
     field(:timestamp, :utc_datetime_usec, primary_key: true)
@@ -30,6 +40,10 @@ defmodule Explorer.Chain.MultichainSearchDb.CountersExportQueue do
     timestamps()
   end
 
+  @doc """
+    Validates that the `attrs` are valid.
+  """
+  @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
   def changeset(%__MODULE__{} = queue, attrs) do
     queue
     |> cast(attrs, @allowed_attrs)
@@ -68,6 +82,15 @@ defmodule Explorer.Chain.MultichainSearchDb.CountersExportQueue do
     |> Repo.stream_reduce(initial, reducer)
   end
 
+  # Limits the SELECT query if needed. The limit is defined in `INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_INIT_QUERY_LIMIT` env variable.
+  #
+  # ## Parameters
+  # - `query`: The query to add the limit to.
+  # - `true or false`: If `true`, add the limit. If `false`, leave the query as it is.
+  #
+  # ## Returns
+  # - The modified query with the limit or the source query without changes.
+  @spec add_queue_fetcher_limit(Ecto.Query.t(), boolean()) :: Ecto.Query.t()
   defp add_queue_fetcher_limit(query, false), do: query
 
   defp add_queue_fetcher_limit(query, true) do
