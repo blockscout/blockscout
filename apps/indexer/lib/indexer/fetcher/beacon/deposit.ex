@@ -205,9 +205,9 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
       Event.find_and_decode(
         @abi,
         log.first_topic && log.first_topic.bytes,
-        log.second_topic && log.second_topic.bytes,
-        log.third_topic && log.third_topic.bytes,
-        log.fourth_topic && log.fourth_topic.bytes,
+        nil,
+        nil,
+        nil,
         log.data.bytes
       )
 
@@ -283,7 +283,7 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
 
   @zero_genesis_validators_root :binary.copy(<<0x00>>, 32)
 
-  def verify(deposit, domain_deposit, genesis_fork_version) do
+  defp verify(deposit, domain_deposit, genesis_fork_version) do
     deposit_message_root =
       hash_tree_root_deposit_message(
         deposit.pubkey.bytes,

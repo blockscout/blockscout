@@ -56,16 +56,42 @@ defmodule Explorer.Chain.Beacon.Deposit do
     timestamps()
   end
 
+  @doc """
+  Validates that the `attrs` are valid.
+  """
+  @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
   def changeset(deposit, attrs) do
     deposit
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
   end
 
+  @spec statuses :: [atom()]
   def statuses, do: @statuses_enum
 
   @sorting [desc: :index]
 
+  @doc """
+  Fetches beacon deposits with pagination and association preloading.
+
+  Retrieves beacon deposits sorted by index in descending order (newest first).
+  For each deposit, extracts the withdrawal address from the withdrawal
+  credentials if they have prefix 0x01 or 0x02, making it available as a
+  virtual field for association preloading.
+
+  ## Parameters
+  - `options`: A keyword list of options:
+    - `:paging_options` - Pagination configuration (defaults to
+      `Chain.default_paging_options()`).
+    - `:necessity_by_association` - A map specifying which associations to
+      preload and whether they are `:required` or `:optional`.
+    - `:api?` - Boolean flag for API context.
+
+  ## Returns
+  - A list of beacon deposits with requested associations preloaded and
+    withdrawal addresses extracted where applicable.
+  """
+  @spec all([Chain.paging_options() | Chain.necessity_by_association() | Chain.api?()]) :: [t()]
   def all(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
@@ -81,6 +107,31 @@ defmodule Explorer.Chain.Beacon.Deposit do
     |> Chain.select_repo(options).preload(optional_necessity_by_association |> Enum.map(&elem(&1, 0)))
   end
 
+  @doc """
+  Fetches beacon deposits from a specific block with pagination and association preloading.
+
+  Retrieves all beacon deposits that were included in the specified block,
+  sorted by index in descending order (newest first). For each deposit,
+  extracts the withdrawal address from the withdrawal credentials if they have
+  prefix 0x01 or 0x02, making it available as a virtual field for association
+  preloading.
+
+  ## Parameters
+  - `block_hash`: The hash of the block to fetch deposits from.
+  - `options`: A keyword list of options:
+    - `:paging_options` - Pagination configuration (defaults to
+      `Chain.default_paging_options()`).
+    - `:necessity_by_association` - A map specifying which associations to
+      preload and whether they are `:required` or `:optional`.
+    - `:api?` - Boolean flag for API context.
+
+  ## Returns
+  - A list of beacon deposits from the specified block with requested
+    associations preloaded and withdrawal addresses extracted where applicable.
+  """
+  @spec from_block_hash(Hash.Full.t(), [Chain.paging_options() | Chain.necessity_by_association() | Chain.api?()]) :: [
+          t()
+        ]
   def from_block_hash(block_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
@@ -97,6 +148,31 @@ defmodule Explorer.Chain.Beacon.Deposit do
     |> Chain.select_repo(options).preload(optional_necessity_by_association |> Enum.map(&elem(&1, 0)))
   end
 
+  @doc """
+  Fetches beacon deposits from a specific address (`from_address`) with pagination and
+  association preloading.
+
+  Retrieves all beacon deposits that were sent from the specified address,
+  sorted by index in descending order (newest first). For each deposit,
+  extracts the withdrawal address from the withdrawal credentials if they have
+  prefix 0x01 or 0x02, making it available as a virtual field for association
+  preloading.
+
+  ## Parameters
+  - `from_address`: The address hash to fetch deposits from.
+  - `options`: A keyword list of options:
+    - `:paging_options` - Pagination configuration (defaults to
+      `Chain.default_paging_options()`).
+    - `:necessity_by_association` - A map specifying which associations to
+      preload and whether they are `:required` or `:optional`.
+    - `:api?` - Boolean flag for API context.
+
+  ## Returns
+  - A list of beacon deposits from the specified address with requested
+    associations preloaded and withdrawal addresses extracted where applicable.
+  """
+  @spec from_address_hash(Hash.Address.t(), [Chain.paging_options() | Chain.necessity_by_association() | Chain.api?()]) ::
+          [t()]
   def from_address_hash(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
@@ -113,10 +189,64 @@ defmodule Explorer.Chain.Beacon.Deposit do
     |> Chain.select_repo(options).preload(optional_necessity_by_association |> Enum.map(&elem(&1, 0)))
   end
 
+  @doc """
+  Retrieves the most recent beacon deposit by index.
+
+  Fetches the beacon deposit with the highest index value, which represents
+  the most recently indexed deposit in the system.
+
+  ## Parameters
+  - `options`: A keyword list of options:
+    - `:api?` - Boolean flag for API context, determines which repository to
+      use for the query.
+
+  ## Returns
+  - The beacon deposit with the highest index.
+  - `nil` if no deposits exist.
+  """
+  @spec get_latest_deposit([Chain.api?()]) :: t() | nil
   def get_latest_deposit(options \\ []) do
     Chain.select_repo(options).one(from(deposit in __MODULE__, order_by: [desc: deposit.index], limit: 1))
   end
 
+  @doc """
+  Fetches beacon deposit event logs from the deposit contract.
+
+  Retrieves deposit event logs from the specified deposit contract address,
+  starting after the given block number and log index position. This function
+  is used for paginated retrieval of deposit events, ensuring only logs from
+  consensus blocks are included.
+
+  ## Parameters
+  - `deposit_contract_address_hash`: The address hash of the deposit contract.
+  - `log_block_number`: The block number to start searching after (for
+    pagination).
+  - `log_index`: The log index within the block to start searching after (for
+    pagination).
+  - `limit`: The maximum number of logs to retrieve.
+
+  ## Returns
+  - A list of deposit event logs with the following fields:
+    - Log fields: `first_topic`, `second_topic`, `third_topic`,
+      `fourth_topic`, `data`, `index`, `block_number`, `block_hash`,
+      `transaction_hash`.
+    - Transaction fields: `from_address_hash`, `block_timestamp`.
+  """
+  @spec get_logs_with_deposits(
+          Hash.Address.t(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer()
+        ) :: [
+          first_topic: Hash.Full.t(),
+          data: Data.t(),
+          index: non_neg_integer(),
+          block_number: non_neg_integer(),
+          block_hash: Hash.Full.t(),
+          transaction_hash: Hash.Full.t(),
+          from_address_hash: Hash.Address.t(),
+          block_timestamp: DateTime.t()
+        ]
   def get_logs_with_deposits(deposit_contract_address_hash, log_block_number, log_index, limit) do
     query =
       from(log in Log,
@@ -129,7 +259,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
         select:
           map(
             log,
-            ^~w(first_topic second_topic third_topic fourth_topic data index block_number block_hash transaction_hash)a
+            ^~w(first_topic data index block_number block_hash transaction_hash)a
           ),
         order_by: [asc: log.block_number, asc: log.index],
         select_merge: map(transaction, ^~w(from_address_hash block_timestamp)a)

@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.V2.DepositView do
+defmodule BlockScoutWeb.API.V2.Ethereum.DepositView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.Helper

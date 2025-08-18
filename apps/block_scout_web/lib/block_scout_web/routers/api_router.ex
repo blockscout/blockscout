@@ -429,8 +429,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     chain_scope :ethereum do
       scope "/beacon" do
-        get("/deposits", V2.DepositController, :list)
-        get("/deposits/count", V2.DepositController, :count)
+        get("/deposits", V2.Ethereum.DepositController, :list)
+        get("/deposits/count", V2.Ethereum.DepositController, :count)
       end
     end
 

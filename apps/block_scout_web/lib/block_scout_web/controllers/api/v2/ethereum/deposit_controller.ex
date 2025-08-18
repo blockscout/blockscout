@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.V2.DepositController do
+defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain, only: [next_page_params: 4, split_list_by_page: 1]
@@ -6,11 +6,29 @@ defmodule BlockScoutWeb.API.V2.DepositController do
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Beacon.Deposit
-  alias Explorer.PagingOptions
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  @doc """
+  Handles `api/v2/beacon/deposits` endpoint.
+  Lists all beacon deposits with pagination support.
+
+  This endpoint retrieves all beacon deposits from the blockchain in a
+  paginated format. The results include preloaded associations for both the
+  from_address and withdrawal_address, including scam badges, names, smart
+  contracts, and proxy implementations. The response may include ENS and
+  metadata enrichment if those services are enabled.
+
+  ## Parameters
+  - `conn`: The Plug connection.
+  - `params`: A map containing optional pagination parameters (e.g., `index`).
+
+  ## Returns
+  - `Plug.Conn.t()` - A 200 response with rendered deposits and pagination
+    information.
+  """
   @spec list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def list(conn, params) do
     full_options =
@@ -38,12 +56,30 @@ defmodule BlockScoutWeb.API.V2.DepositController do
     })
   end
 
+  @doc """
+  Handles `api/v2/beacon/deposits/count` endpoint.
+  Returns the total count of beacon deposits.
+
+  This endpoint calculates the total number of beacon deposits by retrieving
+  the latest deposit's index. Since deposit indices are 0-based and sequential,
+  the total count equals the highest index plus one. If no deposits exist, the
+  count is 0.
+
+  ## Parameters
+  - `conn`: The Plug connection.
+
+  ## Returns
+  - `Plug.Conn.t()` - A JSON response containing:
+    - `deposits_count`: The total number of beacon deposits (integer).
+  """
+  @spec count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def count(conn, _params) do
     last_deposit = Deposit.get_latest_deposit(api?: true) || %{index: -1}
 
     conn |> json(%{deposits_count: last_deposit.index + 1})
   end
 
+  @spec paging_options(map()) :: [Chain.paging_options()]
   def paging_options(%{"index" => index}) do
     case Integer.parse(index) do
       {index, ""} -> [paging_options: %{PagingOptions.default_paging_options() | key: %{index: index}}]
@@ -57,6 +93,7 @@ defmodule BlockScoutWeb.API.V2.DepositController do
 
   def paging_options(_), do: [paging_options: PagingOptions.default_paging_options()]
 
+  @spec paging_function() :: (Deposit.t() -> %{index: non_neg_integer()})
   def paging_function,
     do: fn deposit ->
       %{index: deposit.index}

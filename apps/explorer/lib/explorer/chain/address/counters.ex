@@ -474,8 +474,6 @@ defmodule Explorer.Chain.Address.Counters do
           address_hash,
           options
         )
-      else
-        nil
       end
 
     map =

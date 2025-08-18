@@ -30,7 +30,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias BlockScoutWeb.AccessHelper
-  alias BlockScoutWeb.API.V2.{BlockView, DepositController, DepositView, TransactionView, WithdrawalView}
+
+  alias BlockScoutWeb.API.V2.{
+    BlockView,
+    Ethereum.DepositController,
+    Ethereum.DepositView,
+    TransactionView,
+    WithdrawalView
+  }
+
   alias Explorer.{Chain, Market, PagingOptions}
   alias Explorer.Chain.{Address, Beacon.Deposit, Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Address.{CoinBalance, Counters}
@@ -1410,6 +1418,30 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       forbidden: ForbiddenResponse.response()
     ]
 
+  @doc """
+  Handles `api/v2/addresses/:address_hash/beacon/deposits` endpoint.
+  Fetches beacon deposits for a given address with pagination support.
+
+  This endpoint retrieves all beacon deposits originating from the specified
+  address. The results include preloaded associations for both the from_address
+  and withdrawal_address, including scam badges, names, smart contracts, and
+  proxy implementations. The response is paginated and may include ENS and
+  metadata enrichment if those services are enabled.
+
+  ## Parameters
+  - `conn`: The Plug connection.
+  - `params`: A map containing:
+    - `address_hash_param`: The address hash string to fetch deposits for.
+    - Optional pagination parameters (e.g., `index`).
+
+  ## Returns
+  - `{:format, :error}` - If the address hash format is invalid.
+  - `{:restricted_access, true}` - If the address is restricted from access.
+  - `Plug.Conn.t()` - A 200 response with rendered deposits and pagination
+    information when successful.
+  """
+  @spec beacon_deposits(Plug.Conn.t(), map()) ::
+          {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def beacon_deposits(conn, %{address_hash_param: address_hash_param} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_param, params) do
       full_options =
