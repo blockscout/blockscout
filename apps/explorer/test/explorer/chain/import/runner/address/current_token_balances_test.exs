@@ -307,6 +307,39 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       assert current_token_balance.value == Decimal.new(200)
     end
 
+    test "ignores when the new value_fetched_at not set", %{
+      address: %Address{hash: address_hash} = address,
+      token: %Token{contract_address_hash: token_contract_address_hash},
+      options: options
+    } do
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token_contract_address_hash,
+        value: 200,
+        value_fetched_at: Timex.shift(Timex.now(), minutes: -2)
+      )
+
+      update_holder_count!(token_contract_address_hash, 1)
+
+      assert {:ok, %{address_current_token_balances: [], address_current_token_balances_update_token_holder_counts: []}} =
+               run_changes(
+                 %{
+                   address_hash: address_hash,
+                   token_contract_address_hash: token_contract_address_hash,
+                   block_number: 2,
+                   value: Decimal.new(100)
+                 },
+                 options
+               )
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address_hash)
+
+      assert current_token_balance.block_number == 1
+      assert current_token_balance.value == Decimal.new(200)
+    end
+
     test "ignores when the new block number is lesser", %{
       address: %Address{hash: address_hash} = address,
       token: %Token{contract_address_hash: token_contract_address_hash},
@@ -317,7 +350,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
         address: address,
         block_number: 2,
         token_contract_address_hash: token_contract_address_hash,
-        value: 200
+        value: 200,
+        value_fetched_at: Timex.shift(Timex.now(), minutes: -2)
       )
 
       update_holder_count!(token_contract_address_hash, 1)
@@ -328,7 +362,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                    address_hash: address_hash,
                    token_contract_address_hash: token_contract_address_hash,
                    block_number: 1,
-                   value: Decimal.new(100)
+                   value: Decimal.new(100),
+                   value_fetched_at: Timex.shift(Timex.now(), minutes: -1)
                  },
                  options
                )
