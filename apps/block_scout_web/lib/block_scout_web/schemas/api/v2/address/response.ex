@@ -11,44 +11,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
     nullable: true
   }
 
-  @filecoin_schema %Schema{
-    type: :object,
-    properties: %{
-      id: %Schema{
-        type: :string,
-        description: "Short f0 Filecoin address that may change during chain reorgs",
-        example: "f086971",
-        nullable: true
-      },
-      robust: @filecoin_robust_address_schema,
-      actor_type: %Schema{
-        type: :string,
-        description: "Type of actor associated with the Filecoin address",
-        enum: [
-          "account",
-          "cron",
-          "datacap",
-          "eam",
-          "ethaccount",
-          "evm",
-          "init",
-          "market",
-          "miner",
-          "multisig",
-          "paych",
-          "placeholder",
-          "power",
-          "reward",
-          "system",
-          "verifreg",
-          "paymentchannel"
-        ],
-        nullable: true
-      }
-    },
-    required: [:id, :robust, :actor_type]
-  }
-
   @zilliqa_schema %Schema{
     type: :object,
     properties: %{
@@ -72,8 +34,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
       :filecoin ->
         schema
         |> put_in([:properties, :creator_filecoin_robust_address], @filecoin_robust_address_schema)
-        |> put_in([:properties, :filecoin], @filecoin_schema)
-        |> update_in([:required], &[:creator_filecoin_robust_address, :filecoin | &1])
+        |> update_in([:required], &[:creator_filecoin_robust_address | &1])
 
       :zilliqa ->
         schema
