@@ -4,10 +4,21 @@ defmodule Explorer.Chain.InternalTransaction do
   use Explorer.Schema
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, Block, Data, Hash, PendingBlockOperation, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Data,
+    Hash,
+    PendingOperationsHelper,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   alias Explorer.Chain.DenormalizationHelper
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
+  alias Explorer.Utility.InternalTransactionHelper
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -40,7 +51,6 @@ defmodule Explorer.Chain.InternalTransaction do
    * `block` - block in which this internal transaction occurred
    * `block_hash` - foreign key for `block`
    * `block_index` - the index of this internal transaction inside the `block`
-   * `pending_block` - `nil` if `block` has all its internal transactions fetched
   """
   @primary_key false
   typed_schema "internal_transactions" do
@@ -59,8 +69,8 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:type, Type, null: false)
     field(:value, Wei, null: false)
     field(:block_number, :integer)
-    field(:transaction_index, :integer)
-    field(:block_index, :integer, null: false)
+    field(:transaction_index, :integer, primary_key: true, null: false)
+    field(:block_index, :integer)
 
     timestamps()
 
@@ -91,7 +101,6 @@ defmodule Explorer.Chain.InternalTransaction do
 
     belongs_to(:transaction, Transaction,
       foreign_key: :transaction_hash,
-      primary_key: true,
       references: :hash,
       type: Hash.Full,
       null: false
@@ -99,16 +108,10 @@ defmodule Explorer.Chain.InternalTransaction do
 
     belongs_to(:block, Block,
       foreign_key: :block_hash,
+      primary_key: true,
       references: :hash,
       type: Hash.Full,
       null: false
-    )
-
-    belongs_to(:pending_block, PendingBlockOperation,
-      foreign_key: :block_hash,
-      define_field: false,
-      references: :block_hash,
-      type: Hash.Full
     )
   end
 
@@ -131,11 +134,11 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     trace_address: [],
       ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+      ...>     transaction_index: 0,
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-      ...>     block_index: 0
+      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd"
       ...>   }
       ...> )
       iex> changeset.valid?
@@ -176,7 +179,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     value: 0,
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-      ...>     block_index: 0,
       ...>     transaction_index: 0
       ...>   }
       iex> )
@@ -195,7 +197,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %{
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-      ...>     block_index: 0,
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     index: 0,
@@ -221,7 +222,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %{
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-      ...>     block_index: 0,
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
       ...>     index: 0,
@@ -248,7 +248,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %{
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-      ...>     block_index: 0,
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
       ...>     index: 0,
@@ -275,7 +274,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %{
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-      ...>     block_index: 0,
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
       ...>     index: 0,
@@ -318,7 +316,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     value: 0,
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-      ...>     block_index: 0,
       ...>     transaction_index: 0
       ...>   }
       iex> )
@@ -340,7 +337,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     value: 0,
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-      ...>     block_index: 0,
       ...>     transaction_index: 0
       ...>   }
       ...> )
@@ -367,7 +363,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     value: 0,
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-      ...>     block_index: 0,
       ...>     transaction_index: 0
       ...>   }
       ...> )
@@ -376,22 +371,31 @@ defmodule Explorer.Chain.InternalTransaction do
 
   """
   def changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
+    base_attributes = ~w(block_hash transaction_index index type)a
+
+    all_attributes =
+      if InternalTransactionHelper.primary_key_updated?() do
+        base_attributes
+      else
+        [:block_index | base_attributes]
+      end
+
     internal_transaction
-    |> cast(attrs, ~w(type)a)
-    |> validate_required(~w(type)a)
-    |> validate_block_required(attrs)
+    |> cast(attrs, all_attributes)
+    |> validate_required(all_attributes)
+    |> foreign_key_constraint(:block_hash)
     |> type_changeset(attrs)
   end
 
   @doc """
   Accepts changes without `:type` but with `:block_number`, if `:type` is defined
-  works like `changeset`, except allowing `:block_hash` and `:block_index` to be undefined.
+  works like `changeset`, except allowing `:block_hash` to be undefined.
 
   This is used because the `internal_transactions` runner can derive such values
   on its own or use empty types to know that a block has no internal transactions.
   """
   def blockless_changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
-    changeset = cast(internal_transaction, attrs, ~w(type block_number)a)
+    changeset = cast(internal_transaction, attrs, ~w(type block_number block_hash transaction_index index)a)
 
     if validate_required(changeset, ~w(type)a).valid? do
       type_changeset(changeset, attrs)
@@ -400,21 +404,14 @@ defmodule Explorer.Chain.InternalTransaction do
     end
   end
 
-  defp validate_block_required(changeset, attrs) do
-    changeset
-    |> cast(attrs, ~w(block_hash block_index)a)
-    |> validate_required(~w(block_hash block_index)a)
-    |> foreign_key_constraint(:block_hash)
-  end
-
   defp type_changeset(changeset, attrs) do
     type = get_field(changeset, :type)
 
     type_changeset(changeset, attrs, type)
   end
 
-  @call_optional_fields ~w(error gas_used output block_number transaction_index)a
-  @call_required_fields ~w(call_type from_address_hash gas index input to_address_hash trace_address transaction_hash value)a
+  @call_optional_fields ~w(error gas_used output block_number)a
+  @call_required_fields ~w(call_type from_address_hash gas input to_address_hash trace_address transaction_hash value)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
   defp type_changeset(changeset, attrs, :call) do
@@ -426,11 +423,10 @@ defmodule Explorer.Chain.InternalTransaction do
     |> check_constraint(:call_type, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
     |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_input)
     |> foreign_key_constraint(:transaction_hash)
-    |> unique_constraint(:index)
   end
 
-  @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number transaction_index)a
-  @create_required_fields ~w(from_address_hash gas index init trace_address transaction_hash value)a
+  @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number)a
+  @create_required_fields ~w(from_address_hash gas init trace_address transaction_hash value)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
   defp type_changeset(changeset, attrs, type) when type in [:create, :create2] do
@@ -441,29 +437,26 @@ defmodule Explorer.Chain.InternalTransaction do
     |> validate_create_error_or_result()
     |> check_constraint(:init, message: ~S|can't be blank when type is 'create'|, name: :create_has_init)
     |> foreign_key_constraint(:transaction_hash)
-    |> unique_constraint(:index)
   end
 
-  @selfdestruct_optional_fields ~w(block_number transaction_index)a
-  @selfdestruct_required_fields ~w(from_address_hash index to_address_hash trace_address transaction_hash type value)a
+  @selfdestruct_optional_fields ~w(block_number)a
+  @selfdestruct_required_fields ~w(from_address_hash to_address_hash trace_address transaction_hash type value)a
   @selfdestruct_allowed_fields @selfdestruct_optional_fields ++ @selfdestruct_required_fields
 
   defp type_changeset(changeset, attrs, :selfdestruct) do
     changeset
     |> cast(attrs, @selfdestruct_allowed_fields)
     |> validate_required(@selfdestruct_required_fields)
-    |> unique_constraint(:index)
   end
 
   @stop_optional_fields ~w(from_address_hash gas gas_used error)a
-  @stop_required_fields ~w(block_number transaction_hash transaction_index index type value trace_address)a
+  @stop_required_fields ~w(block_number transaction_hash type value trace_address)a
   @stop_allowed_fields @stop_optional_fields ++ @stop_required_fields
 
   defp type_changeset(changeset, attrs, :stop) do
     changeset
     |> cast(attrs, @stop_allowed_fields)
     |> validate_required(@stop_required_fields)
-    |> unique_constraint(:index)
   end
 
   defp type_changeset(changeset, _, nil), do: changeset
@@ -576,15 +569,29 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @doc """
-  Filters out internal_transactions of blocks that are flagged as needing fetching
+  Filters out internal_transactions of blocks or transactions that are flagged as needing fetching
   of internal_transactions
   """
-  def where_nonpending_block(query \\ nil) do
-    (query || __MODULE__)
-    |> where(
-      [it],
-      fragment("(SELECT block_hash FROM pending_block_operations WHERE block_hash = ? LIMIT 1) IS NULL", it.block_hash)
-    )
+  @spec where_nonpending_operation(Ecto.Query.t() | module()) :: Ecto.Query.t()
+  def where_nonpending_operation(query \\ __MODULE__) do
+    case PendingOperationsHelper.pending_operations_type() do
+      "blocks" ->
+        where(
+          query,
+          [it],
+          fragment("(SELECT 1 FROM pending_block_operations WHERE block_hash = ? LIMIT 1) IS NULL", it.block_hash)
+        )
+
+      "transactions" ->
+        where(
+          query,
+          [it],
+          fragment(
+            "(SELECT 1 FROM pending_transaction_operations WHERE transaction_hash = ? LIMIT 1) IS NULL",
+            it.transaction_hash
+          )
+        )
+    end
   end
 
   @doc """
@@ -612,7 +619,7 @@ defmodule Explorer.Chain.InternalTransaction do
     __MODULE__
     |> for_parent_transaction(hash)
     |> Chain.join_associations(necessity_by_association)
-    |> where_nonpending_block()
+    |> where_nonpending_operation()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
@@ -634,7 +641,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> Chain.join_associations(necessity_by_association)
     |> where_transaction_has_multiple_internal_transactions()
     |> where_is_different_from_parent_transaction()
-    |> where_nonpending_block()
+    |> where_nonpending_operation()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
@@ -658,12 +665,12 @@ defmodule Explorer.Chain.InternalTransaction do
     |> where([internal_transaction], internal_transaction.block_hash == ^hash)
     |> Chain.join_associations(necessity_by_association)
     |> where_is_different_from_parent_transaction()
-    |> where_nonpending_block()
+    |> where_nonpending_operation()
     |> page_block_internal_transaction(paging_options)
     |> filter_by_type(type_filter, call_type_filter)
     |> filter_by_call_type(call_type_filter)
     |> limit(^paging_options.page_size)
-    |> order_by([internal_transaction], asc: internal_transaction.block_index)
+    |> order_by([internal_transaction], asc: internal_transaction.transaction_index, asc: internal_transaction.index)
     |> Chain.select_repo(options).all()
   end
 
@@ -708,7 +715,7 @@ defmodule Explorer.Chain.InternalTransaction do
         if direction == nil || direction == "" do
           query_to_address_hash_wrapped =
             __MODULE__
-            |> where_nonpending_block()
+            |> where_nonpending_operation()
             |> where_address_fields_match(hash, :to_address_hash)
             |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
             |> where_is_different_from_parent_transaction()
@@ -717,7 +724,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
           query_from_address_hash_wrapped =
             __MODULE__
-            |> where_nonpending_block()
+            |> where_nonpending_operation()
             |> where_address_fields_match(hash, :from_address_hash)
             |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
             |> where_is_different_from_parent_transaction()
@@ -726,7 +733,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
           query_created_contract_address_hash_wrapped =
             __MODULE__
-            |> where_nonpending_block()
+            |> where_nonpending_operation()
             |> where_address_fields_match(hash, :created_contract_address_hash)
             |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
             |> where_is_different_from_parent_transaction()
@@ -744,7 +751,7 @@ defmodule Explorer.Chain.InternalTransaction do
           |> deduplicate_and_trim_internal_transactions(paging_options)
         else
           __MODULE__
-          |> where_nonpending_block()
+          |> where_nonpending_operation()
           |> where_address_fields_match(hash, direction)
           |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
           |> where_is_different_from_parent_transaction()
@@ -967,7 +974,7 @@ defmodule Explorer.Chain.InternalTransaction do
           ])
 
         __MODULE__
-        |> where_nonpending_block()
+        |> where_nonpending_operation()
         |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
         |> where_internal_transactions_by_transaction_hash(Keyword.get(options, :transaction_hash))
         |> order_by([internal_transaction],
@@ -986,10 +993,27 @@ defmodule Explorer.Chain.InternalTransaction do
     |> where([internal_transaction], internal_transaction.block_index > ^block_index)
   end
 
+  defp page_block_internal_transaction(query, %PagingOptions{key: %{transaction_index: transaction_index, index: index}}) do
+    query
+    |> where(
+      [internal_transaction],
+      (internal_transaction.transaction_index == ^transaction_index and internal_transaction.index > ^index) or
+        internal_transaction.transaction_index > ^transaction_index
+    )
+  end
+
   defp page_block_internal_transaction(query, _), do: query
 
-  def internal_transaction_to_block_paging_options(%__MODULE__{block_index: block_index}) do
-    %{"block_index" => block_index}
+  def internal_transaction_to_block_paging_options(%__MODULE__{
+        transaction_index: transaction_index,
+        index: index,
+        block_index: block_index
+      }) do
+    if InternalTransactionHelper.primary_key_updated?() do
+      %{"transaction_index" => transaction_index, "index" => index}
+    else
+      %{"block_index" => block_index}
+    end
   end
 
   defp where_internal_transactions_by_transaction_hash(query, nil), do: query

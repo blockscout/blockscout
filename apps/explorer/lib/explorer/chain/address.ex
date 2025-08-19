@@ -808,7 +808,8 @@ defmodule Explorer.Chain.Address do
       order_by: [
         asc_nulls_first: it.error,
         desc: it.block_number,
-        desc: it.block_index
+        desc: it.transaction_index,
+        desc: it.index
       ],
       limit: 1
     )

@@ -5,6 +5,29 @@ defmodule Explorer.TestHelper do
 
   alias ABI.TypeEncoder
 
+  # TODO: Execute this for all background migrations
+  def run_necessary_background_migrations do
+    for background_migration <- [
+          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
+        ] do
+      case background_migration.db_index_operation_status() do
+        :completed ->
+          :ok
+
+        _ ->
+          case background_migration.db_index_operation() do
+            :ok ->
+              background_migration.update_cache()
+              :ok
+
+            :error ->
+              raise "Background migrations failed"
+          end
+      end
+    end
+  end
+
   def mock_logic_storage_pointer_request(
         mox,
         error?,
