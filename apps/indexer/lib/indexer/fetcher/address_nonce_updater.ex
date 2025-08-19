@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.NonceUpdater do
+defmodule Indexer.Fetcher.AddressNonceUpdater do
   @moduledoc """
   Periodically updates addresses nonce
   """
@@ -55,7 +55,7 @@ defmodule Indexer.Fetcher.NonceUpdater do
           %{}
 
         error ->
-          Logger.error("Failed to update addresses nonce: #{inspect(error)}, retrying")
+          log_error(inspect(error))
           addresses_map
       end
 
@@ -65,7 +65,7 @@ defmodule Indexer.Fetcher.NonceUpdater do
   rescue
     exception ->
       error = Exception.format(:error, exception, __STACKTRACE__)
-      Logger.error("Failed to update addresses nonce: #{error}, retrying")
+      log_error(error)
       schedule_next_update()
 
       {:noreply, addresses_map}
@@ -81,5 +81,9 @@ defmodule Indexer.Fetcher.NonceUpdater do
 
   defp schedule_next_update do
     Process.send_after(self(), :update, @default_update_interval)
+  end
+
+  defp log_error(error) do
+    Logger.error("Failed to update addresses nonce: #{error}, retrying")
   end
 end

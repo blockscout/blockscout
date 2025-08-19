@@ -29,11 +29,11 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.{Prometheus, TokenBalances, Tracer}
 
   alias Indexer.Fetcher.{
+    AddressNonceUpdater,
     Beacon.Blob,
     BlockReward,
     ContractCode,
     InternalTransaction,
-    NonceUpdater,
     ReplacedTransaction,
     SignedAuthorizationStatus,
     Token,
@@ -800,17 +800,22 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp process_addresses_nonce(addresses) do
-    {result_addresses, nonce_update_params} =
-      Enum.reduce(addresses, {[], []}, fn address, {addresses_acc, nonce_acc} ->
+    {addresses_excluding_nonce_update, addresses_nonce_update_params} =
+      Enum.reduce(addresses, {[], []}, fn address,
+                                          {addresses_excluding_nonce_update_acc, addresses_nonce_update_params_acc} ->
         case Map.get(address, :nonce) do
-          nil -> {[address | addresses_acc], nonce_acc}
-          nonce -> {[Map.delete(address, :nonce) | addresses_acc], [%{hash: address.hash, nonce: nonce} | nonce_acc]}
+          nil ->
+            {[address | addresses_excluding_nonce_update_acc], addresses_nonce_update_params_acc}
+
+          nonce ->
+            {[Map.delete(address, :nonce) | addresses_excluding_nonce_update_acc],
+             [%{hash: address.hash, nonce: nonce} | addresses_nonce_update_params_acc]}
         end
       end)
 
-    NonceUpdater.add(nonce_update_params)
+    AddressNonceUpdater.add(addresses_nonce_update_params)
 
-    Enum.reverse(result_addresses)
+    Enum.reverse(addresses_excluding_nonce_update)
   end
 
   # Asynchronously schedules matching of Arbitrum L1-to-L2 messages where the message ID is hashed.
