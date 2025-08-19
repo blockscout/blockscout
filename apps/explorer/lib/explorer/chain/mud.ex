@@ -361,13 +361,13 @@ defmodule Explorer.Chain.Mud do
   Returns a map of block numbers to timestamps.
   """
   @spec preload_records_timestamps([Mud.t()]) :: %{non_neg_integer() => DateTime.t()}
-  def preload_records_timestamps(records) do
+  def preload_records_timestamps(records, options \\ []) do
     block_numbers = records |> Enum.map(&(&1.block_number |> Decimal.to_integer())) |> Enum.uniq()
 
     Block
     |> where([b], b.number in ^block_numbers)
     |> select([b], {b.number, b.timestamp})
-    |> Repo.all()
+    |> Chain.select_repo(options).all()
     |> Enum.into(%{})
   end
 
