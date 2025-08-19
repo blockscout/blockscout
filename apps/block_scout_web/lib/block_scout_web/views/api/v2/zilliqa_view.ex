@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
   if @chain_type == :zilliqa do
     # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
     import Explorer.Chain.Zilliqa.Helper, only: [scilla_transaction?: 1], warn: false
-    alias Ecto.Association.NotLoaded
+    alias Ecto.Association.NotLoaded, warn: false
     alias Explorer.Chain.{Address, Block, Transaction}, warn: false
     alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}, warn: false
 
