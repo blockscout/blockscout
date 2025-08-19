@@ -30,7 +30,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
-  import OpenApiSpex.TestAssertions
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
   @instances_amount_in_collection 9
