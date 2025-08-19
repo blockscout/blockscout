@@ -27,4 +27,15 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
         assert false, "Expected message received nothing."
     end
   end
+
+  test "user is able to join to common channels" do
+    common_channels = ["new_block", "indexing", "indexing_internal_transactions"]
+
+    Enum.each(common_channels, fn channel ->
+      assert {:ok, _reply, _socket} =
+               BlockScoutWeb.V2.UserSocket
+               |> socket("no_id", %{})
+               |> subscribe_and_join("blocks:#{channel}")
+    end)
+  end
 end
