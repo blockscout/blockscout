@@ -152,7 +152,10 @@ defmodule BlockScoutWeb.Chain do
     string_keys = map_to_string_keys(paging_params)
 
     next_page_params =
-      Map.merge(params |> delete_parameters_from_next_page_params() |> Map.drop(string_keys), paging_params)
+      params
+      |> delete_parameters_from_next_page_params()
+      |> Map.drop(string_keys)
+      |> Map.merge(paging_params)
 
     current_items_count_string = Map.get(next_page_params, "items_count")
 
@@ -995,12 +998,10 @@ defmodule BlockScoutWeb.Chain do
 
       string_keys = map_to_string_keys(new_params)
 
-      Map.merge(
-        params
-        |> delete_parameters_from_next_page_params()
-        |> Map.drop(["batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch" | string_keys]),
-        new_params
-      )
+      params
+      |> delete_parameters_from_next_page_params()
+      |> Map.drop(["batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch" | string_keys])
+      |> Map.merge(new_params)
     end
   end
 
