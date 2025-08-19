@@ -4,6 +4,9 @@ import Config
 |> Path.join()
 |> Code.eval_file()
 
+config :logger,
+  backends: ConfigHelper.logger_backends()
+
 ######################
 ### BlockScout Web ###
 ######################
