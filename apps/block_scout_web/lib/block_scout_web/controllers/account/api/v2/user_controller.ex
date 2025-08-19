@@ -11,8 +11,6 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
       split_list_by_page: 1
     ]
 
-  import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
-
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Explorer.Account.CustomABI
   alias Explorer.Account.{Identity, TagAddress, TagTransaction, WatchlistAddress}
@@ -53,7 +51,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
       {watchlist_addresses, next_page} = split_list_by_page(results_plus_one)
 
       next_page_params =
-        next_page |> next_page_params(watchlist_addresses, delete_parameters_from_next_page_params(params))
+        next_page |> next_page_params(watchlist_addresses, params)
 
       watchlist_addresses_prepared =
         Enum.map(watchlist_addresses, fn wa ->
@@ -230,7 +228,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
 
       {tags, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page |> next_page_params(tags, delete_parameters_from_next_page_params(params))
+      next_page_params = next_page |> next_page_params(tags, params)
 
       conn
       |> put_status(200)
@@ -289,7 +287,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
 
       {tags, next_page} = split_list_by_page(results_plus_one)
 
-      next_page_params = next_page |> next_page_params(tags, delete_parameters_from_next_page_params(params))
+      next_page_params = next_page |> next_page_params(tags, params)
 
       conn
       |> put_status(200)

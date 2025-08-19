@@ -14,7 +14,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.PagingHelper,
     only: [
       current_filter: 1,
-      delete_parameters_from_next_page_params: 1,
       search_query: 1
     ]
 
@@ -144,7 +143,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       next_page
       |> next_page_params(
         addresses,
-        delete_parameters_from_next_page_params(params),
+        params,
         pager
       )
 
