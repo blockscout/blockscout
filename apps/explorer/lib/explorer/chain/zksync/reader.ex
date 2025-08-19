@@ -312,7 +312,7 @@ defmodule Explorer.Chain.ZkSync.Reader do
         where: lt.hash in ^l1_transaction_hashes
       )
 
-    Repo.replica().all(query, timeout: :infinity)
+    Repo.all(query, timeout: :infinity)
   end
 
   @doc """
