@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
 
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Explorer.Account.CustomABI
-  alias Explorer.Account.{Identity, PublicTagsRequest, TagAddress, TagTransaction, WatchlistAddress}
+  alias Explorer.Account.{Identity, TagAddress, TagTransaction, WatchlistAddress}
   alias Explorer.{Chain, Market, PagingOptions, Repo}
   alias Plug.CSRFProtection
 
@@ -442,82 +442,6 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
       conn
       |> put_status(200)
       |> render(:custom_abi, %{custom_abi: custom_abi})
-    end
-  end
-
-  def public_tags_requests(conn, _params) do
-    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
-         {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)},
-         public_tags_requests <- PublicTagsRequest.get_public_tags_requests_by_identity_id(identity.id) do
-      conn
-      |> put_status(200)
-      |> render(:public_tags_requests, %{public_tags_requests: public_tags_requests})
-    end
-  end
-
-  def delete_public_tags_request(conn, %{"id" => id, "remove_reason" => remove_reason}) do
-    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
-         {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)},
-         {:public_tag_delete, true} <-
-           {:public_tag_delete,
-            PublicTagsRequest.mark_as_deleted_public_tags_request(%{
-              id: id,
-              identity_id: identity.id,
-              remove_reason: remove_reason
-            })} do
-      conn
-      |> put_status(200)
-      |> render(:message, %{message: @ok_message})
-    end
-  end
-
-  def create_public_tags_request(conn, params) do
-    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
-         {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)},
-         {:ok, public_tags_request} <-
-           PublicTagsRequest.create(%{
-             full_name: params["full_name"],
-             email: params["email"],
-             tags: params["tags"],
-             website: params["website"],
-             additional_comment: params["additional_comment"],
-             addresses: params["addresses"],
-             company: params["company"],
-             is_owner: params["is_owner"],
-             identity_id: identity.id
-           }) do
-      conn
-      |> put_status(200)
-      |> render(:public_tags_request, %{public_tags_request: public_tags_request})
-    end
-  end
-
-  def update_public_tags_request(
-        conn,
-        %{
-          "id" => id
-        } = params
-      ) do
-    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
-         {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)},
-         {:ok, public_tags_request} <-
-           PublicTagsRequest.update(
-             reject_nil_map_values(%{
-               id: id,
-               full_name: params["full_name"],
-               email: params["email"],
-               tags: params["tags"],
-               website: params["website"],
-               additional_comment: params["additional_comment"],
-               addresses: params["addresses"],
-               company: params["company"],
-               is_owner: params["is_owner"],
-               identity_id: identity.id
-             })
-           ) do
-      conn
-      |> put_status(200)
-      |> render(:public_tags_request, %{public_tags_request: public_tags_request})
     end
   end
 

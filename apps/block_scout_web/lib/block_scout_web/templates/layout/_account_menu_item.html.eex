@@ -17,7 +17,6 @@
         <a href="<%= tag_transaction_path(@conn, :index) %>" class= "transaction-tags-button dropdown-item"><%= gettext "Transaction Tags" %></a>
         <a href="<%= api_key_path(@conn, :index) %>" class= "api-keys-button dropdown-item"><%= gettext "API keys" %></a>
         <a href="<%= custom_abi_path(@conn, :index) %>" class= "custom-abi-button dropdown-item"><%= gettext "Custom ABI" %></a>
-        <a href="<%= public_tags_request_path(@conn, :index) %>" class= "public-tags-button dropdown-item"><%= gettext "Public Tags" %></a>
       <% else %>
         <p class="alert alert-warning" role="alert" style="margin-bottom: 0"><%= gettext("Please confirm your email address to use the My Account feature.") %></p>
       <% end %>

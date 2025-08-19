@@ -109,11 +109,6 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
       only: [:new, :create, :edit, :update, :delete, :index],
       as: :custom_abi
     )
-
-    resources("/public_tags_request", Account.PublicTagsRequestController,
-      only: [:new, :create, :edit, :update, :delete, :index],
-      as: :public_tags_request
-    )
   end
 
   scope "/v2", as: :account_v2 do
@@ -150,11 +145,6 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
       delete("/custom_abis/:id", UserController, :delete_custom_abi)
       post("/custom_abis", UserController, :create_custom_abi)
       put("/custom_abis/:id", UserController, :update_custom_abi)
-
-      get("/public_tags", UserController, :public_tags_requests)
-      delete("/public_tags/:id", UserController, :delete_public_tags_request)
-      post("/public_tags", UserController, :create_public_tags_request)
-      put("/public_tags/:id", UserController, :update_public_tags_request)
 
       scope "/tags" do
         get("/address/", UserController, :tags_address)
