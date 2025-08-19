@@ -3107,20 +3107,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)
       assert response = json_response(request, 200)
 
-      # Should return both ERC-721 and ERC-1155 tokens combined
-      expected_combined =
-        (ctbs_erc_721 ++ ctbs_erc_1155)
-        |> Enum.sort_by(
-          fn x ->
-            if x.token.fiat_value do
-              Decimal.to_float(Decimal.mult(x.value, x.token.fiat_value))
-            else
-              0
-            end
-          end,
-          :desc
-        )
-
       # Verify we get tokens from both types
       response_token_types =
         response["items"]
