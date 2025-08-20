@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+  alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token, Token.Type}
   alias BlockScoutWeb.Schemas.API.V2.TokenTransfer.{Total, TotalERC1155, TotalERC721}
   alias OpenApiSpex.Schema
 
@@ -28,7 +28,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       method: General.MethodNameNullable,
       block_hash: General.FullHash,
       block_number: %Schema{type: :integer, nullable: false},
-      log_index: %Schema{type: :integer, nullable: false}
+      log_index: %Schema{type: :integer, nullable: false},
+      token_type: Type
     },
     required: [
       :transaction_hash,
@@ -41,7 +42,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       :method,
       :block_hash,
       :block_number,
-      :log_index
+      :log_index,
+      :token_type
     ]
   })
 end
