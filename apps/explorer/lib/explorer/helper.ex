@@ -5,8 +5,7 @@ defmodule Explorer.Helper do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain
-  alias Explorer.Chain.{Data, Hash, Wei}
-  alias Explorer.Chain.Address.ScamBadgeToAddress
+  alias Explorer.Chain.{Address.ScamBadgeToAddress, Data, Hash, Wei}
 
   import Ecto.Query
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
