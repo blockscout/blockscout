@@ -30,6 +30,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias BlockScoutWeb.AccessHelper
+  alias BlockScoutWeb.Schemas.Helper, as: SchemasHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
   alias Explorer.{Chain, Market, PagingOptions}
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction}
@@ -993,11 +994,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     responses: [
       ok:
         {"List of native coin holders with their balances, with pagination.", "application/json",
-         extend_schema(
+         SchemasHelper.extend_schema(
            paginated_response(
              items:
                Schemas.Address.schema()
-               |> extend_schema(
+               |> SchemasHelper.extend_schema(
                  title: "AddressWithCoinBalanceAndTransactionsCount",
                  properties: %{
                    coin_balance: Schemas.General.IntegerStringNullable,

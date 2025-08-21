@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
   @moduledoc false
   alias BlockScoutWeb.API.V2.ZkSyncView
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
   @zksync_schema %Schema{
@@ -215,41 +216,43 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
     case Application.get_env(:explorer, :chain_type) do
       :rsk ->
         schema
-        |> put_in([:properties, :minimum_gas_price], General.IntegerString)
-        |> put_in([:properties, :bitcoin_merged_mining_header], General.HexString)
-        |> put_in([:properties, :bitcoin_merged_mining_coinbase_transaction], General.HexString)
-        |> put_in([:properties, :bitcoin_merged_mining_merkle_proof], General.HexString)
-        |> put_in([:properties, :hash_for_merged_mining], General.FullHash)
+        |> Helper.extend_schema(
+          properties: %{
+            minimum_gas_price: General.IntegerString,
+            bitcoin_merged_mining_header: General.HexString,
+            bitcoin_merged_mining_coinbase_transaction: General.HexString,
+            bitcoin_merged_mining_merkle_proof: General.HexString,
+            hash_for_merged_mining: General.FullHash
+          }
+        )
 
       :optimism ->
-        schema
-        |> put_in([:properties, :optimism], @optimism_schema)
+        schema |> Helper.extend_schema(properties: %{optimism: @optimism_schema})
 
       :zksync ->
-        schema
-        |> put_in([:properties, :zksync], @zksync_schema)
+        schema |> Helper.extend_schema(properties: %{zksync: @zksync_schema})
 
       :arbitrum ->
-        schema
-        |> put_in([:properties, :arbitrum], @arbitrum_schema)
+        schema |> Helper.extend_schema(properties: %{arbitrum: @arbitrum_schema})
 
       :ethereum ->
         schema
-        |> put_in([:properties, :blob_transactions_count], %Schema{type: :integer, nullable: false})
-        |> put_in([:properties, :blob_gas_used], General.IntegerStringNullable)
-        |> put_in([:properties, :excess_blob_gas], General.IntegerStringNullable)
-        |> put_in([:properties, :blob_gas_price], General.IntegerString)
-        |> put_in([:properties, :burnt_blob_fees], General.IntegerString)
-        |> update_in([:required], &([:blob_transactions_count, :blob_gas_used, :excess_blob_gas] ++ &1))
+        |> Helper.extend_schema(
+          properties: %{
+            blob_transactions_count: %Schema{type: :integer, nullable: false},
+            blob_gas_used: General.IntegerStringNullable,
+            excess_blob_gas: General.IntegerStringNullable,
+            blob_gas_price: General.IntegerString,
+            burnt_blob_fees: General.IntegerString
+          },
+          required: [:blob_transactions_count, :blob_gas_used, :excess_blob_gas]
+        )
 
       :celo ->
-        schema
-        |> put_in([:properties, :celo], @celo_schema)
-        |> update_in([:required], &[:celo | &1])
+        schema |> Helper.extend_schema(properties: %{celo: @celo_schema}, required: [:celo])
 
       :zilliqa ->
-        schema
-        |> put_in([:properties, :zilliqa], @zilliqa_schema)
+        schema |> Helper.extend_schema(properties: %{zilliqa: @zilliqa_schema})
 
       _ ->
         schema
