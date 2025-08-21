@@ -40,6 +40,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     WithdrawalView
   }
 
+  alias BlockScoutWeb.Schemas.Helper, as: SchemasHelper
   alias Explorer.{Chain, Market, PagingOptions}
   alias Explorer.Chain.{Address, Beacon.Deposit, Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Address.{CoinBalance, Counters}
@@ -1013,11 +1014,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     responses: [
       ok:
         {"List of native coin holders with their balances, with pagination.", "application/json",
-         extend_schema(
+         SchemasHelper.extend_schema(
            paginated_response(
              items:
                Schemas.Address.schema()
-               |> extend_schema(
+               |> SchemasHelper.extend_schema(
                  title: "AddressWithCoinBalanceAndTransactionsCount",
                  properties: %{
                    coin_balance: Schemas.General.IntegerStringNullable,
