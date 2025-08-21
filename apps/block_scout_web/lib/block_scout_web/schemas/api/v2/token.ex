@@ -53,10 +53,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         symbol: %Schema{type: :string, nullable: false},
         name: %Schema{type: :string, nullable: false},
         decimals: General.IntegerStringNullable,
-        type: %Schema{
-          anyOf: [Type],
-          nullable: true
-        },
+        type: %Schema{allOf: [Type], nullable: true},
         holders_count: General.IntegerStringNullable,
         exchange_rate: General.FloatStringNullable,
         volume_24h: General.FloatStringNullable,
@@ -76,7 +73,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         :total_supply,
         :icon_url,
         :circulating_market_cap
-      ]
+      ],
+      additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()
     |> ChainTypeCustomizations.maybe_append_bridged_info()
