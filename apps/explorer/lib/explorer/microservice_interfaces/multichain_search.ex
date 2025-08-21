@@ -867,14 +867,17 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       block_ranges_in_chunk = if index == 0, do: block_ranges, else: []
       address_token_balances_in_chunk = address_token_balances_chunk_by_index(address_token_balances, index)
 
+      address_coin_balances_chunk =
+        case Enum.fetch(indexed_address_coin_balances_chunks, index) do
+          {:ok, {chunk, ^index}} when is_list(chunk) -> chunk
+          _ -> []
+        end
+
       base_data_chunk
       |> Map.put(:addresses, addresses_chunk)
       |> Map.put(
         :address_coin_balances,
-        if(Enum.empty?(indexed_address_coin_balances_chunks),
-          do: [],
-          else: indexed_address_coin_balances_chunks |> Enum.at(index) |> elem(0) || []
-        )
+        address_coin_balances_chunk
       )
       |> Map.put(:hashes, hashes_in_chunk)
       |> Map.put(:block_ranges, block_ranges_in_chunk)
