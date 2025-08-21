@@ -33,7 +33,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       :prove_transaction_timestamp,
       :execute_transaction_hash,
       :execute_transaction_timestamp
-    ]
+    ],
+    additionalProperties: false
   }
 
   @arbitrum_commitment_transaction_schema %Schema{
@@ -44,7 +45,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       timestamp: General.TimestampNullable,
       status: %Schema{type: :string, enum: ["unfinalized", "finalized"], nullable: true}
     },
-    required: [:hash, :timestamp, :status]
+    required: [:hash, :timestamp, :status],
+    additionalProperties: false
   }
 
   @arbitrum_schema %Schema{
@@ -78,14 +80,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
             ],
             nullable: false
           }
-        }
+        },
+        additionalProperties: false
       },
       gas_used_for_l1: General.IntegerString,
       gas_used_for_l2: General.IntegerString,
       poster_fee: General.IntegerString,
       network_fee: General.IntegerString
     },
-    required: [:gas_used_for_l1, :gas_used_for_l2, :poster_fee, :network_fee]
+    required: [:gas_used_for_l1, :gas_used_for_l2, :poster_fee, :network_fee],
+    additionalProperties: false
   }
 
   @optimism_withdrawal_schema %Schema{
@@ -96,7 +100,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       status: %Schema{type: :string, nullable: false},
       l1_transaction_hash: General.FullHashNullable
     },
-    required: [:nonce, :status, :l1_transaction_hash]
+    required: [:nonce, :status, :l1_transaction_hash],
+    additionalProperties: false
   }
 
   @scroll_schema %Schema{
@@ -129,7 +134,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       :l1_gas_used,
       :l2_fee,
       :l2_block_status
-    ]
+    ],
+    additionalProperties: false
   }
 
   @doc """
@@ -194,7 +200,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
             init_chain: %Schema{type: :object, nullable: true},
             init_transaction_hash: General.FullHashNullable
           },
-          required: [:nonce, :status, :sender_address_hash, :target_address_hash, :payload]
+          required: [:nonce, :status, :sender_address_hash, :target_address_hash, :payload],
+          additionalProperties: false
         })
 
       :scroll ->
@@ -222,7 +229,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
             method: General.MethodNameNullable,
             decoded_input: %Schema{allOf: [General.DecodedInput], nullable: true},
             raw_input: General.HexString
-          }
+          },
+          additionalProperties: false
         })
 
       :stability ->
@@ -238,7 +246,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
             dapp_fee: General.IntegerString,
             validator_fee: General.IntegerString
           },
-          required: [:token, :validator_address, :dapp_address, :total_fee, :dapp_fee, :validator_fee]
+          required: [:token, :validator_address, :dapp_address, :total_fee, :dapp_fee, :validator_fee],
+          additionalProperties: false
         })
 
       :ethereum ->
@@ -254,8 +263,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
         |> put_in([:properties, :celo], %Schema{
           type: :object,
           nullable: false,
-          properties: %{gas_token: %Schema{oneOf: [Token], nullable: true}},
-          required: [:gas_token]
+          properties: %{gas_token: %Schema{allOf: [Token], nullable: true}},
+          required: [:gas_token],
+          additionalProperties: false
         })
         |> update_in([:required], &[:celo | &1])
 
@@ -267,7 +277,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
           properties: %{
             is_scilla: %Schema{type: :boolean, nullable: false}
           },
-          required: [:is_scilla]
+          required: [:is_scilla],
+          additionalProperties: false
         })
         |> update_in([:required], &[:zilliqa | &1])
 
@@ -367,7 +378,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
               type: :object,
               properties: %{raw: %Schema{anyOf: [General.HexString, %Schema{type: :string}], nullable: true}},
               required: [:raw],
-              nullable: false
+              nullable: false,
+              additionalProperties: false
             }
           ],
           nullable: true
@@ -397,7 +409,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
                 description: "Transaction action details (json formatted)",
                 nullable: false
               }
-            }
+            },
+            additionalProperties: false
           },
           nullable: true
         },
@@ -467,7 +480,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         :transaction_tag,
         :has_error_in_internal_transactions,
         :authorization_list
-      ]
+      ],
+      additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()
   )

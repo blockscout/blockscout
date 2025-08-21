@@ -15,6 +15,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.TokenBalance do
       token_id: General.IntegerStringNullable,
       token_instance: %Schema{allOf: [TokenInstance], nullable: true}
     },
-    required: [:value, :token, :token_id, :token_instance]
+    required: [:value, :token, :token_id, :token_instance],
+    additionalProperties: false
   })
 end

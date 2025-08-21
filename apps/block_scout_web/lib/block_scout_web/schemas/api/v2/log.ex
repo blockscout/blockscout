@@ -15,8 +15,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Log do
       topics: %Schema{type: :array, items: General.HexStringNullable, nullable: false},
       data: General.HexString,
       index: %Schema{type: :integer, nullable: false},
-      decoded: %Schema{allOf: [General.DecodedInput], nullable: true},
-      smart_contract: %Schema{oneOf: [Address], nullable: true},
+      decoded: %Schema{allOf: [General.DecodedLogInput], nullable: true},
+      smart_contract: %Schema{allOf: [Address], nullable: true},
       block_hash: General.FullHash,
       block_number: %Schema{type: :integer, nullable: false}
     },
@@ -30,6 +30,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Log do
       :smart_contract,
       :block_hash,
       :block_number
-    ]
+    ],
+    additionalProperties: false
   })
 end

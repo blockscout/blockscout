@@ -42,7 +42,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       :block_hash,
       :block_number,
       :log_index
-    ]
+    ],
+    additionalProperties: false
   })
 end
 
@@ -57,9 +58,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TotalERC721 do
     type: :object,
     properties: %{
       token_id: General.IntegerStringNullable,
-      token_instance: %Schema{type: :object, anyOf: [TokenInstance], nullable: true}
+      token_instance: %Schema{type: :object, anyOf: [TokenInstance], nullable: true, additionalProperties: false}
     },
-    required: [:token_id, :token_instance]
+    required: [:token_id, :token_instance],
+    additionalProperties: false
   })
 end
 
@@ -76,9 +78,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TotalERC1155 do
       token_id: General.IntegerStringNullable,
       value: General.IntegerStringNullable,
       decimals: General.IntegerStringNullable,
-      token_instance: %Schema{type: :object, anyOf: [TokenInstance], nullable: true}
+      token_instance: %Schema{type: :object, anyOf: [TokenInstance], nullable: true, additionalProperties: false}
     },
-    required: [:token_id, :value, :decimals, :token_instance]
+    required: [:token_id, :value, :decimals, :token_instance],
+    additionalProperties: false
   })
 end
 
@@ -94,6 +97,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.Total do
       value: General.IntegerStringNullable,
       decimals: General.IntegerStringNullable
     },
-    required: [:value, :decimals]
+    required: [:value, :decimals],
+    additionalProperties: false
   })
 end

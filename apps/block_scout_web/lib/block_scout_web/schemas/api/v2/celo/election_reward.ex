@@ -24,6 +24,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Celo.ElectionReward do
       :amount,
       :account,
       :associated_account
-    ]
+    ],
+    additionalProperties: false
   })
 end
