@@ -356,12 +356,12 @@ defmodule Explorer.Chain.Celo.Epoch do
     query =
       from(e in __MODULE__,
         where: e.end_block_number >= ^from_block and e.end_block_number < ^to_block,
-        select: %{min: min(e.number), max: max(e.number)}
+        select: {min(e.number), max(e.number)}
       )
 
     case Chain.select_repo(options).one(query) do
-      %{min: nil, max: nil} -> nil
-      %{min: min_epoch, max: max_epoch} -> {min_epoch, max_epoch}
+      {nil, nil} -> nil
+      res -> res
     end
   end
 end
