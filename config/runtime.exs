@@ -1204,7 +1204,9 @@ config :indexer, Indexer.Fetcher.Optimism.Interop.MessageQueue.Supervisor,
   disabled?: ConfigHelper.chain_type() != :optimism
 
 config :indexer, Indexer.Fetcher.Optimism.Interop.MultichainExport.Supervisor,
-  disabled?: ConfigHelper.chain_type() != :optimism
+  disabled?:
+    ConfigHelper.chain_type() != :optimism ||
+      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_OPTIMISM_INTEROP_MULTICHAIN_EXPORT", "true")
 
 config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
