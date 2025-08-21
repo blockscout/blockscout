@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TotalERC721 do
     type: :object,
     properties: %{
       token_id: General.IntegerStringNullable,
-      token_instance: %Schema{type: :object, anyOf: [TokenInstance], nullable: true, additionalProperties: false}
+      token_instance: %Schema{allOf: [TokenInstance], nullable: true}
     },
     required: [:token_id, :token_instance],
     additionalProperties: false
@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TotalERC1155 do
       token_id: General.IntegerStringNullable,
       value: General.IntegerStringNullable,
       decimals: General.IntegerStringNullable,
-      token_instance: %Schema{type: :object, anyOf: [TokenInstance], nullable: true, additionalProperties: false}
+      token_instance: %Schema{allOf: [TokenInstance], nullable: true}
     },
     required: [:token_id, :value, :decimals, :token_instance],
     additionalProperties: false
