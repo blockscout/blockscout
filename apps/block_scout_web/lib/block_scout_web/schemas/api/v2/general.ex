@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
 
   alias BlockScoutWeb.Schemas.API.V2.Celo.ElectionReward.Type, as: CeloElectionRewardType
   alias BlockScoutWeb.Schemas.API.V2.Token.Type, as: TokenType
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.{Parameter, Schema}
 
   defmodule AddressHash do
@@ -68,15 +69,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       case Application.get_env(:explorer, :chain_type) do
         :filecoin ->
           schema
-          |> put_in(
-            [:properties, :filecoin_robust_address],
-            %Schema{
-              type: :string,
-              example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-              nullable: true
-            }
+          |> Helper.extend_schema(
+            properties: %{
+              filecoin_robust_address: %Schema{
+                type: :string,
+                example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
+                nullable: true
+              }
+            },
+            required: [:filecoin_robust_address]
           )
-          |> update_in([:required], &[:filecoin_robust_address | &1])
 
         _ ->
           schema
@@ -489,18 +491,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       nullable: false,
       additionalProperties: false
     }
-  end
-
-  @doc """
-  Extends a schema with additional properties and required fields.
-  """
-  @spec extend_schema(Schema.t(), Keyword.t()) :: Schema.t()
-  def extend_schema(schema, options) do
-    schema
-    |> Map.update!(:properties, &Map.merge(&1, Keyword.get(options, :properties, %{})))
-    |> Map.update!(:required, &(&1 ++ Keyword.get(options, :required, [])))
-    |> Map.put(:title, Keyword.get(options, :title, schema.title))
-    |> Map.put(:description, Keyword.get(options, :description, schema.description))
   end
 
   # `%Schema{anyOf: [%Schema{type: :integer}, EmptyString]}` is used because,

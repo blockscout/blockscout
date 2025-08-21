@@ -2,8 +2,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
   @moduledoc false
   require OpenApiSpex
 
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
-  alias BlockScoutWeb.Schemas.API.V2.General
 
   @filecoin_robust_address_schema %Schema{
     type: :string,
@@ -34,14 +34,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
     case Application.get_env(:explorer, :chain_type) do
       :filecoin ->
         schema
-        |> General.extend_schema(
+        |> Helper.extend_schema(
           properties: %{creator_filecoin_robust_address: @filecoin_robust_address_schema},
           required: [:creator_filecoin_robust_address]
         )
 
       :zilliqa ->
         schema
-        |> General.extend_schema(
+        |> Helper.extend_schema(
           properties: %{zilliqa: @zilliqa_schema},
           required: [:zilliqa]
         )
@@ -60,11 +60,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response do
 
   alias BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     Address.schema()
-    |> General.extend_schema(
+    |> Helper.extend_schema(
       title: "AddressResponse",
       description: "Address response",
       properties: %{
