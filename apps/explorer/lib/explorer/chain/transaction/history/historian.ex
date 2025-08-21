@@ -277,6 +277,14 @@ defmodule Explorer.Chain.Transaction.History.Historian do
     HistoryProcess.config_or_default(:utc_today, Date.utc_today(), __MODULE__)
   end
 
+  @doc """
+    Defines a name of counter type for LastFetchedCounter row
+    storing the last timestamp of when the `save_records` function was called.
+
+    ## Returns
+    - The counter type name.
+  """
+  @spec transaction_stats_last_save_records_timestamp() :: String.t()
   def transaction_stats_last_save_records_timestamp do
     "transaction_stats_last_save_records_timestamp"
   end

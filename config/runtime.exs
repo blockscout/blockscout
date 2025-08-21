@@ -7,6 +7,9 @@ import Config
 config :logger,
   backends: ConfigHelper.logger_backends()
 
+microservice_multichain_search_url = System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")
+transactions_stats_enabled = ConfigHelper.parse_bool_env_var("TXS_STATS_ENABLED", "true")
+
 ######################
 ### BlockScout Web ###
 ######################
@@ -532,7 +535,7 @@ config :explorer, Explorer.Market.Fetcher.History,
 config :explorer, Explorer.Chain.Transaction, suave_bid_contracts: System.get_env("SUAVE_BID_CONTRACTS", "")
 
 config :explorer, Explorer.Chain.Transaction.History.Historian,
-  enabled: ConfigHelper.parse_bool_env_var("TXS_STATS_ENABLED", "true"),
+  enabled: transactions_stats_enabled,
   init_lag_milliseconds: ConfigHelper.parse_time_env_var("TXS_HISTORIAN_INIT_LAG", "0"),
   days_to_compile_at_init: ConfigHelper.parse_integer_env_var("TXS_STATS_DAYS_TO_COMPILE_AT_INIT", 40)
 
@@ -655,7 +658,7 @@ config :explorer, Explorer.SmartContract.StylusVerifierInterface,
 
 config :explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
   api_key: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_API_KEY"),
-  service_url: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"),
+  service_url: microservice_multichain_search_url,
   addresses_chunk_size:
     ConfigHelper.parse_integer_env_var("MICROSERVICE_MULTICHAIN_SEARCH_ADDRESSES_CHUNK_SIZE", 7_000),
   token_info_chunk_size:
@@ -908,6 +911,9 @@ trace_block_ranges =
     ranges -> ranges
   end
 
+disable_multichain_search_db_export_counters_queue_fetcher =
+  ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_FETCHER")
+
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
   metadata_updater_milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_METADATA_UPDATE_INTERVAL", "48h"),
@@ -1045,29 +1051,29 @@ config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC721,
 config :indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor,
   disabled?:
     ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_MAIN_QUEUE_FETCHER") ||
-      is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
+      is_nil(microservice_multichain_search_url)
 
 config :indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue.Supervisor,
   disabled?:
     ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_BALANCES_QUEUE_FETCHER") ||
-      is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
+      is_nil(microservice_multichain_search_url)
 
 config :indexer, Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue.Supervisor,
   disabled?:
     ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_TOKEN_INFO_QUEUE_FETCHER") ||
-      is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL"))
+      is_nil(microservice_multichain_search_url)
 
 config :indexer, Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor,
   disabled?:
-    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_FETCHER") ||
-      is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")) ||
-      !ConfigHelper.parse_bool_env_var("TXS_STATS_ENABLED", "true")
+    disable_multichain_search_db_export_counters_queue_fetcher ||
+      is_nil(microservice_multichain_search_url) ||
+      !transactions_stats_enabled
 
 config :indexer, Indexer.Fetcher.MultichainSearchDb.CountersFetcher.Supervisor,
   disabled?:
-    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_FETCHER") ||
-      is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")) ||
-      !ConfigHelper.parse_bool_env_var("TXS_STATS_ENABLED", "true")
+    disable_multichain_search_db_export_counters_queue_fetcher ||
+      is_nil(microservice_multichain_search_url) ||
+      !transactions_stats_enabled
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE", 10),
