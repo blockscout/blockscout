@@ -8,6 +8,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Optimism.{DisputeGame, FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
 
+  @api_true [api?: true]
+
   @doc """
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
   """
@@ -179,7 +181,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         next_page_params: next_page_params,
         conn: conn
       }) do
-    respected_games = Withdrawal.respected_games()
+    respected_games = Withdrawal.respected_games(@api_true)
 
     %{
       items:
@@ -209,7 +211,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               _ -> {nil, nil}
             end
 
-          {status, challenge_period_end} = Withdrawal.status(w, respected_games)
+          {status, challenge_period_end} = Withdrawal.status(w, respected_games, @api_true)
 
           %{
             "msg_nonce_raw" => Decimal.to_string(w.msg_nonce, :normal),

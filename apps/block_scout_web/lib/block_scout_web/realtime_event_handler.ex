@@ -42,6 +42,7 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     Subscriber.to(:addresses, :on_demand)
     Subscriber.to(:address_coin_balances, :on_demand)
     Subscriber.to(:address_current_token_balances, :on_demand)
+    Subscriber.to(:address_current_token_balances, :realtime)
     Subscriber.to(:address_token_balances, :on_demand)
     Subscriber.to(:token_total_supply, :on_demand)
     Subscriber.to(:changed_bytecode, :on_demand)

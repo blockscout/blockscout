@@ -3101,6 +3101,21 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       check_paginated_response(response, response_2nd_page, ctbs_erc_1155)
       assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       assert_schema(response_2nd_page, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+
+      # Test multiple token types (the fix for the original issue)
+      filter = %{"type" => "ERC-721,ERC-1155"}
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)
+      assert response = json_response(request, 200)
+
+      # Verify we get tokens from both types
+      response_token_types =
+        response["items"]
+        |> Enum.map(fn item -> item["token"]["type"] end)
+        |> Enum.uniq()
+        |> Enum.sort()
+
+      assert response_token_types == ["ERC-1155", "ERC-721"]
+      assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
