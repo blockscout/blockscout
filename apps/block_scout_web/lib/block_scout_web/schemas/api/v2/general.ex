@@ -98,7 +98,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
           address_hash: AddressHash,
           name: %Schema{type: :string, nullable: true}
         },
-        required: [:address_hash, :name]
+        required: [:address_hash, :name],
+        additionalProperties: false
       }
       |> ChainTypeCustomizations.chain_type_fields()
     )
@@ -114,7 +115,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
         display_name: %Schema{type: :string, nullable: false},
         label: %Schema{type: :string, nullable: false}
       },
-      required: [:address_hash, :display_name, :label]
+      required: [:address_hash, :display_name, :label],
+      additionalProperties: false
     })
   end
 
@@ -127,7 +129,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
         display_name: %Schema{type: :string, nullable: false},
         label: %Schema{type: :string, nullable: false}
       },
-      required: [:display_name, :label]
+      required: [:display_name, :label],
+      additionalProperties: false
     })
   end
 
@@ -198,12 +201,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
                 nullable: false
               }
             },
-            nullable: false
+            nullable: false,
+            additionalProperties: false
           }
         }
       },
       required: [:method_id, :method_call, :parameters],
-      nullable: false
+      nullable: false,
+      additionalProperties: false
     })
   end
 
@@ -238,13 +243,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
               }
             },
             required: [:name, :type, :indexed, :value],
-            nullable: false
+            nullable: false,
+            additionalProperties: false
           },
           nullable: false
         }
       },
       required: [:method_id, :method_call, :parameters],
-      nullable: false
+      nullable: false,
+      additionalProperties: false
     })
   end
 
@@ -479,8 +486,21 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
         }
       },
       required: [:items, :next_page_params],
-      nullable: false
+      nullable: false,
+      additionalProperties: false
     }
+  end
+
+  @doc """
+  Extends a schema with additional properties and required fields.
+  """
+  @spec extend_schema(Schema.t(), Keyword.t()) :: Schema.t()
+  def extend_schema(schema, options) do
+    schema
+    |> Map.update!(:properties, &Map.merge(&1, Keyword.get(options, :properties, %{})))
+    |> Map.update!(:required, &(&1 ++ Keyword.get(options, :required, [])))
+    |> Map.put(:title, Keyword.get(options, :title, schema.title))
+    |> Map.put(:description, Keyword.get(options, :description, schema.description))
   end
 
   # `%Schema{anyOf: [%Schema{type: :integer}, EmptyString]}` is used because,

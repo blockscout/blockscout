@@ -34,7 +34,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
               nullable: true
             }
           },
-          required: [:id, :robust, :actor_type]
+          required: [:id, :robust, :actor_type],
+          additionalProperties: false
         })
 
       _ ->
@@ -114,7 +115,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
         :private_tags,
         :watchlist_names,
         :public_tags
-      ]
+      ],
+      additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()
   )
