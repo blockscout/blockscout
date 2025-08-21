@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
 
   @filecoin_robust_address_schema %Schema{
     type: :string,
+    description: "Robust f0/f1/f2/f3/f4 Filecoin address",
     example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
     nullable: true
   }
@@ -19,14 +20,21 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
         |> put_in([:properties, :filecoin], %Schema{
           type: :object,
           properties: %{
-            id: %Schema{type: :string, example: "f03248220", nullable: true},
+            id: %Schema{
+              type: :string,
+              description: "Short f0 Filecoin address that may change during chain reorgs",
+              example: "f03248220",
+              nullable: true
+            },
             robust: @filecoin_robust_address_schema,
             actor_type: %Schema{
               type: :string,
+              description: "Type of actor associated with the Filecoin address",
               enum: EctoEnum.values(Address, :filecoin_actor_type),
               nullable: true
             }
-          }
+          },
+          required: [:id, :robust, :actor_type]
         })
 
       _ ->

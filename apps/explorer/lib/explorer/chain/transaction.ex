@@ -2239,4 +2239,15 @@ defmodule Explorer.Chain.Transaction do
   def method_name(_, _, _) do
     nil
   end
+
+  @doc """
+    Return method id used in transaction
+  """
+  def method_id(%__MODULE__{
+        created_contract_address_hash: nil,
+        input: %{bytes: <<method_id::binary-size(4), _::binary>>}
+      }),
+      do: "0x" <> Base.encode16(method_id, case: :lower)
+
+  def method_id(_transaction), do: "0x"
 end

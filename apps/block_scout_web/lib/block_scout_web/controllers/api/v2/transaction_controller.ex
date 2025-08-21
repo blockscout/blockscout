@@ -17,7 +17,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   import BlockScoutWeb.PagingHelper,
     only: [
-      delete_parameters_from_next_page_params: 1,
       paging_options: 2,
       filter_options: 2,
       method_filter_options: 1,
@@ -209,7 +208,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
     {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
-    next_page_params = next_page |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page |> next_page_params(transactions, params)
 
     conn
     |> put_status(200)
@@ -359,7 +358,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       end
 
     {transactions, next_page} = split_list_by_page(transactions_plus_one)
-    next_page_params = next_page |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page |> next_page_params(transactions, params)
 
     conn
     |> put_status(200)
@@ -403,7 +402,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       |> Chain.hashes_to_transactions(full_options)
 
     {transactions, next_page} = split_list_by_page(transactions_plus_one)
-    next_page_params = next_page |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page |> next_page_params(transactions, params)
 
     conn
     |> put_status(200)
@@ -426,7 +425,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       next_page_params =
         next_page
-        |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
+        |> next_page_params(transactions, params)
 
       conn
       |> put_status(200)
@@ -489,7 +488,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       next_page_params =
         next_page
-        |> token_transfers_next_page_params(token_transfers, delete_parameters_from_next_page_params(params))
+        |> token_transfers_next_page_params(token_transfers, params)
 
       conn
       |> put_status(200)
@@ -519,7 +518,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       next_page_params =
         next_page
-        |> next_page_params(internal_transactions, delete_parameters_from_next_page_params(params))
+        |> next_page_params(internal_transactions, params)
 
       conn
       |> put_status(200)
@@ -551,7 +550,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       next_page_params =
         next_page
-        |> next_page_params(logs, delete_parameters_from_next_page_params(params))
+        |> next_page_params(logs, params)
 
       conn
       |> put_status(200)
@@ -582,7 +581,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       next_page_params =
         next_page
-        |> next_page_params(state_changes, delete_parameters_from_next_page_params(params))
+        |> next_page_params(state_changes, params)
 
       conn
       |> put_status(200)
@@ -607,7 +606,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
-      next_page_params = next_page |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
+      next_page_params = next_page |> next_page_params(transactions, params)
 
       conn
       |> put_status(200)

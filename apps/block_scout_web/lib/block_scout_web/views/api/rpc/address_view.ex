@@ -129,7 +129,8 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "contractAddress" => "#{transaction.created_contract_address_hash}",
       "cumulativeGasUsed" => "#{transaction.cumulative_gas_used}",
       "gasUsed" => "#{transaction.gas_used}",
-      "confirmations" => "#{transaction.confirmations}"
+      "confirmations" => "#{transaction.confirmations}",
+      "methodId" => Transaction.method_id(transaction)
     }
   end
 

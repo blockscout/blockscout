@@ -6,6 +6,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
 
   alias Explorer.Application.Constants
+  alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash, Transaction}
   alias Explorer.Chain.Cache.OptimismFinalizationPeriod
   alias Explorer.Chain.Optimism.{DisputeGame, OutputRoot, WithdrawalEvent}
@@ -26,6 +27,8 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
 
   @required_attrs ~w(msg_nonce hash l2_transaction_hash l2_block_number)a
   @game_fields ~w(created_at resolved_at status)a
+
+  @api_true [api?: true]
 
   @typedoc """
     * `msg_nonce` - A nonce of the withdrawal message.
@@ -158,7 +161,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
           0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
         )
 
-      {status, _} = status(w)
+      {status, _} = status(w, nil, @api_true)
       {msg_nonce, status, w.l1_transaction_hash}
     end)
   end
@@ -173,9 +176,9 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
 
     ## Parameters
     - `w`: A map with the withdrawal info.
-    - `respected_games`: A list of games returned by the `respected_games()` function.
+    - `respected_games`: A list of games returned by the `respected_games(options)` function.
                          Used to avoid duplicated SQL requests when the `status` function
-                         is called in a loop. If `nil`, the `respected_games()` function
+                         is called in a loop. If `nil`, the `respected_games(options)` function
                          is called internally.
 
     ## Returns
@@ -183,15 +186,15 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
                            `datetime` is the point of time when the challenge period ends.
                            (only for `In challenge period` status).
   """
-  @spec status(map(), list() | nil) :: {String.t(), DateTime.t() | nil}
-  def status(w, respected_games \\ nil)
+  @spec status(map(), list() | nil, [Chain.api?()]) :: {String.t(), DateTime.t() | nil}
+  def status(w, respected_games \\ nil, options \\ [])
 
-  def status(w, respected_games) when is_nil(w.l1_transaction_hash) do
+  def status(w, respected_games, options) when is_nil(w.l1_transaction_hash) do
     proven_events = proven_events_by_hash(w.hash)
 
     respected_games =
       if is_nil(respected_games) do
-        respected_games()
+        respected_games(options)
       else
         respected_games
       end
@@ -212,7 +215,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     end
   end
 
-  def status(_w, _respected_games) do
+  def status(_w, _respected_games, _options) do
     {@withdrawal_status_relayed, nil}
   end
 
@@ -220,8 +223,8 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     Returns the list of games which type is equal to the current respected game type
     received from OptimismPortal contract.
   """
-  @spec respected_games() :: list()
-  def respected_games do
+  @spec respected_games([Chain.api?()]) :: list()
+  def respected_games(options) do
     case Helper.parse_integer(Constants.get_constant_value("optimism_respected_game_type")) do
       nil ->
         []
@@ -234,7 +237,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
             limit: 100
           )
 
-        Repo.all(query, timeout: :infinity)
+        Chain.select_repo(options).all(query, timeout: :infinity)
     end
   end
 
@@ -313,7 +316,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   #
   # ## Parameters
   # - `proven_events`: A list of WithdrawalProven events. Each item is `{l1_timestamp, game_address_hash, game_index}` tuple.
-  # - `respected_games`: A list of games returned by the `respected_games()` function.
+  # - `respected_games`: A list of games returned by the `respected_games(options)` function.
   #
   # ## Returns
   # - `{status, datetime}` tuple where the `status` is the current withdrawal status,

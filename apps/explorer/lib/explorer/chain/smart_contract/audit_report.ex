@@ -7,7 +7,7 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
 
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.Hash
-  alias Explorer.ThirdPartyIntegrations.AirTable
+  alias Explorer.ThirdPartyIntegrations.AirTableAuditReport
 
   @max_reports_per_day_for_contract 5
 
@@ -108,7 +108,7 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> AirTable.submit()
+    |> AirTableAuditReport.submit()
     |> Repo.insert()
   end
 

@@ -273,6 +273,7 @@
         "getblocknobytime",
         "getblockreward",
         "getcontractcreation",
+        "getepoch",
         "getlogs",
         "getminedblocks",
         "getsourcecode",

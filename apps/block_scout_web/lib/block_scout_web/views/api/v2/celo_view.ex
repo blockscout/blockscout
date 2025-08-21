@@ -178,7 +178,13 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     end)
   end
 
-  defp epoch_type(epoch) do
+  @doc """
+  Returns the type of the epoch based on its number. If the epoch number is less
+  than the migration epoch number, it returns "L1", otherwise "L2". This is used
+  to differentiate between the two eras of Celo epochs.
+  """
+  @spec epoch_type(Epoch.t()) :: String.t()
+  def epoch_type(epoch) do
     epoch.number
     |> CeloHelper.pre_migration_epoch_number?()
     |> if(do: "L1", else: "L2")
