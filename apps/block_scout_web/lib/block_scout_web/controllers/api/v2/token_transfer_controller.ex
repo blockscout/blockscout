@@ -57,10 +57,6 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
     transactions =
       token_transfers
       |> Enum.map(& &1.transaction)
-      # Celo's Epoch logs does not have an associated transaction and linked to
-      # the block instead, so we discard these token transfers for transaction
-      # decoding
-      |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
 
     decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)

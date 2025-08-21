@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
   use EthereumJSONRPC.Case, async: false
   use BlockScoutWeb.ChannelCase
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias ABI.{TypeDecoder, TypeEncoder}
   alias Explorer.{Chain, Repo, TestHelper}
@@ -2102,6 +2103,30 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       check_paginated_response(response, response_2nd_page, token_transfers_1 ++ token_transfers_2)
       assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+    end
+
+    if @chain_type == :celo do
+      test "get token balance when a token transfer has no transaction", %{conn: conn} do
+        address = insert(:address)
+        block = insert(:block)
+
+        token_transfer =
+          insert(:token_transfer,
+            from_address: address,
+            transaction_hash: nil,
+            block: block,
+            transaction: nil
+          )
+
+        request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
+
+        assert response = json_response(request, 200)
+        assert Enum.count(response["items"]) == 1
+        assert response["next_page_params"] == nil
+
+        compare_item(token_transfer, Enum.at(response["items"], 0), true)
+        assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+      end
     end
   end
 
@@ -4482,17 +4507,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
   end
 
-  defp compare_item(%TokenTransfer{} = token_transfer, json) do
-    assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
-    assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
-    assert to_string(token_transfer.transaction_hash) == json["transaction_hash"]
-    assert json["timestamp"] != nil
-    assert json["method"] != nil
-    assert to_string(token_transfer.block_hash) == json["block_hash"]
-    assert token_transfer.log_index == json["log_index"]
-    assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
-  end
-
   defp compare_item(%InternalTransaction{} = internal_transaction, json) do
     assert internal_transaction.block_number == json["block_number"]
     assert to_string(internal_transaction.gas) == json["gas_limit"]
@@ -4609,6 +4623,21 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
              "token" => %{"address_hash" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
              "amount" => ^amount
            } = json
+  end
+
+  defp compare_item(%TokenTransfer{} = token_transfer, json, allow_nil_method? \\ false) do
+    assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
+    assert to_string(token_transfer.transaction_hash) == to_string(json["transaction_hash"])
+    assert json["timestamp"] != nil
+
+    if not allow_nil_method? do
+      assert json["method"] != nil
+    end
+
+    assert to_string(token_transfer.block_hash) == json["block_hash"]
+    assert token_transfer.log_index == json["log_index"]
+    assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
   end
 
   defp compare_token_instance_in_collection(%Instance{token: %Token{} = token} = instance, json) do
