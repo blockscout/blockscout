@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SignedAuthorization do
         nullable: true
       }
     },
-    required: [:address_hash, :chain_id, :nonce, :r, :s, :v, :authority],
+    required: [:address_hash, :chain_id, :nonce, :r, :s, :v, :authority, :status],
     additionalProperties: false
   })
 end
