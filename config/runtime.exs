@@ -1459,6 +1459,10 @@ config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,
   enabled: celo_epoch_fetchers_enabled?,
   disabled?: not celo_epoch_fetchers_enabled?
 
+config :indexer, Indexer.Fetcher.Celo.Legacy.Account,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_CELO_ACCOUNTS_CONCURRENCY", 1),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_CELO_ACCOUNTS_BATCH_SIZE", 100)
+
 config :indexer, Indexer.Fetcher.Celo.Legacy.Account.Supervisor,
   enabled: ConfigHelper.chain_type() == :celo,
   disabled?: not (ConfigHelper.chain_type() == :celo)

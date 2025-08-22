@@ -29,9 +29,6 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
 
   @behaviour BufferedTask
 
-  @default_max_batch_size 10
-  @default_max_concurrency 1
-
   @doc false
   def child_spec([init_options, gen_server_options]) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
@@ -54,8 +51,8 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
     [
       poll: true,
       flush_interval: :timer.seconds(3),
-      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
-      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
+      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency],
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size],
       task_supervisor: __MODULE__.TaskSupervisor,
       metadata: [fetcher: :celo_accounts]
     ]
