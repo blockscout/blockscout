@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TransactionHashCustomizatio
 
   alias BlockScoutWeb.Schemas.API.V2.General
 
-  def schema() do
+  def schema do
     case Application.get_env(:explorer, :chain_type) do
       :celo ->
         General.FullHashNullable
@@ -25,10 +25,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
 
   alias BlockScoutWeb.Schemas.API.V2.TokenTransfer.{
-    TransactionHashCustomization,
     Total,
     TotalERC1155,
-    TotalERC721
+    TotalERC721,
+    TransactionHashCustomization
   }
 
   alias OpenApiSpex.Schema
