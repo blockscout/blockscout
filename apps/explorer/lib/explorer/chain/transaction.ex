@@ -966,6 +966,15 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
+  def decoded_input_data(
+        %__MODULE__{to_address: %{metadata: _, ens_domain_name: _}},
+        _,
+        _,
+        _,
+        _
+      ),
+      do: {:error, :no_to_address}
+
   defp decode_function_call_via_sig_provider_wrapper(input, hash, skip_sig_provider?) do
     case decode_function_call_via_sig_provider(input, hash, skip_sig_provider?) do
       [] ->
