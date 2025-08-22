@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
+defmodule Indexer.Fetcher.MultichainSearchDb.CountersExportQueue do
   @moduledoc """
   Exports blockchain data to Multichain Search DB service from the queue.
   """
@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
-  alias Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue
+  alias Explorer.Chain.MultichainSearchDb.CountersExportQueue
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Repo
 
@@ -18,8 +18,9 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
 
   @default_max_batch_size 1000
   @default_max_concurrency 10
-  @failed_to_export_data_error "Batch token info export attempt to the Multichain Search DB failed"
-  @fetcher_name :multichain_search_db_token_info_export_queue
+  @delete_queries_chunk_size 10
+  @failed_to_export_data_error "Batch counters export attempt to the Multichain Search DB failed"
+  @fetcher_name :multichain_search_db_counters_export_queue
   @queue_size_info "Queue size"
   @successfully_sent_info "Successfully sent"
 
@@ -36,7 +37,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
   @impl BufferedTask
   def init(initial_acc, reducer, _) do
     {:ok, acc} =
-      TokenInfoExportQueue.stream_multichain_db_token_info_batch(
+      CountersExportQueue.stream_multichain_db_counters_batch(
         initial_acc,
         fn data, acc ->
           Helper.reduce_if_queue_is_not_full(data, acc, reducer, __MODULE__)
@@ -49,29 +50,29 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
 
   @impl BufferedTask
   def run(items_from_db_queue, _) when is_list(items_from_db_queue) do
-    case MultichainSearch.batch_export_token_info(items_from_db_queue) do
+    case MultichainSearch.batch_export_counters(items_from_db_queue) do
       {:ok, {:chunks_processed, chunks}} ->
         chunks
-        |> Enum.map(fn chunk -> chunk.tokens end)
+        |> Enum.map(fn chunk -> chunk.counters end)
         |> List.flatten()
-        |> Enum.map(&MultichainSearch.token_info_http_item_to_queue_item(&1))
+        |> Enum.map(&MultichainSearch.counter_http_item_to_queue_item(&1))
         |> delete_queue_items()
         |> log_queue_size()
 
       {:error, data_to_retry} ->
         Logger.error(fn ->
-          ["#{@failed_to_export_data_error}", "#{inspect(data_to_retry.tokens)}"]
+          ["#{@failed_to_export_data_error}", "#{inspect(data_to_retry.counters)}"]
         end)
 
         queue_items_to_retry =
-          data_to_retry.tokens
-          |> Enum.map(&MultichainSearch.token_info_http_item_to_queue_item(&1))
+          data_to_retry.counters
+          |> Enum.map(&MultichainSearch.counter_http_item_to_queue_item(&1))
 
         items_from_db_queue
         |> Enum.reject(fn item_to_export ->
           Enum.any?(
             queue_items_to_retry,
-            &(&1.address_hash == item_to_export.address_hash and &1.data_type == item_to_export.data_type)
+            &(&1.timestamp == item_to_export.timestamp and &1.counter_type == item_to_export.counter_type)
           )
         end)
         |> delete_queue_items()
@@ -82,6 +83,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
   end
 
   # Removes items successfully sent to Multichain service from db queue.
+  # The list is split into small chunks to prevent db deadlocks.
   #
   # ## Parameters
   # - `items`: The list of queue items to delete from the queue.
@@ -91,10 +93,11 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
   @spec delete_queue_items([map()]) :: [map()]
   defp delete_queue_items(items) do
     items
-    |> Enum.each(fn item ->
-      item
-      |> TokenInfoExportQueue.delete_query()
-      |> Repo.delete_all()
+    |> Enum.chunk_every(@delete_queries_chunk_size)
+    |> Enum.each(fn chunk_items ->
+      chunk_items
+      |> CountersExportQueue.delete_query()
+      |> Repo.transaction()
     end)
 
     items
@@ -113,7 +116,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
       fn ->
         [
           "#{@queue_size_info}: ",
-          "#{TokenInfoExportQueue.queue_size()}, ",
+          "#{CountersExportQueue.queue_size()}, ",
           "#{@successfully_sent_info}: ",
           "#{Enum.count(items_successful)}"
         ]
