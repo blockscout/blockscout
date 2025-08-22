@@ -318,15 +318,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
-    scope "/polygon-edge" do
-      chain_scope :polygon_edge do
-        get("/deposits", V2.PolygonEdgeController, :deposits)
-        get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
-        get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
-        get("/withdrawals/count", V2.PolygonEdgeController, :withdrawals_count)
-      end
-    end
-
     scope "/scroll" do
       if @chain_type == :scroll do
         get("/batches", V2.ScrollController, :batches)

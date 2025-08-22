@@ -5,8 +5,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   alias BlockScoutWeb.Schemas.API.V2.Transaction.Fee
   alias OpenApiSpex.Schema
 
-  @polygon_edge_deposit_withdrawal_schema %Schema{type: :object, nullable: true}
-
   @zksync_schema %Schema{
     type: :object,
     nullable: false,
@@ -145,11 +143,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   # credo:disable-for-next-line
   def chain_type_fields(schema) do
     case Application.get_env(:explorer, :chain_type) do
-      :polygon_edge ->
-        schema
-        |> put_in([:properties, :polygon_edge_deposit], @polygon_edge_deposit_withdrawal_schema)
-        |> put_in([:properties, :polygon_edge_withdrawal], @polygon_edge_deposit_withdrawal_schema)
-
       :polygon_zkevm ->
         schema
         |> put_in([:properties, :zkevm_batch_number], %Schema{type: :integer, nullable: true})
