@@ -68,7 +68,7 @@ jobs:
               "neon"
             ];
 
-            const extraChainTypes = ["suave", "polygon_edge"];
+            const extraChainTypes = ["suave"];
 
             // Chain type matrix we use in master branch
             const allChainTypes = [].concat(defaultChainTypes, chainTypes, extraChainTypes);
