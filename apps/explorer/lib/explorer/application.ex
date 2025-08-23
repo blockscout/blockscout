@@ -311,7 +311,7 @@ defmodule Explorer.Application do
       ]
       |> List.flatten()
 
-    repos_by_chain_type() ++ account_repo() ++ mud_repo() ++ configurable_children_set
+    repos_by_chain_type() ++ account_repo() ++ mud_repo() ++ event_notification_repo() ++ configurable_children_set
   end
 
   defp repos_by_chain_type do
@@ -351,6 +351,14 @@ defmodule Explorer.Application do
   defp mud_repo do
     if Application.get_env(:explorer, Explorer.Chain.Mud)[:enabled] || Mix.env() == :test do
       [Explorer.Repo.Mud]
+    else
+      []
+    end
+  end
+
+  defp event_notification_repo do
+    if Application.get_env(:explorer, :realtime_events_sender) == Explorer.Chain.Events.DBSender || Mix.env() == :test do
+      [Explorer.Repo.EventNotifications]
     else
       []
     end

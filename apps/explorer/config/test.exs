@@ -54,6 +54,7 @@ config :explorer, Explorer.Repo.Account,
   log: false
 
 for repo <- [
+      Explorer.Repo.EventNotifications,
       Explorer.Repo.Arbitrum,
       Explorer.Repo.Beacon,
       Explorer.Repo.Blackfort,
