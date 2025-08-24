@@ -11,6 +11,7 @@ defmodule Indexer.Fetcher.Beacon.Deposit.Status do
   import Ecto.Query
 
   alias Explorer.Chain.Beacon.Deposit
+  alias Explorer.Chain.{Data, Wei}
   alias Explorer.{QueryHelper, Repo}
   alias Indexer.Fetcher.Beacon.{Blob, Client}
 
@@ -42,31 +43,40 @@ defmodule Indexer.Fetcher.Beacon.Deposit.Status do
     epochs_elapsed = div(current_time - reference_timestamp, epoch_duration)
     next_epoch_timestamp = (epochs_elapsed + 1) * epoch_duration + reference_timestamp
 
-    Process.send_after(
-      self(),
-      :fetch_queued_deposits,
-      :timer.seconds(next_epoch_timestamp - current_time + 1)
-    )
+    timer =
+      Process.send_after(
+        self(),
+        :fetch_queued_deposits,
+        :timer.seconds(next_epoch_timestamp - current_time + 1)
+      )
 
-    {:noreply, nil}
+    {:noreply, timer}
   end
 
   defp mark_completed_deposits(pending_deposits) do
     ids =
       pending_deposits
       |> Enum.map(fn deposit ->
+        {:ok, pubkey} = Data.cast(deposit["pubkey"])
+        {:ok, withdrawal_credentials} = Data.cast(deposit["withdrawal_credentials"])
+        {amount, ""} = Integer.parse(deposit["amount"])
+        {:ok, signature} = Data.cast(deposit["signature"])
         {slot, ""} = Integer.parse(deposit["slot"])
 
-        {deposit["pubkey"], deposit["withdrawal_credentials"], deposit["amount"], deposit["signature"],
-         slot_to_timestamp(slot)}
+        {pubkey.bytes, withdrawal_credentials.bytes, amount |> Decimal.new() |> Wei.from(:gwei) |> Wei.to(:wei),
+         signature.bytes, slot |> slot_to_timestamp() |> DateTime.from_unix!()}
       end)
+
+    tuple_not_in =
+      dynamic(
+        not (^QueryHelper.tuple_in([:pubkey, :withdrawal_credentials, :amount, :signature, :block_timestamp], ids))
+      )
 
     query =
       from(
         deposit in Deposit,
-        where:
-          deposit.status == :pending and
-            not (^QueryHelper.tuple_in([:pubkey, :withdrawal_credentials, :amount, :signature, :block_timestamp], ids))
+        where: deposit.status == :pending,
+        where: ^tuple_not_in
       )
 
     Repo.update_all(query, set: [status: "completed", updated_at: DateTime.utc_now()])

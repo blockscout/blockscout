@@ -42,6 +42,7 @@ defmodule BlockScoutWeb.API.V2.EthereumView do
       |> Map.put("beacon_deposits_count", Enum.count(beacon_deposits))
     else
       extended_out_json
+      |> Map.put("beacon_deposits_count", nil)
     end
   end
 end

@@ -118,7 +118,7 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
       {:error, prev, curr} ->
         Logger.error("Non-sequential deposits detected: #{inspect(prev)} followed by #{inspect(curr)}")
         Process.send_after(self(), :process_logs, interval * 10)
-        {:noreply, %__MODULE__{deposit_index: deposit_index}}
+        {:noreply, state}
 
       _ ->
         {deposits_count, _} =

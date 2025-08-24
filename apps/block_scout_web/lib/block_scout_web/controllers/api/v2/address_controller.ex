@@ -1462,7 +1462,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         next_page
         |> next_page_params(
           deposits,
-          delete_parameters_from_next_page_params(params),
+          params,
           DepositController.paging_function()
         )
 

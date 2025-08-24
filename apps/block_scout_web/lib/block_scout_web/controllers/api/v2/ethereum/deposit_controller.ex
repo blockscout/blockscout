@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain, only: [next_page_params: 4, split_list_by_page: 1]
-  import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
@@ -10,6 +10,28 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
   alias Explorer.Chain.Beacon.Deposit
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
+
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags ["beacon_deposits"]
+
+  operation :list,
+    summary: "Lists all beacon deposits",
+    description: "Retrieves a paginated list of all beacon deposits.",
+    parameters: base_params() ++ define_paging_params(["deposit_index", "items_count"]),
+    responses: [
+      ok:
+        {"List of Beacon Deposits, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Beacon.Deposit,
+           next_page_params_example: %{
+             "index" => 123,
+             "items_count" => 50
+           },
+           title_prefix: "BeaconDeposits"
+         )},
+      forbidden: ForbiddenResponse.response()
+    ]
 
   @doc """
   Handles `api/v2/beacon/deposits` endpoint.
@@ -46,7 +68,7 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
 
     next_page_params =
       next_page
-      |> next_page_params(deposits, delete_parameters_from_next_page_params(params), paging_function())
+      |> next_page_params(deposits, params, paging_function())
 
     conn
     |> put_status(200)
@@ -55,6 +77,23 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
       next_page_params: next_page_params
     })
   end
+
+  operation :count,
+    summary: "Gets total count of beacon deposits",
+    description: "Retrieves the total count of beacon deposits.",
+    responses: [
+      ok:
+        {"Total count of beacon deposits.", "application/json",
+         %Schema{
+           title: "TotalBeaconDepositsCount",
+           type: :object,
+           properties: %{
+             deposits_count: %Schema{type: :integer, nullable: false}
+           },
+           required: [:deposits_count]
+         }},
+      forbidden: ForbiddenResponse.response()
+    ]
 
   @doc """
   Handles `api/v2/beacon/deposits/count` endpoint.

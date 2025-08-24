@@ -93,18 +93,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
   """
   @spec all([Chain.paging_options() | Chain.necessity_by_association() | Chain.api?()]) :: [t()]
   def all(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
-
-    {required_necessity_by_association, optional_necessity_by_association} =
-      options |> Keyword.get(:necessity_by_association, %{}) |> Enum.split_with(fn {_, v} -> v == :required end)
-
-    __MODULE__
-    |> SortingHelper.apply_sorting(@sorting, [])
-    |> SortingHelper.page_with_sorting(paging_options, @sorting, [])
-    |> Chain.join_associations(Map.new(required_necessity_by_association))
-    |> Chain.select_repo(options).all()
-    |> Enum.map(&put_withdrawal_address_hash/1)
-    |> Chain.select_repo(options).preload(optional_necessity_by_association |> Enum.map(&elem(&1, 0)))
+    beacon_deposits_list_query(:all, nil, options)
   end
 
   @doc """
@@ -133,19 +122,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
           t()
         ]
   def from_block_hash(block_hash, options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
-
-    {required_necessity_by_association, optional_necessity_by_association} =
-      options |> Keyword.get(:necessity_by_association, %{}) |> Enum.split_with(fn {_, v} -> v == :required end)
-
-    __MODULE__
-    |> where([deposit], deposit.block_hash == ^block_hash)
-    |> SortingHelper.apply_sorting(@sorting, [])
-    |> SortingHelper.page_with_sorting(paging_options, @sorting, [])
-    |> Chain.join_associations(Map.new(required_necessity_by_association))
-    |> Chain.select_repo(options).all()
-    |> Enum.map(&put_withdrawal_address_hash/1)
-    |> Chain.select_repo(options).preload(optional_necessity_by_association |> Enum.map(&elem(&1, 0)))
+    beacon_deposits_list_query(:block_hash, block_hash, options)
   end
 
   @doc """
@@ -174,13 +151,23 @@ defmodule Explorer.Chain.Beacon.Deposit do
   @spec from_address_hash(Hash.Address.t(), [Chain.paging_options() | Chain.necessity_by_association() | Chain.api?()]) ::
           [t()]
   def from_address_hash(address_hash, options \\ []) do
+    beacon_deposits_list_query(:from_address_hash, address_hash, options)
+  end
+
+  defp beacon_deposits_list_query(entity, hash, options) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
     {required_necessity_by_association, optional_necessity_by_association} =
       options |> Keyword.get(:necessity_by_association, %{}) |> Enum.split_with(fn {_, v} -> v == :required end)
 
     __MODULE__
-    |> where([deposit], deposit.from_address_hash == ^address_hash)
+    |> then(fn q ->
+      case entity do
+        :block_hash -> where(q, [deposit], deposit.block_hash == ^hash)
+        :from_address_hash -> where(q, [deposit], deposit.from_address_hash == ^hash)
+        :all -> q
+      end
+    end)
     |> SortingHelper.apply_sorting(@sorting, [])
     |> SortingHelper.page_with_sorting(paging_options, @sorting, [])
     |> Chain.join_associations(Map.new(required_necessity_by_association))
