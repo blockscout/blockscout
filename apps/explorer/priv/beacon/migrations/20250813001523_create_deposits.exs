@@ -35,7 +35,8 @@ defmodule Explorer.Repo.Beacon.Migrations.CreateDeposits do
 
     create(
       index(:beacon_deposits, [:pubkey, :withdrawal_credentials, :amount, :signature, :block_timestamp],
-        where: "status = 'pending'"
+        where: "status = 'pending'",
+        name: :beacon_deposits_composite_key_only_pending_index
       )
     )
   end

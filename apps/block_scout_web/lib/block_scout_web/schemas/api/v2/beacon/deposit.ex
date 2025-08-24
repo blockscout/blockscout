@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Beacon.Deposit do
       block_timestamp: General.Timestamp,
       pubkey: %Schema{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{96})$", nullable: false},
       withdrawal_credentials: %Schema{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{64})$", nullable: false},
-      withdrawal_address: Address,
+      withdrawal_address: %Schema{allOf: [Address], nullable: true},
       amount: General.IntegerString,
       signature: %Schema{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{192})$", nullable: false},
       status: Status,

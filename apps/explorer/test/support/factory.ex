@@ -22,7 +22,7 @@ defmodule Explorer.Factory do
   }
 
   alias Explorer.Admin.Administrator
-  alias Explorer.Chain.Beacon.{Blob, BlobTransaction}
+  alias Explorer.Chain.Beacon.{Blob, BlobTransaction, Deposit}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
 
@@ -48,6 +48,7 @@ defmodule Explorer.Factory do
     TokenTransfer,
     Token.Instance,
     Transaction,
+    Wei,
     Withdrawal
   }
 
@@ -1442,6 +1443,133 @@ defmodule Explorer.Factory do
     %EventNotification{
       data: "test_data",
       inserted_at: DateTime.utc_now()
+    }
+  end
+
+  @beacon_deposit_abi ABI.parse_specification(
+                        [
+                          %{
+                            "anonymous" => false,
+                            "inputs" => [
+                              %{
+                                "indexed" => false,
+                                "internalType" => "bytes",
+                                "name" => "pubkey",
+                                "type" => "bytes"
+                              },
+                              %{
+                                "indexed" => false,
+                                "internalType" => "bytes",
+                                "name" => "withdrawal_credentials",
+                                "type" => "bytes"
+                              },
+                              %{
+                                "indexed" => false,
+                                "internalType" => "bytes",
+                                "name" => "amount",
+                                "type" => "bytes"
+                              },
+                              %{
+                                "indexed" => false,
+                                "internalType" => "bytes",
+                                "name" => "signature",
+                                "type" => "bytes"
+                              },
+                              %{
+                                "indexed" => false,
+                                "internalType" => "bytes",
+                                "name" => "index",
+                                "type" => "bytes"
+                              }
+                            ],
+                            "name" => "DepositEvent",
+                            "type" => "event"
+                          }
+                        ],
+                        include_events?: true
+                      )
+                      |> List.first()
+
+  def beacon_deposit_log_factory(attrs) do
+    pubkey_raw = Map.get(attrs, :deposit_pubkey, sequence("beacon_deposit_pubkey", &<<&1::384>>))
+
+    withdrawal_credentials_raw =
+      Map.get(
+        attrs,
+        :deposit_withdrawal_credentials,
+        sequence("beacon_deposit_withdrawal_credentials", &<<&1::256>>)
+      )
+
+    amount = Map.get(attrs, :deposit_amount, sequence("beacon_deposit_amount", & &1))
+    signature_raw = Map.get(attrs, :deposit_signature, sequence("beacon_deposit_signature", &<<&1::768>>))
+    index = Map.get(attrs, :deposit_index, sequence("beacon_deposit_index", & &1))
+
+    <<_::bytes-4, data_raw::binary>> =
+      ABI.TypeEncoder.encode(
+        [
+          pubkey_raw,
+          withdrawal_credentials_raw,
+          <<amount::unsigned-little-64>>,
+          signature_raw,
+          <<index::unsigned-little-64>>
+        ],
+        @beacon_deposit_abi
+      )
+
+    build(
+      :log,
+      Map.merge(
+        %{
+          first_topic: "0x649BBC62D0E31342AFEA4E5CD82D4049E7E1EE912FC0889AA790803BE39038C5",
+          second_topic: nil,
+          third_topic: nil,
+          fourth_topic: nil,
+          data: %Data{bytes: data_raw}
+        },
+        attrs
+        |> Map.drop([
+          :deposit_pubkey,
+          :deposit_withdrawal_credentials,
+          :deposit_amount,
+          :deposit_signature,
+          :deposit_index
+        ])
+      )
+    )
+  end
+
+  def beacon_deposit_factory do
+    pubkey_raw = sequence("beacon_deposit_pubkey", &<<&1::384>>)
+    withdrawal_credentials_raw = sequence("beacon_deposit_withdrawal_credentials", &<<&1::256>>)
+    amount = sequence("beacon_deposit_amount", & &1)
+    signature_raw = sequence("beacon_deposit_signature", &<<&1::768>>)
+    index = sequence("beacon_deposit_index", & &1)
+
+    log =
+      insert(:beacon_deposit_log,
+        deposit_pubkey: pubkey_raw,
+        deposit_withdrawal_credentials: withdrawal_credentials_raw,
+        deposit_amount: amount,
+        deposit_signature: signature_raw,
+        deposit_index: index
+      )
+
+    block = insert(:block)
+    transaction = insert(:transaction) |> with_block(block)
+
+    %Deposit{
+      pubkey: %Data{bytes: pubkey_raw},
+      withdrawal_credentials: %Data{bytes: withdrawal_credentials_raw},
+      amount: amount |> Decimal.new() |> Wei.from(:wei),
+      signature: %Data{bytes: signature_raw},
+      index: index,
+      block_number: transaction.block.number,
+      block_timestamp: transaction.block.timestamp,
+      log_index: log.index,
+      status: :pending,
+      from_address: insert(:address),
+      block: transaction.block,
+      transaction: transaction
     }
   end
 end

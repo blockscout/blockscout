@@ -46,7 +46,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :beacon_blob_transaction => :optional
       }
       @chain_type_block_necessity_by_association %{
-        [transactions: :beacon_blob_transaction] => :optional
+        [transactions: :beacon_blob_transaction] => :optional,
+        :beacon_deposits => :optional
       }
 
     :optimism ->
@@ -123,8 +124,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :rewards => :optional,
         :transactions => :optional,
         :withdrawals => :optional,
-        :internal_transactions => :optional,
-        :beacon_deposits => :optional
+        :internal_transactions => :optional
       }
       |> Map.merge(@chain_type_block_necessity_by_association),
     api?: true
@@ -464,7 +464,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         next_page
         |> next_page_params(
           deposits,
-          delete_parameters_from_next_page_params(params),
+          params,
           DepositController.paging_function()
         )
 
