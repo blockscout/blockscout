@@ -18,7 +18,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.ErrorResponses do
           description: "Error message indicating the user is not authorized to access the resource",
           example: "Restricted access"
         }
-      }
+      },
+      additionalProperties: false
     })
 
     @spec response() :: {String.t(), String.t(), module()}
