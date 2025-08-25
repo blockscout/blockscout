@@ -16,7 +16,7 @@ jobs:
     env:
       RELEASE_VERSION: 9.0.2
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup repo
         uses: ./.github/actions/setup-repo
         id: setup
@@ -121,7 +121,7 @@ jobs:
   #       production-rsk
   #       production-immutable
   #   steps:
-  #   - uses: actions/checkout@v4
+  #   - uses: actions/checkout@v5
   #   - name: Set Git config
   #     run: |
   #         git config --local user.email "actions@github.com"
