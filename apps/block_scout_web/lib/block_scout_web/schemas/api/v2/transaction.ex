@@ -421,7 +421,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
           description: "Transaction tag set in My Account"
         },
         has_error_in_internal_transactions: %Schema{type: :boolean, nullable: true},
-        authorization_list: %Schema{type: :array, items: SignedAuthorization, nullable: true}
+        authorization_list: %Schema{type: :array, items: SignedAuthorization, nullable: true},
+        is_pending_update: %Schema{type: :boolean, nullable: true}
       },
       required: [
         :hash,
@@ -459,7 +460,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         :transaction_types,
         :transaction_tag,
         :has_error_in_internal_transactions,
-        :authorization_list
+        :authorization_list,
+        :is_pending_update
       ]
     }
     |> ChainTypeCustomizations.chain_type_fields()

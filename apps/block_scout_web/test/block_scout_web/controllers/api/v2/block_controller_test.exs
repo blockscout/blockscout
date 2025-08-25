@@ -247,6 +247,37 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert response_2 == response_1
       compare_item(block, response_2)
     end
+
+    test "includes is_pending_update field in response", %{conn: conn} do
+      block_refetch_needed = insert(:block, refetch_needed: true)
+      block_no_refetch = insert(:block, refetch_needed: false)
+
+      request_1 = get(conn, "/api/v2/blocks/#{block_refetch_needed.hash}")
+      assert response_1 = json_response(request_1, 200)
+      assert response_1["is_pending_update"] == true
+
+      request_2 = get(conn, "/api/v2/blocks/#{block_no_refetch.hash}")
+      assert response_2 = json_response(request_2, 200)
+      assert response_2["is_pending_update"] == false
+    end
+
+    test "includes is_pending_update field in block lists", %{conn: conn} do
+      block_refetch_needed = insert(:block, refetch_needed: true)
+      block_no_refetch = insert(:block, refetch_needed: false)
+
+      request = get(conn, "/api/v2/blocks")
+      assert response = json_response(request, 200)
+
+      # Find the blocks in the response
+      refetch_block_response =
+        Enum.find(response["items"], fn item -> item["hash"] == to_string(block_refetch_needed.hash) end)
+
+      no_refetch_block_response =
+        Enum.find(response["items"], fn item -> item["hash"] == to_string(block_no_refetch.hash) end)
+
+      assert refetch_block_response["is_pending_update"] == true
+      assert no_refetch_block_response["is_pending_update"] == false
+    end
   end
 
   describe "/blocks/{block_hash_or_number}/transactions" do

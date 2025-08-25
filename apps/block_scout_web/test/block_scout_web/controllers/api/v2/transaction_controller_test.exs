@@ -230,6 +230,57 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       compare_item(transaction, response)
     end
 
+    test "includes is_pending_update field in response", %{conn: conn} do
+      block_refetch_needed = insert(:block, refetch_needed: true)
+      block_no_refetch = insert(:block, refetch_needed: false)
+
+      transaction_refetch_needed =
+        :transaction
+        |> insert()
+        |> with_block(block_refetch_needed)
+
+      transaction_no_refetch =
+        :transaction
+        |> insert()
+        |> with_block(block_no_refetch)
+
+      request_1 = get(conn, "/api/v2/transactions/" <> to_string(transaction_refetch_needed.hash))
+      assert response_1 = json_response(request_1, 200)
+      assert response_1["is_pending_update"] == true
+
+      request_2 = get(conn, "/api/v2/transactions/" <> to_string(transaction_no_refetch.hash))
+      assert response_2 = json_response(request_2, 200)
+      assert response_2["is_pending_update"] == false
+    end
+
+    test "includes is_pending_update field in transaction lists", %{conn: conn} do
+      block_refetch_needed = insert(:block, refetch_needed: true)
+      block_no_refetch = insert(:block, refetch_needed: false)
+
+      transaction_refetch_needed =
+        :transaction
+        |> insert()
+        |> with_block(block_refetch_needed)
+
+      transaction_no_refetch =
+        :transaction
+        |> insert()
+        |> with_block(block_no_refetch)
+
+      request = get(conn, "/api/v2/transactions")
+      assert response = json_response(request, 200)
+
+      # Find the transactions in the response
+      refetch_tx_response =
+        Enum.find(response["items"], fn item -> item["hash"] == to_string(transaction_refetch_needed.hash) end)
+
+      no_refetch_tx_response =
+        Enum.find(response["items"], fn item -> item["hash"] == to_string(transaction_no_refetch.hash) end)
+
+      assert refetch_tx_response["is_pending_update"] == true
+      assert no_refetch_tx_response["is_pending_update"] == false
+    end
+
     test "batch 1155 flattened", %{conn: conn} do
       token = insert(:token, type: "ERC-1155")
 
