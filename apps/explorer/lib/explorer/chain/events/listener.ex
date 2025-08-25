@@ -5,8 +5,8 @@ defmodule Explorer.Chain.Events.Listener do
 
   use GenServer
 
-  alias Explorer.Repo.EventNotifications, as: EventNotificationsRepo
   alias Explorer.Repo.ConfigHelper
+  alias Explorer.Repo.EventNotifications, as: EventNotificationsRepo
   alias Explorer.Utility.EventNotification
   alias Postgrex.Notifications
 
