@@ -499,7 +499,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         |> subscribe_and_join(topic)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}")
-      assert response = json_response(request, 200)
+      assert _response = json_response(request, 200)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{fetched_bytecode: ^contract_code},
