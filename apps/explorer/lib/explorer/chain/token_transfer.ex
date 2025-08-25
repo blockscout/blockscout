@@ -60,6 +60,7 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
         field(:token_type, :string)
         field(:block_consensus, :boolean)
         field(:token_instance, :any, virtual: true) :: Instance.t() | nil
+        field(:is_scam, :boolean, virtual: true)
 
         belongs_to(:from_address, Address,
           foreign_key: :from_address_hash,
