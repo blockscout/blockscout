@@ -63,6 +63,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:certified, :boolean)
         field(:is_blueprint, :boolean)
         field(:language, Ecto.Enum, values: @languages_enum, default: :solidity)
+        field(:is_scam, :boolean, virtual: true)
 
         belongs_to(
           :address,
