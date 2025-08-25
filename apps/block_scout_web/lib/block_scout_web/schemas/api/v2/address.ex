@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
           type: :array,
           items: General.Implementation
         },
-        is_verified: %Schema{type: :boolean, description: "Has address associated source code?", nullable: false},
+        is_verified: %Schema{type: :boolean, description: "Has address associated source code?", nullable: true},
         ens_domain_name: %Schema{
           type: :string,
           description: "ENS domain name associated with the address",
