@@ -894,6 +894,7 @@ defmodule Explorer.Chain.Transaction do
         methods_map,
         _smart_contract_full_abi_map
       ) do
+    {:ok, method_id} = MethodIdentifier.cast(method_id)
     methods = check_methods_cache(method_id, methods_map, options)
 
     candidates =

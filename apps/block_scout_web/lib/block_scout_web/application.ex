@@ -50,7 +50,14 @@ defmodule BlockScoutWeb.Application do
       alias BlockScoutWeb.API.APILogger
       alias BlockScoutWeb.Counters.{BlocksIndexedCounter, InternalTransactionsIndexedCounter}
       alias BlockScoutWeb.Prometheus.{Exporter, PhoenixInstrumenter, PublicExporter}
-      alias BlockScoutWeb.{MainPageRealtimeEventHandler, RealtimeEventHandler, SmartContractRealtimeEventHandler}
+
+      alias BlockScoutWeb.{
+        MainPageRealtimeEventHandler,
+        RealtimeEventHandler,
+        SmartContractRealtimeEventHandler,
+        TokenTransferRealtimeEventHandler
+      }
+
       alias BlockScoutWeb.Utility.EventHandlersMetrics
       alias Explorer.Chain.Metrics, as: ChainMetrics
 
@@ -73,6 +80,7 @@ defmodule BlockScoutWeb.Application do
           {MainPageRealtimeEventHandler, name: MainPageRealtimeEventHandler},
           {RealtimeEventHandler, name: RealtimeEventHandler},
           {SmartContractRealtimeEventHandler, name: SmartContractRealtimeEventHandler},
+          {TokenTransferRealtimeEventHandler, name: TokenTransferRealtimeEventHandler},
           {BlocksIndexedCounter, name: BlocksIndexedCounter},
           {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
           {EventHandlersMetrics, []},

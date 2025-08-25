@@ -5,7 +5,13 @@ defmodule BlockScoutWeb.Utility.EventHandlersMetrics do
 
   use GenServer
 
-  alias BlockScoutWeb.{MainPageRealtimeEventHandler, RealtimeEventHandler, SmartContractRealtimeEventHandler}
+  alias BlockScoutWeb.{
+    MainPageRealtimeEventHandler,
+    RealtimeEventHandler,
+    SmartContractRealtimeEventHandler,
+    TokenTransferRealtimeEventHandler
+  }
+
   alias BlockScoutWeb.Prometheus.Instrumenter
 
   @interval :timer.minutes(1)
@@ -32,10 +38,18 @@ defmodule BlockScoutWeb.Utility.EventHandlersMetrics do
     set_handler_metric(MainPageRealtimeEventHandler, :main_page)
     set_handler_metric(RealtimeEventHandler, :common)
     set_handler_metric(SmartContractRealtimeEventHandler, :smart_contract)
+    set_handler_metric(TokenTransferRealtimeEventHandler, :token_transfer)
   end
 
   defp set_handler_metric(handler, label) do
-    {_, queue_length} = Process.info(Process.whereis(handler), :message_queue_len)
+    queue_length =
+      with pid when is_pid(pid) <- Process.whereis(handler),
+           {:message_queue_len, length} <- Process.info(pid, :message_queue_len) do
+        length
+      else
+        _ -> 0
+      end
+
     Instrumenter.event_handler_queue_length(label, queue_length)
   end
 
