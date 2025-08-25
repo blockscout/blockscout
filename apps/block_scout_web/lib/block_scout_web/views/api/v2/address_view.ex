@@ -146,7 +146,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
               token_balance.address_hash,
               token_balance
             )
-        )
+        ),
+      "is_scam" => token_balance.is_scam || false
     }
   end
 
@@ -183,7 +184,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
   defp prepare_nft(nft, token) do
     Map.merge(
-      %{"token_type" => token.type, "value" => value(token.type, nft)},
+      %{"token_type" => token.type, "value" => value(token.type, nft), "is_scam" => nft.is_scam || false},
       TokenView.prepare_token_instance(nft, token)
     )
   end
@@ -195,7 +196,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "token_instances" =>
         Enum.map(collection.preloaded_token_instances, fn instance ->
           prepare_nft_for_collection(collection.token.type, instance)
-        end)
+        end),
+      "is_scam" => collection[:is_scam] || false
     }
   end
 

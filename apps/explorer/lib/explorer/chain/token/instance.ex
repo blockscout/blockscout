@@ -53,6 +53,7 @@ defmodule Explorer.Chain.Token.Instance do
     field(:cdn_upload_error, :string)
     field(:metadata_url, :string)
     field(:skip_metadata_url, :boolean)
+    field(:is_scam, :boolean, virtual: true)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 

@@ -40,6 +40,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     field(:distinct_token_instances_count, :integer, virtual: true)
     field(:token_ids, {:array, :decimal}, virtual: true)
     field(:preloaded_token_instances, {:array, :any}, virtual: true)
+    field(:is_scam, :boolean, virtual: true)
 
     # A transient field for deriving token holder count deltas during address_current_token_balances upserts
     field(:old_value, :decimal)
