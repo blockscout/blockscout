@@ -5,8 +5,8 @@ defmodule Explorer.Chain.Events.Listener do
 
   use GenServer
 
-  alias Explorer.Repo
   alias Explorer.Repo.ConfigHelper
+  alias Explorer.Repo.EventNotifications, as: EventNotificationsRepo
   alias Explorer.Utility.EventNotification
   alias Postgrex.Notifications
 
@@ -17,7 +17,7 @@ defmodule Explorer.Chain.Events.Listener do
   def init(channel) do
     {:ok, pid} =
       :explorer
-      |> Application.get_env(Explorer.Repo)
+      |> Application.get_env(EventNotificationsRepo)
       |> Keyword.merge(listener_db_parameters())
       |> Notifications.start_link()
 
@@ -69,7 +69,7 @@ defmodule Explorer.Chain.Events.Listener do
   end
 
   defp fetch_event_notification(id) do
-    case Repo.get(EventNotification, id) do
+    case EventNotificationsRepo.get(EventNotification, id) do
       nil ->
         nil
 
@@ -79,8 +79,7 @@ defmodule Explorer.Chain.Events.Listener do
   end
 
   defp listener_db_parameters do
-    listener_db_url = Application.get_env(:explorer, Repo)[:listener_url] || Application.get_env(:explorer, Repo)[:url]
-
+    listener_db_url = Application.get_env(:explorer, EventNotificationsRepo)[:url]
     ConfigHelper.extract_parameters(listener_db_url)
   end
 end

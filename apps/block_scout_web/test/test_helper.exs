@@ -37,6 +37,7 @@ Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.BridgedTokens, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Filecoin, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Mud, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.ShrunkInternalTransactions, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.EventNotifications, :manual)
 
 Absinthe.Test.prime(BlockScoutWeb.GraphQL.Schema)
 

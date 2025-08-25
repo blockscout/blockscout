@@ -1,7 +1,7 @@
 defmodule Indexer.Utils.EventNotificationsCleanerTest do
   use Explorer.DataCase
 
-  alias Explorer.Repo
+  alias Explorer.Repo.EventNotifications, as: EventNotificationsRepo
   alias Explorer.Utility.EventNotification
   alias Indexer.Utils.EventNotificationsCleaner
 
@@ -33,11 +33,11 @@ defmodule Indexer.Utils.EventNotificationsCleanerTest do
       old_time = DateTime.utc_now() |> DateTime.add(-2000, :millisecond)
       new_time = DateTime.utc_now() |> DateTime.add(-500, :millisecond)
 
-      insert(:event_notification, data: "old_data", inserted_at: old_time)
-      insert(:event_notification, data: "new_data", inserted_at: new_time)
+      build(:event_notification, data: "old_data", inserted_at: old_time) |> EventNotificationsRepo.insert()
+      build(:event_notification, data: "new_data", inserted_at: new_time) |> EventNotificationsRepo.insert()
 
       # Verify both notifications exist
-      assert Repo.aggregate(EventNotification, :count) == 2
+      assert EventNotificationsRepo.aggregate(EventNotification, :count) == 2
 
       # Set configuration for max_age of 1000ms
       config = Application.get_env(:indexer, EventNotificationsCleaner)
@@ -47,8 +47,8 @@ defmodule Indexer.Utils.EventNotificationsCleanerTest do
       Process.sleep(500)
 
       # Verify only the old notification was deleted
-      assert Repo.aggregate(EventNotification, :count) == 1
-      remaining = Repo.one(from(n in EventNotification, select: n.data))
+      assert EventNotificationsRepo.aggregate(EventNotification, :count) == 1
+      remaining = EventNotificationsRepo.one(from(n in EventNotification, select: n.data))
       assert remaining == "new_data"
     end
 
@@ -56,13 +56,13 @@ defmodule Indexer.Utils.EventNotificationsCleanerTest do
       old_time = DateTime.utc_now() |> DateTime.add(-2000, :millisecond)
 
       # Insert multiple old notifications
-      insert_list(3, :event_notification, inserted_at: old_time)
+      build_list(3, :event_notification, inserted_at: old_time) |> Enum.map(&EventNotificationsRepo.insert(&1))
 
       # Insert one new notification
-      insert(:event_notification, data: "new_data")
+      build(:event_notification, data: "new_data") |> EventNotificationsRepo.insert()
 
       # Verify all notifications exist
-      assert Repo.aggregate(EventNotification, :count) == 4
+      assert EventNotificationsRepo.aggregate(EventNotification, :count) == 4
 
       # Set configuration
       config = Application.get_env(:indexer, EventNotificationsCleaner)
@@ -72,17 +72,17 @@ defmodule Indexer.Utils.EventNotificationsCleanerTest do
       Process.sleep(500)
 
       # Verify only the new notification remains
-      assert Repo.aggregate(EventNotification, :count) == 1
-      remaining = Repo.one(from(n in EventNotification, select: n.data))
+      assert EventNotificationsRepo.aggregate(EventNotification, :count) == 1
+      remaining = EventNotificationsRepo.one(from(n in EventNotification, select: n.data))
       assert remaining == "new_data"
     end
 
     test "does not delete notifications when none are old enough" do
       # Insert only new notifications
-      insert_list(3, :event_notification)
+      build_list(3, :event_notification) |> Enum.map(&EventNotificationsRepo.insert(&1))
 
       # Verify notifications exist
-      assert Repo.aggregate(EventNotification, :count) == 3
+      assert EventNotificationsRepo.aggregate(EventNotification, :count) == 3
 
       # Set configuration
       config = Application.get_env(:indexer, EventNotificationsCleaner)
@@ -92,7 +92,7 @@ defmodule Indexer.Utils.EventNotificationsCleanerTest do
       Process.sleep(500)
 
       # Verify all notifications still exist
-      assert Repo.aggregate(EventNotification, :count) == 3
+      assert EventNotificationsRepo.aggregate(EventNotification, :count) == 3
     end
   end
 end
