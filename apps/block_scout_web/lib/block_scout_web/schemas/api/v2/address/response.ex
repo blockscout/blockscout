@@ -29,12 +29,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
           type: %Schema{
             type: :string,
             enum: [:regular, :validator, :group],
-            nullable: true
+            nullable: false
           },
           name: %Schema{type: :string, nullable: true},
           metadata_url: %Schema{type: :string, nullable: true},
-          nonvoting_locked_celo: %Schema{type: :string, nullable: true},
-          locked_celo: %Schema{type: :string, nullable: true}
+          nonvoting_locked_celo: %Schema{type: :string, nullable: false},
+          locked_celo: %Schema{type: :string, nullable: false}
         },
         required: [
           :type,
