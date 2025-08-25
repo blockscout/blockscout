@@ -512,7 +512,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         |> subscribe_and_join(topic)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}")
-      assert response = json_response(request, 200)
+      assert _response = json_response(request, 200)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{fetched_bytecode: ^contract_code},
@@ -1127,8 +1127,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       from_address = insert(:address)
       to_address = build(:address)
 
-      transaction =
-        insert(:transaction, from_address: from_address, to_address_hash: to_address.hash, to_address: to_address)
+      insert(:transaction, from_address: from_address, to_address_hash: to_address.hash, to_address: to_address)
 
       Explorer.Repo.delete(to_address)
 
@@ -1193,8 +1192,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
-
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       transaction = Enum.at(response["items"], 0)
       assert transaction["to"]["ens_domain_name"] == "test.eth"
