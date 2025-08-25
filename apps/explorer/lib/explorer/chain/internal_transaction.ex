@@ -970,6 +970,7 @@ defmodule Explorer.Chain.InternalTransaction do
         |> where_nonpending_block()
         |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
         |> where_internal_transactions_by_transaction_hash(Keyword.get(options, :transaction_hash))
+        |> where_consensus_transactions()
         |> order_by([internal_transaction],
           desc: internal_transaction.block_number,
           desc: internal_transaction.transaction_index,
@@ -990,6 +991,19 @@ defmodule Explorer.Chain.InternalTransaction do
 
   def internal_transaction_to_block_paging_options(%__MODULE__{block_index: block_index}) do
     %{"block_index" => block_index}
+  end
+
+  defp where_consensus_transactions(query) do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      query
+      |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
+      |> where([_internal_transaction, transaction], transaction.block_consensus == true)
+    else
+      query
+      |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
+      |> join(:inner, [transaction], block in assoc(transaction, :block))
+      |> where([_internal_transaction, _transaction, block], block.consensus == true)
+    end
   end
 
   defp where_internal_transactions_by_transaction_hash(query, nil), do: query

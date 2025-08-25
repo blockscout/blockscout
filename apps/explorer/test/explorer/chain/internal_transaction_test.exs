@@ -1090,51 +1090,54 @@ defmodule Explorer.Chain.InternalTransactionTest do
     end
   end
 
-  defp call_type(opts) do
-    defaults = [
-      type: :call,
-      call_type: :call,
-      to_address_hash: Factory.address_hash(),
-      from_address_hash: Factory.address_hash(),
-      input: Factory.transaction_input(),
-      output: Factory.transaction_input(),
-      gas: Decimal.new(50_000),
-      gas_used: Decimal.new(25_000),
-      value: %Wei{value: 100},
-      index: 0,
-      trace_address: []
-    ]
+  describe "fetch/1" do
+    test "with consensus transactions only" do
+      block_non_consensus = insert(:block, number: 2000, consensus: false)
+      block_consensus = insert(:block, number: 3000)
 
-    struct!(InternalTransaction, Keyword.merge(defaults, opts))
-  end
+      transaction_1 =
+        :transaction
+        |> insert(
+          block_hash: block_non_consensus.hash,
+          block_number: block_non_consensus.number,
+          block_consensus: false,
+          cumulative_gas_used: 100_500,
+          gas_used: 100_500,
+          index: 1
+        )
 
-  defp create_type(opts) do
-    defaults = [
-      type: :create,
-      from_address_hash: Factory.address_hash(),
-      gas: Decimal.new(50_000),
-      gas_used: Decimal.new(25_000),
-      value: %Wei{value: 100},
-      index: 0,
-      init: Factory.transaction_input(),
-      trace_address: []
-    ]
+      transaction_2 =
+        :transaction
+        |> insert()
+        |> with_block(block_consensus)
 
-    struct!(InternalTransaction, Keyword.merge(defaults, opts))
-  end
+      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
+        insert(:internal_transaction,
+          index: 1,
+          transaction: transaction_1,
+          block_number: transaction_1.block_number,
+          block_hash: transaction_1.block_hash,
+          block_index: 1,
+          transaction_index: transaction_1.index
+        )
 
-  defp selfdestruct_type(opts) do
-    defaults = [
-      type: :selfdestruct,
-      from_address_hash: Factory.address_hash(),
-      to_address_hash: Factory.address_hash(),
-      gas: Decimal.new(50_000),
-      gas_used: Decimal.new(25_000),
-      value: %Wei{value: 100},
-      index: 0,
-      trace_address: []
-    ]
+      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
+        insert(:internal_transaction,
+          index: 2,
+          transaction: transaction_2,
+          block_number: transaction_2.block_number,
+          block_hash: transaction_2.block_hash,
+          block_index: 2,
+          transaction_index: transaction_2.index
+        )
 
-    struct!(InternalTransaction, Keyword.merge(defaults, opts))
+      result =
+        []
+        |> InternalTransaction.fetch()
+        |> Enum.map(&{&1.transaction_hash, &1.index})
+
+      refute Enum.member?(result, {first_transaction_hash, first_index})
+      assert Enum.member?(result, {second_transaction_hash, second_index})
+    end
   end
 end
