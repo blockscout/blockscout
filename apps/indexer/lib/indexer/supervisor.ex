@@ -195,14 +195,6 @@ defmodule Indexer.Supervisor do
           Indexer.Fetcher.Optimism.Interop.MultichainExport.Supervisor,
           [[memory_monitor: memory_monitor]]
         },
-        configure(Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
-        configure(Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor, [
-          [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]
-        ]),
-        configure(Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, [
-          [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]
-        ]),
-        configure(Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.Shibarium.L2.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
