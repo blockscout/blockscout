@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.Beacon.Client do
 
   @request_error_msg "Error while sending request to beacon rpc"
 
-  def http_get_request(url) do
+  defp http_get_request(url) do
     case HttpClient.get(url) do
       {:ok, %{body: body, status_code: 200}} ->
         Jason.decode(body)
@@ -79,9 +79,23 @@ defmodule Indexer.Fetcher.Beacon.Client do
     http_get_request(header_url(slot))
   end
 
+  @spec get_spec :: {:error, any()} | {:ok, any()}
+  def get_spec do
+    http_get_request(spec_url())
+  end
+
+  @spec get_pending_deposits(integer() | String.t()) :: {:error, any()} | {:ok, any()}
+  def get_pending_deposits(slot) do
+    http_get_request(pending_deposits_url(slot))
+  end
+
   def blob_sidecars_url(slot), do: "#{base_url()}" <> "/eth/v1/beacon/blob_sidecars/" <> to_string(slot)
 
   def header_url(slot), do: "#{base_url()}" <> "/eth/v1/beacon/headers/" <> to_string(slot)
+
+  defp pending_deposits_url(epoch), do: "#{base_url()}/eth/v1/beacon/states/#{epoch}/pending_deposits"
+
+  defp spec_url, do: "#{base_url()}/eth/v1/config/spec"
 
   def base_url do
     Application.get_env(:indexer, Indexer.Fetcher.Beacon)[:beacon_rpc]
