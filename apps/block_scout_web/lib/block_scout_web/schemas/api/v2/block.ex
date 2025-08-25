@@ -125,6 +125,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
     properties: %{
       is_epoch_block: %Schema{type: :boolean, nullable: false},
       epoch_number: %Schema{type: :integer, nullable: false},
+      l1_era_finalized_epoch_number: %Schema{type: :integer, nullable: true},
       base_fee: %Schema{
         type: :object,
         nullable: true,
@@ -151,7 +152,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
         additionalProperties: false
       }
     },
-    required: [:is_epoch_block, :epoch_number],
+    required: [:is_epoch_block, :epoch_number, :l1_era_finalized_epoch_number],
     additionalProperties: false
   }
 
