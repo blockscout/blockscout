@@ -13,7 +13,7 @@ jobs:
       RELEASE_VERSION: 9.0.2
       DOCKER_CHAIN_NAME: xdai
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup repo
         uses: ./.github/actions/setup-repo
         id: setup
