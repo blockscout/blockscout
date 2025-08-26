@@ -134,7 +134,8 @@ for migrator <- [
       Explorer.Migrator.BackfillMetadataURL,
       Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds,
       Explorer.Migrator.ReindexDuplicatedInternalTransactions,
-      Explorer.Migrator.MergeAdjacentMissingBlockRanges
+      Explorer.Migrator.MergeAdjacentMissingBlockRanges,
+      Explorer.Migrator.EmptyInternalTransactionsZeroValues
     ] do
   config :explorer, migrator, enabled: true
 end
