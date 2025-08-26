@@ -1198,8 +1198,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       from_address = insert(:address)
       to_address = build(:address)
 
-      transaction =
-        insert(:transaction, from_address: from_address, to_address_hash: to_address.hash, to_address: to_address)
+      insert(:transaction, from_address: from_address, to_address_hash: to_address.hash, to_address: to_address)
 
       Explorer.Repo.delete(to_address)
 

@@ -227,7 +227,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       transaction_index: token_transfer.transaction.index,
       token_transfer_index: token_transfer.log_index,
       token_transfer_batch_index: token_transfer.reverse_index_in_batch,
-      is_scam: token_transfer.is_scam || false
+      is_scam: token_transfer.is_scam
     }
   end
 

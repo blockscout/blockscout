@@ -174,7 +174,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       token_transfer_index: advanced_filter.token_transfer_index,
       token_transfer_batch_index: advanced_filter.token_transfer_batch_index,
       fee: advanced_filter.fee,
-      is_scam: advanced_filter.is_scam || false
+      is_scam: advanced_filter.is_scam
     }
   end
 

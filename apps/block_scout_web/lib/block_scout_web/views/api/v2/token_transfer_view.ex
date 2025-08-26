@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
       "block_number" => token_transfer.block_number,
       "log_index" => token_transfer.log_index,
       "token_type" => token_transfer.token_type,
-      "is_scam" => token_transfer.is_scam || false
+      "is_scam" => token_transfer.is_scam
     }
   end
 

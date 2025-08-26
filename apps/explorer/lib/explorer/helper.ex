@@ -265,6 +265,7 @@ defmodule Explorer.Helper do
 
       true ->
         query
+        |> select_merge([q], %{is_scam: false})
     end
   end
 

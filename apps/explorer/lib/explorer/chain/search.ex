@@ -1080,7 +1080,6 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:is_scam, dynamic([sabm: sabm], not is_nil(sabm.address_hash)))
     else
       search_fields
-      # |> Map.put(:is_scam, false)
     end
   end
 
