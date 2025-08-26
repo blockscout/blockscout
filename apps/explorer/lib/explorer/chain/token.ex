@@ -171,7 +171,7 @@ defmodule Explorer.Chain.Token do
         changeset
 
       property ->
-        put_change(changeset, key, Helper.sanitize_input(property))
+        put_change(changeset, key, Helper.escape_minimal(property))
     end
   end
 
