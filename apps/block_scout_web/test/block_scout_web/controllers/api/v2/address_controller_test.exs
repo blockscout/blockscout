@@ -1193,6 +1193,101 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
+
+    test "regression test for decoding issue", %{conn: conn} do
+      from_address = insert(:address)
+      to_address = build(:address)
+
+      transaction =
+        insert(:transaction, from_address: from_address, to_address_hash: to_address.hash, to_address: to_address)
+
+      Explorer.Repo.delete(to_address)
+
+      bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+
+      old_env_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      old_env_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      Bypass.expect_once(bypass, "POST", "api/v1/#{chain_id}/addresses:batch_resolve_names", fn conn ->
+        Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{
+            "names" => %{
+              to_string(to_address) => "test.eth"
+            }
+          })
+        )
+      end)
+
+      Bypass.expect_once(bypass, "GET", "api/v1/metadata", fn conn ->
+        Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{
+            "addresses" => %{
+              to_string(to_address) => %{
+                "tags" => [
+                  %{
+                    "name" => "Proposer Fee Recipient",
+                    "ordinal" => 0,
+                    "slug" => "proposer-fee-recipient",
+                    "tagType" => "generic",
+                    "meta" => "{\"styles\":\"danger_high\"}"
+                  }
+                ]
+              }
+            }
+          })
+        )
+      end)
+
+      request = get(conn, "/api/v2/addresses/#{from_address.hash}/transactions")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+
+      transaction = Enum.at(response["items"], 0)
+      assert transaction["to"]["ens_domain_name"] == "test.eth"
+
+      assert transaction["to"]["metadata"] == %{
+               "tags" => [
+                 %{
+                   "slug" => "proposer-fee-recipient",
+                   "name" => "Proposer Fee Recipient",
+                   "ordinal" => 0,
+                   "tagType" => "generic",
+                   "meta" => %{"styles" => "danger_high"}
+                 }
+               ]
+             }
+
+      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      Bypass.down(bypass)
+    end
   end
 
   describe "/addresses/{address_hash}/token-transfers" do

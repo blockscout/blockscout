@@ -24,6 +24,8 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue, as: MultichainSearchDbBalancesExportQueue
+  alias Indexer.Fetcher.MultichainSearchDb.CountersExportQueue, as: MultichainSearchDbCountersExportQueue
+  alias Indexer.Fetcher.MultichainSearchDb.CountersFetcher, as: MultichainSearchDbCountersFetcher
   alias Indexer.Fetcher.MultichainSearchDb.MainExportQueue, as: MultichainSearchDbMainExportQueue
   alias Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue, as: MultichainSearchDbTokenInfoExportQueue
   alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
@@ -158,6 +160,8 @@ defmodule Indexer.Supervisor do
         {MultichainSearchDbMainExportQueue.Supervisor, [[memory_monitor: memory_monitor]]},
         {MultichainSearchDbBalancesExportQueue.Supervisor, [[memory_monitor: memory_monitor]]},
         {MultichainSearchDbTokenInfoExportQueue.Supervisor, [[memory_monitor: memory_monitor]]},
+        {MultichainSearchDbCountersExportQueue.Supervisor, [[memory_monitor: memory_monitor]]},
+        {MultichainSearchDbCountersFetcher.Supervisor, [[memory_monitor: memory_monitor]]},
         {Indexer.Fetcher.RollupL1ReorgMonitor.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(
           Indexer.Fetcher.Optimism.TransactionBatch.Supervisor,
@@ -191,14 +195,6 @@ defmodule Indexer.Supervisor do
           Indexer.Fetcher.Optimism.Interop.MultichainExport.Supervisor,
           [[memory_monitor: memory_monitor]]
         },
-        configure(Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
-        configure(Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor, [
-          [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]
-        ]),
-        configure(Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, [
-          [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]
-        ]),
-        configure(Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.Shibarium.L2.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),

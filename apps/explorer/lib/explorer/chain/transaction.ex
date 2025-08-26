@@ -902,6 +902,7 @@ defmodule Explorer.Chain.Transaction do
         methods_map,
         _smart_contract_full_abi_map
       ) do
+    {:ok, method_id} = MethodIdentifier.cast(method_id)
     methods = check_methods_cache(method_id, methods_map, options)
 
     candidates =
@@ -973,6 +974,15 @@ defmodule Explorer.Chain.Transaction do
         output
     end
   end
+
+  def decoded_input_data(
+        %__MODULE__{to_address: %{metadata: _, ens_domain_name: _}},
+        _,
+        _,
+        _,
+        _
+      ),
+      do: {:error, :no_to_address}
 
   defp decode_function_call_via_sig_provider_wrapper(input, hash, skip_sig_provider?) do
     case decode_function_call_via_sig_provider(input, hash, skip_sig_provider?) do

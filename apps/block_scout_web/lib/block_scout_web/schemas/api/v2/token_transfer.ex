@@ -53,7 +53,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       method: General.MethodNameNullable,
       block_hash: General.FullHash,
       block_number: %Schema{type: :integer, nullable: false},
-      log_index: %Schema{type: :integer, nullable: false}
+      log_index: %Schema{type: :integer, nullable: false},
+      token_type: Token.Type
     },
     required: [
       :transaction_hash,
@@ -66,7 +67,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       :method,
       :block_hash,
       :block_number,
-      :log_index
+      :log_index,
+      :token_type
     ]
   })
 end
