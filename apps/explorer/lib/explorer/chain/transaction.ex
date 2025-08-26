@@ -808,6 +808,14 @@ defmodule Explorer.Chain.Transaction do
   def decoded_input_data(%NotLoaded{}, _, _, _, _),
     do: {:error, :not_loaded}
 
+  if @chain_type == :celo do
+    # Celo's Epoch logs does not have an associated transaction and linked to
+    # the block instead, so we discard these token transfers for transaction
+    # decoding
+    def decoded_input_data(nil, _, _, _, _),
+      do: {:error, :celo_epoch_log}
+  end
+
   # skip decoding if input is empty
   def decoded_input_data(
         %__MODULE__{input: %{bytes: bytes}},
@@ -2158,17 +2166,35 @@ defmodule Explorer.Chain.Transaction do
 
     # decode remaining transaction using methods map
     decoded_transactions
-    |> Enum.map(fn
-      {nil, transaction} ->
-        transaction
-        |> Map.put(:to_address, %NotLoaded{})
-        |> decoded_input_data(skip_sig_provider?, opts, methods_map, smart_contract_full_abi_map)
-        |> format_decoded_input()
-
-      {decoded, _} ->
-        decoded
-    end)
+    |> Enum.map(
+      &decode_remaining_transaction(
+        &1,
+        skip_sig_provider?,
+        opts,
+        methods_map,
+        smart_contract_full_abi_map
+      )
+    )
   end
+
+  if @chain_type == :celo do
+    defp decode_remaining_transaction({nil, nil}, _, _, _, _), do: nil
+  end
+
+  defp decode_remaining_transaction(
+         {nil, transaction},
+         skip_sig_provider?,
+         opts,
+         methods_map,
+         smart_contract_full_abi_map
+       ) do
+    transaction
+    |> Map.put(:to_address, %NotLoaded{})
+    |> decoded_input_data(skip_sig_provider?, opts, methods_map, smart_contract_full_abi_map)
+    |> format_decoded_input()
+  end
+
+  defp decode_remaining_transaction({decoded, _}, _, _, _, _), do: decoded
 
   defp combine_smart_contract_full_abi_map(transactions) do
     # parse unique address hashes of smart-contracts from to_address and created_contract_address properties of the transactions list
