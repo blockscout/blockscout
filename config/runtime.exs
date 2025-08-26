@@ -1591,14 +1591,13 @@ config :ex_aws, :s3,
 nmh_enabled? = ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_ENABLED")
 nmh_remote? = ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_REMOTE_DISPATCHER_NODE_MODE_ENABLED")
 nmh_worker? = ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_IS_WORKER")
-nodes_map = ConfigHelper.parse_json_with_atom_keys_env_var("NFT_MEDIA_HANDLER_NODES_MAP")
 
 config :nft_media_handler,
   enabled?: nmh_enabled?,
   tmp_dir: "./temp",
   remote?: nmh_remote?,
   worker?: nmh_worker?,
-  nodes_map: nodes_map,
+  r2_folder: System.get_env("NFT_MEDIA_HANDLER_R2_BUCKET_FOLDER"),
   standalone_media_worker?: nmh_enabled? && nmh_remote? && nmh_worker?,
   worker_concurrency: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_WORKER_CONCURRENCY", 10),
   worker_batch_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_WORKER_BATCH_SIZE", 10),
@@ -1614,6 +1613,17 @@ config :nft_media_handler, Indexer.NFTMediaHandler.Backfiller,
 
 config :indexer, Indexer.Fetcher.Zilliqa.ScillaSmartContracts.Supervisor,
   disabled?: ConfigHelper.chain_type() != :zilliqa
+
+config :libcluster,
+  topologies: [
+    test: [
+      strategy: Cluster.Strategy.Kubernetes.DNS,
+      config: [
+        service: System.get_env("K8S_SERVICE"),
+        application_name: "blockscout"
+      ]
+    ]
+  ]
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

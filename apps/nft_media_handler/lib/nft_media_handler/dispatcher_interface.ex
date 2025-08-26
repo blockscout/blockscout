@@ -15,13 +15,7 @@ defmodule NFTMediaHandler.DispatcherInterface do
   """
   @impl true
   def init(_) do
-    nodes = :nft_media_handler |> Application.get_env(:nodes_map) |> Map.to_list()
-
-    if Enum.empty?(nodes) do
-      {:stop, "NFT_MEDIA_HANDLER_NODES_MAP must contain at least one node"}
-    else
-      {:ok, %{used_nodes: [], unused_nodes: nodes}}
-    end
+    {:ok, %{used_nodes: [], unused_nodes: []}}
   end
 
   @doc """
@@ -33,8 +27,20 @@ defmodule NFTMediaHandler.DispatcherInterface do
     {used, unused, node_to_call} =
       case unused_nodes do
         [] ->
-          [to_call | remains] = used_nodes |> Enum.reverse()
-          {[to_call], remains, to_call}
+          Node.list()
+          |> Enum.filter(fn node ->
+            (node |> :rpc.call(Application, :get_env, [:explorer, :mode]) |> process_rpc_response(node)) in [
+              :all,
+              :indexer
+            ]
+          end)
+          |> case do
+            [] ->
+              raise "No indexer nodes discovered"
+
+            [to_call, remains] ->
+              {[to_call], remains, to_call}
+          end
 
         [to_call | remains] ->
           {[to_call | used_nodes], remains, to_call}
@@ -58,13 +64,13 @@ defmodule NFTMediaHandler.DispatcherInterface do
     function = :get_urls_to_fetch
 
     if Application.get_env(:nft_media_handler, :remote?) do
-      {node, folder} = GenServer.call(__MODULE__, :take_node_to_call)
+      node = GenServer.call(__MODULE__, :take_node_to_call)
+      {urls, folder} = node |> :rpc.call(Indexer.NFTMediaHandler.Queue, function, args) |> process_rpc_response(node)
 
-      {node |> :rpc.call(Indexer.NFTMediaHandler.Queue, :get_urls_to_fetch, args) |> process_rpc_response(node), node,
-       folder}
+      {urls, node, folder}
     else
-      folder = Application.get_env(:nft_media_handler, :nodes_map)[:self]
-      {apply(Indexer.NFTMediaHandler.Queue, function, args), :self, folder}
+      {urls, folder} = apply(Indexer.NFTMediaHandler.Queue, function, args)
+      {urls, :self, folder}
     end
   end
 
