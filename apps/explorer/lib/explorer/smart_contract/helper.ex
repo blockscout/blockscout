@@ -12,6 +12,8 @@ defmodule Explorer.SmartContract.Helper do
   alias Indexer.Fetcher.OnDemand.ContractCode
   alias Phoenix.HTML
 
+  import EthereumJSONRPC, only: [fetch_codes: 2]
+
   @api_true [api?: true]
 
   def queryable_method?(method) do
@@ -343,9 +345,11 @@ defmodule Explorer.SmartContract.Helper do
         {:ok, bytecode}
 
       _ ->
-        # Bytecode not found in DB, try to fetch it on-demand
-        case fetch_bytecode_on_demand(address_hash, options) do
+        # Bytecode not found in DB, try to fetch it directly from RPC node
+        case fetch_bytecode_from_rpc(address_hash) do
           {:ok, bytecode} when bytecode != "0x" and not is_nil(bytecode) ->
+            # Trigger async update of the database for future requests
+            trigger_async_db_update(address_hash, options)
             {:ok, bytecode}
 
           _ ->
@@ -354,20 +358,31 @@ defmodule Explorer.SmartContract.Helper do
     end
   end
 
-  # Attempts to fetch bytecode from the node on-demand and update the database
-  defp fetch_bytecode_on_demand(address_hash, options) do
-    with {:ok, address} <- Chain.hash_to_address(address_hash, options) do
-      # Trigger the on-demand contract code fetcher
-      ContractCode.trigger_fetch(nil, address)
+  # Fetches bytecode directly from the RPC node
+  defp fetch_bytecode_from_rpc(address_hash) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-      # Give the fetcher a moment to complete (this is asynchronous)
-      Process.sleep(100)
-
-      # Check if bytecode is now available in the database
-      Chain.smart_contract_bytecode(address_hash, options)
+    with {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} <-
+           fetch_codes(
+             [%{block_quantity: "latest", address: to_string(address_hash)}],
+             json_rpc_named_arguments
+           ),
+         contract_code_object when not is_nil(contract_code_object) <- List.first(fetched_codes),
+         code when is_binary(code) <- contract_code_object.code do
+      {:ok, code}
     else
+      _ -> {:error, :fetch_failed}
+    end
+  end
+
+  # Triggers async update of the database with the address for future requests
+  defp trigger_async_db_update(address_hash, options) do
+    case Chain.hash_to_address(address_hash, options) do
+      {:ok, address} ->
+        ContractCode.trigger_fetch(nil, address)
+
       _ ->
-        "0x"
+        :ok
     end
   end
 end
