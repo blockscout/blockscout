@@ -5,11 +5,11 @@ defmodule BlockScoutWeb.Utility.EventHandlersMetrics do
 
   use GenServer
 
-  alias BlockScoutWeb.{
-    MainPageRealtimeEventHandler,
-    RealtimeEventHandler,
-    SmartContractRealtimeEventHandler,
-    TokenTransferRealtimeEventHandler
+  alias BlockScoutWeb.RealtimeEventHandlers.{
+    Main,
+    MainPage,
+    SmartContract,
+    TokenTransfer
   }
 
   alias BlockScoutWeb.Prometheus.Instrumenter
@@ -35,10 +35,10 @@ defmodule BlockScoutWeb.Utility.EventHandlersMetrics do
   end
 
   defp set_metrics do
-    set_handler_metric(MainPageRealtimeEventHandler, :main_page)
-    set_handler_metric(RealtimeEventHandler, :common)
-    set_handler_metric(SmartContractRealtimeEventHandler, :smart_contract)
-    set_handler_metric(TokenTransferRealtimeEventHandler, :token_transfer)
+    set_handler_metric(MainPage, :main_page)
+    set_handler_metric(Main, :common)
+    set_handler_metric(SmartContract, :smart_contract)
+    set_handler_metric(TokenTransfer, :token_transfer)
   end
 
   defp set_handler_metric(handler, label) do

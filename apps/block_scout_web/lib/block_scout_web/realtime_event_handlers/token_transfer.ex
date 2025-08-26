@@ -1,12 +1,11 @@
-defmodule BlockScoutWeb.MainPageRealtimeEventHandler do
+defmodule BlockScoutWeb.RealtimeEventHandlers.TokenTransfer do
   @moduledoc """
-  Subscribing process for main page broadcast events from realtime.
+  Subscribing process for token transfer broadcast events from realtime.
   """
 
   use GenServer
 
   alias BlockScoutWeb.Notifier
-  alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Events.Subscriber
 
   def start_link(_) do
@@ -15,9 +14,7 @@ defmodule BlockScoutWeb.MainPageRealtimeEventHandler do
 
   @impl true
   def init([]) do
-    Helper.create_cache_table(:last_broadcasted_block)
-    Subscriber.to(:blocks, :realtime)
-    Subscriber.to(:transactions, :realtime)
+    Subscriber.to(:token_transfers, :realtime)
     {:ok, []}
   end
 

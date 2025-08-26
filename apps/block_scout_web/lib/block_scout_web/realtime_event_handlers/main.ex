@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.RealtimeEventHandler do
+defmodule BlockScoutWeb.RealtimeEventHandlers.Main do
   @moduledoc """
   Subscribing process for broadcast events from realtime.
   """

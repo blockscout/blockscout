@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.SmartContractRealtimeEventHandler do
+defmodule BlockScoutWeb.RealtimeEventHandlers.SmartContract do
   @moduledoc """
   Subscribing process for smart contract verification related broadcast events from realtime.
   """
