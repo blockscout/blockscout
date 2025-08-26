@@ -144,7 +144,6 @@ config :block_scout_web, :api_rate_limit,
   },
   no_rate_limit_api_key_value: System.get_env("API_NO_RATE_LIMIT_API_KEY"),
   whitelisted_ips: System.get_env("API_RATE_LIMIT_WHITELISTED_IPS"),
-  is_blockscout_behind_proxy: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_IS_BLOCKSCOUT_BEHIND_PROXY"),
   api_v2_token_ttl: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL", "30m"),
   eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5),
   redis_url: if(api_rate_limit_redis_url == "", do: nil, else: api_rate_limit_redis_url),
@@ -154,6 +153,11 @@ config :block_scout_web, :api_rate_limit,
       else: BlockScoutWeb.RateLimit.Hammer.Redis
     ),
   config_url: System.get_env("API_RATE_LIMIT_CONFIG_URL")
+
+config :block_scout_web, :remote_ip,
+  is_blockscout_behind_proxy: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_IS_BLOCKSCOUT_BEHIND_PROXY"),
+  headers: ConfigHelper.parse_list_env_var("API_RATE_LIMIT_REMOTE_IP_HEADERS", "x-forwarded-for"),
+  proxies: ConfigHelper.parse_list_env_var("API_RATE_LIMIT_REMOTE_IP_KNOWN_PROXIES", "")
 
 default_graphql_rate_limit = 10
 
