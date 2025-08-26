@@ -9,6 +9,7 @@ defmodule Explorer.SmartContract.Helper do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.{Reader, Writer}
+  alias Indexer.Fetcher.OnDemand.ContractCode
   alias Phoenix.HTML
 
   @api_true [api?: true]
@@ -311,5 +312,62 @@ defmodule Explorer.SmartContract.Helper do
 
     # todo: Dangerous, fix with https://github.com/blockscout/blockscout/issues/12544
     ExplorerHelper.add_0x_prefix(binary_hash)
+  end
+
+  @doc """
+  Checks if an address has deployed bytecode, fetching it on-demand if not found in the database.
+
+  This function is used during smart contract verification to ensure that contracts deployed
+  via CREATE2 in internal transactions (which may not be indexed) can still be verified.
+
+  ## Parameters
+    - `address_hash`: The address hash to check
+    - `options`: Chain query options (default: [api?: true])
+
+  ## Returns
+    - `{:ok, bytecode}` if bytecode is found (either in DB or fetched from node)
+    - `{:error, :not_a_smart_contract}` if no bytecode is found after attempting to fetch
+
+  ## Examples
+      iex> check_and_fetch_bytecode(address_hash)
+      {:ok, "0x608060405234801561001057600080fd5b50..."}
+
+      iex> check_and_fetch_bytecode(eoa_address_hash)
+      {:error, :not_a_smart_contract}
+  """
+  @spec check_and_fetch_bytecode(Hash.Address.t(), Keyword.t()) ::
+          {:ok, String.t()} | {:error, :not_a_smart_contract}
+  def check_and_fetch_bytecode(address_hash, options \\ @api_true) do
+    case Chain.smart_contract_bytecode(address_hash, options) do
+      bytecode when bytecode != "0x" and not is_nil(bytecode) ->
+        {:ok, bytecode}
+
+      _ ->
+        # Bytecode not found in DB, try to fetch it on-demand
+        case fetch_bytecode_on_demand(address_hash, options) do
+          {:ok, bytecode} when bytecode != "0x" and not is_nil(bytecode) ->
+            {:ok, bytecode}
+
+          _ ->
+            {:error, :not_a_smart_contract}
+        end
+    end
+  end
+
+  # Attempts to fetch bytecode from the node on-demand and update the database
+  defp fetch_bytecode_on_demand(address_hash, options) do
+    with {:ok, address} <- Chain.hash_to_address(address_hash, options) do
+      # Trigger the on-demand contract code fetcher
+      ContractCode.trigger_fetch(nil, address)
+
+      # Give the fetcher a moment to complete (this is asynchronous)
+      Process.sleep(100)
+
+      # Check if bytecode is now available in the database
+      Chain.smart_contract_bytecode(address_hash, options)
+    else
+      _ ->
+        "0x"
+    end
   end
 end

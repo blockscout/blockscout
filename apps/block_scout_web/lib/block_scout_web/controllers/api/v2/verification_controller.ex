@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.SmartContract.Stylus.PublisherWorker, as: StylusPublisherWorker
   alias Explorer.SmartContract.Vyper.PublisherWorker, as: VyperPublisherWorker
-  alias Explorer.SmartContract.{CompilerVersion, RustVerifierInterface, Solidity.CodeCompiler, StylusVerifierInterface}
+  alias Explorer.SmartContract.{CompilerVersion, Helper, RustVerifierInterface, Solidity.CodeCompiler, StylusVerifierInterface}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -395,8 +395,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
 
   defp validate_address(%{"address_hash" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:not_a_smart_contract, bytecode} when bytecode != "0x" <-
-           {:not_a_smart_contract, Chain.smart_contract_bytecode(address_hash, @api_true)},
+         {:not_a_smart_contract, {:ok, _bytecode}} <-
+           {:not_a_smart_contract, Helper.check_and_fetch_bytecode(address_hash, @api_true)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:already_verified, false} <-
            {:already_verified, SmartContract.verified_with_full_match?(address_hash, @api_true)} do
