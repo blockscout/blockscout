@@ -198,7 +198,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
                            "init" => to_string(internal_transaction.init),
                            "input" => nil,
                            "output" => nil,
-                           "trace_address" => Jason.encode!(internal_transaction.trace_address),
+                           "trace_address" => internal_transaction.trace_address,
                            "type" => internal_transaction.type |> to_string() |> String.upcase(),
                            "value" => to_string(internal_transaction.value.value),
                            "block_number" => internal_transaction.block_number,

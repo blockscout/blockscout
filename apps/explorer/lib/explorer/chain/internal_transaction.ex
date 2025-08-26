@@ -414,7 +414,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @call_optional_fields ~w(error gas_used output block_number transaction_index)a
-  @call_required_fields ~w(call_type from_address_hash gas index input to_address_hash trace_address transaction_hash value)a
+  @call_required_fields ~w(call_type from_address_hash gas index input to_address_hash transaction_hash value)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
   defp type_changeset(changeset, attrs, :call) do
@@ -430,7 +430,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number transaction_index)a
-  @create_required_fields ~w(from_address_hash gas index init trace_address transaction_hash value)a
+  @create_required_fields ~w(from_address_hash gas index init transaction_hash value)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
   defp type_changeset(changeset, attrs, type) when type in [:create, :create2] do
@@ -445,7 +445,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @selfdestruct_optional_fields ~w(block_number transaction_index)a
-  @selfdestruct_required_fields ~w(from_address_hash index to_address_hash trace_address transaction_hash type value)a
+  @selfdestruct_required_fields ~w(from_address_hash index to_address_hash transaction_hash type value)a
   @selfdestruct_allowed_fields @selfdestruct_optional_fields ++ @selfdestruct_required_fields
 
   defp type_changeset(changeset, attrs, :selfdestruct) do
@@ -456,7 +456,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @stop_optional_fields ~w(from_address_hash gas gas_used error)a
-  @stop_required_fields ~w(block_number transaction_hash transaction_index index type value trace_address)a
+  @stop_required_fields ~w(block_number transaction_hash transaction_index index type value)a
   @stop_allowed_fields @stop_optional_fields ++ @stop_required_fields
 
   defp type_changeset(changeset, attrs, :stop) do

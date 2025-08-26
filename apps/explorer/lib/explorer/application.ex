@@ -168,6 +168,7 @@ defmodule Explorer.Application do
         |> configure_multichain_search_microservice(),
         configure_mode_dependent_process(Explorer.Migrator.ArbitrumDaRecordsNormalization, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.ShrinkInternalTransactions, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.EmptyInternalTransactionsTraceAddress, :indexer),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount, :blackfort),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.Counters.Stability.ValidatorsCount, :stability),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.LatestL1BlockNumber, [
