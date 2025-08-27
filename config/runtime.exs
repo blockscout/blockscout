@@ -132,11 +132,11 @@ config :block_scout_web, :api_rate_limit,
     period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP_TIME_INTERVAL", "1s")
   },
   ip: %{
-    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_IP", 500),
-    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_IP_TIME_INTERVAL", "15m")
+    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_IP", 300),
+    period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_IP_TIME_INTERVAL", "1m")
   },
   temporary_token: %{
-    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN", 4),
+    limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN", 5),
     period: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN_TIME_INTERVAL", "1s")
   },
   account_api_key: %{
