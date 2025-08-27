@@ -59,7 +59,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
   @doc """
   Validates that the `attrs` are valid.
   """
-  @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
+  @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Changeset.t()
   def changeset(deposit, attrs) do
     deposit
     |> cast(attrs, @required_attrs)
@@ -225,14 +225,16 @@ defmodule Explorer.Chain.Beacon.Deposit do
           non_neg_integer(),
           non_neg_integer()
         ) :: [
-          first_topic: Hash.Full.t(),
-          data: Data.t(),
-          index: non_neg_integer(),
-          block_number: non_neg_integer(),
-          block_hash: Hash.Full.t(),
-          transaction_hash: Hash.Full.t(),
-          from_address_hash: Hash.Address.t(),
-          block_timestamp: DateTime.t()
+          %{
+            first_topic: Hash.Full.t(),
+            data: Data.t(),
+            index: non_neg_integer(),
+            block_number: non_neg_integer(),
+            block_hash: Hash.Full.t(),
+            transaction_hash: Hash.Full.t(),
+            from_address_hash: Hash.Address.t(),
+            block_timestamp: DateTime.t()
+          }
         ]
   def get_logs_with_deposits(deposit_contract_address_hash, log_block_number, log_index, limit) do
     query =
