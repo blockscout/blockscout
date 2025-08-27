@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   import EthereumJSONRPC, only: [fetch_codes: 2]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Data}
+  alias Explorer.Chain.{Address, Data, Hash}
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Events.Publisher
@@ -30,6 +30,30 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
       end
     else
       ContractCreatorOnDemand.trigger_fetch(address)
+    end
+  end
+
+  @doc """
+  Synchronously fetches bytecode from RPC for a given address hash.
+  This function can be used when you need immediate bytecode retrieval
+  without going through the async GenServer process.
+
+  Returns `{:ok, bytecode}` if bytecode is found, or `{:error, reason}` otherwise.
+  """
+  @spec fetch_bytecode_sync(Hash.Address.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {:ok, String.t()} | {:error, atom()}
+  def fetch_bytecode_sync(address_hash, json_rpc_named_arguments) do
+    with {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} <-
+           fetch_codes(
+             [%{block_quantity: "latest", address: to_string(address_hash)}],
+             json_rpc_named_arguments
+           ),
+         contract_code_object when not is_nil(contract_code_object) <- List.first(fetched_codes),
+         code when is_binary(code) and code != "0x" <- contract_code_object.code do
+      {:ok, code}
+    else
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, :not_a_smart_contract}
     end
   end
 

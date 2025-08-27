@@ -12,8 +12,6 @@ defmodule Explorer.SmartContract.Helper do
   alias Indexer.Fetcher.OnDemand.ContractCode
   alias Phoenix.HTML
 
-  import EthereumJSONRPC, only: [fetch_codes: 2]
-
   @api_true [api?: true]
 
   def queryable_method?(method) do
@@ -345,33 +343,18 @@ defmodule Explorer.SmartContract.Helper do
         {:ok, bytecode}
 
       _ ->
-        # Bytecode not found in DB, try to fetch it directly from RPC node
-        case fetch_bytecode_from_rpc(address_hash) do
-          {:ok, bytecode} when bytecode != "0x" and not is_nil(bytecode) ->
+        # Bytecode not found in DB, try to fetch it directly from RPC node using existing fetcher
+        json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+        
+        case ContractCode.fetch_bytecode_sync(address_hash, json_rpc_named_arguments) do
+          {:ok, bytecode} ->
             # Trigger async update of the database for future requests
             trigger_async_db_update(address_hash, options)
             {:ok, bytecode}
 
-          _ ->
+          {:error, _} ->
             {:error, :not_a_smart_contract}
         end
-    end
-  end
-
-  # Fetches bytecode directly from the RPC node
-  defp fetch_bytecode_from_rpc(address_hash) do
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-    with {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} <-
-           fetch_codes(
-             [%{block_quantity: "latest", address: to_string(address_hash)}],
-             json_rpc_named_arguments
-           ),
-         contract_code_object when not is_nil(contract_code_object) <- List.first(fetched_codes),
-         code when is_binary(code) <- contract_code_object.code do
-      {:ok, code}
-    else
-      _ -> {:error, :fetch_failed}
     end
   end
 
