@@ -32,9 +32,9 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
-          tags: ghcr.io/blockscout/blockscout:latest, ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout-private:latest, ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -54,9 +54,9 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
-          tags: ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}-indexer
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -78,9 +78,9 @@ jobs:
           context: .
           file: ./docker/oldUI.Dockerfile
           push: true
-          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
-          tags: ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}-with-old-ui
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}-with-old-ui
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64

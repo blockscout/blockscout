@@ -32,7 +32,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-zilliqa:latest, ghcr.io/blockscout/blockscout-zilliqa:${{ env.RELEASE_VERSION }}
+          tags: ghcr.io/blockscout/blockscout-zilliqa-private:latest, ghcr.io/blockscout/blockscout-zilliqa-private:${{ env.RELEASE_VERSION }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -48,7 +48,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-zilliqa:${{ env.RELEASE_VERSION }}-indexer
+          tags: ghcr.io/blockscout/blockscout-zilliqa-private:${{ env.RELEASE_VERSION }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64

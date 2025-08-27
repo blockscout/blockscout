@@ -35,7 +35,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+          tags: ghcr.io/blockscout/blockscout-celo-private:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -51,7 +51,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
+          tags: ghcr.io/blockscout/blockscout-celo-private:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
