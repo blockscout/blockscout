@@ -338,34 +338,6 @@ defmodule Explorer.SmartContract.Helper do
   @spec check_and_fetch_bytecode(Hash.Address.t(), Keyword.t()) ::
           {:ok, String.t()} | {:error, :not_a_smart_contract}
   def check_and_fetch_bytecode(address_hash, options \\ @api_true) do
-    case Chain.smart_contract_bytecode(address_hash, options) do
-      bytecode when bytecode != "0x" and not is_nil(bytecode) ->
-        {:ok, bytecode}
-
-      _ ->
-        # Bytecode not found in DB, try to fetch it directly from RPC node using existing fetcher
-        json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-        
-        case ContractCode.fetch_bytecode_sync(address_hash, json_rpc_named_arguments) do
-          {:ok, bytecode} ->
-            # Trigger async update of the database for future requests
-            trigger_async_db_update(address_hash, options)
-            {:ok, bytecode}
-
-          {:error, _} ->
-            {:error, :not_a_smart_contract}
-        end
-    end
-  end
-
-  # Triggers async update of the database with the address for future requests
-  defp trigger_async_db_update(address_hash, options) do
-    case Chain.hash_to_address(address_hash, options) do
-      {:ok, address} ->
-        ContractCode.trigger_fetch(nil, address)
-
-      _ ->
-        :ok
-    end
+    ContractCode.check_and_fetch_bytecode(address_hash, options)
   end
 end

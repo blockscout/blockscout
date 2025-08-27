@@ -34,26 +34,21 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   end
 
   @doc """
-  Synchronously fetches bytecode from RPC for a given address hash.
-  This function can be used when you need immediate bytecode retrieval
-  without going through the async GenServer process.
+  Checks database for bytecode first, then fetches from RPC if not found.
+  This function handles the complete verification flow including database fallback.
 
-  Returns `{:ok, bytecode}` if bytecode is found, or `{:error, reason}` otherwise.
+  Returns `{:ok, bytecode}` if bytecode is found, or `{:error, :not_a_smart_contract}` otherwise.
   """
-  @spec fetch_bytecode_sync(Hash.Address.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
-          {:ok, String.t()} | {:error, atom()}
-  def fetch_bytecode_sync(address_hash, json_rpc_named_arguments) do
-    with {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} <-
-           fetch_codes(
-             [%{block_quantity: "latest", address: to_string(address_hash)}],
-             json_rpc_named_arguments
-           ),
-         contract_code_object when not is_nil(contract_code_object) <- Enum.at(fetched_codes, 0),
-         code when is_binary(code) and code != "0x" <- contract_code_object.code do
-      {:ok, code}
-    else
-      {:error, reason} -> {:error, reason}
-      _ -> {:error, :not_a_smart_contract}
+  @spec check_and_fetch_bytecode(Hash.Address.t(), Keyword.t()) ::
+          {:ok, String.t()} | {:error, :not_a_smart_contract}
+  def check_and_fetch_bytecode(address_hash, options \\ []) do
+    case Chain.smart_contract_bytecode(address_hash, options) do
+      bytecode when bytecode != "0x" and not is_nil(bytecode) ->
+        {:ok, bytecode}
+
+      _ ->
+        # Bytecode not found in DB, try to fetch it synchronously from RPC
+        GenServer.call(__MODULE__, {:check_and_fetch, address_hash, options})
     end
   end
 
@@ -187,6 +182,34 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
     fetch_contract_code(address, state)
 
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_call({:check_and_fetch, address_hash, options}, _from, state) do
+    case Chain.hash_to_address(address_hash, options) do
+      {:ok, address} ->
+        # Try to fetch bytecode directly from RPC
+        result = case fetch_codes(
+          [%{block_quantity: "latest", address: to_string(address_hash)}],
+          state.json_rpc_named_arguments
+        ) do
+          {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
+            case Enum.at(fetched_codes, 0) do
+              %{code: code} when is_binary(code) and code != "0x" ->
+                # Trigger async update for future requests
+                trigger_fetch(nil, address)
+                {:ok, code}
+              _ ->
+                {:error, :not_a_smart_contract}
+            end
+          {:error, _} ->
+            {:error, :not_a_smart_contract}
+        end
+        {:reply, result, state}
+
+      _ ->
+        {:reply, {:error, :not_a_smart_contract}, state}
+    end
   end
 
   # An initial threshold to fetch smart-contract bytecode on-demand
