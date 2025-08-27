@@ -58,8 +58,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
           interval: Application.get_env(:indexer, __MODULE__)[:interval],
           batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size],
           deposit_contract_address_hash: deposit_contract_address_hash,
-          domain_deposit: Base.decode16!(domain_deposit_hex),
-          genesis_fork_version: Base.decode16!(genesis_fork_version_hex),
+          domain_deposit: Base.decode16!(domain_deposit_hex, case: :mixed),
+          genesis_fork_version: Base.decode16!(genesis_fork_version_hex, case: :mixed),
           deposit_index: last_processed_deposit.index,
           last_processed_log_block_number: last_processed_deposit.block_number,
           last_processed_log_index: last_processed_deposit.log_index
