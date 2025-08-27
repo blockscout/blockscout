@@ -256,16 +256,18 @@ defmodule Explorer.Helper do
         query
         |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
         |> where([sabm: sabm], is_nil(sabm.address_hash))
-        |> select_merge([q], %{is_scam: false})
+        |> select_merge([q], %{reputation: "ok"})
 
       Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
         query
         |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
-        |> select_merge([q, sabm: sabm], %{is_scam: not is_nil(sabm.address_hash)})
+        |> select_merge([q, sabm: sabm], %{
+          reputation: fragment("CASE WHEN ? THEN ? ELSE ? END", is_nil(sabm.address_hash), "ok", "scam")
+        })
 
       true ->
         query
-        |> select_merge([q], %{is_scam: false})
+        |> select_merge([q], %{reputation: "ok"})
     end
   end
 

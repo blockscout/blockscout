@@ -320,7 +320,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         "coin_balance" => if(address.fetched_coin_balance, do: address.fetched_coin_balance.value),
         "license_type" => smart_contract.license_type,
         "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false),
-        "is_scam" => smart_contract.is_scam
+        "reputation" => smart_contract.reputation
       }
 
     smart_contract_info

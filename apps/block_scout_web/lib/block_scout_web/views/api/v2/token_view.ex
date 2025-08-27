@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "total_supply" => nil,
       "icon_url" => nil,
       "circulating_market_cap" => nil,
-      "is_scam" => nil
+      "reputation" => nil
     }
     |> maybe_append_bridged_info(token)
   end
@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "total_supply" => token.total_supply,
       "icon_url" => token.icon_url,
       "circulating_market_cap" => token.circulating_market_cap,
-      "is_scam" => token.is_scam
+      "reputation" => token.reputation
     }
     |> maybe_append_bridged_info(token)
     |> chain_type_fields(%{address: token.contract_address, field_prefix: nil})

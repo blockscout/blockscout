@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Token.Instance do
   alias Explorer.{Chain, Helper, QueryHelper, Repo}
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Explorer.Chain.Reputation
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Token.Instance.Thumbnails
   alias Explorer.Helper, as: ExplorerHelper
@@ -53,7 +54,7 @@ defmodule Explorer.Chain.Token.Instance do
     field(:cdn_upload_error, :string)
     field(:metadata_url, :string)
     field(:skip_metadata_url, :boolean)
-    field(:is_scam, :boolean, virtual: true)
+    field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 

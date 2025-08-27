@@ -10,7 +10,18 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.{Chain, Helper, PagingOptions}
-  alias Explorer.Chain.{Address, Data, DenormalizationHelper, Hash, InternalTransaction, TokenTransfer, Transaction}
+
+  alias Explorer.Chain.{
+    Address,
+    Data,
+    DenormalizationHelper,
+    Hash,
+    InternalTransaction,
+    Reputation,
+    TokenTransfer,
+    Transaction
+  }
+
   alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
 
   @primary_key false
@@ -19,7 +30,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     field(:type, :string)
     field(:input, Data)
     field(:timestamp, :utc_datetime_usec)
-    field(:is_scam, :boolean, virtual: true)
+    field(:reputation, Ecto.Enum, values: Reputation.enum_values())
 
     belongs_to(
       :from_address,
@@ -227,7 +238,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       transaction_index: token_transfer.transaction.index,
       token_transfer_index: token_transfer.log_index,
       token_transfer_batch_index: token_transfer.reverse_index_in_batch,
-      is_scam: token_transfer.is_scam
+      reputation: token_transfer.reputation
     }
   end
 

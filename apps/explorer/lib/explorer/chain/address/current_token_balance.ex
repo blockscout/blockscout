@@ -14,7 +14,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Token}
+  alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Reputation, Token}
   alias Explorer.Chain.Address.TokenBalance
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -40,7 +40,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     field(:distinct_token_instances_count, :integer, virtual: true)
     field(:token_ids, {:array, :decimal}, virtual: true)
     field(:preloaded_token_instances, {:array, :any}, virtual: true)
-    field(:is_scam, :boolean, virtual: true)
+    field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
     # A transient field for deriving token holder count deltas during address_current_token_balances upserts
     field(:old_value, :decimal)

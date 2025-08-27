@@ -9,6 +9,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
   alias Explorer.Chain.{
     Address,
     Hash,
+    Reputation,
     SmartContractAdditionalSource
   }
 
@@ -63,7 +64,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:certified, :boolean)
         field(:is_blueprint, :boolean)
         field(:language, Ecto.Enum, values: @languages_enum, default: :solidity)
-        field(:is_scam, :boolean, virtual: true)
+        field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
         belongs_to(
           :address,

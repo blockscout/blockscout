@@ -553,7 +553,7 @@ defmodule Explorer.Chain.Search do
     |> apply_sorting([], @token_sorting)
     |> page_search_results(paging_options, "token")
     |> ExplorerHelper.maybe_hide_scam_addresses_without_select_merge(:contract_address_hash, options)
-    |> select(^(token_search_fields() |> add_is_scam_to_search_fields(options)))
+    |> select(^(token_search_fields() |> add_reputation_to_search_fields(options)))
   end
 
   defp search_token_by_address_hash_query(address_hash, options) do
@@ -568,7 +568,7 @@ defmodule Explorer.Chain.Search do
 
     query
     |> ExplorerHelper.maybe_hide_scam_addresses_without_select_merge(:contract_address_hash, options)
-    |> select(^(token_search_fields() |> add_is_scam_to_search_fields(options)))
+    |> select(^(token_search_fields() |> add_reputation_to_search_fields(options)))
   end
 
   defp search_contract_query(term, paging_options, options) do
@@ -581,7 +581,7 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
       |> Map.put(:verified, true)
       |> Map.put(:priority, 0)
-      |> add_is_scam_to_search_fields(options)
+      |> add_reputation_to_search_fields(options)
 
     base_query =
       from(smart_contract in SmartContract,
@@ -756,7 +756,7 @@ defmodule Explorer.Chain.Search do
       on: address.hash == tag.address_hash
     )
     |> ExplorerHelper.maybe_hide_scam_addresses_without_select_merge(:hash, options)
-    |> select(^(metadata_tags_search_fields() |> add_is_scam_to_search_fields(options)))
+    |> select(^(metadata_tags_search_fields() |> add_reputation_to_search_fields(options)))
   end
 
   defp page_search_results(
@@ -1039,7 +1039,7 @@ defmodule Explorer.Chain.Search do
       order: 0,
       metadata: dynamic(type(^nil, :map)),
       addresses_index: 0,
-      is_scam: false
+      reputation: "ok"
     }
   end
 
@@ -1074,10 +1074,13 @@ defmodule Explorer.Chain.Search do
     |> Map.put(:priority, 1)
   end
 
-  defp add_is_scam_to_search_fields(search_fields, options) do
+  defp add_reputation_to_search_fields(search_fields, options) do
     if ExplorerHelper.force_show_scam_addresses?(options) do
       search_fields
-      |> Map.put(:is_scam, dynamic([sabm: sabm], not is_nil(sabm.address_hash)))
+      |> Map.put(
+        :reputation,
+        dynamic([sabm: sabm], fragment("CASE WHEN ? THEN ? ELSE ? END", is_nil(sabm.address_hash), "ok", "scam"))
+      )
     else
       search_fields
     end

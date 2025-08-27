@@ -2305,7 +2305,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           "priority" => 0,
           "type" => "address",
           "url" => "/address/#{address_hash}",
-          "is_scam" => false
+          "reputation" => "ok"
         }
         | for(
             i <- 0..48,
