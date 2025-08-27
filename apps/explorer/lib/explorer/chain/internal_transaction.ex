@@ -1000,9 +1000,8 @@ defmodule Explorer.Chain.InternalTransaction do
       |> where([_internal_transaction, transaction], transaction.block_consensus == true)
     else
       query
-      |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
-      |> join(:inner, [transaction], block in assoc(transaction, :block))
-      |> where([_internal_transaction, _transaction, block], block.consensus == true)
+      |> join(:inner, [internal_transaction], block in assoc(internal_transaction, :block))
+      |> where([_internal_transaction, block], block.consensus == true)
     end
   end
 
