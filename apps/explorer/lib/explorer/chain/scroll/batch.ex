@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Scroll.Batch do
 
   @required_attrs ~w(number commit_transaction_hash commit_block_number commit_timestamp container)a
   @zstd_magic_number <<0x28, 0xB5, 0x2F, 0xFD>>
-  @codec_version 7
+  @codec_min_version 7
 
   @typedoc """
     Descriptor of the batch:
@@ -103,7 +103,7 @@ defmodule Explorer.Chain.Scroll.Batch do
     <<version, blob_payload_size::size(24), is_compressed::size(8), rest::binary>> = blob_data_raw
 
     # ensure we have correct version, blob envelope size doesn't exceed the raw data size, and compression flag is correct
-    with {:version_is_supported, true} <- {:version_is_supported, version == @codec_version},
+    with {:version_is_supported, true} <- {:version_is_supported, version >= @codec_min_version},
          {:size_is_correct, true} <- {:size_is_correct, blob_payload_size + 5 <= byte_size(blob_data_raw)},
          {:compression_flag_is_correct, true} <-
            {:compression_flag_is_correct, is_compressed in [0, 1]},
@@ -113,7 +113,7 @@ defmodule Explorer.Chain.Scroll.Batch do
       decompressed
     else
       {:version_is_supported, false} ->
-        Logger.error("Codec version #{version} is not supported. Expected: #{@codec_version}.")
+        Logger.error("Codec version #{version} is not supported. Expected: >=#{@codec_min_version}")
         nil
 
       {:size_is_correct, false} ->
