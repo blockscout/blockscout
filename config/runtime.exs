@@ -1430,7 +1430,7 @@ config :indexer, Indexer.Fetcher.Beacon.Deposit.Supervisor,
 
 config :indexer, Indexer.Fetcher.Beacon.Deposit,
   interval: ConfigHelper.parse_time_env_var("INDEXER_BEACON_DEPOSIT_FETCHER_INTERVAL", "6s"),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_DEPOSIT_FETCHER_BATCH_SIZE", 1000)
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_BEACON_DEPOSIT_FETCHER_BATCH_SIZE", 1_000)
 
 config :indexer, Indexer.Fetcher.Beacon.Deposit.Status.Supervisor,
   disabled?:
