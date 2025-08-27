@@ -314,30 +314,4 @@ defmodule Explorer.SmartContract.Helper do
     ExplorerHelper.add_0x_prefix(binary_hash)
   end
 
-  @doc """
-  Checks if an address has deployed bytecode, fetching it on-demand if not found in the database.
-
-  This function is used during smart contract verification to ensure that contracts deployed
-  via CREATE2 in internal transactions (which may not be indexed) can still be verified.
-
-  ## Parameters
-    - `address_hash`: The address hash to check
-    - `options`: Chain query options (default: [api?: true])
-
-  ## Returns
-    - `{:ok, bytecode}` if bytecode is found (either in DB or fetched from node)
-    - `{:error, :not_a_smart_contract}` if no bytecode is found after attempting to fetch
-
-  ## Examples
-      iex> check_and_fetch_bytecode(address_hash)
-      {:ok, "0x608060405234801561001057600080fd5b50..."}
-
-      iex> check_and_fetch_bytecode(eoa_address_hash)
-      {:error, :not_a_smart_contract}
-  """
-  @spec check_and_fetch_bytecode(Hash.Address.t(), Keyword.t()) ::
-          {:ok, String.t()} | {:error, :not_a_smart_contract}
-  def check_and_fetch_bytecode(address_hash, options \\ @api_true) do
-    ContractCode.check_and_fetch_bytecode(address_hash, options)
-  end
 end

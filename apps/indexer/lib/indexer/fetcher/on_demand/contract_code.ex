@@ -115,20 +115,35 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   #
   # ## Returns
   #   `:ok` (the function always returns `:ok`, actual results are handled via side effects)
+
+  # Extracts the core RPC fetching logic for reuse
+  @spec fetch_codes_from_rpc(Address.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {:ok, String.t()} | {:error, any()}
+  defp fetch_codes_from_rpc(address, json_rpc_named_arguments) do
+    case fetch_codes(
+      [%{block_quantity: "latest", address: to_string(address.hash)}],
+      json_rpc_named_arguments
+    ) do
+      {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
+        case Enum.at(fetched_codes, 0) do
+          %{code: code} when is_binary(code) ->
+            {:ok, code}
+          _ ->
+            {:error, :no_code}
+        end
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   @spec fetch_and_broadcast_bytecode(Address.t(), %{
           json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments()
         }) :: :ok
   defp fetch_and_broadcast_bytecode(address, %{json_rpc_named_arguments: _} = state) do
-    with {:fetched_code, {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}}} <-
-           {:fetched_code,
-            fetch_codes(
-              [%{block_quantity: "latest", address: to_string(address.hash)}],
-              state.json_rpc_named_arguments
-            )},
-         contract_code_object = Enum.at(fetched_codes, 0),
-         false <- is_nil(contract_code_object),
+    with {:fetched_code, {:ok, code}} <-
+           {:fetched_code, fetch_codes_from_rpc(address, state.json_rpc_named_arguments)},
          {:ok, fetched_code} <-
-           (contract_code_object.code == "0x" && {:ok, nil}) || Data.cast(contract_code_object.code),
+           (code == "0x" && {:ok, nil}) || Data.cast(code),
          true <- fetched_code != address.contract_code do
       case Chain.import(%{
              addresses: %{
@@ -153,7 +168,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
               Implementation.upsert_eip7702_implementations(addresses)
           end
 
-          Publisher.broadcast(%{fetched_bytecode: [address.hash, contract_code_object.code]}, :on_demand)
+          Publisher.broadcast(%{fetched_bytecode: [address.hash, code]}, :on_demand)
 
           ContractCreatorOnDemand.trigger_fetch(address)
 
@@ -188,20 +203,12 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   def handle_call({:check_and_fetch, address_hash, options}, _from, state) do
     case Chain.hash_to_address(address_hash, options) do
       {:ok, address} ->
-        # Try to fetch bytecode directly from RPC
-        result = case fetch_codes(
-          [%{block_quantity: "latest", address: to_string(address_hash)}],
-          state.json_rpc_named_arguments
-        ) do
-          {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
-            case Enum.at(fetched_codes, 0) do
-              %{code: code} when is_binary(code) and code != "0x" ->
-                # Trigger async update for future requests
-                trigger_fetch(nil, address)
-                {:ok, code}
-              _ ->
-                {:error, :not_a_smart_contract}
-            end
+        # Use the core fetching logic from fetch_and_broadcast_bytecode
+        result = case fetch_codes_from_rpc(address, state.json_rpc_named_arguments) do
+          {:ok, code} when is_binary(code) and code != "0x" ->
+            # Trigger async update for future requests
+            trigger_fetch(nil, address)
+            {:ok, code}
           {:error, _} ->
             {:error, :not_a_smart_contract}
         end
