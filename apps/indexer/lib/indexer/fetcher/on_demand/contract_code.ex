@@ -48,7 +48,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
              [%{block_quantity: "latest", address: to_string(address_hash)}],
              json_rpc_named_arguments
            ),
-         contract_code_object when not is_nil(contract_code_object) <- List.first(fetched_codes),
+         contract_code_object when not is_nil(contract_code_object) <- Enum.at(fetched_codes, 0),
          code when is_binary(code) and code != "0x" <- contract_code_object.code do
       {:ok, code}
     else
@@ -130,7 +130,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
               [%{block_quantity: "latest", address: to_string(address.hash)}],
               state.json_rpc_named_arguments
             )},
-         contract_code_object = List.first(fetched_codes),
+         contract_code_object = Enum.at(fetched_codes, 0),
          false <- is_nil(contract_code_object),
          {:ok, fetched_code} <-
            (contract_code_object.code == "0x" && {:ok, nil}) || Data.cast(contract_code_object.code),
