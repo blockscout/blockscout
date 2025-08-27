@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.Schemas.API.V2.Beacon.Deposit do
   @moduledoc """
-  This module defines the schema for the CeloElectionReward struct.
+  This module defines the schema for the Beacon.Deposit struct.
   """
   require OpenApiSpex
 
