@@ -239,6 +239,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
       from(log in Log,
         join: transaction in assoc(log, :transaction),
         where: transaction.block_consensus == true,
+        where: log.block_hash == transaction.block_hash,
         where: log.address_hash == ^deposit_contract_address_hash,
         where: log.first_topic == ^@deposit_event_signature,
         where: {log.block_number, log.index} > {^log_block_number, ^log_index},
