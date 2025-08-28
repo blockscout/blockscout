@@ -8,8 +8,6 @@ defmodule BlockScoutWeb.TestApiSchemaAssertions do
   HTTP method and status code.
   """
 
-  # import Phoenix.ConnTest, except: [json_response: 2]
-
   require Logger
   alias OpenApiSpex.{Operation, PathItem}
 
@@ -27,29 +25,23 @@ defmodule BlockScoutWeb.TestApiSchemaAssertions do
     if String.starts_with?(request_path, "/api/") do
       spec = BlockScoutWeb.ApiSpec.spec()
 
-      case find_path_item(spec, request_path) do
-        {:ok, %PathItem{} = path_item} ->
-          case Map.get(path_item, :get) do
-            %Operation{} = operation ->
-              case find_response_schema(operation, status_code) do
-                {:ok, schema} ->
-                  Logger.info(
-                    "Validated response against schema for path: #{request_path} and status code: #{status_code}"
-                  )
+      with {:path_item, {:ok, %PathItem{} = path_item}} <- {:path_item, find_path_item(spec, request_path)},
+           {:operation, %Operation{} = operation} <- {:operation, Map.get(path_item, :get)},
+           {:schema, {:ok, schema}} <- {:schema, find_response_schema(operation, status_code)} do
+        Logger.info("Validated response against schema for path: #{request_path} and status code: #{status_code}")
 
-                  OpenApiSpex.TestAssertions.assert_raw_schema(json, schema, spec)
-
-                :error ->
-                  Logger.warning("No schema found for path: #{request_path} and status code: #{status_code}")
-                  :ok
-              end
-
-            _ ->
-              :ok
-          end
-
-        :error ->
+        OpenApiSpex.TestAssertions.assert_raw_schema(json, schema, spec)
+      else
+        {:path_item, :error} ->
           Logger.warning("No schema found for path: #{request_path}")
+          :ok
+
+        {:operation, _} ->
+          Logger.warning("No GET operation found for path: #{request_path}")
+          :ok
+
+        {:schema, :error} ->
+          Logger.warning("No schema found for path: #{request_path} and status code: #{status_code}")
           :ok
       end
     end

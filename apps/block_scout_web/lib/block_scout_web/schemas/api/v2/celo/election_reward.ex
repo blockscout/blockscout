@@ -23,7 +23,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Celo.ElectionReward do
     required: [
       :amount,
       :account,
-      :associated_account
+      :associated_account,
+      :epoch_number
     ],
     additionalProperties: false
   })
