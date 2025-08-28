@@ -1,11 +1,9 @@
 defmodule Explorer.Chain.InternalTransactionTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.{Address, Block, Data, InternalTransaction, Transaction, Wei}
-  alias Explorer.Factory
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction}
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.PagingOptions
-
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   doctest InternalTransaction
 
@@ -1138,6 +1136,41 @@ defmodule Explorer.Chain.InternalTransactionTest do
 
       refute Enum.member?(result, {first_transaction_hash, first_index})
       assert Enum.member?(result, {second_transaction_hash, second_index})
+    end
+
+    test "with consensus transactions and blocks only" do
+      BackgroundMigrations.set_transactions_denormalization_finished(true)
+      block_non_consensus = insert(:block, number: 2000, consensus: false)
+      block_consensus = insert(:block, number: 3000)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block_consensus)
+
+      insert(:internal_transaction,
+        index: 1,
+        transaction: transaction,
+        block_number: transaction.block_number,
+        block_hash: block_non_consensus.hash,
+        block_index: 1,
+        transaction_index: transaction.index
+      )
+
+      consensus_it =
+        insert(:internal_transaction,
+          index: 2,
+          transaction: transaction,
+          block_number: transaction.block_number,
+          block_hash: block_consensus.hash,
+          block_index: 2,
+          transaction_index: transaction.index
+        )
+
+      assert [{consensus_it.transaction_hash, consensus_it.index, consensus_it.block_hash}] ==
+               []
+               |> InternalTransaction.fetch()
+               |> Enum.map(&{&1.transaction_hash, &1.index, &1.block_hash})
     end
   end
 end
