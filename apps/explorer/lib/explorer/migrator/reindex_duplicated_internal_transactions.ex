@@ -14,6 +14,7 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactions do
 
   alias Explorer.Chain.{
     Block,
+    Hash,
     InternalTransaction,
     PendingBlockOperation
   }
@@ -31,37 +32,59 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactions do
     limit = batch_size() * concurrency()
 
     ids =
-      unprocessed_data_query()
+      state
+      |> unprocessed_data_query()
       |> distinct(true)
       |> limit(^limit)
       |> Repo.all(timeout: :infinity)
 
-    {ids, state}
+    case {ids, state["step"]} do
+      {[], step} when step != "finalize" ->
+        new_state = %{"step" => "finalize"}
+        MigrationStatus.update_meta(migration_name(), new_state)
+        last_unprocessed_identifiers(new_state)
+
+      {ids, _field} ->
+        {ids, state}
+    end
   end
 
   @impl FillingMigration
-  def unprocessed_data_query do
+  def unprocessed_data_query(state) do
+    field =
+      case state["step"] do
+        "finalize" -> :block_hash
+        _ -> :block_number
+      end
+
     from(
       it in InternalTransaction,
-      group_by: [it.block_number, it.transaction_index, it.index],
+      where: not is_nil(field(it, ^field)),
+      group_by: [field(it, ^field), it.transaction_index, it.index],
       having: count("*") > 1,
-      select: it.block_number
+      select: field(it, ^field)
     )
   end
 
   @impl FillingMigration
-  def update_batch(block_numbers) do
+  def update_batch(block_numbers_or_hashes) do
     now = DateTime.utc_now()
+
+    {it_field, block_field} =
+      case block_numbers_or_hashes do
+        [number | _] when is_integer(number) -> {:block_number, :number}
+        [%Hash{} | _] -> {:block_hash, :hash}
+      end
 
     result =
       Repo.transaction(fn ->
         InternalTransaction
-        |> where([it], it.block_number in ^block_numbers)
+        |> where([it], field(it, ^it_field) in ^block_numbers_or_hashes)
         |> Repo.delete_all()
 
         pbo_params =
           Block
-          |> where([b], b.number in ^block_numbers)
+          |> where([b], field(b, ^block_field) in ^block_numbers_or_hashes)
           |> where([b], b.consensus == true)
           |> select([b], %{block_hash: b.hash, block_number: b.number})
           |> Repo.all()
