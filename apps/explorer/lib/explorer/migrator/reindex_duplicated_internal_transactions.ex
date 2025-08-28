@@ -31,21 +31,15 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactions do
   def last_unprocessed_identifiers(state) do
     limit = batch_size() * concurrency()
 
-    current_field =
-      case state["step"] do
-        "finalize" -> :block_hash
-        _ -> :block_number
-      end
-
     ids =
-      current_field
+      state
       |> unprocessed_data_query()
       |> distinct(true)
       |> limit(^limit)
       |> Repo.all(timeout: :infinity)
 
-    case {ids, current_field} do
-      {[], :block_number} ->
+    case {ids, state["step"]} do
+      {[], step} when step != "finalize" ->
         new_state = %{"step" => "finalize"}
         MigrationStatus.update_meta(migration_name(), new_state)
         last_unprocessed_identifiers(new_state)
@@ -56,7 +50,13 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactions do
   end
 
   @impl FillingMigration
-  def unprocessed_data_query(field) do
+  def unprocessed_data_query(state) do
+    field =
+      case state["step"] do
+        "finalize" -> :block_hash
+        _ -> :block_number
+      end
+
     from(
       it in InternalTransaction,
       where: not is_nil(field(it, ^field)),

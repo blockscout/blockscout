@@ -62,7 +62,7 @@ defmodule Explorer.Migrator.FillingMigration do
     limiting is handled within `last_unprocessed_identifiers/1`.
   """
   @callback unprocessed_data_query :: Ecto.Query.t() | nil
-  @callback unprocessed_data_query(any()) :: Ecto.Query.t() | nil
+  @callback unprocessed_data_query(map()) :: Ecto.Query.t() | nil
 
   @doc """
     This callback retrieves the next batch of data for migration processing. It returns
