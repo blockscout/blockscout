@@ -76,7 +76,6 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert List.first(response["items"])["reputation"] == "ok"
     end
 
-
     test "search block", %{conn: conn} do
       block = insert(:block)
 

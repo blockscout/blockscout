@@ -30,6 +30,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
     TotalERC721,
     TransactionHashCustomization
   }
+
   alias Explorer.Chain.Reputation
   alias OpenApiSpex.Schema
 
@@ -54,7 +55,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       block_hash: General.FullHash,
       block_number: %Schema{type: :integer, nullable: false},
       log_index: %Schema{type: :integer, nullable: false},
-      token_type: Token.Type
+      token_type: Token.Type,
       reputation: %Schema{
         type: :string,
         enum: Reputation.enum_values(),

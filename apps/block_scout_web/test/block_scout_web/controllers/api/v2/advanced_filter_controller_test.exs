@@ -13,18 +13,21 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       transaction = insert(:transaction) |> with_block()
 
-insert(:token_transfer, transaction: transaction)
+      insert(:token_transfer, transaction: transaction)
 
       request =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
-        |> get("/api/v2/advanced-filters",%{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+        |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
 
       response = json_response(request, 200)
 
       assert List.first(response["items"])["reputation"] == "ok"
 
-      assert response == conn |> get("/api/v2/advanced-filters" ,%{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"}) |> json_response(200)
+      assert response ==
+               conn
+               |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+               |> json_response(200)
     end
 
     test "get smart-contract with scam reputation", %{conn: conn} do
@@ -40,13 +43,13 @@ insert(:token_transfer, transaction: transaction)
       request =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
-        |> get("/api/v2/advanced-filters",%{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+        |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
 
       response = json_response(request, 200)
 
       assert List.first(response["items"])["reputation"] == "scam"
 
-      request = conn |> get("/api/v2/advanced-filters",%{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+      request = conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
       response = json_response(request, 200)
 
       assert response["items"] == []
@@ -61,7 +64,7 @@ insert(:token_transfer, transaction: transaction)
 
       insert(:token_transfer, transaction: transaction)
 
-      request = conn |> get("/api/v2/advanced-filters",%{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+      request = conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
       response = json_response(request, 200)
 
       assert List.first(response["items"])["reputation"] == "ok"
