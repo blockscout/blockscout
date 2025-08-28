@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token, Token.Type}
+  alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
 
   alias BlockScoutWeb.Schemas.API.V2.TokenTransfer.{
     Total,
