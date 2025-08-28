@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+  alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token, Token.Type}
 
   alias BlockScoutWeb.Schemas.API.V2.TokenTransfer.{
     Total,
@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
     TotalERC721,
     TransactionHashCustomization
   }
-
+  alias Explorer.Chain.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -55,6 +55,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       block_number: %Schema{type: :integer, nullable: false},
       log_index: %Schema{type: :integer, nullable: false},
       token_type: Token.Type
+      reputation: %Schema{
+        type: :string,
+        enum: Reputation.enum_values(),
+        description: "Reputation of the token transfer",
+        nullable: true
+      }
     },
     required: [
       :transaction_hash,
@@ -68,7 +74,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       :block_hash,
       :block_number,
       :log_index,
-      :token_type
+      :token_type,
+      :reputation
     ]
   })
 end

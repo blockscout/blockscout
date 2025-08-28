@@ -304,7 +304,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_smart_contract_address_for_list(
          %Address{
            smart_contract: %SmartContract{} = smart_contract,
-           token: token
+           token: token,
+           reputation: reputation
          } = address
        ) do
     smart_contract_info =
@@ -320,7 +321,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         "coin_balance" => if(address.fetched_coin_balance, do: address.fetched_coin_balance.value),
         "license_type" => smart_contract.license_type,
         "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false),
-        "reputation" => smart_contract.reputation
+        "reputation" => reputation
       }
 
     smart_contract_info

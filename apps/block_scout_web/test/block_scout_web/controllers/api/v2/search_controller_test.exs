@@ -6,6 +6,77 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   alias Plug.Conn.Query
 
   describe "/search" do
+    test "get token-transfers with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/search?q=#{token.name}")
+
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+
+      assert response == conn |> get("/api/v2/search?q=#{token.name}") |> json_response(200)
+    end
+
+    test "get smart-contract with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/search?q=#{token.name}")
+
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/search?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert response["items"] == []
+    end
+
+    test "get token-transfers with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      request = conn |> get("/api/v2/search?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
+    test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request = conn |> get("/api/v2/search?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
+
     test "search block", %{conn: conn} do
       block = insert(:block)
 
@@ -1847,6 +1918,76 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   end
 
   describe "/search/quick" do
+    test "get token with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/search/quick?q=#{token.name}")
+
+      response = json_response(request, 200)
+
+      assert List.first(response)["reputation"] == "ok"
+
+      assert response == conn |> get("/api/v2/search/quick?q=#{token.name}") |> json_response(200)
+    end
+
+    test "get token with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/search/quick?q=#{token.name}")
+
+      response = json_response(request, 200)
+
+      assert List.first(response)["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/search/quick?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert response == []
+    end
+
+    test "get token with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      request = conn |> get("/api/v2/search/quick?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert List.first(response)["reputation"] == "ok"
+    end
+
+    test "get token with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request = conn |> get("/api/v2/search/quick?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert List.first(response)["reputation"] == "ok"
+    end
+
     test "check that all categories are in response list", %{conn: conn} do
       name = "156000"
 

@@ -392,7 +392,7 @@ defmodule Explorer.Chain.Token.Instance do
       distinct_token_instances_count: fragment("COUNT(*)"),
       token_ids: fragment("array_agg(?)", ctb.token_id)
     })
-    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses_with_aggregate(:token_contract_address_hash, options)
     |> page_erc_1155_nft_collections(paging_options)
     |> limit(^paging_options.page_size)
     |> Chain.select_repo(options).all()
