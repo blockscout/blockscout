@@ -123,6 +123,7 @@ jobs:
         run: |
           mix local.hex --force
           mix local.rebar --force
+          mix deps.clean --all
           mix deps.get
           mix deps.compile --skip-umbrella-children
 
