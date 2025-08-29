@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Address.Schema do
     Data,
     Hash,
     InternalTransaction,
+    Reputation,
     SignedAuthorization,
     SmartContract,
     Token,
@@ -88,6 +89,7 @@ defmodule Explorer.Chain.Address.Schema do
         field(:gas_used, :integer)
         field(:ens_domain_name, :string, virtual: true)
         field(:metadata, :any, virtual: true)
+        field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
         has_one(:smart_contract, SmartContract, references: :hash)
         has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)

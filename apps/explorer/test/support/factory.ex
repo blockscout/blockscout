@@ -32,6 +32,7 @@ defmodule Explorer.Factory do
     Address.TokenBalance,
     Address.CoinBalance,
     Address.CoinBalanceDaily,
+    Address.ScamBadgeToAddress,
     Block,
     ContractMethod,
     Data,
@@ -1442,6 +1443,12 @@ defmodule Explorer.Factory do
     %EventNotification{
       data: "test_data",
       inserted_at: DateTime.utc_now()
+    }
+  end
+
+  def scam_badge_to_address_factory do
+    %ScamBadgeToAddress{
+      address_hash: insert(:address).hash
     }
   end
 end

@@ -251,13 +251,75 @@ defmodule Explorer.Helper do
   def maybe_hide_scam_addresses(nil, _address_hash_key, _options), do: nil
 
   def maybe_hide_scam_addresses(query, address_hash_key, options) do
-    if Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] do
-      query
-      |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
-      |> where([sabm: sabm], is_nil(sabm.address_hash))
-    else
-      query
+    cond do
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+        |> where([sabm: sabm], is_nil(sabm.address_hash))
+        |> select_merge([q], %{reputation: "ok"})
+
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+        |> select_merge([q, sabm: sabm], %{
+          reputation: fragment("CASE WHEN ? THEN ? ELSE ? END", is_nil(sabm.address_hash), "ok", "scam")
+        })
+
+      true ->
+        query
+        |> select_merge([q], %{reputation: "ok"})
     end
+  end
+
+  def maybe_hide_scam_addresses_without_select_merge(nil, _address_hash_key, _options), do: nil
+
+  def maybe_hide_scam_addresses_without_select_merge(query, address_hash_key, options) do
+    cond do
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+        |> where([sabm: sabm], is_nil(sabm.address_hash))
+
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+
+      true ->
+        query
+    end
+  end
+
+  def maybe_hide_scam_addresses_with_aggregate(nil, _address_hash_key, _options), do: nil
+
+  def maybe_hide_scam_addresses_with_aggregate(query, address_hash_key, options) do
+    cond do
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+        |> where([sabm: sabm], is_nil(sabm.address_hash))
+        |> select_merge([q], %{reputation: "ok"})
+
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+        |> select_merge([q, sabm: sabm], %{
+          reputation:
+            fragment(
+              "CASE WHEN MAX(CASE WHEN ? THEN 0 ELSE 1 END) = 0 THEN ? ELSE ? END",
+              is_nil(sabm.address_hash),
+              "ok",
+              "scam"
+            )
+        })
+
+      true ->
+        query
+        |> select_merge([q], %{reputation: "ok"})
+    end
+  end
+
+  def force_show_scam_addresses?(options) do
+    Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?]
   end
 
   @doc """
