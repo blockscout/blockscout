@@ -99,133 +99,133 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   }
 
   defp handle_fallback(:transactions_denormalization_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       TransactionsDenormalization,
       &set_transactions_denormalization_finished/1
     )
   end
 
   defp handle_fallback(:tb_token_type_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       AddressTokenBalanceTokenType,
       &set_tb_token_type_finished/1
     )
   end
 
   defp handle_fallback(:ctb_token_type_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       AddressCurrentTokenBalanceTokenType,
       &set_ctb_token_type_finished/1
     )
   end
 
   defp handle_fallback(:tt_denormalization_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       TokenTransferTokenType,
       &set_tt_denormalization_finished/1
     )
   end
 
   defp handle_fallback(:sanitize_duplicated_log_index_logs_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       SanitizeDuplicatedLogIndexLogs,
       &set_sanitize_duplicated_log_index_logs_finished/1
     )
   end
 
   defp handle_fallback(:backfill_multichain_search_db_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       BackfillMultichainSearchDB,
       &set_backfill_multichain_search_db_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_create_logs_block_hash_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateLogsBlockHashIndex,
       &set_heavy_indexes_create_logs_block_hash_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropLogsBlockNumberAscIndexAscIndex,
       &set_heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateLogsAddressHashBlockNumberDescIndexDescIndex,
       &set_heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_logs_address_hash_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropLogsAddressHashIndex,
       &set_heavy_indexes_drop_logs_address_hash_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_logs_address_hash_transaction_hash_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropLogsAddressHashTransactionHashIndex,
       &set_heavy_indexes_drop_logs_address_hash_transaction_hash_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_logs_index_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropLogsIndexIndex,
       &set_heavy_indexes_drop_logs_index_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_create_logs_address_hash_first_topic_block_number_index_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
       &set_heavy_indexes_create_logs_address_hash_first_topic_block_number_index_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropTokenTransfersBlockNumberAscLogIndexAscIndex,
       &set_heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropTokenTransfersFromAddressHashTransactionHashIndex,
       &set_heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_token_transfers_to_address_hash_transaction_hash_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropTokenTransfersToAddressHashTransactionHashIndex,
       &set_heavy_indexes_drop_token_transfers_to_address_hash_transaction_hash_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_token_transfers_token_contract_address_hash_transaction_hash_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
       &set_heavy_indexes_drop_token_transfers_token_contract_address_hash_transaction_hash_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_token_transfers_block_number_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropTokenTransfersBlockNumberIndex,
       &set_heavy_indexes_drop_token_transfers_block_number_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_internal_transactions_from_address_hash_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropInternalTransactionsFromAddressHashIndex,
       &set_heavy_indexes_drop_internal_transactions_from_address_hash_index_finished/1
     )
@@ -234,91 +234,91 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   defp handle_fallback(
          :heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished
        ) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
       &set_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_create_addresses_verified_hash_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateAddressesVerifiedHashIndex,
       &set_heavy_indexes_create_addresses_verified_hash_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_create_addresses_verified_transactions_count_desc_hash_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateAddressesVerifiedTransactionsCountDescHashIndex,
       &set_heavy_indexes_create_addresses_verified_transactions_count_desc_hash_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_create_addresses_verified_fetched_coin_balance_desc_hash_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
       &set_heavy_indexes_create_addresses_verified_fetched_coin_balance_desc_hash_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_create_smart_contracts_language_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateSmartContractsLanguageIndex,
       &set_heavy_indexes_create_smart_contracts_language_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropTransactionsCreatedContractAddressHashWithPendingIndex,
       &set_heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_transactions_from_address_hash_with_pending_index) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropTransactionsFromAddressHashWithPendingIndex,
       &set_heavy_indexes_drop_transactions_from_address_hash_with_pending_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_drop_transactions_to_address_hash_with_pending_index) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       DropTransactionsToAddressHashWithPendingIndex,
       &set_heavy_indexes_drop_transactions_to_address_hash_with_pending_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_create_logs_deposits_withdrawals_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateLogsDepositsWithdrawalsIndex,
       &set_heavy_indexes_create_logs_deposits_withdrawals_index_finished/1
     )
   end
 
   defp handle_fallback(:arbitrum_da_records_normalization_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       ArbitrumDaRecordsNormalization,
       &set_arbitrum_da_records_normalization_finished/1
     )
   end
 
   defp handle_fallback(:smart_contract_language_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       SmartContractLanguage,
       &set_smart_contract_language_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
       &set_heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished/1
     )
   end
 
   defp handle_fallback(:heavy_indexes_create_addresses_transactions_count_desc_partial_index_finished) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateAddressesTransactionsCountDescPartialIndex,
       &set_heavy_indexes_create_addresses_transactions_count_desc_partial_index_finished/1
     )
@@ -327,7 +327,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   defp handle_fallback(
          :heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished
        ) do
-    start_migration_status_task(
+    set_and_return_migration_status(
       CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex,
       &set_heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished/1
     )
@@ -337,11 +337,11 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     {:return, false}
   end
 
-  defp start_migration_status_task(migration_module, status_setter) do
-    Task.start_link(fn ->
-      status_setter.(migration_module.migration_finished?())
-    end)
+  defp set_and_return_migration_status(migration_module, status_setter) do
+    status = migration_module.migration_finished?()
 
-    {:return, false}
+    status_setter.(status)
+
+    {:return, status}
   end
 end

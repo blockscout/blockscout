@@ -134,6 +134,7 @@ defmodule Explorer.Repo do
         Explorer.Repo.Account,
         Explorer.Repo.BridgedTokens,
         Explorer.Repo.ShrunkInternalTransactions,
+        Explorer.Repo.EventNotifications,
 
         # Chain-type dependent repos
         Explorer.Repo.Arbitrum,

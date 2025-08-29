@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       next_page_params: 3,
       next_page_params: 4,
       paging_options: 1,
+      param_to_block_number: 1,
       put_key_value_to_paging_options: 3,
       split_list_by_page: 1,
       parse_block_hash_or_number_param: 1
@@ -14,7 +15,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   import BlockScoutWeb.PagingHelper,
     only: [
-      delete_parameters_from_next_page_params: 1,
       select_block_type: 1,
       type_filter_options: 1,
       internal_transaction_type_options: 1,
@@ -31,9 +31,11 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
+  alias Explorer.Chain.Cache.{BlockNumber, Counters.AverageBlockTime}
   alias Explorer.Chain.InternalTransaction
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
+  alias Timex.Duration
 
   case @chain_type do
     :ethereum ->
@@ -170,7 +172,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
     {blocks, next_page} = split_list_by_page(blocks_plus_one)
 
-    next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page |> next_page_params(blocks, params)
 
     conn
     |> put_status(200)
@@ -196,7 +198,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       |> ArbitrumSettlementReader.batch_blocks(full_options)
       |> split_list_by_page()
 
-    next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page |> next_page_params(blocks, params)
 
     conn
     |> put_status(200)
@@ -223,7 +225,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       |> OptimismTransactionBatch.batch_blocks(full_options)
       |> split_list_by_page()
 
-    next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page |> next_page_params(blocks, params)
 
     conn
     |> put_status(200)
@@ -250,7 +252,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       |> ScrollReader.batch_blocks(full_options)
       |> split_list_by_page()
 
-    next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page |> next_page_params(blocks, params)
 
     conn
     |> put_status(200)
@@ -281,7 +283,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
       next_page_params =
         next_page
-        |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
+        |> next_page_params(transactions, params)
 
       conn
       |> put_status(200)
@@ -321,7 +323,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         next_page
         |> next_page_params(
           internal_transactions,
-          delete_parameters_from_next_page_params(params),
+          params,
           &InternalTransaction.internal_transaction_to_block_paging_options/1
         )
 
@@ -357,7 +359,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       withdrawals_plus_one = Chain.block_to_withdrawals(block.hash, full_options)
       {withdrawals, next_page} = split_list_by_page(withdrawals_plus_one)
 
-      next_page_params = next_page |> next_page_params(withdrawals, delete_parameters_from_next_page_params(params))
+      next_page_params = next_page |> next_page_params(withdrawals, params)
 
       conn
       |> put_status(200)
@@ -366,6 +368,44 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         withdrawals: withdrawals |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
+    end
+  end
+
+  @doc """
+  Function to handle GET requests to `/api/v2/blocks/:block_number/countdown` endpoint.
+  Calculates the estimated time remaining until a specified block number is reached
+  based on the current block number and average block time.
+
+  ## Parameters
+  - `conn`: The connection struct
+  - `params`: Map containing the target block number
+
+  ## Returns
+  - Renders countdown data with current block, target block, remaining blocks, and estimated time
+  - Returns appropriate error responses via fallback controller for various failure cases
+  """
+  @spec block_countdown(Plug.Conn.t(), map()) ::
+          Plug.Conn.t()
+          | {:format, {:error, :invalid}}
+          | {:max_block, nil}
+          | {:average_block_time, {:error, :disabled}}
+          | {:remaining_blocks, 0}
+  def block_countdown(conn, %{"block_number" => block_number}) do
+    with {:format, {:ok, target_block_number}} <- {:format, param_to_block_number(block_number)},
+         {:max_block, current_block_number} when not is_nil(current_block_number) <-
+           {:max_block, BlockNumber.get_max()},
+         {:average_block_time, average_block_time} when is_struct(average_block_time) <-
+           {:average_block_time, AverageBlockTime.average_block_time()},
+         {:remaining_blocks, remaining_blocks} when remaining_blocks > 0 <-
+           {:remaining_blocks, target_block_number - current_block_number} do
+      estimated_time_in_sec = Float.round(remaining_blocks * Duration.to_seconds(average_block_time), 1)
+
+      render(conn, :block_countdown,
+        current_block: current_block_number,
+        countdown_block: target_block_number,
+        remaining_blocks: remaining_blocks,
+        estimated_time_in_sec: estimated_time_in_sec
+      )
     end
   end
 

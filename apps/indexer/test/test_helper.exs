@@ -17,9 +17,10 @@ end
 Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)
 Mox.defmock(Indexer.BufferedTaskTest.RetryableTask, for: Indexer.BufferedTask)
 Mox.defmock(Indexer.BufferedTaskTest.ShrinkableTask, for: Indexer.BufferedTask)
-Mox.defmock(Explorer.Mox.HTTPoison, for: HTTPoison.Base)
+Mox.defmock(Explorer.Mock.TeslaAdapter, for: Tesla.Adapter)
 
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
 ExUnit.start()
 
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.EventNotifications, :manual)

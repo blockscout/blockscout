@@ -4,6 +4,7 @@ defmodule ConfigHelper do
   import Bitwise
   alias Explorer.Market.Source
   alias Indexer.Transform.Blocks
+  alias Utils.ConfigHelper
 
   def repos do
     base_repos = [Explorer.Repo, Explorer.Repo.Account]
@@ -16,7 +17,6 @@ defmodule ConfigHelper do
         ethereum: Explorer.Repo.Beacon,
         filecoin: Explorer.Repo.Filecoin,
         optimism: Explorer.Repo.Optimism,
-        polygon_edge: Explorer.Repo.PolygonEdge,
         polygon_zkevm: Explorer.Repo.PolygonZkevm,
         rsk: Explorer.Repo.RSK,
         scroll: Explorer.Repo.Scroll,
@@ -35,7 +35,8 @@ defmodule ConfigHelper do
       [
         {parse_bool_env_var("BRIDGED_TOKENS_ENABLED"), Explorer.Repo.BridgedTokens},
         {parse_bool_env_var("MUD_INDEXER_ENABLED"), Explorer.Repo.Mud},
-        {parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"), Explorer.Repo.ShrunkInternalTransactions}
+        {parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"), Explorer.Repo.ShrunkInternalTransactions},
+        {mode() in [:indexer, :api], Explorer.Repo.EventNotifications}
       ]
       |> Enum.filter(&elem(&1, 0))
       |> Enum.map(&elem(&1, 1))
@@ -43,13 +44,55 @@ defmodule ConfigHelper do
     base_repos ++ chain_type_repos ++ ext_repos
   end
 
-  @spec hackney_options() :: any()
-  def hackney_options() do
+  @doc """
+  Returns the list of logger backends to be used by the application.
+
+  If the DISABLE_FILE_LOGGING environment variable is set to true, only base
+  logger backends (:console and LoggerJSON) are returned. Otherwise, returns
+  both base and file logger backends.
+  """
+  @spec logger_backends() :: list()
+  def logger_backends do
+    base_logger_backends = [
+      :console,
+      LoggerJSON
+    ]
+
+    file_logger_backends =
+      [
+        {LoggerFileBackend, :error},
+        {LoggerFileBackend, :ecto},
+        {LoggerFileBackend, :block_scout_web},
+        {LoggerFileBackend, :ethereum_jsonrpc},
+        {LoggerFileBackend, :explorer},
+        {LoggerFileBackend, :indexer},
+        {LoggerFileBackend, :indexer_token_balances},
+        {LoggerFileBackend, :token_instances},
+        {LoggerFileBackend, :reading_token_functions},
+        {LoggerFileBackend, :pending_transactions_to_refetch},
+        {LoggerFileBackend, :empty_blocks_to_refetch},
+        {LoggerFileBackend, :withdrawal},
+        {LoggerFileBackend, :api},
+        {LoggerFileBackend, :block_import_timings},
+        {LoggerFileBackend, :account},
+        {LoggerFileBackend, :api_v2}
+      ]
+
+    if parse_bool_env_var("DISABLE_FILE_LOGGING") do
+      base_logger_backends
+    else
+      base_logger_backends ++ file_logger_backends
+    end
+  end
+
+  @spec http_options(non_neg_integer()) :: list()
+  def http_options(default_timeout \\ 1) do
+    http_timeout = timeout(default_timeout)
     basic_auth_user = System.get_env("ETHEREUM_JSONRPC_USER", "")
     basic_auth_pass = System.get_env("ETHEREUM_JSONRPC_PASSWORD", nil)
 
-    [pool: :ethereum_jsonrpc]
-    |> (&if(System.get_env("ETHEREUM_JSONRPC_HTTP_INSECURE", "") == "true", do: [:insecure] ++ &1, else: &1)).()
+    [pool: :ethereum_jsonrpc, recv_timeout: http_timeout, timeout: http_timeout]
+    |> (&if(System.get_env("ETHEREUM_JSONRPC_HTTP_INSECURE", "") == "true", do: [insecure: true] ++ &1, else: &1)).()
     |> (&if(basic_auth_user != "" && !is_nil(basic_auth_pass),
           do: [basic_auth: {basic_auth_user, basic_auth_pass}] ++ &1,
           else: &1
@@ -105,12 +148,12 @@ defmodule ConfigHelper do
         nil
 
       value ->
-        case value |> String.downcase() |> Integer.parse() do
-          {milliseconds, "ms"} -> milliseconds
-          {hours, "h"} -> :timer.hours(hours)
-          {minutes, "m"} -> :timer.minutes(minutes)
-          {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
-          _ -> raise "Invalid time format in environment variable #{env_var}: #{value}"
+        case ConfigHelper.parse_time_value(value) do
+          :error ->
+            raise "Invalid time format in environment variable #{env_var}: #{value}"
+
+          time ->
+            time
         end
     end
   end
@@ -312,7 +355,6 @@ defmodule ConfigHelper do
     "ethereum",
     "filecoin",
     "optimism",
-    "polygon_edge",
     "polygon_zkevm",
     "rsk",
     "scroll",

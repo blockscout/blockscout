@@ -133,8 +133,8 @@ defmodule Explorer.Chain.Celo.Epoch do
       iex> Explorer.Chain.Celo.Epoch.fetched_epochs(sorting: [asc: :number], paging_options: %{page_size: 10})
       [%Explorer.Chain.Celo.Epoch{number: 1, fetched?: true, ...}, ...]
   """
-  @spec fetched_epochs(Keyword.t()) :: [__MODULE__.t()]
-  def fetched_epochs(options) do
+  @spec all(Keyword.t()) :: [__MODULE__.t()]
+  def all(options) do
     default_sorting = [desc: :number]
 
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -142,7 +142,6 @@ defmodule Explorer.Chain.Celo.Epoch do
     sorting_options = Keyword.get(options, :sorting, [])
 
     __MODULE__
-    |> where(fetched?: true)
     |> SortingHelper.apply_sorting(sorting_options, default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
     |> Chain.join_associations(necessity_by_association)
@@ -329,5 +328,40 @@ defmodule Explorer.Chain.Celo.Epoch do
       # Limit to just one result
       limit: 1
     )
+  end
+
+  @doc """
+  Converts a block number range to epoch number range by finding epochs whose
+  end block numbers fall within the specified block range.
+
+  ## Parameters
+    - `from_block` (`integer()`): The starting block number.
+    - `to_block` (`integer()`): The ending block number.
+    - `options` (`Keyword.t()`): Options for selecting the repository.
+
+  ## Returns
+    - `{integer(), integer()} | nil`: A tuple containing the minimum and maximum
+      epoch numbers or nil.
+
+  ## Examples
+
+      iex> Explorer.Chain.Celo.Epoch.block_range_to_epoch_range(123400, 125000)
+      {42, 43}
+
+      iex> Explorer.Chain.Celo.Epoch.block_range_to_epoch_range(999999, 1000000)
+      nil
+  """
+  @spec block_range_to_epoch_range(integer(), integer(), Keyword.t()) :: {integer(), integer()} | nil
+  def block_range_to_epoch_range(from_block, to_block, options \\ []) do
+    query =
+      from(e in __MODULE__,
+        where: e.end_block_number >= ^from_block and e.end_block_number < ^to_block,
+        select: {min(e.number), max(e.number)}
+      )
+
+    case Chain.select_repo(options).one(query) do
+      {nil, nil} -> nil
+      res -> res
+    end
   end
 end

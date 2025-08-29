@@ -7,8 +7,10 @@ defmodule Explorer.Market.Fetcher.Token do
   require Logger
 
   alias Explorer.Chain
+  alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Import.Runner.Tokens
   alias Explorer.Market.Source
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
 
   defstruct [
     :source,
@@ -60,7 +62,7 @@ defmodule Explorer.Market.Fetcher.Token do
       {:ok, source_state, fetch_finished?, tokens_data} ->
         case update_tokens(tokens_data) do
           {:ok, _imported} ->
-            :ok
+            enqueue_to_multichain(tokens_data)
 
           {:error, err} ->
             Logger.error("Error while importing tokens market data: #{inspect(err)}")
@@ -102,6 +104,36 @@ defmodule Explorer.Market.Fetcher.Token do
   @impl GenServer
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
     {:noreply, state}
+  end
+
+  # Adds market data of the token (such as price and market cap) to the queue to send that to Multichain service.
+  #
+  # ## Parameters
+  # - `tokens_data`: A list of token data.
+  #
+  # ## Returns
+  # - `:ok` if the data is accepted for insertion.
+  # - `:ignore` if the Multichain service is not used.
+  @spec enqueue_to_multichain([
+          %{
+            :contract_address_hash => Address.t(),
+            optional(:fiat_value) => Decimal.t(),
+            optional(:circulating_market_cap) => Decimal.t(),
+            optional(any()) => any()
+          }
+        ]) :: :ok | :ignore
+  defp enqueue_to_multichain(tokens_data) do
+    tokens_data
+    |> Enum.reduce(%{}, fn token, acc ->
+      data_for_multichain = MultichainSearch.prepare_token_market_data_for_queue(token)
+
+      if data_for_multichain == %{} do
+        acc
+      else
+        Map.put(acc, token.contract_address_hash.bytes, data_for_multichain)
+      end
+    end)
+    |> MultichainSearch.send_token_info_to_queue(:market_data)
   end
 
   defp update_tokens(token_params) do

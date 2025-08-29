@@ -320,6 +320,7 @@ defmodule Explorer.Chain.Transaction do
     Data,
     DenormalizationHelper,
     Hash,
+    MethodIdentifier,
     SmartContract.Proxy,
     TokenTransfer,
     Transaction,
@@ -329,8 +330,6 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
 
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-
-  alias Explorer.Helper, as: ExplorerHelper
 
   alias Explorer.SmartContract.SigProviderInterface
 
@@ -809,6 +808,14 @@ defmodule Explorer.Chain.Transaction do
   def decoded_input_data(%NotLoaded{}, _, _, _, _),
     do: {:error, :not_loaded}
 
+  if @chain_type == :celo do
+    # Celo's Epoch logs does not have an associated transaction and linked to
+    # the block instead, so we discard these token transfers for transaction
+    # decoding
+    def decoded_input_data(nil, _, _, _, _),
+      do: {:error, :celo_epoch_log}
+  end
+
   # skip decoding if input is empty
   def decoded_input_data(
         %__MODULE__{input: %{bytes: bytes}},
@@ -895,6 +902,7 @@ defmodule Explorer.Chain.Transaction do
         methods_map,
         _smart_contract_full_abi_map
       ) do
+    {:ok, method_id} = MethodIdentifier.cast(method_id)
     methods = check_methods_cache(method_id, methods_map, options)
 
     candidates =
@@ -966,6 +974,15 @@ defmodule Explorer.Chain.Transaction do
         output
     end
   end
+
+  def decoded_input_data(
+        %__MODULE__{to_address: %{metadata: _, ens_domain_name: _}},
+        _,
+        _,
+        _,
+        _
+      ),
+      do: {:error, :no_to_address}
 
   defp decode_function_call_via_sig_provider_wrapper(input, hash, skip_sig_provider?) do
     case decode_function_call_via_sig_provider(input, hash, skip_sig_provider?) do
@@ -1040,7 +1057,8 @@ defmodule Explorer.Chain.Transaction do
           parse_method_name(decoded_func)
 
         {:error, :contract_not_verified, []} ->
-          ExplorerHelper.add_0x_prefix(method_id)
+          {:ok, method_id} = MethodIdentifier.cast(method_id)
+          to_string(method_id)
 
         _ ->
           "Transfer"
@@ -1919,19 +1937,19 @@ defmodule Explorer.Chain.Transaction do
   Returns next page params based on the provided transaction.
   """
   @spec address_transactions_next_page_params(Explorer.Chain.Transaction.t()) :: %{
-          required(String.t()) => Decimal.t() | Wei.t() | non_neg_integer | DateTime.t() | Hash.t()
+          required(atom()) => Decimal.t() | Wei.t() | non_neg_integer | DateTime.t() | Hash.t()
         }
   def address_transactions_next_page_params(
         %__MODULE__{block_number: block_number, index: index, inserted_at: inserted_at, hash: hash, value: value} =
           transaction
       ) do
     %{
-      "fee" => transaction |> fee(:wei) |> elem(1),
-      "value" => value,
-      "block_number" => block_number,
-      "index" => index,
-      "inserted_at" => inserted_at,
-      "hash" => hash
+      fee: transaction |> fee(:wei) |> elem(1),
+      value: value,
+      block_number: block_number,
+      index: index,
+      inserted_at: inserted_at,
+      hash: hash
     }
   end
 
@@ -1964,7 +1982,7 @@ defmodule Explorer.Chain.Transaction do
       {:actual, Decimal.new(4)}
 
   """
-  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t() | nil}
+  @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t() | nil} | {:actual, Decimal.t() | nil}
   def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
 
   def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil} = transaction, unit) do
@@ -2116,8 +2134,12 @@ defmodule Explorer.Chain.Transaction do
     empty_methods_map =
       transactions
       |> Enum.flat_map(fn
-        %{input: %{bytes: <<method_id::binary-size(4), _::binary>>}} -> [method_id]
-        _ -> []
+        %{input: %{bytes: <<method_id::binary-size(4), _::binary>>}} ->
+          {:ok, method_id} = MethodIdentifier.cast(method_id)
+          [method_id]
+
+        _ ->
+          []
       end)
       |> Enum.into(%{}, &{&1, []})
 
@@ -2144,17 +2166,35 @@ defmodule Explorer.Chain.Transaction do
 
     # decode remaining transaction using methods map
     decoded_transactions
-    |> Enum.map(fn
-      {nil, transaction} ->
-        transaction
-        |> Map.put(:to_address, %NotLoaded{})
-        |> decoded_input_data(skip_sig_provider?, opts, methods_map, smart_contract_full_abi_map)
-        |> format_decoded_input()
-
-      {decoded, _} ->
-        decoded
-    end)
+    |> Enum.map(
+      &decode_remaining_transaction(
+        &1,
+        skip_sig_provider?,
+        opts,
+        methods_map,
+        smart_contract_full_abi_map
+      )
+    )
   end
+
+  if @chain_type == :celo do
+    defp decode_remaining_transaction({nil, nil}, _, _, _, _), do: nil
+  end
+
+  defp decode_remaining_transaction(
+         {nil, transaction},
+         skip_sig_provider?,
+         opts,
+         methods_map,
+         smart_contract_full_abi_map
+       ) do
+    transaction
+    |> Map.put(:to_address, %NotLoaded{})
+    |> decoded_input_data(skip_sig_provider?, opts, methods_map, smart_contract_full_abi_map)
+    |> format_decoded_input()
+  end
+
+  defp decode_remaining_transaction({decoded, _}, _, _, _, _), do: decoded
 
   defp combine_smart_contract_full_abi_map(transactions) do
     # parse unique address hashes of smart-contracts from to_address and created_contract_address properties of the transactions list
@@ -2225,7 +2265,8 @@ defmodule Explorer.Chain.Transaction do
         skip_sc_check?
       ) do
     if skip_sc_check? || Address.smart_contract?(to_address) do
-      ExplorerHelper.add_0x_prefix(method_id)
+      {:ok, method_id} = MethodIdentifier.cast(method_id)
+      method_id |> to_string()
     else
       nil
     end
@@ -2234,4 +2275,15 @@ defmodule Explorer.Chain.Transaction do
   def method_name(_, _, _) do
     nil
   end
+
+  @doc """
+    Return method id used in transaction
+  """
+  def method_id(%__MODULE__{
+        created_contract_address_hash: nil,
+        input: %{bytes: <<method_id::binary-size(4), _::binary>>}
+      }),
+      do: "0x" <> Base.encode16(method_id, case: :lower)
+
+  def method_id(_transaction), do: "0x"
 end

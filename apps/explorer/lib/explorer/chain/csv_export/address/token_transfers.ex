@@ -132,7 +132,7 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
         |> handle_token_transfer_paging_options(paging_options)
         |> preload(^DenormalizationHelper.extend_transaction_preload([:transaction]))
         |> preload(:token)
-        |> Repo.all()
+        |> Repo.replica().all()
     end
   end
 

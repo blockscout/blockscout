@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.Token do
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Token
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Token.MetadataRetriever
   alias Indexer.{BufferedTask, Tracer}
 
@@ -72,6 +73,15 @@ defmodule Indexer.Fetcher.Token do
       |> (&if(&1 == %{}, do: &1, else: Map.put(&1, :cataloged, true))).()
 
     {:ok, _} = Token.update(token, token_params)
+
+    if Map.get(token_params, :cataloged) do
+      data_for_multichain = MultichainSearch.prepare_token_metadata_for_queue(token, token_params)
+
+      %{}
+      |> Map.put(token.contract_address_hash.bytes, data_for_multichain)
+      |> MultichainSearch.send_token_info_to_queue(:metadata)
+    end
+
     :ok
   end
 

@@ -1,15 +1,20 @@
 defmodule BlockScoutWeb.API.RPC.ContractView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.AddressView
   alias BlockScoutWeb.API.RPC.RPCView
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
-  alias Explorer.Chain.{Address, SmartContract}
+
+  alias Explorer.Chain.{
+    Address,
+    InternalTransaction,
+    SmartContract,
+    Transaction
+  }
 
   defguardp is_empty_string(input) when input == "" or input == nil
 
   def render("getcontractcreation.json", %{addresses: addresses}) do
-    contracts = addresses |> Enum.map(&address_to_response/1) |> Enum.reject(&is_nil/1)
+    contracts = addresses |> Enum.map(&prepare_contract_creation_info/1) |> Enum.reject(&is_nil/1)
 
     RPCView.render("show.json", data: contracts)
   end
@@ -238,15 +243,45 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     end
   end
 
-  defp address_to_response(address) do
-    creator_hash = AddressView.from_address_hash(address)
-    creation_transaction = creator_hash && AddressView.transaction_hash(address)
+  @spec prepare_contract_creation_info(Address.t()) :: %{binary() => binary()} | nil
+  defp prepare_contract_creation_info(%Address{
+         contract_creation_internal_transaction:
+           %InternalTransaction{
+             transaction: %Transaction{} = transaction
+           } = internal_transaction
+       }) do
+    %{
+      "contractAddress" => to_string(internal_transaction.created_contract_address_hash),
+      "contractFactory" => to_string(internal_transaction.from_address_hash),
+      "creationBytecode" => to_string(internal_transaction.init)
+    }
+    |> with_creation_transaction_info(transaction)
+  end
 
-    creation_transaction &&
-      %{
-        "contractAddress" => to_string(address.hash),
-        "contractCreator" => to_string(creator_hash),
-        "txHash" => to_string(creation_transaction)
-      }
+  defp prepare_contract_creation_info(%Address{
+         contract_creation_transaction: %Transaction{} = transaction
+       }) do
+    %{
+      "contractAddress" => to_string(transaction.created_contract_address_hash),
+      "contractFactory" => "",
+      "creationBytecode" => to_string(transaction.input)
+    }
+    |> with_creation_transaction_info(transaction)
+  end
+
+  defp prepare_contract_creation_info(_), do: nil
+
+  @spec with_creation_transaction_info(%{binary() => binary()}, Transaction.t()) ::
+          %{binary() => binary()}
+  defp with_creation_transaction_info(info, transaction) do
+    unix_timestamp = DateTime.to_unix(transaction.block_timestamp, :second)
+
+    %{
+      "contractCreator" => to_string(transaction.from_address_hash),
+      "txHash" => to_string(transaction.hash),
+      "blockNumber" => to_string(transaction.block_number),
+      "timestamp" => to_string(unix_timestamp)
+    }
+    |> Map.merge(info)
   end
 end

@@ -156,8 +156,6 @@ defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
         "status" => batch_status(batch),
         "timestamp" => batch.timestamp,
         "transactions_count" => batch.l2_transactions_count,
-        # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
-        "transaction_count" => batch.l2_transactions_count,
         "sequence_transaction_hash" => sequence_transaction_hash,
         "verify_transaction_hash" => verify_transaction_hash
       }

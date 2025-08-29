@@ -24,7 +24,7 @@ defmodule Explorer.Chain do
       where: 3
     ]
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
+  import EthereumJSONRPC, only: [fetch_block_internal_transactions: 2]
 
   require Logger
 
@@ -787,30 +787,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec token_contract_address_from_token_name(String.t()) :: {:ok, Hash.Address.t()} | {:error, :not_found}
-  def token_contract_address_from_token_name(name) when is_binary(name) do
-    query =
-      from(token in Token,
-        where: ilike(token.symbol, ^name),
-        or_where: ilike(token.name, ^name),
-        select: token.contract_address_hash
-      )
-
-    query
-    |> Repo.all()
-    |> case do
-      [] ->
-        {:error, :not_found}
-
-      hashes ->
-        if Enum.count(hashes) == 1 do
-          {:ok, List.first(hashes)}
-        else
-          {:error, :not_found}
-        end
-    end
-  end
-
   @doc """
   Converts `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
 
@@ -1158,21 +1134,12 @@ defmodule Explorer.Chain do
         assets_to_import = %{
           addresses: imported[:addresses] || [],
           blocks: imported[:blocks] || [],
-          transactions: imported[:transactions] || []
+          transactions: imported[:transactions] || [],
+          address_current_token_balances: imported[:address_current_token_balances] || []
         }
 
-        if assets_to_import == %{
-             addresses: [],
-             blocks: [],
-             transactions: []
-           } do
-          result
-        else
-          # todo: consider robust async way of importing
-          MultichainSearch.batch_import(assets_to_import)
-
-          result
-        end
+        MultichainSearch.send_data_to_queue(assets_to_import)
+        result
 
       other_result ->
         other_result
@@ -1555,50 +1522,6 @@ defmodule Explorer.Chain do
   def balance_in_fiat(%{token: %{fiat_value: fiat_value, decimals: decimals}} = token_balance) do
     tokens = CurrencyHelper.divide_decimals(token_balance.value, decimals)
     Decimal.mult(tokens, fiat_value)
-  end
-
-  @doc """
-  Returns a stream of unfetched `t:Explorer.Chain.Address.CoinBalance.t/0`.
-
-  When there are addresses, the `reducer` is called for each `t:Explorer.Chain.Address.t/0` `hash` and all
-  `t:Explorer.Chain.Block.t/0` `block_number` that address is mentioned.
-
-  | Address Hash Schema                        | Address Hash Field              | Block Number Schema                | Block Number Field |
-  |--------------------------------------------|---------------------------------|------------------------------------|--------------------|
-  | `t:Explorer.Chain.Block.t/0`               | `miner_hash`                    | `t:Explorer.Chain.Block.t/0`       | `number`           |
-  | `t:Explorer.Chain.Transaction.t/0`         | `from_address_hash`             | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-  | `t:Explorer.Chain.Transaction.t/0`         | `to_address_hash`               | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-  | `t:Explorer.Chain.Log.t/0`                 | `address_hash`                  | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-  | `t:Explorer.Chain.InternalTransaction.t/0` | `created_contract_address_hash` | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-  | `t:Explorer.Chain.InternalTransaction.t/0` | `from_address_hash`             | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-  | `t:Explorer.Chain.InternalTransaction.t/0` | `to_address_hash`               | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
-
-  Pending `t:Explorer.Chain.Transaction.t/0` `from_address_hash` and `to_address_hash` aren't returned because they
-  don't have an associated block number.
-
-  When there are no addresses, the `reducer` is never called and the `initial` is returned in an `:ok` tuple.
-
-  When an `t:Explorer.Chain.Address.t/0` `hash` is used multiple times, all unique `t:Explorer.Chain.Block.t/0` `number`
-  will be returned.
-  """
-  @spec stream_unfetched_balances(
-          initial :: accumulator,
-          reducer ::
-            (entry :: %{address_hash: Hash.Address.t(), block_number: Block.block_number()}, accumulator -> accumulator),
-          limited? :: boolean()
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_unfetched_balances(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
-    query =
-      from(
-        balance in CoinBalance,
-        where: is_nil(balance.value_fetched_at),
-        select: %{address_hash: balance.address_hash, block_number: balance.block_number}
-      )
-
-    query
-    |> add_coin_balances_fetcher_limit(limited?)
-    |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
@@ -2245,6 +2168,7 @@ defmodule Explorer.Chain do
   def pending_transactions_list do
     Transaction
     |> pending_transactions_query()
+    |> where([t], t.inserted_at < ago(1, "day"))
     |> Repo.all(timeout: :infinity)
   end
 
@@ -2660,42 +2584,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks if an address is a contract
-  """
-  @spec contract_address?(String.t(), non_neg_integer(), Keyword.t()) :: boolean() | :json_rpc_error
-  def contract_address?(address_hash, block_number, json_rpc_named_arguments \\ []) do
-    {:ok, binary_hash} = Explorer.Chain.Hash.Address.cast(address_hash)
-
-    query = Address.address_query(binary_hash)
-
-    address = Repo.one(query)
-
-    cond do
-      is_nil(address) ->
-        block_quantity = integer_to_quantity(block_number)
-
-        case EthereumJSONRPC.fetch_codes(
-               [%{block_quantity: block_quantity, address: address_hash}],
-               json_rpc_named_arguments
-             ) do
-          {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
-            result = List.first(fetched_codes)
-
-            result && !(is_nil(result[:code]) || result[:code] == "" || result[:code] == "0x")
-
-          _ ->
-            :json_rpc_error
-        end
-
-      is_nil(address.contract_code) ->
-        false
-
-      true ->
-        true
-    end
-  end
-
-  @doc """
   Fetches contract creation input data from the transaction (not internal transaction).
   """
   @spec contract_creation_input_data_from_transaction(String.t()) :: nil | binary()
@@ -2864,12 +2752,6 @@ defmodule Explorer.Chain do
 
   defp page_blocks(query, %PagingOptions{key: {block_number}}) do
     where(query, [block], block.number < ^block_number)
-  end
-
-  defp page_coin_balances(query, %PagingOptions{key: nil}), do: query
-
-  defp page_coin_balances(query, %PagingOptions{key: {block_number}}) do
-    where(query, [coin_balance], coin_balance.block_number < ^block_number)
   end
 
   defp page_logs(query, %PagingOptions{key: nil}), do: query
@@ -3083,13 +2965,6 @@ defmodule Explorer.Chain do
     Repo.exists?(query)
   end
 
-  @spec address_tokens_with_balance(Hash.Address.t(), [any()]) :: []
-  def address_tokens_with_balance(address_hash, paging_options \\ []) do
-    address_hash
-    |> Address.Token.list_address_tokens_with_balance(paging_options)
-    |> Repo.all()
-  end
-
   @spec find_and_update_replaced_transactions([
           %{
             required(:nonce) => non_neg_integer,
@@ -3205,11 +3080,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp fetch_coin_balances(address, paging_options) do
-    address.hash
-    |> CoinBalance.fetch_coin_balances(paging_options)
-  end
-
   @spec fetch_last_token_balance(Hash.Address.t(), Hash.Address.t()) :: Decimal.t()
   def fetch_last_token_balance(address_hash, token_contract_address_hash) do
     if address_hash !== %{} do
@@ -3230,157 +3100,8 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec address_to_coin_balances(Address.t(), [paging_options | api?]) :: []
-  def address_to_coin_balances(address, options) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    case paging_options do
-      %PagingOptions{key: {0}} ->
-        []
-
-      _ ->
-        address_to_coin_balances_internal(address, options, paging_options)
-    end
-  end
-
-  defp address_to_coin_balances_internal(address, options, paging_options) do
-    balances_raw =
-      address
-      |> fetch_coin_balances(paging_options)
-      |> page_coin_balances(paging_options)
-      |> select_repo(options).all()
-      |> preload_transactions(options)
-
-    if Enum.empty?(balances_raw) do
-      balances_raw
-    else
-      balances_raw_filtered =
-        balances_raw
-        |> Enum.filter(fn balance -> balance.value end)
-
-      min_block_number =
-        balances_raw_filtered
-        |> Enum.min_by(fn balance -> balance.block_number end, fn -> %{} end)
-        |> Map.get(:block_number)
-
-      max_block_number =
-        balances_raw_filtered
-        |> Enum.max_by(fn balance -> balance.block_number end, fn -> %{} end)
-        |> Map.get(:block_number)
-
-      min_block_timestamp = find_block_timestamp(min_block_number, options)
-      max_block_timestamp = find_block_timestamp(max_block_number, options)
-
-      min_block_unix_timestamp =
-        min_block_timestamp
-        |> Timex.to_unix()
-
-      max_block_unix_timestamp =
-        max_block_timestamp
-        |> Timex.to_unix()
-
-      blocks_delta = max_block_number - min_block_number
-
-      balances_with_dates =
-        if blocks_delta > 0 do
-          add_block_timestamp_to_balances(
-            balances_raw_filtered,
-            min_block_number,
-            min_block_unix_timestamp,
-            max_block_unix_timestamp,
-            blocks_delta
-          )
-        else
-          add_min_block_timestamp_to_balances(balances_raw_filtered, min_block_unix_timestamp)
-        end
-
-      balances_with_dates
-      |> Enum.sort(fn balance1, balance2 -> balance1.block_number >= balance2.block_number end)
-    end
-  end
-
-  # Here we fetch from DB one transaction per one coin balance. It's much more faster than LEFT OUTER JOIN which was before.
-  defp preload_transactions(balances, options) do
-    tasks =
-      Enum.map(balances, fn balance ->
-        Task.async(fn ->
-          Transaction
-          |> where(
-            [transaction],
-            transaction.block_number == ^balance.block_number and
-              (transaction.value > ^0 or (transaction.gas_price > ^0 and transaction.gas_used > ^0)) and
-              (transaction.to_address_hash == ^balance.address_hash or
-                 transaction.from_address_hash == ^balance.address_hash)
-          )
-          |> select([transaction], transaction.hash)
-          |> limit(1)
-          |> select_repo(options).one()
-        end)
-      end)
-
-    tasks
-    |> Task.yield_many(120_000)
-    |> Enum.zip(balances)
-    |> Enum.map(fn {{task, res}, balance} ->
-      case res do
-        {:ok, hash} ->
-          put_transaction_hash(hash, balance)
-
-        {:exit, _reason} ->
-          balance
-
-        nil ->
-          Task.shutdown(task, :brutal_kill)
-          balance
-      end
-    end)
-  end
-
-  defp put_transaction_hash(hash, coin_balance),
-    do: if(hash, do: %CoinBalance{coin_balance | transaction_hash: hash}, else: coin_balance)
-
-  defp add_block_timestamp_to_balances(
-         balances_raw_filtered,
-         min_block_number,
-         min_block_unix_timestamp,
-         max_block_unix_timestamp,
-         blocks_delta
-       ) do
-    balances_raw_filtered
-    |> Enum.map(fn balance ->
-      date =
-        trunc(
-          min_block_unix_timestamp +
-            (balance.block_number - min_block_number) * (max_block_unix_timestamp - min_block_unix_timestamp) /
-              blocks_delta
-        )
-
-      add_date_to_balance(balance, date)
-    end)
-  end
-
-  defp add_min_block_timestamp_to_balances(balances_raw_filtered, min_block_unix_timestamp) do
-    balances_raw_filtered
-    |> Enum.map(fn balance ->
-      date = min_block_unix_timestamp
-
-      add_date_to_balance(balance, date)
-    end)
-  end
-
-  defp add_date_to_balance(balance, date) do
-    formatted_date = Timex.from_unix(date)
-    %{balance | block_timestamp: formatted_date}
-  end
-
   def get_token_balance(address_hash, token_contract_address_hash, block_number, token_id \\ nil, options \\ []) do
     query = TokenBalance.fetch_token_balance(address_hash, token_contract_address_hash, block_number, token_id)
-
-    select_repo(options).one(query)
-  end
-
-  def get_coin_balance(address_hash, block_number, options \\ []) do
-    query = CoinBalance.fetch_coin_balance(address_hash, block_number)
 
     select_repo(options).one(query)
   end
@@ -3462,12 +3183,6 @@ defmodule Explorer.Chain do
     else
       false
     end
-  end
-
-  def get_token_ids_1155(contract_address_hash) do
-    contract_address_hash
-    |> CurrentTokenBalance.token_ids_query()
-    |> Repo.all()
   end
 
   @spec data() :: Dataloader.Ecto.t()
@@ -3914,14 +3629,6 @@ defmodule Explorer.Chain do
 
       block_index
     end
-  end
-
-  defp find_block_timestamp(number, options) do
-    Block
-    |> where([block], block.number == ^number)
-    |> select([block], block.timestamp)
-    |> limit(1)
-    |> select_repo(options).one()
   end
 
   @spec get_token_transfer_type(TokenTransfer.t()) ::
@@ -4402,14 +4109,6 @@ defmodule Explorer.Chain do
     token_balances_fetcher_limit = Application.get_env(:indexer, :token_balances_fetcher_init_limit)
 
     limit(query, ^token_balances_fetcher_limit)
-  end
-
-  defp add_coin_balances_fetcher_limit(query, false), do: query
-
-  defp add_coin_balances_fetcher_limit(query, true) do
-    coin_balances_fetcher_limit = Application.get_env(:indexer, :coin_balances_fetcher_init_limit)
-
-    limit(query, ^coin_balances_fetcher_limit)
   end
 
   @spec default_paging_options() :: map()

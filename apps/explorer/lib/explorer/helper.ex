@@ -5,9 +5,9 @@ defmodule Explorer.Helper do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain
-  alias Explorer.Chain.{Data, Hash}
+  alias Explorer.Chain.{Address.ScamBadgeToAddress, Data, Hash, Wei}
 
-  import Ecto.Query, only: [where: 3]
+  import Ecto.Query
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   @max_safe_integer round(:math.pow(2, 63)) - 1
@@ -133,11 +133,13 @@ defmodule Explorer.Helper do
         iex> safe_parse_non_negative_integer("27606393966689717254124294199939478533331961967491413693980084341759630764504")
         {:error, :too_big_integer}
   """
-  def safe_parse_non_negative_integer(string) do
+  @spec safe_parse_non_negative_integer(String.t(), integer()) ::
+          {:ok, integer()} | {:error, :negative_integer | :too_big_integer | :invalid_integer}
+  def safe_parse_non_negative_integer(string, max_safe_integer \\ @max_safe_integer) do
     case Integer.parse(string) do
       {num, ""} ->
         case num do
-          _ when num > @max_safe_integer -> {:error, :too_big_integer}
+          _ when num > max_safe_integer -> {:error, :too_big_integer}
           _ when num < 0 -> {:error, :negative_integer}
           _ -> {:ok, num}
         end
@@ -251,13 +253,8 @@ defmodule Explorer.Helper do
   def maybe_hide_scam_addresses(query, address_hash_key, options) do
     if Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] do
       query
-      |> where(
-        [q],
-        fragment(
-          "NOT EXISTS (SELECT 1 FROM scam_address_badge_mappings sabm WHERE sabm.address_hash=?)",
-          field(q, ^address_hash_key)
-        )
-      )
+      |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+      |> where([sabm: sabm], is_nil(sabm.address_hash))
     else
       query
     end
@@ -532,4 +529,28 @@ defmodule Explorer.Helper do
 
     Enum.map(params, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
   end
+
+  @doc """
+  Converts various value types to a Decimal type.
+
+  This function handles multiple input types and ensures they are properly
+  converted to a Decimal representation.
+
+  ## Parameters
+  - `value`: The value to convert, which can be:
+    - `nil`: Converted to Decimal 0
+    - `%Wei{}`: The Decimal value is extracted from the struct
+    - `float`: Converted using Decimal.from_float/1
+    - `String.t()` or `integer()`: Converted using Decimal.new/1
+    - `Decimal.t()`: Returned unchanged
+
+  ## Returns
+  - A Decimal representation of the input value
+  """
+  @spec number_to_decimal(nil | Wei.t() | integer() | float() | String.t() | Decimal.t()) :: Decimal.t()
+  def number_to_decimal(nil), do: Decimal.new(0)
+  def number_to_decimal(%Wei{value: value}), do: value
+  def number_to_decimal(value) when is_float(value), do: Decimal.from_float(value)
+  def number_to_decimal(value) when is_binary(value) or is_integer(value), do: Decimal.new(value)
+  def number_to_decimal(%Decimal{} = value), do: value
 end

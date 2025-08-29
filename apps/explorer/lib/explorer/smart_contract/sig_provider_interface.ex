@@ -3,8 +3,8 @@ defmodule Explorer.SmartContract.SigProviderInterface do
     Adapter for decoding events and function calls with https://github.com/blockscout/blockscout-rs/tree/main/sig-provider
   """
 
+  alias Explorer.HttpClient
   alias Explorer.Utility.Microservice
-  alias HTTPoison.Response
   require Logger
 
   @request_error_msg "Error while sending request to sig-provider"
@@ -78,11 +78,11 @@ defmodule Explorer.SmartContract.SigProviderInterface do
   end
 
   defp http_get_request(url) do
-    case HTTPoison.get(url) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.get(url) do
+      {:ok, %{body: body, status_code: 200}} ->
         process_sig_provider_response(body)
 
-      {:ok, %Response{body: body, status_code: _}} ->
+      {:ok, %{body: body, status_code: _}} ->
         {:error, body}
 
       {:error, error} ->
@@ -104,8 +104,8 @@ defmodule Explorer.SmartContract.SigProviderInterface do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+      {:ok, %{body: body, status_code: 200}} ->
         body |> Jason.decode()
 
       error ->
@@ -142,7 +142,9 @@ defmodule Explorer.SmartContract.SigProviderInterface do
 
   defp decode_event_url, do: "#{base_api_url()}" <> "/event"
 
-  defp decode_events_batch_url, do: "#{base_api_url()}" <> "/events:batch-get"
+  # cspell:disable
+  defp decode_events_batch_url, do: "#{base_api_url()}" <> "/events%3Abatch-get"
+  # cspell:enable
 
   def base_api_url, do: "#{base_url()}" <> "/api/v1/abi"
 

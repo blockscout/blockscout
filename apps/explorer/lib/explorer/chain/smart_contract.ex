@@ -189,23 +189,30 @@ defmodule Explorer.Chain.SmartContract do
     }
   ]
 
-  @default_languages ~w(solidity vyper yul)a
+  @default_languages [
+    solidity: 1,
+    vyper: 2,
+    yul: 3,
+    geas: 5
+  ]
+
   @chain_type_languages (case @chain_type do
                            :arbitrum ->
-                             ~w(stylus_rust)a
+                             [stylus_rust: 4]
 
                            :zilliqa ->
-                             ~w(scilla)a
+                             [scilla: 4]
 
                            _ ->
-                             ~w()a
+                             []
                          end)
 
-  @languages @default_languages ++ @chain_type_languages
-  @languages_enum @languages |> Enum.with_index(1)
-  @language_string_to_atom @languages |> Map.new(&{to_string(&1), &1})
+  @languages_enum @default_languages ++ @chain_type_languages
+  @language_string_to_atom @languages_enum
+                           |> Enum.map(&elem(&1, 0))
+                           |> Map.new(&{to_string(&1), &1})
 
-  @type base_language :: :solidity | :vyper | :yul
+  @type base_language :: :solidity | :vyper | :yul | :geas
 
   case @chain_type do
     :arbitrum ->
@@ -241,8 +248,6 @@ defmodule Explorer.Chain.SmartContract do
   def dead_address_hash_string do
     @dead_address_hash_string
   end
-
-  @default_sorting [asc: :hash]
 
   @typedoc """
   The name of a parameter to a function or event.
@@ -1119,7 +1124,8 @@ defmodule Explorer.Chain.SmartContract do
   @doc """
   Converts address hash to smart-contract object with metadata_from_verified_bytecode_twin=true
   """
-  @spec address_hash_to_smart_contract_with_bytecode_twin(Hash.Address.t(), [api?]) :: {__MODULE__.t() | nil, boolean()}
+  @spec address_hash_to_smart_contract_with_bytecode_twin(Hash.Address.t(), [api?], boolean()) ::
+          {__MODULE__.t() | nil, boolean()}
   def address_hash_to_smart_contract_with_bytecode_twin(address_hash, options \\ [], fetch_implementation? \\ true) do
     current_smart_contract = address_hash_to_smart_contract(address_hash, options)
 
@@ -1436,7 +1442,20 @@ defmodule Explorer.Chain.SmartContract do
   def verified_contract_addresses(options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
-    sorting_options = Keyword.get(options, :sorting, [])
+
+    # If no sorting options are provided, we sort by `:id` descending only. If
+    # there are some sorting options supplied, we sort by `:hash` ascending as a
+    # secondary key.
+    {sorting_options, default_sorting_options} =
+      options
+      |> Keyword.get(:sorting)
+      |> case do
+        nil ->
+          {[], [{:desc, :id, :smart_contract}]}
+
+        options ->
+          {options, [asc: :hash]}
+      end
 
     addresses_query =
       if background_migrations_finished?() do
@@ -1448,8 +1467,8 @@ defmodule Explorer.Chain.SmartContract do
 
     addresses_query
     |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
-    |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
-    |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
+    |> SortingHelper.apply_sorting(sorting_options, default_sorting_options)
+    |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting_options)
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
   end
@@ -1493,6 +1512,7 @@ defmodule Explorer.Chain.SmartContract do
       as: :address,
       where: address.verified == true,
       inner_lateral_join: contract in ^smart_contracts_subquery,
+      as: :smart_contract,
       on: true,
       select: address,
       preload: [smart_contract: contract]

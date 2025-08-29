@@ -8,7 +8,7 @@ defmodule Explorer.Chain.ContractMethod do
   import Ecto.Query, only: [from: 2]
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, MethodIdentifier, SmartContract}
+  alias Explorer.Chain.{Data, Hash, MethodIdentifier, SmartContract}
   alias Explorer.{Chain, Repo}
 
   typed_schema "contract_methods" do
@@ -67,7 +67,7 @@ defmodule Explorer.Chain.ContractMethod do
   @doc """
   Query that finds limited number of contract methods by selector id
   """
-  @spec find_contract_method_query(binary(), integer()) :: Ecto.Query.t()
+  @spec find_contract_method_query(binary() | Data.t(), integer()) :: Ecto.Query.t()
   def find_contract_method_query(method_id, limit) do
     from(
       contract_method in __MODULE__,
@@ -137,8 +137,10 @@ defmodule Explorer.Chain.ContractMethod do
         # we always take only the first 4 bytes of the hash.
         <<first_four_bytes::binary-size(4), _::binary>> = selector.method_id
 
+        {:ok, method_id} = MethodIdentifier.cast(first_four_bytes)
+
         %{
-          identifier: first_four_bytes,
+          identifier: method_id,
           abi: element,
           type: Atom.to_string(selector.type),
           inserted_at: now,

@@ -18,8 +18,5 @@
     <li class="nav-item account">
       <a class="custom-abi-button <%= nav_class(@active_item, :custom_abis) %>" href="<%= custom_abi_path(@conn, :index) %>"><%= gettext "Custom ABI" %></a>
     </li>
-    <li class="nav-item account">
-      <a class="public-tags-button <%= nav_class(@active_item, :public_tags) %>" href="<%= public_tags_request_path(@conn, :index) %>"><%= gettext "Public tags" %></a>
-    </li>
   </ul>
 </div>

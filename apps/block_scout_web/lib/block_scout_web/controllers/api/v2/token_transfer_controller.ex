@@ -13,7 +13,6 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
 
   import BlockScoutWeb.PagingHelper,
     only: [
-      delete_parameters_from_next_page_params: 1,
       token_transfers_types_options: 1
     ]
 
@@ -58,10 +57,6 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
     transactions =
       token_transfers
       |> Enum.map(& &1.transaction)
-      # Celo's Epoch logs does not have an associated transaction and linked to
-      # the block instead, so we discard these token transfers for transaction
-      # decoding
-      |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
 
     decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
@@ -72,7 +67,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
       |> Enum.into(%{}, fn {%{hash: hash}, decoded_input} -> {hash, decoded_input} end)
 
     next_page_params =
-      next_page |> token_transfers_next_page_params(token_transfers, delete_parameters_from_next_page_params(params))
+      next_page |> token_transfers_next_page_params(token_transfers, params)
 
     conn
     |> put_status(200)

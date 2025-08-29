@@ -62,7 +62,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   use Utils.CompileTimeEnvHelper, future_check_interval: [:indexer, [__MODULE__, :future_check_interval]]
 
   alias EthereumJSONRPC.Utility.RangesHelper
-  alias Explorer.{Chain, Helper, Repo}
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Utility.{MissingBlockRange, MissingRangesManipulator}
 
@@ -480,22 +480,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   @spec parse_block_ranges(binary()) ::
           {:finite_ranges, [Range.t()]} | {:infinite_ranges, [Range.t()], non_neg_integer()} | :no_ranges
   def parse_block_ranges(block_ranges_string) do
-    ranges =
-      block_ranges_string
-      |> String.split(",")
-      |> Enum.map(fn string_range ->
-        case String.split(string_range, "..") do
-          [from_string, "latest"] ->
-            Helper.parse_integer(from_string)
-
-          [from_string, to_string] ->
-            get_from_to(from_string, to_string)
-
-          _ ->
-            nil
-        end
-      end)
-      |> RangesHelper.sanitize_ranges()
+    ranges = RangesHelper.parse_block_ranges(block_ranges_string)
 
     case List.last(ranges) do
       _from.._to//_ ->
@@ -506,17 +491,6 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
       num ->
         {:infinite_ranges, List.delete_at(ranges, -1), num - 1}
-    end
-  end
-
-  # Creates a range from string boundaries, returning nil if parsing fails or if from > to
-  @spec get_from_to(binary(), binary()) :: Range.t() | nil
-  defp get_from_to(from_string, to_string) do
-    with {from, ""} <- Integer.parse(from_string),
-         {to, ""} <- Integer.parse(to_string) do
-      if from <= to, do: from..to, else: nil
-    else
-      _ -> nil
     end
   end
 end

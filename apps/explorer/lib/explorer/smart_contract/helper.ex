@@ -93,6 +93,20 @@ defmodule Explorer.SmartContract.Helper do
     |> String.trim()
   end
 
+  @doc """
+  Escapes only <, > and & symbols
+  """
+  @spec escape_minimal(any()) :: any()
+  def escape_minimal(input) when is_binary(input) do
+    input
+    # should always be the first to replace
+    |> String.replace("&", "&amp;")
+    |> String.replace("<", "&lt;")
+    |> String.replace(">", "&gt;")
+  end
+
+  def escape_minimal(other), do: other
+
   def sol_file?(filename) do
     case List.last(String.split(String.downcase(filename), ".")) do
       "sol" ->
@@ -309,6 +323,7 @@ defmodule Explorer.SmartContract.Helper do
           nil
       end
 
+    # todo: Dangerous, fix with https://github.com/blockscout/blockscout/issues/12544
     ExplorerHelper.add_0x_prefix(binary_hash)
   end
 end

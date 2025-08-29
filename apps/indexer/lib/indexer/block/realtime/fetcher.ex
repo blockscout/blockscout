@@ -22,6 +22,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_polygon_zkevm_bridge_l1_tokens: 1,
       async_import_realtime_coin_balances: 1,
       async_import_replaced_transactions: 2,
+      async_import_signed_authorizations_statuses: 2,
       async_import_token_balances: 2,
       async_import_token_instances: 1,
       async_import_tokens: 2,
@@ -397,14 +398,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block_number)
   end
 
-  # Removes all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables
-  # previously written starting from the reorg block number
-  defp do_remove_assets_by_number(:polygon_edge, reorg_block) do
-    # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
-    Indexer.Fetcher.PolygonEdge.Withdrawal.remove(reorg_block)
-    Indexer.Fetcher.PolygonEdge.DepositExecute.remove(reorg_block)
-  end
-
   # Removes all rows from `polygon_zkevm_bridge` table
   # previously written starting from the reorg block number
   defp do_remove_assets_by_number(:polygon_zkevm, reorg_block) do
@@ -559,5 +552,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_polygon_zkevm_bridge_l1_tokens(imported)
     async_import_celo_epoch_block_operations(imported, realtime?)
     async_import_filecoin_addresses_info(imported, realtime?)
+    async_import_signed_authorizations_statuses(imported, realtime?)
   end
 end

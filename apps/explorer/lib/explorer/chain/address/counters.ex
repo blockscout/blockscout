@@ -2,12 +2,12 @@ defmodule Explorer.Chain.Address.Counters do
   @moduledoc """
     Functions related to Explorer.Chain.Address counters
   """
-  import Ecto.Query, only: [from: 2, limit: 2, select: 3, union: 2, where: 3]
+  import Ecto.Query, only: [from: 2, limit: 2, select: 3, union_all: 2, where: 3]
 
   import Explorer.Chain,
     only: [select_repo: 1, wrapped_union_subquery: 1]
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, PagingOptions, Repo}
 
   alias Explorer.Chain.Cache.Counters.{
     AddressTabsElementsCount,
@@ -237,11 +237,9 @@ defmodule Explorer.Chain.Address.Counters do
       |> wrapped_union_subquery()
 
     query_to_address_hash_wrapped
-    |> union(^query_from_address_hash_wrapped)
-    |> union(^query_created_contract_address_hash_wrapped)
+    |> union_all(^query_from_address_hash_wrapped)
+    |> union_all(^query_created_contract_address_hash_wrapped)
     |> wrapped_union_subquery()
-    |> InternalTransaction.where_is_different_from_parent_transaction()
-    |> limit(@counters_limit)
   end
 
   def address_counters(address, options \\ []) do
@@ -251,7 +249,7 @@ defmodule Explorer.Chain.Address.Counters do
       end)
 
     Task.start_link(fn ->
-      transaction_count(address)
+      transactions_count(address)
     end)
 
     Task.start_link(fn ->
@@ -281,7 +279,7 @@ defmodule Explorer.Chain.Address.Counters do
     |> List.to_tuple()
   end
 
-  def transaction_count(address) do
+  def transactions_count(address) do
     AddressTransactionsCount.fetch(address)
   end
 
@@ -521,8 +519,7 @@ defmodule Explorer.Chain.Address.Counters do
     run_or_ignore(cache[counter_type], counter_type, address_hash, fn ->
       result =
         query
-        |> limit(@counters_limit)
-        |> select_repo(options).aggregate(:count)
+        |> count(options, counter_type)
 
       stop = System.monotonic_time()
       diff = System.convert_time_unit(stop - start, :native, :millisecond)
@@ -534,6 +531,19 @@ defmodule Explorer.Chain.Address.Counters do
 
       {counter_type, result}
     end)
+  end
+
+  defp count(query, options, :internal_transactions) do
+    query
+    |> select_repo(options).all()
+    |> InternalTransaction.deduplicate_and_trim_internal_transactions(%PagingOptions{page_size: @counters_limit})
+    |> Enum.count()
+  end
+
+  defp count(query, options, _counter_type) do
+    query
+    |> limit(@counters_limit)
+    |> select_repo(options).aggregate(:count)
   end
 
   defp process_transactions_counter(
