@@ -29,7 +29,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
+          tags: ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}-private:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -46,7 +46,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-indexer
+          tags: ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}-private:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64

@@ -34,9 +34,9 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
-          tags: ghcr.io/blockscout/blockscout:master, ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout-private:master, ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -56,7 +56,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}-indexer
+          tags: ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -77,8 +77,8 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
-          tags: ghcr.io/blockscout/blockscout:frontend-main
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache
+          tags: ghcr.io/blockscout/blockscout-private:frontend-main
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64

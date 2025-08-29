@@ -1,9 +1,7 @@
-name: Release for Gnosis Chain
+name: Release for Arbitrum
 
 on:
   workflow_dispatch:
-  release:
-    types: [published]
 
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
@@ -26,13 +24,13 @@ jobs:
           docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
-      - name: Build and push Docker image for Gnosis chain (indexer + API)
+      - name: Build and push Docker image for Arbitrum (indexer + API)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-xdai-private:latest, ghcr.io/blockscout/blockscout-xdai-private:${{ env.RELEASE_VERSION }}
+          tags: ghcr.io/blockscout/blockscout-arbitrum:latest, ghcr.io/blockscout/blockscout-arbitrum:${{ env.RELEASE_VERSION }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -40,16 +38,15 @@ jobs:
           build-args: |
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            BRIDGED_TOKENS_ENABLED=true
-            CHAIN_TYPE=ethereum
+            CHAIN_TYPE=arbitrum
 
-      - name: Build and push Docker image for Gnosis chain (indexer)
+      - name: Build and push Docker image for Arbitrum (indexer)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-xdai-private:${{ env.RELEASE_VERSION }}-indexer
+          tags: ghcr.io/blockscout/blockscout-arbitrum:${{ env.RELEASE_VERSION }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -58,5 +55,4 @@ jobs:
             DISABLE_API=true
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            BRIDGED_TOKENS_ENABLED=true
-            CHAIN_TYPE=ethereum
+            CHAIN_TYPE=arbitrum

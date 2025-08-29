@@ -32,7 +32,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-zkevm:latest, ghcr.io/blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}
+          tags: ghcr.io/blockscout/blockscout-zkevm-private:latest, ghcr.io/blockscout/blockscout-zkevm-private:${{ env.RELEASE_VERSION }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -48,7 +48,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}-indexer
+          tags: ghcr.io/blockscout/blockscout-zkevm-private:${{ env.RELEASE_VERSION }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
