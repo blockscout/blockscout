@@ -1122,629 +1122,643 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert ens["ens_info"]["name"] == name
     end
 
-    test "finds a TAC operation", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
-
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
-
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
-
-      operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
-
-      tac_response = """
-      {
-      "items": [
-        {
-            "operation_id": "#{operation_id}",
-            "sender": null,
-            "timestamp": "2025-05-14T19:16:38.000Z",
-            "type": "TON_TAC_TON"
-        }
-      ],
-      "next_page_params": null
-      }
-      """
-
-      Bypass.expect_once(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          assert conn.params["q"] == operation_id
-          Plug.Conn.resp(conn, 200, tac_response)
-        end
-      )
-
-      request = get(conn, "/api/v2/search?q=#{operation_id}")
-
-      assert %{
-               "items" => [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => operation_id,
-                     "sender" => nil,
-                     "timestamp" => "2025-05-14T19:16:38.000Z",
-                     "type" => "TON_TAC_TON"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ],
-               "next_page_params" => nil
-             } == json_response(request, 200)
-    end
-
-    test "handles no results from TAC microservice", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
-
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
-
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
-
-      operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
-
-      tac_response = """
-      {
-        "items": [],
-        "next_page_params": null
-      }
-      """
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          assert conn.params["q"] == operation_id
-          Plug.Conn.resp(conn, 200, tac_response)
-        end
-      )
-
-      request = get(conn, "/api/v2/search?q=#{operation_id}")
-
-      assert %{
-               "items" => [],
-               "next_page_params" => nil
-             } == json_response(request, 200)
-    end
-
-    test "finds a TAC operation with transaction", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
-
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
-
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
-
-      transaction = insert(:transaction) |> with_block()
-
-      operation_id = "#{transaction.hash}"
-
-      tac_response = """
-      {
-      "items": [
-        {
-            "operation_id": "#{operation_id}",
-            "sender": null,
-            "timestamp": "2025-05-14T19:16:38.000Z",
-            "type": "TON_TAC_TON"
-        }
-      ],
-      "next_page_params": null
-      }
-      """
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          assert conn.params["q"] == operation_id
-          Plug.Conn.resp(conn, 200, tac_response)
-        end
-      )
-
-      request = get(conn, "/api/v2/search?q=#{operation_id}")
-      assert response = json_response(request, 200)
-
-      # tl to check order
-      assert %{
-               "priority" => 0,
-               "tac_operation" => %{
-                 "operation_id" => operation_id,
-                 "sender" => nil,
-                 "timestamp" => "2025-05-14T19:16:38.000Z",
-                 "type" => "TON_TAC_TON"
-               },
-               "type" => "tac_operation"
-             } in tl(response["items"])
-
-      assert %{
-               "priority" => 0,
-               "transaction_hash" => "#{transaction.hash}",
-               "type" => "transaction",
-               "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
-               "url" => "/tx/#{transaction.hash}"
-             } in response["items"]
-    end
-
-    test "finds a TAC operation with block", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
-
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
-
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
-
-      transaction = insert(:transaction) |> with_block()
-
-      operation_id = "#{transaction.block_hash}"
-
-      tac_response = """
-      {
-      "items": [
-        {
-            "operation_id": "#{operation_id}",
-            "sender": null,
-            "timestamp": "2025-05-14T19:16:38.000Z",
-            "type": "TON_TAC_TON"
-        }
-      ],
-      "next_page_params": null
-      }
-      """
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          assert conn.params["q"] == operation_id
-          Plug.Conn.resp(conn, 200, tac_response)
-        end
-      )
-
-      request = get(conn, "/api/v2/search?q=#{operation_id}")
-      assert response = json_response(request, 200)
-
-      # tl to check order
-      assert %{
-               "priority" => 0,
-               "tac_operation" => %{
-                 "operation_id" => operation_id,
-                 "sender" => nil,
-                 "timestamp" => "2025-05-14T19:16:38.000Z",
-                 "type" => "TON_TAC_TON"
-               },
-               "type" => "tac_operation"
-             } in tl(response["items"])
-
-      assert %{
-               "block_hash" => "#{transaction.block_hash}",
-               "block_number" => transaction.block_number,
-               "block_type" => "block",
-               "priority" => 3,
-               "type" => "block",
-               "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
-               "url" => "/block/#{transaction.block_hash}"
-             } in response["items"]
-    end
-
-    test "finds TAC operations by sender and paginates", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
-
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
-
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
-
-      address_hash = Address.checksum(insert(:address).hash)
-      operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
-
-      tac_first_response = """
-      {
-        "items": [
-        #{for i <- 10..59, do: """
-        {
-          "operation_id": "#{operation_id}",
-          "sender": "#{address_hash}",
-          "timestamp": "2025-05-14T19:16:#{i}.000Z",
-          "type": "TON_TAC_TON"
-        }#{if i == 59, do: "", else: ","}
-      """}
-        ],
-        "next_page_params": {
-          "page_token": 1747250219,
-          "page_size": 50
-        }
-      }
-      """
-
-      tac_second_response = """
-      {
-        "items": [
-        #{for i <- 10..59, do: """
-        {
-          "operation_id": "#{operation_id}",
-          "sender": "#{address_hash}",
-          "timestamp": "#{if i == 0, do: "2025-05-14T19:16:59.000Z", else: "2025-05-14T19:17:#{i}.000Z"}",
-          "type": "TON_TAC_TON"
-        }#{if i == 59, do: "", else: ","}
-      """}
-        ],
-        "next_page_params": {
-          "page_token": 1747250279,
-          "page_size": 50
-        }
-      }
-      """
-
-      tac_third_response = """
-      {
-        "items": [
-        {
-          "operation_id": "#{operation_id}",
-          "sender": "#{address_hash}",
-          "timestamp": "2025-05-14T19:18:01.000Z",
-          "type": "TON_TAC_TON"
-        }
-        ],
-        "next_page_params": null
-      }
-      """
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          case conn.params["page_token"] do
-            nil -> Plug.Conn.resp(conn, 200, tac_first_response)
-            "1747250218" -> Plug.Conn.resp(conn, 200, tac_second_response)
-            "1747250279" -> Plug.Conn.resp(conn, 200, tac_third_response)
-            _ -> raise "Unexpected page_token"
-          end
-        end
-      )
-
-      request = get(conn, "/api/v2/search?q=#{address_hash}")
-      assert response = json_response(request, 200)
-
-      second_page_request =
-        get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
-
-      second_page_response = json_response(second_page_request, 200)
-
-      third_page_request =
-        get(conn, "/api/v2/search", second_page_response["next_page_params"] |> Query.encode() |> Query.decode())
-
-      assert %{
-               "items" => [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => operation_id,
-                     "sender" => address_hash,
-                     "timestamp" => "2025-05-14T19:18:01.000Z",
-                     "type" => "TON_TAC_TON"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ],
-               "next_page_params" => nil
-             } == json_response(third_page_request, 200)
-    end
-
-    test "finds TAC operations by TON sender", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
-
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
-
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
-
-      tac_response = """
-      {
-      "items": [
-        {
-            "operation_id": "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-            "type": "ROLLBACK",
-            "timestamp": "2025-06-05T12:21:11.000Z",
-            "sender": {
-                "address": "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                "blockchain": "TON"
-            }
-        }
-      ],
-      "next_page_params": null
-      }
-      """
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          case conn.params["q"] do
-            expected_q
-            when expected_q in [
-                   "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                   "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt",
-                   "UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko",
-                   "kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n",
-                   "0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi",
-                   "0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d"
-                 ] ->
-              Plug.Conn.resp(conn, 200, tac_response)
-
-            q ->
-              raise "Unexpected 'q' parameter #{inspect(q)}"
-          end
-        end
-      )
-
-      request = get(conn, "/api/v2/search?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt")}")
-      assert response = json_response(request, 200)
-
-      assert [
-               %{
-                 "priority" => 0,
-                 "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
-                 },
-                 "type" => "tac_operation"
-               }
-             ] == response["items"]
-
-      request = get(conn, "/api/v2/search?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt")}")
-      assert response = json_response(request, 200)
-
-      assert [
-               %{
-                 "priority" => 0,
-                 "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
-                 },
-                 "type" => "tac_operation"
-               }
-             ] == response["items"]
-
-      request = get(conn, "/api/v2/search?q=#{URI.encode_www_form("UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko")}")
-      assert response = json_response(request, 200)
-
-      assert [
-               %{
-                 "priority" => 0,
-                 "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
-                 },
-                 "type" => "tac_operation"
-               }
-             ] == response["items"]
-
-      request = get(conn, "/api/v2/search?q=#{URI.encode_www_form("kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n")}")
-      assert response = json_response(request, 200)
-
-      assert [
-               %{
-                 "priority" => 0,
-                 "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
-                 },
-                 "type" => "tac_operation"
-               }
-             ] == response["items"]
-
-      request = get(conn, "/api/v2/search?q=#{URI.encode_www_form("0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi")}")
-      assert response = json_response(request, 200)
-
-      assert [
-               %{
-                 "priority" => 0,
-                 "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
-                 },
-                 "type" => "tac_operation"
-               }
-             ] == response["items"]
-
-      request =
-        get(
-          conn,
-          "/api/v2/search?q=#{URI.encode_www_form("0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d")}"
+    if Application.compile_env(:explorer, :chain_type) == :default do
+      test "finds a TAC operation", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
         )
 
-      assert response = json_response(request, 200)
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
-      assert [
-               %{
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:38.000Z",
+              "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect_once(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{operation_id}")
+
+        assert %{
+                 "items" => [
+                   %{
+                     "priority" => 0,
+                     "tac_operation" => %{
+                       "operation_id" => operation_id,
+                       "sender" => nil,
+                       "timestamp" => "2025-05-14T19:16:38.000Z",
+                       "type" => "TON_TAC_TON"
+                     },
+                     "type" => "tac_operation"
+                   }
+                 ],
+                 "next_page_params" => nil
+               } == json_response(request, 200)
+      end
+
+      test "handles no results from TAC microservice", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
+
+        tac_response = """
+        {
+          "items": [],
+          "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{operation_id}")
+
+        assert %{
+                 "items" => [],
+                 "next_page_params" => nil
+               } == json_response(request, 200)
+      end
+
+      test "finds a TAC operation with transaction", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        transaction = insert(:transaction) |> with_block()
+
+        operation_id = "#{transaction.hash}"
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:38.000Z",
+              "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{operation_id}")
+        assert response = json_response(request, 200)
+
+        # tl to check order
+        assert %{
                  "priority" => 0,
                  "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
+                   "operation_id" => operation_id,
+                   "sender" => nil,
+                   "timestamp" => "2025-05-14T19:16:38.000Z",
+                   "type" => "TON_TAC_TON"
                  },
                  "type" => "tac_operation"
-               }
-             ] == response["items"]
-    end
+               } in tl(response["items"])
 
-    test "finds TAC operations with transaction and paginates", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+        assert %{
+                 "priority" => 0,
+                 "transaction_hash" => "#{transaction.hash}",
+                 "type" => "transaction",
+                 "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+                 "url" => "/tx/#{transaction.hash}"
+               } in response["items"]
+      end
 
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
+      test "finds a TAC operation with block", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
 
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
 
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
-      operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
 
-      insert(:transaction, hash: operation_id)
+        transaction = insert(:transaction) |> with_block()
 
-      tac_first_response = """
-      {
+        operation_id = "#{transaction.block_hash}"
+
+        tac_response = """
+        {
         "items": [
-        #{for i <- 0..49, do: """
-        {
-          "operation_id": "#{operation_id}",
-          "sender": null,
-          "timestamp": "2025-05-14T19:16:#{i}.000Z",
-          "type": "TON_TAC_TON"
-        }#{if i == 49, do: "", else: ","}
-      """}
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:38.000Z",
+              "type": "TON_TAC_TON"
+          }
         ],
-        "next_page_params": {
-          "page_token": 1747250209,
-          "page_size": 50
+        "next_page_params": null
         }
-      }
-      """
+        """
 
-      tac_second_response = """
-      {
-      "items": [
-        {
-            "operation_id": "#{operation_id}",
-            "sender": null,
-            "timestamp": "2025-05-14T19:16:50.000Z",
-            "type": "TON_TAC_TON"
-        }
-      ],
-      "next_page_params": null
-      }
-      """
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          case conn.params["page_token"] do
-            nil -> Plug.Conn.resp(conn, 200, tac_first_response)
-            "1747250208" -> Plug.Conn.resp(conn, 200, tac_second_response)
-            _ -> raise "Unexpected page_token"
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
           end
-        end
-      )
+        )
 
-      request = get(conn, "/api/v2/search?q=#{operation_id}")
-      assert response = json_response(request, 200)
-      next_page_request = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+        request = get(conn, "/api/v2/search?q=#{operation_id}")
+        assert response = json_response(request, 200)
 
-      assert %{
-               "items" => [
+        # tl to check order
+        assert %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => operation_id,
+                   "sender" => nil,
+                   "timestamp" => "2025-05-14T19:16:38.000Z",
+                   "type" => "TON_TAC_TON"
+                 },
+                 "type" => "tac_operation"
+               } in tl(response["items"])
+
+        assert %{
+                 "block_hash" => "#{transaction.block_hash}",
+                 "block_number" => transaction.block_number,
+                 "block_type" => "block",
+                 "priority" => 3,
+                 "type" => "block",
+                 "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+                 "url" => "/block/#{transaction.block_hash}"
+               } in response["items"]
+      end
+
+      test "finds TAC operations by sender and paginates", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        address_hash = Address.checksum(insert(:address).hash)
+        operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
+
+        tac_first_response = """
+        {
+          "items": [
+          #{for i <- 10..59, do: """
+          {
+            "operation_id": "#{operation_id}",
+            "sender": "#{address_hash}",
+            "timestamp": "2025-05-14T19:16:#{i}.000Z",
+            "type": "TON_TAC_TON"
+          }#{if i == 59, do: "", else: ","}
+        """}
+          ],
+          "next_page_params": {
+            "page_token": 1747250219,
+            "page_size": 50
+          }
+        }
+        """
+
+        tac_second_response = """
+        {
+          "items": [
+          #{for i <- 10..59, do: """
+          {
+            "operation_id": "#{operation_id}",
+            "sender": "#{address_hash}",
+            "timestamp": "#{if i == 0, do: "2025-05-14T19:16:59.000Z", else: "2025-05-14T19:17:#{i}.000Z"}",
+            "type": "TON_TAC_TON"
+          }#{if i == 59, do: "", else: ","}
+        """}
+          ],
+          "next_page_params": {
+            "page_token": 1747250279,
+            "page_size": 50
+          }
+        }
+        """
+
+        tac_third_response = """
+        {
+          "items": [
+          {
+            "operation_id": "#{operation_id}",
+            "sender": "#{address_hash}",
+            "timestamp": "2025-05-14T19:18:01.000Z",
+            "type": "TON_TAC_TON"
+          }
+          ],
+          "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            case conn.params["page_token"] do
+              nil -> Plug.Conn.resp(conn, 200, tac_first_response)
+              "1747250218" -> Plug.Conn.resp(conn, 200, tac_second_response)
+              "1747250279" -> Plug.Conn.resp(conn, 200, tac_third_response)
+              _ -> raise "Unexpected page_token"
+            end
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{address_hash}")
+        assert response = json_response(request, 200)
+
+        second_page_request =
+          get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+
+        second_page_response = json_response(second_page_request, 200)
+
+        third_page_request =
+          get(conn, "/api/v2/search", second_page_response["next_page_params"] |> Query.encode() |> Query.decode())
+
+        assert %{
+                 "items" => [
+                   %{
+                     "priority" => 0,
+                     "tac_operation" => %{
+                       "operation_id" => operation_id,
+                       "sender" => address_hash,
+                       "timestamp" => "2025-05-14T19:18:01.000Z",
+                       "type" => "TON_TAC_TON"
+                     },
+                     "type" => "tac_operation"
+                   }
+                 ],
+                 "next_page_params" => nil
+               } == json_response(third_page_request, 200)
+      end
+
+      test "finds TAC operations by TON sender", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+              "type": "ROLLBACK",
+              "timestamp": "2025-06-05T12:21:11.000Z",
+              "sender": {
+                  "address": "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                  "blockchain": "TON"
+              }
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            case conn.params["q"] do
+              expected_q
+              when expected_q in [
+                     "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt",
+                     "UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko",
+                     "kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n",
+                     "0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi",
+                     "0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d"
+                   ] ->
+                Plug.Conn.resp(conn, 200, tac_response)
+
+              q ->
+                raise "Unexpected 'q' parameter #{inspect(q)}"
+            end
+          end
+        )
+
+        request =
+          get(conn, "/api/v2/search?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
                  %{
                    "priority" => 0,
                    "tac_operation" => %{
-                     "operation_id" => operation_id,
-                     "sender" => nil,
-                     "timestamp" => "2025-05-14T19:16:50.000Z",
-                     "type" => "TON_TAC_TON"
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
                    },
                    "type" => "tac_operation"
                  }
-               ],
-               "next_page_params" => nil
-             } == json_response(next_page_request, 200)
+               ] == response["items"]
+
+        request =
+          get(conn, "/api/v2/search?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response["items"]
+
+        request =
+          get(conn, "/api/v2/search?q=#{URI.encode_www_form("UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response["items"]
+
+        request =
+          get(conn, "/api/v2/search?q=#{URI.encode_www_form("kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response["items"]
+
+        request =
+          get(conn, "/api/v2/search?q=#{URI.encode_www_form("0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response["items"]
+
+        request =
+          get(
+            conn,
+            "/api/v2/search?q=#{URI.encode_www_form("0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d")}"
+          )
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response["items"]
+      end
+
+      test "finds TAC operations with transaction and paginates", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
+
+        insert(:transaction, hash: operation_id)
+
+        tac_first_response = """
+        {
+          "items": [
+          #{for i <- 0..49, do: """
+          {
+            "operation_id": "#{operation_id}",
+            "sender": null,
+            "timestamp": "2025-05-14T19:16:#{i}.000Z",
+            "type": "TON_TAC_TON"
+          }#{if i == 49, do: "", else: ","}
+        """}
+          ],
+          "next_page_params": {
+            "page_token": 1747250209,
+            "page_size": 50
+          }
+        }
+        """
+
+        tac_second_response = """
+        {
+        "items": [
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:50.000Z",
+              "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            case conn.params["page_token"] do
+              nil -> Plug.Conn.resp(conn, 200, tac_first_response)
+              "1747250208" -> Plug.Conn.resp(conn, 200, tac_second_response)
+              _ -> raise "Unexpected page_token"
+            end
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{operation_id}")
+        assert response = json_response(request, 200)
+
+        next_page_request =
+          get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+
+        assert %{
+                 "items" => [
+                   %{
+                     "priority" => 0,
+                     "tac_operation" => %{
+                       "operation_id" => operation_id,
+                       "sender" => nil,
+                       "timestamp" => "2025-05-14T19:16:50.000Z",
+                       "type" => "TON_TAC_TON"
+                     },
+                     "type" => "tac_operation"
+                   }
+                 ],
+                 "next_page_params" => nil
+               } == json_response(next_page_request, 200)
+      end
     end
   end
 
@@ -2042,53 +2056,116 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              end)
     end
 
-    test "finds a TAC operation", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+    if Application.compile_env(:explorer, :chain_type) == :default do
+      test "finds a TAC operation", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
 
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
 
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
 
-      operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
+        operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
 
-      tac_response = """
-      {
-      "items": [
+        tac_response = """
         {
-          "operation_id": "#{operation_id}",
-          "sender": null,
-          "timestamp": "2025-05-14T19:16:38.000Z",
-          "type": "TON_TAC_TON"
+        "items": [
+          {
+            "operation_id": "#{operation_id}",
+            "sender": null,
+            "timestamp": "2025-05-14T19:16:38.000Z",
+            "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
         }
-      ],
-      "next_page_params": null
-      }
-      """
+        """
 
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          assert conn.params["q"] == operation_id
-          Plug.Conn.resp(conn, 200, tac_response)
-        end
-      )
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
 
-      request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+        request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
 
-      assert [
-               %{
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => operation_id,
+                     "sender" => nil,
+                     "timestamp" => "2025-05-14T19:16:38.000Z",
+                     "type" => "TON_TAC_TON"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == json_response(request, 200)
+      end
+
+      test "finds a TAC operation with transaction", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        transaction = insert(:transaction) |> with_block()
+
+        operation_id = "#{transaction.hash}"
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:38.000Z",
+              "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+        assert response = json_response(request, 200)
+
+        # tl to check order
+        assert %{
                  "priority" => 0,
                  "tac_operation" => %{
                    "operation_id" => operation_id,
@@ -2097,178 +2174,388 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                    "type" => "TON_TAC_TON"
                  },
                  "type" => "tac_operation"
-               }
-             ] == json_response(request, 200)
-    end
+               } in tl(response)
 
-    test "finds a TAC operation with transaction", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+        assert %{
+                 "priority" => 0,
+                 "transaction_hash" => "#{transaction.hash}",
+                 "type" => "transaction",
+                 "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+                 "url" => "/tx/#{transaction.hash}"
+               } in response
+      end
 
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
+      test "finds a TAC operation with block", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
 
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
 
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
-      transaction = insert(:transaction) |> with_block()
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
 
-      operation_id = "#{transaction.hash}"
+        transaction = insert(:transaction) |> with_block()
 
-      tac_response = """
-      {
-      "items": [
+        operation_id = "#{transaction.block_hash}"
+
+        tac_response = """
         {
-            "operation_id": "#{operation_id}",
-            "sender": null,
-            "timestamp": "2025-05-14T19:16:38.000Z",
-            "type": "TON_TAC_TON"
+        "items": [
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:38.000Z",
+              "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
         }
-      ],
-      "next_page_params": null
-      }
-      """
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          assert conn.params["q"] == operation_id
-          Plug.Conn.resp(conn, 200, tac_response)
-        end
-      )
-
-      request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
-      assert response = json_response(request, 200)
-
-      # tl to check order
-      assert %{
-               "priority" => 0,
-               "tac_operation" => %{
-                 "operation_id" => operation_id,
-                 "sender" => nil,
-                 "timestamp" => "2025-05-14T19:16:38.000Z",
-                 "type" => "TON_TAC_TON"
-               },
-               "type" => "tac_operation"
-             } in tl(response)
-
-      assert %{
-               "priority" => 0,
-               "transaction_hash" => "#{transaction.hash}",
-               "type" => "transaction",
-               "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
-               "url" => "/tx/#{transaction.hash}"
-             } in response
-    end
-
-    test "finds a TAC operation with block", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
-
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
-
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
-
-      transaction = insert(:transaction) |> with_block()
-
-      operation_id = "#{transaction.block_hash}"
-
-      tac_response = """
-      {
-      "items": [
-        {
-            "operation_id": "#{operation_id}",
-            "sender": null,
-            "timestamp": "2025-05-14T19:16:38.000Z",
-            "type": "TON_TAC_TON"
-        }
-      ],
-      "next_page_params": null
-      }
-      """
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          assert conn.params["q"] == operation_id
-          Plug.Conn.resp(conn, 200, tac_response)
-        end
-      )
-
-      request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
-      assert response = json_response(request, 200)
-
-      # tl to check order
-      assert %{
-               "priority" => 0,
-               "tac_operation" => %{
-                 "operation_id" => operation_id,
-                 "sender" => nil,
-                 "timestamp" => "2025-05-14T19:16:38.000Z",
-                 "type" => "TON_TAC_TON"
-               },
-               "type" => "tac_operation"
-             } in tl(response)
-
-      assert %{
-               "block_hash" => "#{transaction.block_hash}",
-               "block_number" => transaction.block_number,
-               "block_type" => "block",
-               "priority" => 3,
-               "type" => "block",
-               "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
-               "url" => "/block/#{transaction.block_hash}"
-             } in response
-    end
-
-    test "finds a lot of TAC operations with address", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
-
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
-
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
-
-      address_hash = Address.checksum(insert(:address).hash)
-      operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
-
-      tac_response =
         """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+        assert response = json_response(request, 200)
+
+        # tl to check order
+        assert %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => operation_id,
+                   "sender" => nil,
+                   "timestamp" => "2025-05-14T19:16:38.000Z",
+                   "type" => "TON_TAC_TON"
+                 },
+                 "type" => "tac_operation"
+               } in tl(response)
+
+        assert %{
+                 "block_hash" => "#{transaction.block_hash}",
+                 "block_number" => transaction.block_number,
+                 "block_type" => "block",
+                 "priority" => 3,
+                 "type" => "block",
+                 "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+                 "url" => "/block/#{transaction.block_hash}"
+               } in response
+      end
+
+      test "finds a lot of TAC operations with address", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        address_hash = Address.checksum(insert(:address).hash)
+        operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
+
+        tac_response =
+          """
+          {
+            "items": [
+            #{for i <- 0..49, do: """
+            {
+              "operation_id": "#{operation_id}",
+              "sender": "#{address_hash}",
+              "timestamp": "2025-05-14T19:16:#{i}.000Z",
+              "type": "TON_TAC_TON"
+            }#{if i == 49, do: "", else: ","}
+          """}
+            ],
+            "next_page_params": {
+              "page_token": "2025-05-14T19:16:49.000Z",
+              "page_size": 50
+            }
+          }
+          """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == address_hash
+
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search/quick?q=#{address_hash}")
+        assert response = json_response(request, 200)
+
+        correct_response = [
+          %{
+            "address_hash" => address_hash,
+            "certified" => false,
+            "ens_info" => nil,
+            "is_smart_contract_verified" => false,
+            "name" => nil,
+            "priority" => 0,
+            "type" => "address",
+            "url" => "/address/#{address_hash}"
+          }
+          | for(
+              i <- 0..48,
+              do: %{
+                "priority" => 0,
+                "tac_operation" => %{
+                  "operation_id" => operation_id,
+                  "sender" => address_hash,
+                  "timestamp" => "2025-05-14T19:16:#{i}.000Z",
+                  "type" => "TON_TAC_TON"
+                },
+                "type" => "tac_operation"
+              }
+            )
+        ]
+
+        assert correct_response == response
+      end
+
+      test "finds a TAC operation with TON address", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+              "type": "ROLLBACK",
+              "timestamp": "2025-06-05T12:21:11.000Z",
+              "sender": {
+                  "address": "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                  "blockchain": "TON"
+              }
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            case conn.params["q"] do
+              expected_q
+              when expected_q in [
+                     "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt",
+                     "UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko",
+                     "kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n",
+                     "0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi",
+                     "0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d"
+                   ] ->
+                Plug.Conn.resp(conn, 200, tac_response)
+
+              q ->
+                raise "Unexpected 'q' parameter #{inspect(q)}"
+            end
+          end
+        )
+
+        request =
+          get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+
+        request =
+          get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+
+        request =
+          get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+
+        request =
+          get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+
+        request =
+          get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+
+        request =
+          get(
+            conn,
+            "/api/v2/search/quick?q=#{URI.encode_www_form("0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d")}"
+          )
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+      end
+
+      test "finds a lot if TAC operations with transaction", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        transaction =
+          insert(:transaction, hash: "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2")
+          |> with_block()
+
+        operation_id = "#{transaction.hash}"
+
+        tac_response = """
         {
           "items": [
           #{for i <- 0..49, do: """
           {
             "operation_id": "#{operation_id}",
-            "sender": "#{address_hash}",
+            "sender": null,
             "timestamp": "2025-05-14T19:16:#{i}.000Z",
             "type": "TON_TAC_TON"
           }#{if i == 49, do: "", else: ","}
@@ -2281,315 +2568,45 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         }
         """
 
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          assert conn.params["q"] == address_hash
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
 
-          Plug.Conn.resp(conn, 200, tac_response)
-        end
-      )
-
-      request = get(conn, "/api/v2/search/quick?q=#{address_hash}")
-      assert response = json_response(request, 200)
-
-      correct_response = [
-        %{
-          "address_hash" => address_hash,
-          "certified" => false,
-          "ens_info" => nil,
-          "is_smart_contract_verified" => false,
-          "name" => nil,
-          "priority" => 0,
-          "type" => "address",
-          "url" => "/address/#{address_hash}"
-        }
-        | for(
-            i <- 0..48,
-            do: %{
-              "priority" => 0,
-              "tac_operation" => %{
-                "operation_id" => operation_id,
-                "sender" => address_hash,
-                "timestamp" => "2025-05-14T19:16:#{i}.000Z",
-                "type" => "TON_TAC_TON"
-              },
-              "type" => "tac_operation"
-            }
-          )
-      ]
-
-      assert correct_response == response
-    end
-
-    test "finds a TAC operation with TON address", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
-
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
-
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
-
-      tac_response = """
-      {
-      "items": [
-        {
-            "operation_id": "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-            "type": "ROLLBACK",
-            "timestamp": "2025-06-05T12:21:11.000Z",
-            "sender": {
-                "address": "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                "blockchain": "TON"
-            }
-        }
-      ],
-      "next_page_params": null
-      }
-      """
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          case conn.params["q"] do
-            expected_q
-            when expected_q in [
-                   "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                   "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt",
-                   "UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko",
-                   "kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n",
-                   "0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi",
-                   "0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d"
-                 ] ->
-              Plug.Conn.resp(conn, 200, tac_response)
-
-            q ->
-              raise "Unexpected 'q' parameter #{inspect(q)}"
+            Plug.Conn.resp(conn, 200, tac_response)
           end
-        end
-      )
-
-      request =
-        get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt")}")
-
-      assert response = json_response(request, 200)
-
-      assert [
-               %{
-                 "priority" => 0,
-                 "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
-                 },
-                 "type" => "tac_operation"
-               }
-             ] == response
-
-      request =
-        get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt")}")
-
-      assert response = json_response(request, 200)
-
-      assert [
-               %{
-                 "priority" => 0,
-                 "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
-                 },
-                 "type" => "tac_operation"
-               }
-             ] == response
-
-      request =
-        get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko")}")
-
-      assert response = json_response(request, 200)
-
-      assert [
-               %{
-                 "priority" => 0,
-                 "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
-                 },
-                 "type" => "tac_operation"
-               }
-             ] == response
-
-      request =
-        get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n")}")
-
-      assert response = json_response(request, 200)
-
-      assert [
-               %{
-                 "priority" => 0,
-                 "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
-                 },
-                 "type" => "tac_operation"
-               }
-             ] == response
-
-      request =
-        get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi")}")
-
-      assert response = json_response(request, 200)
-
-      assert [
-               %{
-                 "priority" => 0,
-                 "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
-                 },
-                 "type" => "tac_operation"
-               }
-             ] == response
-
-      request =
-        get(
-          conn,
-          "/api/v2/search/quick?q=#{URI.encode_www_form("0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d")}"
         )
 
-      assert response = json_response(request, 200)
+        request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+        assert response = json_response(request, 200)
 
-      assert [
-               %{
-                 "priority" => 0,
-                 "tac_operation" => %{
-                   "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                   "sender" => %{
-                     "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                     "blockchain" => "TON"
-                   },
-                   "timestamp" => "2025-06-05T12:21:11.000Z",
-                   "type" => "ROLLBACK"
-                 },
-                 "type" => "tac_operation"
-               }
-             ] == response
-    end
+        correct_response = [
+          %{
+            "priority" => 0,
+            "transaction_hash" => "#{transaction.hash}",
+            "type" => "transaction",
+            "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+            "url" => "/tx/#{transaction.hash}"
+          }
+          | for(
+              i <- 0..48,
+              do: %{
+                "priority" => 0,
+                "tac_operation" => %{
+                  "operation_id" => operation_id,
+                  "sender" => nil,
+                  "timestamp" => "2025-05-14T19:16:#{i}.000Z",
+                  "type" => "TON_TAC_TON"
+                },
+                "type" => "tac_operation"
+              }
+            )
+        ]
 
-    test "finds a lot if TAC operations with transaction", %{conn: conn} do
-      bypass = Bypass.open()
-      tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
-
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
-      )
-
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      on_exit(fn ->
-        Bypass.down(bypass)
-        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
-        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      end)
-
-      transaction =
-        insert(:transaction, hash: "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2") |> with_block()
-
-      operation_id = "#{transaction.hash}"
-
-      tac_response = """
-      {
-        "items": [
-        #{for i <- 0..49, do: """
-        {
-          "operation_id": "#{operation_id}",
-          "sender": null,
-          "timestamp": "2025-05-14T19:16:#{i}.000Z",
-          "type": "TON_TAC_TON"
-        }#{if i == 49, do: "", else: ","}
-      """}
-        ],
-        "next_page_params": {
-          "page_token": "2025-05-14T19:16:49.000Z",
-          "page_size": 50
-        }
-      }
-      """
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/v1/tac/operations",
-        fn conn ->
-          assert conn.params["q"] == operation_id
-
-          Plug.Conn.resp(conn, 200, tac_response)
-        end
-      )
-
-      request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
-      assert response = json_response(request, 200)
-
-      correct_response = [
-        %{
-          "priority" => 0,
-          "transaction_hash" => "#{transaction.hash}",
-          "type" => "transaction",
-          "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
-          "url" => "/tx/#{transaction.hash}"
-        }
-        | for(
-            i <- 0..48,
-            do: %{
-              "priority" => 0,
-              "tac_operation" => %{
-                "operation_id" => operation_id,
-                "sender" => nil,
-                "timestamp" => "2025-05-14T19:16:#{i}.000Z",
-                "type" => "TON_TAC_TON"
-              },
-              "type" => "tac_operation"
-            }
-          )
-      ]
-
-      assert correct_response == response
+        assert correct_response == response
+      end
     end
 
     test "returns empty list and don't crash", %{conn: conn} do

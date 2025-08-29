@@ -202,10 +202,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "abi" => target_contract.abi,
         "proxy_type" => "eip1967",
         "implementations" => [
-          %{
+          prepare_implementation(%{
             "address_hash" => formatted_implementation_address_hash_string,
             "name" => nil
-          }
+          })
         ],
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
@@ -224,7 +224,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       result_props = correct_response |> Map.keys()
 
       for prop <- result_props do
-        assert prepare_implementation(correct_response[prop]) == response[prop]
+        assert correct_response[prop] == response[prop]
       end
     end
 
@@ -511,10 +511,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "creation_bytecode" => proxy_transaction_input,
         "proxy_type" => "eip1167",
         "implementations" => [
-          %{
+          prepare_implementation(%{
             "address_hash" => Address.checksum(implementation_contract.address_hash),
             "name" => implementation_contract.name
-          }
+          })
         ]
       }
 
@@ -524,7 +524,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       result_props = correct_response |> Map.keys()
 
       for prop <- result_props do
-        assert prepare_implementation(correct_response[prop]) == response[prop]
+        assert correct_response[prop] == response[prop]
       end
     end
 
@@ -666,10 +666,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     correct_response = %{
       "proxy_type" => "clone_with_immutable_arguments",
       "implementations" => [
-        %{
+        prepare_implementation(%{
           "address_hash" => formatted_implementation_address_hash_string,
           "name" => implementation_contract.name
-        }
+        })
       ],
       "deployed_bytecode" => proxy_deployed_bytecode,
       "creation_bytecode" => proxy_transaction_input
@@ -683,7 +683,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     result_props = correct_response |> Map.keys()
 
     for prop <- result_props do
-      assert prepare_implementation(correct_response[prop]) == response[prop]
+      assert correct_response[prop] == response[prop]
     end
   end
 
@@ -1772,10 +1772,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     assert Enum.count(second_page_resp["items"]) == 1
     assert second_page_resp["next_page_params"] == nil
     compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
-  end
-
-  defp prepare_implementation(items) when is_list(items) do
-    Enum.map(items, &prepare_implementation/1)
   end
 
   defp prepare_implementation(%{"address_hash" => _, "name" => _} = implementation) do

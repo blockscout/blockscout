@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.NFTCollection do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.{General, Token, Token.Type, TokenInstance}
+  alias BlockScoutWeb.Schemas.API.V2.{General, Token, TokenInstanceInList}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -14,24 +14,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.NFTCollection do
       amount: General.IntegerStringNullable,
       token_instances: %Schema{
         type: :array,
-        items: %Schema{
-          allOf: [
-            TokenInstance,
-            %Schema{
-              type: :object,
-              nullable: false,
-              properties: %{
-                token_type: Type,
-                value: General.IntegerStringNullable
-              },
-              required: [:token_type, :value]
-            }
-          ],
-          nullable: true
-        },
+        items: TokenInstanceInList,
         nullable: false
       }
     },
-    required: [:token, :amount, :token_instances]
+    required: [:token, :amount, :token_instances],
+    additionalProperties: false
   })
 end
