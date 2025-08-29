@@ -997,6 +997,7 @@ defmodule Explorer.Chain.InternalTransaction do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       query
       |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
+      |> where([internal_transaction, transaction], transaction.block_hash == internal_transaction.block_hash)
       |> where([_internal_transaction, transaction], transaction.block_consensus == true)
     else
       query
