@@ -52,6 +52,7 @@ defmodule Explorer.Application do
 
     # Children to start in all environments
     base_children = [
+      {Cluster.Supervisor, [Application.get_env(:libcluster, :topologies), [name: Explorer.ClusterSupervisor]]},
       Explorer.Repo,
       Explorer.Repo.Replica1,
       Explorer.Vault,
