@@ -1294,7 +1294,7 @@ defmodule Explorer.EthRPC do
        when is_list(params) do
     with {:ok, action} <- get_action(method),
          {:correct_arity, true} <-
-           {:correct_arity, Helper.public_function_exported?(__MODULE__, action, Enum.count(params))} do
+           {:correct_arity, :erlang.function_exported(__MODULE__, action, Enum.count(params))} do
       apply(__MODULE__, action, params)
     else
       {:correct_arity, _} ->

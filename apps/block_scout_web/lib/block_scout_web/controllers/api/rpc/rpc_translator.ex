@@ -33,7 +33,6 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
     TransactionController
   }
 
-  alias Explorer.Helper
   alias Phoenix.Controller
   alias Plug.Conn
 
@@ -161,7 +160,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   @doc false
   @spec call_controller(Conn.t(), module(), atom()) :: {:ok, Conn.t()} | {:error, :no_action} | {:error, Exception.t()}
   defp call_controller(conn, controller, action) do
-    if Helper.public_function_exported?(controller, action, 2) do
+    if :erlang.function_exported(controller, action, 2) do
       {:ok, controller.call(conn, action)}
     else
       {:error, :no_action}

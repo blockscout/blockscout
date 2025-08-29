@@ -553,32 +553,4 @@ defmodule Explorer.Helper do
   def number_to_decimal(value) when is_float(value), do: Decimal.from_float(value)
   def number_to_decimal(value) when is_binary(value) or is_integer(value), do: Decimal.new(value)
   def number_to_decimal(%Decimal{} = value), do: value
-
-  @doc """
-  Checks if a given function with specified arity is exported as a public function by the given module.
-
-  ## Parameters
-
-    - `module`: The module to check (atom).
-    - `function`: The function name to check (atom).
-    - `arity`: The arity of the function (integer).
-
-  ## Returns
-
-    - `true` if the function is exported as a public function by the module.
-    - `false` otherwise.
-
-  ## Examples
-
-      iex> public_function_exported?(Enum, :map, 2)
-      true
-
-      iex> public_function_exported?(Enum, :non_existing_function, 1)
-      false
-  """
-
-  @spec public_function_exported?(module :: atom(), function :: atom(), arity :: non_neg_integer()) :: boolean()
-  def public_function_exported?(module, function, arity) do
-    :functions |> module.__info__() |> Enum.member?({function, arity})
-  end
 end
