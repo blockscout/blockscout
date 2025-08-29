@@ -546,4 +546,251 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
          ]}
       ]
     }
+
+  @doc """
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchFromEigenDA(
+        uint256 sequenceNumber,
+        EigenDACert calldata cert,
+        IGasRefunder gasRefunder,
+        uint256 afterDelayedMessagesRead,
+        uint256 prevMessageCount,
+        uint256 newMessageCount
+      )
+  """
+  def add_sequencer_l2_batch_from_eigen_da_selector_with_abi,
+    do: %ABI.FunctionSelector{
+      function: "addSequencerL2BatchFromEigenDA",
+      types: [
+        {:uint, 256},
+        # EigenDACert structure
+        {:tuple,
+         [
+           # BlobVerificationProof
+           {:tuple,
+            [
+              # batchId
+              {:uint, 32},
+              # blobIndex
+              {:uint, 32},
+              # BatchMetadata
+              {:tuple,
+               [
+                 # BatchHeader
+                 {:tuple,
+                  [
+                    # blobHeadersRoot
+                    {:bytes, 32},
+                    # quorumNumbers
+                    :bytes,
+                    # signedStakeForQuorums
+                    :bytes,
+                    # referenceBlockNumber
+                    {:uint, 32}
+                  ]},
+                 # signatoryRecordHash
+                 {:bytes, 32},
+                 # confirmationBlockNumber
+                 {:uint, 32}
+               ]},
+              # inclusionProof
+              :bytes,
+              # quorumIndices
+              :bytes
+            ]},
+           # BlobHeader
+           {:tuple,
+            [
+              # BN254.G1Point commitment
+              {:tuple,
+               [
+                 # X
+                 {:uint, 256},
+                 # Y
+                 {:uint, 256}
+               ]},
+              # dataLength
+              {:uint, 32},
+              # QuorumBlobParam[] quorumBlobParams
+              {:array,
+               {:tuple,
+                [
+                  # quorumNumber
+                  {:uint, 8},
+                  # adversaryThresholdPercentage
+                  {:uint, 8},
+                  # confirmationThresholdPercentage
+                  {:uint, 8},
+                  # chunkLength
+                  {:uint, 32}
+                ]}}
+            ]}
+         ]},
+        :address,
+        {:uint, 256},
+        {:uint, 256},
+        {:uint, 256}
+      ]
+    }
+
+  @doc """
+    Returns ABI definition for EigenDACert structure for encoding purposes.
+
+    The EigenDACert contains BlobVerificationProof and BlobHeader with full nested structures.
+  """
+  def eigen_da_cert_abi,
+    do: %ABI.FunctionSelector{
+      function: nil,
+      types: [
+        # EigenDACert structure
+        {:tuple,
+         [
+           # BlobVerificationProof
+           {:tuple,
+            [
+              # batchId
+              {:uint, 32},
+              # blobIndex
+              {:uint, 32},
+              # BatchMetadata
+              {:tuple,
+               [
+                 # BatchHeader
+                 {:tuple,
+                  [
+                    # blobHeadersRoot
+                    {:bytes, 32},
+                    # quorumNumbers
+                    :bytes,
+                    # signedStakeForQuorums
+                    :bytes,
+                    # referenceBlockNumber
+                    {:uint, 32}
+                  ]},
+                 # signatoryRecordHash
+                 {:bytes, 32},
+                 # confirmationBlockNumber
+                 {:uint, 32}
+               ]},
+              # inclusionProof
+              :bytes,
+              # quorumIndices
+              :bytes
+            ]},
+           # BlobHeader
+           {:tuple,
+            [
+              # BN254.G1Point commitment
+              {:tuple,
+               [
+                 # X
+                 {:uint, 256},
+                 # Y
+                 {:uint, 256}
+               ]},
+              # dataLength
+              {:uint, 32},
+              # QuorumBlobParam[] quorumBlobParams
+              {:array,
+               {:tuple,
+                [
+                  # quorumNumber
+                  {:uint, 8},
+                  # adversaryThresholdPercentage
+                  {:uint, 8},
+                  # confirmationThresholdPercentage
+                  {:uint, 8},
+                  # chunkLength
+                  {:uint, 32}
+                ]}}
+            ]}
+         ]}
+      ]
+    }
+
+  @doc """
+    Returns ABI definition for BlobVerificationProof structure for encoding purposes.
+
+    The BlobVerificationProof contains batchId, blobIndex, BatchMetadata, inclusionProof, and quorumIndices.
+  """
+  def eigen_da_blob_verification_proof_abi,
+    # https://github.com/Layr-Labs/eigenda/blob/6c1deb51fced68efb1aaa585dd5ddb6a27f88637/contracts/src/core/libraries/v1/EigenDATypesV1.sol#L36-L55
+    do: %ABI.FunctionSelector{
+      function: nil,
+      types: [
+        # BlobVerificationProof
+        {:tuple,
+         [
+           # batchId
+           {:uint, 32},
+           # blobIndex
+           {:uint, 32},
+           # BatchMetadata
+           {:tuple,
+            [
+              # BatchHeader
+              {:tuple,
+               [
+                 # blobHeadersRoot
+                 {:bytes, 32},
+                 # quorumNumbers
+                 :bytes,
+                 # signedStakeForQuorums
+                 :bytes,
+                 # referenceBlockNumber
+                 {:uint, 32}
+               ]},
+              # signatoryRecordHash
+              {:bytes, 32},
+              # confirmationBlockNumber
+              {:uint, 32}
+            ]},
+           # inclusionProof
+           :bytes,
+           # quorumIndices
+           :bytes
+         ]}
+      ]
+    }
+
+  @doc """
+    Returns ABI definition for BlobHeader structure for encoding purposes.
+
+    The BlobHeader contains BN254.G1Point commitment, dataLength, and quorumBlobParams array.
+  """
+  def eigen_da_blob_header_abi,
+    # https://github.com/Layr-Labs/eigenda/blob/6c1deb51fced68efb1aaa585dd5ddb6a27f88637/contracts/src/core/libraries/v1/EigenDATypesV1.sol#L18-L29
+    do: %ABI.FunctionSelector{
+      function: nil,
+      types: [
+        # BlobHeader
+        {:tuple,
+         [
+           # BN254.G1Point commitment
+           {:tuple,
+            [
+              # X
+              {:uint, 256},
+              # Y
+              {:uint, 256}
+            ]},
+           # dataLength
+           {:uint, 32},
+           # QuorumBlobParam[] quorumBlobParams
+           {:array,
+            {:tuple,
+             [
+               # quorumNumber
+               {:uint, 8},
+               # adversaryThresholdPercentage
+               {:uint, 8},
+               # confirmationThresholdPercentage
+               {:uint, 8},
+               # chunkLength
+               {:uint, 32}
+             ]}}
+         ]}
+      ]
+    }
 end
