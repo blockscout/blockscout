@@ -111,7 +111,9 @@ defmodule EthereumJSONRPC.Receipts do
         l1_fee: 0,\
         l1_fee_scalar: 0,\
         l1_gas_price: 0,\
-        l1_gas_used: 0\
+        l1_gas_used: 0,\
+        operator_fee_scalar: 0,\
+        operator_fee_constant: 0\
       """
     :scroll -> """
         l1_fee: 0\
