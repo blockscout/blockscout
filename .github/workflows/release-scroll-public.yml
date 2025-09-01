@@ -1,4 +1,4 @@
-name: Release for Scroll
+name: Public Release for Scroll
 
 on:
   workflow_dispatch:

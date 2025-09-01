@@ -1,4 +1,4 @@
-name: Release for Optimism
+name: Public Release for Optimism
 
 on:
   workflow_dispatch:

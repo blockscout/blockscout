@@ -1,4 +1,4 @@
-name: Release for Gnosis Chain
+name: Public Release for Gnosis Chain
 
 on:
   workflow_dispatch:

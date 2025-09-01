@@ -1,4 +1,4 @@
-name: Release for Celo
+name: Public Release for Celo
 
 on:
   workflow_dispatch:

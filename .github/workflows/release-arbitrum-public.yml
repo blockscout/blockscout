@@ -1,4 +1,4 @@
-name: Release for Arbitrum
+name: Public Release for Arbitrum
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: Release for Zetachain
+name: Public Release for Zetachain
 
 on:
   workflow_dispatch:

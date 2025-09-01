@@ -1,4 +1,4 @@
-name: Release for Fuse
+name: Public Release for Fuse
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: Release for ZkSync
+name: Public Release for ZkSync
 
 on:
   workflow_dispatch:

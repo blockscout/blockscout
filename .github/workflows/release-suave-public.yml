@@ -1,4 +1,4 @@
-name: Release for SUAVE
+name: Public Release for SUAVE
 
 on:
   workflow_dispatch:

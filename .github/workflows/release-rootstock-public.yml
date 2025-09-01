@@ -1,4 +1,4 @@
-name: Release for Rootstock
+name: Public Release for Rootstock
 
 on:
   workflow_dispatch:

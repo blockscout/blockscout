@@ -1,4 +1,4 @@
-name: Release for Zilliqa
+name: Public Release for Zilliqa
 
 on:
   workflow_dispatch:

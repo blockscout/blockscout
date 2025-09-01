@@ -1,4 +1,4 @@
-name: Release for Ethereum
+name: Public Release for Ethereum
 
 on:
   workflow_dispatch:
