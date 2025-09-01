@@ -222,11 +222,7 @@ defmodule Explorer.TestHelper do
        ] ++
          Enum.map(rest, fn
            %{id: id6, method: "eth_call", params: [%{data: "0x5c60da1b", to: _}, "latest"]} ->
-             if Keyword.get(mocks, :basic_implementation) do
-               %{id: id6, result: address_hash_to_full_hash_string(Keyword.get(mocks, :basic_implementation))}
-             else
-               %{id: id6, error: "error"}
-             end
+             mocks |> Keyword.get(:basic_implementation, @zero_address_hash) |> encode_in_batch_response(id6)
          end)}
     end)
 

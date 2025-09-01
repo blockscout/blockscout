@@ -1,6 +1,7 @@
 defmodule Explorer.Chain.SmartContract.ProxyTest do
   use Explorer.DataCase, async: false
   import Mox
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.SmartContract
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
@@ -301,6 +302,50 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
     verify!(EthereumJSONRPC.Mox)
 
     assert implementation_abi == @implementation_abi
+  end
+
+  test "extract_address_hash/1" do
+    assert Proxy.extract_address_hash(nil) == nil
+    assert Proxy.extract_address_hash("0x") == nil
+    assert Proxy.extract_address_hash("0x0") == nil
+    assert Proxy.extract_address_hash("0x0000000000000000000000000000000000000000") == nil
+    assert Proxy.extract_address_hash("0x0000000000000000000000000000000000000000000000000000000000000000") == nil
+    assert Proxy.extract_address_hash("INVALID") == :error
+
+    # 20-bytes value
+    assert Proxy.extract_address_hash("0x1111111111111111111111111111111111111111") ==
+             {:ok,
+              %Hash{
+                byte_count: 20,
+                bytes: <<0x1111111111111111111111111111111111111111::160>>
+              }}
+
+    # 19-bytes value
+    assert Proxy.extract_address_hash("0x11111111111111111111111111111111111111") ==
+             {:ok,
+              %Hash{
+                byte_count: 20,
+                bytes: <<0x0011111111111111111111111111111111111111::160>>
+              }}
+
+    # 21-bytes value
+    assert Proxy.extract_address_hash("0x001111111111111111111111111111111111111111") ==
+             {:ok,
+              %Hash{
+                byte_count: 20,
+                bytes: <<0x1111111111111111111111111111111111111111::160>>
+              }}
+
+    # canonical 32-bytes value
+    assert Proxy.extract_address_hash("0x0000000000000000000000001111111111111111111111111111111111111111") ==
+             {:ok,
+              %Hash{
+                byte_count: 20,
+                bytes: <<0x1111111111111111111111111111111111111111::160>>
+              }}
+
+    # 33-bytes value
+    assert Proxy.extract_address_hash("0x000000000000000000000000001111111111111111111111111111111111111111") == nil
   end
 
   test "check proxy_contract?/1 function" do

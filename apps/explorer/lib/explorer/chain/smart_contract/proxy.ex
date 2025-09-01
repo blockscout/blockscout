@@ -375,7 +375,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   def extract_address_hash(value) do
     with false <- is_nil(value),
          false <- zero_hex_string?(value),
-         {:ok, %Data{bytes: bytes}} <- Data.cast(value) do
+         {:ok, %Data{bytes: bytes}} <- Data.cast(value),
+         false <- byte_size(bytes) > 32 do
       Hash.Address.cast((<<0::160>> <> bytes) |> binary_slice(-20, 20))
     else
       :error -> :error
@@ -453,30 +454,45 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end
   end
 
-  def conflicting_implementations_info(proxy_implementation) do
-    if proxy_implementation &&
-         proxy_implementation.proxy_type &&
-         proxy_implementation.conflicting_proxy_types &&
-         proxy_implementation.conflicting_address_hashes do
-      conflicting_implementations =
-        proxy_implementation.conflicting_proxy_types
-        |> Enum.zip(proxy_implementation.conflicting_address_hashes)
-        |> Enum.map(fn {proxy_type, address_hashes} ->
-          %{
-            "proxy_type" => proxy_type,
-            "implementations" => Enum.map(address_hashes, &%{"address_hash" => Address.checksum(&1)})
-          }
-        end)
+  @doc """
+  Returns conflicting implementations info for a given proxy implementation.
 
-      [
+  ## Parameters
+
+    * `proxy_implementation` - An `Implementation.t()` struct.
+
+  ## Returns
+
+  A list of maps containing information about the conflicting proxy implementations, if more than 1 proxy type is present.
+
+  """
+  @spec conflicting_implementations_info(Implementation.t() | nil) :: [map()] | nil
+  def conflicting_implementations_info(
         %{
-          "proxy_type" => proxy_implementation.proxy_type,
-          "implementations" => proxy_object_info(proxy_implementation)
+          proxy_type: proxy_type,
+          conflicting_proxy_types: conflicting_proxy_types,
+          conflicting_address_hashes: conflicting_address_hashes
+        } = proxy_implementation
+      )
+      when not is_nil(proxy_type) and is_list(conflicting_proxy_types) and is_list(conflicting_address_hashes) do
+    conflicting_implementations =
+      conflicting_proxy_types
+      |> Enum.zip(conflicting_address_hashes)
+      |> Enum.map(fn {proxy_type, address_hashes} ->
+        %{
+          "proxy_type" => proxy_type,
+          "implementations" => Enum.map(address_hashes, &%{"address_hash" => Address.checksum(&1)})
         }
-        | conflicting_implementations
-      ]
-    else
-      nil
-    end
+      end)
+
+    [
+      %{
+        "proxy_type" => proxy_type,
+        "implementations" => proxy_object_info(proxy_implementation)
+      }
+      | conflicting_implementations
+    ]
   end
+
+  def conflicting_implementations_info(_proxy_implementation), do: nil
 end
