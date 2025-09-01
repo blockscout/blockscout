@@ -206,22 +206,14 @@ defmodule EthereumJSONRPC.Contract do
     request(full_params)
   end
 
-  def eth_get_storage_at_request(contract_address, storage_pointer, block_number, json_rpc_named_arguments) do
-    block =
-      case block_number do
-        nil -> "latest"
-        block_number -> integer_to_quantity(block_number)
-      end
+  def eth_get_storage_at_request(contract_address, storage_pointer, id) do
+    full_params = %{
+      id: id,
+      method: "eth_getStorageAt",
+      params: [contract_address, storage_pointer, "latest"]
+    }
 
-    result =
-      %{id: 0, method: "eth_getStorageAt", params: [contract_address, storage_pointer, block]}
-      |> request()
-      |> json_rpc(json_rpc_named_arguments)
-
-    case result do
-      {:ok, storage_value} -> {:ok, storage_value}
-      other -> other
-    end
+    request(full_params)
   end
 
   defp format_error(nil), do: {:error, ""}
