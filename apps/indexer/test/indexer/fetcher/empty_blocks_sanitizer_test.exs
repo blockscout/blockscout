@@ -11,6 +11,8 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
   setup :set_mox_global
   setup :verify_on_exit!
 
+  @moduletag [capture_log: true, no_geth: true]
+
   @head_offset 1000
 
   test "process db-non-empty blocks", %{json_rpc_named_arguments: json_rpc_named_arguments} do
