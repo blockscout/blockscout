@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - custom-build
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
@@ -28,7 +32,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}-postrelease-custom-build-${{ env.SHORT_SHA }}
+          tags: ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}-postrelease-custom-build-${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -43,7 +47,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}-postrelease-custom-build-${{ env.SHORT_SHA }}-indexer
+          tags: ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}-postrelease-custom-build-${{ env.SHORT_SHA }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64

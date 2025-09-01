@@ -5,7 +5,12 @@ on:
     inputs:
       number:
         type: number
+        description: Number of pre-release alpha iteration
         required: true
+
+permissions:
+  contents: read
+  packages: write
 
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
@@ -34,7 +39,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+          tags: ghcr.io/blockscout/blockscout-zkevm-private:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -50,7 +55,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
+          tags: ghcr.io/blockscout/blockscout-zkevm-private:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
