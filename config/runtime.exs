@@ -1250,7 +1250,8 @@ config :indexer, Indexer.Fetcher.Optimism,
   l2_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L2_ETH_GET_LOGS_RANGE_SIZE", 250),
   block_duration: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_BLOCK_DURATION", 2),
   start_block_l1: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L1_START_BLOCK"),
-  portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL_CONTRACT")
+  portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL_CONTRACT"),
+  isthmus_timestamp_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_ISTHMUS_TIMESTAMP")
 
 config :indexer, Indexer.Fetcher.Optimism.Deposit,
   transaction_type: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L1_DEPOSITS_TRANSACTION_TYPE", 126)

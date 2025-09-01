@@ -462,14 +462,14 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   # Extends the json output for a transaction adding Optimism-related info to the output
-  # (such as related withdrawals, interop messages).
+  # (such as related withdrawals, operator fee, interop messages).
   #
   # ## Parameters
   # - `out_json`: A map defining output json which will be extended.
   # - `transaction`: transaction structure containing necessary data for the OP fields.
   #
   # ## Returns
-  # - An extended map containing `op_withdrawals`, `op_interop_messages` (optional).
+  # - An extended map containing `op_withdrawals`, `operator_fee` (optional), `op_interop_messages` (optional).
   @spec add_optimism_fields(map(), Transaction.t()) :: map()
   defp add_optimism_fields(out_json, transaction) do
     portal_contract_address_hash = Withdrawal.portal_contract_address()
@@ -494,11 +494,20 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         }
       end)
 
+    operator_fee = Transaction.operator_fee(transaction)
+
     interop_messages =
       transaction.hash
       |> InteropMessage.messages_by_transaction()
 
     out_json = Map.put(out_json, "op_withdrawals", withdrawals)
+
+    out_json =
+      if Decimal.gt?(operator_fee, Decimal.new(0)) do
+        Map.put(out_json, "operator_fee", operator_fee)
+      else
+        out_json
+      end
 
     if interop_messages == [] do
       out_json
