@@ -189,6 +189,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
           },
           required: [:nonce, :status, :sender_address_hash, :target_address_hash, :payload]
         })
+        |> put_in([:properties, :operator_fee_scalar], General.IntegerString)
+        |> put_in([:properties, :operator_fee_constant], General.IntegerString)
 
       :scroll ->
         schema

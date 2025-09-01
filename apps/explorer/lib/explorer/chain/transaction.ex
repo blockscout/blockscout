@@ -49,6 +49,8 @@ defmodule Explorer.Chain.Transaction.Schema do
                               field(:l1_gas_used, :decimal)
                               field(:l1_transaction_origin, Hash.Full)
                               field(:l1_block_number, :integer)
+                              field(:operator_fee_scalar, :decimal)
+                              field(:operator_fee_constant, :decimal)
                             end,
                             2
                           )
@@ -341,7 +343,7 @@ defmodule Explorer.Chain.Transaction do
 
   @chain_type_optional_attrs (case @chain_type do
                                 :optimism ->
-                                  ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_transaction_origin l1_block_number)a
+                                  ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_transaction_origin l1_block_number operator_fee_scalar operator_fee_constant)a
 
                                 :scroll ->
                                   ~w(l1_fee queue_index)a
@@ -522,6 +524,8 @@ defmodule Explorer.Chain.Transaction do
    * `wrapped_r` - R field of the signature from the `wrapped` field (used by Suave)
    * `wrapped_s` - S field of the signature from the `wrapped` field (used by Suave)
    * `wrapped_hash` - hash from the `wrapped` field (used by Suave)
+   * `operator_fee_scalar` - operatorFeeScalar is a uint32 scalar set by a chain operator (used by some OP chains)
+   * `operator_fee_constant` - operatorFeeConstant is a uint64 constant set by a chain operator (used by some OP chains)
   """
   Explorer.Chain.Transaction.Schema.generate()
 
@@ -2011,11 +2015,45 @@ defmodule Explorer.Chain.Transaction do
         value -> value
       end
 
+    # operator_fee is calculated for OP chains starting from the Isthmus upgrade
+    {:ok, operator_fee} =
+      transaction
+      |> operator_fee()
+      |> Wei.cast()
+
     gas_price
     |> l2_fee_calc(gas_used, unit)
     |> Wei.from(unit)
     |> Wei.sum(l1_fee)
+    |> Wei.sum(operator_fee)
     |> Wei.to(unit)
+  end
+
+  @spec operator_fee(Transaction.t()) :: Decimal.t()
+  def operator_fee(transaction) do
+    gas_used =
+      if is_nil(transaction.gas_used) do
+        transaction.gas
+      else
+        transaction.gas_used
+      end
+
+    operator_fee_scalar =
+      case Map.get(transaction, :operator_fee_scalar) do
+        nil -> Decimal.new(0)
+        value -> value
+      end
+
+    operator_fee_constant =
+      case Map.get(transaction, :operator_fee_constant) do
+        nil -> Decimal.new(0)
+        value -> value
+      end
+
+    gas_used
+    |> Decimal.mult(operator_fee_scalar)
+    |> Decimal.div_int(1_000_000)
+    |> Decimal.add(operator_fee_constant)
   end
 
   @doc """
