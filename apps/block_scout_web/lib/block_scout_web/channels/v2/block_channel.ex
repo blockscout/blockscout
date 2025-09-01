@@ -4,7 +4,8 @@ defmodule BlockScoutWeb.V2.BlockChannel do
   """
   use BlockScoutWeb, :channel
 
-  def join("blocks:new_block", _params, socket) do
+  def join("blocks:" <> common, _params, socket)
+      when common in ["new_block", "indexing", "indexing_internal_transactions"] do
     {:ok, %{}, socket}
   end
 

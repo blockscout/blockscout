@@ -196,19 +196,6 @@ defmodule Explorer.Factory do
     %{"contract_address_hash" => contract_address_hash, "name" => sequence("test"), "abi" => contract_code_info().abi}
   end
 
-  def public_tags_request_factory do
-    %{
-      "full_name" => sequence("full name"),
-      "email" => sequence(:email, &"test_user-#{&1}@blockscout.com"),
-      "tags" => Enum.join(Enum.map(1..Enum.random(1..2), fn _ -> sequence("Tag") end), ";"),
-      "website" => sequence("website"),
-      "additional_comment" => sequence("additional_comment"),
-      "addresses" => Enum.map(1..Enum.random(1..10), fn _ -> to_string(build(:address).hash) end),
-      "company" => sequence("company"),
-      "is_owner" => random_bool()
-    }
-  end
-
   def account_watchlist_factory do
     %Watchlist{
       identity: build(:account_identity)

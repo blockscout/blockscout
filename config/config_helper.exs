@@ -17,7 +17,6 @@ defmodule ConfigHelper do
         ethereum: Explorer.Repo.Beacon,
         filecoin: Explorer.Repo.Filecoin,
         optimism: Explorer.Repo.Optimism,
-        polygon_edge: Explorer.Repo.PolygonEdge,
         polygon_zkevm: Explorer.Repo.PolygonZkevm,
         rsk: Explorer.Repo.RSK,
         scroll: Explorer.Repo.Scroll,
@@ -36,12 +35,54 @@ defmodule ConfigHelper do
       [
         {parse_bool_env_var("BRIDGED_TOKENS_ENABLED"), Explorer.Repo.BridgedTokens},
         {parse_bool_env_var("MUD_INDEXER_ENABLED"), Explorer.Repo.Mud},
-        {parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"), Explorer.Repo.ShrunkInternalTransactions}
+        {parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"), Explorer.Repo.ShrunkInternalTransactions},
+        {mode() in [:indexer, :api], Explorer.Repo.EventNotifications}
       ]
       |> Enum.filter(&elem(&1, 0))
       |> Enum.map(&elem(&1, 1))
 
     base_repos ++ chain_type_repos ++ ext_repos
+  end
+
+  @doc """
+  Returns the list of logger backends to be used by the application.
+
+  If the DISABLE_FILE_LOGGING environment variable is set to true, only base
+  logger backends (:console and LoggerJSON) are returned. Otherwise, returns
+  both base and file logger backends.
+  """
+  @spec logger_backends() :: list()
+  def logger_backends do
+    base_logger_backends = [
+      :console,
+      LoggerJSON
+    ]
+
+    file_logger_backends =
+      [
+        {LoggerFileBackend, :error},
+        {LoggerFileBackend, :ecto},
+        {LoggerFileBackend, :block_scout_web},
+        {LoggerFileBackend, :ethereum_jsonrpc},
+        {LoggerFileBackend, :explorer},
+        {LoggerFileBackend, :indexer},
+        {LoggerFileBackend, :indexer_token_balances},
+        {LoggerFileBackend, :token_instances},
+        {LoggerFileBackend, :reading_token_functions},
+        {LoggerFileBackend, :pending_transactions_to_refetch},
+        {LoggerFileBackend, :empty_blocks_to_refetch},
+        {LoggerFileBackend, :withdrawal},
+        {LoggerFileBackend, :api},
+        {LoggerFileBackend, :block_import_timings},
+        {LoggerFileBackend, :account},
+        {LoggerFileBackend, :api_v2}
+      ]
+
+    if parse_bool_env_var("DISABLE_FILE_LOGGING") do
+      base_logger_backends
+    else
+      base_logger_backends ++ file_logger_backends
+    end
   end
 
   @spec http_options(non_neg_integer()) :: list()
@@ -314,7 +355,6 @@ defmodule ConfigHelper do
     "ethereum",
     "filecoin",
     "optimism",
-    "polygon_edge",
     "polygon_zkevm",
     "rsk",
     "scroll",

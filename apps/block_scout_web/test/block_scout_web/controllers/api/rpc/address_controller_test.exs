@@ -670,7 +670,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "contractAddress" => "#{transaction.created_contract_address_hash}",
           "cumulativeGasUsed" => "#{transaction.cumulative_gas_used}",
           "gasUsed" => "#{transaction.gas_used}",
-          "confirmations" => "0"
+          "confirmations" => "0",
+          "methodId" => "0x"
         }
       ]
 

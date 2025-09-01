@@ -62,6 +62,7 @@ defmodule Explorer.Migrator.FillingMigration do
     limiting is handled within `last_unprocessed_identifiers/1`.
   """
   @callback unprocessed_data_query :: Ecto.Query.t() | nil
+  @callback unprocessed_data_query(map()) :: Ecto.Query.t() | nil
 
   @doc """
     This callback retrieves the next batch of data for migration processing. It returns
@@ -152,6 +153,8 @@ defmodule Explorer.Migrator.FillingMigration do
     - `:ignore` by default
   """
   @callback before_start :: any()
+
+  @optional_callbacks unprocessed_data_query: 0, unprocessed_data_query: 1
 
   defmacro __using__(opts) do
     quote do

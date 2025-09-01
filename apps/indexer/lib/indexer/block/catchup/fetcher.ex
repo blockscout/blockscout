@@ -29,7 +29,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
   alias Explorer.Chain.NullRoundHeight
-  alias Explorer.Utility.{MassiveBlock, MissingRangesManipulator}
+  alias Explorer.Utility.{MassiveBlock, MissingBlockRange, MissingRangesManipulator}
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.TaskSupervisor
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
@@ -50,7 +50,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     Logger.metadata(fetcher: :block_catchup)
     Process.flag(:trap_exit, true)
 
-    case MissingRangesManipulator.get_latest_batch(blocks_batch_size() * blocks_concurrency()) do
+    case MissingBlockRange.get_latest_batch(blocks_batch_size() * blocks_concurrency()) do
       [] ->
         %{
           first_block_number: nil,
@@ -254,7 +254,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   end
 
   defp timeout_exception?(%{message: message}) when is_binary(message) do
-    String.match?(message, ~r/due to a timeout/)
+    String.match?(message, ~r/due to a timeout/) or String.match?(message, ~r/due to user request/)
   end
 
   defp timeout_exception?(_exception), do: false

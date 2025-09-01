@@ -1,3 +1,21 @@
+defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TransactionHashCustomization do
+  @moduledoc false
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  alias BlockScoutWeb.Schemas.API.V2.General
+
+  def schema do
+    case Application.get_env(:explorer, :chain_type) do
+      :celo ->
+        General.FullHashNullable
+
+      _ ->
+        General.FullHash
+    end
+  end
+end
+
 defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
   @moduledoc """
   Schema for token transfer
@@ -5,13 +23,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
-  alias BlockScoutWeb.Schemas.API.V2.TokenTransfer.{Total, TotalERC1155, TotalERC721}
+
+  alias BlockScoutWeb.Schemas.API.V2.TokenTransfer.{
+    Total,
+    TotalERC1155,
+    TotalERC721,
+    TransactionHashCustomization
+  }
+
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     type: :object,
     properties: %{
-      transaction_hash: General.FullHash,
+      transaction_hash: TransactionHashCustomization.schema(),
       from: Address,
       to: Address,
       total: %Schema{
@@ -28,7 +53,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       method: General.MethodNameNullable,
       block_hash: General.FullHash,
       block_number: %Schema{type: :integer, nullable: false},
-      log_index: %Schema{type: :integer, nullable: false}
+      log_index: %Schema{type: :integer, nullable: false},
+      token_type: Token.Type
     },
     required: [
       :transaction_hash,
@@ -41,7 +67,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       :method,
       :block_hash,
       :block_number,
-      :log_index
+      :log_index,
+      :token_type
     ]
   })
 end
