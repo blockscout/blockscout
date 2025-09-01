@@ -13,6 +13,10 @@ env:
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
   RELEASE_VERSION: 9.0.2
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry

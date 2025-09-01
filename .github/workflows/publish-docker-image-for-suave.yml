@@ -8,6 +8,10 @@ on:
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry

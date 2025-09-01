@@ -5,7 +5,12 @@ on:
     inputs:
       number:
         type: number
+        description: Number of pre-release alpha iteration
         required: true
+
+permissions:
+  contents: read
+  packages: write
 
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}

@@ -3,6 +3,10 @@ name: Release for Polygon zkEVM
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}

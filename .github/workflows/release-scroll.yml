@@ -5,6 +5,10 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}

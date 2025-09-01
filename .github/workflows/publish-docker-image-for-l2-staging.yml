@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - staging-l2
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
