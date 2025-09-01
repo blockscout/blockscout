@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
     TransactionHashCustomization
   }
 
-  alias Explorer.Chain.Reputation
+  alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{

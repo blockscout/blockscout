@@ -13,11 +13,11 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   alias Explorer.Chain.{
     Address,
+    Address.Reputation,
     Data,
     DenormalizationHelper,
     Hash,
     InternalTransaction,
-    Reputation,
     TokenTransfer,
     Transaction
   }

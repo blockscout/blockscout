@@ -14,8 +14,8 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Reputation, Token}
-  alias Explorer.Chain.Address.TokenBalance
+  alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Token}
+  alias Explorer.Chain.Address.{Reputation, TokenBalance}
 
   @default_paging_options %PagingOptions{page_size: 50}
 

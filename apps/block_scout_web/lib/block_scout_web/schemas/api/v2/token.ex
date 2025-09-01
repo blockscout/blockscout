@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
 
   alias BlockScoutWeb.Schemas.API.V2.General
   alias BlockScoutWeb.Schemas.API.V2.Token.{ChainTypeCustomizations, Type}
-  alias Explorer.Chain.Reputation
+  alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(

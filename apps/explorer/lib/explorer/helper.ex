@@ -271,9 +271,15 @@ defmodule Explorer.Helper do
     end
   end
 
-  def maybe_hide_scam_addresses_without_select_merge(nil, _address_hash_key, _options), do: nil
+  @doc """
+  Conditionally hides scam addresses in the given query, does not select the reputation field.
+  """
+  @spec maybe_hide_scam_addresses_without_select(nil | Ecto.Query.t(), atom(), [
+          Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
+        ]) :: Ecto.Query.t()
+  def maybe_hide_scam_addresses_without_select(nil, _address_hash_key, _options), do: nil
 
-  def maybe_hide_scam_addresses_without_select_merge(query, address_hash_key, options) do
+  def maybe_hide_scam_addresses_without_select(query, address_hash_key, options) do
     cond do
       Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
         query
@@ -289,6 +295,12 @@ defmodule Explorer.Helper do
     end
   end
 
+  @doc """
+  Conditionally hides scam addresses in the given query with aggregate functions.
+  """
+  @spec maybe_hide_scam_addresses_with_aggregate(nil | Ecto.Query.t(), atom(), [
+          Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
+        ]) :: Ecto.Query.t()
   def maybe_hide_scam_addresses_with_aggregate(nil, _address_hash_key, _options), do: nil
 
   def maybe_hide_scam_addresses_with_aggregate(query, address_hash_key, options) do
@@ -318,6 +330,10 @@ defmodule Explorer.Helper do
     end
   end
 
+  @doc """
+  Function used for identify cases when user explicitly requests to show scam addresses and there are enabled scam addresses in the application.
+  """
+  @spec force_show_scam_addresses?(keyword()) :: boolean()
   def force_show_scam_addresses?(options) do
     Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?]
   end

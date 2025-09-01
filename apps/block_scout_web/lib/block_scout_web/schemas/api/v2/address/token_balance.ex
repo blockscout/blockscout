@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.TokenBalance do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.{General, Token, TokenInstance}
-  alias Explorer.Chain.Reputation
+  alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{

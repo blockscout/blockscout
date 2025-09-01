@@ -9,9 +9,9 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
 
   alias Explorer.Chain.{
     Address,
+    Address.Reputation,
     Block,
     Hash,
-    Reputation,
     Transaction
   }
 

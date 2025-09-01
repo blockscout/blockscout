@@ -7,8 +7,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   alias Explorer.{Chain, Helper, QueryHelper, Repo}
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
-  alias Explorer.Chain.Address.CurrentTokenBalance
-  alias Explorer.Chain.Reputation
+  alias Explorer.Chain.Address.{CurrentTokenBalance, Reputation}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Token.Instance.Thumbnails
   alias Explorer.Helper, as: ExplorerHelper

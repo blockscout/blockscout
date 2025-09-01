@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Reputation do
+defmodule Explorer.Chain.Address.Reputation do
   @moduledoc """
   This module defines the reputation enum values.
   """

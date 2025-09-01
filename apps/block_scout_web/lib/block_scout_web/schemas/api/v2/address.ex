@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
 
   alias BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations
   alias BlockScoutWeb.Schemas.API.V2.{General, Proxy}
-  alias Explorer.Chain.Reputation
+  alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(

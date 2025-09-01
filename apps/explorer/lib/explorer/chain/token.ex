@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Token.Schema do
   @moduledoc false
   use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
-  alias Explorer.Chain.{Address, Hash, Reputation}
+  alias Explorer.Chain.{Address, Address.Reputation, Hash}
 
   if @bridged_tokens_enabled do
     @bridged_field [

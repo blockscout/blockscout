@@ -9,11 +9,11 @@ defmodule Explorer.Chain.Address.Schema do
 
   alias Explorer.Chain.{
     Address,
+    Address.Reputation,
     Block,
     Data,
     Hash,
     InternalTransaction,
-    Reputation,
     SignedAuthorization,
     SmartContract,
     Token,

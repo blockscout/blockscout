@@ -8,8 +8,8 @@ defmodule Explorer.Chain.SmartContract.Schema do
 
   alias Explorer.Chain.{
     Address,
+    Address.Reputation,
     Hash,
-    Reputation,
     SmartContractAdditionalSource
   }
 
