@@ -11,7 +11,7 @@ on:
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
-  RELEASE_VERSION: 9.0.2
+  RELEASE_VERSION: 9.1.0
 
 permissions:
   contents: read
