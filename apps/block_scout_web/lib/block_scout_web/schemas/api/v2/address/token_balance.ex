@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.TokenBalance do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.{General, Token, TokenInstance}
+  alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -13,8 +14,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.TokenBalance do
       value: General.IntegerString,
       token: %Schema{allOf: [Token], nullable: true},
       token_id: General.IntegerStringNullable,
-      token_instance: %Schema{allOf: [TokenInstance], nullable: true}
+      token_instance: %Schema{allOf: [TokenInstance], nullable: true},
+      reputation: %Schema{
+        type: :string,
+        enum: Reputation.enum_values(),
+        description: "Reputation of the token balance",
+        nullable: true
+      }
     },
-    required: [:value, :token, :token_id, :token_instance]
+    required: [:value, :token, :token_id, :token_instance, :reputation]
   })
 end

@@ -205,6 +205,129 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   describe "/transactions/{transaction_hash}" do
+    test "get token-transfers with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert List.first(response["token_transfers"])["reputation"] == "ok"
+
+      assert response == conn |> get("/api/v2/transactions/#{transaction.hash}") |> json_response(200)
+    end
+
+    test "get smart-contract with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert List.first(response["token_transfers"])["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert response["token_transfers"] == []
+    end
+
+    test "get token-transfers with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert List.first(response["token_transfers"])["reputation"] == "ok"
+    end
+
+    test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert List.first(response["token_transfers"])["reputation"] == "ok"
+    end
+
     test "return 404 on non existing transaction", %{conn: conn} do
       transaction = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}")
@@ -643,6 +766,137 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   describe "/transactions/{transaction_hash}/token-transfers" do
+    test "get token-transfers with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
+
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+
+      assert response == conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers") |> json_response(200)
+    end
+
+    test "get smart-contract with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
+
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
+      response = json_response(request, 200)
+
+      assert response["items"] == []
+    end
+
+    test "get token-transfers with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
+    test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
     test "return 404 on non existing transaction", %{conn: conn} do
       transaction = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/token-transfers")

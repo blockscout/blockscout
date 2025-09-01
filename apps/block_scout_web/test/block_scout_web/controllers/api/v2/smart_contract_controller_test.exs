@@ -1542,6 +1542,67 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         :ok
       end
 
+      test "get smart-contract with ok reputation", %{conn: conn} do
+        init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+        Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+        on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+        insert(:smart_contract)
+
+        request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/smart-contracts")
+        response = json_response(request, 200)
+
+        assert List.first(response["items"])["reputation"] == "ok"
+
+        assert response == conn |> get("/api/v2/smart-contracts") |> json_response(200)
+      end
+
+      test "get smart-contract with scam reputation", %{conn: conn} do
+        init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+        Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+        on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+        target_contract = insert(:smart_contract)
+        insert(:scam_badge_to_address, address_hash: target_contract.address_hash)
+
+        request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/smart-contracts")
+        response = json_response(request, 200)
+
+        assert List.first(response["items"])["reputation"] == "scam"
+
+        request = conn |> get("/api/v2/smart-contracts")
+        response = json_response(request, 200)
+
+        assert response["items"] == []
+      end
+
+      test "get smart-contract with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+        init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+        Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+        on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+        insert(:smart_contract)
+
+        request = conn |> get("/api/v2/smart-contracts")
+        response = json_response(request, 200)
+
+        assert List.first(response["items"])["reputation"] == "ok"
+      end
+
+      test "get smart-contract with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+        init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+        Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+        on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+        target_contract = insert(:smart_contract)
+        insert(:scam_badge_to_address, address_hash: target_contract.address_hash)
+
+        request = conn |> get("/api/v2/smart-contracts")
+        response = json_response(request, 200)
+
+        assert List.first(response["items"])["reputation"] == "ok"
+      end
+
       test "get [] on empty db", %{conn: conn} do
         request = get(conn, "/api/v2/smart-contracts")
 
