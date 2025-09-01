@@ -59,6 +59,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
     has_many(:addresses, Address, foreign_key: :hash, references: :address_hashes)
     has_many(:smart_contracts, SmartContract, foreign_key: :address_hash, references: :address_hashes)
+    has_many(:conflicting_addresses, Address, foreign_key: :hash, references: :conflicting_address_hashes)
 
     belongs_to(
       :address,
@@ -566,7 +567,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         |> Map.new(&{&1.hash, &1})
 
       for ids <- nested_ids,
-          address when not is_nil(address) <- ids |> Enum.map(&addresses_map[&1]) do
+          address when not is_nil(address) <- ids |> List.flatten() |> Enum.map(&addresses_map[&1]) do
         {ids, address}
       end
     end
@@ -579,10 +580,15 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     ## Examples
 
       iex> Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
-      [proxy_implementations: [addresses: &Explorer.Chain.SmartContract.Proxy.Models.Implementation.addresses_association_for_filecoin/1]]
+      [
+        proxy_implementations: [
+          addresses: &Explorer.Chain.SmartContract.Proxy.Models.Implementation.addresses_association_for_filecoin/1,
+          conflicting_addresses: &Explorer.Chain.SmartContract.Proxy.Models.Implementation.addresses_association_for_filecoin/1
+        ]
+      ]
     """
     @spec proxy_implementations_association() :: [
-            proxy_implementations: [addresses: fun()]
+            proxy_implementations: [addresses: fun(), conflicting_addresses: fun()]
           ]
     def proxy_implementations_association do
       [proxy_implementations: proxy_implementations_addresses_association()]
@@ -596,18 +602,25 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     ## Examples
 
       iex> Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_addresses_association()
-      [addresses: &Explorer.Chain.SmartContract.Proxy.Models.Implementation.addresses_association_for_filecoin/1]
+      [
+        addresses: &Explorer.Chain.SmartContract.Proxy.Models.Implementation.addresses_association_for_filecoin/1,
+        conflicting_addresses: &Explorer.Chain.SmartContract.Proxy.Models.Implementation.addresses_association_for_filecoin/1
+      ]
 
     """
-    @spec proxy_implementations_association() :: [addresses: fun()]
+    @spec proxy_implementations_addresses_association() :: [addresses: fun(), conflicting_addresses: fun()]
     def proxy_implementations_addresses_association do
-      [addresses: &__MODULE__.addresses_association_for_filecoin/1]
+      [
+        addresses: &__MODULE__.addresses_association_for_filecoin/1,
+        conflicting_addresses: &__MODULE__.addresses_association_for_filecoin/1
+      ]
     end
 
     def proxy_implementations_smart_contracts_association do
       [
         proxy_implementations: [
           addresses: &__MODULE__.addresses_association_for_filecoin/1,
+          conflicting_addresses: &__MODULE__.addresses_association_for_filecoin/1,
           smart_contracts: &__MODULE__.smart_contract_association_for_implementations/1
         ]
       ]

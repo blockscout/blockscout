@@ -417,7 +417,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   def proxy_object_info(nil), do: []
 
   def proxy_object_info(proxy_implementation) do
-    implementations_info = prepare_implementations(proxy_implementation)
+    implementations_info = prepare_implementations(proxy_implementation.addresses)
     implementation_addresses = proxy_implementation.address_hashes
     implementation_names = proxy_implementation.names
 
@@ -437,7 +437,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       Map.put(address, "filecoin_robust_address", implementations_info[address_hash])
     end
 
-    def prepare_implementations(%Implementation{addresses: [_ | _] = addresses}) do
+    def prepare_implementations(addresses) when is_list(addresses) do
       Enum.into(addresses, %{}, fn address -> {Address.checksum(address.hash), address.filecoin_robust} end)
     end
 
@@ -475,13 +475,19 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         } = proxy_implementation
       )
       when not is_nil(proxy_type) and is_list(conflicting_proxy_types) and is_list(conflicting_address_hashes) do
+    implementations_info = prepare_implementations(proxy_implementation.conflicting_addresses)
+
     conflicting_implementations =
       conflicting_proxy_types
       |> Enum.zip(conflicting_address_hashes)
       |> Enum.map(fn {proxy_type, address_hashes} ->
         %{
           "proxy_type" => proxy_type,
-          "implementations" => Enum.map(address_hashes, &%{"address_hash" => Address.checksum(&1)})
+          "implementations" =>
+            Enum.map(
+              address_hashes,
+              &(%{"address_hash" => Address.checksum(&1)} |> chain_type_fields(implementations_info))
+            )
         }
       end)
 
