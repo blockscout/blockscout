@@ -37,18 +37,22 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   Checks database for bytecode first, then fetches from RPC if not found.
   This function handles the complete verification flow including database fallback.
 
-  Returns `{:ok, bytecode}` if bytecode is found, or `{:error, :not_a_smart_contract}` otherwise.
+  Returns `{:ok, bytecode}` if bytecode is found, or `:error` otherwise.
   """
-  @spec check_and_fetch_bytecode(Hash.Address.t(), Keyword.t()) ::
-          {:ok, String.t()} | {:error, :not_a_smart_contract}
-  def check_and_fetch_bytecode(address_hash, options \\ []) do
-    case Chain.smart_contract_bytecode(address_hash, options) do
-      bytecode when bytecode != "0x" and not is_nil(bytecode) ->
-        {:ok, bytecode}
+  @spec get_or_fetch_bytecode(Hash.Address.t()) ::
+          {:ok, String.t()} | :error
+  def get_or_fetch_bytecode(address_hash) do
+    case Chain.hash_to_address(address_hash, []) do
+      {:ok, %Address{} = address} ->
+        if is_nil(address.contract_code) or Address.eoa_with_code?(address) do
+          # Bytecode not found in DB, try to fetch it synchronously from RPC
+          GenServer.call(__MODULE__, {:fetch, address})
+        else
+          {:ok, address.contract_code}
+        end
 
       _ ->
-        # Bytecode not found in DB, try to fetch it synchronously from RPC
-        GenServer.call(__MODULE__, {:check_and_fetch, address_hash, options})
+        :error
     end
   end
 
@@ -66,7 +70,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   #   `:ok` in all cases.
   @spec fetch_contract_code(Address.t(), %{
           json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments()
-        }) :: :ok
+        }) :: {:ok, String.t() | nil} | :error
   defp fetch_contract_code(address, state) do
     with {:need_to_fetch, true} <- {:need_to_fetch, fetch?(address)},
          {:retries_number, {retries_number, updated_at}} <-
@@ -79,14 +83,13 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
       fetch_and_broadcast_bytecode(address, state)
     else
       {:need_to_fetch, false} ->
-        :ok
+        :error
 
       {:retries_number, nil} ->
         fetch_and_broadcast_bytecode(address, state)
-        :ok
 
       {:retry, false} ->
-        :ok
+        :error
     end
   end
 
@@ -138,48 +141,50 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
 
   @spec fetch_and_broadcast_bytecode(Address.t(), %{
           json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments()
-        }) :: :ok
+        }) :: {:ok, String.t() | nil} | :error
   defp fetch_and_broadcast_bytecode(address, %{json_rpc_named_arguments: _} = state) do
     with {:fetched_code, {:ok, code}} <-
            {:fetched_code, fetch_codes_from_rpc(address, state.json_rpc_named_arguments)},
          {:ok, fetched_code} <-
-           (code == "0x" && {:ok, nil}) || Data.cast(code),
-         true <- fetched_code != address.contract_code do
-      case Chain.import(%{
+           (contract_code_object.code == "0x" && {:ok, nil}) || Data.cast(contract_code_object.code),
+         true <- fetched_code != address.contract_code,
+         {:ok, %{addresses: addresses}} <-
+           Chain.import(%{
              addresses: %{
                params: [%{hash: address.hash, contract_code: fetched_code}],
                on_conflict: {:replace, [:contract_code, :updated_at]},
                fields_to_update: [:contract_code]
              }
            }) do
-        {:ok, %{addresses: addresses}} ->
-          Accounts.drop(addresses)
+      Accounts.drop(addresses)
 
-          # Update EIP7702 proxy addresses to avoid inconsistencies between addresses and proxy_implementations tables.
-          # Other proxy types are not handled here, since their bytecode doesn't change the way EIP7702 bytecode does.
-          cond do
-            Address.smart_contract?(address) and !Address.eoa_with_code?(address) ->
-              :ok
+      # Update EIP7702 proxy addresses to avoid inconsistencies between addresses and proxy_implementations tables.
+      # Other proxy types are not handled here, since their bytecode doesn't change the way EIP7702 bytecode does.
+      cond do
+        Address.smart_contract?(address) and !Address.eoa_with_code?(address) ->
+          :ok
 
-            is_nil(fetched_code) ->
-              Implementation.delete_implementations([address.hash])
+        is_nil(fetched_code) ->
+          Implementation.delete_implementations([address.hash])
 
-            true ->
-              Implementation.upsert_eip7702_implementations(addresses)
-          end
-
-          Publisher.broadcast(%{fetched_bytecode: [address.hash, code]}, :on_demand)
-
-          ContractCreatorOnDemand.trigger_fetch(address)
-
-          AddressContractCodeFetchAttempt.delete(address.hash)
+        true ->
+          Implementation.upsert_eip7702_implementations(addresses)
       end
+
+      Publisher.broadcast(%{fetched_bytecode: [address.hash, contract_code_object.code]}, :on_demand)
+
+      ContractCreatorOnDemand.trigger_fetch(address)
+
+      AddressContractCodeFetchAttempt.delete(address.hash)
+
+      {:ok, fetched_code}
     else
       {:fetched_code, {:error, _}} ->
-        :ok
+        :error
 
       _ ->
         AddressContractCodeFetchAttempt.insert_retries_number(address.hash)
+        :error
     end
   end
 
@@ -200,23 +205,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   end
 
   @impl true
-  def handle_call({:check_and_fetch, address_hash, options}, _from, state) do
-    case Chain.hash_to_address(address_hash, options) do
-      {:ok, address} ->
-        # Use the core fetching logic from fetch_and_broadcast_bytecode
-        result = case fetch_codes_from_rpc(address, state.json_rpc_named_arguments) do
-          {:ok, code} when is_binary(code) and code != "0x" ->
-            # Trigger async update for future requests
-            trigger_fetch(nil, address)
-            {:ok, code}
-          {:error, _} ->
-            {:error, :not_a_smart_contract}
-        end
-        {:reply, result, state}
-
-      _ ->
-        {:reply, {:error, :not_a_smart_contract}, state}
-    end
+  def handle_call({:fetch, address}, _from, state) do
+    result = fetch_contract_code(address, state)
+    {:reply, result, state}
   end
 
   # An initial threshold to fetch smart-contract bytecode on-demand
