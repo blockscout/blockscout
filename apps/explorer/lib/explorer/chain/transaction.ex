@@ -1434,6 +1434,38 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
+  Streams a batch of transactions without OP operator fee for which the fee needs to be defined.
+
+  This function selects specific fields from the transaction records and applies a reducer function to each entry in the stream, accumulating the result.
+
+  ## Parameters
+  - `initial`: The initial accumulator value.
+  - `reducer`: A function that takes an entry (as a map) and the current accumulator, returning the updated accumulator.
+  - `start_timestamp`: A timestamp starting from which the transactions should be scanned.
+
+  ## Returns
+  - `{:ok, accumulator}`: A tuple containing `:ok` and the final accumulator after processing the stream.
+  """
+  @spec stream_transactions_without_operator_fee(
+          initial :: accumulator,
+          reducer :: (entry :: map(), accumulator -> accumulator),
+          start_timestamp :: non_neg_integer()
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_transactions_without_operator_fee(initial, reducer, start_timestamp) when is_function(reducer, 2) do
+    limit = Application.get_env(:indexer, Indexer.Fetcher.Optimism.OperatorFee)[:init_limit]
+
+    __MODULE__
+    |> select([t], t.hash)
+    |> where(
+      [t],
+      t.block_timestamp >= ^start_timestamp and t.block_consensus == true and is_nil(t.operator_fee_constant)
+    )
+    |> limit(^limit)
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
   Returns true if the transaction is a Rootstock REMASC transaction.
   """
   @spec rootstock_remasc_transaction?(Explorer.Chain.Transaction.t()) :: boolean
