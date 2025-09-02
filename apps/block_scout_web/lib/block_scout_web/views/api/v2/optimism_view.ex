@@ -494,14 +494,15 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         }
       end)
 
-    operator_fee = Transaction.operator_fee(transaction)
-
     interop_messages =
       transaction.hash
       |> InteropMessage.messages_by_transaction()
 
     out_json = Map.put(out_json, "op_withdrawals", withdrawals)
 
+    operator_fee = Transaction.operator_fee(transaction)
+
+    # credo:disable-for-next-line
     out_json =
       if Decimal.gt?(operator_fee, Decimal.new(0)) do
         Map.put(out_json, "operator_fee", operator_fee)

@@ -60,6 +60,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.Arbitrum.RollupMessagesCatchup, as: ArbitrumRollupMessagesCatchup
   alias Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses, as: ArbitrumTrackingBatchesStatuses
   alias Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1, as: ArbitrumTrackingMessagesOnL1
+  alias Indexer.Fetcher.Optimism.OperatorFee, as: OptimismOperatorFee
   alias Indexer.Fetcher.ZkSync.BatchesStatusTracker, as: ZkSyncBatchesStatusTracker
   alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
 
@@ -195,6 +196,8 @@ defmodule Indexer.Supervisor do
           Indexer.Fetcher.Optimism.Interop.MultichainExport.Supervisor,
           [[memory_monitor: memory_monitor]]
         },
+        {OptimismOperatorFee.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         configure(Indexer.Fetcher.Shibarium.L2.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
