@@ -241,8 +241,14 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
         where: exists(any_block_transactions_query())
       )
 
+    # Inner Join is required in order to lock only `blocks` table.
+    # As `non_empty_blocks_query` has WHERE condition on `transactions` table,
+    # if you apply lock to the query, the `transactions` table is also locked
+    # and that results in obtaining locks before the sort.
     from(
-      block in subquery(non_empty_blocks_query),
+      block in Block,
+      inner_join: non_empty_block in subquery(non_empty_blocks_query),
+      on: block.hash == non_empty_block.hash,
       select: %{hash: block.hash},
       order_by: [asc: block.hash],
       lock: fragment("FOR NO KEY UPDATE OF ?", block)
