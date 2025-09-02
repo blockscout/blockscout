@@ -43,18 +43,18 @@ jobs:
           # Copy with the specific release number tag
           docker buildx imagetools create \
             --tag ghcr.io/blockscout/blockscout-test:${TARGET_TAG} \
-            ghcr.io/blockscout/blockscout-private:${SOURCE_TAG}
+            ghcr.io/blockscout/blockscout:${SOURCE_TAG}
           
           # Also copy with latest tag
           docker buildx imagetools create \
             --tag ghcr.io/blockscout/blockscout-test:latest \
-            ghcr.io/blockscout/blockscout-private:latest
+            ghcr.io/blockscout/blockscout:latest
 
       - name: Verify deployment
         run: |
           RELEASE_NUMBER="${{ github.event.inputs.release_number }}"
           echo "Bundle successfully copied from private to public repository"
-          echo "Source: ghcr.io/blockscout/blockscout-private:${SOURCE_TAG}"
+          echo "Source: ghcr.io/blockscout/blockscout:${SOURCE_TAG}"
           echo "Target 1: ghcr.io/blockscout/blockscout-test:${TARGET_TAG}"
           echo "Target 2: ghcr.io/blockscout/blockscout-test:latest"
           
