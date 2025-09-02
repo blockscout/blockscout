@@ -84,7 +84,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
          {:params, external_libraries} <-
            {:params, fetch_external_libraries(params)},
          {:not_a_smart_contract, {:ok, _bytecode}} <-
-           {:not_a_smart_contract, ContractCode.get_or_fetch_bytecode(casted_address_hash)},
+           {:not_a_smart_contract,
+            conn
+            |> AccessHelper.conn_to_ip_string()
+            |> ContractCode.get_or_fetch_bytecode(casted_address_hash)},
          {:publish, {:ok, _}} <-
            {:publish, Publisher.publish(address_hash, fetched_params, external_libraries)} do
       address = Contracts.address_hash_to_address_with_source_code(casted_address_hash)
@@ -167,7 +170,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_params(params)},
          {:not_a_smart_contract, {:ok, _bytecode}} <-
-           {:not_a_smart_contract, ContractCode.get_or_fetch_bytecode(casted_address_hash)},
+           {:not_a_smart_contract,
+            conn
+            |> AccessHelper.conn_to_ip_string()
+            |> ContractCode.get_or_fetch_bytecode(casted_address_hash)},
          uid <- VerificationStatus.generate_uid(address_hash) do
       Que.add(SolidityPublisherWorker, {"json_api", fetched_params, json_input, uid})
 
@@ -203,7 +209,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:params, {:ok, fetched_params}} <- {:params, fetch_verifysourcecode_solidity_single_file_params(params)},
          {:not_a_smart_contract, {:ok, _bytecode}} <-
-           {:not_a_smart_contract, ContractCode.get_or_fetch_bytecode(casted_address_hash)},
+           {:not_a_smart_contract,
+            conn
+            |> AccessHelper.conn_to_ip_string()
+            |> ContractCode.get_or_fetch_bytecode(casted_address_hash)},
          external_libraries <- fetch_external_libraries_for_verifysourcecode(params),
          uid <- VerificationStatus.generate_uid(address_hash) do
       Que.add(SolidityPublisherWorker, {"flattened_api", fetched_params, external_libraries, uid})
@@ -441,7 +450,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_vyper_verify_params(params)},
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:not_a_smart_contract, {:ok, _bytecode}} <-
-           {:not_a_smart_contract, ContractCode.get_or_fetch_bytecode(casted_address_hash)},
+           {:not_a_smart_contract,
+            conn
+            |> AccessHelper.conn_to_ip_string()
+            |> ContractCode.get_or_fetch_bytecode(casted_address_hash)},
          {:publish, {:ok, _}} <-
            {:publish, VyperPublisher.publish(address_hash, fetched_params)} do
       address = Contracts.address_hash_to_address_with_source_code(casted_address_hash)

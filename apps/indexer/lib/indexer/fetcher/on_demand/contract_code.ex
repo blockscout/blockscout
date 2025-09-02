@@ -41,18 +41,15 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   """
   @spec get_or_fetch_bytecode(Hash.Address.t()) ::
           {:ok, String.t()} | :error
-  def get_or_fetch_bytecode(address_hash) do
-    case Chain.hash_to_address(address_hash, []) do
-      {:ok, %Address{} = address} ->
-        if is_nil(address.contract_code) or Address.eoa_with_code?(address) do
-          # Bytecode not found in DB, try to fetch it synchronously from RPC
-          GenServer.call(__MODULE__, {:fetch, address})
-        else
-          {:ok, address.contract_code}
-        end
-
-      _ ->
-        :error
+  def get_or_fetch_bytecode(caller \\ nil, address_hash) do
+    with {:ok, %Address{} = address} <- Chain.hash_to_address(address_hash, []),
+         fetch? = is_nil(address.contract_code) or Address.eoa_with_code?(address),
+         {true, _} <- {fetch?, address.contract_code},
+         :allow <- RateLimiter.check_rate(caller, :on_demand) do
+      GenServer.call(__MODULE__, {:fetch, address})
+    else
+      {false, bytecode} -> {:ok, bytecode}
+      _ -> :error
     end
   end
 
