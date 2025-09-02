@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.{Address, Data, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.{Repo, TestHelper}
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
@@ -1902,6 +1903,42 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
+  describe "transactions/{transaction_hash}/beacon/deposits" do
+    if Application.compile_env(:explorer, :chain_type) == :ethereum do
+      test "get 404 on non-existing transaction", %{conn: conn} do
+        transaction = build(:transaction)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/beacon/deposits")
+        response = json_response(request, 404)
+      end
+
+      test "get deposits", %{conn: conn} do
+        transaction = insert(:transaction)
+
+        deposits = insert_list(51, :beacon_deposit, transaction: transaction)
+
+        insert(:beacon_deposit)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/beacon/deposits")
+        assert response = json_response(request, 200)
+
+        request_2nd_page =
+          get(conn, "/api/v2/transactions/#{transaction.hash}/beacon/deposits", response["next_page_params"])
+
+        assert response_2nd_page = json_response(request_2nd_page, 200)
+
+        check_paginated_response(response, response_2nd_page, deposits)
+      end
+    else
+      test "returns an error about chain type", %{conn: conn} do
+        transaction = insert(:transaction)
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/beacon/deposits")
+        assert response = json_response(request, 404)
+        assert %{"message" => "Endpoint not available for current chain type"} = response
+      end
+    end
+  end
+
   defp compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
     assert transaction.block_number == json["block_number"]
@@ -1966,6 +2003,45 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                ],
                else: []
              )
+  end
+
+  defp compare_item(%BeaconDeposit{} = deposit, json) do
+    index = deposit.index
+    transaction_hash = to_string(deposit.transaction_hash)
+    block_hash = to_string(deposit.block_hash)
+    block_number = deposit.block_number
+    pubkey = to_string(deposit.pubkey)
+    withdrawal_credentials = to_string(deposit.withdrawal_credentials)
+    signature = to_string(deposit.signature)
+    from_address_hash = Address.checksum(deposit.from_address_hash)
+
+    if deposit.withdrawal_address_hash do
+      withdrawal_address_hash = Address.checksum(deposit.withdrawal_address_hash)
+
+      assert %{
+               "index" => ^index,
+               "transaction_hash" => ^transaction_hash,
+               "block_hash" => ^block_hash,
+               "block_number" => ^block_number,
+               "pubkey" => ^pubkey,
+               "withdrawal_credentials" => ^withdrawal_credentials,
+               "withdrawal_address" => %{"hash" => ^withdrawal_address_hash},
+               "signature" => ^signature,
+               "from_address" => %{"hash" => ^from_address_hash}
+             } = json
+    else
+      assert %{
+               "index" => ^index,
+               "transaction_hash" => ^transaction_hash,
+               "block_hash" => ^block_hash,
+               "block_number" => ^block_number,
+               "pubkey" => ^pubkey,
+               "withdrawal_credentials" => ^withdrawal_credentials,
+               "withdrawal_address" => nil,
+               "signature" => ^signature,
+               "from_address" => %{"hash" => ^from_address_hash}
+             } = json
+    end
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, transactions) do

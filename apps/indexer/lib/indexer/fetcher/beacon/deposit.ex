@@ -27,8 +27,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
     :last_processed_log_index
   ]
 
-  def start_link(arguments, gen_server_options \\ []) do
-    GenServer.start_link(__MODULE__, arguments, gen_server_options)
+  def start_link([init_opts, server_opts]) do
+    GenServer.start_link(__MODULE__, init_opts, server_opts)
   end
 
   @impl GenServer
@@ -89,6 +89,33 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
         Logger.error("Failed to fetch beacon spec: #{inspect(reason)}")
         {:stop, :fetch_failed, nil}
     end
+  end
+
+  @impl GenServer
+  def handle_cast({:lost_consensus, block_number}, %__MODULE__{} = state) do
+    {_deleted_deposits_count, deleted_deposits} =
+      Repo.delete_all(
+        from(d in Deposit, where: d.block_number >= ^block_number, select: d.index),
+        timeout: :infinity
+      )
+
+    deposit_index = Enum.min(deleted_deposits, fn -> state.deposit_index + 1 end)
+
+    {:noreply,
+     %{
+       state
+       | deposit_index: deposit_index - 1,
+         last_processed_log_block_number: block_number - 1,
+         last_processed_log_index: -1
+     }}
+  rescue
+    postgrex_error in Postgrex.Error ->
+      Logger.error(
+        "Error while trying to delete reorged Beacon Deposits: #{Exception.format(:error, postgrex_error, __STACKTRACE__)}. Retrying."
+      )
+
+      GenServer.cast(self(), {:lost_consensus, block_number})
+      {:noreply, state}
   end
 
   @impl GenServer

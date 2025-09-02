@@ -126,6 +126,36 @@ defmodule Explorer.Chain.Beacon.Deposit do
   end
 
   @doc """
+  Fetches beacon deposits from a specific transaction with pagination and association preloading.
+
+  Retrieves all beacon deposits that were included in the specified transaction,
+  sorted by index in descending order (newest first). For each deposit,
+  extracts the withdrawal address from the withdrawal credentials if they have
+  prefix 0x01 or 0x02, making it available as a virtual field for association
+  preloading.
+
+  ## Parameters
+  - `transaction_hash`: The hash of the transaction to fetch deposits from.
+  - `options`: A keyword list of options:
+    - `:paging_options` - Pagination configuration (defaults to
+      `Chain.default_paging_options()`).
+    - `:necessity_by_association` - A map specifying which associations to
+      preload and whether they are `:required` or `:optional`.
+    - `:api?` - Boolean flag for API context.
+
+  ## Returns
+  - A list of beacon deposits from the specified transaction with requested
+    associations preloaded and withdrawal addresses extracted where applicable.
+  """
+  @spec from_transaction_hash(Hash.Full.t(), [Chain.paging_options() | Chain.necessity_by_association() | Chain.api?()]) ::
+          [
+            t()
+          ]
+  def from_transaction_hash(transaction_hash, options \\ []) do
+    beacon_deposits_list_query(:transaction_hash, transaction_hash, options)
+  end
+
+  @doc """
   Fetches beacon deposits from a specific address (`from_address`) with pagination and
   association preloading.
 
@@ -165,6 +195,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
       case entity do
         :block_hash -> where(q, [deposit], deposit.block_hash == ^hash)
         :from_address_hash -> where(q, [deposit], deposit.from_address_hash == ^hash)
+        :transaction_hash -> where(q, [deposit], deposit.transaction_hash == ^hash)
         :all -> q
       end
     end)

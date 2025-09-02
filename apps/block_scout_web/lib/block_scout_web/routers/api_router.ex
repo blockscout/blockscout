@@ -190,6 +190,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if @chain_type == :ethereum do
         get("/:transaction_hash_param/blobs", V2.TransactionController, :blobs)
       end
+
+      chain_scope :ethereum do
+        get("/:transaction_hash_param/beacon/deposits", V2.TransactionController, :beacon_deposits)
+      end
     end
 
     scope "/token-transfers" do

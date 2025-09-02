@@ -13,6 +13,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit.StatusTest do
   setup :set_mox_global
 
   if Application.compile_env(:explorer, :chain_type) == :ethereum do
+    @epoch_duration 384
+
     setup do
       initial_supervisor_env = Application.get_env(:indexer, StatusSupervisor)
       initial_fetcher_env = Application.get_env(:indexer, StatusFetcher)
@@ -22,7 +24,7 @@ defmodule Indexer.Fetcher.Beacon.Deposit.StatusTest do
       Application.put_env(
         :indexer,
         StatusFetcher,
-        initial_fetcher_env |> Keyword.merge(epoch_duration: 384, reference_timestamp: 1_722_024_023)
+        initial_fetcher_env |> Keyword.merge(epoch_duration: @epoch_duration, reference_timestamp: 1_722_024_023)
       )
 
       on_exit(fn ->
@@ -102,7 +104,6 @@ defmodule Indexer.Fetcher.Beacon.Deposit.StatusTest do
           ]
           }
           """
-          |> dbg()
 
         Tesla.Test.expect_tesla_call(
           times: 1,
@@ -113,7 +114,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit.StatusTest do
 
         {:noreply, timer} = StatusFetcher.handle_info(:fetch_queued_deposits, nil)
 
-        dbg(timer)
+        # if next scheduled call is later than epoch duration something is wrong
+        assert Process.read_timer(timer) / 1000 >= @epoch_duration + 1
 
         assert [
                  %Deposit{status: :invalid},

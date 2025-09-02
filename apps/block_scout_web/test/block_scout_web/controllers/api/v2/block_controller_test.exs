@@ -549,6 +549,8 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
         deposits = insert_list(51, :beacon_deposit, block: block)
 
+        insert(:beacon_deposit)
+
         request = get(conn, "/api/v2/blocks/#{block.hash}/beacon/deposits")
         assert response = json_response(request, 200)
 
