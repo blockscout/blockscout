@@ -13,7 +13,7 @@
 - Export main page counters to Multichain service ([#13007](https://github.com/blockscout/blockscout/issues/13007))
 - Add methodId to txlist rpc method ([#13043](https://github.com/blockscout/blockscout/issues/13043))
 - Runtime config option to disable file logging ([#12805](https://github.com/blockscout/blockscout/issues/12805))
-- Add celo-cpecific APIv1 `getepoch` action ([#12853](https://github.com/blockscout/blockscout/issues/12853))
+- Add celo-specific APIv1 `getepoch` action ([#12853](https://github.com/blockscout/blockscout/issues/12853))
 
 ### 🐛 Bug Fixes
 
