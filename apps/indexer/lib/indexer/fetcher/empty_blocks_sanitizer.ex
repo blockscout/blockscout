@@ -224,7 +224,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
     )
   end
 
-  defp any_block_transactions_query() do
+  defp any_block_transactions_query do
     from(
       t in Transaction,
       select: 1,
