@@ -711,7 +711,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   @doc """
   Handles `api/v2/transactions/:transaction_hash_param/beacon/deposits` endpoint.
-  Fetches beacon deposits included in a specific block with pagination support.
+  Fetches beacon deposits included in a specific transaction with pagination support.
 
   This endpoint retrieves all beacon deposits that were included in the
   specified transactions. The results include preloaded associations for both the from_address and
@@ -732,8 +732,9 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     information when successful.
   """
   @spec beacon_deposits(Plug.Conn.t(), map()) ::
-          {:error, :not_found | {:invalid, :hash | :number}}
-          | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
+          {:format, :error}
+          | {:not_found, {:error, :not_found}}
+          | {:restricted_access, true}
           | Plug.Conn.t()
   def beacon_deposits(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:ok, _transaction, transaction_hash} <- validate_transaction(transaction_hash_string, params) do

@@ -258,9 +258,27 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
         other_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fb")
 
         insert(:log)
-        log_a = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 0)
+        transaction_a = insert(:transaction) |> with_block()
+
+        log_a =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 0,
+            transaction: transaction_a,
+            block: transaction_a.block
+          )
+
         log_a_transaction_hash = log_a.transaction_hash
-        log_b = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 1)
+        transaction_b = insert(:transaction) |> with_block()
+
+        log_b =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 1,
+            transaction: transaction_b,
+            block: transaction_b.block
+          )
+
         log_b_transaction_hash = log_b.transaction_hash
         # ensure that logs from other contract or with other signature are ignored
         _log_to_be_ignored_b = insert(:beacon_deposit_log, address: other_contract_address, deposit_index: 2)
@@ -282,9 +300,28 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
         other_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fb")
 
         insert(:log)
-        log_a = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 0)
+        transaction_a = insert(:transaction) |> with_block()
+
+        log_a =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 0,
+            transaction: transaction_a,
+            block: transaction_a.block
+          )
+
         log_a_transaction_hash = log_a.transaction_hash
-        log_b = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 1)
+
+        transaction_b = insert(:transaction) |> with_block()
+
+        log_b =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 1,
+            transaction: transaction_b,
+            block: transaction_b.block
+          )
+
         log_b_transaction_hash = log_b.transaction_hash
         # ensure that logs from other contract or with other signature are ignored
         _log_to_be_ignored_b = insert(:beacon_deposit_log, address: other_contract_address, deposit_index: 2)
@@ -301,9 +338,35 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
       test "fails to process non-sequential logs (logs starts not from 0, between batches)" do
         deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
-        _log_to_be_ignored_a = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 1)
-        _log_a = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 2)
-        _log_b = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 3)
+        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
+
+        _log_to_be_ignored_a =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 1,
+            transaction: transaction_a_to_be_ignored,
+            block: transaction_a_to_be_ignored.block
+          )
+
+        transaction_a = insert(:transaction) |> with_block()
+
+        _log_a =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 2,
+            transaction: transaction_a,
+            block: transaction_a.block
+          )
+
+        transaction_b = insert(:transaction) |> with_block()
+
+        _log_b =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 3,
+            transaction: transaction_b,
+            block: transaction_b.block
+          )
 
         log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, @state) end)
 
@@ -315,10 +378,36 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
       test "fails to process non-sequential logs (non-sequential between, between batches)" do
         deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
-        log_a = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 0)
+        transaction_a = insert(:transaction) |> with_block()
+
+        log_a =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 0,
+            transaction: transaction_a,
+            block: transaction_a.block
+          )
+
         log_a_transaction_hash = log_a.transaction_hash
-        _log_to_be_ignored_a = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 2)
-        _log_b = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 3)
+        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
+
+        _log_to_be_ignored_a =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 2,
+            transaction: transaction_a_to_be_ignored,
+            block: transaction_a_to_be_ignored.block
+          )
+
+        transaction_b = insert(:transaction) |> with_block()
+
+        _log_b =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 3,
+            transaction: transaction_b,
+            block: transaction_b.block
+          )
 
         {:noreply, new_state} = DepositFetcher.handle_info(:process_logs, @state)
 
@@ -334,9 +423,35 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
 
         deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
-        _log_to_be_ignored_a = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 1)
-        _log_a = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 2)
-        _log_b = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 3)
+        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
+
+        _log_to_be_ignored_a =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 1,
+            transaction: transaction_a_to_be_ignored,
+            block: transaction_a_to_be_ignored.block
+          )
+
+        transaction_a = insert(:transaction) |> with_block()
+
+        _log_a =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 2,
+            transaction: transaction_a,
+            block: transaction_a.block
+          )
+
+        transaction_b = insert(:transaction) |> with_block()
+
+        _log_b =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 3,
+            transaction: transaction_b,
+            block: transaction_b.block
+          )
 
         log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, state) end)
 
@@ -350,9 +465,35 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
 
         deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
-        _log_a = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 0)
-        _log_to_be_ignored_a = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 2)
-        _log_b = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 3)
+        transaction_a = insert(:transaction) |> with_block()
+
+        _log_a =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 0,
+            transaction: transaction_a,
+            block: transaction_a.block
+          )
+
+        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
+
+        _log_to_be_ignored_a =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 2,
+            transaction: transaction_a_to_be_ignored,
+            block: transaction_a_to_be_ignored.block
+          )
+
+        transaction_b = insert(:transaction) |> with_block()
+
+        _log_b =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 3,
+            transaction: transaction_b,
+            block: transaction_b.block
+          )
 
         log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, state) end)
 
@@ -365,6 +506,8 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
         state = Map.put(@state, :batch_size, 5)
 
         deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
+
+        transaction_a = insert(:transaction) |> with_block()
 
         _valid_log =
           insert(:beacon_deposit_log,
@@ -382,10 +525,20 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
                 "a519a7ff525a6831a6099399033bb5a0b959ec7af022ad7f37aa869927bbb59e1271079cbdff416e7f8f6f0f8ea7173304f4abdabfa65923a6b0304d49c97cef0690d0017b39518e7b19848657e2a9f73601d5037c217c5252558be1a8176e3d",
                 case: :mixed
               ),
-            deposit_index: 0
+            deposit_index: 0,
+            transaction: transaction_a,
+            block: transaction_a.block
           )
 
-        _invalid_log = insert(:beacon_deposit_log, address: deposit_contract_address, deposit_index: 1)
+        transaction_b = insert(:transaction) |> with_block()
+
+        _invalid_log =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 1,
+            transaction: transaction_b,
+            block: transaction_b.block
+          )
 
         DepositFetcher.handle_info(:process_logs, state)
 

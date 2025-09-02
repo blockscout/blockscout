@@ -546,7 +546,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       removed_consensus_blocks
       |> Enum.map(fn {number, _hash} -> number end)
 
-    GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, removed_consensus_block_numbers |> Enum.min()})
+    if not Enum.empty?(removed_consensus_block_numbers) do
+      GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, removed_consensus_block_numbers |> Enum.min()})
+    end
 
     repo.update_all(
       from(

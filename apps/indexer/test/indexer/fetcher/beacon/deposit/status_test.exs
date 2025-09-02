@@ -115,7 +115,7 @@ defmodule Indexer.Fetcher.Beacon.Deposit.StatusTest do
         {:noreply, timer} = StatusFetcher.handle_info(:fetch_queued_deposits, nil)
 
         # if next scheduled call is later than epoch duration something is wrong
-        assert Process.read_timer(timer) / 1000 >= @epoch_duration + 1
+        assert Process.read_timer(timer) / 1000 <= @epoch_duration + 1
 
         assert [
                  %Deposit{status: :invalid},
