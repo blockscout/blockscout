@@ -84,8 +84,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
          {:params, external_libraries} <-
            {:params, fetch_external_libraries(params)},
          {:not_a_smart_contract, {:ok, _bytecode}} <-
-           {:not_a_smart_contract, ContractCode.check_and_fetch_bytecode(casted_address_hash, @api_true)},
-         {:not_a_smart_contract, {:ok, _bytecode}} <-
            {:not_a_smart_contract, ContractCode.get_or_fetch_bytecode(casted_address_hash)},
          {:publish, {:ok, _}} <-
            {:publish, Publisher.publish(address_hash, fetched_params, external_libraries)} do
@@ -442,8 +440,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def verify_vyper_contract(conn, %{"addressHash" => address_hash} = params) do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_vyper_verify_params(params)},
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
-         {:not_a_smart_contract, {:ok, _bytecode}} <-
-           {:not_a_smart_contract, ContractCode.check_and_fetch_bytecode(casted_address_hash, @api_true)},
          {:not_a_smart_contract, {:ok, _bytecode}} <-
            {:not_a_smart_contract, ContractCode.get_or_fetch_bytecode(casted_address_hash)},
          {:publish, {:ok, _}} <-

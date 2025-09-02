@@ -9,7 +9,6 @@ defmodule Explorer.SmartContract.Helper do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.{Reader, Writer}
-  alias Indexer.Fetcher.OnDemand.ContractCode
   alias Phoenix.HTML
 
   @api_true [api?: true]
@@ -313,5 +312,4 @@ defmodule Explorer.SmartContract.Helper do
     # todo: Dangerous, fix with https://github.com/blockscout/blockscout/issues/12544
     ExplorerHelper.add_0x_prefix(binary_hash)
   end
-
 end
