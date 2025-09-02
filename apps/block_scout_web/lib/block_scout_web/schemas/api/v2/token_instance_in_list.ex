@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstanceInList do
 
   alias BlockScoutWeb.Schemas.API.V2.{General, Token.Type, TokenInstance}
   alias BlockScoutWeb.Schemas.Helper
+  alias Explorer.Chain.Address.Reputation
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     TokenInstance.schema()
@@ -13,9 +15,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstanceInList do
       title: "TokenInstanceInList",
       properties: %{
         token_type: Type,
-        value: General.IntegerStringNullable
+        value: General.IntegerStringNullable,
+        reputation: %Schema{
+          type: :string,
+          enum: Reputation.enum_values(),
+          description: "Reputation of the token instance",
+          nullable: true
+        }
       },
-      required: [:token_type, :value]
+      required: [:token_type, :value, :reputation]
     )
   )
 end
