@@ -548,6 +548,12 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     get("/multichain-search-export", BlockScoutWeb.API.HealthController, :multichain_search_db_export)
   end
 
+  scope "/v2" do
+    pipe_through(:api_v2)
+
+    get("/*path", BlockScoutWeb.API.V2.FallbackController, :unknown_action)
+  end
+
   scope "/" do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC}
