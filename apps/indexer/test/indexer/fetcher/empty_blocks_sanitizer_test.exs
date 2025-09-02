@@ -11,6 +11,16 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
   setup :set_mox_global
   setup :verify_on_exit!
 
+  # Uncomment if you need to see what queries are sent to the Postgres
+  # (check the database logs)
+  #
+  # setup do
+  #   Repo.query("load 'auto_explain';")
+  #   Repo.query("SET auto_explain.log_min_duration = 0;")
+  #   Repo.query("SET auto_explain.log_analyze = true;")
+  #   :ok
+  # end
+
   @moduletag [capture_log: true, no_geth: true]
 
   @head_offset 1000
