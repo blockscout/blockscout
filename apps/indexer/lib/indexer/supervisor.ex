@@ -23,6 +23,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.Blackfort.Validator, as: ValidatorBlackfort
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
+  alias Indexer.Fetcher.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
   alias Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue, as: MultichainSearchDbBalancesExportQueue
   alias Indexer.Fetcher.MultichainSearchDb.CountersExportQueue, as: MultichainSearchDbCountersExportQueue
   alias Indexer.Fetcher.MultichainSearchDb.CountersFetcher, as: MultichainSearchDbCountersFetcher
@@ -157,6 +158,7 @@ defmodule Indexer.Supervisor do
         {TokenCountersUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
+        {InternalTransactionDeleteQueue.Supervisor, [[memory_monitor: memory_monitor]]},
         {MultichainSearchDbMainExportQueue.Supervisor, [[memory_monitor: memory_monitor]]},
         {MultichainSearchDbBalancesExportQueue.Supervisor, [[memory_monitor: memory_monitor]]},
         {MultichainSearchDbTokenInfoExportQueue.Supervisor, [[memory_monitor: memory_monitor]]},

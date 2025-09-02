@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
+  alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
   alias Explorer.Chain.{Address, Block, Transaction, PendingBlockOperation}
   alias Explorer.{Chain, Repo}
   alias Explorer.Utility.MissingBlockRange
@@ -438,6 +439,18 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
                 # cancels out to no change
                 blocks_update_token_holder_counts: []
               }} = run_block_consensus_change(block, true, options)
+    end
+
+    test "internal transactions are inserted to delete queue if some blocks lost consensus",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      insert(:block, number: block_number, consensus: true)
+
+      assert {:ok,
+              %{
+                save_internal_transactions_for_delete: [^block_number]
+              }} = run_block_consensus_change(block, true, options)
+
+      assert %{block_number: ^block_number} = Repo.one(InternalTransactionDeleteQueue)
     end
 
     # Regression test for https://github.com/poanetwork/blockscout/issues/1644
