@@ -1,4 +1,4 @@
-name: Copy Bundle from Private to Public Repository
+name: Public release publishing
 
 on:
   workflow_dispatch:
@@ -66,13 +66,13 @@ jobs:
             
             # Copy with the specific release number tag
             docker buildx imagetools create \
-              --tag ghcr.io/blockscout/${CHAIN}-test:${RELEASE_NUMBER} \
-              ghcr.io/blockscout/${CHAIN}:${RELEASE_NUMBER}
+              --tag ghcr.io/blockscout/${CHAIN}:${RELEASE_NUMBER} \
+              ghcr.io/blockscout/${CHAIN}-private:${RELEASE_NUMBER}
             
             # Also copy with latest tag
             docker buildx imagetools create \
-              --tag ghcr.io/blockscout/${CHAIN}-test:latest \
-              ghcr.io/blockscout/${CHAIN}:latest
+              --tag ghcr.io/blockscout/${CHAIN}:latest \
+              ghcr.io/blockscout/${CHAIN}-private:latest
               
             echo "✅ Completed copying ${CHAIN}"
           done
@@ -82,14 +82,10 @@ jobs:
           RELEASE_NUMBER="${{ github.event.inputs.release_number }}"
           echo "🎉 All bundles successfully copied from private to public repositories"
           echo ""
-          echo "📦 Main repository:"
-          echo "  Source: ghcr.io/blockscout/blockscout:${SOURCE_TAG}"
-          echo "  Target 1: ghcr.io/blockscout/blockscout-test:${TARGET_TAG}"
-          echo "  Target 2: ghcr.io/blockscout/blockscout-test:latest"
-          echo ""
-          echo "🔗 Chain-specific repositories copied:"
+          echo "🔗 All repositories copied:"
           
           CHAINS=(
+            "blockscout"
             "blockscout-arbitrum"
             "blockscout-celo"
             "blockscout-ethereum"
@@ -107,10 +103,10 @@ jobs:
           )
           
           for CHAIN in "${CHAINS[@]}"; do
-            echo "  ✅ ${CHAIN} -> ${CHAIN}-test (tags: ${RELEASE_NUMBER}, latest)"
+            echo "  ✅ ${CHAIN}-private -> ${CHAIN} (tags: ${RELEASE_NUMBER}, latest)"
           done
           
           echo ""
           echo "🔍 Inspecting main repository images:"
-          docker buildx imagetools inspect ghcr.io/blockscout/blockscout-test:${TARGET_TAG}
-          docker buildx imagetools inspect ghcr.io/blockscout/blockscout-test:latest
+          docker buildx imagetools inspect ghcr.io/blockscout/blockscout:${TARGET_TAG}
+          docker buildx imagetools inspect ghcr.io/blockscout/blockscout:latest
