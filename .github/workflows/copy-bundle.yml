@@ -37,29 +37,80 @@ jobs:
           echo "SOURCE_TAG=${SOURCE_TAG}" >> $GITHUB_ENV
           echo "TARGET_TAG=${TARGET_TAG}" >> $GITHUB_ENV
 
-      - name: Copy image from private to public repository
+      - name: Copy chain-specific images from private to public repositories
         run: |
           RELEASE_NUMBER="${{ github.event.inputs.release_number }}"
-          # Copy with the specific release number tag
-          docker buildx imagetools create \
-            --tag ghcr.io/blockscout/blockscout-test:${TARGET_TAG} \
-            ghcr.io/blockscout/blockscout:${SOURCE_TAG}
           
-          # Also copy with latest tag
-          docker buildx imagetools create \
-            --tag ghcr.io/blockscout/blockscout-test:latest \
-            ghcr.io/blockscout/blockscout:latest
+          # Array of chain-specific repositories
+          CHAINS=(
+            "blockscout"
+            "blockscout-arbitrum"
+            "blockscout-celo"
+            "blockscout-ethereum"
+            "blockscout-filecoin"
+            "blockscout-fuse"
+            "blockscout-xdai"
+            "blockscout-optimism"
+            "blockscout-zkevm"
+            "blockscout-rsk"
+            "blockscout-scroll"
+            "blockscout-suave"
+            "blockscout-zetachain"
+            "blockscout-zilliqa"
+            "blockscout-zksync"
+          )
+          
+          # Copy each chain-specific image
+          for CHAIN in "${CHAINS[@]}"; do
+            echo "Copying ${CHAIN}..."
+            
+            # Copy with the specific release number tag
+            docker buildx imagetools create \
+              --tag ghcr.io/blockscout/${CHAIN}-test:${RELEASE_NUMBER} \
+              ghcr.io/blockscout/${CHAIN}:${RELEASE_NUMBER}
+            
+            # Also copy with latest tag
+            docker buildx imagetools create \
+              --tag ghcr.io/blockscout/${CHAIN}-test:latest \
+              ghcr.io/blockscout/${CHAIN}:latest
+              
+            echo "✅ Completed copying ${CHAIN}"
+          done
 
       - name: Verify deployment
         run: |
           RELEASE_NUMBER="${{ github.event.inputs.release_number }}"
-          echo "Bundle successfully copied from private to public repository"
-          echo "Source: ghcr.io/blockscout/blockscout:${SOURCE_TAG}"
-          echo "Target 1: ghcr.io/blockscout/blockscout-test:${TARGET_TAG}"
-          echo "Target 2: ghcr.io/blockscout/blockscout-test:latest"
+          echo "🎉 All bundles successfully copied from private to public repositories"
+          echo ""
+          echo "📦 Main repository:"
+          echo "  Source: ghcr.io/blockscout/blockscout:${SOURCE_TAG}"
+          echo "  Target 1: ghcr.io/blockscout/blockscout-test:${TARGET_TAG}"
+          echo "  Target 2: ghcr.io/blockscout/blockscout-test:latest"
+          echo ""
+          echo "🔗 Chain-specific repositories copied:"
           
-          # Inspect both copied images
-          echo "Inspecting release-specific tag:"
+          CHAINS=(
+            "blockscout-arbitrum"
+            "blockscout-celo"
+            "blockscout-ethereum"
+            "blockscout-filecoin"
+            "blockscout-fuse"
+            "blockscout-xdai"
+            "blockscout-optimism"
+            "blockscout-zkevm"
+            "blockscout-rsk"
+            "blockscout-scroll"
+            "blockscout-suave"
+            "blockscout-zetachain"
+            "blockscout-zilliqa"
+            "blockscout-zksync"
+          )
+          
+          for CHAIN in "${CHAINS[@]}"; do
+            echo "  ✅ ${CHAIN} -> ${CHAIN}-test (tags: ${RELEASE_NUMBER}, latest)"
+          done
+          
+          echo ""
+          echo "🔍 Inspecting main repository images:"
           docker buildx imagetools inspect ghcr.io/blockscout/blockscout-test:${TARGET_TAG}
-          echo "Inspecting latest tag:"
           docker buildx imagetools inspect ghcr.io/blockscout/blockscout-test:latest
