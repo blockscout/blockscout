@@ -1,0 +1,65 @@
+name: Copy Bundle from Private to Public Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_number:
+        description: 'Release number (e.g., v9.1.0, latest)'
+        required: true
+        type: string
+
+jobs:
+  copy-bundle:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - uses: actions/checkout@v5
+      - name: Setup repo
+        uses: ./.github/actions/setup-repo
+        id: setup
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          docker-remote-multi-platform: true
+          docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
+          docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
+
+      - name: Set source and target tags
+        run: |
+          RELEASE_NUMBER="${{ github.event.inputs.release_number || 'latest' }}"
+          SOURCE_TAG="${RELEASE_NUMBER}"
+          TARGET_TAG="${RELEASE_NUMBER}"
+          echo "SOURCE_TAG=${SOURCE_TAG}" >> $GITHUB_ENV
+          echo "TARGET_TAG=${TARGET_TAG}" >> $GITHUB_ENV
+
+      - name: Copy image from private to public repository
+        run: |
+          RELEASE_NUMBER="${{ github.event.inputs.release_number }}"
+          # Copy with the specific release number tag
+          docker buildx imagetools create \
+            --tag ghcr.io/blockscout/blockscout-test:${TARGET_TAG} \
+            ghcr.io/blockscout/blockscout-private:${SOURCE_TAG}
+          
+          # Also copy with latest tag
+          docker buildx imagetools create \
+            --tag ghcr.io/blockscout/blockscout-test:latest \
+            ghcr.io/blockscout/blockscout-private:latest
+
+      - name: Verify deployment
+        run: |
+          RELEASE_NUMBER="${{ github.event.inputs.release_number }}"
+          echo "Bundle successfully copied from private to public repository"
+          echo "Source: ghcr.io/blockscout/blockscout-private:${SOURCE_TAG}"
+          echo "Target 1: ghcr.io/blockscout/blockscout-test:${TARGET_TAG}"
+          echo "Target 2: ghcr.io/blockscout/blockscout-test:latest"
+          
+          # Inspect both copied images
+          echo "Inspecting release-specific tag:"
+          docker buildx imagetools inspect ghcr.io/blockscout/blockscout-test:${TARGET_TAG}
+          echo "Inspecting latest tag:"
+          docker buildx imagetools inspect ghcr.io/blockscout/blockscout-test:latest
