@@ -82,7 +82,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
           where: block.hash in subquery(unprocessed_non_empty_blocks_query)
         ),
         [set: [is_empty: false, updated_at: Timex.now()]],
-        timeout: 1000
+        timeout: :infinity
       )
 
     unprocessed_empty_blocks_list = unprocessed_empty_blocks_list_query(limit())
