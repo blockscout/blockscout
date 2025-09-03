@@ -2021,8 +2021,8 @@ defmodule Explorer.Chain.Transaction do
   @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t() | nil} | {:actual, Decimal.t() | nil}
   def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
 
-  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil} = transaction, unit) do
-    {:maximum, fee_calc(transaction, gas_price, gas, unit)}
+  def fee(%Transaction{gas: gas, gas_price: _gas_price, gas_used: nil} = transaction, unit) do
+    {:maximum, fee_calc(transaction, gas, unit)}
   end
 
   if @chain_type == :optimism do
@@ -2036,24 +2036,35 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used} = transaction, unit) do
-    {:actual, fee_calc(transaction, gas_price, gas_used, unit)}
+  def fee(%Transaction{gas_price: _gas_price, gas_used: gas_used} = transaction, unit) do
+    {:actual, fee_calc(transaction, gas_used, unit)}
   end
 
-  defp fee_calc(transaction, gas_price, gas_used, unit) do
+  # Internal function calculating a total fee of the transaction as follows:
+  #   total_fee = l2_fee + l1_fee + operator_fee
+  # The `operator_fee` is only calculated for OP chains (for others it's zero) starting from the Isthmus upgrade.
+  #
+  # ## Parameters
+  # - `transaction`: The transaction entity.
+  # - `gas_used`: The amount of gas used in the transaction. Equals to gas limit for pending transactions.
+  # - `unit`: Which unit the result should be presented in. One of [:ether, :gwei, :wei].
+  #
+  # ## Returns
+  # - The calculated total fee.
+  @spec fee_calc(Transaction.t(), Decimal.t(), :ether | :gwei | :wei) :: Decimal.t()
+  defp fee_calc(transaction, gas_used, unit) do
     l1_fee =
       case Map.get(transaction, :l1_fee) do
         nil -> Wei.from(Decimal.new(0), :wei)
         value -> value
       end
 
-    # operator_fee is calculated for OP chains starting from the Isthmus upgrade
     {:ok, operator_fee} =
       transaction
       |> operator_fee()
       |> Wei.cast()
 
-    gas_price
+    transaction.gas_price
     |> l2_fee_calc(gas_used, unit)
     |> Wei.from(unit)
     |> Wei.sum(l1_fee)
@@ -2061,6 +2072,18 @@ defmodule Explorer.Chain.Transaction do
     |> Wei.to(unit)
   end
 
+  @doc """
+    The operator fee is calculated for OP chains starting from the Isthmus upgrade
+    as described in https://specs.optimism.io/protocol/isthmus/exec-engine.html#operator-fee
+
+    If the `operatorFeeScalar` or `operatorFeeConstant` is `nil`, it's treated as zero.
+
+    ## Parameters
+    - `transaction`: The transaction entity.
+
+    ## Returns
+    - The calculated operator fee for the given transaction.
+  """
   @spec operator_fee(Transaction.t()) :: Decimal.t()
   def operator_fee(transaction) do
     gas_used =
