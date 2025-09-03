@@ -21,11 +21,10 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   @update_timeout 60_000
 
   @interval :timer.seconds(10)
-
+  @batch_size 10
   @head_offset 1000
 
-  defstruct interval: @interval,
-            json_rpc_named_arguments: []
+  defstruct json_rpc_named_arguments: []
 
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
@@ -46,14 +45,13 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
   @impl GenServer
   def init(opts) when is_list(opts) do
-    interval = Application.get_env(:indexer, __MODULE__)[:interval]
+    # For the first call we want it to start immediately
+    # (don't affect implementation in any way, but helps tests not to flake)
+    Kernel.send(self(), :sanitize_empty_blocks)
 
     state = %__MODULE__{
-      json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
-      interval: interval || @interval
+      json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments)
     }
-
-    Process.send_after(self(), :sanitize_empty_blocks, state.interval)
 
     {:ok, state}
   end
@@ -61,7 +59,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   @impl GenServer
   def handle_info(
         :sanitize_empty_blocks,
-        %{interval: interval, json_rpc_named_arguments: json_rpc_named_arguments} = state
+        %{json_rpc_named_arguments: json_rpc_named_arguments} = state
       ) do
     Logger.info("Start sanitizing of empty blocks. Batch size is #{limit()}",
       fetcher: :empty_blocks_to_refetch
@@ -69,7 +67,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
     sanitize_empty_blocks(json_rpc_named_arguments)
 
-    Process.send_after(self(), :sanitize_empty_blocks, interval)
+    Process.send_after(self(), :sanitize_empty_blocks, interval())
 
     {:noreply, state}
   end
@@ -77,13 +75,15 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   defp sanitize_empty_blocks(json_rpc_named_arguments) do
     unprocessed_non_empty_blocks_query = unprocessed_non_empty_blocks_query(limit())
 
-    Repo.update_all(
-      from(
-        block in Block,
-        where: block.hash in subquery(unprocessed_non_empty_blocks_query)
-      ),
-      set: [is_empty: false, updated_at: Timex.now()]
-    )
+    updated =
+      Repo.update_all(
+        from(
+          block in Block,
+          where: block.hash in subquery(unprocessed_non_empty_blocks_query)
+        ),
+        [set: [is_empty: false, updated_at: Timex.now()]],
+        timeout: 1000
+      )
 
     unprocessed_empty_blocks_list = unprocessed_empty_blocks_list_query(limit())
 
@@ -269,7 +269,10 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   end
 
   defp limit do
-    value = Application.get_env(:indexer, __MODULE__)[:batch_size]
-    value
+    Application.get_env(:indexer, __MODULE__)[:batch_size] || @batch_size
+  end
+
+  defp interval do
+    Application.get_env(:indexer, __MODULE__)[:interval] || @interval
   end
 end
