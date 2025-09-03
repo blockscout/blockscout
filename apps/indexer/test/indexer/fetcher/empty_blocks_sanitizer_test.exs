@@ -189,3 +189,175 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
      ]}
   end
 end
+
+  describe "additional edge cases (ExUnit + Mox)" do
+    test "marks refetch_needed when JSON-RPC returns error", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      # Setup a candidate block without txs that requires sanitization
+      block_to_process = insert(:block, is_empty: nil)
+      populate_database_with_dummy_blocks()
+      assert Repo.get!(Block, block_to_process.hash).is_empty == nil
+
+      encoded_expected_block_number = "0x" <> Integer.to_string(block_to_process.number, 16)
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(
+          :json_rpc,
+          fn [
+               %{
+                 id: _id,
+                 method: "eth_getBlockByNumber",
+                 params: [^encoded_expected_block_number, false]
+               }
+             ],
+             _options ->
+            {:error, :timeout}
+          end
+        )
+      end
+
+      EmptyBlocksSanitizer.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      processed_block =
+        wait_for_results(fn ->
+          Repo.one!(
+            from(b in Block,
+              where: b.hash == ^block_to_process.hash and b.updated_at != ^block_to_process.updated_at
+            )
+          )
+        end)
+
+      # On RPC error, we expect the sanitizer to schedule a refetch
+      assert processed_block.is_empty == nil
+      assert processed_block.refetch_needed == true
+    end
+
+    test "keeps refetch_needed when JSON-RPC returns nil result for the block (missing on node)", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      block_to_process = insert(:block, is_empty: nil)
+      populate_database_with_dummy_blocks()
+      assert Repo.get!(Block, block_to_process.hash).is_empty == nil
+
+      encoded_expected_block_number = "0x" <> Integer.to_string(block_to_process.number, 16)
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(
+          :json_rpc,
+          fn [
+               %{
+                 id: id,
+                 method: "eth_getBlockByNumber",
+                 params: [^encoded_expected_block_number, false]
+               }
+             ],
+             _options ->
+            # Simulate node not returning the block yet
+            {:ok, [%{id: id, result: nil}]}
+          end
+        )
+      end
+
+      EmptyBlocksSanitizer.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      processed_block =
+        wait_for_results(fn ->
+          Repo.one!(
+            from(b in Block,
+              where: b.hash == ^block_to_process.hash and b.updated_at != ^block_to_process.updated_at
+            )
+          )
+        end)
+
+      # If node lacks the block, sanitizer shouldn't mark empty; should require refetch
+      assert processed_block.is_empty == nil
+      assert processed_block.refetch_needed == true
+    end
+
+    test "does not falsely mark empty when node returns a different block hash (mismatch)", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      block_to_process = insert(:block, is_empty: nil)
+      populate_database_with_dummy_blocks()
+      assert Repo.get!(Block, block_to_process.hash).is_empty == nil
+
+      encoded_expected_block_number = "0x" <> Integer.to_string(block_to_process.number, 16)
+      mismatched_hash = "0x" <> String.duplicate("1", 64)
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(
+          :json_rpc,
+          fn [
+               %{
+                 id: id,
+                 method: "eth_getBlockByNumber",
+                 params: [^encoded_expected_block_number, false]
+               }
+             ],
+             _options ->
+            # Return a block object but with a different hash to emulate reorg/mismatch
+            {:ok,
+             [
+               %{
+                 id: id,
+                 result: %{
+                   "difficulty" => "0x0",
+                   "gasLimit" => "0x0",
+                   "gasUsed" => "0x0",
+                   "hash" => mismatched_hash,
+                   "extraData" => "0x0",
+                   "logsBloom" => "0x0",
+                   "miner" => "0x0",
+                   "number" => block_to_process.number,
+                   "parentHash" => "0x0",
+                   "receiptsRoot" => "0x0",
+                   "size" => "0x0",
+                   "sha3Uncles" => "0x0",
+                   "stateRoot" => "0x0",
+                   "timestamp" => "0x0",
+                   "totalDifficulty" => "0x0",
+                   "transactions" => [],
+                   "transactionsRoot" => "0x0",
+                   "uncles" => []
+                 }
+               }
+             ]}
+          end
+        )
+      end
+
+      EmptyBlocksSanitizer.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      processed_block =
+        wait_for_results(fn ->
+          Repo.one!(
+            from(b in Block,
+              where: b.hash == ^block_to_process.hash and b.updated_at != ^block_to_process.updated_at
+            )
+          )
+        end)
+
+      # On hash mismatch, sanitizer should avoid concluding emptiness and require refetch
+      assert processed_block.is_empty == nil
+      assert processed_block.refetch_needed == true
+    end
+
+    test "idempotently handles already-processed block (no duplicate updates)", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      # Create a block that is already marked non-empty
+      block = insert(:block, is_empty: false, refetch_needed: false)
+      populate_database_with_dummy_blocks()
+
+      # Track original timestamps to ensure no redundant updates
+      original = Repo.get!(Block, block.hash)
+      original_updated_at = original.updated_at
+
+      # Start sanitizer; it should skip/ignore already processed blocks
+      EmptyBlocksSanitizer.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      # Give sanitizer a chance; it should not alter the row
+      :timer.sleep(200)
+
+      persisted = Repo.get!(Block, block.hash)
+      assert persisted.is_empty == false
+      assert persisted.refetch_needed == false
+      assert persisted.updated_at == original_updated_at
+    end
+  end
