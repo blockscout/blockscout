@@ -723,7 +723,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   - `conn`: The Plug connection.
   - `params`: A map containing:
     - `"transaction_hash_param"`: The transaction hash to fetch deposits from.
-    - Optional pagination parameters (e.g., `index`).
+    - Optional pagination parameter:
+      - `"index"`: non-negative integer, the starting index for pagination.
 
   ## Returns
   - `{:error, :not_found}` - If the transaction is not found.

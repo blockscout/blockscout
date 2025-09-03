@@ -429,7 +429,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   - `params`: A map containing:
     - `"block_hash_or_number"`: The block identifier (hash or number) to fetch
       deposits from.
-    - Optional pagination parameters (e.g., `index`).
+    - Optional pagination parameter:
+      - `"index"`: non-negative integer, the starting index for pagination.
 
   ## Returns
   - `{:error, :not_found}` - If the block is not found.

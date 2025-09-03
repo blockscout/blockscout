@@ -1432,7 +1432,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   - `conn`: The Plug connection.
   - `params`: A map containing:
     - `address_hash_param`: The address hash string to fetch deposits for.
-    - Optional pagination parameters (e.g., `index`).
+    - Optional pagination parameter:
+      - `index`: non-negative integer, the starting index for pagination.
 
   ## Returns
   - `{:format, :error}` - If the address hash format is invalid.

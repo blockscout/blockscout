@@ -45,7 +45,8 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
 
   ## Parameters
   - `conn`: The Plug connection.
-  - `params`: A map containing optional pagination parameters (e.g., `index`).
+  - `params`: A map containing optional pagination parameters:
+    - `"index"`: non-negative integer, the starting index for pagination.
 
   ## Returns
   - `Plug.Conn.t()` - A 200 response with rendered deposits and pagination
