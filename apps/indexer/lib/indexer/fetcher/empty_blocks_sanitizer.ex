@@ -75,15 +75,14 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   defp sanitize_empty_blocks(json_rpc_named_arguments) do
     unprocessed_non_empty_blocks_query = unprocessed_non_empty_blocks_query(limit())
 
-    updated =
-      Repo.update_all(
-        from(
-          block in Block,
-          where: block.hash in subquery(unprocessed_non_empty_blocks_query)
-        ),
-        [set: [is_empty: false, updated_at: Timex.now()]],
-        timeout: :infinity
-      )
+    Repo.update_all(
+      from(
+        block in Block,
+        where: block.hash in subquery(unprocessed_non_empty_blocks_query)
+      ),
+      [set: [is_empty: false, updated_at: Timex.now()]],
+      timeout: :infinity
+    )
 
     unprocessed_empty_blocks_list = unprocessed_empty_blocks_list_query(limit())
 
