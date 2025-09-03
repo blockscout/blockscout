@@ -1,6 +1,15 @@
 defmodule Indexer.Fetcher.Optimism.OperatorFee do
   @moduledoc """
-  Retrieves and saves operator fee for historic transactions from their receipts using RPC calls.
+  Retrieves and saves operator fee for historic transactions from their receipts using RPC calls
+  starting from the timestamp defined in INDEXER_OPTIMISM_L2_ISTHMUS_TIMESTAMP env variable.
+
+  If the env variable is not defined or the chain type is not :optimism, the module doesn't start.
+
+  Once the historic transactions are handled, the module stops working and doesn't start again
+  after instance restarts. If there is a need to make it work again, the corresponding constant
+  should be manually removed from the `constants` database table.
+
+  The transaction queue handling is adjusted by `INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_*` env variables.
   """
 
   require Logger
@@ -106,13 +115,16 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
     receipts
     |> Enum.map(&Receipt.elixir_to_params(&1.result))
     |> Enum.each(fn receipt ->
-      Transaction
-      |> Repo.get_by(hash: receipt.transaction_hash)
-      |> Transaction.changeset(%{
-        operator_fee_scalar: receipt.operator_fee_scalar,
-        operator_fee_constant: receipt.operator_fee_constant
-      })
-      |> Repo.update()
+      now = DateTime.utc_now()
+
+      Repo.update_all(
+        from(t in Transaction, where: t.hash == ^receipt.transaction_hash),
+        set: [
+          operator_fee_scalar: receipt.operator_fee_scalar,
+          operator_fee_constant: receipt.operator_fee_constant,
+          updated_at: now
+        ]
+      )
     end)
   end
 

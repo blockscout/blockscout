@@ -439,7 +439,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     - `transaction`: transaction structure containing extra Optimism-related info.
 
     ## Returns
-    An extended map containing `l1_*` and `op_withdrawals` items related to Optimism.
+    An extended map containing `l1_*`, `op_withdrawals`, `op_interop_messages`, and other items related to Optimism.
   """
   @spec extend_transaction_json_response(map(), %{
           :__struct__ => Explorer.Chain.Transaction,
@@ -470,6 +470,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   #
   # ## Returns
   # - An extended map containing `op_withdrawals`, `operator_fee` (optional), `op_interop_messages` (optional).
+  #   If the operator fee is zero, it's not presented in the resulting map.
   @spec add_optimism_fields(map(), Transaction.t()) :: map()
   defp add_optimism_fields(out_json, transaction) do
     portal_contract_address_hash = Withdrawal.portal_contract_address()
