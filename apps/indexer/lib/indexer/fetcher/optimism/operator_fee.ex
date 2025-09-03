@@ -5,13 +5,15 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
 
   require Logger
 
-  use Indexer.Fetcher, restart: :permanent
+  use Indexer.Fetcher, restart: :transient
   use Spandex.Decorators
 
   import EthereumJSONRPC,
     only: [
       json_rpc: 2
     ]
+
+  import Ecto.Query, only: [from: 2]
 
   alias EthereumJSONRPC.Receipt
   alias EthereumJSONRPC.Receipts.ByTransactionHash
@@ -30,9 +32,9 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
 
   @doc false
   def child_spec([init_options, gen_server_options]) do
-    {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
+    {json_rpc_named_arguments, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
 
-    unless state do
+    unless json_rpc_named_arguments do
       raise ArgumentError,
             ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec " <>
               "to allow for json_rpc calls when running."
@@ -41,19 +43,15 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
     merged_init_opts =
       defaults()
       |> Keyword.merge(mergeable_init_options)
-      |> Keyword.put(:state, state)
+      |> Keyword.put(:state, json_rpc_named_arguments)
 
     Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
   end
 
   @impl BufferedTask
-  def init(initial_acc, reducer, _) do
+  def init(initial_acc, reducer, _json_rpc_named_arguments) do
     if Constants.get_constant_value(@fetcher_finished_constant_key) == "true" do
-      Logger.info("All known transactions are previously handled by #{__MODULE__} module so it won't be started.",
-        fetcher: @fetcher_name
-      )
-
-      GenServer.stop(__MODULE__, :shutdown)
+      Process.send(__MODULE__, :shutdown, [])
       initial_acc
     else
       isthmus_timestamp_l2 = Application.get_env(:indexer, Indexer.Fetcher.Optimism)[:isthmus_timestamp_l2]
@@ -75,7 +73,8 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
         )
 
         Constants.set_constant_value(@fetcher_finished_constant_key, "true")
-        GenServer.stop(__MODULE__, :shutdown)
+
+        Process.send(__MODULE__, :shutdown, [])
       end
 
       acc
@@ -104,15 +103,15 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
       )
 
     receipts
-    |> Enum.map(&Receipt.elixir_to_params(&1.result))
+    |> Enum.map(&Receipt.to_elixir(&1.result))
+    |> Enum.map(&Receipt.elixir_to_params(&1))
     |> Enum.each(fn receipt ->
-      Transaction
-      |> Repo.get_by(hash: receipt.transaction_hash)
-      |> Transaction.changeset(%{
-        operator_fee_scalar: receipt.operator_fee_scalar,
-        operator_fee_constant: receipt.operator_fee_constant
-      })
-      |> Repo.update()
+      now = DateTime.utc_now()
+
+      Repo.update_all(
+        from(t in Transaction, where: t.hash == ^receipt.transaction_hash),
+        set: [operator_fee_scalar: receipt.operator_fee_scalar, operator_fee_constant: receipt.operator_fee_constant, updated_at: now]
+      )
     end)
   end
 

@@ -1453,13 +1453,14 @@ defmodule Explorer.Chain.Transaction do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_transactions_without_operator_fee(initial, reducer, start_timestamp) when is_function(reducer, 2) do
+    {:ok, start_datetime} = DateTime.from_unix(start_timestamp)
     limit = Application.get_env(:indexer, Indexer.Fetcher.Optimism.OperatorFee)[:init_limit]
 
     __MODULE__
     |> select([t], t.hash)
     |> where(
       [t],
-      t.block_timestamp >= ^start_timestamp and t.block_consensus == true and is_nil(t.operator_fee_constant)
+      t.block_timestamp >= ^start_datetime and t.block_consensus == true and is_nil(t.operator_fee_constant)
     )
     |> limit(^limit)
     |> Repo.stream_reduce(initial, reducer)
