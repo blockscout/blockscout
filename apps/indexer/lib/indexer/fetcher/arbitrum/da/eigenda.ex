@@ -127,7 +127,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Eigenda do
       data_type: 0,
       data_key: data_key,
       data: data,
-      # This field must be removed as soon as migration to a separate table for Batch-to-DA-record associations is completed.
+      # TODO: This field must be removed as soon as migration to a separate table for Batch-to-DA-record associations is completed.
       batch_number: nil
     }
 
