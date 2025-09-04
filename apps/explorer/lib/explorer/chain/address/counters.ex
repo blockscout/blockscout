@@ -28,6 +28,7 @@ defmodule Explorer.Chain.Address.Counters do
     Withdrawal
   }
 
+  alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
 
   require Logger
@@ -35,7 +36,16 @@ defmodule Explorer.Chain.Address.Counters do
   @typep counter :: non_neg_integer() | nil
 
   @counters_limit 51
-  @types [:validations, :transactions, :token_transfers, :token_balances, :logs, :withdrawals, :internal_transactions]
+  @types [
+    :validations,
+    :transactions,
+    :token_transfers,
+    :token_balances,
+    :logs,
+    :withdrawals,
+    :internal_transactions,
+    :beacon_deposits
+  ]
   @transactions_types [:transactions_from, :transactions_to, :transactions_contract]
 
   defp address_hash_to_logs_query(address_hash) do
@@ -240,6 +250,13 @@ defmodule Explorer.Chain.Address.Counters do
     |> union_all(^query_from_address_hash_wrapped)
     |> union_all(^query_created_contract_address_hash_wrapped)
     |> wrapped_union_subquery()
+  end
+
+  defp address_hash_to_beacon_deposits_unordered_query(address_hash) do
+    from(
+      deposit in BeaconDeposit,
+      where: deposit.from_address_hash == ^address_hash
+    )
   end
 
   def address_counters(address, options \\ []) do
@@ -448,6 +465,17 @@ defmodule Explorer.Chain.Address.Counters do
         nil
       end
 
+    beacon_deposits_count_task =
+      if Application.get_env(:explorer, :chain_type) == :ethereum do
+        configure_task(
+          :beacon_deposits,
+          cached_counters,
+          address_hash_to_beacon_deposits_unordered_query(address_hash),
+          address_hash,
+          options
+        )
+      end
+
     map =
       [
         validations_count_task,
@@ -459,7 +487,8 @@ defmodule Explorer.Chain.Address.Counters do
         logs_count_task,
         withdrawals_count_task,
         internal_transactions_count_task,
-        celo_election_rewards_count_task
+        celo_election_rewards_count_task,
+        beacon_deposits_count_task
       ]
       |> Enum.reject(&is_nil/1)
       |> Task.yield_many(:timer.seconds(1))
