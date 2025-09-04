@@ -105,7 +105,7 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
      %{
        state
        | deposit_index: deposit_index - 1,
-         last_processed_log_block_number: block_number - 1,
+         last_processed_log_block_number: block_number,
          last_processed_log_index: -1
      }}
   rescue
