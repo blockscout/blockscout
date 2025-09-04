@@ -1,12 +1,17 @@
 defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
   use BlockScoutWeb.ConnCase
   use BlockScoutWeb.ChannelCase, async: false
+  # Provide JSON-RPC named arguments and Mox helpers for Ethereum JSON-RPC
+  use EthereumJSONRPC.Case, async: false
 
   alias BlockScoutWeb.V2.UserSocket
   alias Explorer.Chain.Address
   alias Explorer.TestHelper
   alias Tesla.Multipart
   alias Plug.Conn
+  import Mox
+  alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
+  alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
 
   @moduletag timeout: :infinity
 
@@ -33,6 +38,82 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
       assert is_list(response["verification_options"])
       assert is_list(response["vyper_evm_versions"])
       assert response["is_rust_verifier_microservice_enabled"] == false
+    end
+  end
+
+  describe "bytecode lookup on verification requests" do
+    # Set up Mox and start on-demand bytecode fetcher with mocked transport
+    setup :set_mox_global
+    setup :verify_on_exit!
+
+    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+      start_supervised!({ContractCodeOnDemand, [mocked_json_rpc_named_arguments, [name: ContractCodeOnDemand]]})
+      start_supervised!({ContractCreatorOnDemand, name: ContractCreatorOnDemand})
+
+      %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
+    end
+
+    test "proceeds when bytecode is fetched from RPC", %{conn: conn} do
+      address = insert(:address)
+      string_address_hash = to_string(address.hash)
+
+      contract_code = "0x6080"
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_getCode",
+                                  params: [^string_address_hash, "latest"]
+                                }
+                              ],
+                              _ ->
+        {:ok, [%{id: id, result: contract_code}]}
+      end)
+
+      params = %{"compiler_version" => "", "source_code" => ""}
+
+      request =
+        post(
+          conn,
+          "/api/v2/smart-contracts/#{address.hash}/verification/via/flattened-code",
+          params
+        )
+
+      assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
+    end
+
+    test "returns 404 when RPC returns empty code (EOA or not a contract)", %{conn: conn} do
+      address = insert(:address)
+      string_address_hash = to_string(address.hash)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_getCode",
+                                  params: [^string_address_hash, "latest"]
+                                }
+                              ],
+                              _ ->
+        {:ok, [%{id: id, result: "0x"}]}
+      end)
+
+      params = %{"compiler_version" => "", "source_code" => ""}
+
+      request =
+        post(
+          conn,
+          "/api/v2/smart-contracts/#{address.hash}/verification/via/flattened-code",
+          params
+        )
+
+      assert %{"message" => "Address is not a smart-contract"} = json_response(request, 404)
     end
   end
 
