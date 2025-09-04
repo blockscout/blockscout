@@ -68,7 +68,7 @@ defmodule Explorer.Utility.MissingBlockRange do
     - A list of `Range` structs, where each range represents a contiguous block range of missing blocks.
 
   """
-  @spec get_latest_batch(integer()) :: [__MODULE__.t()]
+  @spec get_latest_batch(integer()) :: [Range.t()]
   def get_latest_batch(size \\ @default_returning_batch_size) do
     size
     |> get_latest_ranges_query()

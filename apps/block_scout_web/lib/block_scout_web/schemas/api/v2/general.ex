@@ -432,7 +432,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :string},
       required: false,
       description: "API key for rate limiting",
-      name: :api_key
+      name: :apikey
     }
   end
 
@@ -676,6 +676,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Type for paging",
       name: :type
+    },
+    "deposit_index" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 0, maximum: 9_223_372_036_854_775_807},
+      required: false,
+      description: "Deposit index for paging",
+      name: :index
     }
   }
 

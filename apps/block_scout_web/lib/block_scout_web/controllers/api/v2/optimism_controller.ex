@@ -10,11 +10,6 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       split_list_by_page: 1
     ]
 
-  import BlockScoutWeb.PagingHelper,
-    only: [
-      delete_parameters_from_next_page_params: 1
-    ]
-
   import Explorer.Helper, only: [hash_to_binary: 1]
 
   alias BlockScoutWeb.API.V2.ApiView
@@ -54,7 +49,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       |> TransactionBatch.list()
       |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, batches, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page_params(next_page, batches, params)
 
     conn
     |> put_status(200)
@@ -100,7 +95,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
             end
 
           # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
-          transaction_count =
+          transactions_count =
             case l2_block_range do
               nil -> 0
               range -> Transaction.transaction_count_for_block_range(range)
@@ -110,9 +105,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
           fs
           |> Map.put(:l2_block_range, l2_block_range)
-          |> Map.put(:transactions_count, transaction_count)
-          # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
-          |> Map.put(:transaction_count, transaction_count)
+          |> Map.put(:transactions_count, transactions_count)
           |> Map.put(:batch_data_container, batch_data_container)
         end)
       end)

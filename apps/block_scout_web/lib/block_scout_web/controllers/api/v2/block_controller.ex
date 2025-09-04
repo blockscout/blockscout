@@ -15,7 +15,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   import BlockScoutWeb.PagingHelper,
     only: [
-      delete_parameters_from_next_page_params: 1,
       select_block_type: 1,
       type_filter_options: 1,
       internal_transaction_type_options: 1,
@@ -26,12 +25,15 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias BlockScoutWeb.API.V2.{
+    Ethereum.DepositController,
+    Ethereum.DepositView,
     TransactionView,
     WithdrawalView
   }
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
+  alias Explorer.Chain.Beacon.Deposit
   alias Explorer.Chain.Cache.{BlockNumber, Counters.AverageBlockTime}
   alias Explorer.Chain.InternalTransaction
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
@@ -44,7 +46,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :beacon_blob_transaction => :optional
       }
       @chain_type_block_necessity_by_association %{
-        [transactions: :beacon_blob_transaction] => :optional
+        [transactions: :beacon_blob_transaction] => :optional,
+        :beacon_deposits => :optional
       }
 
     :optimism ->
@@ -173,7 +176,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
     {blocks, next_page} = split_list_by_page(blocks_plus_one)
 
-    next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page |> next_page_params(blocks, params)
 
     conn
     |> put_status(200)
@@ -199,7 +202,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       |> ArbitrumSettlementReader.batch_blocks(full_options)
       |> split_list_by_page()
 
-    next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page |> next_page_params(blocks, params)
 
     conn
     |> put_status(200)
@@ -226,7 +229,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       |> OptimismTransactionBatch.batch_blocks(full_options)
       |> split_list_by_page()
 
-    next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page |> next_page_params(blocks, params)
 
     conn
     |> put_status(200)
@@ -253,7 +256,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       |> ScrollReader.batch_blocks(full_options)
       |> split_list_by_page()
 
-    next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page |> next_page_params(blocks, params)
 
     conn
     |> put_status(200)
@@ -284,7 +287,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
       next_page_params =
         next_page
-        |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
+        |> next_page_params(transactions, params)
 
       conn
       |> put_status(200)
@@ -324,7 +327,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         next_page
         |> next_page_params(
           internal_transactions,
-          delete_parameters_from_next_page_params(params),
+          params,
           &InternalTransaction.internal_transaction_to_block_paging_options/1
         )
 
@@ -360,7 +363,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       withdrawals_plus_one = Chain.block_to_withdrawals(block.hash, full_options)
       {withdrawals, next_page} = split_list_by_page(withdrawals_plus_one)
 
-      next_page_params = next_page |> next_page_params(withdrawals, delete_parameters_from_next_page_params(params))
+      next_page_params = next_page |> next_page_params(withdrawals, params)
 
       conn
       |> put_status(200)
@@ -407,6 +410,72 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         remaining_blocks: remaining_blocks,
         estimated_time_in_sec: estimated_time_in_sec
       )
+    end
+  end
+
+  @doc """
+  Handles `api/v2/blocks/:block_hash_or_number/beacon/deposits` endpoint.
+  Fetches beacon deposits included in a specific block with pagination support.
+
+  This endpoint retrieves all beacon deposits that were included in the
+  specified block. The block can be identified by either its hash or number.
+  The results include preloaded associations for both the from_address and
+  withdrawal_address, including scam badges, names, smart contracts, and proxy
+  implementations. The response is paginated and may include ENS and metadata
+  enrichment if those services are enabled.
+
+  ## Parameters
+  - `conn`: The Plug connection.
+  - `params`: A map containing:
+    - `"block_hash_or_number"`: The block identifier (hash or number) to fetch
+      deposits from.
+    - Optional pagination parameter:
+      - `"index"`: non-negative integer, the starting index for pagination.
+
+  ## Returns
+  - `{:error, :not_found}` - If the block is not found.
+  - `{:error, {:invalid, :hash | :number}}` - If the block identifier format is
+    invalid.
+  - `{:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}`
+    - If the block has lost consensus in the blockchain.
+  - `Plug.Conn.t()` - A 200 response with rendered deposits and pagination
+    information when successful.
+  """
+  @spec beacon_deposits(Plug.Conn.t(), map()) ::
+          {:error, :not_found | {:invalid, :hash | :number}}
+          | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
+          | Plug.Conn.t()
+  def beacon_deposits(conn, %{"block_hash_or_number" => block_hash_or_number} = params) do
+    with {:ok, block} <- block_param_to_block(block_hash_or_number) do
+      full_options =
+        [
+          necessity_by_association: %{
+            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+            [withdrawal_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
+              :optional
+          },
+          api?: true
+        ]
+        |> Keyword.merge(DepositController.paging_options(params))
+
+      deposit_plus_one = Deposit.from_block_hash(block.hash, full_options)
+      {deposits, next_page} = split_list_by_page(deposit_plus_one)
+
+      next_page_params =
+        next_page
+        |> next_page_params(
+          deposits,
+          params,
+          DepositController.paging_function()
+        )
+
+      conn
+      |> put_status(200)
+      |> put_view(DepositView)
+      |> render(:deposits, %{
+        deposits: deposits |> maybe_preload_ens() |> maybe_preload_metadata(),
+        next_page_params: next_page_params
+      })
     end
   end
 

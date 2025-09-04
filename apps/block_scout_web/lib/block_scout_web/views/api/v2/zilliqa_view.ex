@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
   if @chain_type == :zilliqa do
     # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
     import Explorer.Chain.Zilliqa.Helper, only: [scilla_transaction?: 1], warn: false
+    alias Ecto.Association.NotLoaded, warn: false
     alias Explorer.Chain.{Address, Block, Transaction}, warn: false
     alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}, warn: false
 
@@ -64,8 +65,8 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
     ## Returns
     - A map extended with data related to Zilliqa.
     """
-    @spec extend_address_json_response(map(), Address.t()) :: map()
-    def extend_address_json_response(out_json, %Address{} = address) do
+    @spec extend_address_json_response(map(), Address.t() | nil | NotLoaded.t()) :: map()
+    def extend_address_json_response(out_json, address) do
       is_scilla_contract =
         case address do
           %Address{
@@ -81,8 +82,6 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
         is_scilla_contract: is_scilla_contract
       })
     end
-
-    def extend_address_json_response(out_json, _address), do: out_json
 
     @spec add_quorum_certificate(map(), Block.t()) :: map()
     defp add_quorum_certificate(

@@ -2,147 +2,66 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
   @moduledoc """
   Module for fetching proxy implementation from ResolvedDelegateProxy https://github.com/ethereum-optimism/optimism/blob/9580179013a04b15e6213ae8aa8d43c3f559ed9a/packages/contracts-bedrock/src/legacy/ResolvedDelegateProxy.sol
   """
-  alias Explorer.Chain
-  alias Explorer.Chain.{Hash, SmartContract}
-  alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
-  # 8da5cb5b = keccak256(owner())
-  @owner_signature "8da5cb5b"
+  alias Explorer.Chain.{Data, Hash}
+  alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.ResolverBehaviour
 
-  # 204e1c7a = keccak256(getProxyImplementation(address))
-  @get_proxy_implementation_signature "204e1c7a"
+  @behaviour ResolverBehaviour
 
-  @resolved_delegate_proxy_abi [
-    %{
-      "inputs" => [
-        %{
-          "internalType" => "contract AddressManager",
-          "name" => "_addressManager",
-          "type" => "address"
-        },
-        %{
-          "internalType" => "string",
-          "name" => "_implementationName",
-          "type" => "string"
-        }
-      ],
-      "stateMutability" => "nonpayable",
-      "type" => "constructor"
-    },
-    %{"stateMutability" => "payable", "type" => "fallback"}
-  ]
+  @resolved_delegate_proxy <<0x608060408181523060009081526001602090815282822054908290529181207FBF40FAC1000000000000000000000000000000000000000000000000000000009093529173FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF9091169063BF40FAC19061006D9060846101E2565B602060405180830381865AFA15801561008A573D6000803E3D6000FD5B505050506040513D601F19601F820116820180604052508101906100AE91906102C5565B905073FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF8116610157576040517F08C379A000000000000000000000000000000000000000000000000000000000815260206004820152603960248201527F5265736F6C76656444656C656761746550726F78793A2074617267657420616460448201527F6472657373206D75737420626520696E697469616C697A656400000000000000606482015260840160405180910390FD5B6000808273FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF16600036604051610182929190610302565B600060405180830381855AF49150503D80600081146101BD576040519150601F19603F3D011682016040523D82523D6000602084013E6101C2565B606091505B5090925090508115156001036101DA57805160208201F35B805160208201FD5B600060208083526000845481600182811C91508083168061020457607F831692505B858310810361023A577F4E487B710000000000000000000000000000000000000000000000000000000085526022600452602485FD5B878601838152602001818015610257576001811461028B576102B6565B7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF008616825284151560051B820196506102B6565B60008B81526020902060005B868110156102B057815484820152908501908901610297565B83019750505B50949998505050505050505050565B6000602082840312156102D757600080FD5B815173FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF811681146102FB57600080FD5B9392505050565B818382376000910190815291905056FEA164736F6C634300080F000A::6392>>
 
-  @owner_method_abi [
-    %{
-      "inputs" => [],
-      "name" => "owner",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
-  @get_proxy_implementation_method_abi [
-    %{
-      "inputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "_proxy",
-          "type" => "address"
-        }
-      ],
-      "name" => "getProxyImplementation",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
-  @doc """
-  Get implementation address hash string following ResolvedDelegateProxy proxy pattern. It returns the value as array of the strings.
-  """
-  @spec get_implementation_address_hash_strings(Hash.Address.t(), [Chain.api?()]) :: [binary()] | :error
-  def get_implementation_address_hash_strings(proxy_address_hash, options \\ []) do
-    case get_implementation_address_hash_string(proxy_address_hash, options) do
-      nil -> []
-      :error -> :error
-      implementation_address_hash_string -> [implementation_address_hash_string]
-    end
-  end
-
-  @doc """
-  Returns the ABI of the ResolvedDelegateProxy smart contract.
-  """
-  @spec resolved_delegate_proxy_abi() :: [map()]
-  def resolved_delegate_proxy_abi do
-    @resolved_delegate_proxy_abi
-  end
-
-  # Get implementation address hash string following ResolvedDelegateProxy proxy pattern
-  @spec get_implementation_address_hash_string(Hash.Address.t(), Keyword.t()) :: binary() | nil | :error
-  defp get_implementation_address_hash_string(proxy_address_hash, options) do
-    proxy_smart_contract =
-      proxy_address_hash
-      |> SmartContract.address_hash_to_smart_contract(options)
-
-    if proxy_smart_contract && proxy_smart_contract.abi == @resolved_delegate_proxy_abi do
-      case SmartContract.format_constructor_arguments(
-             proxy_smart_contract.abi,
-             proxy_smart_contract.constructor_arguments
-           ) do
-        [[address_manager_hash_string, _address_manager_type_abi], _] ->
-          owner_address_hash_string = get_owner_from_address_manager(address_manager_hash_string)
-
-          get_implementation_from_owner(owner_address_hash_string, proxy_address_hash)
-
-        _ ->
-          :error
-      end
+  def quick_resolve_implementations(proxy_address, _proxy_type) do
+    with {:match, @resolved_delegate_proxy} <-
+           {:match, proxy_address.contract_code && proxy_address.contract_code.bytes},
+         reqs = get_fetch_requirements(proxy_address.hash),
+         {:ok, values} <- Proxy.fetch_values(reqs, proxy_address.hash),
+         {:ok, implementation_name} <- extract_short_string(values[reqs |> Enum.at(0)]),
+         {:ok, address_manager_address_hash} <- Proxy.extract_address_hash(values[reqs |> Enum.at(1)]),
+         {:ok, implementation_value} <-
+           Proxy.fetch_value(
+             {:call, "0x" <> Base.encode16(ABI.encode("getAddress(string)", [implementation_name]), case: :lower)},
+             address_manager_address_hash
+           ),
+         {:ok, address_hash} <- Proxy.extract_address_hash(implementation_value) do
+      {:ok, [address_hash]}
     else
-      nil
+      :error -> :error
+      # proceed to other proxy types only if bytecode doesn't match
+      {:match, _} -> nil
+      # if bytecode matches but resolution fails, we should halt
+      _ -> {:ok, []}
     end
   end
 
-  defp get_owner_from_address_manager(address_manager_hash_string) do
-    case @owner_signature
-         |> SmartContractHelper.get_binary_string_from_contract_getter(
-           address_manager_hash_string,
-           @owner_method_abi
-         ) do
-      <<owner_address_hash_string::binary-size(42)>> ->
-        owner_address_hash_string
+  @spec get_fetch_requirements(Hash.Address.t()) :: [ResolverBehaviour.fetch_requirement()]
+  def get_fetch_requirements(proxy_address_hash) do
+    # slot 0
+    # mapping(address => string) private implementationName;
+    implementation_name_slot = ExKeccak.hash_256(<<0::96, proxy_address_hash.bytes::binary, 0::256>>)
 
-      _other_result ->
-        nil
-    end
+    # slot 1
+    # mapping(address => AddressManager) private addressManager;
+    address_manager_slot = ExKeccak.hash_256(<<0::96, proxy_address_hash.bytes::binary, 1::256>>)
+
+    [
+      storage: "0x" <> Base.encode16(implementation_name_slot, case: :lower),
+      storage: "0x" <> Base.encode16(address_manager_slot, case: :lower)
+    ]
   end
 
-  defp get_implementation_from_owner(nil, _proxy_address_hash), do: nil
-
-  defp get_implementation_from_owner(owner_address_hash_string, proxy_address_hash) do
-    case @get_proxy_implementation_signature
-         |> SmartContractHelper.get_binary_string_from_contract_getter(
-           owner_address_hash_string,
-           @get_proxy_implementation_method_abi,
-           [to_string(proxy_address_hash)]
-         ) do
-      <<implementation_address_hash_string::binary-size(42)>> ->
-        implementation_address_hash_string
-
-      _other_result ->
-        :error
+  # Decodes string value from smart-contract storage value, works only for short strings (<= 31 bytes)
+  @spec extract_short_string(String.t() | nil) :: {:ok, String.t()} | :error | nil
+  defp extract_short_string(value) do
+    with false <- is_nil(value),
+         {:ok, %Data{bytes: bytes}} <- Data.cast(value),
+         32 <- byte_size(bytes),
+         double_length when double_length > 0 and double_length < 64 <- :binary.last(bytes),
+         0 <- rem(double_length, 2) do
+      {:ok, binary_part(bytes, 0, div(double_length, 2))}
+    else
+      :error -> :error
+      _ -> nil
     end
   end
 end

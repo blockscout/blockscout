@@ -22,14 +22,13 @@ defmodule BlockScoutWeb.API.V2.EthereumView do
   def extend_block_json_response(out_json, %Block{} = block, single_block?) do
     blob_gas_used = Map.get(block, :blob_gas_used)
     excess_blob_gas = Map.get(block, :excess_blob_gas)
+    beacon_deposits = Map.get(block, :beacon_deposits, [])
 
     blob_transaction_count = block.blob_transactions_count
 
     extended_out_json =
       out_json
       |> Map.put("blob_transactions_count", blob_transaction_count)
-      # todo: It should be removed in favour `blob_transactions_count` property with the next release after 8.0.0
-      |> Map.put("blob_transaction_count", blob_transaction_count)
       |> Map.put("blob_gas_used", blob_gas_used)
       |> Map.put("excess_blob_gas", excess_blob_gas)
 
@@ -40,8 +39,10 @@ defmodule BlockScoutWeb.API.V2.EthereumView do
       extended_out_json
       |> Map.put("blob_gas_price", blob_gas_price)
       |> Map.put("burnt_blob_fees", burnt_blob_transaction_fees)
+      |> Map.put("beacon_deposits_count", Enum.count(beacon_deposits))
     else
       extended_out_json
+      |> Map.put("beacon_deposits_count", nil)
     end
   end
 end

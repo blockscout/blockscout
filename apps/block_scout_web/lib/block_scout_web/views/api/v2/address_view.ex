@@ -84,7 +84,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     - Map containing:
       - `:hash` - address hash
       - `:coin_balance` - current coin balance value
-      - `:transaction_count` - number of transactions as string
+      - `:transactions_count` - number of transactions as string
       - Additional address info fields from Helper.address_with_info/4
   """
   @spec prepare_address_for_list(Address.t()) :: map()
@@ -92,8 +92,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     nil
     |> Helper.address_with_info(address, address.hash, true)
     |> Map.put(:transactions_count, to_string(address.transactions_count))
-    # todo: It should be removed in favour `transaction_count` property with the next release after 8.0.0
-    |> Map.put(:transaction_count, to_string(address.transactions_count))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
 
@@ -148,7 +146,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
               token_balance.address_hash,
               token_balance
             )
-        )
+        ),
+      "reputation" => token_balance.reputation
     }
   end
 
@@ -185,7 +184,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
   defp prepare_nft(nft, token) do
     Map.merge(
-      %{"token_type" => token.type, "value" => value(token.type, nft)},
+      %{"token_type" => token.type, "value" => value(token.type, nft), "reputation" => nft.reputation},
       TokenView.prepare_token_instance(nft, token)
     )
   end
@@ -197,7 +196,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "token_instances" =>
         Enum.map(collection.preloaded_token_instances, fn instance ->
           prepare_nft_for_collection(collection.token.type, instance)
-        end)
+        end),
+      "reputation" => collection.reputation
     }
   end
 

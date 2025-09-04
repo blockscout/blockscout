@@ -173,7 +173,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       internal_transaction_index: advanced_filter.internal_transaction_index,
       token_transfer_index: advanced_filter.token_transfer_index,
       token_transfer_batch_index: advanced_filter.token_transfer_batch_index,
-      fee: advanced_filter.fee
+      fee: advanced_filter.fee,
+      reputation: advanced_filter.reputation
     }
   end
 

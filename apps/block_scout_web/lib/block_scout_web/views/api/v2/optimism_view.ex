@@ -8,6 +8,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Optimism.{DisputeGame, FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
 
+  @api_true [api?: true]
+
   @doc """
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
   """
@@ -20,7 +22,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       batches
       |> Enum.map(fn batch ->
         Task.async(fn ->
-          transaction_count =
+          transactions_count =
             Repo.replica().aggregate(
               from(
                 t in Transaction,
@@ -34,9 +36,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
           %{
             "l2_block_number" => batch.l2_block_number,
-            "transactions_count" => transaction_count,
-            # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
-            "transaction_count" => transaction_count,
+            "transactions_count" => transactions_count,
             "l1_transaction_hashes" => batch.frame_sequence.l1_transaction_hashes,
             "l1_timestamp" => batch.frame_sequence.l1_timestamp
           }
@@ -125,8 +125,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           %{
             "index" => g.index,
             "game_type" => g.game_type,
-            # todo: It should be removed in favour `contract_address_hash` property with the next release after 8.0.0
-            "contract_address" => g.address_hash,
             "contract_address_hash" => g.address_hash,
             "l2_block_number" => l2_block_number,
             "created_at" => g.created_at,
@@ -183,7 +181,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         next_page_params: next_page_params,
         conn: conn
       }) do
-    respected_games = Withdrawal.respected_games()
+    respected_games = Withdrawal.respected_games(@api_true)
 
     %{
       items:
@@ -213,7 +211,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               _ -> {nil, nil}
             end
 
-          {status, challenge_period_end} = Withdrawal.status(w, respected_games)
+          {status, challenge_period_end} = Withdrawal.status(w, respected_games, @api_true)
 
           %{
             "msg_nonce_raw" => Decimal.to_string(w.msg_nonce, :normal),
@@ -343,7 +341,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   # - `internal_id`: The internal ID of the batch.
   # - `l2_block_number_from`: Start L2 block number of the batch block range.
   # - `l2_block_number_to`: End L2 block number of the batch block range.
-  # - `transaction_count`: The L2 transaction count included into the blocks of the range.
+  # - `transactions_count`: The L2 transaction count included into the blocks of the range.
   # - `batch`: Either an `Explorer.Chain.Optimism.FrameSequence` entry or a map with
   #            the corresponding fields.
   #
@@ -358,23 +356,19 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           | %{:l1_timestamp => DateTime.t(), :l1_transaction_hashes => list(), optional(any()) => any()}
         ) :: %{
           :number => non_neg_integer(),
-          :internal_id => non_neg_integer(),
           :l1_timestamp => DateTime.t(),
           :l2_start_block_number => non_neg_integer(),
-          :l2_block_start => non_neg_integer(),
           :l2_end_block_number => non_neg_integer(),
-          :l2_block_end => non_neg_integer(),
           :transactions_count => non_neg_integer(),
-          :transaction_count => non_neg_integer(),
           :l1_transaction_hashes => list(),
           :batch_data_container => :in_blob4844 | :in_celestia | :in_calldata | nil
         }
-  defp render_base_info_for_batch(internal_id, l2_block_number_from, l2_block_number_to, transaction_count, batch) do
+  defp render_base_info_for_batch(internal_id, l2_block_number_from, l2_block_number_to, transactions_count, batch) do
     FrameSequence.prepare_base_info_for_batch(
       internal_id,
       l2_block_number_from,
       l2_block_number_to,
-      transaction_count,
+      transactions_count,
       batch.batch_data_container,
       batch
     )
@@ -408,8 +402,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       batch_info =
         %{
           "number" => frame_sequence.id,
-          # todo: It should be removed in favour `number` property with the next release after 8.0.0
-          "internal_id" => frame_sequence.id,
           "l1_timestamp" => frame_sequence.l1_timestamp,
           "l1_transaction_hashes" => frame_sequence.l1_transaction_hashes,
           "batch_data_container" => batch_data_container

@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.{Address, Data, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.{Repo, TestHelper}
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
@@ -205,6 +206,129 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   describe "/transactions/{transaction_hash}" do
+    test "get token-transfers with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert List.first(response["token_transfers"])["reputation"] == "ok"
+
+      assert response == conn |> get("/api/v2/transactions/#{transaction.hash}") |> json_response(200)
+    end
+
+    test "get smart-contract with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert List.first(response["token_transfers"])["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert response["token_transfers"] == []
+    end
+
+    test "get token-transfers with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert List.first(response["token_transfers"])["reputation"] == "ok"
+    end
+
+    test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert List.first(response["token_transfers"])["reputation"] == "ok"
+    end
+
     test "return 404 on non existing transaction", %{conn: conn} do
       transaction = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}")
@@ -228,6 +352,57 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       assert response = json_response(request, 200)
       compare_item(transaction, response)
+    end
+
+    test "includes is_pending_update field in response", %{conn: conn} do
+      block_refetch_needed = insert(:block, refetch_needed: true)
+      block_no_refetch = insert(:block, refetch_needed: false)
+
+      transaction_refetch_needed =
+        :transaction
+        |> insert()
+        |> with_block(block_refetch_needed)
+
+      transaction_no_refetch =
+        :transaction
+        |> insert()
+        |> with_block(block_no_refetch)
+
+      request_1 = get(conn, "/api/v2/transactions/" <> to_string(transaction_refetch_needed.hash))
+      assert response_1 = json_response(request_1, 200)
+      assert response_1["is_pending_update"] == true
+
+      request_2 = get(conn, "/api/v2/transactions/" <> to_string(transaction_no_refetch.hash))
+      assert response_2 = json_response(request_2, 200)
+      assert response_2["is_pending_update"] == false
+    end
+
+    test "includes is_pending_update field in transaction lists", %{conn: conn} do
+      block_refetch_needed = insert(:block, refetch_needed: true)
+      block_no_refetch = insert(:block, refetch_needed: false)
+
+      transaction_refetch_needed =
+        :transaction
+        |> insert()
+        |> with_block(block_refetch_needed)
+
+      transaction_no_refetch =
+        :transaction
+        |> insert()
+        |> with_block(block_no_refetch)
+
+      request = get(conn, "/api/v2/transactions")
+      assert response = json_response(request, 200)
+
+      # Find the transactions in the response
+      refetch_tx_response =
+        Enum.find(response["items"], fn item -> item["hash"] == to_string(transaction_refetch_needed.hash) end)
+
+      no_refetch_tx_response =
+        Enum.find(response["items"], fn item -> item["hash"] == to_string(transaction_no_refetch.hash) end)
+
+      assert refetch_tx_response["is_pending_update"] == true
+      assert no_refetch_tx_response["is_pending_update"] == false
     end
 
     test "batch 1155 flattened", %{conn: conn} do
@@ -592,6 +767,137 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   describe "/transactions/{transaction_hash}/token-transfers" do
+    test "get token-transfers with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
+
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+
+      assert response == conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers") |> json_response(200)
+    end
+
+    test "get smart-contract with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
+
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
+      response = json_response(request, 200)
+
+      assert response["items"] == []
+    end
+
+    test "get token-transfers with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
+    test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:token, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
+        amounts: Enum.map(0..50, fn x -> x end)
+      )
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
     test "return 404 on non existing transaction", %{conn: conn} do
       transaction = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/token-transfers")
@@ -1265,7 +1571,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^token_address_hash,
+                         "address_hash" => ^token_address_hash,
                          "name" => ^token_name,
                          "symbol" => ^token_symbol,
                          "type" => ^token_type
@@ -1280,7 +1586,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "celo" => %{
                    "gas_token" => %{
-                     "address" => ^token_address_hash,
+                     "address_hash" => ^token_address_hash,
                      "name" => ^token_name,
                      "symbol" => ^token_symbol,
                      "type" => ^token_type
@@ -1295,7 +1601,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^token_address_hash,
+                         "address_hash" => ^token_address_hash,
                          "name" => ^token_name,
                          "symbol" => ^token_symbol,
                          "type" => ^token_type
@@ -1311,7 +1617,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  %{
                    "celo" => %{
                      "gas_token" => %{
-                       "address" => ^token_address_hash,
+                       "address_hash" => ^token_address_hash,
                        "name" => ^token_name,
                        "symbol" => ^token_symbol,
                        "type" => ^token_type
@@ -1338,7 +1644,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^unknown_token_address_hash
+                         "address_hash" => ^unknown_token_address_hash
                        }
                      }
                    }
@@ -1350,7 +1656,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "celo" => %{
                    "gas_token" => %{
-                     "address" => ^unknown_token_address_hash
+                     "address_hash" => ^unknown_token_address_hash
                    }
                  }
                } = json_response(request, 200)
@@ -1362,7 +1668,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    %{
                      "celo" => %{
                        "gas_token" => %{
-                         "address" => ^unknown_token_address_hash
+                         "address_hash" => ^unknown_token_address_hash
                        }
                      }
                    }
@@ -1375,7 +1681,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  %{
                    "celo" => %{
                      "gas_token" => %{
-                       "address" => ^unknown_token_address_hash
+                       "address_hash" => ^unknown_token_address_hash
                      }
                    }
                  }
@@ -1491,7 +1797,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
@@ -1506,7 +1812,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
         assert %{
                  "stability_fee" => %{
-                   "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                   "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                    "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                    "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                    "total_fee" => "44136000000000",
@@ -1521,7 +1827,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
@@ -1553,7 +1859,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
@@ -1568,7 +1874,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
         assert %{
                  "stability_fee" => %{
-                   "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                   "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                    "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                    "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                    "total_fee" => "44136000000000",
@@ -1583,7 +1889,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  "items" => [
                    %{
                      "stability_fee" => %{
-                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "token" => %{"address_hash" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
                        "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
                        "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
                        "total_fee" => "44136000000000",
@@ -1593,6 +1899,42 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    }
                  ]
                } = json_response(request, 200)
+      end
+    end
+  end
+
+  describe "transactions/{transaction_hash}/beacon/deposits" do
+    if Application.compile_env(:explorer, :chain_type) == :ethereum do
+      test "get 404 on non-existing transaction", %{conn: conn} do
+        transaction = build(:transaction)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/beacon/deposits")
+        response = json_response(request, 404)
+      end
+
+      test "get deposits", %{conn: conn} do
+        transaction = insert(:transaction)
+
+        deposits = insert_list(51, :beacon_deposit, transaction: transaction)
+
+        insert(:beacon_deposit)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/beacon/deposits")
+        assert response = json_response(request, 200)
+
+        request_2nd_page =
+          get(conn, "/api/v2/transactions/#{transaction.hash}/beacon/deposits", response["next_page_params"])
+
+        assert response_2nd_page = json_response(request_2nd_page, 200)
+
+        check_paginated_response(response, response_2nd_page, deposits)
+      end
+    else
+      test "returns an error about chain type", %{conn: conn} do
+        transaction = insert(:transaction)
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/beacon/deposits")
+        assert response = json_response(request, 404)
+        assert %{"message" => "Endpoint not available for current chain type"} = response
       end
     end
   end
@@ -1661,6 +2003,45 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                ],
                else: []
              )
+  end
+
+  defp compare_item(%BeaconDeposit{} = deposit, json) do
+    index = deposit.index
+    transaction_hash = to_string(deposit.transaction_hash)
+    block_hash = to_string(deposit.block_hash)
+    block_number = deposit.block_number
+    pubkey = to_string(deposit.pubkey)
+    withdrawal_credentials = to_string(deposit.withdrawal_credentials)
+    signature = to_string(deposit.signature)
+    from_address_hash = Address.checksum(deposit.from_address_hash)
+
+    if deposit.withdrawal_address_hash do
+      withdrawal_address_hash = Address.checksum(deposit.withdrawal_address_hash)
+
+      assert %{
+               "index" => ^index,
+               "transaction_hash" => ^transaction_hash,
+               "block_hash" => ^block_hash,
+               "block_number" => ^block_number,
+               "pubkey" => ^pubkey,
+               "withdrawal_credentials" => ^withdrawal_credentials,
+               "withdrawal_address" => %{"hash" => ^withdrawal_address_hash},
+               "signature" => ^signature,
+               "from_address" => %{"hash" => ^from_address_hash}
+             } = json
+    else
+      assert %{
+               "index" => ^index,
+               "transaction_hash" => ^transaction_hash,
+               "block_hash" => ^block_hash,
+               "block_number" => ^block_number,
+               "pubkey" => ^pubkey,
+               "withdrawal_credentials" => ^withdrawal_credentials,
+               "withdrawal_address" => nil,
+               "signature" => ^signature,
+               "from_address" => %{"hash" => ^from_address_hash}
+             } = json
+    end
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, transactions) do
@@ -1887,7 +2268,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         |> with_block()
         |> Repo.preload(to_address: :smart_contract)
 
-      TestHelper.get_all_proxies_implementation_zero_addresses()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary?just_request_body=true")
 

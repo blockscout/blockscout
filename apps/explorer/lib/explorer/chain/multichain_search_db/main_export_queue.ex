@@ -80,6 +80,9 @@ defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
   """
   @spec by_hashes_query([binary()]) :: Ecto.Query.t()
   def by_hashes_query(hashes) do
+    # todo: In order to prevent deadlocks consider ordering by `hash`
+    # and rewrite logic to acquire items first with locking
+    # then deleting them.
     __MODULE__
     |> where([export], export.hash in ^hashes)
   end

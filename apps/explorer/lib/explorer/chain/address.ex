@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Address.Schema do
 
   alias Explorer.Chain.{
     Address,
+    Address.Reputation,
     Block,
     Data,
     Hash,
@@ -88,6 +89,7 @@ defmodule Explorer.Chain.Address.Schema do
         field(:gas_used, :integer)
         field(:ens_domain_name, :string, virtual: true)
         field(:metadata, :any, virtual: true)
+        field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
         has_one(:smart_contract, SmartContract, references: :hash)
         has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)
@@ -613,8 +615,8 @@ defmodule Explorer.Chain.Address do
     - `nil` if the contract code hasn't been loaded
   """
   @spec eoa_with_code?(any()) :: boolean() | nil
-  def eoa_with_code?(%__MODULE__{contract_code: %Data{bytes: code}}) do
-    EIP7702.get_delegate_address(code) != nil
+  def eoa_with_code?(%__MODULE__{} = address) do
+    !is_nil(EIP7702.quick_resolve_implementations(address))
   end
 
   def eoa_with_code?(%NotLoaded{}), do: nil

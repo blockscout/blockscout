@@ -260,11 +260,11 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
         if Data.empty?(code) do
           assert is_nil(proxy_implementations)
         else
-          implementations = [EIP7702.get_delegate_address(code.bytes) |> Hash.Address.cast() |> elem(1)]
+          {:ok, address_hashes} = EIP7702.quick_resolve_implementations(address)
 
           assert proxy_implementations.proxy_address_hash == address_hash
           assert proxy_implementations.proxy_type == :eip7702
-          assert proxy_implementations.address_hashes == implementations
+          assert proxy_implementations.address_hashes == address_hashes
           assert proxy_implementations.names == [nil]
         end
       end)
@@ -292,6 +292,90 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
         value -> value
       end
       |> to_string()
+    end
+  end
+
+  describe "get_or_fetch_bytecode/1" do
+    test "returns code from DB without RPC when present" do
+      code = Data.cast("0x6080") |> elem(1)
+      address = insert(:address, contract_code: code)
+
+      # No RPC expectations set: will fail if RPC is called.
+      assert {:ok, ^code} = ContractCodeOnDemand.get_or_fetch_bytecode(address.hash)
+
+      # Ensure fetch attempts not created
+      assert is_nil(Repo.get(AddressContractCodeFetchAttempt, address.hash))
+
+      # Ensure code unchanged in DB
+      assert Repo.get(Address, address.hash).contract_code == code
+    end
+
+    test "fetches from RPC when code not in DB and returns it, broadcasting event" do
+      Subscriber.to(:fetched_bytecode, :on_demand)
+
+      address = insert(:address)
+      address_hash = address.hash
+      string_address_hash = to_string(address.hash)
+
+      contract_code_hex = "0x6080"
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_getCode",
+                                  params: [^string_address_hash, "latest"]
+                                }
+                              ],
+                              _ ->
+        {:ok, [%{id: id, result: contract_code_hex}]}
+      end)
+
+      code = Data.cast(contract_code_hex) |> elem(1)
+
+      assert {:ok, ^code} = ContractCodeOnDemand.get_or_fetch_bytecode(address_hash)
+
+      # DB updated
+      assert Repo.get(Address, address_hash).contract_code == code
+
+      # No attempts record left
+      assert is_nil(Repo.get(AddressContractCodeFetchAttempt, address_hash))
+
+      # Broadcast happened
+      assert_receive({:chain_event, :fetched_bytecode, :on_demand, [^address_hash, ^contract_code_hex]})
+    end
+
+    test "returns :error and increments attempts when RPC returns empty code" do
+      address = insert(:address)
+      address_hash = address.hash
+      string_address_hash = to_string(address.hash)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_getCode",
+                                  params: [^string_address_hash, "latest"]
+                                }
+                              ],
+                              _ ->
+        {:ok, [%{id: id, result: "0x"}]}
+      end)
+
+      assert :error = ContractCodeOnDemand.get_or_fetch_bytecode(address_hash)
+
+      # DB not updated, attempts incremented
+      assert is_nil(Repo.get(Address, address_hash).contract_code)
+      attempts = Repo.get(AddressContractCodeFetchAttempt, address_hash)
+      assert attempts.retries_number == 1
+    end
+
+    test "returns :error when address is not found" do
+      # Build a random address hash that is not in DB
+      {:ok, random_hash} = Hash.Address.cast(<<1::160>>)
+      assert :error = ContractCodeOnDemand.get_or_fetch_bytecode(random_hash)
     end
   end
 end
