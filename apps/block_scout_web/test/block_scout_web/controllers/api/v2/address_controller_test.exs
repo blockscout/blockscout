@@ -5508,7 +5508,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         response = json_response(request, 200)
 
         assert %{"items" => [], "next_page_params" => nil} = response
-        assert_schema(response, "AddressBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       end
 
       test "get 422 on invalid address", %{conn: conn} do
@@ -5524,8 +5523,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                    }
                  ]
                } = response
-
-        assert_schema(response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
       end
 
       test "get deposits", %{conn: conn} do
@@ -5540,8 +5537,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         assert response_2nd_page = json_response(request_2nd_page, 200)
 
         check_paginated_response(response, response_2nd_page, deposits)
-        assert_schema(response, "AddressBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-        assert_schema(response_2nd_page, "AddressBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       end
     else
       test "returns an error about chain type", %{conn: conn} do

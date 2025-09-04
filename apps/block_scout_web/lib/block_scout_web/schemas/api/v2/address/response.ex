@@ -17,7 +17,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
     properties: %{
       is_scilla_contract: %Schema{type: :boolean, nullable: false}
     },
-    required: [:is_scilla_contract]
+    required: [:is_scilla_contract],
+    additionalProperties: false
   }
 
   @doc """

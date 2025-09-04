@@ -1509,7 +1509,7 @@ defmodule Explorer.Factory do
 
     amount = Map.get(attrs, :deposit_amount, sequence("beacon_deposit_amount", & &1))
     signature_raw = Map.get(attrs, :deposit_signature, sequence("beacon_deposit_signature", &<<&1::768>>))
-    index = Map.get(attrs, :deposit_index, sequence("beacon_deposit_index", & &1))
+    index = Map.get_lazy(attrs, :deposit_index, fn -> sequence("beacon_deposit_index", & &1) end)
 
     <<_::bytes-4, data_raw::binary>> =
       ABI.TypeEncoder.encode(
