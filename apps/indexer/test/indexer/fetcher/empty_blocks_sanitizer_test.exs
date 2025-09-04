@@ -8,6 +8,17 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
   alias Indexer.Fetcher.EmptyBlocksSanitizer
   alias Explorer.Chain.Block
 
+  @head_offset 1
+
+  # We decrease the number of blocks required to be inserted for the test
+  # in order to make it faster and to prevent filling the database with lots of trash.
+  setup_all do
+    opts = Application.get_env(:indexer, EmptyBlocksSanitizer)
+    new_opts = Keyword.put(opts, :head_offset, @head_offset)
+    Application.put_env(:indexer, EmptyBlocksSanitizer, new_opts)
+    :ok
+  end
+
   setup :set_mox_global
   setup :verify_on_exit!
 
@@ -22,8 +33,6 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
   # end
 
   @moduletag [capture_log: true, no_geth: true]
-
-  @head_offset 1000
 
   test "process db-non-empty blocks", %{json_rpc_named_arguments: json_rpc_named_arguments} do
     # Setup

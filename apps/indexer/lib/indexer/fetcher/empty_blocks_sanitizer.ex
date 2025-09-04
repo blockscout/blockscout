@@ -210,7 +210,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   end
 
   defp consensus_blocks_with_nil_is_empty_query(limit) do
-    safe_block_number = BlockNumber.get_max() - @head_offset
+    safe_block_number = BlockNumber.get_max() - head_offset()
 
     from(block in Block,
       as: :block,
@@ -273,5 +273,9 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
   defp interval do
     Application.get_env(:indexer, __MODULE__)[:interval] || @interval
+  end
+
+  defp head_offset do
+    Application.get_env(:indexer, __MODULE__)[:head_offset] || @head_offset
   end
 end
