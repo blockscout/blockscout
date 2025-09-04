@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.XnameController do
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @doc """
-    Function to handle GET requests to `/api/v2/proxy/xname/address/:address_hash_param` endpoint.
+    Function to handle GET requests to `/api/v2/proxy/3rdparty/xname/address/:address_hash_param` endpoint.
   """
   @spec address(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def address(conn, %{"address_hash_param" => address_hash_string} = params) do
