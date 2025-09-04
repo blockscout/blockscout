@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- on-demand bytecode fetching on smart contract verification requests ([#10724](https://github.com/blockscout/blockscout/issues/10724))
 - Improved proxy detection ([#12846](https://github.com/blockscout/blockscout/issues/12846))
 - Add `reputation` property where applicable ([#13070](https://github.com/blockscout/blockscout/issues/13070))
 - Add envs to configure RemoteIp lib usage ([#13082](https://github.com/blockscout/blockscout/issues/13082))
