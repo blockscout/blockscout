@@ -6,6 +6,81 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
   interacting with core Arbitrum protocol contracts including:
   """
 
+  # EigenDA type definitions - extracted for reusability
+  @eigen_da_bn254_g1_point_type {:tuple,
+   [
+     # X
+     {:uint, 256},
+     # Y
+     {:uint, 256}
+   ]}
+
+  @eigen_da_quorum_blob_param_type {:tuple,
+   [
+     # quorumNumber
+     {:uint, 8},
+     # adversaryThresholdPercentage
+     {:uint, 8},
+     # confirmationThresholdPercentage
+     {:uint, 8},
+     # chunkLength
+     {:uint, 32}
+   ]}
+
+  @eigen_da_batch_header_type {:tuple,
+   [
+     # blobHeadersRoot
+     {:bytes, 32},
+     # quorumNumbers
+     :bytes,
+     # signedStakeForQuorums
+     :bytes,
+     # referenceBlockNumber
+     {:uint, 32}
+   ]}
+
+  @eigen_da_batch_metadata_type {:tuple,
+   [
+     # BatchHeader
+     @eigen_da_batch_header_type,
+     # signatoryRecordHash
+     {:bytes, 32},
+     # confirmationBlockNumber
+     {:uint, 32}
+   ]}
+
+  @eigen_da_blob_verification_proof_type {:tuple,
+   [
+     # batchId
+     {:uint, 32},
+     # blobIndex
+     {:uint, 32},
+     # BatchMetadata
+     @eigen_da_batch_metadata_type,
+     # inclusionProof
+     :bytes,
+     # quorumIndices
+     :bytes
+   ]}
+
+  @eigen_da_blob_header_type {:tuple,
+   [
+     # BN254.G1Point commitment
+     @eigen_da_bn254_g1_point_type,
+     # dataLength
+     {:uint, 32},
+     # QuorumBlobParam[] quorumBlobParams
+     {:array, @eigen_da_quorum_blob_param_type}
+   ]}
+
+  @eigen_da_cert_type {:tuple,
+   [
+     # BlobVerificationProof
+     @eigen_da_blob_verification_proof_type,
+     # BlobHeader
+     @eigen_da_blob_header_type
+   ]}
+
   @selector_outbox "ce11e6ab"
   @selector_sequencer_inbox "ee35f327"
   @selector_bridge "e78cea92"
@@ -565,68 +640,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
       types: [
         {:uint, 256},
         # EigenDACert structure
-        {:tuple,
-         [
-           # BlobVerificationProof
-           {:tuple,
-            [
-              # batchId
-              {:uint, 32},
-              # blobIndex
-              {:uint, 32},
-              # BatchMetadata
-              {:tuple,
-               [
-                 # BatchHeader
-                 {:tuple,
-                  [
-                    # blobHeadersRoot
-                    {:bytes, 32},
-                    # quorumNumbers
-                    :bytes,
-                    # signedStakeForQuorums
-                    :bytes,
-                    # referenceBlockNumber
-                    {:uint, 32}
-                  ]},
-                 # signatoryRecordHash
-                 {:bytes, 32},
-                 # confirmationBlockNumber
-                 {:uint, 32}
-               ]},
-              # inclusionProof
-              :bytes,
-              # quorumIndices
-              :bytes
-            ]},
-           # BlobHeader
-           {:tuple,
-            [
-              # BN254.G1Point commitment
-              {:tuple,
-               [
-                 # X
-                 {:uint, 256},
-                 # Y
-                 {:uint, 256}
-               ]},
-              # dataLength
-              {:uint, 32},
-              # QuorumBlobParam[] quorumBlobParams
-              {:array,
-               {:tuple,
-                [
-                  # quorumNumber
-                  {:uint, 8},
-                  # adversaryThresholdPercentage
-                  {:uint, 8},
-                  # confirmationThresholdPercentage
-                  {:uint, 8},
-                  # chunkLength
-                  {:uint, 32}
-                ]}}
-            ]}
-         ]},
+        @eigen_da_cert_type,
         :address,
         {:uint, 256},
         {:uint, 256},
@@ -644,68 +658,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
       function: nil,
       types: [
         # EigenDACert structure
-        {:tuple,
-         [
-           # BlobVerificationProof
-           {:tuple,
-            [
-              # batchId
-              {:uint, 32},
-              # blobIndex
-              {:uint, 32},
-              # BatchMetadata
-              {:tuple,
-               [
-                 # BatchHeader
-                 {:tuple,
-                  [
-                    # blobHeadersRoot
-                    {:bytes, 32},
-                    # quorumNumbers
-                    :bytes,
-                    # signedStakeForQuorums
-                    :bytes,
-                    # referenceBlockNumber
-                    {:uint, 32}
-                  ]},
-                 # signatoryRecordHash
-                 {:bytes, 32},
-                 # confirmationBlockNumber
-                 {:uint, 32}
-               ]},
-              # inclusionProof
-              :bytes,
-              # quorumIndices
-              :bytes
-            ]},
-           # BlobHeader
-           {:tuple,
-            [
-              # BN254.G1Point commitment
-              {:tuple,
-               [
-                 # X
-                 {:uint, 256},
-                 # Y
-                 {:uint, 256}
-               ]},
-              # dataLength
-              {:uint, 32},
-              # QuorumBlobParam[] quorumBlobParams
-              {:array,
-               {:tuple,
-                [
-                  # quorumNumber
-                  {:uint, 8},
-                  # adversaryThresholdPercentage
-                  {:uint, 8},
-                  # confirmationThresholdPercentage
-                  {:uint, 8},
-                  # chunkLength
-                  {:uint, 32}
-                ]}}
-            ]}
-         ]}
+        @eigen_da_cert_type
       ]
     }
 
@@ -720,37 +673,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
       function: nil,
       types: [
         # BlobVerificationProof
-        {:tuple,
-         [
-           # batchId
-           {:uint, 32},
-           # blobIndex
-           {:uint, 32},
-           # BatchMetadata
-           {:tuple,
-            [
-              # BatchHeader
-              {:tuple,
-               [
-                 # blobHeadersRoot
-                 {:bytes, 32},
-                 # quorumNumbers
-                 :bytes,
-                 # signedStakeForQuorums
-                 :bytes,
-                 # referenceBlockNumber
-                 {:uint, 32}
-               ]},
-              # signatoryRecordHash
-              {:bytes, 32},
-              # confirmationBlockNumber
-              {:uint, 32}
-            ]},
-           # inclusionProof
-           :bytes,
-           # quorumIndices
-           :bytes
-         ]}
+        @eigen_da_blob_verification_proof_type
       ]
     }
 
@@ -765,32 +688,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
       function: nil,
       types: [
         # BlobHeader
-        {:tuple,
-         [
-           # BN254.G1Point commitment
-           {:tuple,
-            [
-              # X
-              {:uint, 256},
-              # Y
-              {:uint, 256}
-            ]},
-           # dataLength
-           {:uint, 32},
-           # QuorumBlobParam[] quorumBlobParams
-           {:array,
-            {:tuple,
-             [
-               # quorumNumber
-               {:uint, 8},
-               # adversaryThresholdPercentage
-               {:uint, 8},
-               # confirmationThresholdPercentage
-               {:uint, 8},
-               # chunkLength
-               {:uint, 32}
-             ]}}
-         ]}
+        @eigen_da_blob_header_type
       ]
     }
 end
