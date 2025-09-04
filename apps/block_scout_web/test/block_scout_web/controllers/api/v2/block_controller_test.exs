@@ -524,25 +524,16 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         block = build(:block)
 
         request = get(conn, "/api/v2/blocks/#{block.hash}/beacon/deposits")
-        response = json_response(request, 404)
+        json_response(request, 404)
       end
 
-      # test "get 422 on invalid block", %{conn: conn} do
-      #   request = get(conn, "/api/v2/blocks/invalid/beacon/deposits")
-      #   response = json_response(request, 422)
+      test "get 422 on invalid block", %{conn: conn} do
+        request_1 = get(conn, "/api/v2/blocks/0x123123/beacon/deposits")
+        assert %{"message" => "Invalid hash"} = json_response(request_1, 422)
 
-      #   assert %{
-      #            "errors" => [
-      #              %{
-      #                "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
-      #                "source" => %{"pointer" => "/address_hash_param"},
-      #                "title" => "Invalid value"
-      #              }
-      #            ]
-      #          } = response
-
-      #   assert_schema(response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
-      # end
+        request_2 = get(conn, "/api/v2/blocks/123qwe/beacon/deposits")
+        assert %{"message" => "Invalid number"} = json_response(request_2, 422)
+      end
 
       test "get deposits", %{conn: conn} do
         block = insert(:block)
@@ -558,8 +549,6 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         assert response_2nd_page = json_response(request_2nd_page, 200)
 
         check_paginated_response(response, response_2nd_page, deposits)
-        # assert_schema(response, "BlockBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-        # assert_schema(response_2nd_page, "BlockBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       end
     else
       test "returns an error about chain type", %{conn: conn} do
