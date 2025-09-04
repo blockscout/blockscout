@@ -349,7 +349,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
         :transaction_fees,
         :withdrawals_count,
         :is_pending_update
-      ]
+      ],
+      additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()
   )
