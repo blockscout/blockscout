@@ -231,19 +231,24 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
         {:ok, :in_calldata, nil}
 
       32 ->
+        # 0x20
         log_error("ZERO HEAVY messages are not supported.")
         {:error, nil, nil}
 
       99 ->
+        # 0x63
         Celestia.parse_batch_accompanying_data(batch_number, rest)
 
       128 ->
+        # 0x80
         Anytrust.parse_batch_accompanying_data(batch_number, rest)
 
       136 ->
+        # 0x88
         Anytrust.parse_batch_accompanying_data(batch_number, rest)
 
       237 ->
+        # 0xed
         Eigenda.parse_batch_accompanying_data(batch_number, rest)
 
       _ ->
