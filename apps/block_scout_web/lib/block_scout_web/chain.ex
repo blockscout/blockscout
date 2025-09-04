@@ -19,6 +19,8 @@ defmodule BlockScoutWeb.Chain do
       page_size: 0
     ]
 
+  import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
+
   import Explorer.Helper, only: [parse_boolean: 1, parse_integer: 1]
 
   alias BlockScoutWeb.PagingHelper
@@ -147,7 +149,14 @@ defmodule BlockScoutWeb.Chain do
   def next_page_params(_, list, params, paging_function) do
     paging_params = paging_function.(List.last(list))
 
-    next_page_params = Map.merge(params, paging_params)
+    string_keys = map_to_string_keys(paging_params)
+
+    next_page_params =
+      params
+      |> delete_parameters_from_next_page_params()
+      |> Map.drop(string_keys)
+      |> Map.merge(paging_params)
+
     current_items_count_string = Map.get(next_page_params, "items_count")
 
     items_count =
@@ -223,21 +232,19 @@ defmodule BlockScoutWeb.Chain do
   def paging_options(
         %{
           "market_cap" => market_cap_string,
-          "holders_count" => holder_count_string,
-          # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
-          "holder_count" => holder_count_string,
+          "holders_count" => holders_count_string,
           "name" => name_string,
           "contract_address_hash" => contract_address_hash_string,
           "is_name_null" => is_name_null_string
         } = params
       )
-      when is_binary(market_cap_string) and is_binary(holder_count_string) and is_binary(name_string) and
+      when is_binary(market_cap_string) and is_binary(holders_count_string) and is_binary(name_string) and
              is_binary(contract_address_hash_string) and is_binary(is_name_null_string) do
     market_cap_decimal = decimal_parse(market_cap_string)
 
     fiat_value_decimal = decimal_parse(params["fiat_value"])
 
-    holder_count = parse_integer(holder_count_string)
+    holders_count = parse_integer(holders_count_string)
     token_name = if is_name_null_string == "true", do: nil, else: name_string
 
     case Hash.Address.cast(contract_address_hash_string) do
@@ -248,7 +255,7 @@ defmodule BlockScoutWeb.Chain do
             | key: %{
                 fiat_value: fiat_value_decimal,
                 circulating_market_cap: market_cap_decimal,
-                holder_count: holder_count,
+                holder_count: holders_count,
                 name: token_name,
                 contract_address_hash: contract_address_hash
               }
@@ -759,15 +766,13 @@ defmodule BlockScoutWeb.Chain do
   defp paging_params(%Token{
          contract_address_hash: contract_address_hash,
          circulating_market_cap: circulating_market_cap,
-         holder_count: holder_count,
+         holder_count: holders_count,
          name: token_name,
          fiat_value: fiat_value
        }) do
     %{
       "market_cap" => circulating_market_cap,
-      "holders_count" => holder_count,
-      # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
-      "holder_count" => holder_count,
+      "holders_count" => holders_count,
       "contract_address_hash" => contract_address_hash,
       "name" => token_name,
       "is_name_null" => is_nil(token_name),
@@ -862,8 +867,6 @@ defmodule BlockScoutWeb.Chain do
     %{
       "smart_contract_id" => smart_contract.id,
       "transactions_count" => smart_contract.address.transactions_count,
-      # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
-      "transaction_count" => smart_contract.address.transactions_count,
       "coin_balance" =>
         smart_contract.address.fetched_coin_balance && Wei.to(smart_contract.address.fetched_coin_balance, :wei)
     }
@@ -978,7 +981,11 @@ defmodule BlockScoutWeb.Chain do
         |> last_token_transfer_before_current(current_token_transfer)
         |> (&if(is_nil(&1), do: %{}, else: paging_params(&1))).()
 
+      string_keys = map_to_string_keys(new_params)
+
       params
+      |> delete_parameters_from_next_page_params()
+      |> Map.drop(["batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch" | string_keys])
       |> Map.merge(new_params)
       |> Map.merge(%{
         batch_log_index: current_token_transfer.log_index,
@@ -987,7 +994,14 @@ defmodule BlockScoutWeb.Chain do
         index_in_batch: current_token_transfer.index_in_batch
       })
     else
-      Map.merge(params, paging_params(List.last(list)))
+      new_params = paging_params(List.last(list))
+
+      string_keys = map_to_string_keys(new_params)
+
+      params
+      |> delete_parameters_from_next_page_params()
+      |> Map.drop(["batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch" | string_keys])
+      |> Map.merge(new_params)
     end
   end
 
@@ -1038,4 +1052,13 @@ defmodule BlockScoutWeb.Chain do
   @spec fetch_scam_token_toggle(Keyword.t(), Plug.Conn.t()) :: Keyword.t()
   def fetch_scam_token_toggle(params, conn),
     do: Keyword.put(params, :show_scam_tokens?, conn.cookies["show_scam_tokens"] |> parse_boolean())
+
+  defp map_to_string_keys(map) do
+    map
+    |> Map.keys()
+    |> Enum.map(fn
+      key when is_atom(key) -> Atom.to_string(key)
+      key -> key
+    end)
+  end
 end

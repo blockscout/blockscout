@@ -497,7 +497,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       tokens_ordered_by_holders = Enum.sort(tokens, &(&1.holder_count <= &2.holder_count))
 
       request_ordered_by_holders =
-        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "holder_count", "order" => "desc"}))
+        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "holders_count", "order" => "desc"}))
 
       assert response_ordered_by_holders = json_response(request_ordered_by_holders, 200)
 
@@ -506,7 +506,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           conn,
           "/api/v2/tokens",
           additional_params
-          |> Map.merge(%{"sort" => "holder_count", "order" => "desc"})
+          |> Map.merge(%{"sort" => "holders_count", "order" => "desc"})
           |> Map.merge(response_ordered_by_holders["next_page_params"])
         )
 
@@ -521,7 +521,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       tokens_ordered_by_holders_asc = Enum.sort(tokens, &(&1.holder_count >= &2.holder_count))
 
       request_ordered_by_holders_asc =
-        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "holder_count", "order" => "asc"}))
+        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "holders_count", "order" => "asc"}))
 
       assert response_ordered_by_holders_asc = json_response(request_ordered_by_holders_asc, 200)
 
@@ -530,7 +530,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           conn,
           "/api/v2/tokens",
           additional_params
-          |> Map.merge(%{"sort" => "holder_count", "order" => "asc"})
+          |> Map.merge(%{"sort" => "holders_count", "order" => "asc"})
           |> Map.merge(response_ordered_by_holders_asc["next_page_params"])
         )
 
@@ -628,6 +628,67 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
       check_paginated_response(response, response_2nd_page, tokens)
+    end
+
+    test "get token with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      insert(:token)
+
+      request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/tokens")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+
+      assert response == conn |> get("/api/v2/tokens") |> json_response(200)
+    end
+
+    test "get token with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      target_token = insert(:token)
+      insert(:scam_badge_to_address, address_hash: target_token.contract_address_hash)
+
+      request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/tokens")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/tokens")
+      response = json_response(request, 200)
+
+      assert response["items"] == []
+    end
+
+    test "get token with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      insert(:token)
+
+      request = conn |> get("/api/v2/tokens")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
+    test "get token with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      target_token = insert(:token)
+      insert(:scam_badge_to_address, address_hash: target_token.contract_address_hash)
+
+      request = conn |> get("/api/v2/tokens")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
     end
 
     test "tokens are filtered by single type", %{conn: conn} do
@@ -2312,14 +2373,14 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   end
 
   def compare_item(%Token{} = token, json) do
-    assert Address.checksum(token.contract_address.hash) == json["address"]
+    assert Address.checksum(token.contract_address.hash) == json["address_hash"]
     assert token.symbol == json["symbol"]
     assert token.name == json["name"]
     assert to_string(token.decimals) == json["decimals"]
     assert token.type == json["type"]
 
-    assert (is_nil(token.holder_count) and is_nil(json["holders"])) or
-             (to_string(token.holder_count) == json["holders"] and !is_nil(token.holder_count))
+    assert (is_nil(token.holder_count) and is_nil(json["holders_count"])) or
+             (to_string(token.holder_count) == json["holders_count"] and !is_nil(token.holder_count))
 
     assert to_string(token.total_supply) == json["total_supply"]
     assert Map.has_key?(json, "exchange_rate")
@@ -2360,7 +2421,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
              "value" => ^value,
              "id" => ^id,
              "metadata" => ^metadata,
-             "token" => %{"address" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
+             "token" => %{"address_hash" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
              "external_app_url" => ^app_url,
              "animation_url" => ^animation_url,
              "image_url" => ^image_url,

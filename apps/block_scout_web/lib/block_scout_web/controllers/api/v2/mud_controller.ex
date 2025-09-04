@@ -156,7 +156,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
       {records, next_page} = world |> Mud.world_table_records(table_id, options) |> split_list_by_page()
 
-      blocks = Mud.preload_records_timestamps(records)
+      blocks = Mud.preload_records_timestamps(records, @api_true)
 
       next_page_params =
         next_page_params(next_page, records, conn.query_params, fn item ->
@@ -207,7 +207,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
          {:format, {:ok, record_id}} <- {:format, Data.cast(record_id_param)},
          {:ok, schema} <- Mud.world_table_schema(world, table_id),
          {:ok, record} <- Mud.world_table_record(world, table_id, record_id) do
-      blocks = Mud.preload_records_timestamps([record])
+      blocks = Mud.preload_records_timestamps([record], @api_true)
 
       conn
       |> put_status(200)

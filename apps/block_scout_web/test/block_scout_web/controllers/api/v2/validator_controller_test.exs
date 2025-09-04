@@ -179,10 +179,10 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
         request = get(conn, "/api/v2/validators/stability/counters")
 
         assert %{
-                 "active_validators_counter" => "3",
+                 "active_validators_count" => "3",
                  "active_validators_percentage" => ^percentage,
-                 "new_validators_counter_24h" => "6",
-                 "validators_counter" => "9"
+                 "new_validators_count_24h" => "6",
+                 "validators_count" => "9"
                } = json_response(request, 200)
       end
     end

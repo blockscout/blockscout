@@ -178,7 +178,13 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     end)
   end
 
-  defp epoch_type(epoch) do
+  @doc """
+  Returns the type of the epoch based on its number. If the epoch number is less
+  than the migration epoch number, it returns "L1", otherwise "L2". This is used
+  to differentiate between the two eras of Celo epochs.
+  """
+  @spec epoch_type(Epoch.t()) :: String.t()
+  def epoch_type(epoch) do
     epoch.number
     |> CeloHelper.pre_migration_epoch_number?()
     |> if(do: "L1", else: "L2")
@@ -358,12 +364,12 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   ## Example
       iex> transfers = %{
-      ...>   reserve_bolster_transfer: %{"token" => %{"address" => "0xABC..."}, "total" => %{"value" => Decimal.new("100")}},
-      ...>   community_transfer: %{"token" => %{"address" => "0xABC..."}, "total" => %{"value" => Decimal.new("200")}}
+      ...>   reserve_bolster_transfer: %{"token" => %{"address_hash" => "0xABC..."}, "total" => %{"value" => Decimal.new("100")}},
+      ...>   community_transfer: %{"token" => %{"address_hash" => "0xABC..."}, "total" => %{"value" => Decimal.new("200")}}
       ...> }
       iex> calculate_total_epoch_rewards(transfers)
       %{
-        token: %{"address" => "0xABC...", ...},
+        token: %{"address_hash" => "0xABC...", ...},
         total: %{decimals: Decimal.new("18"), value: Decimal.new("300")}
       }
   """
@@ -443,7 +449,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   defp fee_handler_base_fee_breakdown(base_fee, block_number) do
     with {:ok, fee_handler_contract_address_hash} <-
            CeloCoreContracts.get_address(:fee_handler, block_number),
-         {:ok, %{"address" => fee_beneficiary_address_hash}} <-
+         {:ok, %{"address_hash" => fee_beneficiary_address_hash}} <-
            CeloCoreContracts.get_event(:fee_handler, :fee_beneficiary_set, block_number),
          {:ok, %{"value" => burn_fraction_fixidity_lib}} <-
            CeloCoreContracts.get_event(:fee_handler, :burn_fraction_set, block_number),

@@ -17,7 +17,8 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueue do
 
   @behaviour BufferedTask
 
-  @default_max_batch_size 1000
+  @delete_queries_chunk_size 100
+  @default_max_batch_size 3000
   @default_max_concurrency 10
   @failed_to_re_export_data_error "Batch main export retry to the Multichain Search DB failed"
 
@@ -78,8 +79,12 @@ defmodule Indexer.Fetcher.MultichainSearchDb.MainExportQueue do
           end)
 
         all_hashes
-        |> MainExportQueue.by_hashes_query()
-        |> Repo.delete_all()
+        |> Enum.chunk_every(@delete_queries_chunk_size)
+        |> Enum.each(fn chunk_items ->
+          chunk_items
+          |> MainExportQueue.by_hashes_query()
+          |> Repo.delete_all()
+        end)
 
         :ok
 

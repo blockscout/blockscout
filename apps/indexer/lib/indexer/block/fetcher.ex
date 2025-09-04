@@ -29,6 +29,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.{Prometheus, TokenBalances, Tracer}
 
   alias Indexer.Fetcher.{
+    AddressNonceUpdater,
     Beacon.Blob,
     BlockReward,
     ContractCode,
@@ -54,8 +55,6 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Transform.Stability.Validators, as: StabilityValidators
 
   alias Indexer.Transform.Optimism.Withdrawals, as: OptimismWithdrawals
-
-  alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 
   alias Indexer.Transform.Scroll.L1FeeParams, as: ScrollL1FeeParams
 
@@ -180,13 +179,6 @@ defmodule Indexer.Block.Fetcher do
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          optimism_withdrawals =
            if(callback_module == Indexer.Block.Realtime.Fetcher, do: OptimismWithdrawals.parse(logs), else: []),
-         polygon_edge_withdrawals =
-           if(callback_module == Indexer.Block.Realtime.Fetcher, do: Withdrawals.parse(logs), else: []),
-         polygon_edge_deposit_executes =
-           if(callback_module == Indexer.Block.Realtime.Fetcher,
-             do: DepositExecutes.parse(logs),
-             else: []
-           ),
          scroll_l1_fee_params =
            if(callback_module == Indexer.Block.Realtime.Fetcher,
              do: ScrollL1FeeParams.parse(logs),
@@ -237,8 +229,9 @@ defmodule Indexer.Block.Fetcher do
            Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
          token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers}),
          stability_validators = StabilityValidators.parse(blocks),
+         addresses_without_nonce = process_addresses_nonce(addresses),
          basic_import_options = %{
-           addresses: %{params: addresses},
+           addresses: %{params: addresses_without_nonce},
            address_coin_balances: %{params: coin_balances_params_set},
            address_token_balances: %{params: address_token_balances},
            address_current_token_balances: %{
@@ -259,8 +252,6 @@ defmodule Indexer.Block.Fetcher do
            %{
              transactions_with_receipts: transactions_with_receipts,
              optimism_withdrawals: optimism_withdrawals,
-             polygon_edge_withdrawals: polygon_edge_withdrawals,
-             polygon_edge_deposit_executes: polygon_edge_deposit_executes,
              polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
              scroll_l1_fee_params: scroll_l1_fee_params,
              shibarium_bridge_operations: shibarium_bridge_operations,
@@ -314,15 +305,6 @@ defmodule Indexer.Block.Fetcher do
   defp do_import_options(:optimism, basic_import_options, %{optimism_withdrawals: optimism_withdrawals}) do
     basic_import_options
     |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
-  end
-
-  defp do_import_options(:polygon_edge, basic_import_options, %{
-         polygon_edge_withdrawals: polygon_edge_withdrawals,
-         polygon_edge_deposit_executes: polygon_edge_deposit_executes
-       }) do
-    basic_import_options
-    |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
-    |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
   end
 
   defp do_import_options(:polygon_zkevm, basic_import_options, %{
@@ -795,6 +777,25 @@ defmodule Indexer.Block.Fetcher do
 
       Map.put(token_transfer, :token, token)
     end)
+  end
+
+  defp process_addresses_nonce(addresses) do
+    {addresses_excluding_nonce_update, addresses_nonce_update_params} =
+      Enum.reduce(addresses, {[], []}, fn address,
+                                          {addresses_excluding_nonce_update_acc, addresses_nonce_update_params_acc} ->
+        case Map.get(address, :nonce) do
+          nil ->
+            {[address | addresses_excluding_nonce_update_acc], addresses_nonce_update_params_acc}
+
+          nonce ->
+            {[Map.delete(address, :nonce) | addresses_excluding_nonce_update_acc],
+             [%{hash: address.hash, nonce: nonce} | addresses_nonce_update_params_acc]}
+        end
+      end)
+
+    AddressNonceUpdater.add(addresses_nonce_update_params)
+
+    Enum.reverse(addresses_excluding_nonce_update)
   end
 
   # Asynchronously schedules matching of Arbitrum L1-to-L2 messages where the message ID is hashed.

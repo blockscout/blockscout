@@ -11,13 +11,15 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
   alias Explorer.Chain.Wei
   alias Explorer.Chain.{Hash, MultichainSearchDb.BalancesExportQueue}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
+  alias Explorer.Repo
 
   alias Indexer.BufferedTask
   alias Indexer.Helper, as: IndexerHelper
 
   @behaviour BufferedTask
 
-  @default_max_batch_size 1000
+  @delete_queries_chunk_size 10
+  @default_max_batch_size 3000
   @default_max_concurrency 10
   @failed_to_re_export_data_error "Batch balances export retry to the Multichain Search DB failed"
 
@@ -66,7 +68,14 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
 
         unless Enum.empty?(all_balances) do
           all_balances
-          |> BalancesExportQueue.delete_elements_from_queue_by_params()
+          |> Enum.sort_by(&{&1.address_hash, &1.token_contract_address_hash_or_native, &1.token_id})
+          |> Enum.chunk_every(@delete_queries_chunk_size)
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          |> Enum.each(fn chunk_items ->
+            chunk_items
+            |> BalancesExportQueue.delete_elements_from_queue_by_params()
+            |> Repo.transact()
+          end)
         end
 
         :ok

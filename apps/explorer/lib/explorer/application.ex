@@ -172,7 +172,6 @@ defmodule Explorer.Application do
         configure_chain_type_dependent_process(Explorer.Chain.Cache.Counters.Stability.ValidatorsCount, :stability),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.LatestL1BlockNumber, [
           :optimism,
-          :polygon_edge,
           :polygon_zkevm,
           :scroll,
           :shibarium
@@ -192,7 +191,9 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.ReindexDuplicatedInternalTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.MergeAdjacentMissingBlockRanges, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.UnescapeQuotesInTokens, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.ReindexBlocksWithMissingTransactions, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
           :indexer
@@ -303,6 +304,10 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex,
           :indexer
         ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractAdditionalSourcesUniqueIndex,
+          :indexer
+        ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),
         configure(Explorer.Chain.Fetcher.AddressesBlacklist),
         Explorer.Migrator.SwitchPendingOperations,
@@ -311,7 +316,7 @@ defmodule Explorer.Application do
       ]
       |> List.flatten()
 
-    repos_by_chain_type() ++ account_repo() ++ mud_repo() ++ configurable_children_set
+    repos_by_chain_type() ++ account_repo() ++ mud_repo() ++ event_notification_repo() ++ configurable_children_set
   end
 
   defp repos_by_chain_type do
@@ -351,6 +356,14 @@ defmodule Explorer.Application do
   defp mud_repo do
     if Application.get_env(:explorer, Explorer.Chain.Mud)[:enabled] || Mix.env() == :test do
       [Explorer.Repo.Mud]
+    else
+      []
+    end
+  end
+
+  defp event_notification_repo do
+    if Application.get_env(:explorer, :realtime_events_sender) == Explorer.Chain.Events.DBSender || Mix.env() == :test do
+      [Explorer.Repo.EventNotifications]
     else
       []
     end

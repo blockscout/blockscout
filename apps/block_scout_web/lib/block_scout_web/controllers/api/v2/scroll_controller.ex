@@ -8,11 +8,6 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
       split_list_by_page: 1
     ]
 
-  import BlockScoutWeb.PagingHelper,
-    only: [
-      delete_parameters_from_next_page_params: 1
-    ]
-
   alias Explorer.Chain.Scroll.Reader
 
   @api_true [api?: true]
@@ -55,7 +50,7 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
       |> Reader.batches()
       |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, batches, delete_parameters_from_next_page_params(params))
+    next_page_params = next_page_params(next_page, batches, params)
 
     conn
     |> put_status(200)

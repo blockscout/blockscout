@@ -14,7 +14,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.PagingHelper,
     only: [
       current_filter: 1,
-      delete_parameters_from_next_page_params: 1,
       search_query: 1
     ]
 
@@ -144,7 +143,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       next_page
       |> next_page_params(
         addresses,
-        delete_parameters_from_next_page_params(params),
+        params,
         pager
       )
 
@@ -161,13 +160,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   parameters.
 
   ## Returns
-  If 'hash', 'transaction_count', and 'coin_balance' parameters are provided,
+  If 'hash', 'transactions_count', and 'coin_balance' parameters are provided,
   uses them as pagination keys for address-based sorting. If 'smart_contract_id'
   parameter is provided, uses it as pagination key for smart contract ID-based
   sorting. Otherwise, returns default paging options.
 
   ## Examples
-      iex> smart_contract_addresses_paging_options(%{"hash" => "0x123...", "transaction_count" => "100", "coin_balance" => "1000"})
+      iex> smart_contract_addresses_paging_options(%{"hash" => "0x123...", "transactions_count" => "100", "coin_balance" => "1000"})
       [paging_options: %{key: %{hash: ..., transactions_count: 100, fetched_coin_balance: 1000}}]
 
       iex> smart_contract_addresses_paging_options(%{"smart_contract_id" => "42"})
@@ -189,7 +188,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     |> Chain.string_to_address_hash()
     |> case do
       {:ok, address_hash} ->
-        transactions_count = parse_integer(params["transaction_count"])
+        transactions_count = parse_integer(params["transactions_count"])
         coin_balance = parse_integer(params["coin_balance"])
 
         %{
@@ -226,7 +225,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   ## Examples
       iex> address = %Explorer.Chain.Address{hash: "0x123...", transactions_count: 100, fetched_coin_balance: 1000}
       iex> smart_contract_addresses_paging_params(address)
-      %{"hash" => "0x123...", "transaction_count" => 100, "coin_balance" => 1000}
+      %{"hash" => "0x123...", "transactions_count" => 100, "coin_balance" => 1000}
   """
   @spec smart_contract_addresses_paging_params(Explorer.Chain.Address.t()) :: %{
           required(String.t()) => any()
@@ -238,8 +237,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       }) do
     %{
       "hash" => address_hash,
-      # todo: It should be removed in favour: transactions_count
-      "transaction_count" => transactions_count,
       "transactions_count" => transactions_count,
       "coin_balance" => coin_balance
     }

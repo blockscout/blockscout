@@ -13,7 +13,6 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
 
   import BlockScoutWeb.PagingHelper,
     only: [
-      delete_parameters_from_next_page_params: 1,
       stability_validators_state_options: 1,
       validators_blackfort_sorting: 1,
       validators_stability_sorting: 1
@@ -52,7 +51,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       next_page
       |> next_page_params(
         validators,
-        delete_parameters_from_next_page_params(params),
+        params,
         &ValidatorStability.next_page_params/1
       )
 
@@ -74,14 +73,8 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     conn
     |> json(%{
       validators_count: validators_counter,
-      # todo: It should be removed in favour `validators_count` property with the next release after 8.0.0
-      validators_counter: validators_counter,
       new_validators_count_24h: new_validators_counter,
-      # todo: It should be removed in favour `new_validators_count_24h` property with the next release after 8.0.0
-      new_validators_counter_24h: new_validators_counter,
       active_validators_count: active_validators_counter,
-      # todo: It should be removed in favour `active_validators_count` property with the next release after 8.0.0
-      active_validators_counter: active_validators_counter,
       active_validators_percentage:
         calculate_active_validators_percentage(active_validators_counter, validators_counter)
     })
@@ -108,7 +101,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       next_page
       |> next_page_params(
         validators,
-        delete_parameters_from_next_page_params(params),
+        params,
         &ValidatorBlackfort.next_page_params/1
       )
 
@@ -129,11 +122,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     conn
     |> json(%{
       validators_count: validators_counter,
-      # todo: It should be removed in favour `validators_count` property with the next release after 8.0.0
-      validators_counter: validators_counter,
-      new_validators_count_24h: new_validators_counter,
-      # todo: It should be removed in favour `new_validators_count_24h` property with the next release after 8.0.0
-      new_validators_counter_24h: new_validators_counter
+      new_validators_count_24h: new_validators_counter
     })
   end
 
@@ -181,7 +170,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       next_page
       |> next_page_params(
         validators,
-        delete_parameters_from_next_page_params(params),
+        params,
         &ValidatorZilliqa.next_page_params/1
       )
 

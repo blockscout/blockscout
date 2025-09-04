@@ -10,7 +10,6 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     ]
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
-  import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
 
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Celo.{ElectionReward, Epoch}
@@ -47,7 +46,6 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
     filtered_params =
       params
-      |> delete_parameters_from_next_page_params()
       |> Map.drop(["number"])
 
     next_page_params =

@@ -24,9 +24,9 @@ defmodule Explorer.Chain.SignedAuthorization do
   @type to_import :: %{
           transaction_hash: binary(),
           index: non_neg_integer(),
-          chain_id: non_neg_integer(),
+          chain_id: non_neg_integer() | Decimal.t(),
           address: binary(),
-          nonce: non_neg_integer(),
+          nonce: non_neg_integer() | Decimal.t(),
           r: non_neg_integer(),
           s: non_neg_integer(),
           v: non_neg_integer(),
@@ -52,7 +52,7 @@ defmodule Explorer.Chain.SignedAuthorization do
   @primary_key false
   typed_schema "signed_authorizations" do
     field(:index, :integer, primary_key: true, null: false)
-    field(:chain_id, :integer, null: false)
+    field(:chain_id, :decimal, null: false)
     field(:address, Hash.Address, null: false)
     field(:nonce, :decimal, null: false)
     field(:r, :decimal, null: false)
@@ -136,10 +136,10 @@ defmodule Explorer.Chain.SignedAuthorization do
     chain_id = ChainId.get_id()
 
     cond do
-      struct.chain_id != 0 and !is_nil(chain_id) and struct.chain_id != chain_id ->
+      not Decimal.eq?(struct.chain_id, 0) and !is_nil(chain_id) and not Decimal.eq?(struct.chain_id, chain_id) ->
         :invalid_chain_id
 
-      struct.chain_id != 0 and is_nil(chain_id) ->
+      not Decimal.eq?(struct.chain_id, 0) and is_nil(chain_id) ->
         nil
 
       struct.nonce |> Decimal.gte?(2 ** 64 - 1) ->

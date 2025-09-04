@@ -143,11 +143,13 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
 
     ordered_changes_list =
       changes_list
-      # brand new tokens start with no holders
+      # brand new tokens start with no holders and transfers
       # set cataloged: nil, if not set before, to get proper COALESCE result
       # if don't set it, cataloged will default to false (as in DB schema)
       # and COALESCE in on_conflict will return false
-      |> Stream.map(fn token -> token |> Map.put_new(:holder_count, 0) |> Map.put_new(:cataloged, nil) end)
+      |> Stream.map(fn token ->
+        token |> Map.put_new(:holder_count, 0) |> Map.put_new(:transfer_count, 0) |> Map.put_new(:cataloged, nil)
+      end)
       # Enforce Token ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(& &1.contract_address_hash)
 
@@ -196,7 +198,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             cataloged: fragment("COALESCE(EXCLUDED.cataloged, ?)", token.cataloged),
             bridged: fragment("COALESCE(EXCLUDED.bridged, ?)", token.bridged),
             skip_metadata: fragment("COALESCE(EXCLUDED.skip_metadata, ?)", token.skip_metadata),
-            # `holder_count` is not updated as a pre-existing token means the `holder_count` is already initialized OR
+            # `holder_count` and `transfer_count` are not updated as a pre-existing token means these counts are already initialized OR
             #   need to be migrated with `priv/repo/migrations/scripts/update_new_tokens_holder_count_in_batches.sql.exs`
             # Don't update `contract_address_hash` as it is the primary key and used for the conflict target
             inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token.inserted_at),

@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
 
   @filecoin_robust_address_schema %Schema{
     type: :string,
+    description: "Robust f0/f1/f2/f3/f4 Filecoin address",
     example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
     nullable: true
   }
@@ -19,14 +20,21 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
         |> put_in([:properties, :filecoin], %Schema{
           type: :object,
           properties: %{
-            id: %Schema{type: :string, example: "f03248220", nullable: true},
+            id: %Schema{
+              type: :string,
+              description: "Short f0 Filecoin address that may change during chain reorgs",
+              example: "f03248220",
+              nullable: true
+            },
             robust: @filecoin_robust_address_schema,
             actor_type: %Schema{
               type: :string,
+              description: "Type of actor associated with the Filecoin address",
               enum: EctoEnum.values(Address, :filecoin_actor_type),
               nullable: true
             }
-          }
+          },
+          required: [:id, :robust, :actor_type]
         })
 
       _ ->
@@ -45,6 +53,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
 
   alias BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations
   alias BlockScoutWeb.Schemas.API.V2.{General, Proxy}
+  alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -56,13 +65,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
         is_contract: %Schema{type: :boolean, description: "Has address contract code?", nullable: true},
         name: %Schema{type: :string, description: "Name associated with the address", nullable: true},
         is_scam: %Schema{type: :boolean, description: "Has address scam badge?", nullable: false},
+        reputation: %Schema{
+          type: :string,
+          enum: Reputation.enum_values(),
+          description: "Reputation of the address",
+          nullable: false
+        },
         proxy_type: General.ProxyType,
         implementations: %Schema{
           description: "Implementations linked with the contract",
           type: :array,
           items: General.Implementation
         },
-        is_verified: %Schema{type: :boolean, description: "Has address associated source code?", nullable: false},
+        is_verified: %Schema{type: :boolean, description: "Has address associated source code?", nullable: true},
         ens_domain_name: %Schema{
           type: :string,
           description: "ENS domain name associated with the address",
@@ -90,6 +105,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
         :is_contract,
         :name,
         :is_scam,
+        :reputation,
         :proxy_type,
         :implementations,
         :is_verified,

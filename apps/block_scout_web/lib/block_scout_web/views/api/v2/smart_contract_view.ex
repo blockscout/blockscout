@@ -172,7 +172,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
     proxy_type = implementations && implementations.proxy_type
 
-    minimal_proxy? = proxy_type in ["eip1167", "clone_with_immutable_arguments", "erc7760"]
+    minimal_proxy? = proxy_type in [:eip1167, :eip7702, :clone_with_immutable_arguments, :erc7760]
 
     target_contract =
       if smart_contract_verified, do: smart_contract, else: bytecode_twin_contract
@@ -195,6 +195,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_verified_via_verifier_alliance" => smart_contract.verified_via_verifier_alliance,
       "proxy_type" => proxy_type,
       "implementations" => Proxy.proxy_object_info(implementations),
+      "conflicting_implementations" => Proxy.conflicting_implementations_info(implementations),
       "sourcify_repo_url" =>
         if(smart_contract_verified_via_sourcify,
           do: AddressContractView.sourcify_repo_url(address.hash, smart_contract.partially_verified)
@@ -237,7 +238,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_smart_contract(%Address{proxy_implementations: implementations} = address, _conn) do
     %{
       "proxy_type" => implementations && implementations.proxy_type,
-      "implementations" => Proxy.proxy_object_info(implementations)
+      "implementations" => Proxy.proxy_object_info(implementations),
+      "conflicting_implementations" => Proxy.conflicting_implementations_info(implementations)
     }
     |> Map.merge(bytecode_info(address))
   end
@@ -304,7 +306,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_smart_contract_address_for_list(
          %Address{
            smart_contract: %SmartContract{} = smart_contract,
-           token: token
+           token: token,
+           reputation: reputation
          } = address
        ) do
     smart_contract_info =
@@ -313,15 +316,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         "compiler_version" => smart_contract.compiler_version,
         "optimization_enabled" => smart_contract.optimization,
         "transactions_count" => address.transactions_count,
-        # todo: It should be removed in favour `transactions_count` property with the next release after 8.0.0
-        "transaction_count" => address.transactions_count,
         "language" => SmartContract.language(smart_contract),
         "verified_at" => smart_contract.inserted_at,
         "market_cap" => token && token.circulating_market_cap,
         "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
         "coin_balance" => if(address.fetched_coin_balance, do: address.fetched_coin_balance.value),
         "license_type" => smart_contract.license_type,
-        "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false)
+        "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false),
+        "reputation" => reputation
       }
 
     smart_contract_info
