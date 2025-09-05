@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.ErrorHelperTest do
   use BlockScoutWeb.ConnCase, async: true
-  import Phoenix.HTML.Tag, only: [content_tag: 3]
+  import Phoenix.HTML
+  import Phoenix.HTML.Form
+  use PhoenixHTMLHelpers
 
   alias BlockScoutWeb.ErrorHelper
 
