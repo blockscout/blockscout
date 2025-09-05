@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.Account.API.V2.FallbackController do
-  use Phoenix.Controller
+  use Phoenix.Controller, formats: [html: "View", json: "View"]
 
   alias BlockScoutWeb.Account.API.V2.UserView
   alias Ecto.Changeset

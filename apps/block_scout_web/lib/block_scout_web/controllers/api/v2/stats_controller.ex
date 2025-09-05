@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.API.V2.StatsController do
-  use Phoenix.Controller
+  use Phoenix.Controller, formats: [html: "View", json: "View"]
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.API.V2.Helper
