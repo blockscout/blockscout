@@ -11,6 +11,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
 
+  import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
+
   import BlockScoutWeb.Chain,
     only: [
       split_list_by_page: 1,
@@ -37,12 +39,14 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   @api_true [api?: true]
 
+  @token_options [api?: true, necessity_by_association: %{reputation_association() => :optional}]
+
   def token(conn, %{"address_hash_param" => address_hash_string} = params) do
     ip = AccessHelper.conn_to_ip_string(conn)
 
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
+         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @token_options)} do
       TokenTotalSupplyOnDemand.trigger_fetch(ip, address_hash)
 
       conn

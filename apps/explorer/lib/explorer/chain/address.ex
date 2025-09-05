@@ -89,7 +89,6 @@ defmodule Explorer.Chain.Address.Schema do
         field(:gas_used, :integer)
         field(:ens_domain_name, :string, virtual: true)
         field(:metadata, :any, virtual: true)
-        field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
         has_one(:smart_contract, SmartContract, references: :hash)
         has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)
@@ -112,6 +111,7 @@ defmodule Explorer.Chain.Address.Schema do
         has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
         has_one(:scam_badge, Address.ScamBadgeToAddress, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
+        has_one(:reputation, Reputation, foreign_key: :address_hash, references: :hash)
 
         # In practice, this is a one-to-many relationship, but we only need to check if any signed authorization
         # exists for a given address. This done this way to avoid loading all signed authorizations for an address.

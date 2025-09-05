@@ -25,7 +25,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
-  alias Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Plug.Conn
 
