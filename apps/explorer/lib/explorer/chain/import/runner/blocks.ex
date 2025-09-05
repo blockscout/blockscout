@@ -291,6 +291,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     {_num, transactions} = repo.update_all(update_query, [], timeout: timeout)
 
+    transactions
+    |> Enum.map(& &1.hash)
+    |> PendingOperationsHelper.delete_related_transaction_operations()
+
     {:ok, transactions}
   rescue
     postgrex_error in Postgrex.Error ->
