@@ -699,12 +699,14 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
             timeout: timeout
           )
 
-        {_, _transactions_result} =
+        {_, transaction_hashes} =
           repo.update_all(
-            from(t in Transaction, join: s in subquery(transactions_query), on: t.hash == s.hash),
+            from(t in Transaction, join: s in subquery(transactions_query), on: t.hash == s.hash, select: t.hash),
             [set: transactions_replacements],
             timeout: timeout
           )
+
+        PendingOperationsHelper.delete_related_transaction_operations(transaction_hashes)
 
         MissingRangesManipulator.add_ranges_by_block_numbers(result)
 
