@@ -178,7 +178,7 @@ defmodule Explorer.Application do
         ]),
         configure_chain_type_dependent_con_cache(),
         Explorer.Migrator.SanitizeDuplicatedLogIndexLogs
-        |> configure()
+        |> configure_mode_dependent_process(:indexer)
         |> configure_chain_type_dependent_process([
           :polygon_zkevm,
           :rsk,
