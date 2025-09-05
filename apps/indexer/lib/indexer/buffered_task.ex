@@ -761,6 +761,13 @@ defmodule Indexer.BufferedTask do
     {:noreply, buffer_entries(state, entries, front?)}
   end
 
+  # Handles graceful shutdown. A fetcher implementing BufferedTask behaviour
+  # can invoke `Process.send(__MODULE__, :shutdown, [])` to shutdown itself.
+  # Its `restart` configuration must be set to `:transient`.
+  def handle_info(:shutdown, state) do
+    {:stop, :shutdown, state}
+  end
+
   # Handles synchronous buffering of entries.
   # Adds the provided entries to either the front or back buffer and waits for the operation to complete.
   # This is used when the caller needs confirmation that the entries have been buffered.
