@@ -351,6 +351,7 @@
         "lastname",
         "lastword",
         "lformat",
+        "libcluster",
         "libp",
         "libraryaddress",
         "libraryname",
