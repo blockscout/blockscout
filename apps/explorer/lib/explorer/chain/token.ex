@@ -34,7 +34,6 @@ defmodule Explorer.Chain.Token.Schema do
         field(:is_verified_via_admin_panel, :boolean)
         field(:volume_24h, :decimal)
         field(:transfer_count, :integer)
-        field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
         belongs_to(
           :contract_address,
@@ -45,6 +44,8 @@ defmodule Explorer.Chain.Token.Schema do
           type: Hash.Address,
           null: false
         )
+
+        has_one(:reputation, Reputation, foreign_key: :address_hash, references: :contract_address_hash)
 
         unquote_splicing(@bridged_field)
 

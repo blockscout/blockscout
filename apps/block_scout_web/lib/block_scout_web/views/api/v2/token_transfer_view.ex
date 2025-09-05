@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
       "block_number" => token_transfer.block_number,
       "log_index" => token_transfer.log_index,
       "token_type" => token_transfer.token_type,
-      "reputation" => token_transfer.reputation
+      "reputation" => token_transfer.token.reputation
     }
   end
 

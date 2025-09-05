@@ -64,7 +64,6 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:certified, :boolean)
         field(:is_blueprint, :boolean)
         field(:language, Ecto.Enum, values: @languages_enum, default: :solidity)
-        field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
         belongs_to(
           :address,
@@ -79,6 +78,8 @@ defmodule Explorer.Chain.SmartContract.Schema do
           references: :address_hash,
           foreign_key: :address_hash
         )
+
+        has_one(:reputation, Reputation, foreign_key: :address_hash, references: :address_hash)
 
         timestamps()
 

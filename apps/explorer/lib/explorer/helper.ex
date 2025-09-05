@@ -5,7 +5,7 @@ defmodule Explorer.Helper do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain
-  alias Explorer.Chain.{Address.ScamBadgeToAddress, Data, Hash, Wei}
+  alias Explorer.Chain.{Address.Reputation, Address.ScamBadgeToAddress, Data, Hash, Wei}
 
   import Ecto.Query
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -156,12 +156,21 @@ defmodule Explorer.Helper do
     Results will be placed to `preload_field`
   """
   @spec custom_preload(list(map()), keyword(), atom(), atom(), atom(), atom()) :: list()
-  def custom_preload(list, options, struct, foreign_key_field, references_field, preload_field) do
+  def custom_preload(
+        list,
+        options,
+        struct,
+        foreign_key_field,
+        references_field,
+        preload_field,
+        preload_field_association \\ []
+      ) do
     to_fetch_from_db = list |> Enum.map(& &1[foreign_key_field]) |> Enum.uniq()
 
     associated_elements =
       struct
       |> where([t], field(t, ^references_field) in ^to_fetch_from_db)
+      |> preload(^preload_field_association)
       |> Chain.select_repo(options).all()
       |> Enum.reduce(%{}, fn el, acc -> Map.put(acc, Map.from_struct(el)[references_field], el) end)
 
@@ -256,18 +265,20 @@ defmodule Explorer.Helper do
         query
         |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
         |> where([sabm: sabm], is_nil(sabm.address_hash))
-        |> select_merge([q], %{reputation: "ok"})
+        |> select_merge([q], %{reputation: %Reputation{reputation: "ok"}})
 
       Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
         query
         |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
         |> select_merge([q, sabm: sabm], %{
-          reputation: fragment("CASE WHEN ? THEN ? ELSE ? END", is_nil(sabm.address_hash), "ok", "scam")
+          reputation: %Reputation{
+            reputation: fragment("CASE WHEN ? THEN ? ELSE ? END", is_nil(sabm.address_hash), "ok", "scam")
+          }
         })
 
       true ->
         query
-        |> select_merge([q], %{reputation: "ok"})
+        |> select_merge([q], %{reputation: %Reputation{reputation: "ok"}})
     end
   end
 
@@ -309,24 +320,26 @@ defmodule Explorer.Helper do
         query
         |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
         |> where([sabm: sabm], is_nil(sabm.address_hash))
-        |> select_merge([q], %{reputation: "ok"})
+        |> select_merge([q], %{reputation: %Reputation{reputation: "ok"}})
 
       Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
         query
         |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
         |> select_merge([q, sabm: sabm], %{
-          reputation:
-            fragment(
-              "CASE WHEN MAX(CASE WHEN ? THEN 0 ELSE 1 END) = 0 THEN ? ELSE ? END",
-              is_nil(sabm.address_hash),
-              "ok",
-              "scam"
-            )
+          reputation: %Reputation{
+            reputation:
+              fragment(
+                "CASE WHEN MAX(CASE WHEN ? THEN 0 ELSE 1 END) = 0 THEN ? ELSE ? END",
+                is_nil(sabm.address_hash),
+                "ok",
+                "scam"
+              )
+          }
         })
 
       true ->
         query
-        |> select_merge([q], %{reputation: "ok"})
+        |> select_merge([q], %{reputation: %Reputation{reputation: "ok"}})
     end
   end
 

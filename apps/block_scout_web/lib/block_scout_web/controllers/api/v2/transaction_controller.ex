@@ -29,6 +29,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   import Explorer.MicroserviceInterfaces.Metadata,
     only: [maybe_preload_metadata: 1, maybe_preload_metadata_to_transaction: 1]
 
+  import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
+
   import Ecto.Query,
     only: [
       preload: 2
@@ -104,13 +106,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   @token_transfers_necessity_by_association %{
     [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-    [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
+    [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+    [token: reputation_association()] => :optional
   }
 
   @token_transfers_in_transaction_necessity_by_association %{
     [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
     [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-    token: :required
+    [token: reputation_association()] => :optional
   }
 
   @internal_transaction_necessity_by_association [

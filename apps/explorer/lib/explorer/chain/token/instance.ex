@@ -53,7 +53,6 @@ defmodule Explorer.Chain.Token.Instance do
     field(:cdn_upload_error, :string)
     field(:metadata_url, :string)
     field(:skip_metadata_url, :boolean)
-    field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 
@@ -66,6 +65,8 @@ defmodule Explorer.Chain.Token.Instance do
       primary_key: true,
       null: false
     )
+
+    has_one(:reputation, Reputation, foreign_key: :address_hash, references: :token_contract_address_hash)
 
     timestamps()
   end
@@ -396,7 +397,14 @@ defmodule Explorer.Chain.Token.Instance do
     |> limit(^paging_options.page_size)
     |> Chain.select_repo(options).all()
     |> Enum.map(&erc_1155_preload_nft(&1, address_hash, options))
-    |> Helper.custom_preload(options, Token, :token_contract_address_hash, :contract_address_hash, :token)
+    |> Helper.custom_preload(
+      options,
+      Token,
+      :token_contract_address_hash,
+      :contract_address_hash,
+      :token,
+      Reputation.reputation_association()
+    )
   end
 
   defp page_erc_1155_nft_collections(query, %PagingOptions{key: {contract_address_hash, "ERC-1155"}}) do
@@ -429,7 +437,14 @@ defmodule Explorer.Chain.Token.Instance do
     |> limit(^paging_options.page_size)
     |> Chain.select_repo(options).all()
     |> Enum.map(&erc_1155_preload_nft(&1, address_hash, options))
-    |> Helper.custom_preload(options, Token, :token_contract_address_hash, :contract_address_hash, :token)
+    |> Helper.custom_preload(
+      options,
+      Token,
+      :token_contract_address_hash,
+      :contract_address_hash,
+      :token,
+      Reputation.reputation_association()
+    )
   end
 
   defp page_erc_404_nft_collections(query, %PagingOptions{key: {contract_address_hash, "ERC-404"}}) do
