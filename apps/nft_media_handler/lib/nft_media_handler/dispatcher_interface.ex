@@ -38,7 +38,7 @@ defmodule NFTMediaHandler.DispatcherInterface do
             [] ->
               raise "No indexer nodes discovered"
 
-            [to_call, remains] ->
+            [to_call | remains] ->
               {[to_call], remains, to_call}
           end
 
