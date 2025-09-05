@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.CoinBalanceByDay do
       date: %Schema{type: :string, format: :date, nullable: false},
       value: General.IntegerString
     },
-    required: [:date, :value]
+    required: [:date, :value],
+    additionalProperties: false
   })
 end

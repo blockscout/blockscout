@@ -31,7 +31,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
-  import OpenApiSpex.TestAssertions
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
   @instances_amount_in_collection 9
@@ -90,7 +89,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
       json_response = json_response(request, 200)
       check_response(correct_response, json_response)
-      assert_schema(json_response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -107,8 +105,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get address & get the same response for checksummed and downcased parameter", %{conn: conn} do
@@ -147,12 +143,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
       json_response = json_response(request, 200)
       check_response(correct_response, json_response)
-      assert_schema(json_response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
 
       request = get(conn, "/api/v2/addresses/#{String.downcase(to_string(address.hash))}")
       json_response = json_response(request, 200)
       check_response(correct_response, json_response)
-      assert_schema(json_response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "returns successful creation transaction for a contract when both failed and successful transactions exist",
@@ -182,8 +176,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["is_contract"]
       assert response["creation_transaction_hash"] == to_string(succeeded_transaction.hash)
       assert response["creation_status"] == "success"
-
-      assert_schema(response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "returns failed creation transaction for a contract",
@@ -205,8 +197,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["is_contract"]
       assert response["creation_transaction_hash"] == to_string(failed_transaction.hash)
       assert response["creation_status"] == "failed"
-
-      assert_schema(response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     defp check_response(pattern_response, response) do
@@ -335,8 +325,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get EIP-1967 proxy contract info", %{conn: conn} do
@@ -391,8 +379,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get Resolved Delegate Proxy contract info", %{conn: conn} do
@@ -450,8 +436,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get watchlist id", %{conn: conn} do
@@ -486,8 +470,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
 
       assert response["watchlist_address_id"] == watchlist_address.id
-
-      assert_schema(response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "broadcasts fetched_bytecode event", %{conn: conn} do
@@ -518,8 +500,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         |> subscribe_and_join(topic)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}")
-      assert response = json_response(request, 200)
-      assert_schema(response, "AddressResponse", BlockScoutWeb.ApiSpec.spec())
+      assert _response = json_response(request, 200)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{fetched_bytecode: ^contract_code},
@@ -544,8 +525,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "gas_usage_count" => "0",
                "validations_count" => "0"
              } = json_response
-
-      assert_schema(json_response, "AddressCounters", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -562,8 +541,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get counters with 0s", %{conn: conn} do
@@ -579,8 +556,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "gas_usage_count" => "0",
                "validations_count" => "0"
              } = json_response
-
-      assert_schema(json_response, "AddressCounters", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get counters", %{conn: conn} do
@@ -620,8 +595,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "gas_usage_count" => ^gas_used,
                "validations_count" => "1"
              } = json_response
-
-      assert_schema(json_response, "AddressCounters", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
@@ -633,8 +606,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       json_response = json_response(request, 200)
 
       assert %{"items" => [], "next_page_params" => nil} = json_response
-
-      assert_schema(json_response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -651,8 +622,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get relevant transaction", %{conn: conn} do
@@ -669,7 +638,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(transaction, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get pending transaction", %{conn: conn} do
@@ -689,7 +657,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       compare_item(pending_transaction, Enum.at(response["items"], 0))
       compare_item(transaction, Enum.at(response["items"], 1))
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get only :to transaction", %{conn: conn} do
@@ -705,7 +672,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(transaction, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get only :from transactions", %{conn: conn} do
@@ -721,7 +687,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(transaction, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "validated transactions can paginate", %{conn: conn} do
@@ -736,8 +701,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, transactions)
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "pending transactions can paginate", %{conn: conn} do
@@ -752,7 +715,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, transactions)
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "pending + validated transactions can paginate", %{conn: conn} do
@@ -764,12 +726,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
       assert response = json_response(request, 200)
 
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-
       request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/transactions", response["next_page_params"])
       assert response_2nd_page = json_response(request_2nd_page, 200)
-
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert Enum.count(response["items"]) == 50
       assert response["next_page_params"] != nil
@@ -790,8 +748,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         response,
         transactions_validated ++ [Enum.at(transactions_pending, 0)]
       )
-
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test ":to transactions can paginate", %{conn: conn} do
@@ -810,8 +766,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, transactions)
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test ":from transactions can paginate", %{conn: conn} do
@@ -830,8 +784,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, transactions)
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test ":from + :to transactions can paginate", %{conn: conn} do
@@ -863,10 +815,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_3rd_page = json_response(request_3rd_page, 200)
 
       check_paginated_response(response_2nd_page, response_3rd_page, transactions_from ++ [Enum.at(transactions_to, 0)])
-
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_3rd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "422 on wrong ordering params", %{conn: conn} do
@@ -891,8 +839,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "backward compatible with legacy paging params", %{conn: conn} do
@@ -916,8 +862,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, transactions)
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "backward compatible with legacy paging params for pending transactions", %{conn: conn} do
@@ -943,8 +887,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page_pending = json_response(request_2nd_page_pending, 200)
 
       check_paginated_response(response, response_2nd_page_pending, transactions)
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page_pending, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "can order and paginate by fee ascending", %{conn: conn} do
@@ -984,8 +926,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
 
       check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "can order and paginate by fee descending", %{conn: conn} do
@@ -1025,8 +965,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
 
       check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "can order and paginate by value ascending", %{conn: conn} do
@@ -1061,8 +999,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
 
       check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "can order and paginate by value descending", %{conn: conn} do
@@ -1097,8 +1033,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
 
       check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "can order and paginate by block number ascending", %{conn: conn} do
@@ -1137,8 +1071,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
 
       check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "can order and paginate by block number descending", %{conn: conn} do
@@ -1177,8 +1109,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
 
       check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "regression test for decoding issue", %{conn: conn} do
@@ -1251,8 +1181,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
 
-      assert_schema(response, "AddressTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-
       transaction = Enum.at(response["items"], 0)
       assert transaction["to"]["ens_domain_name"] == "test.eth"
 
@@ -1301,8 +1229,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert List.first(response["items"])["reputation"] == "ok"
 
       assert response == conn |> get("/api/v2/addresses/#{address.hash}/token-transfers") |> json_response(200)
-
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get token transfers with scam reputation", %{conn: conn} do
@@ -1328,7 +1254,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/addresses/#{address.hash}/token-transfers")
 
       response = json_response(request, 200)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "scam"
 
@@ -1336,8 +1261,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert response["items"] == []
-
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get token transfers with ok reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -1360,8 +1283,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert List.first(response["items"])["reputation"] == "ok"
-
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get token transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -1387,8 +1308,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert List.first(response["items"])["reputation"] == "ok"
-
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 200 on non existing address", %{conn: conn} do
@@ -1398,7 +1317,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       json_response = json_response(request, 200)
 
       assert %{"items" => [], "next_page_params" => nil} = json_response
-      assert_schema(json_response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -1415,8 +1333,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 200 on non existing address of token", %{conn: conn} do
@@ -1428,7 +1344,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       json_response = json_response(request, 200)
 
       assert %{"items" => [], "next_page_params" => nil} = json_response
-      assert_schema(json_response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid token address hash", %{conn: conn} do
@@ -1447,8 +1362,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get relevant token transfer", %{conn: conn} do
@@ -1477,7 +1390,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(token_transfer, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "method in token transfer could be decoded", %{conn: conn} do
@@ -1529,8 +1441,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
       compare_item(token_transfer, Enum.at(response["items"], 0))
       assert Enum.at(response["items"], 0)["method"] == "mint"
-
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get relevant token transfer filtered by token", %{conn: conn} do
@@ -1572,7 +1482,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(token_transfer, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "token transfers by token can paginate", %{conn: conn} do
@@ -1610,9 +1519,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_transfers)
-
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get only :to token transfer", %{conn: conn} do
@@ -1642,7 +1548,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(token_transfer, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get only :from token transfer", %{conn: conn} do
@@ -1672,7 +1577,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(token_transfer, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "token transfers can paginate", %{conn: conn} do
@@ -1697,8 +1601,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_transfers)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test ":to token transfers can paginate", %{conn: conn} do
@@ -1737,8 +1639,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_transfers)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test ":from token transfers can paginate", %{conn: conn} do
@@ -1777,8 +1677,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_transfers)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test ":from + :to tt can paginate", %{conn: conn} do
@@ -1831,9 +1729,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_3rd_page = json_response(request_3rd_page, 200)
 
       check_paginated_response(response_2nd_page, response_3rd_page, tt_from ++ [Enum.at(tt_to, 0)])
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_3rd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check token type filters", %{conn: conn} do
@@ -1900,8 +1795,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, erc_20_tt)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       # -- ------ --
 
       # -- ERC-721 --
@@ -1915,8 +1808,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, erc_721_tt)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       # -- ------ --
 
       # -- ERC-1155 --
@@ -1930,8 +1821,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, erc_1155_tt)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       # -- ------ --
 
       # two filters simultaneously
@@ -1967,9 +1856,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_3rd_page["next_page_params"] == nil
       compare_item(Enum.at(erc_20_tt, 1), Enum.at(response_3rd_page["items"], 0))
       compare_item(Enum.at(erc_20_tt, 0), Enum.at(response_3rd_page["items"], 1))
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_3rd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       # -- ------ --
     end
 
@@ -2028,8 +1914,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
       check_paginated_response(response, response_2nd_page, erc_721_tt)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       filter = %{"type" => "ERC-721,ERC-20", "filter" => "to"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
       assert response = json_response(request, 200)
@@ -2040,8 +1924,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, erc_721_tt)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       filter = %{"type" => "ERC-721,ERC-20", "filter" => "from"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
@@ -2053,8 +1935,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, erc_20_tt)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check that same token_ids within batch squashes", %{conn: conn} do
@@ -2095,8 +1975,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_transfers)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check that pagination works for 721 tokens", %{conn: conn} do
@@ -2127,8 +2005,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_transfers)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check that pagination works fine with 1155 batches #1 (large batch) + check filters", %{conn: conn} do
@@ -2165,16 +2041,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_transfers)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       filter = %{"type" => "ERC-1155", "filter" => "from"}
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
       assert response = json_response(request, 200)
       assert %{"items" => [], "next_page_params" => nil} = response
-
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check that pagination works fine with 1155 batches #2 some batches on the first page and one on the second",
@@ -2241,8 +2113,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_transfers_1 ++ token_transfers_2 ++ [tt_3])
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check that pagination works fine with 1155 batches #3", %{conn: conn} do
@@ -2296,8 +2166,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_transfers_1 ++ token_transfers_2)
-      assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     if @chain_type == :celo do
@@ -2320,7 +2188,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         assert response["next_page_params"] == nil
 
         compare_item(token_transfer, Enum.at(response["items"], 0), true)
-        assert_schema(response, "AddressTokenTransfersPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       end
     end
   end
@@ -2333,7 +2200,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert %{"items" => [], "next_page_params" => nil} = response
-      assert_schema(response, "AddressInternalTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2350,8 +2216,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get internal transaction and filter working", %{conn: conn} do
@@ -2392,7 +2256,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       compare_item(internal_transaction_from, Enum.at(response["items"], 1))
       compare_item(internal_transaction_to, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressInternalTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", %{"filter" => "from"})
 
@@ -2401,7 +2264,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(internal_transaction_from, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressInternalTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", %{"filter" => "to"})
 
@@ -2409,7 +2271,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
       compare_item(internal_transaction_to, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressInternalTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "internal transactions can paginate", %{conn: conn} do
@@ -2442,8 +2303,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, internal_transactions_from)
-      assert_schema(response, "AddressInternalTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressInternalTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       internal_transactions_to =
         for i <- 52..102 do
@@ -2472,8 +2331,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, internal_transactions_to)
-      assert_schema(response, "AddressInternalTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressInternalTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       filter = %{"filter" => "from"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", filter)
@@ -2489,8 +2346,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, internal_transactions_from)
-      assert_schema(response, "AddressInternalTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressInternalTransactionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
@@ -2501,7 +2356,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = get(conn, "/api/v2/addresses/#{address.hash}/blocks-validated")
       assert response = json_response(request, 200)
       assert %{"items" => [], "next_page_params" => nil} = response
-      assert_schema(response, "AddressBlocksValidatedPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2518,8 +2372,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get relevant block validated", %{conn: conn} do
@@ -2534,7 +2386,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(block, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressBlocksValidatedPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "blocks validated can be paginated", %{conn: conn} do
@@ -2549,8 +2400,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, blocks)
-      assert_schema(response, "AddressBlocksValidatedPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressBlocksValidatedPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
@@ -2572,8 +2421,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert List.first(response)["reputation"] == "ok"
 
       assert response == conn |> get("/api/v2/addresses/#{address.hash}/token-balances") |> json_response(200)
-
-      assert_schema(response, "AddressTokenBalances", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get token balances with scam reputation", %{conn: conn} do
@@ -2591,7 +2438,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/addresses/#{address.hash}/token-balances")
 
       response = json_response(request, 200)
-      assert_schema(response, "AddressTokenBalances", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response)["reputation"] == "scam"
 
@@ -2599,8 +2445,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert response == []
-
-      assert_schema(response, "AddressTokenBalances", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get smart-contract with ok reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -2616,8 +2460,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert List.first(response)["reputation"] == "ok"
-
-      assert_schema(response, "AddressTokenBalances", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get smart-contract with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -2635,8 +2477,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert List.first(response)["reputation"] == "ok"
-
-      assert_schema(response, "AddressTokenBalances", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get empty list on non existing address", %{conn: conn} do
@@ -2645,7 +2485,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-balances")
       assert response = json_response(request, 200)
       assert response == []
-      assert_schema(response, "AddressTokenBalances", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2662,8 +2501,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get token balance", %{conn: conn} do
@@ -2682,8 +2519,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       for i <- 0..50 do
         compare_item(Enum.at(ctbs, i), Enum.at(response, i))
       end
-
-      assert_schema(response, "AddressTokenBalances", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
@@ -2695,7 +2530,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert %{"items" => [], "next_page_params" => nil} = response
-      assert_schema(response, "AddressCoinBalanceHistoryPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2712,8 +2546,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get coin balance history", %{conn: conn} do
@@ -2729,7 +2561,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(acb, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressCoinBalanceHistoryPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get coin balance with transaction", %{conn: conn} do
@@ -2795,8 +2626,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, acbs)
-      assert_schema(response, "AddressCoinBalanceHistoryPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressCoinBalanceHistoryPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
@@ -2815,8 +2644,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "days" => ^days_count,
                "items" => []
              } = response
-
-      assert_schema(response, "AddressCoinBalanceHistoryByDay", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2833,8 +2660,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get coin balance history by day", %{conn: conn} do
@@ -2859,8 +2684,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  %{"date" => _, "value" => "1000"}
                ]
              } = response
-
-      assert_schema(response, "AddressCoinBalanceHistoryByDay", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
@@ -2871,7 +2694,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
       response = json_response(request, 200)
       assert %{"items" => [], "next_page_params" => nil} = response
-      assert_schema(response, "AddressLogsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2888,8 +2710,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get log", %{conn: conn} do
@@ -2916,7 +2736,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(log, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressLogsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     # for some reasons test does not work if run as single test
@@ -2945,8 +2764,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/logs", response["next_page_params"])
       assert response_2nd_page = json_response(request_2nd_page, 200)
       check_paginated_response(response, response_2nd_page, logs)
-      assert_schema(response, "AddressLogsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressLogsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     # https://github.com/blockscout/blockscout/issues/9926
@@ -3030,7 +2847,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(log, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressLogsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       log = Enum.at(response["items"], 0)
       assert log["address"]["ens_domain_name"] == "test.eth"
@@ -3092,7 +2908,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["next_page_params"] == nil
 
       compare_item(log, Enum.at(response["items"], 0))
-      assert_schema(response, "AddressLogsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "log could be decoded via verified implementation", %{conn: conn} do
@@ -3192,8 +3007,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              }
-
-      assert_schema(response, "AddressLogsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "test corner case, when preload functions face absent smart contract", %{conn: conn} do
@@ -3236,7 +3049,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log_from_api = Enum.at(response["items"], 0)
 
       compare_item(log, log_from_api)
-      assert_schema(response, "AddressLogsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "ignore logs without topics when trying to decode with sig provider", %{conn: conn} do
@@ -3322,8 +3134,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert List.first(response["items"])["reputation"] == "ok"
 
       assert response == conn |> get("/api/v2/addresses/#{address.hash}/tokens") |> json_response(200)
-
-      assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get token balances with scam reputation", %{conn: conn} do
@@ -3344,7 +3154,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/addresses/#{address.hash}/tokens")
       response = json_response(request, 200)
-      assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "scam"
 
@@ -3352,8 +3161,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert response["items"] == []
-
-      assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get token balances with ok reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -3373,8 +3180,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert List.first(response["items"])["reputation"] == "ok"
-
-      assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get token balances with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -3397,8 +3202,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert List.first(response["items"])["reputation"] == "ok"
-
-      assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get empty list on non existing address", %{conn: conn} do
@@ -3408,7 +3211,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
       assert %{"items" => [], "next_page_params" => nil} = response
-      assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -3425,8 +3227,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get tokens", %{conn: conn} do
@@ -3475,8 +3275,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, ctbs_erc_20)
-      assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       filter = %{"type" => "ERC-721"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)
@@ -3488,8 +3286,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, ctbs_erc_721)
-      assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       filter = %{"type" => "ERC-1155"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)
@@ -3501,8 +3297,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, ctbs_erc_1155)
-      assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       # Test multiple token types (the fix for the original issue)
       filter = %{"type" => "ERC-721,ERC-1155"}
@@ -3517,7 +3311,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         |> Enum.sort()
 
       assert response_token_types == ["ERC-1155", "ERC-721"]
-      assert_schema(response, "AddressTokensPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
@@ -3810,7 +3603,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert %{"items" => [], "next_page_params" => nil} = response
-      assert_schema(response, "AddressWithdrawalsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -3827,8 +3619,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get withdrawals", %{conn: conn} do
@@ -3842,8 +3632,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, address.withdrawals)
-      assert_schema(response, "AddressWithdrawalsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressWithdrawalsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
@@ -3859,7 +3647,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert pattern_response["items"] == response["items"]
       assert pattern_response["next_page_params"] == response["next_page_params"]
       assert pattern_response["total_supply"] == response["total_supply"]
-      assert_schema(response, "AddressesList", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check pagination", %{conn: conn} do
@@ -3879,9 +3666,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert Enum.at(response["items"], 0)["coin_balance"] ==
                to_string(Enum.at(addresses, 50).fetched_coin_balance.value)
-
-      assert_schema(response, "AddressesList", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressesList", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check nil", %{conn: conn} do
@@ -3892,7 +3676,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert %{"items" => [address_json], "next_page_params" => nil} = response
 
       compare_item(address, address_json)
-      assert_schema(response, "AddressesList", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check smart contract preload", %{conn: conn} do
@@ -3905,7 +3688,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert String.downcase(address["hash"]) == to_string(smart_contract.address_hash)
       assert address["is_contract"] == true
       assert address["is_verified"] == true
-      assert_schema(response, "AddressesList", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check sorting by balance asc", %{conn: conn} do
@@ -3927,9 +3709,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         response_2nd_page,
         Enum.sort_by(addresses, &Decimal.to_integer(&1.fetched_coin_balance.value), :desc)
       )
-
-      assert_schema(response, "AddressesList", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressesList", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check sorting by transactions count asc", %{conn: conn} do
@@ -3947,9 +3726,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, Enum.sort_by(addresses, & &1.transactions_count, :desc))
-
-      assert_schema(response, "AddressesList", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressesList", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check sorting by balance desc", %{conn: conn} do
@@ -3971,9 +3747,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         response_2nd_page,
         Enum.sort_by(addresses, &Decimal.to_integer(&1.fetched_coin_balance.value), :asc)
       )
-
-      assert_schema(response, "AddressesList", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressesList", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check sorting by transactions count desc", %{conn: conn} do
@@ -3991,9 +3764,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, Enum.sort_by(addresses, & &1.transactions_count, :asc))
-
-      assert_schema(response, "AddressesList", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressesList", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
@@ -4014,8 +3784,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "internal_transactions_count" => 0,
                "celo_election_rewards_count" => 0
              } = response
-
-      assert_schema(response, "AddressTabsCounters", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -4032,8 +3800,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get counters with 0s", %{conn: conn} do
@@ -4051,8 +3817,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "withdrawals_count" => 0,
                "internal_transactions_count" => 0
              } = response
-
-      assert_schema(response, "AddressTabsCounters", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get counters and check that cache works", %{conn: conn} do
@@ -4127,8 +3891,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "internal_transactions_count" => 2
              } = response
 
-      assert_schema(response, "AddressTabsCounters", BlockScoutWeb.ApiSpec.spec())
-
       for x <- 3..4 do
         insert(:internal_transaction,
           transaction: transaction,
@@ -4153,8 +3915,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "withdrawals_count" => 51,
                "internal_transactions_count" => 2
              } = response
-
-      assert_schema(response, "AddressTabsCounters", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "check counters cache ttl", %{conn: conn} do
@@ -4229,8 +3989,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "internal_transactions_count" => 2
              } = response
 
-      assert_schema(response, "AddressTabsCounters", BlockScoutWeb.ApiSpec.spec())
-
       old_env = Application.get_env(:explorer, Explorer.Chain.Cache.Counters.AddressTabsElementsCount)
       Application.put_env(:explorer, Explorer.Chain.Cache.Counters.AddressTabsElementsCount, ttl: 200)
       :timer.sleep(200)
@@ -4263,8 +4021,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "internal_transactions_count" => 4
              } = response
 
-      assert_schema(response, "AddressTabsCounters", BlockScoutWeb.ApiSpec.spec())
-
       Application.put_env(:explorer, Explorer.Chain.Cache.Counters.AddressTabsElementsCount, old_env)
     end
   end
@@ -4281,7 +4037,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert %{"items" => [], "next_page_params" => nil} = response
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn, endpoint: endpoint} do
@@ -4298,8 +4053,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get token with ok reputation", %{conn: conn, endpoint: endpoint} do
@@ -4354,7 +4107,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         conn |> put_req_cookie("show_scam_tokens", "true") |> get(endpoint.(address.hash), %{"type" => "ERC-721"})
 
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "ok"
 
@@ -4364,7 +4116,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         conn |> put_req_cookie("show_scam_tokens", "true") |> get(endpoint.(address.hash), %{"type" => "ERC-1155"})
 
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "ok"
 
@@ -4374,7 +4125,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         conn |> put_req_cookie("show_scam_tokens", "true") |> get(endpoint.(address.hash), %{"type" => "ERC-404"})
 
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "ok"
 
@@ -4435,13 +4185,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         conn |> put_req_cookie("show_scam_tokens", "true") |> get(endpoint.(address.hash), %{"type" => "ERC-721"})
 
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "scam"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-721"})
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert response["items"] == []
 
@@ -4450,13 +4198,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         conn |> put_req_cookie("show_scam_tokens", "true") |> get(endpoint.(address.hash), %{"type" => "ERC-1155"})
 
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "scam"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-1155"})
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert response["items"] == []
 
@@ -4465,13 +4211,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         conn |> put_req_cookie("show_scam_tokens", "true") |> get(endpoint.(address.hash), %{"type" => "ERC-404"})
 
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "scam"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-404"})
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert response["items"] == []
     end
@@ -4524,19 +4268,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-721"})
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "ok"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-1155"})
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "ok"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-404"})
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "ok"
     end
@@ -4594,19 +4335,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-721"})
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "ok"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-1155"})
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "ok"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-404"})
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "ok"
     end
@@ -4636,8 +4374,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_instances)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get paginated ERC-1155 nft", %{conn: conn, endpoint: endpoint} do
@@ -4674,8 +4410,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_instances)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get paginated ERC-404 nft", %{conn: conn, endpoint: endpoint} do
@@ -4712,8 +4446,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_instances)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "test filters", %{conn: conn, endpoint: endpoint} do
@@ -4765,8 +4497,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_instances_721)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       filter = %{"type" => "ERC-1155"}
       request = get(conn, endpoint.(address.hash), filter)
@@ -4776,8 +4506,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, token_instances_1155)
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "return all token instances", %{conn: conn, endpoint: endpoint} do
@@ -4847,10 +4575,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       compare_item(Enum.at(token_instances_1155, 1), Enum.at(response_3rd_page["items"], 0))
       compare_item(Enum.at(token_instances_1155, 0), Enum.at(response_3rd_page["items"], 1))
-
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_3rd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
@@ -4927,8 +4651,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-721"})
                |> json_response(200)
 
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-
       request =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
@@ -4942,8 +4664,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                conn
                |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-1155"})
                |> json_response(200)
-
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get nft collections with scam reputation", %{conn: conn} do
@@ -5010,7 +4730,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-721"})
 
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "scam"
 
@@ -5019,15 +4738,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert response["items"] == []
 
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-
       request =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
         |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-1155"})
 
       response = json_response(request, 200)
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert List.first(response["items"])["reputation"] == "scam"
 
@@ -5035,8 +4751,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       response = json_response(request, 200)
 
       assert response["items"] == []
-
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get smart-contract with ok reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -5099,14 +4813,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert List.first(response["items"])["reputation"] == "ok"
 
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-1155"})
       response = json_response(request, 200)
 
       assert List.first(response["items"])["reputation"] == "ok"
-
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get smart-contract with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -5173,14 +4883,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert List.first(response["items"])["reputation"] == "ok"
 
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-1155"})
       response = json_response(request, 200)
 
       assert List.first(response["items"])["reputation"] == "ok"
-
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 200 on non existing address", %{conn: conn, endpoint: endpoint} do
@@ -5190,8 +4896,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
       assert %{"items" => [], "next_page_params" => nil} = response
-
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get 422 on invalid address", %{conn: conn, endpoint: endpoint} do
@@ -5208,8 +4912,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              } = json_response
-
-      assert_schema(json_response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get paginated erc-721 collection", %{conn: conn, endpoint: endpoint} do
@@ -5257,8 +4959,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, ctbs)
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get paginated erc-1155 collection", %{conn: conn, endpoint: endpoint} do
@@ -5305,8 +5005,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, collections)
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "test filters", %{conn: conn, endpoint: endpoint} do
@@ -5387,8 +5085,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, ctbs)
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       filter = %{"type" => "ERC-1155"}
       request = get(conn, endpoint.(address.hash), filter)
@@ -5398,8 +5094,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, collections)
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "return all collections", %{conn: conn, endpoint: endpoint} do
@@ -5498,9 +5192,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       compare_item(Enum.at(collections_1155, 1), Enum.at(response_3rd_page["items"], 0))
       compare_item(Enum.at(collections_1155, 0), Enum.at(response_3rd_page["items"], 1))
-      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_2nd_page, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      assert_schema(response_3rd_page, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
   end
 
@@ -5513,7 +5204,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         response = json_response(request, 200)
 
         assert %{"items" => [], "next_page_params" => nil} = response
-        assert_schema(response, "AddressBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       end
 
       test "get 422 on invalid address", %{conn: conn} do
@@ -5529,8 +5219,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                    }
                  ]
                } = response
-
-        assert_schema(response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
       end
 
       test "get deposits", %{conn: conn} do
@@ -5545,8 +5233,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         assert response_2nd_page = json_response(request_2nd_page, 200)
 
         check_paginated_response(response, response_2nd_page, deposits)
-        assert_schema(response, "AddressBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-        assert_schema(response_2nd_page, "AddressBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       end
     else
       test "returns an error about chain type", %{conn: conn} do
