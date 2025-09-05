@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
 
   # We decrease the number of blocks required to be inserted for the test
   # in order to make it faster and to prevent filling the database with lots of trash.
+  # Otherwise, with default offset of `1000`, the tests start to flake periodically.
   setup_all do
     opts = Application.get_env(:indexer, EmptyBlocksSanitizer)
     new_opts = Keyword.put(opts, :head_offset, @head_offset)
@@ -119,7 +120,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
              }
            ],
            _options ->
-          eth_get_block_by_number_response(id, block_to_process.number, block_to_process.hash, [transaction_hash])
+          eth_get_block_by_number_response(id, encoded_expected_block_number, block_to_process.hash, [transaction_hash])
         end
       )
     end
@@ -169,7 +170,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
     end)
   end
 
-  defp eth_get_block_by_number_response(id, block_number, block_hash, transaction_hashes) do
+  defp eth_get_block_by_number_response(id, encoded_block_number, block_hash, transaction_hashes) do
     {:ok,
      [
        %{
@@ -182,7 +183,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
            "extraData" => "0x0",
            "logsBloom" => "0x0",
            "miner" => "0x0",
-           "number" => block_number,
+           "number" => encoded_block_number,
            "parentHash" => "0x0",
            "receiptsRoot" => "0x0",
            "size" => "0x0",

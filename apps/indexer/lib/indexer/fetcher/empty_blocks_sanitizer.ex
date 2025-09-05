@@ -224,6 +224,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   end
 
   defp any_block_transactions_query do
+    # NOTE: relies on parent_as(:block) set by the caller query (see consensus_blocks_with_nil_is_empty_query/1)
     from(
       t in Transaction,
       select: 1,
