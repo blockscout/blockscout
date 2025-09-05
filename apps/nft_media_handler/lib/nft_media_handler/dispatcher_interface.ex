@@ -92,7 +92,7 @@ defmodule NFTMediaHandler.DispatcherInterface do
 
   defp process_rpc_response({:badrpc, _reason} = error, node) do
     Logger.error("Received an error from #{node}: #{inspect(error)}")
-    []
+    {[], nil}
   end
 
   defp process_rpc_response(response, _node), do: response

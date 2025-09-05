@@ -103,7 +103,7 @@ defmodule Explorer.Application do
     opts = [strategy: :one_for_one, name: Explorer.Supervisor, max_restarts: 1_000]
 
     if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
-      Supervisor.start_link([libcluster()], opts)
+      Supervisor.start_link([libcluster()] |> List.flatten(), opts)
     else
       Supervisor.start_link(children, opts)
     end
