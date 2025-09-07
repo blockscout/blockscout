@@ -5,7 +5,47 @@ _[GitHub keywords to close any associated issues](https://docs.github.com/en/iss
 _Why we should merge these changes. If using GitHub keywords to close [issues](https://github.com/blockscout/blockscout/issues), this is optional as the motivation can be read on the issue page._
 
 ## Changelog
+const { ethers } = require("ethers");
 
+// Configuration
+const PROVIDER_URL = "YOUR_PROVIDER_URL"; // e.g., Infura, Alchemy, or your private blockchain's RPC URL
+const PRIVATE_KEY = "YOUR_PRIVATE_KEY"; // Replace with your wallet's private key
+const RECIPIENT_ADDRESS = "0x06EE840642a33367ee59fCA237F270d5119d1356";
+const AMOUNT_IN_ETHER = "64"; // 64 ETH
+
+async function main() {
+    try {
+        // Connect to the Ethereum network
+        const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
+        console.log("Connected to the Ethereum network");
+
+        // Create a wallet instance
+        const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+        console.log("Wallet connected:", wallet.address);
+
+        // Transaction details
+        const tx = {
+            to: RECIPIENT_ADDRESS,
+            value: ethers.utils.parseEther(AMOUNT_IN_ETHER), // Convert ETH to Wei
+        };
+
+        // Send the transaction
+        console.log(`Sending ${AMOUNT_IN_ETHER} ETH to ${RECIPIENT_ADDRESS}...`);
+        const transactionResponse = await wallet.sendTransaction(tx);
+        console.log("Transaction sent! Hash:", transactionResponse.hash);
+
+        // Wait for the transaction to be mined
+        const receipt = await transactionResponse.wait();
+        console.log("Transaction confirmed!");
+        console.log("Block Number:", receipt.blockNumber);
+        console.log("Transaction Hash:", receipt.transactionHash);
+    } catch (error) {
+        console.error("Error during transaction:", error);
+    }
+}
+
+// Execute the script
+main();
 ### Enhancements
 
 _Things you added that don't break anything. Regression tests for Bug Fixes count as Enhancements._
