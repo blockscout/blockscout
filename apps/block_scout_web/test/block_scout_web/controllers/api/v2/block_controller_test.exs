@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Withdrawal}
-  alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
@@ -518,59 +517,6 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
     end
   end
 
-  describe "blocks/{block_hash_or_number}/beacon/deposits" do
-    if Application.compile_env(:explorer, :chain_type) == :ethereum do
-      test "get 404 on non-existing block", %{conn: conn} do
-        block = build(:block)
-
-        request = get(conn, "/api/v2/blocks/#{block.hash}/beacon/deposits")
-        response = json_response(request, 404)
-      end
-
-      # test "get 422 on invalid block", %{conn: conn} do
-      #   request = get(conn, "/api/v2/blocks/invalid/beacon/deposits")
-      #   response = json_response(request, 422)
-
-      #   assert %{
-      #            "errors" => [
-      #              %{
-      #                "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
-      #                "source" => %{"pointer" => "/address_hash_param"},
-      #                "title" => "Invalid value"
-      #              }
-      #            ]
-      #          } = response
-
-      #   assert_schema(response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
-      # end
-
-      test "get deposits", %{conn: conn} do
-        block = insert(:block)
-
-        deposits = insert_list(51, :beacon_deposit, block: block)
-
-        insert(:beacon_deposit)
-
-        request = get(conn, "/api/v2/blocks/#{block.hash}/beacon/deposits")
-        assert response = json_response(request, 200)
-
-        request_2nd_page = get(conn, "/api/v2/blocks/#{block.hash}/beacon/deposits", response["next_page_params"])
-        assert response_2nd_page = json_response(request_2nd_page, 200)
-
-        check_paginated_response(response, response_2nd_page, deposits)
-        # assert_schema(response, "BlockBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-        # assert_schema(response_2nd_page, "BlockBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-      end
-    else
-      test "returns an error about chain type", %{conn: conn} do
-        block = insert(:block)
-        request = get(conn, "/api/v2/blocks/#{block.hash}/beacon/deposits")
-        assert response = json_response(request, 404)
-        assert %{"message" => "Endpoint not available for current chain type"} = response
-      end
-    end
-  end
-
   defp compare_item(%Block{} = block, json) do
     assert to_string(block.hash) == json["hash"]
     assert block.number == json["height"]
@@ -595,45 +541,6 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
     assert to_string(internal_transaction.transaction_hash) == json["transaction_hash"]
     assert Address.checksum(internal_transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(internal_transaction.to_address_hash) == json["to"]["hash"]
-  end
-
-  defp compare_item(%BeaconDeposit{} = deposit, json) do
-    index = deposit.index
-    transaction_hash = to_string(deposit.transaction_hash)
-    block_hash = to_string(deposit.block_hash)
-    block_number = deposit.block_number
-    pubkey = to_string(deposit.pubkey)
-    withdrawal_credentials = to_string(deposit.withdrawal_credentials)
-    signature = to_string(deposit.signature)
-    from_address_hash = Address.checksum(deposit.from_address_hash)
-
-    if deposit.withdrawal_address_hash do
-      withdrawal_address_hash = Address.checksum(deposit.withdrawal_address_hash)
-
-      assert %{
-               "index" => ^index,
-               "transaction_hash" => ^transaction_hash,
-               "block_hash" => ^block_hash,
-               "block_number" => ^block_number,
-               "pubkey" => ^pubkey,
-               "withdrawal_credentials" => ^withdrawal_credentials,
-               "withdrawal_address" => %{"hash" => ^withdrawal_address_hash},
-               "signature" => ^signature,
-               "from_address" => %{"hash" => ^from_address_hash}
-             } = json
-    else
-      assert %{
-               "index" => ^index,
-               "transaction_hash" => ^transaction_hash,
-               "block_hash" => ^block_hash,
-               "block_number" => ^block_number,
-               "pubkey" => ^pubkey,
-               "withdrawal_credentials" => ^withdrawal_credentials,
-               "withdrawal_address" => nil,
-               "signature" => ^signature,
-               "from_address" => %{"hash" => ^from_address_hash}
-             } = json
-    end
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, list) do

@@ -265,8 +265,7 @@ defmodule Explorer.Chain.TransactionTest do
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
-      EthereumJSONRPC.Mox
-      |> TestHelper.mock_generic_proxy_requests()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       transaction =
         :transaction_to_verified_contract
@@ -278,8 +277,7 @@ defmodule Explorer.Chain.TransactionTest do
     end
 
     test "that a contract call will look up a match in contract_methods table" do
-      EthereumJSONRPC.Mox
-      |> TestHelper.mock_generic_proxy_requests()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       :transaction_to_verified_contract
       |> insert()
@@ -302,8 +300,7 @@ defmodule Explorer.Chain.TransactionTest do
     end
 
     test "arguments name in function call replaced with argN if it's empty string" do
-      EthereumJSONRPC.Mox
-      |> TestHelper.mock_generic_proxy_requests()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       contract =
         insert(:smart_contract,
