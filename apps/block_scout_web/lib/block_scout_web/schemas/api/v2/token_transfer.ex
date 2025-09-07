@@ -31,7 +31,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
     TransactionHashCustomization
   }
 
-  alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -55,13 +54,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       block_hash: General.FullHash,
       block_number: %Schema{type: :integer, nullable: false},
       log_index: %Schema{type: :integer, nullable: false},
-      token_type: Token.Type,
-      reputation: %Schema{
-        type: :string,
-        enum: Reputation.enum_values(),
-        description: "Reputation of the token transfer",
-        nullable: true
-      }
+      token_type: Token.Type
     },
     required: [
       :transaction_hash,
@@ -75,8 +68,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       :block_hash,
       :block_number,
       :log_index,
-      :token_type,
-      :reputation
+      :token_type
     ]
   })
 end

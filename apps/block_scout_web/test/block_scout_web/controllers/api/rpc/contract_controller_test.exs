@@ -471,8 +471,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         }
       ]
 
-      EthereumJSONRPC.Mox
-      |> TestHelper.mock_generic_proxy_requests()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       assert response =
                conn
@@ -737,8 +736,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         }
       ]
 
-      EthereumJSONRPC.Mox
-      |> TestHelper.mock_generic_proxy_requests()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       assert response =
                conn
@@ -847,8 +845,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         }
       ]
 
-      EthereumJSONRPC.Mox
-      |> TestHelper.mock_generic_proxy_requests()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       assert response =
                conn
@@ -919,8 +916,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         "addressHash" => "0xf26594F585De4EB0Ae9De865d9053FEe02ac6eF1"
       }
 
-      EthereumJSONRPC.Mox
-      |> TestHelper.mock_generic_proxy_requests()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       conn
       |> get("/api", params)
@@ -1320,7 +1316,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       }
     ]
     test "verify", %{conn: conn, params: params} do
-      proxy_contract_address = insert(:contract_address, contract_code: "0xDEADBEEF5c60da1bDEADBEEF")
+      proxy_contract_address = insert(:contract_address)
 
       insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
@@ -1332,8 +1328,25 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         contract_code_md5: "123"
       )
 
-      EthereumJSONRPC.Mox
-      |> TestHelper.mock_generic_proxy_requests(basic_implementation: implementation_contract_address.hash)
+      implementation_contract_address_hash_string =
+        Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
+
+      TestHelper.get_all_proxies_implementation_zero_addresses()
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
+             }
+           ]}
+        end
+      )
 
       %{
         "message" => "OK",

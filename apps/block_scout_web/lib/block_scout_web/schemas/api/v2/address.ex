@@ -53,7 +53,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
 
   alias BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations
   alias BlockScoutWeb.Schemas.API.V2.{General, Proxy}
-  alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -65,12 +64,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
         is_contract: %Schema{type: :boolean, description: "Has address contract code?", nullable: true},
         name: %Schema{type: :string, description: "Name associated with the address", nullable: true},
         is_scam: %Schema{type: :boolean, description: "Has address scam badge?", nullable: false},
-        reputation: %Schema{
-          type: :string,
-          enum: Reputation.enum_values(),
-          description: "Reputation of the address",
-          nullable: false
-        },
         proxy_type: General.ProxyType,
         implementations: %Schema{
           description: "Implementations linked with the contract",
@@ -105,7 +98,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
         :is_contract,
         :name,
         :is_scam,
-        :reputation,
         :proxy_type,
         :implementations,
         :is_verified,

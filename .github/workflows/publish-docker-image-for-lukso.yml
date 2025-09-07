@@ -5,16 +5,12 @@ on:
   push:
     branches:
       - production-lukso
-permissions:
-  contents: read
-  packages: write
-
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 9.1.0
+      RELEASE_VERSION: 9.0.2
       DOCKER_CHAIN_NAME: lukso
     steps:
       - uses: actions/checkout@v5
@@ -33,7 +29,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}-private:latest, ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}-private:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
+          tags: ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:latest, ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64

@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   alias Explorer.{Chain, Helper, QueryHelper, Repo}
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
-  alias Explorer.Chain.Address.{CurrentTokenBalance, Reputation}
+  alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Token.Instance.Thumbnails
   alias Explorer.Helper, as: ExplorerHelper
@@ -53,7 +53,6 @@ defmodule Explorer.Chain.Token.Instance do
     field(:cdn_upload_error, :string)
     field(:metadata_url, :string)
     field(:skip_metadata_url, :boolean)
-    field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 
@@ -384,6 +383,7 @@ defmodule Explorer.Chain.Token.Instance do
 
     CurrentTokenBalance
     |> where([ctb], ctb.address_hash == ^address_hash and ctb.value > 0 and ctb.token_type == "ERC-1155")
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> group_by([ctb], ctb.token_contract_address_hash)
     |> order_by([ctb], asc: ctb.token_contract_address_hash)
     |> select([ctb], %{
@@ -391,7 +391,6 @@ defmodule Explorer.Chain.Token.Instance do
       distinct_token_instances_count: fragment("COUNT(*)"),
       token_ids: fragment("array_agg(?)", ctb.token_id)
     })
-    |> ExplorerHelper.maybe_hide_scam_addresses_with_aggregate(:token_contract_address_hash, options)
     |> page_erc_1155_nft_collections(paging_options)
     |> limit(^paging_options.page_size)
     |> Chain.select_repo(options).all()
@@ -417,6 +416,7 @@ defmodule Explorer.Chain.Token.Instance do
 
     CurrentTokenBalance
     |> where([ctb], ctb.address_hash == ^address_hash and not is_nil(ctb.token_id) and ctb.token_type == "ERC-404")
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> group_by([ctb], ctb.token_contract_address_hash)
     |> order_by([ctb], asc: ctb.token_contract_address_hash)
     |> select([ctb], %{
@@ -424,7 +424,6 @@ defmodule Explorer.Chain.Token.Instance do
       distinct_token_instances_count: fragment("COUNT(*)"),
       token_ids: fragment("array_agg(?)", ctb.token_id)
     })
-    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> page_erc_404_nft_collections(paging_options)
     |> limit(^paging_options.page_size)
     |> Chain.select_repo(options).all()
