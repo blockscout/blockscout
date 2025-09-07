@@ -145,7 +145,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
           | :error
           | :empty
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
-  def try_to_get_implementation_from_known_proxy_patterns(proxy_address) do
+  defp try_to_get_implementation_from_known_proxy_patterns(proxy_address) do
     with true <- Address.smart_contract?(proxy_address),
          # first, we try to immediately resolve proxy types by matching bytecodes,
          # while collecting fetch requirements for all other proxy types
