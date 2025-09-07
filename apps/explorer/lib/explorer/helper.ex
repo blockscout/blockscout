@@ -251,13 +251,91 @@ defmodule Explorer.Helper do
   def maybe_hide_scam_addresses(nil, _address_hash_key, _options), do: nil
 
   def maybe_hide_scam_addresses(query, address_hash_key, options) do
-    if Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] do
-      query
-      |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
-      |> where([sabm: sabm], is_nil(sabm.address_hash))
-    else
-      query
+    cond do
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+        |> where([sabm: sabm], is_nil(sabm.address_hash))
+        |> select_merge([q], %{reputation: "ok"})
+
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+        |> select_merge([q, sabm: sabm], %{
+          reputation: fragment("CASE WHEN ? THEN ? ELSE ? END", is_nil(sabm.address_hash), "ok", "scam")
+        })
+
+      true ->
+        query
+        |> select_merge([q], %{reputation: "ok"})
     end
+  end
+
+  @doc """
+  Conditionally hides scam addresses in the given query, does not select the reputation field.
+  """
+  @spec maybe_hide_scam_addresses_without_select(nil | Ecto.Query.t(), atom(), [
+          Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
+        ]) :: Ecto.Query.t()
+  def maybe_hide_scam_addresses_without_select(nil, _address_hash_key, _options), do: nil
+
+  def maybe_hide_scam_addresses_without_select(query, address_hash_key, options) do
+    cond do
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+        |> where([sabm: sabm], is_nil(sabm.address_hash))
+
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+
+      true ->
+        query
+    end
+  end
+
+  @doc """
+  Conditionally hides scam addresses in the given query with aggregate functions.
+  """
+  @spec maybe_hide_scam_addresses_with_aggregate(nil | Ecto.Query.t(), atom(), [
+          Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
+        ]) :: Ecto.Query.t()
+  def maybe_hide_scam_addresses_with_aggregate(nil, _address_hash_key, _options), do: nil
+
+  def maybe_hide_scam_addresses_with_aggregate(query, address_hash_key, options) do
+    cond do
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+        |> where([sabm: sabm], is_nil(sabm.address_hash))
+        |> select_merge([q], %{reputation: "ok"})
+
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
+        query
+        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
+        |> select_merge([q, sabm: sabm], %{
+          reputation:
+            fragment(
+              "CASE WHEN MAX(CASE WHEN ? THEN 0 ELSE 1 END) = 0 THEN ? ELSE ? END",
+              is_nil(sabm.address_hash),
+              "ok",
+              "scam"
+            )
+        })
+
+      true ->
+        query
+        |> select_merge([q], %{reputation: "ok"})
+    end
+  end
+
+  @doc """
+  Function used for identify cases when user explicitly requests to show scam addresses and there are enabled scam addresses in the application.
+  """
+  @spec force_show_scam_addresses?(keyword()) :: boolean()
+  def force_show_scam_addresses?(options) do
+    Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?]
   end
 
   @doc """

@@ -43,7 +43,8 @@ defmodule BlockScoutWeb.AddressReadContractControllerTest do
 
       insert(:smart_contract, address_hash: contract_address.hash, contract_code_md5: "123")
 
-      TestHelper.get_all_proxies_implementation_zero_addresses()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       conn =
         get(conn, address_read_contract_path(BlockScoutWeb.Endpoint, :index, Address.checksum(contract_address.hash)))

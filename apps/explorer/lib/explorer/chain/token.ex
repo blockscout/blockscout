@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Token.Schema do
   @moduledoc false
   use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.{Address, Address.Reputation, Hash}
 
   if @bridged_tokens_enabled do
     @bridged_field [
@@ -34,6 +34,7 @@ defmodule Explorer.Chain.Token.Schema do
         field(:is_verified_via_admin_panel, :boolean)
         field(:volume_24h, :decimal)
         field(:transfer_count, :integer)
+        field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
         belongs_to(
           :contract_address,

@@ -14,7 +14,7 @@ defmodule Indexer.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "9.0.2",
+      version: "9.1.0",
       xref: [
         exclude: [
           Explorer.Chain.Optimism.Deposit,
@@ -51,6 +51,7 @@ defmodule Indexer.MixProject do
       {:decorator, "~> 1.4"},
       # JSONRPC access to Nethermind for `Explorer.Indexer`
       {:ethereum_jsonrpc, in_umbrella: true},
+      {:ex_eth_bls, "~> 0.1.0"},
       # Brotli compression/decompression
       {:ex_brotli, "~> 0.5.0"},
       {:ex_keccak, "~> 0.7.5"},
