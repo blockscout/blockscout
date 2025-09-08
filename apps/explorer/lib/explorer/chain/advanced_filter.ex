@@ -30,7 +30,6 @@ defmodule Explorer.Chain.AdvancedFilter do
     field(:type, :string)
     field(:input, Data)
     field(:timestamp, :utc_datetime_usec)
-    field(:reputation, Ecto.Enum, values: Reputation.enum_values())
 
     belongs_to(
       :from_address,
@@ -59,6 +58,8 @@ defmodule Explorer.Chain.AdvancedFilter do
     field(:value, :decimal, null: true)
 
     has_one(:token_transfer, TokenTransfer, foreign_key: :transaction_hash, references: :hash, null: true)
+
+    has_one(:reputation, Reputation, foreign_key: :address_hash, references: :hash)
 
     field(:fee, :decimal)
 
@@ -238,7 +239,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       transaction_index: token_transfer.transaction.index,
       token_transfer_index: token_transfer.log_index,
       token_transfer_batch_index: token_transfer.reverse_index_in_batch,
-      reputation: token_transfer.reputation
+      reputation: token_transfer.token.reputation
     }
   end
 
@@ -518,11 +519,11 @@ defmodule Explorer.Chain.AdvancedFilter do
       |> page_token_transfers(paging_options)
 
     token_transfer_query
-    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:token_contract_address_hash, options)
     |> limit_query(paging_options)
     |> query_function.(false)
     |> limit_query(paging_options)
-    |> preload([:transaction, :token])
+    |> preload([:transaction, [token: ^Reputation.reputation_association()]])
     |> select_merge([token_transfer], %{token_ids: [token_transfer.token_id], amounts: [token_transfer.amount]})
   end
 

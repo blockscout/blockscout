@@ -32,6 +32,7 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.Chain.{
     Address,
     Address.CoinBalance,
+    Address.Reputation,
     BlockNumberHelper,
     DenormalizationHelper,
     InternalTransaction,
@@ -263,7 +264,7 @@ defmodule BlockScoutWeb.Notifier do
       all_token_transfers
       |> Repo.preload(
         DenormalizationHelper.extend_transaction_preload([
-          :token,
+          [token: Reputation.reputation_association()],
           :transaction,
           from_address: [
             :scam_badge,

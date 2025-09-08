@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+  import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
   alias BlockScoutWeb.AccessHelper
 
@@ -82,7 +83,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
       :block => :optional,
       :transaction => :optional,
-      :token => :optional
+      [token: reputation_association()] => :optional
     },
     api?: true
   ]
@@ -91,16 +92,16 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     necessity_by_association: %{
       :names => :optional,
       :scam_badge => :optional,
-      :token => :optional,
       :signed_authorization => :optional,
-      :smart_contract => :optional
+      :smart_contract => :optional,
+      [token: reputation_association()] => :optional
     },
     api?: true
   ]
 
   @nft_necessity_by_association [
     necessity_by_association: %{
-      :token => :optional
+      [token: reputation_association()] => :optional
     }
   ]
 
@@ -125,6 +126,12 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       [epoch: [:end_processing_block]] => :optional
     },
     api?: true
+  ]
+
+  @token_preload_options [
+    necessity_by_association: %{
+      [token: reputation_association()] => :optional
+    }
   ]
 
   @spec contract_address_preloads() :: [keyword()]
@@ -292,7 +299,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {:ok, _address} ->
           token_balances =
             address_hash
-            |> Chain.fetch_last_token_balances(@api_true |> fetch_scam_token_toggle(conn))
+            |> Chain.fetch_last_token_balances(
+              @api_true
+              |> fetch_scam_token_toggle(conn)
+              |> Keyword.merge(@token_preload_options)
+            )
 
           TokenBalanceOnDemand.trigger_fetch(ip, address_hash)
 
@@ -900,6 +911,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               |> paging_options()
               |> Keyword.merge(token_transfers_types_options(params))
               |> Keyword.merge(@api_true)
+              |> Keyword.merge(@token_preload_options)
               |> fetch_scam_token_toggle(conn)
             )
 

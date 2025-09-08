@@ -1779,7 +1779,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "don't fetch token instance metadata for non-existent token instance", %{
       conn: conn,
-      v2_secret_key: v2_secret_key
+      v2_secret_key: _v2_secret_key
     } do
       token = insert(:token, type: "ERC-721")
       token_id = 0
