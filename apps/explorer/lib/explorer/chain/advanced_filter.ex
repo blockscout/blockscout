@@ -239,7 +239,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       transaction_index: token_transfer.transaction.index,
       token_transfer_index: token_transfer.log_index,
       token_transfer_batch_index: token_transfer.reverse_index_in_batch,
-      reputation: token_transfer.reputation
+      reputation: token_transfer.token.reputation
     }
   end
 
@@ -519,7 +519,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       |> page_token_transfers(paging_options)
 
     token_transfer_query
-    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:token_contract_address_hash, options)
     |> limit_query(paging_options)
     |> query_function.(false)
     |> limit_query(paging_options)

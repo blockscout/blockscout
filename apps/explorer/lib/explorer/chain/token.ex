@@ -386,9 +386,15 @@ defmodule Explorer.Chain.Token do
   @doc """
     Gets tokens with given contract address hashes.
   """
-  @spec get_by_contract_address_hashes([Hash.Address.t()], [Chain.api?()]) :: [Token.t()]
+  @spec get_by_contract_address_hashes([Hash.Address.t()], [Chain.api?() | Chain.necessity_by_association_option()]) ::
+          [Token.t()]
   def get_by_contract_address_hashes(hashes, options) do
-    Chain.select_repo(options).all(from(t in __MODULE__, where: t.contract_address_hash in ^hashes))
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    __MODULE__
+    |> where([t], t.contract_address_hash in ^hashes)
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
   end
 
   @doc """

@@ -184,7 +184,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
   defp prepare_nft(nft, token) do
     Map.merge(
-      %{"token_type" => token.type, "value" => value(token.type, nft), "reputation" => nft.reputation},
+      %{"token_type" => token.type, "value" => value(token.type, nft), "reputation" => token.reputation},
       TokenView.prepare_token_instance(nft, token)
     )
   end

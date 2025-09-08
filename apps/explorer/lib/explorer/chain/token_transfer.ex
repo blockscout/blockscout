@@ -275,7 +275,7 @@ defmodule Explorer.Chain.TokenTransfer do
         preloads =
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
-            :token,
+            [token: reputation_association()],
             [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
             [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
