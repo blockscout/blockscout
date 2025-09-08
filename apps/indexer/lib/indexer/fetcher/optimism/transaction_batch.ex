@@ -133,6 +133,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          batch_submitter: batch_submitter,
          eip4844_blobs_api_url: Helper.trim_url(env[:eip4844_blobs_api_url]),
          celestia_blobs_api_url: Helper.trim_url(env[:celestia_blobs_api_url]),
+         alt_da_server_url: Helper.trim_url(env[:alt_da_server_url]),
          block_check_interval: block_check_interval,
          start_block: start_block,
          end_block: last_safe_block,
@@ -216,6 +217,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   # - `batch_submitter`: L1 address which sends L1 batch transactions to the `batch_inbox`
   # - `eip4844_blobs_api_url`: URL of Blockscout Blobs API to get EIP-4844 blobs
   # - `celestia_blobs_api_url`: URL of the server where Celestia blobs can be read from
+  # - `alt_da_server_url`: URL of Alt-DA server where keccak commitment data can be read from
   # - `block_check_interval`: time interval for checking latest block number
   # - `start_block`: start block number of the block range
   # - `end_block`: end block number of the block range
@@ -234,6 +236,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           batch_submitter: batch_submitter,
           eip4844_blobs_api_url: eip4844_blobs_api_url,
           celestia_blobs_api_url: celestia_blobs_api_url,
+          alt_da_server_url: alt_da_server_url,
           block_check_interval: block_check_interval,
           start_block: start_block,
           end_block: end_block,
@@ -276,7 +279,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
                 {genesis_block_l2, block_duration},
                 incomplete_channels_acc,
                 {json_rpc_named_arguments, json_rpc_named_arguments_l2},
-                {eip4844_blobs_api_url, celestia_blobs_api_url, chain_id_l1},
+                {eip4844_blobs_api_url, celestia_blobs_api_url, alt_da_server_url, chain_id_l1},
                 Helper.infinite_retries_number()
               )
 
@@ -735,7 +738,12 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     []
   end
 
-  @spec alt_da_commitment_to_input(binary(), non_neg_integer(), String.t(), String.t()) :: []
+  @spec alt_da_commitment_to_input(binary(), non_neg_integer(), String.t(), String.t()) :: [
+    %{
+      :bytes => binary(),
+      :alt_da_commitment => String.t()
+    }
+  ]
   defp alt_da_commitment_to_input("0x" <> transaction_input, offset, transaction_hash, da_server_url) do
     transaction_input
     |> Base.decode16!(case: :mixed)
@@ -746,13 +754,14 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     commitment = binary_part(transaction_input, offset, 1 + 32)
     commitment_string = "0x" <> Base.encode16(commitment, case: :lower)
 
-    url = da_server_url <> commitment_string
+    url = da_server_url <> "/" <> commitment_string
 
     with {:ok, data} <- Helper.http_get_request(url, :raw),
          true <- byte_size(data) > 0 do
       [
         %{
-          bytes: data
+          bytes: data,
+          alt_da_commitment: commitment_string
         }
       ]
     else
@@ -774,7 +783,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   defp alt_da_commitment_to_input(_transaction_input, _offset, _transaction_hash, "") do
     Logger.error(
-      "Cannot read data from the DA server as its URL is not defined. Please, check INDEXER_OPTIMISM_L1_BATCH_DA_SERVER_URL env variable."
+      "Cannot read data from the DA server as its URL is not defined. Please, check INDEXER_OPTIMISM_L1_BATCH_ALT_DA_SERVER_URL env variable."
     )
     []
   end
@@ -785,7 +794,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          {genesis_block_l2, block_duration},
          incomplete_channels,
          json_rpc_named_arguments_l2,
-         {eip4844_blobs_api_url, celestia_blobs_api_url, chain_id_l1}
+         {eip4844_blobs_api_url, celestia_blobs_api_url, alt_da_server_url, chain_id_l1}
        ) do
     transactions_filtered
     |> Enum.reduce({:ok, incomplete_channels, [], [], []}, fn transaction,
@@ -794,7 +803,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       inputs =
         cond do
           transaction.type == 3 ->
-            # this is EIP-4844 transaction, so we get the inputs from the blobs
+            # this is EIP-4844 transaction, so we get the inputs from EIP-4844 blobs
             block_timestamp = get_block_timestamp_by_number(transaction.block_number, blocks_params)
 
             eip4844_blobs_to_inputs(
@@ -811,7 +820,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
           commitment_alt_da_signature(transaction.input) == 0x0100 ->
             # this is Alt-DA transaction with a keccak commitment, so we get the data from a DA server
-            alt_da_commitment_to_input(transaction.input, 1, transaction.hash, "https://da.redstonechain.com/get/")
+            alt_da_commitment_to_input(transaction.input, 1, transaction.hash, alt_da_server_url)
 
           first_byte(transaction.input) == 0xCE ->
             # backward compatibility with OP Celestia Raspberry
@@ -868,7 +877,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         block_timestamp: block_timestamp,
         transaction_hash: transaction.hash,
         eip4844_blob_hash: Map.get(input, :eip4844_blob_hash),
-        celestia_blob_metadata: Map.get(input, :celestia_blob_metadata)
+        celestia_blob_metadata: Map.get(input, :celestia_blob_metadata),
+        alt_da_commitment: Map.get(input, :alt_da_commitment)
       })
 
     l1_timestamp =
@@ -959,6 +969,21 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
                     key: :crypto.hash(:sha256, height <> commitment),
                     type: :celestia,
                     metadata: frame.celestia_blob_metadata,
+                    l1_transaction_hash: frame.transaction_hash,
+                    l1_timestamp: frame.block_timestamp,
+                    frame_sequence_id: frame_sequence_id
+                  }
+                ]
+
+            !is_nil(Map.get(frame, :alt_da_commitment)) ->
+              # credo:disable-for-next-line /Credo.Check.Refactor.AppendSingleItem/
+              new_blobs_acc ++
+                [
+                  %{
+                    id: next_blob_id,
+                    key: Base.decode16!(String.trim_leading(frame.alt_da_commitment, "0x"), case: :mixed),
+                    type: :alt_da,
+                    metadata: %{commitment: frame.alt_da_commitment},
                     l1_transaction_hash: frame.transaction_hash,
                     l1_timestamp: frame.block_timestamp,
                     frame_sequence_id: frame_sequence_id
