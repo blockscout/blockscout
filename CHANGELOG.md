@@ -19,6 +19,7 @@
 
 ### 🐛 Bug Fixes
 
+- Add reputation to token, rework reputation preload ([#13149](https://github.com/blockscout/blockscout/pull/13149))
 - Replace get_constant_by_key with get_constant_value in get_last_processed_token_address_hash ([#13118](https://github.com/blockscout/blockscout/issues/13118))
 - Duplicates of smart contracts additional sources ([#13018](https://github.com/blockscout/blockscout/issues/13018))
 - Set  for read ops in NFT backfillers ([#13116](https://github.com/blockscout/blockscout/issues/13116))
