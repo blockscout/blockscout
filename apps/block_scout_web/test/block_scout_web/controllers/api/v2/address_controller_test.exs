@@ -4912,6 +4912,30 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         %Instance{ti | current_token_balance: current_token_balance}
       end
 
+      token = insert(:token, type: "ERC-404")
+      amount = Enum.random(16..50)
+
+      for _ <- 0..(amount - 1) do
+        ti =
+          insert(:token_instance,
+            token_contract_address_hash: token.contract_address_hash,
+            owner_address_hash: address.hash
+          )
+          |> Repo.preload([:token])
+
+        current_token_balance =
+          insert(:address_current_token_balance,
+            address: address,
+            token_type: "ERC-404",
+            token_id: ti.token_id,
+            token_contract_address_hash: token.contract_address_hash,
+            value: Enum.random(1..100_000)
+          )
+          |> Repo.preload([:token])
+
+        %Instance{ti | current_token_balance: current_token_balance}
+      end
+
       request =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
@@ -4940,6 +4964,22 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response ==
                conn
                |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-1155"})
+               |> json_response(200)
+
+      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-404"})
+
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+
+      assert response ==
+               conn
+               |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-404"})
                |> json_response(200)
 
       assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
@@ -5003,6 +5043,31 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         %Instance{ti | current_token_balance: current_token_balance}
       end
 
+      token = insert(:token, type: "ERC-404")
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+      amount = Enum.random(16..50)
+
+      for _ <- 0..(amount - 1) do
+        ti =
+          insert(:token_instance,
+            token_contract_address_hash: token.contract_address_hash,
+            owner_address_hash: address.hash
+          )
+          |> Repo.preload([:token])
+
+        current_token_balance =
+          insert(:address_current_token_balance,
+            address: address,
+            token_type: "ERC-404",
+            token_id: ti.token_id,
+            token_contract_address_hash: token.contract_address_hash,
+            value: Enum.random(1..100_000)
+          )
+          |> Repo.preload([:token])
+
+        %Instance{ti | current_token_balance: current_token_balance}
+      end
+
       request =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
@@ -5036,9 +5101,26 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["items"] == []
 
       assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-404"})
+
+      response = json_response(request, 200)
+      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+
+      assert List.first(response["items"])["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-404"})
+      response = json_response(request, 200)
+
+      assert response["items"] == []
+
+      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
-    test "get smart-contract with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+    test "get nft collections with ok reputation with hide_scam_addresses=false", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, false)
       on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
@@ -5093,6 +5175,30 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         %Instance{ti | current_token_balance: current_token_balance}
       end
 
+      token = insert(:token, type: "ERC-404")
+      amount = Enum.random(16..50)
+
+      for _ <- 0..(amount - 1) do
+        ti =
+          insert(:token_instance,
+            token_contract_address_hash: token.contract_address_hash,
+            owner_address_hash: address.hash
+          )
+          |> Repo.preload([:token])
+
+        current_token_balance =
+          insert(:address_current_token_balance,
+            address: address,
+            token_type: "ERC-404",
+            token_id: ti.token_id,
+            token_contract_address_hash: token.contract_address_hash,
+            value: Enum.random(1..100_000)
+          )
+          |> Repo.preload([:token])
+
+        %Instance{ti | current_token_balance: current_token_balance}
+      end
+
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-721"})
       response = json_response(request, 200)
 
@@ -5106,9 +5212,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert List.first(response["items"])["reputation"] == "ok"
 
       assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+
+      request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-404"})
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+
+      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
-    test "get smart-contract with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+    test "get nft collections with scam reputation with hide_scam_addresses=false", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, false)
       on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
@@ -5167,6 +5280,32 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         %Instance{ti | current_token_balance: current_token_balance}
       end
 
+      token = insert(:token, type: "ERC-404")
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      amount = Enum.random(16..50)
+
+      for _ <- 0..(amount - 1) do
+        ti =
+          insert(:token_instance,
+            token_contract_address_hash: token.contract_address_hash,
+            owner_address_hash: address.hash
+          )
+          |> Repo.preload([:token])
+
+        current_token_balance =
+          insert(:address_current_token_balance,
+            address: address,
+            token_type: "ERC-404",
+            token_id: ti.token_id,
+            token_contract_address_hash: token.contract_address_hash,
+            value: Enum.random(1..100_000)
+          )
+          |> Repo.preload([:token])
+
+        %Instance{ti | current_token_balance: current_token_balance}
+      end
+
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-721"})
       response = json_response(request, 200)
 
@@ -5175,6 +5314,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-1155"})
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+
+      assert_schema(response, "AddressNFTCollectionsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+
+      request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-404"})
       response = json_response(request, 200)
 
       assert List.first(response["items"])["reputation"] == "ok"
