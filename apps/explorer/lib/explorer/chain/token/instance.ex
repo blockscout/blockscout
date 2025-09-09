@@ -136,11 +136,60 @@ defmodule Explorer.Chain.Token.Instance do
     do:
       from(i in __MODULE__, where: i.token_contract_address_hash == ^token_contract_address and i.token_id == ^token_id)
 
+  @doc """
+  Paginated NFT instances owned by an address.
+
+  ## Notes
+  * Filter: `:token_type` list (empty or omitted = all).
+  * Pagination key: `{token_contract_address_hash, token_id, token_type}`.
+  * Resumes at the key's type; earlier types skipped.
+  * Fills one page sequentially across types; spillover allowed.
+
+  ## Params
+  * `address_hash` - owner address (binary or `Hash.Address`).
+  * `options` (keyword):
+    - `:paging_options` (%PagingOptions{}; default `Chain.default_paging_options/0`).
+    - `:token_type` (list of labels) filter.
+    - `:necessity_by_association` pass-through for joins.
+
+  ## Returns
+  * list (<= page_size) of `%Explorer.Chain.Token.Instance{}`; empty list if none.
+  """
   @spec nft_list(binary() | Hash.Address.t(), keyword()) :: [__MODULE__.t()]
   def nft_list(address_hash, options) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     page_size = paging_options.page_size
+    remaining_types = remaining_token_types(options)
 
+    {acc, _filled} =
+      Enum.reduce_while(remaining_types, {[], 0}, fn type, {list, count} ->
+        options =
+          if Enum.empty?(list) do
+            options
+          else
+            Keyword.put(options, :paging_options, %PagingOptions{
+              page_size: page_size - count
+            })
+          end
+
+        fetched = fetch_by_type_and_address_hash(type, address_hash, options)
+        new_list = list ++ fetched
+        new_count = count + length(fetched)
+
+        if new_count >= page_size do
+          {:halt, {Enum.take(new_list, page_size), page_size}}
+        else
+          {:cont, {new_list, new_count}}
+        end
+      end)
+
+    acc
+  end
+
+  # Drop all types until start type (so we continue where we left off)
+  # Accumulate results sequentially per type until we fill the page
+  @spec remaining_token_types(keyword()) :: [String.t()]
+  defp remaining_token_types(options) do
     token_types =
       options
       |> Keyword.get(:token_type, [])
@@ -153,50 +202,28 @@ defmodule Explorer.Chain.Token.Instance do
       end)
       |> Enum.sort()
 
-    # Drop all types until start type (so we continue where we left off)
-    remaining_types =
-      case paging_options do
-        %PagingOptions{
-          key: {_contract_address_hash, _token_id, type}
-        }
-        when is_binary(type) ->
-          Enum.drop_while(token_types, &(&1 != type))
+    options
+    |> Keyword.get(:paging_options, Chain.default_paging_options())
+    |> case do
+      %PagingOptions{
+        key: {_contract_address_hash, _token_id, type}
+      }
+      when is_binary(type) ->
+        Enum.drop_while(token_types, &(&1 != type))
 
-        _ ->
-          token_types
-      end
+      _ ->
+        token_types
+    end
+  end
 
-    # Accumulate results sequentially per type until we fill the page
-    {acc, _filled} =
-      Enum.reduce_while(remaining_types, {[], 0}, fn type, {list, count} ->
-        type_options =
-          if Enum.empty?(list) do
-            options
-          else
-            Keyword.put(options, :paging_options, %PagingOptions{
-              page_size: page_size - count
-            })
-          end
-
-        fetch =
-          case type do
-            "ERC-721" -> &erc_721_token_instances_by_owner_address_hash/2
-            "ERC-1155" -> &erc_1155_token_instances_by_address_hash/2
-            "ERC-404" -> &erc_404_token_instances_by_address_hash/2
-            _ -> fn _, _ -> [] end
-          end
-
-        fetched = fetch.(address_hash, type_options)
-        new_list = list ++ fetched
-        new_count = count + length(fetched)
-
-        cond do
-          new_count >= page_size -> {:halt, {Enum.take(new_list, page_size), page_size}}
-          true -> {:cont, {new_list, new_count}}
-        end
-      end)
-
-    acc
+  @spec fetch_by_type_and_address_hash(binary(), binary() | Hash.Address.t(), keyword()) :: [__MODULE__.t()]
+  defp fetch_by_type_and_address_hash(type, address_hash, options) do
+    case type do
+      "ERC-721" -> erc_721_token_instances_by_owner_address_hash(address_hash, options)
+      "ERC-1155" -> erc_1155_token_instances_by_address_hash(address_hash, options)
+      "ERC-404" -> erc_404_token_instances_by_address_hash(address_hash, options)
+      _ -> []
+    end
   end
 
   @doc """
