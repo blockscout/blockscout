@@ -231,6 +231,7 @@ defmodule BlockScoutWeb.PagingHelper do
     params
     |> Map.drop([
       :address_hash_param,
+      :type,
       :apikey,
       "apikey",
       "block_hash_or_number",

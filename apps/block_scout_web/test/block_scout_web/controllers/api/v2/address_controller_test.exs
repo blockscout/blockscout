@@ -4639,6 +4639,40 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert_schema(response_2nd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
+    test "next_page_params does not leak original type filter", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      # Create a mix of ERC-1155 and ERC-404 items exceeding one page
+      insert_list(60, :address_current_token_balance_with_token_id)
+
+      for _ <- 1..60 do
+        token = insert(:token, type: "ERC-1155")
+
+        ti =
+          insert(:token_instance, token_contract_address_hash: token.contract_address_hash) |> Repo.preload([:token])
+
+        ctb =
+          insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+            address: address,
+            token_type: "ERC-1155",
+            token_id: ti.token_id,
+            token_contract_address_hash: token.contract_address_hash
+          )
+
+        %Instance{ti | current_token_balance: ctb}
+      end
+
+      response =
+        conn
+        |> get(endpoint.(address.hash), %{type: "ERC-404,ERC-1155"})
+        |> json_response(200)
+
+      assert not is_nil(response["next_page_params"])
+      refute Map.has_key?(response["next_page_params"], "type")
+      assert Map.has_key?(response["next_page_params"], "token_type")
+      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+    end
+
     test "get paginated ERC-1155 nft", %{conn: conn, endpoint: endpoint} do
       address = insert(:address)
 
