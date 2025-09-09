@@ -414,11 +414,10 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
         config["platforms"]
         |> Map.keys()
         |> Enum.reduce([], fn platform_id, acc ->
-          protocol = parse_protocol(config["platforms"][platform_id])
           proxy_params = parse_proxy_params(%{"platform_id" => platform_id})
 
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          if protocol in [:ws, :wss] and not is_nil(proxy_params.url) do
+          if valid_websocket_url?(proxy_params.url) do
             [{platform_id, proxy_params.url} | acc]
           else
             acc
@@ -426,6 +425,15 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
         end)
         |> Enum.reverse()
       end
+    end
+  end
+
+  defp valid_websocket_url?(nil), do: false
+
+  defp valid_websocket_url?(url) do
+    case URI.parse(url) do
+      %URI{scheme: scheme, host: host} when scheme in ["ws", "wss"] and not is_nil(host) -> true
+      _ -> false
     end
   end
 end
