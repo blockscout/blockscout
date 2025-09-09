@@ -17,6 +17,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy.SocketHandler do
   def websocket_init(state) do
     case TargetClient.start_link(self(), state.opts[:url]) do
       {:ok, target_pid} ->
+        Process.monitor(target_pid)
         {:ok, %{state | target: target_pid}}
 
       {:error, reason} ->
