@@ -20,6 +20,7 @@
 ### 🐛 Bug Fixes
 
 - Pagination and filtering issues in `/addresses/:hash/nft` ([#13175](https://github.com/blockscout/blockscout/pull/13175))
+- Fix reputation preload for ERC-404 collections ([#13174](https://github.com/blockscout/blockscout/pull/13174))
 - Add reputation to token, rework reputation preload ([#13149](https://github.com/blockscout/blockscout/pull/13149))
 - Replace get_constant_by_key with get_constant_value in get_last_processed_token_address_hash ([#13118](https://github.com/blockscout/blockscout/issues/13118))
 - Duplicates of smart contracts additional sources ([#13018](https://github.com/blockscout/blockscout/issues/13018))
