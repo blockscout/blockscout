@@ -73,6 +73,9 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def stability_validators_state_options(_), do: [state: []]
 
+  @doc """
+    Parse 'type' query parameter from request option map
+  """
   @spec token_transfers_types_options(map()) :: [{:token_type, list}]
   def token_transfers_types_options(%{"type" => filters}) do
     [
