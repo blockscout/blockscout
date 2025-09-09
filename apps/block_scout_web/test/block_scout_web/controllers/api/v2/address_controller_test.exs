@@ -4926,7 +4926,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
              } = Enum.frequencies_by(page2_resp["items"], & &1["token_type"])
     end
 
-    test "multi-type filter excludes unrequested types (ERC-404,ERC-1155)", %{conn: conn, endpoint: endpoint} do
+    test "multi-type filter includes only requested types", %{conn: conn, endpoint: endpoint} do
       address = insert(:address)
 
       # ERC-721 tokens (should be excluded by filter)
