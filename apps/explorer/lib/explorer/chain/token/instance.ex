@@ -155,15 +155,23 @@ defmodule Explorer.Chain.Token.Instance do
     erc_404_token_instances_by_address_hash(address_hash, options)
   end
 
+  # Priority: ERC-721, ERC-1155, ERC-404
   defp nft_list(address_hash, _, options) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
     case paging_options do
-      %PagingOptions{key: {_contract_address_hash, _token_id, "ERC-1155"}} ->
-        erc_1155_token_instances_by_address_hash(address_hash, options)
-
       %PagingOptions{key: {_contract_address_hash, _token_id, "ERC-404"}} ->
         erc_404_token_instances_by_address_hash(address_hash, options)
+
+      %PagingOptions{key: {_contract_address_hash, _token_id, "ERC-1155"}} ->
+        erc_1155 = erc_1155_token_instances_by_address_hash(address_hash, options)
+
+        if length(erc_1155) == paging_options.page_size do
+          erc_1155
+        else
+          erc_404 = erc_404_token_instances_by_address_hash(address_hash, options)
+          (erc_1155 ++ erc_404) |> Enum.take(paging_options.page_size)
+        end
 
       _ ->
         erc_721 = erc_721_token_instances_by_owner_address_hash(address_hash, options)
@@ -172,9 +180,13 @@ defmodule Explorer.Chain.Token.Instance do
           erc_721
         else
           erc_1155 = erc_1155_token_instances_by_address_hash(address_hash, options)
-          erc_404 = erc_404_token_instances_by_address_hash(address_hash, options)
+          erc_721_1155 = erc_721 ++ erc_1155
 
-          (erc_721 ++ erc_1155 ++ erc_404) |> Enum.take(paging_options.page_size)
+          erc_404 =
+            (length(erc_721_1155) >= paging_options.page_size && []) ||
+              erc_404_token_instances_by_address_hash(address_hash, options)
+
+          (erc_721_1155 ++ erc_404) |> Enum.take(paging_options.page_size)
         end
     end
   end
@@ -330,12 +342,23 @@ defmodule Explorer.Chain.Token.Instance do
     erc_404_collections_by_address_hash(address_hash, options)
   end
 
+  # Priority: ERC-721, ERC-1155, ERC-404
   defp nft_collections(address_hash, _, options) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
     case paging_options do
+      %PagingOptions{key: {_contract_address_hash, "ERC-404"}} ->
+        erc_404_collections_by_address_hash(address_hash, options)
+
       %PagingOptions{key: {_contract_address_hash, "ERC-1155"}} ->
-        erc_1155_collections_by_address_hash(address_hash, options)
+        erc_1155 = erc_1155_collections_by_address_hash(address_hash, options)
+
+        if length(erc_1155) == paging_options.page_size do
+          erc_1155
+        else
+          erc_404 = erc_404_collections_by_address_hash(address_hash, options)
+          (erc_1155 ++ erc_404) |> Enum.take(paging_options.page_size)
+        end
 
       _ ->
         erc_721 = erc_721_collections_by_address_hash(address_hash, options)
@@ -344,9 +367,13 @@ defmodule Explorer.Chain.Token.Instance do
           erc_721
         else
           erc_1155 = erc_1155_collections_by_address_hash(address_hash, options)
-          erc_404 = erc_404_collections_by_address_hash(address_hash, options)
+          erc_721_1155 = erc_721 ++ erc_1155
 
-          (erc_721 ++ erc_1155 ++ erc_404) |> Enum.take(paging_options.page_size)
+          erc_404 =
+            (length(erc_721_1155) >= paging_options.page_size && []) ||
+              erc_404_collections_by_address_hash(address_hash, options)
+
+          (erc_721_1155 ++ erc_404) |> Enum.take(paging_options.page_size)
         end
     end
   end
