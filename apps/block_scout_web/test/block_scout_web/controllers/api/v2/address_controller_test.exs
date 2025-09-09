@@ -4639,6 +4639,40 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert_schema(response_2nd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
+    test "next_page_params does not leak original type filter", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      # Create a mix of ERC-1155 and ERC-404 items exceeding one page
+      insert_list(60, :address_current_token_balance_with_token_id)
+
+      for _ <- 1..60 do
+        token = insert(:token, type: "ERC-1155")
+
+        ti =
+          insert(:token_instance, token_contract_address_hash: token.contract_address_hash) |> Repo.preload([:token])
+
+        ctb =
+          insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+            address: address,
+            token_type: "ERC-1155",
+            token_id: ti.token_id,
+            token_contract_address_hash: token.contract_address_hash
+          )
+
+        %Instance{ti | current_token_balance: ctb}
+      end
+
+      response =
+        conn
+        |> get(endpoint.(address.hash), %{type: "ERC-404,ERC-1155"})
+        |> json_response(200)
+
+      assert not is_nil(response["next_page_params"])
+      refute Map.has_key?(response["next_page_params"], "type")
+      assert Map.has_key?(response["next_page_params"], "token_type")
+      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+    end
+
     test "get paginated ERC-1155 nft", %{conn: conn, endpoint: endpoint} do
       address = insert(:address)
 
@@ -4837,19 +4871,153 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert Enum.count(response_2nd_page["items"]) == 50
       assert Enum.count(response_3rd_page["items"]) == 2
 
-      compare_item(Enum.at(token_instances_721, 50), Enum.at(response["items"], 0))
-      compare_item(Enum.at(token_instances_721, 1), Enum.at(response["items"], 49))
+      compare_item(Enum.at(token_instances_1155, 50), Enum.at(response["items"], 0))
+      compare_item(Enum.at(token_instances_1155, 1), Enum.at(response["items"], 49))
 
-      compare_item(Enum.at(token_instances_721, 0), Enum.at(response_2nd_page["items"], 0))
-      compare_item(Enum.at(token_instances_1155, 50), Enum.at(response_2nd_page["items"], 1))
-      compare_item(Enum.at(token_instances_1155, 2), Enum.at(response_2nd_page["items"], 49))
+      compare_item(Enum.at(token_instances_1155, 0), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(token_instances_721, 50), Enum.at(response_2nd_page["items"], 1))
+      compare_item(Enum.at(token_instances_721, 2), Enum.at(response_2nd_page["items"], 49))
 
-      compare_item(Enum.at(token_instances_1155, 1), Enum.at(response_3rd_page["items"], 0))
-      compare_item(Enum.at(token_instances_1155, 0), Enum.at(response_3rd_page["items"], 1))
+      compare_item(Enum.at(token_instances_721, 1), Enum.at(response_3rd_page["items"], 0))
+      compare_item(Enum.at(token_instances_721, 0), Enum.at(response_3rd_page["items"], 1))
 
       assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       assert_schema(response_2nd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       assert_schema(response_3rd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+    end
+
+    test "paginates across types after intermediate type exhaustion (should include next type)", %{
+      conn: conn,
+      endpoint: endpoint
+    } do
+      address = insert(:address)
+
+      # Insert 30 ERC-1155 (with balances)
+      for _ <- 1..30 do
+        token = insert(:token, type: "ERC-1155")
+
+        ti =
+          insert(:token_instance,
+            token_contract_address_hash: token.contract_address_hash
+          )
+          |> Repo.preload([:token])
+
+        insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+          address: address,
+          token_type: "ERC-1155",
+          token_id: ti.token_id,
+          token_contract_address_hash: token.contract_address_hash
+        )
+      end
+
+      # Insert 25 ERC-404 (with balances)
+      for _ <- 1..25 do
+        token = insert(:token, type: "ERC-404")
+
+        ti =
+          insert(:token_instance,
+            token_contract_address_hash: token.contract_address_hash
+          )
+          |> Repo.preload([:token])
+
+        insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+          address: address,
+          token_type: "ERC-404",
+          token_id: ti.token_id,
+          token_contract_address_hash: token.contract_address_hash
+        )
+      end
+
+      # Insert 10 ERC-721 (owned directly)
+      for _ <- 1..10 do
+        erc_721_token = insert(:token, type: "ERC-721")
+
+        insert(:token_instance,
+          owner_address_hash: address.hash,
+          token_contract_address_hash: erc_721_token.contract_address_hash
+        )
+      end
+
+      # Page 1
+      page1_resp = conn |> get(endpoint.(address.hash)) |> json_response(200)
+      assert Enum.count(page1_resp["items"]) == 50
+      assert page1_resp["next_page_params"] != nil
+
+      # Expect mixture of ERC-721 and ERC-1155 only on first page (by current logic order)
+      assert %{
+               "ERC-1155" => 30,
+               "ERC-404" => 20
+             } = Enum.frequencies_by(page1_resp["items"], & &1["token_type"])
+
+      page2_resp = conn |> get(endpoint.(address.hash), page1_resp["next_page_params"]) |> json_response(200)
+
+      assert Enum.count(page2_resp["items"]) == 15
+      assert page2_resp["next_page_params"] == nil
+
+      assert %{
+               "ERC-404" => 5,
+               "ERC-721" => 10
+             } = Enum.frequencies_by(page2_resp["items"], & &1["token_type"])
+    end
+
+    test "multi-type filter includes only requested types", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      # ERC-721 tokens (should be excluded by filter)
+      for _ <- 1..5 do
+        erc_721_token = insert(:token, type: "ERC-721")
+
+        insert(:token_instance,
+          owner_address_hash: address.hash,
+          token_contract_address_hash: erc_721_token.contract_address_hash
+        )
+      end
+
+      # ERC-1155 tokens (should be included)
+      for _ <- 1..5 do
+        token = insert(:token, type: "ERC-1155")
+
+        ti =
+          insert(:token_instance,
+            token_contract_address_hash: token.contract_address_hash
+          )
+          |> Repo.preload([:token])
+
+        insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+          address: address,
+          token_type: "ERC-1155",
+          token_id: ti.token_id,
+          token_contract_address_hash: token.contract_address_hash
+        )
+      end
+
+      # ERC-404 tokens (should be included)
+      for _ <- 1..5 do
+        token = insert(:token, type: "ERC-404")
+
+        ti =
+          insert(:token_instance,
+            token_contract_address_hash: token.contract_address_hash
+          )
+          |> Repo.preload([:token])
+
+        insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+          address: address,
+          token_type: "ERC-404",
+          token_id: ti.token_id,
+          token_contract_address_hash: token.contract_address_hash
+        )
+      end
+
+      filter = %{"type" => "ERC-404,ERC-1155"}
+      request = get(conn, endpoint.(address.hash), filter)
+      response = json_response(request, 200)
+
+      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
+
+      assert Enum.count(response["items"]) == 10
+      assert Enum.all?(response["items"], fn item -> item["token_type"] in ["ERC-404", "ERC-1155"] end)
+      refute Enum.any?(response["items"], fn item -> item["token_type"] == "ERC-721" end)
     end
   end
 
