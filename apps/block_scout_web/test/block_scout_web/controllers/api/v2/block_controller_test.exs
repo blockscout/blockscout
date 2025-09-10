@@ -213,10 +213,50 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   describe "/blocks/{block_hash_or_number}" do
     test "return 422 on invalid parameter", %{conn: conn} do
       request_1 = get(conn, "/api/v2/blocks/0x123123")
-      assert %{"message" => "Invalid hash"} = json_response(request_1, 422)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" =>
+                     "Failed to cast value using any of: Schema(title: \"FullHash\", type: :string), Schema(type: :integer)",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid integer. Got: string",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request_1, 422)
 
       request_2 = get(conn, "/api/v2/blocks/123qwe")
-      assert %{"message" => "Invalid number"} = json_response(request_2, 422)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" =>
+                     "Failed to cast value using any of: Schema(title: \"FullHash\", type: :string), Schema(type: :integer)",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid integer. Got: string",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request_2, 422)
     end
 
     test "return 404 on non existing block", %{conn: conn} do
@@ -511,10 +551,50 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   describe "/blocks/{block_hash_or_number}/transactions" do
     test "return 422 on invalid parameter", %{conn: conn} do
       request_1 = get(conn, "/api/v2/blocks/0x123123/transactions")
-      assert %{"message" => "Invalid hash"} = json_response(request_1, 422)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" =>
+                     "Failed to cast value using any of: Schema(title: \"FullHash\", type: :string), Schema(type: :integer)",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid integer. Got: string",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request_1, 422)
 
       request_2 = get(conn, "/api/v2/blocks/123qwe/transactions")
-      assert %{"message" => "Invalid number"} = json_response(request_2, 422)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" =>
+                     "Failed to cast value using any of: Schema(title: \"FullHash\", type: :string), Schema(type: :integer)",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid integer. Got: string",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request_2, 422)
     end
 
     test "return 404 on non existing block", %{conn: conn} do
@@ -599,10 +679,50 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   describe "/blocks/{block_hash_or_number}/withdrawals" do
     test "return 422 on invalid parameter", %{conn: conn} do
       request_1 = get(conn, "/api/v2/blocks/0x123123/withdrawals")
-      assert %{"message" => "Invalid hash"} = json_response(request_1, 422)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" =>
+                     "Failed to cast value using any of: Schema(title: \"FullHash\", type: :string), Schema(type: :integer)",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid integer. Got: string",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request_1, 422)
 
       request_2 = get(conn, "/api/v2/blocks/123qwe/withdrawals")
-      assert %{"message" => "Invalid number"} = json_response(request_2, 422)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" =>
+                     "Failed to cast value using any of: Schema(title: \"FullHash\", type: :string), Schema(type: :integer)",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid integer. Got: string",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request_2, 422)
     end
 
     test "return 404 on non existing block", %{conn: conn} do
@@ -670,10 +790,50 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   describe "/blocks/{block_hash_or_number}/internal-transactions" do
     test "returns 422 on invalid parameter", %{conn: conn} do
       request_1 = get(conn, "/api/v2/blocks/0x123123/internal-transactions")
-      assert %{"message" => "Invalid hash"} = json_response(request_1, 422)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" =>
+                     "Failed to cast value using any of: Schema(title: \"FullHash\", type: :string), Schema(type: :integer)",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid integer. Got: string",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request_1, 422)
 
       request_2 = get(conn, "/api/v2/blocks/123qwe/internal-transactions")
-      assert %{"message" => "Invalid number"} = json_response(request_2, 422)
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" =>
+                     "Failed to cast value using any of: Schema(title: \"FullHash\", type: :string), Schema(type: :integer)",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid integer. Got: string",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request_2, 422)
     end
 
     test "returns 404 on non existing block", %{conn: conn} do
@@ -756,10 +916,50 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
       test "get 422 on invalid block", %{conn: conn} do
         request_1 = get(conn, "/api/v2/blocks/0x123123/beacon/deposits")
-        assert %{"message" => "Invalid hash"} = json_response(request_1, 422)
+
+        assert %{
+                 "errors" => [
+                   %{
+                     "detail" =>
+                       "Failed to cast value using any of: Schema(title: \"FullHash\", type: :string), Schema(type: :integer)",
+                     "source" => %{"pointer" => "/block_hash_or_number_param"},
+                     "title" => "Invalid value"
+                   },
+                   %{
+                     "detail" => "Invalid integer. Got: string",
+                     "source" => %{"pointer" => "/block_hash_or_number_param"},
+                     "title" => "Invalid value"
+                   },
+                   %{
+                     "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                     "source" => %{"pointer" => "/block_hash_or_number_param"},
+                     "title" => "Invalid value"
+                   }
+                 ]
+               } = json_response(request_1, 422)
 
         request_2 = get(conn, "/api/v2/blocks/123qwe/beacon/deposits")
-        assert %{"message" => "Invalid number"} = json_response(request_2, 422)
+
+        assert %{
+                 "errors" => [
+                   %{
+                     "detail" =>
+                       "Failed to cast value using any of: Schema(title: \"FullHash\", type: :string), Schema(type: :integer)",
+                     "source" => %{"pointer" => "/block_hash_or_number_param"},
+                     "title" => "Invalid value"
+                   },
+                   %{
+                     "detail" => "Invalid integer. Got: string",
+                     "source" => %{"pointer" => "/block_hash_or_number_param"},
+                     "title" => "Invalid value"
+                   },
+                   %{
+                     "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                     "source" => %{"pointer" => "/block_hash_or_number_param"},
+                     "title" => "Invalid value"
+                   }
+                 ]
+               } = json_response(request_2, 422)
       end
 
       test "get deposits", %{conn: conn} do
