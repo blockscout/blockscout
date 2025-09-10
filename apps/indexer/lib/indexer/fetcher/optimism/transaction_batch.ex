@@ -310,8 +310,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
             Publisher.broadcast(
               %{
-                new_optimism_batches:
-                  Enum.map(sequences, &FrameSequence.batch_by_internal_id(&1.id, include_blobs?: false))
+                new_optimism_batches: Enum.map(sequences, &FrameSequence.batch_by_number(&1.id, include_blobs?: false))
               },
               :realtime
             )
