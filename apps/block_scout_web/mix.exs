@@ -123,7 +123,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:number, "~> 1.0.1"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html_helpers, "~> 1.0"},
-      {:phoenix_live_reload, "~> 1.2", only: [:dev]},
+      {:phoenix_live_reload, "~> 1.6", only: [:dev]},
       {:phoenix_live_view, "~> 1.1"},
       {:phoenix_pubsub, "~> 2.0"},
       {:prometheus_ex, "~> 5.0.0", override: true},
