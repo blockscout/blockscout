@@ -118,8 +118,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       number: %Schema{type: :integer, nullable: true},
       l1_timestamp: General.TimestampNullable,
       l1_transaction_hashes: %Schema{type: :array, items: General.FullHash, nullable: false},
-      batch_data_container: %Schema{type: :string, nullable: false, enum: ["in_blob4844", "in_celestia", "in_alt_da", "in_calldata"]},
-      blobs: %Schema{type: :array, items: %Schema{anyOf: [@blob4844_schema, @celestia_schema, @alt_da_schema]}, nullable: false}
+      batch_data_container: %Schema{
+        type: :string,
+        nullable: false,
+        enum: ["in_blob4844", "in_celestia", "in_alt_da", "in_calldata"]
+      },
+      blobs: %Schema{
+        type: :array,
+        items: %Schema{anyOf: [@blob4844_schema, @celestia_schema, @alt_da_schema]},
+        nullable: false
+      }
     },
     required: [:number, :l1_timestamp, :l1_transaction_hashes, :batch_data_container]
   }

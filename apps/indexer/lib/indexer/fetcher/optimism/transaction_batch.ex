@@ -738,30 +738,42 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     []
   end
 
-  @spec alt_da_commitment_to_input(binary(), non_neg_integer(), String.t(), String.t()) :: [
-    %{
-      :bytes => binary(),
-      :alt_da_commitment => String.t()
-    }
-  ]
-  defp alt_da_commitment_to_input("0x" <> transaction_input, offset, transaction_hash, da_server_url) do
+  # Gets Alt-DA data & commitment hash by L1 transaction input (encoding the commitment).
+  # The data is then read from the remote DA server.
+  #
+  # ## Parameters
+  # - `transaction_input`: The contents of transaction `input` field.
+  # - `transaction_hash`: The L1 transaction hash for logging purposes.
+  # - `da_server_url`: The URL to DA server implementing a get request.
+  #
+  # ## Returns
+  # - A list with a map containing commitment data and hash.
+  # - An empty list in case of an error (DA server didn't respond, URL is not defined, or transaction input is incorrect).
+  @spec alt_da_commitment_to_input(binary(), String.t(), String.t()) :: [
+          %{
+            :bytes => binary(),
+            :alt_da_commitment => String.t()
+          }
+        ]
+  defp alt_da_commitment_to_input("0x" <> transaction_input, transaction_hash, da_server_url) do
     transaction_input
     |> Base.decode16!(case: :mixed)
-    |> alt_da_commitment_to_input(offset, transaction_hash, da_server_url)
+    |> alt_da_commitment_to_input(transaction_hash, da_server_url)
   end
 
-  defp alt_da_commitment_to_input(transaction_input, offset, _transaction_hash, da_server_url) when byte_size(transaction_input) == offset + 1 + 32 and da_server_url != "" do
-    commitment = binary_part(transaction_input, offset, 1 + 32)
-    commitment_string = "0x" <> Base.encode16(commitment, case: :lower)
+  defp alt_da_commitment_to_input(transaction_input, _transaction_hash, da_server_url)
+       when byte_size(transaction_input) == 2 + 32 and da_server_url != "" do
+    commitment_for_url = binary_part(transaction_input, 1, 1 + 32)
+    commitment_for_url_string = "0x" <> Base.encode16(commitment_for_url, case: :lower)
 
-    url = da_server_url <> "/" <> commitment_string
+    url = da_server_url <> "/" <> commitment_for_url_string
 
     with {:ok, data} <- Helper.http_get_request(url, :raw),
          true <- byte_size(data) > 0 do
       [
         %{
           bytes: data,
-          alt_da_commitment: commitment_string
+          alt_da_commitment: "0x" <> Base.encode16(transaction_input, case: :lower)
         }
       ]
     else
@@ -776,15 +788,16 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end
   end
 
-  defp alt_da_commitment_to_input(_transaction_input, _offset, transaction_hash, da_server_url) when da_server_url != "" do
+  defp alt_da_commitment_to_input(_transaction_input, transaction_hash, da_server_url) when da_server_url != "" do
     Logger.error("L1 transaction with Alt-DA commitment has incorrect input length. Tx hash: #{transaction_hash}")
     []
   end
 
-  defp alt_da_commitment_to_input(_transaction_input, _offset, _transaction_hash, "") do
+  defp alt_da_commitment_to_input(_transaction_input, _transaction_hash, "") do
     Logger.error(
       "Cannot read data from the DA server as its URL is not defined. Please, check INDEXER_OPTIMISM_L1_BATCH_ALT_DA_SERVER_URL env variable."
     )
+
     []
   end
 
@@ -820,7 +833,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
           commitment_alt_da_signature(transaction.input) == 0x0100 ->
             # this is Alt-DA transaction with a keccak commitment, so we get the data from a DA server
-            alt_da_commitment_to_input(transaction.input, 1, transaction.hash, alt_da_server_url)
+            alt_da_commitment_to_input(transaction.input, transaction.hash, alt_da_server_url)
 
           first_byte(transaction.input) == 0xCE ->
             # backward compatibility with OP Celestia Raspberry
@@ -1517,8 +1530,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         _ ->
           {fallback_start_block, env[:inbox], env[:submitter]}
       end
-
-    start_block = 23295546
 
     if !is_nil(start_block) and Helper.address_correct?(batch_inbox) and Helper.address_correct?(batch_submitter) do
       {start_block, String.downcase(batch_inbox), String.downcase(batch_submitter)}

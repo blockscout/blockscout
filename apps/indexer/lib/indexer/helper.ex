@@ -784,7 +784,7 @@ defmodule Indexer.Helper do
     - `{:ok, response}` where `response` is a map decoded from a JSON object, or the raw bytes (depending on the `response_format` parameter).
     - `{:error, reason}` in case of failure (after three unsuccessful attempts).
   """
-  @spec http_get_request(String.t(), :json | :raw, non_neg_integer()) :: {:ok, map()} | {:error, any()}
+  @spec http_get_request(String.t(), :json | :raw, non_neg_integer()) :: {:ok, map() | binary()} | {:error, any()}
   def http_get_request(url, response_format \\ :json, attempts_done \\ 0) do
     recv_timeout = 5_000
     connect_timeout = 8_000
