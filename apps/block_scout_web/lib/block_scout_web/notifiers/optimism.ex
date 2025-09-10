@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.Notifiers.Optimism do
 
   def handle_event({:chain_event, :new_optimism_batches, :realtime, batches}) do
     batches
-    |> Enum.sort_by(& &1.internal_id, :asc)
+    |> Enum.sort_by(& &1.number, :asc)
     |> Enum.each(fn batch ->
       Endpoint.broadcast("optimism:new_batch", "new_optimism_batch", %{
         batch: batch
