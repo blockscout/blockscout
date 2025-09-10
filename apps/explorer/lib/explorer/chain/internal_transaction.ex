@@ -58,6 +58,7 @@ defmodule Explorer.Chain.InternalTransaction do
   typed_schema "internal_transactions" do
     # todo: consider using enum: `field(:call_type, Ecto.Enum, values: [:call, :callcode, :delegatecall, :staticcall])`
     field(:call_type, CallType)
+    field(:call_type_enum, Ecto.Enum, values: [:call, :callcode, :delegatecall, :staticcall, :invalid])
     field(:created_contract_code, Data)
     field(:error, :string)
     field(:gas, :decimal)
@@ -413,16 +414,19 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @call_optional_fields ~w(error gas_used output block_number)a
-  @call_required_fields ~w(call_type from_address_hash gas input to_address_hash trace_address transaction_hash value)a
+  @call_required_fields ~w(call_type_enum from_address_hash gas input to_address_hash trace_address transaction_hash value)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
   defp type_changeset(changeset, attrs, :call) do
     changeset
-    |> cast(attrs, @call_allowed_fields)
+    |> cast(adjust_call_type(attrs), @call_allowed_fields)
     |> validate_required(@call_required_fields)
     # TODO consider removing
     |> validate_call_error_or_result()
-    |> check_constraint(:call_type, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
+    |> check_constraint(:call_type_enum,
+      message: ~S|can't be blank when type is 'call'|,
+      name: :call_has_call_type_enum
+    )
     |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_input)
     |> foreign_key_constraint(:transaction_hash)
   end
@@ -462,6 +466,16 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   defp type_changeset(changeset, _, nil), do: changeset
+
+  defp adjust_call_type(%{call_type_enum: _} = attrs), do: attrs
+
+  defp adjust_call_type(%{call_type: call_type} = attrs) when not is_nil(call_type) do
+    attrs
+    |> Map.delete(:call_type)
+    |> Map.put(:call_type_enum, call_type)
+  end
+
+  defp adjust_call_type(attrs), do: attrs
 
   defp validate_disallowed(changeset, field, named_arguments) when is_atom(field) do
     case get_field(changeset, field) do
@@ -667,8 +681,8 @@ defmodule Explorer.Chain.InternalTransaction do
   def block_to_internal_transactions(block_number, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    type_filter = Keyword.get(options, :type)
-    call_type_filter = Keyword.get(options, :call_type)
+    type_filter = Keyword.get(options, :type, [])
+    call_type_filter = Keyword.get(options, :call_type, [])
 
     __MODULE__
     |> where([internal_transaction], internal_transaction.block_number == ^block_number)
@@ -970,7 +984,10 @@ defmodule Explorer.Chain.InternalTransaction do
 
   defp filter_by_call_type(query, call_types) do
     query
-    |> where([internal_transaction], internal_transaction.call_type in ^call_types)
+    |> where(
+      [internal_transaction],
+      internal_transaction.call_type_enum in ^call_types or internal_transaction.call_type in ^call_types
+    )
   end
 
   @doc """
@@ -1189,5 +1206,14 @@ defmodule Explorer.Chain.InternalTransaction do
       })
 
     {:ok, [first_trace_formatted]}
+  end
+
+  @spec call_type(map()) :: atom() | nil
+  def call_type(%{call_type: call_type, call_type_enum: call_type_enum}) do
+    if BackgroundMigrations.get_backfill_call_type_enum_finished() do
+      call_type_enum
+    else
+      call_type_enum || call_type
+    end
   end
 end

@@ -77,6 +77,7 @@ for migrator <- [
       Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
       Explorer.Migrator.DeleteZeroValueInternalTransactions,
       Explorer.Migrator.FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
+      Explorer.Migrator.BackfillCallTypeEnum,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
