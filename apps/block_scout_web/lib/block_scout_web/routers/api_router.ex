@@ -206,26 +206,26 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     scope "/blocks" do
       get("/", V2.BlockController, :blocks)
-      get("/:block_hash_or_number", V2.BlockController, :block)
-      get("/:block_hash_or_number/transactions", V2.BlockController, :transactions)
-      get("/:block_hash_or_number/internal-transactions", V2.BlockController, :internal_transactions)
-      get("/:block_hash_or_number/withdrawals", V2.BlockController, :withdrawals)
-      get("/:block_number/countdown", V2.BlockController, :block_countdown)
+      get("/:block_hash_or_number_param", V2.BlockController, :block)
+      get("/:block_hash_or_number_param/transactions", V2.BlockController, :transactions)
+      get("/:block_hash_or_number_param/internal-transactions", V2.BlockController, :internal_transactions)
+      get("/:block_hash_or_number_param/withdrawals", V2.BlockController, :withdrawals)
+      get("/:block_number_param/countdown", V2.BlockController, :block_countdown)
 
       if @chain_type == :arbitrum do
-        get("/arbitrum-batch/:batch_number", V2.BlockController, :arbitrum_batch)
+        get("/arbitrum-batch/:batch_number_param", V2.BlockController, :arbitrum_batch)
       end
 
       chain_scope :optimism do
-        get("/optimism-batch/:batch_number", V2.BlockController, :optimism_batch)
+        get("/optimism-batch/:batch_number_param", V2.BlockController, :optimism_batch)
       end
 
       if @chain_type == :scroll do
-        get("/scroll-batch/:batch_number", V2.BlockController, :scroll_batch)
+        get("/scroll-batch/:batch_number_param", V2.BlockController, :scroll_batch)
       end
 
       chain_scope :ethereum do
-        get("/:block_hash_or_number/beacon/deposits", V2.BlockController, :beacon_deposits)
+        get("/:block_hash_or_number_param/beacon/deposits", V2.BlockController, :beacon_deposits)
       end
     end
 

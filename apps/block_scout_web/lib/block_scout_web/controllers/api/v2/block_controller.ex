@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.V2.BlockController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
@@ -39,6 +40,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias Explorer.Chain.InternalTransaction
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
+  alias Schemas.ErrorResponses.NotFoundResponse
   alias Timex.Duration
 
   case @chain_type do
@@ -133,14 +135,30 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags(["blocks"])
+
+  operation(:block,
+    summary: "Retrieve detailed information about a specific block",
+    description:
+      "Retrieves detailed information for a specific block, including transactions, internal transactions, and metadata.",
+    parameters: [block_hash_or_number_param() | base_params()],
+    responses: [
+      ok: {"Detailed information about the specified block.", "application/json", Schemas.Block.Response},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+  )
+
   @doc """
-  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number` endpoint.
+  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number_param` endpoint.
   """
   @spec block(Plug.Conn.t(), map()) ::
           {:error, :not_found | {:invalid, :hash | :number}}
           | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
           | Plug.Conn.t()
-  def block(conn, %{"block_hash_or_number" => block_hash_or_number}) do
+  def block(conn, %{block_hash_or_number_param: block_hash_or_number}) do
     with {:ok, block} <- block_param_to_block(block_hash_or_number, @block_params) do
       conn
       |> put_status(200)
@@ -161,6 +179,27 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         {:lost_consensus, Chain.nonconsensus_block_by_number(number, @api_true)}
     end
   end
+
+  operation(:blocks,
+    summary: "List blocks with optional filtering and sorting",
+    description: "Retrieves a paginated list of blocks with optional filtering by block type and sorting options.",
+    parameters:
+      base_params() ++
+        [block_type_param()] ++
+        define_paging_params(["block_number", "items_count"]),
+    responses: [
+      ok:
+        {"List of blocks with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Block,
+           next_page_params_example: %{
+             "block_number" => 22_566_361,
+             "items_count" => 50
+           },
+           title_prefix: "Blocks"
+         )}
+    ]
+  )
 
   @doc """
   Function to handle GET requests to `/api/v2/blocks` endpoint.
@@ -187,12 +226,34 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     })
   end
 
+  operation(:arbitrum_batch,
+    summary: "List L2 blocks in an Arbitrum batch",
+    description: "Retrieves L2 blocks that are bound to a specific Arbitrum batch number.",
+    parameters:
+      base_params() ++
+        [batch_number_param(), block_type_param()] ++
+        define_paging_params(["block_number", "items_count"]),
+    responses: [
+      ok:
+        {"L2 blocks in the specified Arbitrum batch.", "application/json",
+         paginated_response(
+           items: Schemas.Block,
+           next_page_params_example: %{
+             "block_number" => 22_566_361,
+             "items_count" => 50
+           },
+           title_prefix: "ArbitrumBatchBlocks"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+  )
+
   @doc """
-    Function to handle GET requests to `/api/v2/blocks/arbitrum-batch/:batch_number` endpoint.
+    Function to handle GET requests to `/api/v2/blocks/arbitrum-batch/:batch_number_param` endpoint.
     It renders the list of L2 blocks bound to the specified batch.
   """
   @spec arbitrum_batch(Plug.Conn.t(), any()) :: Plug.Conn.t()
-  def arbitrum_batch(conn, %{"batch_number" => batch_number} = params) do
+  def arbitrum_batch(conn, %{batch_number_param: batch_number} = params) do
     full_options =
       params
       |> select_block_type()
@@ -213,12 +274,34 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     })
   end
 
+  operation(:optimism_batch,
+    summary: "List L2 blocks in an Optimism batch",
+    description: "Retrieves L2 blocks that are bound to a specific Optimism batch number.",
+    parameters:
+      base_params() ++
+        [batch_number_param(), block_type_param()] ++
+        define_paging_params(["block_number", "items_count"]),
+    responses: [
+      ok:
+        {"L2 blocks in the specified Optimism batch.", "application/json",
+         paginated_response(
+           items: Schemas.Block,
+           next_page_params_example: %{
+             "block_number" => 22_566_361,
+             "items_count" => 50
+           },
+           title_prefix: "OptimismBatchBlocks"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+  )
+
   @doc """
-    Function to handle GET requests to `/api/v2/blocks/optimism-batch/:batch_number` endpoint.
+    Function to handle GET requests to `/api/v2/blocks/optimism-batch/:batch_number_param` endpoint.
     It renders the list of L2 blocks bound to the specified batch.
   """
   @spec optimism_batch(Plug.Conn.t(), any()) :: Plug.Conn.t()
-  def optimism_batch(conn, %{"batch_number" => batch_number} = params) do
+  def optimism_batch(conn, %{batch_number_param: batch_number} = params) do
     full_options =
       params
       |> select_block_type()
@@ -240,12 +323,34 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     })
   end
 
+  operation(:scroll_batch,
+    summary: "List L2 blocks in a Scroll batch",
+    description: "Retrieves L2 blocks that are bound to a specific Scroll batch number.",
+    parameters:
+      base_params() ++
+        [batch_number_param(), block_type_param()] ++
+        define_paging_params(["block_number", "items_count"]),
+    responses: [
+      ok:
+        {"L2 blocks in the specified Scroll batch.", "application/json",
+         paginated_response(
+           items: Schemas.Block,
+           next_page_params_example: %{
+             "block_number" => 22_566_361,
+             "items_count" => 50
+           },
+           title_prefix: "ScrollBatchBlocks"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+  )
+
   @doc """
-    Function to handle GET requests to `/api/v2/blocks/scroll-batch/:batch_number` endpoint.
+    Function to handle GET requests to `/api/v2/blocks/scroll-batch/:batch_number_param` endpoint.
     It renders the list of L2 blocks bound to the specified batch.
   """
   @spec scroll_batch(Plug.Conn.t(), any()) :: Plug.Conn.t()
-  def scroll_batch(conn, %{"batch_number" => batch_number} = params) do
+  def scroll_batch(conn, %{batch_number_param: batch_number} = params) do
     full_options =
       params
       |> select_block_type()
@@ -267,14 +372,38 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     })
   end
 
+  operation(:transactions,
+    summary: "List transactions in a specific block",
+    description: "Retrieves transactions included in a specific block with optional filtering and sorting.",
+    parameters:
+      base_params() ++
+        [block_hash_or_number_param(), transaction_type_param()] ++
+        define_paging_params(["block_number", "index", "items_count"]),
+    responses: [
+      ok:
+        {"Transactions in the specified block.", "application/json",
+         paginated_response(
+           items: Schemas.Transaction,
+           next_page_params_example: %{
+             "block_number" => 12_345_678,
+             "index" => 103,
+             "items_count" => 50
+           },
+           title_prefix: "BlockTransactions"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+  )
+
   @doc """
-  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/transactions` endpoint.
+  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number_param/transactions` endpoint.
   """
   @spec transactions(Plug.Conn.t(), map()) ::
           {:error, :not_found | {:invalid, :hash | :number}}
           | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
           | Plug.Conn.t()
-  def transactions(conn, %{"block_hash_or_number" => block_hash_or_number} = params) do
+  def transactions(conn, %{block_hash_or_number_param: block_hash_or_number} = params) do
     with {:ok, block} <- block_param_to_block(block_hash_or_number) do
       full_options =
         @transaction_necessity_by_association
@@ -300,8 +429,32 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
+  operation(:internal_transactions,
+    summary: "List internal transactions in a specific block",
+    description:
+      "Retrieves internal transactions included in a specific block with optional filtering by type and call type.",
+    parameters:
+      base_params() ++
+        [block_hash_or_number_param(), internal_transaction_type_param(), internal_transaction_call_type_param()] ++
+        define_paging_params(["block_index", "items_count"]),
+    responses: [
+      ok:
+        {"Internal transactions in the specified block.", "application/json",
+         paginated_response(
+           items: Schemas.InternalTransaction,
+           next_page_params_example: %{
+             "block_index" => 8,
+             "items_count" => 50
+           },
+           title_prefix: "BlockInternalTransactions"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+  )
+
   @doc """
-  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/internal-transactions` endpoint.
+  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number_param/internal-transactions` endpoint.
   Query params:
    - `type` - Filters internal transactions by type. Possible values: (#{Explorer.Chain.InternalTransaction.Type.values()})
    - `call_type` - Filters internal transactions by call type. Possible values: (#{Explorer.Chain.InternalTransaction.CallType.values()})
@@ -311,7 +464,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
           {:error, :not_found | {:invalid, :hash | :number}}
           | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
           | Plug.Conn.t()
-  def internal_transactions(conn, %{"block_hash_or_number" => block_hash_or_number} = params) do
+  def internal_transactions(conn, %{block_hash_or_number_param: block_hash_or_number} = params) do
     with {:ok, block} <- block_param_to_block(block_hash_or_number) do
       full_options =
         @internal_transaction_necessity_by_association
@@ -343,14 +496,37 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
+  operation(:withdrawals,
+    summary: "List withdrawals in a specific block",
+    description: "Retrieves validator withdrawals included in a specific block.",
+    parameters:
+      base_params() ++
+        [block_hash_or_number_param()] ++
+        define_paging_params(["index", "items_count"]),
+    responses: [
+      ok:
+        {"Withdrawals in the specified block.", "application/json",
+         paginated_response(
+           items: Schemas.Withdrawal,
+           next_page_params_example: %{
+             "index" => 88_192_653,
+             "items_count" => 50
+           },
+           title_prefix: "BlockWithdrawals"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+  )
+
   @doc """
-  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/withdrawals` endpoint.
+  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number_param/withdrawals` endpoint.
   """
   @spec withdrawals(Plug.Conn.t(), map()) ::
           {:error, :not_found | {:invalid, :hash | :number}}
           | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
           | Plug.Conn.t()
-  def withdrawals(conn, %{"block_hash_or_number" => block_hash_or_number} = params) do
+  def withdrawals(conn, %{block_hash_or_number_param: block_hash_or_number} = params) do
     with {:ok, block} <- block_param_to_block(block_hash_or_number) do
       full_options =
         [
@@ -376,8 +552,20 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
+  operation(:block_countdown,
+    summary: "Get countdown information for a target block number",
+    description:
+      "Calculates the estimated time remaining until a specified block number is reached based on current block and average block time.",
+    parameters: [block_number_param() | base_params()],
+    responses: [
+      ok: {"Block countdown information.", "application/json", Schemas.Block.Countdown},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+  )
+
   @doc """
-  Function to handle GET requests to `/api/v2/blocks/:block_number/countdown` endpoint.
+  Function to handle GET requests to `/api/v2/blocks/:block_number_param/countdown` endpoint.
   Calculates the estimated time remaining until a specified block number is reached
   based on the current block number and average block time.
 
@@ -395,7 +583,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
           | {:max_block, nil}
           | {:average_block_time, {:error, :disabled}}
           | {:remaining_blocks, 0}
-  def block_countdown(conn, %{"block_number" => block_number}) do
+  def block_countdown(conn, %{block_number_param: block_number}) do
     with {:format, {:ok, target_block_number}} <- {:format, param_to_block_number(block_number)},
          {:max_block, current_block_number} when not is_nil(current_block_number) <-
            {:max_block, BlockNumber.get_max()},
@@ -414,8 +602,31 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
+  operation(:beacon_deposits,
+    summary: "List beacon deposits in a specific block",
+    description: "Retrieves beacon deposits included in a specific block with pagination support.",
+    parameters:
+      base_params() ++
+        [block_hash_or_number_param()] ++
+        define_paging_params(["index", "items_count"]),
+    responses: [
+      ok:
+        {"Beacon deposits in the specified block.", "application/json",
+         paginated_response(
+           items: Schemas.Beacon.Deposit,
+           next_page_params_example: %{
+             "index" => 123,
+             "items_count" => 50
+           },
+           title_prefix: "BlockBeaconDeposits"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+  )
+
   @doc """
-  Handles `api/v2/blocks/:block_hash_or_number/beacon/deposits` endpoint.
+  Handles `api/v2/blocks/:block_hash_or_number_param/beacon/deposits` endpoint.
   Fetches beacon deposits included in a specific block with pagination support.
 
   This endpoint retrieves all beacon deposits that were included in the
@@ -428,7 +639,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   ## Parameters
   - `conn`: The Plug connection.
   - `params`: A map containing:
-    - `"block_hash_or_number"`: The block identifier (hash or number) to fetch
+    - `"block_hash_or_number_param"`: The block identifier (hash or number) to fetch
       deposits from.
     - Optional pagination parameter:
       - `"index"`: non-negative integer, the starting index for pagination.
@@ -446,7 +657,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
           {:error, :not_found | {:invalid, :hash | :number}}
           | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
           | Plug.Conn.t()
-  def beacon_deposits(conn, %{"block_hash_or_number" => block_hash_or_number} = params) do
+  def beacon_deposits(conn, %{block_hash_or_number_param: block_hash_or_number} = params) do
     with {:ok, block} <- block_param_to_block(block_hash_or_number) do
       full_options =
         [
