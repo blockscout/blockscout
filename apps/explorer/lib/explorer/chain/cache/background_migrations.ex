@@ -30,6 +30,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :arbitrum_da_records_normalization_finished,
     key: :sanitize_verified_addresses_finished,
     key: :smart_contract_language_finished,
+    key: :backfill_call_type_enum_finished,
     key: :heavy_indexes_create_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
     key: :heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished,
@@ -69,6 +70,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     AddressCurrentTokenBalanceTokenType,
     AddressTokenBalanceTokenType,
     ArbitrumDaRecordsNormalization,
+    BackfillCallTypeEnum,
     BackfillMultichainSearchDB,
     EmptyInternalTransactionsData,
     FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
@@ -149,6 +151,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       BackfillMultichainSearchDB,
       &set_backfill_multichain_search_db_finished/1
+    )
+  end
+
+  defp handle_fallback(:backfill_call_type_enum_finished) do
+    set_and_return_migration_status(
+      BackfillCallTypeEnum,
+      &set_backfill_call_type_enum_finished/1
     )
   end
 

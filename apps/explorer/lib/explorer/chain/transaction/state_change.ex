@@ -58,8 +58,12 @@ defmodule Explorer.Chain.Transaction.StateChange do
     end
   end
 
-  defp update_coin_balances_from_internal_transaction(%InternalTransaction{call_type: :delegatecall}, coin_balances),
-    do: coin_balances
+  defp update_coin_balances_from_internal_transaction(
+         %InternalTransaction{call_type: call_type, call_type_enum: call_type_enum},
+         coin_balances
+       )
+       when :delegatecall in [call_type, call_type_enum],
+       do: coin_balances
 
   defp update_coin_balances_from_internal_transaction(%InternalTransaction{index: 0}, coin_balances), do: coin_balances
 

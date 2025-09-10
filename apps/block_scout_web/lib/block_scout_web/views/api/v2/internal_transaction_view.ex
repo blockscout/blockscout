@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
     %{
       "error" => internal_transaction.error,
       "success" => is_nil(internal_transaction.error),
-      "type" => internal_transaction.call_type || internal_transaction.type,
+      "type" => InternalTransaction.call_type(internal_transaction) || internal_transaction.type,
       "transaction_hash" => internal_transaction.transaction_hash,
       "transaction_index" => internal_transaction.transaction_index,
       "from" =>
