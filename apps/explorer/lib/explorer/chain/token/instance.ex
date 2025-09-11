@@ -197,10 +197,9 @@ defmodule Explorer.Chain.Token.Instance do
         if Enum.empty?(types) do
           Token.allowed_nft_type_labels()
         else
-          types
+          Token.allowed_nft_type_labels() |> Enum.filter(&(&1 in types))
         end
       end)
-      |> Enum.sort()
 
     options
     |> Keyword.get(:paging_options, Chain.default_paging_options())

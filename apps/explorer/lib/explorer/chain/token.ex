@@ -144,14 +144,14 @@ defmodule Explorer.Chain.Token do
   @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block metadata_updated_at updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel volume_24h)a
 
   @doc """
-    Returns the list of allowed NFT type labels.
+    Returns the **ordered** list of allowed NFT type labels.
   """
   @spec allowed_nft_type_labels() :: [String.t()]
   def allowed_nft_type_labels,
     do: [
+      "ERC-721",
       "ERC-1155",
-      "ERC-404",
-      "ERC-721"
+      "ERC-404"
     ]
 
   @doc false

@@ -4871,15 +4871,15 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert Enum.count(response_2nd_page["items"]) == 50
       assert Enum.count(response_3rd_page["items"]) == 2
 
-      compare_item(Enum.at(token_instances_1155, 50), Enum.at(response["items"], 0))
-      compare_item(Enum.at(token_instances_1155, 1), Enum.at(response["items"], 49))
+      compare_item(Enum.at(token_instances_721, 50), Enum.at(response["items"], 0))
+      compare_item(Enum.at(token_instances_721, 1), Enum.at(response["items"], 49))
 
-      compare_item(Enum.at(token_instances_1155, 0), Enum.at(response_2nd_page["items"], 0))
-      compare_item(Enum.at(token_instances_721, 50), Enum.at(response_2nd_page["items"], 1))
-      compare_item(Enum.at(token_instances_721, 2), Enum.at(response_2nd_page["items"], 49))
+      compare_item(Enum.at(token_instances_721, 0), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(token_instances_1155, 50), Enum.at(response_2nd_page["items"], 1))
+      compare_item(Enum.at(token_instances_1155, 2), Enum.at(response_2nd_page["items"], 49))
 
-      compare_item(Enum.at(token_instances_721, 1), Enum.at(response_3rd_page["items"], 0))
-      compare_item(Enum.at(token_instances_721, 0), Enum.at(response_3rd_page["items"], 1))
+      compare_item(Enum.at(token_instances_1155, 1), Enum.at(response_3rd_page["items"], 0))
+      compare_item(Enum.at(token_instances_1155, 0), Enum.at(response_3rd_page["items"], 1))
 
       assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       assert_schema(response_2nd_page, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
@@ -4892,8 +4892,18 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     } do
       address = insert(:address)
 
-      # Insert 30 ERC-1155 (with balances)
+      # Insert 30 ERC-721 (owned directly)
       for _ <- 1..30 do
+        erc_721_token = insert(:token, type: "ERC-721")
+
+        insert(:token_instance,
+          owner_address_hash: address.hash,
+          token_contract_address_hash: erc_721_token.contract_address_hash
+        )
+      end
+
+      # Insert 25 ERC-1155 (with balances)
+      for _ <- 1..25 do
         token = insert(:token, type: "ERC-1155")
 
         ti =
@@ -4910,8 +4920,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         )
       end
 
-      # Insert 25 ERC-404 (with balances)
-      for _ <- 1..25 do
+      # Insert 10 ERC-404 (with balances)
+      for _ <- 1..10 do
         token = insert(:token, type: "ERC-404")
 
         ti =
@@ -4928,16 +4938,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         )
       end
 
-      # Insert 10 ERC-721 (owned directly)
-      for _ <- 1..10 do
-        erc_721_token = insert(:token, type: "ERC-721")
-
-        insert(:token_instance,
-          owner_address_hash: address.hash,
-          token_contract_address_hash: erc_721_token.contract_address_hash
-        )
-      end
-
       # Page 1
       page1_resp = conn |> get(endpoint.(address.hash)) |> json_response(200)
       assert Enum.count(page1_resp["items"]) == 50
@@ -4945,8 +4945,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       # Expect mixture of ERC-721 and ERC-1155 only on first page (by current logic order)
       assert %{
-               "ERC-1155" => 30,
-               "ERC-404" => 20
+               "ERC-721" => 30,
+               "ERC-1155" => 20
              } = Enum.frequencies_by(page1_resp["items"], & &1["token_type"])
 
       page2_resp = conn |> get(endpoint.(address.hash), page1_resp["next_page_params"]) |> json_response(200)
@@ -4955,8 +4955,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert page2_resp["next_page_params"] == nil
 
       assert %{
-               "ERC-404" => 5,
-               "ERC-721" => 10
+               "ERC-1155" => 5,
+               "ERC-404" => 10
              } = Enum.frequencies_by(page2_resp["items"], & &1["token_type"])
     end
 
