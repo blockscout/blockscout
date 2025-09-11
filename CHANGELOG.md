@@ -19,6 +19,7 @@
 
 ### 🐛 Bug Fixes
 
+- Adjustments in address nft and collections endpoints ([#13192](https://github.com/blockscout/blockscout/pull/13192))
 - Fix batch's number processing from the socket event ([#13181](https://github.com/blockscout/blockscout/pull/13181))
 - Delete PTOs for forked transactions ([#13145](https://github.com/blockscout/blockscout/pull/13145))
 - Pagination and filtering issues in `/addresses/:hash/nft` ([#13175](https://github.com/blockscout/blockscout/pull/13175))
