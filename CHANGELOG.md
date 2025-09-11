@@ -55,6 +55,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Remove quantile_estimator dep ([#13190](https://github.com/blockscout/blockscout/pull/13190))
 - Change release workflow ([#13087](https://github.com/blockscout/blockscout/issues/13087))
 - Update and format pull request template ([#13028](https://github.com/blockscout/blockscout/issues/13028))
 - Add final check for ReindexDuplicatedInternalTransactions ([#13091](https://github.com/blockscout/blockscout/issues/13091))
