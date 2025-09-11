@@ -15,7 +15,12 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
     json_rpc_named_arguments: [:indexer, :json_rpc_named_arguments]
 
   import Explorer.Helper, only: [abi_to_method_id: 1]
-  import Indexer.Helper, only: [read_contracts_with_retries: 4]
+
+  import Indexer.Helper,
+    only: [
+      read_contracts_with_retries: 4,
+      read_contracts_with_retries_by_chunks: 3
+    ]
 
   @repeated_request_max_retries 3
 
@@ -101,37 +106,41 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
     }
   }
 
+  @abis @abi |> Map.values() |> Enum.map(&Map.values/1) |> List.flatten()
+  @chunk_size @abis |> Enum.count()
+
   @doc """
   Read Celo account data from core smart contracts.
   """
-  @spec fetch(String.t()) :: {:ok, map()} | :error
-  def fetch(account_address) do
-    account_address
+  @spec fetch([String.t()]) :: {:ok, [map()]} | :error
+  def fetch(account_addresses) do
+    account_addresses
     |> do_fetch()
     |> case do
-      {:ok,
-       [
-         {:ok, [name]},
-         {:ok, [url]},
-         {:ok, [locked_gold]},
-         {:ok, [nonvoting_locked_gold]},
-         {:ok, [is_validator]},
-         {:ok, [is_validator_group]}
-       ]} ->
-        type =
-          cond do
-            is_validator ->
-              :validator
+      {:ok, responses} ->
+        account_addresses
+        |> Enum.zip(Enum.chunk_every(responses, @chunk_size))
+        |> Enum.map(fn {account_address,
+                        [
+                          {:ok, [name]},
+                          {:ok, [url]},
+                          {:ok, [locked_gold]},
+                          {:ok, [nonvoting_locked_gold]},
+                          {:ok, [is_validator]},
+                          {:ok, [is_validator_group]}
+                        ]} ->
+          type =
+            cond do
+              is_validator ->
+                :validator
 
-            is_validator_group ->
-              :group
+              is_validator_group ->
+                :group
 
-            true ->
-              :regular
-          end
+              true ->
+                :regular
+            end
 
-        {
-          :ok,
           %{
             address_hash: account_address,
             name: truncate(name),
@@ -140,7 +149,8 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
             nonvoting_locked_celo: nonvoting_locked_gold,
             type: type
           }
-        }
+        end)
+        |> then(&{:ok, &1})
 
       {:error, errors} ->
         Logger.error(fn ->
