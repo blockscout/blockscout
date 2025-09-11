@@ -86,8 +86,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       batches
       |> Enum.map(fn fs ->
         Task.async(fn ->
-          l2_block_number_from = TransactionBatch.edge_l2_block_number(fs.id, :min)
-          l2_block_number_to = TransactionBatch.edge_l2_block_number(fs.id, :max)
+          l2_block_number_from = TransactionBatch.edge_l2_block_number(fs.id, :min, @api_true)
+          l2_block_number_to = TransactionBatch.edge_l2_block_number(fs.id, :max, @api_true)
 
           l2_block_range =
             if not is_nil(l2_block_number_from) and not is_nil(l2_block_number_to) do

@@ -105,8 +105,8 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
     batch = select_repo(options).one(query)
 
     if not is_nil(batch) do
-      l2_block_number_from = TransactionBatch.edge_l2_block_number(number, :min)
-      l2_block_number_to = TransactionBatch.edge_l2_block_number(number, :max)
+      l2_block_number_from = TransactionBatch.edge_l2_block_number(number, :min, options)
+      l2_block_number_to = TransactionBatch.edge_l2_block_number(number, :max, options)
       transactions_count = Transaction.transaction_count_for_block_range(l2_block_number_from..l2_block_number_to)
 
       {batch_data_container, blobs} =
