@@ -136,6 +136,73 @@ defmodule Explorer.Chain.Token.Instance do
     do:
       from(i in __MODULE__, where: i.token_contract_address_hash == ^token_contract_address and i.token_id == ^token_id)
 
+  @spec page_nft_list(
+          binary() | Hash.Address.t(),
+          keyword(),
+          (PagingOptions.t() -> String.t() | nil),
+          %{
+            String.t() => (binary()
+                           | Hash.Address.t(),
+                           keyword() ->
+                             [any()])
+          }
+        ) :: [any()]
+  defp page_nft_list(address_hash, options, get_type, type_to_fetch_func) when is_list(options) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+    page_size = paging_options.page_size
+    remaining_types = remaining_token_types(options, get_type)
+
+    {acc, _filled} =
+      Enum.reduce_while(remaining_types, {[], 0}, fn type, {list, count} ->
+        options =
+          if Enum.empty?(list) do
+            options
+          else
+            Keyword.put(options, :paging_options, %PagingOptions{
+              page_size: page_size - count
+            })
+          end
+
+        fetch = Map.get(type_to_fetch_func, type, fn _, _ -> [] end)
+        fetched = fetch.(address_hash, options)
+        new_list = list ++ fetched
+        new_count = count + length(fetched)
+
+        if new_count >= page_size do
+          {:halt, {Enum.take(new_list, page_size), page_size}}
+        else
+          {:cont, {new_list, new_count}}
+        end
+      end)
+
+    acc
+  end
+
+  @spec remaining_token_types(keyword(), (PagingOptions.t() -> String.t() | nil)) :: [String.t()]
+  defp remaining_token_types(options, get_type) do
+    token_types =
+      options
+      |> Keyword.get(:token_type, [])
+      |> then(fn types ->
+        if Enum.empty?(types) do
+          Token.allowed_nft_type_labels()
+        else
+          Token.allowed_nft_type_labels() |> Enum.filter(&(&1 in types))
+        end
+      end)
+
+    options
+    |> Keyword.get(:paging_options, Chain.default_paging_options())
+    |> get_type.()
+    |> case do
+      type when is_binary(type) ->
+        Enum.drop_while(token_types, &(&1 != type))
+
+      _ ->
+        token_types
+    end
+  end
+
   @doc """
   Paginated NFT instances owned by an address.
 
@@ -157,72 +224,19 @@ defmodule Explorer.Chain.Token.Instance do
   """
   @spec nft_list(binary() | Hash.Address.t(), keyword()) :: [__MODULE__.t()]
   def nft_list(address_hash, options) when is_list(options) do
-    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
-    page_size = paging_options.page_size
-    remaining_types = remaining_token_types(options)
-
-    {acc, _filled} =
-      Enum.reduce_while(remaining_types, {[], 0}, fn type, {list, count} ->
-        options =
-          if Enum.empty?(list) do
-            options
-          else
-            Keyword.put(options, :paging_options, %PagingOptions{
-              page_size: page_size - count
-            })
-          end
-
-        fetched = fetch_by_type_and_address_hash(type, address_hash, options)
-        new_list = list ++ fetched
-        new_count = count + length(fetched)
-
-        if new_count >= page_size do
-          {:halt, {Enum.take(new_list, page_size), page_size}}
-        else
-          {:cont, {new_list, new_count}}
-        end
-      end)
-
-    acc
-  end
-
-  # Drop all types until start type (so we continue where we left off)
-  # Accumulate results sequentially per type until we fill the page
-  @spec remaining_token_types(keyword()) :: [String.t()]
-  defp remaining_token_types(options) do
-    token_types =
-      options
-      |> Keyword.get(:token_type, [])
-      |> then(fn types ->
-        if Enum.empty?(types) do
-          Token.allowed_nft_type_labels()
-        else
-          Token.allowed_nft_type_labels() |> Enum.filter(&(&1 in types))
-        end
-      end)
-
-    options
-    |> Keyword.get(:paging_options, Chain.default_paging_options())
-    |> case do
-      %PagingOptions{
-        key: {_contract_address_hash, _token_id, type}
+    page_nft_list(
+      address_hash,
+      options,
+      fn
+        %PagingOptions{key: {_, _, type}} -> type
+        _ -> nil
+      end,
+      %{
+        "ERC-721" => &erc_721_token_instances_by_owner_address_hash/2,
+        "ERC-1155" => &erc_1155_token_instances_by_address_hash/2,
+        "ERC-404" => &erc_404_token_instances_by_address_hash/2
       }
-      when is_binary(type) ->
-        Enum.drop_while(token_types, &(&1 != type))
-
-      _ ->
-        token_types
-    end
-  end
-
-  @spec fetch_by_type_and_address_hash(binary(), binary() | Hash.Address.t(), keyword()) :: [__MODULE__.t()]
-  defp fetch_by_type_and_address_hash(type, address_hash, options) do
-    case type do
-      "ERC-721" -> erc_721_token_instances_by_owner_address_hash(address_hash, options)
-      "ERC-1155" -> erc_1155_token_instances_by_address_hash(address_hash, options)
-      "ERC-404" -> erc_404_token_instances_by_address_hash(address_hash, options)
-      _ -> []
-    end
+    )
   end
 
   @doc """
@@ -357,44 +371,21 @@ defmodule Explorer.Chain.Token.Instance do
 
   @preloaded_nfts_limit 9
 
-  @spec nft_collections(binary() | Hash.Address.t(), keyword) :: list
-  def nft_collections(address_hash, options \\ [])
-
+  @spec nft_collections(binary() | Hash.Address.t(), keyword()) :: [CurrentTokenBalance.t()]
   def nft_collections(address_hash, options) when is_list(options) do
-    nft_collections(address_hash, Keyword.get(options, :token_type, []), options)
-  end
-
-  defp nft_collections(address_hash, ["ERC-721"], options) do
-    erc_721_collections_by_address_hash(address_hash, options)
-  end
-
-  defp nft_collections(address_hash, ["ERC-1155"], options) do
-    erc_1155_collections_by_address_hash(address_hash, options)
-  end
-
-  defp nft_collections(address_hash, ["ERC-404"], options) do
-    erc_404_collections_by_address_hash(address_hash, options)
-  end
-
-  defp nft_collections(address_hash, _, options) do
-    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
-
-    case paging_options do
-      %PagingOptions{key: {_contract_address_hash, "ERC-1155"}} ->
-        erc_1155_collections_by_address_hash(address_hash, options)
-
-      _ ->
-        erc_721 = erc_721_collections_by_address_hash(address_hash, options)
-
-        if length(erc_721) == paging_options.page_size do
-          erc_721
-        else
-          erc_1155 = erc_1155_collections_by_address_hash(address_hash, options)
-          erc_404 = erc_404_collections_by_address_hash(address_hash, options)
-
-          (erc_721 ++ erc_1155 ++ erc_404) |> Enum.take(paging_options.page_size)
-        end
-    end
+    page_nft_list(
+      address_hash,
+      options,
+      fn
+        %PagingOptions{key: {_, type}} -> type
+        _ -> nil
+      end,
+      %{
+        "ERC-721" => &erc_721_collections_by_address_hash/2,
+        "ERC-1155" => &erc_1155_collections_by_address_hash/2,
+        "ERC-404" => &erc_404_collections_by_address_hash/2
+      }
+    )
   end
 
   @spec erc_721_collections_by_address_hash(binary() | Hash.Address.t(), keyword) :: [CurrentTokenBalance.t()]
