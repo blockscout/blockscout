@@ -583,7 +583,7 @@ defmodule Explorer.Chain.InternalTransaction do
     (query || __MODULE__)
     |> where(
       [it],
-      fragment("(SELECT block_hash FROM pending_block_operations WHERE block_hash = ? LIMIT 1) IS NULL", it.block_hash)
+      fragment("NOT EXISTS (SELECT 1 FROM pending_block_operations WHERE block_hash = ?)", it.block_hash)
     )
   end
 
