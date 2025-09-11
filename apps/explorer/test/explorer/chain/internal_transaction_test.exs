@@ -1138,39 +1138,42 @@ defmodule Explorer.Chain.InternalTransactionTest do
       assert Enum.member?(result, {second_transaction_hash, second_index})
     end
 
-    test "with consensus transactions and blocks only" do
-      BackgroundMigrations.set_transactions_denormalization_finished(true)
-      block_non_consensus = insert(:block, number: 2000, consensus: false)
-      block_consensus = insert(:block, number: 3000)
+    # todo: This test is temporarily disabled because this check is removed for the sake of performance:
+    # |> where([internal_transaction, transaction], transaction.block_hash == internal_transaction.block_hash)
+    # Return the test back when reorg data will be moved out from the main tables.
+    #   test "with consensus transactions and blocks only" do
+    #     BackgroundMigrations.set_transactions_denormalization_finished(true)
+    #     block_non_consensus = insert(:block, number: 2000, consensus: false)
+    #     block_consensus = insert(:block, number: 3000)
 
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(block_consensus)
+    #     transaction =
+    #       :transaction
+    #       |> insert()
+    #       |> with_block(block_consensus)
 
-      insert(:internal_transaction,
-        index: 1,
-        transaction: transaction,
-        block_number: transaction.block_number,
-        block_hash: block_non_consensus.hash,
-        block_index: 1,
-        transaction_index: transaction.index
-      )
+    #     insert(:internal_transaction,
+    #       index: 1,
+    #       transaction: transaction,
+    #       block_number: transaction.block_number,
+    #       block_hash: block_non_consensus.hash,
+    #       block_index: 1,
+    #       transaction_index: transaction.index
+    #     )
 
-      consensus_it =
-        insert(:internal_transaction,
-          index: 2,
-          transaction: transaction,
-          block_number: transaction.block_number,
-          block_hash: block_consensus.hash,
-          block_index: 2,
-          transaction_index: transaction.index
-        )
+    #     consensus_it =
+    #       insert(:internal_transaction,
+    #         index: 2,
+    #         transaction: transaction,
+    #         block_number: transaction.block_number,
+    #         block_hash: block_consensus.hash,
+    #         block_index: 2,
+    #         transaction_index: transaction.index
+    #       )
 
-      assert [{consensus_it.transaction_hash, consensus_it.index, consensus_it.block_hash}] ==
-               []
-               |> InternalTransaction.fetch()
-               |> Enum.map(&{&1.transaction_hash, &1.index, &1.block_hash})
-    end
+    #     assert [{consensus_it.transaction_hash, consensus_it.index, consensus_it.block_hash}] ==
+    #              []
+    #              |> InternalTransaction.fetch()
+    #              |> Enum.map(&{&1.transaction_hash, &1.index, &1.block_hash})
+    #   end
   end
 end
