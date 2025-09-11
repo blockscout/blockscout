@@ -520,7 +520,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "transaction_tag" =>
         GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_transaction? && conn)),
       "has_error_in_internal_transactions" => transaction.has_error_in_internal_transactions,
-      "authorization_list" => authorization_list(transaction.signed_authorizations)
+      "authorization_list" => authorization_list(transaction.signed_authorizations),
+      "is_pending_update" => transaction.block && transaction.block.refetch_needed
     }
 
     result
@@ -895,18 +896,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp with_chain_type_fields(result, transaction, single_transaction?, conn, watchlist_names) do
     chain_type = Application.get_env(:explorer, :chain_type)
     do_with_chain_type_fields(chain_type, result, transaction, single_transaction?, conn, watchlist_names)
-  end
-
-  defp do_with_chain_type_fields(
-         :polygon_edge,
-         result,
-         transaction,
-         true = _single_transaction?,
-         conn,
-         _watchlist_names
-       ) do
-    # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-    BlockScoutWeb.API.V2.PolygonEdgeView.extend_transaction_json_response(result, transaction.hash, conn)
   end
 
   defp do_with_chain_type_fields(

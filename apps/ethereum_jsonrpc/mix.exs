@@ -23,7 +23,7 @@ defmodule EthereumJSONRPC.MixProject do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "9.0.2"
+      version: "9.1.0"
     ]
   end
 
@@ -69,7 +69,7 @@ defmodule EthereumJSONRPC.MixProject do
       {:logger_file_backend, "~> 0.0.10"},
       # Mocking `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` so we avoid hitting real chains for local testing
       {:mox, "~> 1.1.0", only: [:test]},
-      {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
+      {:prometheus_ex, "~> 5.0.0", override: true},
       # Tracing
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog

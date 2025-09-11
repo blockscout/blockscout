@@ -17,7 +17,7 @@ on:
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
-  RELEASE_VERSION: 9.0.2
+  RELEASE_VERSION: 9.1.0
 
 jobs:
   matrix-builder:
@@ -51,7 +51,7 @@ jobs:
               "neon"
             ];
 
-            const extraChainTypes = ["suave", "polygon_edge"];
+            const extraChainTypes = ["suave"];
 
             // Chain type matrix we use in master branch
             const allChainTypes = [].concat(defaultChainTypes, chainTypes, extraChainTypes);
@@ -64,7 +64,7 @@ jobs:
     name: Build and Cache deps
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
@@ -108,7 +108,7 @@ jobs:
       - build-and-cache
       - matrix-builder
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
@@ -156,14 +156,14 @@ jobs:
           fi
 
       - name: Checkout specs repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ vars.API_SPECS_REPOSITORY }}
           token: ${{ secrets.API_SPECS_PAT }}
           path: api-specs
 
       - name: Download all swagger specs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: openapi-spec-*
           merge-multiple: true

@@ -5,8 +5,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   alias BlockScoutWeb.Schemas.API.V2.Transaction.Fee
   alias OpenApiSpex.Schema
 
-  @polygon_edge_deposit_withdrawal_schema %Schema{type: :object, nullable: true}
-
   @zksync_schema %Schema{
     type: :object,
     nullable: false,
@@ -145,11 +143,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   # credo:disable-for-next-line
   def chain_type_fields(schema) do
     case Application.get_env(:explorer, :chain_type) do
-      :polygon_edge ->
-        schema
-        |> put_in([:properties, :polygon_edge_deposit], @polygon_edge_deposit_withdrawal_schema)
-        |> put_in([:properties, :polygon_edge_withdrawal], @polygon_edge_deposit_withdrawal_schema)
-
       :polygon_zkevm ->
         schema
         |> put_in([:properties, :zkevm_batch_number], %Schema{type: :integer, nullable: true})
@@ -428,7 +421,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
           description: "Transaction tag set in My Account"
         },
         has_error_in_internal_transactions: %Schema{type: :boolean, nullable: true},
-        authorization_list: %Schema{type: :array, items: SignedAuthorization, nullable: true}
+        authorization_list: %Schema{type: :array, items: SignedAuthorization, nullable: true},
+        is_pending_update: %Schema{type: :boolean, nullable: true}
       },
       required: [
         :hash,
@@ -466,7 +460,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         :transaction_types,
         :transaction_tag,
         :has_error_in_internal_transactions,
-        :authorization_list
+        :authorization_list,
+        :is_pending_update
       ]
     }
     |> ChainTypeCustomizations.chain_type_fields()

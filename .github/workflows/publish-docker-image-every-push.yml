@@ -11,14 +11,18 @@ on:
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
-  RELEASE_VERSION: 9.0.2
+  RELEASE_VERSION: 9.1.0
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup repo
         uses: ./.github/actions/setup-repo
         id: setup
@@ -34,9 +38,9 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
-          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache,mode=max
-          tags: ghcr.io/blockscout/blockscout:master, ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout-private:master, ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -56,7 +60,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}-indexer
+          tags: ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -77,8 +81,8 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout:buildcache
-          tags: ghcr.io/blockscout/blockscout:frontend-main
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache
+          tags: ghcr.io/blockscout/blockscout-private:frontend-main
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64

@@ -159,7 +159,8 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     end
 
     test "preloads to_address smart contract verified", %{conn: conn} do
-      TestHelper.get_all_proxies_implementation_zero_addresses()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       transaction = insert(:transaction_to_verified_contract)
 
