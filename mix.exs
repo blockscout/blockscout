@@ -94,9 +94,6 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
-      {:phoenix_html_helpers, "~> 1.0"},
-      {:phoenix, "== 1.6.16"},
-      {:phoenix_live_view, "~> 1.1"},
       {:prometheus_ex, "~> 5.0.0", override: true},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.8", override: true},
       {:tesla, "~> 1.15.3"},
