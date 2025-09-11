@@ -51,6 +51,7 @@
 ### ⚡ Performance
 
 - Optimize maybe_hide_scam_addresses/3 query ([#12927](https://github.com/blockscout/blockscout/issues/12927))
+- Fix perf of finding non pending block in internal transactions related queries ([#13189](https://github.com/blockscout/blockscout/pull/13189))
 
 ### ⚙️ Miscellaneous Tasks
 
