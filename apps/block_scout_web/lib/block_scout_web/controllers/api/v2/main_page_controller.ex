@@ -10,11 +10,12 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+  import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
   case @chain_type do
     :celo ->
       @chain_type_transaction_necessity_by_association %{
-        :gas_token => :optional
+        [gas_token: reputation_association()] => :optional
       }
 
     _ ->

@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.Notifier do
   case @chain_type do
     :celo ->
       @chain_type_transaction_associations [
-        :gas_token
+        gas_token: Reputation.reputation_association()
       ]
 
     _ ->
