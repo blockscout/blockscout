@@ -10,14 +10,6 @@ defmodule Explorer.Chain.Celo.EpochReward do
 
   @required_attrs ~w(epoch_number)a
   @optional_attrs ~w(reserve_bolster_transfer_log_index community_transfer_log_index carbon_offsetting_transfer_log_index)a
-  # @optional_attrs [
-  #   :reserve_bolster_transfer_log_index,
-  #   :reserve_bolster_transfer_value,
-  #   :community_transfer_log_index,
-  #   :community_transfer_value,
-  #   :carbon_offsetting_transfer_log_index,
-  #   :carbon_offsetting_transfer_value
-  # ]
   @allowed_attrs @required_attrs ++ @optional_attrs
 
   @primary_key false

@@ -12,6 +12,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_blobs: 2,
       async_import_block_rewards: 2,
       async_import_celo_epoch_block_operations: 2,
+      async_import_celo_accounts: 2,
       async_import_coin_balances: 2,
       async_import_created_contract_codes: 2,
       async_import_filecoin_addresses_info: 2,
@@ -146,6 +147,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_token_instances(imported)
     async_import_blobs(imported, realtime?)
     async_import_celo_epoch_block_operations(imported, realtime?)
+    async_import_celo_accounts(imported, realtime?)
     async_import_filecoin_addresses_info(imported, realtime?)
     async_import_signed_authorizations_statuses(imported, realtime?)
   end
