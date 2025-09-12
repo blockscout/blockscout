@@ -1,5 +1,111 @@
 # Changelog
 
+## 9.1.0
+
+### 🚀 Features
+
+- beacon deposits ([#12985](https://github.com/blockscout/blockscout/pull/12985))
+- on-demand bytecode fetching on smart contract verification requests ([#10724](https://github.com/blockscout/blockscout/issues/10724))
+- Improved proxy detection ([#12846](https://github.com/blockscout/blockscout/issues/12846))
+- Add `reputation` property where applicable ([#13070](https://github.com/blockscout/blockscout/issues/13070))
+- Add envs to configure RemoteIp lib usage ([#13082](https://github.com/blockscout/blockscout/issues/13082))
+- Add possibility to forward event notification to another DB ([#13064](https://github.com/blockscout/blockscout/issues/13064))
+- Add x-api-key header ([#13076](https://github.com/blockscout/blockscout/issues/13076))
+- Add token_type to token transfer API response ([#13038](https://github.com/blockscout/blockscout/issues/13038))
+- Export main page counters to Multichain service ([#13007](https://github.com/blockscout/blockscout/issues/13007))
+- Add methodId to txlist rpc method ([#13043](https://github.com/blockscout/blockscout/issues/13043))
+- Runtime config option to disable file logging ([#12805](https://github.com/blockscout/blockscout/issues/12805))
+- Add celo-specific APIv1 `getepoch` action ([#12853](https://github.com/blockscout/blockscout/issues/12853))
+
+### 🐛 Bug Fixes
+
+- Fix batch's number processing from the socket event ([#13181](https://github.com/blockscout/blockscout/pull/13181))
+- Delete PTOs for forked transactions ([#13145](https://github.com/blockscout/blockscout/pull/13145))
+- Pagination and filtering issues in `/addresses/:hash/nft` ([#13175](https://github.com/blockscout/blockscout/pull/13175))
+- Fix reputation preload for ERC-404 collections ([#13174](https://github.com/blockscout/blockscout/pull/13174))
+- Add reputation to token, rework reputation preload ([#13149](https://github.com/blockscout/blockscout/pull/13149))
+- Replace get_constant_by_key with get_constant_value in get_last_processed_token_address_hash ([#13118](https://github.com/blockscout/blockscout/issues/13118))
+- Duplicates of smart contracts additional sources ([#13018](https://github.com/blockscout/blockscout/issues/13018))
+- Set  for read ops in NFT backfillers ([#13116](https://github.com/blockscout/blockscout/issues/13116))
+- Return internal transactions for consensus blocks only in /api/v2/internal-transactions ([#13041](https://github.com/blockscout/blockscout/issues/13041))
+- Fix recv timeout option in Universal proxy config ([#13046](https://github.com/blockscout/blockscout/issues/13046))
+- Fix failing ETH RPC tests ([#13099](https://github.com/blockscout/blockscout/issues/13099))
+- Escape only significant characters in tokens ([#13078](https://github.com/blockscout/blockscout/issues/13078))
+- `/api/v2/addresses/:hash/token-transfers` returns 500 on celo ([#13050](https://github.com/blockscout/blockscout/issues/13050))
+- RuntimeEnvHelper usage in Auth0.Migrated ([#13075](https://github.com/blockscout/blockscout/issues/13075))
+- Fix no function clause matching in Explorer.Chain.Transaction.decoded_input_data/5 ([#13055](https://github.com/blockscout/blockscout/issues/13055))
+- Fix Postgres errors in Explorer.Migrator.BackfillMetadataURL ([#13063](https://github.com/blockscout/blockscout/issues/13063))
+- Fix multichain search queue export bug processing ([#13049](https://github.com/blockscout/blockscout/issues/13049))
+- Csv export for celo l2 epoch rewards on address ([#12815](https://github.com/blockscout/blockscout/issues/12815))
+- Change signed_authorizations chain_id type to numeric ([#13042](https://github.com/blockscout/blockscout/issues/13042))
+- Address api spec for `filecoin` and `zilliqa` chain types ([#12996](https://github.com/blockscout/blockscout/issues/12996))
+- Token type filtering to support multiple types with OR logic ([#13008](https://github.com/blockscout/blockscout/issues/13008))
+- Don't validate address hash for common blocks channels ([#13020](https://github.com/blockscout/blockscout/issues/13020))
+- Fix matching in current token balances import filter ([#12930](https://github.com/blockscout/blockscout/issues/12930))
+- Expand indexer timeout exception definition ([#12748](https://github.com/blockscout/blockscout/issues/12748))
+
+### 🚜 Refactor
+
+- Remove public tags request functionality ([#13006](https://github.com/blockscout/blockscout/issues/13006))
+
+### ⚡ Performance
+
+- Optimize maybe_hide_scam_addresses/3 query ([#12927](https://github.com/blockscout/blockscout/issues/12927))
+
+### ⚙️ Miscellaneous Tasks
+
+- Change release workflow ([#13087](https://github.com/blockscout/blockscout/issues/13087))
+- Update and format pull request template ([#13028](https://github.com/blockscout/blockscout/issues/13028))
+- Add final check for ReindexDuplicatedInternalTransactions ([#13091](https://github.com/blockscout/blockscout/issues/13091))
+- Remove obsolete circleci config ([#13097](https://github.com/blockscout/blockscout/issues/13097))
+- Replace ReindexDuplicatedInternalTransactions grouping field ([#13084](https://github.com/blockscout/blockscout/issues/13084))
+- Bump default rps to 5 ([#13089](https://github.com/blockscout/blockscout/issues/13089))
+- Add `is_pending_update` flag to block and transaction API endpoints ([#13013](https://github.com/blockscout/blockscout/issues/13013))
+- Bump actions major versions ([#13077](https://github.com/blockscout/blockscout/issues/13077))
+- Move token transfers to a separate event handler ([#13068](https://github.com/blockscout/blockscout/issues/13068))
+- Remove Polygon Edge modules and chain type ([#13056](https://github.com/blockscout/blockscout/issues/13056))
+- Cover token info export to Multichain service by unit tests ([#12899](https://github.com/blockscout/blockscout/issues/12899))
+- Route left API DB requests from master to read DB replica ([#12896](https://github.com/blockscout/blockscout/issues/12896))
+- Refactor usage of delete_parameters_from_next_page_params/1 ([#13005](https://github.com/blockscout/blockscout/issues/13005))
+- Move address nonce updating to a separate process ([#12941](https://github.com/blockscout/blockscout/issues/12941))
+- Catchup fetcher various improvements ([#12866](https://github.com/blockscout/blockscout/issues/12866))
+- Add disconnect_on_error_codes param to repo config ([#12800](https://github.com/blockscout/blockscout/issues/12800))
+- Move addresses to a separate import stage ([#12857](https://github.com/blockscout/blockscout/issues/12857))
+
+### New ENV variables
+
+| Variable              | Description                                                                                                                                                      | Parameters                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `DISABLE_FILE_LOGGING`                                  | Disables file-based logging when set to `true`. When enabled, application logs will only be written to stdout/stderr.                                                                                                                                                                                                                                                                                                                              | Version: v9.1.0\+ <br />Default: `false` <br/>Applications: API, Indexer                                                                                                                                                                                                                                                                            |
+| `API_RATE_LIMIT_REMOTE_IP_HEADERS`                | Comma separated list of HTTP headers to extract the real client IP address when Blockscout is behind a proxy for rate limiting purposes. Implemented in [#12386](https://github.com/blockscout/blockscout/pull/13082)                                 | Version: v9.1.0\+ <br />Default: `x-forwarded-for` <br />Applications: API               |
+| `API_RATE_LIMIT_REMOTE_IP_KNOWN_PROXIES`          | Comma separated list of trusted proxy IP addresses or CIDR ranges that are allowed to set the client IP headers for rate limiting. Implemented in [#12386](https://github.com/blockscout/blockscout/pull/13082)                                       | Version: v9.1.0\+ <br />Default: `(empty)` <br />Applications: API                       |
+| `INDEXER_DISABLE_OPTIMISM_INTEROP_MULTICHAIN_EXPORT` | Disables exporting of interop messages to Multichain service. Implemented in [#13051](https://github.com/blockscout/blockscout/pull/13051).                                                                                                                                                                                                                                                                                                                                                                                                                                   | Version: v9.1.0\+ <br />Default: `true` <br />Applications: Indexer                                        |
+| `MICROSERVICE_MULTICHAIN_SEARCH_COUNTERS_CHUNK_SIZE`                              | Chunk size of counters while exporting to Multichain Search DB. Implemented in [#13007](https://github.com/blockscout/blockscout/pull/13007).                                                                                                                   | Version: v9.1.0\+ <br />Default: `1000`<br />Applications: Indexer            |
+| `INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_FETCHER`              | If `true`, multichain DB counters export fetcher doesn't run. Implemented in [#13007](https://github.com/blockscout/blockscout/pull/13007).                                                                                                                     | Version: v9.1.0\+ <br />Default: `false`<br />Applications: Indexer           |
+| `INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_BATCH_SIZE`                   | Batch size for multichain DB counters export fetcher. Implemented in [#13007](https://github.com/blockscout/blockscout/pull/13007).                                                                                                                             | Version: v9.1.0\+ <br />Default: `1000`<br />Applications: Indexer            |
+| `INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_CONCURRENCY`                  | Concurrency for multichain DB counters export fetcher. Implemented in [#13007](https://github.com/blockscout/blockscout/pull/13007).                                                                                                                            | Version: v9.1.0\+ <br />Default: `10`<br />Applications: Indexer              |
+| `INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_ENQUEUE_BUSY_WAITING_TIMEOUT` | Timeout before new attempt to append item to multichain DB counters export queue if it's full. [Time format](backend-env-variables.md#time-format). Implemented in [#13007](https://github.com/blockscout/blockscout/pull/13007).                               | Version: v9.1.0\+ <br />Default: `1s`<br />Applications: Indexer              |
+| `INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_MAX_QUEUE_SIZE`               | Maximum size of multichain DB counters export queue. Implemented in [#13007](https://github.com/blockscout/blockscout/pull/13007).                                                                                                                              | Version: v9.1.0\+ <br />Default: `1000`<br />Applications: Indexer            |
+| `INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_INIT_QUERY_LIMIT`             | Limit of the init query for processing the counters export queue to the Multichain DB. Implemented in [#13007](https://github.com/blockscout/blockscout/pull/13007).                                                                                            | Version: v9.1.0\+ <br />Default: `1000` <br />Applications: Indexer           |
+
+
+
+### Deprecated ENV variables
+
+| Variable                                              | Required | Description                                                                                                                                                                                                                                                                                                                                        | Default                                                                                       | Version  | Need recompile | Deprecated in Version |
+| ----------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------- | -------------- | --------------------- |
+| `INDEXER_POLYGON_EDGE_L1_RPC` | The RPC endpoint for L1 used to fetch deposit or withdrawal events. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+| `INDEXER_POLYGON_EDGE_L1_EXIT_HELPER_CONTRACT` | The address of ExitHelper contract on L1 (root chain) used to fetch withdrawal exits. Required for withdrawal events indexing. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+| `INDEXER_POLYGON_EDGE_L1_WITHDRAWALS_START_BLOCK` | The number of start block on L1 (root chain) to index withdrawal exits. If the table of withdrawal exits is not empty, the process will continue indexing from the last indexed message. If empty or not defined, the withdrawal exits are not indexed. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+| `INDEXER_POLYGON_EDGE_L1_STATE_SENDER_CONTRACT` | The address of StateSender contract on L1 (root chain) used to fetch deposits. Required for deposit events indexing. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+| `INDEXER_POLYGON_EDGE_L1_DEPOSITS_START_BLOCK` | The number of start block on L1 (root chain) to index deposits. If the table of deposits is not empty, the process will continue indexing from the last indexed message. If empty or not defined, the deposits are not indexed. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+| `INDEXER_POLYGON_EDGE_L2_STATE_SENDER_CONTRACT` | The address of L2StateSender contract on L2 (child chain) used to fetch withdrawals. Required for withdrawal events indexing. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+| `INDEXER_POLYGON_EDGE_L2_WITHDRAWALS_START_BLOCK` | The number of start block on L2 (child chain) to index withdrawals. If the table of withdrawals is not empty, the process will fill gaps and then continue indexing from the last indexed message. If empty or not defined, the withdrawals are not indexed. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+| `INDEXER_POLYGON_EDGE_L2_STATE_RECEIVER_CONTRACT` | The address of StateReceiver contract on L2 (child chain) used to fetch deposit executes. Required for deposit events indexing. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+| `INDEXER_POLYGON_EDGE_L2_DEPOSITS_START_BLOCK` | The number of start block on L2 (child chain) to index deposit executes. If the table of deposit executes is not empty, the process will fill gaps and then continue indexing from the last indexed message. If empty or not defined, the deposit executes are not indexed. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+| `INDEXER_POLYGON_EDGE_ETH_GET_LOGS_RANGE_SIZE` | Block range size for eth\_getLogs request in Polygon Edge indexer modules. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+
+
 ## 9.0.2
 
 ### 🐛 Bug Fixes
@@ -111,6 +217,7 @@
 - Remove `is_self_destructed` field in `/api/v2/smart-contracts/{address_hash}` response ([#12239](https://github.com/blockscout/blockscout/issues/12239))
 - Set home directory for blockscout user ([#12337](https://github.com/blockscout/blockscout/issues/12337))
 
+### New ENV variables
 
 | Variable              | Description                                                                                                                                                      | Parameters                                                                                      |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |

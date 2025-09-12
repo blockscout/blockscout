@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Block.Schema do
   }
 
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
+  alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
   alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
@@ -32,6 +33,7 @@ defmodule Explorer.Chain.Block.Schema do
                             quote do
                               field(:blob_gas_used, :decimal)
                               field(:excess_blob_gas, :decimal)
+                              has_many(:beacon_deposits, BeaconDeposit, foreign_key: :block_hash, references: :hash)
                             end,
                             2
                           )

@@ -2,37 +2,29 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1822 do
   @moduledoc """
   Module for fetching proxy implementation from https://eips.ethereum.org/EIPS/eip-1822 Universal Upgradeable Proxy Standard (UUPS)
   """
-  alias Explorer.Chain
-  alias Explorer.Chain.Hash
+
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.ResolverBehaviour
+
+  @behaviour ResolverBehaviour
 
   # keccak256("PROXIABLE")
   @storage_slot_proxiable "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7"
 
-  @doc """
-  Get implementation address hash string following EIP-1822. It returns the value as array of the strings.
-  """
-  @spec get_implementation_address_hash_strings(Hash.Address.t(), [Chain.api?()]) :: [binary()] | :error
-  def get_implementation_address_hash_strings(proxy_address_hash, _options \\ []) do
-    case get_implementation_address_hash_string(proxy_address_hash) do
-      nil -> []
+  def quick_resolve_implementations(_proxy_address, _proxy_type),
+    do:
+      {:cont,
+       %{
+         implementation_slot: {:storage, @storage_slot_proxiable}
+       }}
+
+  def resolve_implementations(_proxy_address, _proxy_type, prefetched_values) do
+    with {:ok, value} <- Map.fetch(prefetched_values, :implementation_slot),
+         {:ok, address_hash} <- Proxy.extract_address_hash(value) do
+      {:ok, [address_hash]}
+    else
       :error -> :error
-      implementation_address_hash_string -> [implementation_address_hash_string]
+      _ -> nil
     end
-  end
-
-  # Get implementation address hash string following EIP-1822
-  @spec get_implementation_address_hash_string(Hash.Address.t()) :: binary() | nil | :error
-  defp get_implementation_address_hash_string(proxy_address_hash) do
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-    proxiable_contract_address_hash_string =
-      Proxy.get_implementation_from_storage(
-        proxy_address_hash,
-        @storage_slot_proxiable,
-        json_rpc_named_arguments
-      )
-
-    Proxy.abi_decode_address_output(proxiable_contract_address_hash_string)
   end
 end

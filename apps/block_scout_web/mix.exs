@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "9.0.2",
+      version: "9.1.0",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
@@ -127,15 +127,14 @@ defmodule BlockScoutWeb.Mixfile do
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
       {:phoenix_live_view, "~> 0.17"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
+      {:prometheus_ex, "~> 5.0.0", override: true},
       # use `:cowboy` for WebServer with `:plug`
       {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
       {:poison, "~> 4.0.1"},
       {:postgrex, ">= 0.0.0"},
-      # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
-      {:prometheus, "~> 4.0", override: true},
+      {:prometheus, "~> 6.0", override: true},
       # Gather methods for Phoenix requests
       {:prometheus_phoenix, "~> 1.2"},
       # Expose metrics from URL Prometheus server can scrape

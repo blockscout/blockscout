@@ -174,8 +174,7 @@ defmodule Explorer.Chain.Search do
 
   defp address_hash_search_if_first_page(%PagingOptions{key: nil}, address_hash, options) do
     address_hash
-    |> search_token_by_address_hash_query()
-    |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
+    |> search_token_by_address_hash_query(options)
     |> union_all(
       ^(address_hash
         |> search_address_by_address_hash_query())
@@ -311,18 +310,15 @@ defmodule Explorer.Chain.Search do
   defp search_by_string(term, paging_options, metadata_tags, options) do
     tokens_query_certified =
       term
-      |> search_token_query_certified(paging_options)
-      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
+      |> search_token_query_certified(paging_options, options)
 
     tokens_query_not_certified =
       term
-      |> search_token_query_not_certified(paging_options)
-      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
+      |> search_token_query_not_certified(paging_options, options)
 
     metadata_tags_addresses_query = join_metadata_tags_with_addresses(metadata_tags, options)
 
-    contracts_query =
-      term |> search_contract_query(paging_options) |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
+    contracts_query = term |> search_contract_query(paging_options, options)
 
     labels_query = search_label_query(term, paging_options)
 
@@ -440,18 +436,15 @@ defmodule Explorer.Chain.Search do
 
     tokens_results =
       (term
-       |> search_token_query_certified(paging_options)
-       |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
+       |> search_token_query_certified(paging_options, options)
        |> select_repo(options).all()) ++
         (term
-         |> search_token_query_not_certified(paging_options)
-         |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
+         |> search_token_query_not_certified(paging_options, options)
          |> select_repo(options).all())
 
     contracts_results =
       term
-      |> search_contract_query(paging_options)
-      |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
+      |> search_contract_query(paging_options, options)
       |> select_repo(options).all()
 
     labels_results = term |> search_label_query(paging_options) |> select_repo(options).all()
@@ -534,44 +527,51 @@ defmodule Explorer.Chain.Search do
     |> page_search_results(paging_options, "label")
   end
 
-  defp search_token_query_not_certified(term, paging_options) do
+  defp search_token_query_not_certified(term, paging_options, options) do
     term
-    |> search_token_by_symbol_or_name_query(paging_options)
+    |> search_token_by_symbol_or_name_query(paging_options, options)
     |> where([smart_contract: smart_contract], is_nil(smart_contract.certified) or not smart_contract.certified)
   end
 
-  defp search_token_query_certified(term, paging_options) do
+  defp search_token_query_certified(term, paging_options, options) do
     term
-    |> search_token_by_symbol_or_name_query(paging_options)
+    |> search_token_by_symbol_or_name_query(paging_options, options)
     |> where([smart_contract: smart_contract], smart_contract.certified)
   end
 
-  defp search_token_by_symbol_or_name_query(term, paging_options) do
+  defp search_token_by_symbol_or_name_query(term, paging_options, options) do
     base_query =
       from(token in Token,
         as: :token,
         left_join: smart_contract in SmartContract,
         as: :smart_contract,
         on: token.contract_address_hash == smart_contract.address_hash,
-        where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
-        select: ^token_search_fields()
+        where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term)
       )
 
-    base_query |> apply_sorting([], @token_sorting) |> page_search_results(paging_options, "token")
+    base_query
+    |> apply_sorting([], @token_sorting)
+    |> page_search_results(paging_options, "token")
+    |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:contract_address_hash, options)
+    |> select(^(token_search_fields() |> add_reputation_to_search_fields(options)))
   end
 
-  defp search_token_by_address_hash_query(address_hash) do
-    from(token in Token,
-      as: :token,
-      left_join: smart_contract in SmartContract,
-      as: :smart_contract,
-      on: token.contract_address_hash == smart_contract.address_hash,
-      where: token.contract_address_hash == ^address_hash,
-      select: ^token_search_fields()
-    )
+  defp search_token_by_address_hash_query(address_hash, options) do
+    query =
+      from(token in Token,
+        as: :token,
+        left_join: smart_contract in SmartContract,
+        as: :smart_contract,
+        on: token.contract_address_hash == smart_contract.address_hash,
+        where: token.contract_address_hash == ^address_hash
+      )
+
+    query
+    |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:contract_address_hash, options)
+    |> select(^(token_search_fields() |> add_reputation_to_search_fields(options)))
   end
 
-  defp search_contract_query(term, paging_options) do
+  defp search_contract_query(term, paging_options, options) do
     contract_search_fields =
       search_fields()
       |> Map.put(:address_hash, dynamic([smart_contract: smart_contract], smart_contract.address_hash))
@@ -581,15 +581,17 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
       |> Map.put(:verified, true)
       |> Map.put(:priority, 0)
+      |> add_reputation_to_search_fields(options)
 
     base_query =
       from(smart_contract in SmartContract,
         as: :smart_contract,
-        where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", smart_contract.name, ^term),
-        select: ^contract_search_fields
+        where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", smart_contract.name, ^term)
       )
 
     base_query
+    |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:address_hash, options)
+    |> select(^contract_search_fields)
     |> apply_sorting([], @contract_sorting)
     |> page_search_results(paging_options, "contract")
   end
@@ -753,8 +755,8 @@ defmodule Explorer.Chain.Search do
       as: :metadata_tag,
       on: address.hash == tag.address_hash
     )
-    |> select(^metadata_tags_search_fields())
-    |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:hash, options)
+    |> select(^(metadata_tags_search_fields() |> add_reputation_to_search_fields(options)))
   end
 
   defp page_search_results(
@@ -1036,7 +1038,8 @@ defmodule Explorer.Chain.Search do
       is_verified_via_admin_panel: nil,
       order: 0,
       metadata: dynamic(type(^nil, :map)),
-      addresses_index: 0
+      addresses_index: 0,
+      reputation: "ok"
     }
   end
 
@@ -1069,6 +1072,18 @@ defmodule Explorer.Chain.Search do
     |> Map.put(:addresses_index, dynamic([metadata_tag: tag], tag.addresses_index))
     |> Map.put(:verified, dynamic([address: address], address.verified))
     |> Map.put(:priority, 1)
+  end
+
+  defp add_reputation_to_search_fields(search_fields, options) do
+    if ExplorerHelper.force_show_scam_addresses?(options) do
+      search_fields
+      |> Map.put(
+        :reputation,
+        dynamic([sabm: sabm], fragment("CASE WHEN ? THEN ? ELSE ? END", is_nil(sabm.address_hash), "ok", "scam"))
+      )
+    else
+      search_fields
+    end
   end
 
   @paginated_types ["label", "contract", "token", "metadata_tag", "tac_operation"]

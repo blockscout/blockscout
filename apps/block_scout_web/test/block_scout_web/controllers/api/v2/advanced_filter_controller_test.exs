@@ -6,6 +6,85 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
   alias Explorer.{Factory, TestHelper}
 
   describe "/advanced_filters" do
+    test "get token-transfers with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      transaction = insert(:transaction) |> with_block()
+
+      insert(:token_transfer, transaction: transaction)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+
+      assert response ==
+               conn
+               |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+               |> json_response(200)
+    end
+
+    test "get smart-contract with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      transaction = insert(:transaction) |> with_block()
+
+      tt = insert(:token_transfer, transaction: transaction)
+      insert(:scam_badge_to_address, address_hash: tt.token_contract_address_hash)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+      response = json_response(request, 200)
+
+      assert response["items"] == []
+    end
+
+    test "get token-transfers with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      transaction = insert(:transaction) |> with_block()
+
+      insert(:token_transfer, transaction: transaction)
+
+      request = conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
+    test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      transaction = insert(:transaction) |> with_block()
+      tt = insert(:token_transfer, transaction: transaction)
+      insert(:scam_badge_to_address, address_hash: tt.token_contract_address_hash)
+
+      request = conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
     test "empty list", %{conn: conn} do
       request = get(conn, "/api/v2/advanced-filters")
       assert response = json_response(request, 200)
@@ -183,7 +262,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
     end
 
     test "filter by methods", %{conn: conn} do
-      TestHelper.get_all_proxies_implementation_zero_addresses()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       transaction = :transaction |> insert() |> with_block()
 

@@ -5,6 +5,10 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
@@ -14,10 +18,10 @@ jobs:
     name: Push Docker image to GitHub Container Registry
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 9.0.2
+      RELEASE_VERSION: 9.1.0
       API_GRAPHQL_MAX_COMPLEXITY: 10400
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup repo
         uses: ./.github/actions/setup-repo
         id: setup
@@ -33,7 +37,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-celo:latest, ghcr.io/blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}
+          tags: ghcr.io/blockscout/blockscout-celo-private:latest, ghcr.io/blockscout/blockscout-celo-private:${{ env.RELEASE_VERSION }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -50,7 +54,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-indexer
+          tags: ghcr.io/blockscout/blockscout-celo-private:${{ env.RELEASE_VERSION }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64

@@ -343,6 +343,12 @@ defmodule BlockScoutWeb.Plug.RateLimitTest do
       assert get_resp_header(request, "x-ratelimit-limit") == ["-1"]
       assert get_resp_header(request, "x-ratelimit-remaining") == ["-1"]
       assert get_resp_header(request, "x-ratelimit-reset") == ["-1"]
+
+      request = conn |> put_req_header("x-api-key", "123") |> get("/api/v2/transactions")
+      assert request.status == 200
+      assert get_resp_header(request, "x-ratelimit-limit") == ["-1"]
+      assert get_resp_header(request, "x-ratelimit-remaining") == ["-1"]
+      assert get_resp_header(request, "x-ratelimit-reset") == ["-1"]
     end
 
     test "enforces rate limit with invalid API key", %{conn: conn} do

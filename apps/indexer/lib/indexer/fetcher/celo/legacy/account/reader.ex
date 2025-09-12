@@ -15,7 +15,12 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
     json_rpc_named_arguments: [:indexer, :json_rpc_named_arguments]
 
   import Explorer.Helper, only: [abi_to_method_id: 1]
-  import Indexer.Helper, only: [read_contracts_with_retries: 4]
+
+  import Indexer.Helper,
+    only: [
+      read_contracts_with_retries: 4,
+      read_contracts_with_retries_by_chunks: 3
+    ]
 
   @repeated_request_max_retries 3
 
@@ -43,6 +48,33 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
         "outputs" => [
           %{"internalType" => "string", "name" => "", "type" => "string"}
         ],
+        "payable" => false,
+        "stateMutability" => "view",
+        "type" => "function"
+      },
+      get_vote_signer: %{
+        "constant" => true,
+        "inputs" => [%{"name" => "account", "type" => "address"}],
+        "name" => "getVoteSigner",
+        "outputs" => [%{"name" => "", "type" => "address"}],
+        "payable" => false,
+        "stateMutability" => "view",
+        "type" => "function"
+      },
+      get_validator_signer: %{
+        "constant" => true,
+        "inputs" => [%{"name" => "account", "type" => "address"}],
+        "name" => "getValidatorSigner",
+        "outputs" => [%{"name" => "", "type" => "address"}],
+        "payable" => false,
+        "stateMutability" => "view",
+        "type" => "function"
+      },
+      get_attestation_signer: %{
+        "constant" => true,
+        "inputs" => [%{"name" => "account", "type" => "address"}],
+        "name" => "getAttestationSigner",
+        "outputs" => [%{"name" => "", "type" => "address"}],
         "payable" => false,
         "stateMutability" => "view",
         "type" => "function"
@@ -101,6 +133,9 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
     }
   }
 
+  @abis @abi |> Map.values() |> Enum.map(&Map.values/1) |> List.flatten()
+  @chunk_size @abis |> Enum.count()
+
   @doc """
   Read Celo account data from core smart contracts.
   """
@@ -116,7 +151,10 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
          {:ok, [locked_gold]},
          {:ok, [nonvoting_locked_gold]},
          {:ok, [is_validator]},
-         {:ok, [is_validator_group]}
+         {:ok, [is_validator_group]},
+         {:ok, [vote_signer]},
+         {:ok, [validator_signer]},
+         {:ok, [attestation_signer]}
        ]} ->
         type =
           cond do
@@ -130,17 +168,18 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
               :regular
           end
 
-        {
-          :ok,
-          %{
-            address_hash: account_address,
-            name: truncate(name),
-            metadata_url: truncate(url),
-            locked_celo: locked_gold,
-            nonvoting_locked_celo: nonvoting_locked_gold,
-            type: type
-          }
-        }
+        {:ok,
+         %{
+           address_hash: account_address,
+           name: truncate(name),
+           metadata_url: truncate(url),
+           locked_celo: locked_gold,
+           nonvoting_locked_celo: nonvoting_locked_gold,
+           type: type,
+           vote_signer_address_hash: normalize_signer(account_address, vote_signer),
+           validator_signer_address_hash: normalize_signer(account_address, validator_signer),
+           attestation_signer_address_hash: normalize_signer(account_address, attestation_signer)
+         }}
 
       {:error, errors} ->
         Logger.error(fn ->
@@ -154,6 +193,15 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
   @spec truncate(binary()) :: binary()
   defp truncate(binary) when is_binary(binary) do
     String.slice(binary, 0, 255)
+  end
+
+  @spec normalize_signer(String.t(), String.t()) :: String.t() | nil
+  defp normalize_signer(address_hash, signer_address_hash) do
+    if address_hash == signer_address_hash do
+      nil
+    else
+      signer_address_hash
+    end
   end
 
   @spec do_fetch(String.t()) :: {:ok, keyword()} | {:error, any()}
@@ -187,6 +235,21 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
       %{
         contract_address: validators_contract_address_hash(),
         method_id: abi_to_method_id(@abi.validators.is_validator_group),
+        args: [account_address]
+      },
+      %{
+        contract_address: accounts_contract_address_hash(),
+        method_id: abi_to_method_id(@abi.accounts.get_vote_signer),
+        args: [account_address]
+      },
+      %{
+        contract_address: accounts_contract_address_hash(),
+        method_id: abi_to_method_id(@abi.accounts.get_validator_signer),
+        args: [account_address]
+      },
+      %{
+        contract_address: accounts_contract_address_hash(),
+        method_id: abi_to_method_id(@abi.accounts.get_attestation_signer),
         args: [account_address]
       }
     ]
