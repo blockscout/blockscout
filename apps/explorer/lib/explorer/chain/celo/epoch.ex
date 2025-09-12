@@ -269,15 +269,13 @@ defmodule Explorer.Chain.Celo.Epoch do
         where: tt.log_index in ^log_indexes and tt.block_hash == ^block_hash,
         select: {tt.log_index, tt},
         preload: [
-          ^reputation_association(),
           [token: ^reputation_association()],
           [
             from_address: [
               :scam_badge,
               :names,
               :smart_contract,
-              ^proxy_implementations_association(),
-              ^reputation_association()
+              ^proxy_implementations_association()
             ]
           ],
           [
@@ -285,11 +283,9 @@ defmodule Explorer.Chain.Celo.Epoch do
               :scam_badge,
               :names,
               :smart_contract,
-              ^proxy_implementations_association(),
-              ^reputation_association()
+              ^proxy_implementations_association()
             ]
-          ],
-          [token_contract_address: ^reputation_association()]
+          ]
         ]
       )
 
