@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.OnDemand.FirstTrace do
 
   def maybe_trigger_fetch(transaction, opts \\ []) do
     unless Application.get_env(:explorer, :shrink_internal_transactions_enabled) do
-      transaction.hash
+      transaction
       |> InternalTransaction.all_transaction_to_internal_transactions(opts)
       |> Enum.any?(&(&1.index == 0))
       |> unless do
