@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <%= case @view_module do %>
+    <%= case Phoenix.Controller.view_module(@conn) do %>
       <% Elixir.BlockScoutWeb.ChainView -> %>
         <link rel="stylesheet" href="<%= static_path(@conn, "/css/main-page.css") %>">
         <link rel="preload" href="<%= static_path(@conn, "/js/chain.js") %>" as="script">
@@ -27,7 +27,7 @@
     <link rel="preload" href="<%= static_path(@conn, "/images/icons/fontawesome/tag.svg") %>" as="image" crossorigin>
     <link rel="preload" href="<%= static_path(@conn, "/css/non-critical.css") %>" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/non-critical.css") %>">
-    <%= render_existing(@view_module, "styles.html", assigns) %>
+    <%= render_existing(Phoenix.Controller.view_module(@conn), "styles.html", assigns) %>
 
     <link rel="apple-touch-icon" sizes="180x180" href="<%= static_path(@conn, "/apple-touch-icon.png") %>">
     <link rel="icon" type="image/png" sizes="32x32" href="<%= static_path(@conn, "/images/favicon-32x32.png") %>">
@@ -39,7 +39,7 @@
     <meta name="msapplication-config" content="<%= static_path(@conn, "/browserconfig.xml") %>">
     <meta name="theme-color" content="#ffffff">
 
-    <%= render_existing(@view_module, "_metatags.html", assigns) || render("_default_title.html") %>
+    <%= render_existing(Phoenix.Controller.view_module(@conn), "_metatags.html", assigns) || render("_default_title.html") %>
 
     <script defer data-cfasync="false">
       window.localized = {
@@ -99,58 +99,58 @@
       <%= if session && !session[:email_verified] do %>
         <p class="alert alert-warning" role="alert" style="margin-bottom: 0"><%= gettext("Please confirm your email address to use the My Account feature.") %> <%= gettext("A confirmation email was sent to") %> <a href="mailto:<%= session[:email] %>"><%=session[:email] %></a> <%= gettext "on sign up. Didn’t receive?" %> <a href="/api/account/v2/email/resend" class="ajax"><%= gettext "Resend verification email" %></a>.</p>
       <% else %>
-        <p class="alert alert-info" role="alert"><%= Map.get(@conn.private, :phoenix_flash) && get_flash(@conn, :info) %></p>
+        <p class="alert alert-info" role="alert"><%= Map.get(@conn.private, :phoenix_flash) && Phoenix.Controller.get_flash(@conn, :info) %></p>
       <% end %>
-      <p class="alert alert-danger" role="alert"><%= Map.get(@conn.private, :phoenix_flash) && get_flash(@conn, :error) %></p>
+      <p class="alert alert-danger" role="alert"><%= Map.get(@conn.private, :phoenix_flash) && Phoenix.Controller.get_flash(@conn, :error) %></p>
       <main class="js-ad-dependant-pt pt-5">
         <%= @inner_content %>
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
     <%= if (
-      @view_module != Elixir.BlockScoutWeb.ChainView &&
-      @view_module != Elixir.BlockScoutWeb.BlockView &&
-      @view_module != Elixir.BlockScoutWeb.BlockTransactionView &&
-      @view_module != Elixir.BlockScoutWeb.BlockWithdrawalView &&
-      @view_module != Elixir.BlockScoutWeb.AddressView &&
-      @view_module != Elixir.BlockScoutWeb.TokensView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionView &&
-      @view_module != Elixir.BlockScoutWeb.PendingTransactionView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionInternalTransactionView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionLogView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionRawTraceView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionTokenTransferView &&
-      @view_module != Elixir.BlockScoutWeb.TransactionStateView &&
-      @view_module != Elixir.BlockScoutWeb.AddressTransactionView &&
-      @view_module != Elixir.BlockScoutWeb.AddressTokenTransferView &&
-      @view_module != Elixir.BlockScoutWeb.AddressTokenView &&
-      @view_module != Elixir.BlockScoutWeb.AddressWithdrawalView &&
-      @view_module != Elixir.BlockScoutWeb.AddressInternalTransactionView &&
-      @view_module != Elixir.BlockScoutWeb.AddressCoinBalanceView &&
-      @view_module != Elixir.BlockScoutWeb.AddressLogsView &&
-      @view_module != Elixir.BlockScoutWeb.AddressValidationView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationVyperView &&
-      @view_module != Elixir.BlockScoutWeb.AddressReadContractView &&
-      @view_module != Elixir.BlockScoutWeb.AddressReadProxyView &&
-      @view_module != Elixir.BlockScoutWeb.AddressWriteContractView &&
-      @view_module != Elixir.BlockScoutWeb.AddressWriteProxyView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.TransferView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.ContractView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.HolderView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.InventoryView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.InstanceView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.MetadataView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.OverviewView &&
-      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.TransferView &&
-      @view_module != Elixir.BlockScoutWeb.VerifiedContractsView &&
-      @view_module != Elixir.BlockScoutWeb.APIDocsView &&
-      @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
-      @view_module != Elixir.BlockScoutWeb.SearchView &&
-      @view_module != Elixir.BlockScoutWeb.StakesView &&
-      @view_module != Elixir.BlockScoutWeb.WithdrawalView
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.ChainView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.BlockView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.BlockTransactionView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.BlockWithdrawalView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.TokensView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.TransactionView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.PendingTransactionView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.TransactionInternalTransactionView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.TransactionLogView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.TransactionRawTraceView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.TransactionTokenTransferView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.TransactionStateView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressTransactionView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressTokenTransferView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressTokenView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressWithdrawalView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressInternalTransactionView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressCoinBalanceView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressLogsView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressValidationView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressContractView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressContractVerificationView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressContractVerificationVyperView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressReadContractView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressReadProxyView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressWriteContractView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.AddressWriteProxyView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.Tokens.TransferView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.Tokens.ContractView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.Tokens.HolderView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.Tokens.InventoryView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.Tokens.InstanceView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.Tokens.Instance.MetadataView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.Tokens.Instance.OverviewView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.Tokens.Instance.TransferView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.VerifiedContractsView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.APIDocsView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.Admin.DashboardView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.SearchView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.StakesView &&
+      Phoenix.Controller.view_module(@conn) != Elixir.BlockScoutWeb.WithdrawalView
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>
@@ -159,20 +159,20 @@
         render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status
       end
     %>
-    <%= render_existing(@view_module, "scripts.html", assigns) %>
-    <%= if @view_module == Elixir.BlockScoutWeb.ChainView do %>
+    <%= render_existing(Phoenix.Controller.view_module(@conn), "scripts.html", assigns) %>
+    <%= if Phoenix.Controller.view_module(@conn) == Elixir.BlockScoutWeb.ChainView do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
     <% end %>
-    <%= if @view_module == Elixir.BlockScoutWeb.TransactionView do %>
+    <%= if Phoenix.Controller.view_module(@conn) == Elixir.BlockScoutWeb.TransactionView do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/custom-scrollbar.js") %>"></script>
     <% end %>
     <script defer src="<%= static_path(@conn, "/js/autocomplete.js") %>"></script>
-    <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationView, Elixir.BlockScoutWeb.AddressContractVerificationVyperView, Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView] do %>
+    <%= if Phoenix.Controller.view_module(@conn) in [Elixir.BlockScoutWeb.AddressContractVerificationView, Elixir.BlockScoutWeb.AddressContractVerificationVyperView, Elixir.BlockScoutWeb.AddressContractVerificationViaFlattenedCodeView] do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
     <% end %>
-    <%= if @view_module in [Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
+    <%= if Phoenix.Controller.view_module(@conn) in [Elixir.BlockScoutWeb.AddressContractVerificationViaMultiPartFilesView, Elixir.BlockScoutWeb.AddressContractVerificationViaJsonView, Elixir.BlockScoutWeb.AddressContractVerificationViaStandardJsonInputView] do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/dropzone.js") %>"></script>
     <% end %>
