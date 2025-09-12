@@ -2,14 +2,9 @@ name: antiscam
 
 on:
   issue_comment:
-    types:
-      - created
-      - edited
-
+    types: [created, edited]
   discussion_comment:
-    types:
-      - created
-      - edited
+    types: [created, edited]
 
 permissions:
   pull-requests: write
@@ -17,7 +12,8 @@ permissions:
 
 jobs:
   build:
-    if: ${{ !github.event.issue.pull_request }}
+    # Run if it's NOT a PR comment OR if it's a discussion comment (no issue context)
+    if: github.event_name == 'discussion_comment' || (github.event_name == 'issue_comment' && !github.event.issue.pull_request)
     name: Antiscam
     runs-on: ubuntu-latest
 
