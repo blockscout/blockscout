@@ -36,9 +36,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
           metadata_url: %Schema{type: :string, nullable: true},
           nonvoting_locked_celo: %Schema{type: :string, nullable: false},
           locked_celo: %Schema{type: :string, nullable: false},
-          vote_signer_address: Address,
-          validator_signer_address: Address,
-          attestation_signer_address: Address
+          vote_signer_address: %Schema{allOf: [Address], nullable: true},
+          validator_signer_address: %Schema{allOf: [Address], nullable: false},
+          attestation_signer_address: %Schema{allOf: [Address], nullable: false}
         },
         required: [
           :type,
