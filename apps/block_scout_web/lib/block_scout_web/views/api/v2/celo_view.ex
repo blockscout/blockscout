@@ -238,7 +238,22 @@ defmodule BlockScoutWeb.API.V2.CeloView do
             name: account.name,
             metadata_url: account.metadata_url,
             nonvoting_locked_celo: account.nonvoting_locked_celo,
-            locked_celo: account.locked_celo
+            locked_celo: account.locked_celo,
+            vote_signer_address:
+              Helper.address_with_info(
+                account.vote_signer_address,
+                account.vote_signer_address_hash
+              ),
+            validator_signer_address:
+              Helper.address_with_info(
+                account.validator_signer_address,
+                account.validator_signer_address_hash
+              ),
+            attestation_signer_address:
+              Helper.address_with_info(
+                account.attestation_signer_address,
+                account.attestation_signer_address_hash
+              )
           }
 
         _ ->

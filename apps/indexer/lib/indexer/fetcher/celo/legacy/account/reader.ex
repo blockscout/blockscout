@@ -18,8 +18,8 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
 
   import Indexer.Helper,
     only: [
-      read_contracts_with_retries: 4,
-      read_contracts_with_retries_by_chunks: 3
+      read_contracts_with_retries: 4
+      # read_contracts_with_retries_by_chunks: 3
     ]
 
   @repeated_request_max_retries 3
@@ -133,8 +133,8 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
     }
   }
 
-  @abis @abi |> Map.values() |> Enum.map(&Map.values/1) |> List.flatten()
-  @chunk_size @abis |> Enum.count()
+  # @abis @abi |> Map.values() |> Enum.map(&Map.values/1) |> List.flatten()
+  # @chunk_size @abis |> Enum.count()
 
   @doc """
   Read Celo account data from core smart contracts.
