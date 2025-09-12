@@ -1308,17 +1308,24 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["epoch_number", "amount", "associated_account_address_hash", "type"]),
+        define_paging_params([
+          "epoch_number",
+          "amount",
+          "associated_account_address_hash",
+          "type",
+          "items_count"
+        ]),
     responses: [
       ok:
         {"Celo election rewards for the specified address.", "application/json",
          paginated_response(
            items: Schemas.Celo.ElectionReward,
            next_page_params_example: %{
-             "block_number" => 100,
+             "epoch_number" => 100,
              "amount" => "1000000000000000000",
              "associated_account_address_hash" => "0x1234567890123456789012345678901234567890",
-             "type" => "validator"
+             "type" => "validator",
+             "items_count" => 50
            },
            title_prefix: "AddressCeloElectionRewards"
          )},
@@ -1392,7 +1399,12 @@ defmodule BlockScoutWeb.API.V2.AddressController do
          {amount, ""} <- Decimal.parse(amount_string),
          {:ok, associated_account_address_hash} <-
            Hash.Address.cast(associated_account_address_hash_string),
-         {:ok, type} <- CeloElectionReward.type_from_string(type_string) do
+         sanitized_type_string <-
+           type_string
+           |> String.trim()
+           |> String.downcase()
+           |> String.replace("-", "_"),
+         {:ok, type} <- CeloElectionReward.type_from_string(sanitized_type_string) do
       %{
         PagingOptions.default_paging_options()
         | key: %{

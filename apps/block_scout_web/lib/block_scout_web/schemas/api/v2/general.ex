@@ -672,7 +672,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     },
     "type" => %Parameter{
       in: :query,
-      schema: CeloElectionRewardType,
+      schema: CeloElectionRewardType.schema(),
       required: false,
       description: "Type for paging",
       name: :type
