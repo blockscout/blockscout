@@ -14,7 +14,16 @@ defmodule Explorer.Chain.Celo.Account do
   alias Explorer.Chain.{Address, Hash, Wei}
 
   @required_attrs ~w(address_hash )a
-  @optional_attrs ~w(type name metadata_url nonvoting_locked_celo locked_celo)a
+  @optional_attrs [
+    :type,
+    :name,
+    :metadata_url,
+    :nonvoting_locked_celo,
+    :locked_celo,
+    :vote_signer_address_hash,
+    :validator_signer_address_hash,
+    :attestation_signer_address_hash
+  ]
   @allowed_attrs @required_attrs ++ @optional_attrs
 
   @typedoc """
@@ -45,6 +54,33 @@ defmodule Explorer.Chain.Celo.Account do
       references: :hash,
       type: Hash.Address,
       null: false
+    )
+
+    belongs_to(
+      :vote_signer_address,
+      Address,
+      foreign_key: :vote_signer_address_hash,
+      references: :hash,
+      type: Hash.Address,
+      null: true
+    )
+
+    belongs_to(
+      :validator_signer_address,
+      Address,
+      foreign_key: :validator_signer_address_hash,
+      references: :hash,
+      type: Hash.Address,
+      null: true
+    )
+
+    belongs_to(
+      :attestation_signer_address,
+      Address,
+      foreign_key: :attestation_signer_address_hash,
+      references: :hash,
+      type: Hash.Address,
+      null: true
     )
 
     timestamps()

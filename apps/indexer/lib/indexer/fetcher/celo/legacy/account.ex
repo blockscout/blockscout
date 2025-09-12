@@ -21,6 +21,7 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
   alias Explorer.Chain.Celo.PendingAccountOperation
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Celo.Legacy.Account.Reader, as: AccountReader
+  alias Indexer.Transform.Addresses
 
   require Logger
 
@@ -121,7 +122,13 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
   end
 
   defp import_accounts(accounts) do
+    addresses =
+      Addresses.extract_addresses(%{
+        celo_accounts: accounts
+      })
+
     import_params = %{
+      addresses: %{params: addresses},
       celo_accounts: %{params: accounts},
       timeout: :infinity
     }
