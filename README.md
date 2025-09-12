@@ -3,7 +3,7 @@
 <div align="center">
 
 [![Blockscout](https://github.com/blockscout/blockscout/actions/workflows/config.yml/badge.svg)](https://github.com/blockscout/blockscout/actions)
-[![Discord](https://dcbadge.vercel.app/api/server/blockscout?style=flat)](https://discord.gg/blockscout)
+[![Discord](https://img.shields.io/badge/chat-Blockscout-green.svg)](https://discord.gg/blockscout)
 
 </div>
 
