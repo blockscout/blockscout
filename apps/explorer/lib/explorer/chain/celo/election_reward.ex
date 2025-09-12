@@ -30,6 +30,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
   import Ecto.Query, only: [from: 2, where: 3, group_by: 3, select: 3]
+  import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.{Chain, SortingHelper}
@@ -201,7 +202,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
         {type, %{total: total, count: count}}
       end)
 
-    reward_type_to_token = election_reward_tokens_by_type(options)
+    reward_type_to_token = election_reward_tokens_by_type()
 
     @types_enum
     |> Map.new(&{&1, %{total: Decimal.new(0), count: 0}})
@@ -229,14 +230,19 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   #     ...> }
   #     iex> Explorer.Chain.Celo.ElectionReward.election_reward_token_addresses_by_type(epoch_number)
   #     %{voter_reward: %Token{}, ...}
-  @spec election_reward_tokens_by_type(Keyword.t()) :: %{atom() => Token.t() | nil}
-  defp election_reward_tokens_by_type(options) do
+  @spec election_reward_tokens_by_type :: %{atom() => Token.t() | nil}
+  defp election_reward_tokens_by_type do
     reward_type_to_token_address_hash = reward_type_to_token_address_hash()
 
     tokens =
       reward_type_to_token_address_hash
       |> Map.values()
-      |> Token.get_by_contract_address_hashes(options)
+      |> Token.get_by_contract_address_hashes(
+        api?: true,
+        necessity_by_association: %{
+          reputation_association() => :optional
+        }
+      )
 
     reward_type_to_token_address_hash
     |> Map.new(fn {type, address_hash} ->

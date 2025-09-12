@@ -10,6 +10,8 @@ defmodule Explorer.Chain.Celo.Epoch do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
     only: [proxy_implementations_association: 0]
 
+  import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
+
   alias Explorer.{Chain, Repo, SortingHelper}
 
   alias Explorer.Chain.{
@@ -267,9 +269,27 @@ defmodule Explorer.Chain.Celo.Epoch do
         where: tt.log_index in ^log_indexes and tt.block_hash == ^block_hash,
         select: {tt.log_index, tt},
         preload: [
-          :token,
-          [from_address: [:scam_badge, :names, :smart_contract, ^proxy_implementations_association()]],
-          [to_address: [:scam_badge, :names, :smart_contract, ^proxy_implementations_association()]]
+          ^reputation_association(),
+          [token: ^reputation_association()],
+          [
+            from_address: [
+              :scam_badge,
+              :names,
+              :smart_contract,
+              ^proxy_implementations_association(),
+              ^reputation_association()
+            ]
+          ],
+          [
+            to_address: [
+              :scam_badge,
+              :names,
+              :smart_contract,
+              ^proxy_implementations_association(),
+              ^reputation_association()
+            ]
+          ],
+          [token_contract_address: ^reputation_association()]
         ]
       )
 
