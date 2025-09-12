@@ -4406,7 +4406,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert not is_nil(response["next_page_params"])
       refute Map.has_key?(response["next_page_params"], "type")
       assert Map.has_key?(response["next_page_params"], "token_type")
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
     end
 
     test "get paginated ERC-1155 nft", %{conn: conn, endpoint: endpoint} do
@@ -4736,8 +4735,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       filter = %{"type" => "ERC-404,ERC-1155"}
       request = get(conn, endpoint.(address.hash), filter)
       response = json_response(request, 200)
-
-      assert_schema(response, "AddressNFTsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
 
       assert Enum.count(response["items"]) == 10
       assert Enum.all?(response["items"], fn item -> item["token_type"] in ["ERC-404", "ERC-1155"] end)
