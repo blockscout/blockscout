@@ -34,7 +34,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
 
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.{Chain, SortingHelper}
-  alias Explorer.Chain.{Address, Celo.Epoch, Hash, Token, Wei}
+  alias Explorer.Chain.{Address, Celo.Epoch, Hash, Token, Wei, Address.Reputation}
 
   @type type :: :voter | :validator | :group | :delegated_payment
   @types_enum ~w(voter validator group delegated_payment)a
@@ -335,6 +335,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
+    |> with_loaded_token_reputations()
   end
 
   defp reward_type_to_token_address_hash do
@@ -400,6 +401,37 @@ defmodule Explorer.Chain.Celo.ElectionReward do
           ),
       select_merge: %{token: t}
     )
+  end
+
+  # Ensures each reward token has its reputation association loaded to avoid JSON encoding errors.
+  @spec with_loaded_token_reputations([__MODULE__.t()]) :: [__MODULE__.t()]
+  defp with_loaded_token_reputations(rewards) when is_list(rewards) do
+    tokens =
+      rewards
+      |> Enum.map(& &1.token)
+      |> Enum.reject(&is_nil/1)
+
+    if tokens == [] do
+      rewards
+    else
+      address_hashes = Enum.map(tokens, & &1.contract_address_hash)
+
+      # Reputation.preload_reputation returns list of {address_hash, reputation_struct}
+      hash_to_reputation = Reputation.preload_reputation(address_hashes) |> Map.new()
+
+      address_hash_to_token =
+        Enum.reduce(tokens, %{}, fn token, acc ->
+          reputation = Map.get(hash_to_reputation, token.contract_address_hash)
+          Map.put(acc, token.contract_address_hash, Map.put(token, :reputation, reputation))
+        end)
+
+      Enum.map(rewards, fn r ->
+        case r.token do
+          nil -> r
+          %{contract_address_hash: h} -> %{r | token: Map.get(address_hash_to_token, h)}
+        end
+      end)
+    end
   end
 
   @doc """
