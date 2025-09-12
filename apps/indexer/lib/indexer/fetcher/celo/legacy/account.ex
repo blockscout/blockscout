@@ -21,6 +21,7 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
   alias Explorer.Chain.Celo.PendingAccountOperation
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Celo.Legacy.Account.Reader, as: AccountReader
+  alias Indexer.Transform.Addresses
 
   require Logger
 
@@ -28,9 +29,6 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
   use Spandex.Decorators
 
   @behaviour BufferedTask
-
-  @default_max_batch_size 10
-  @default_max_concurrency 1
 
   @doc false
   def child_spec([init_options, gen_server_options]) do
@@ -54,8 +52,8 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
     [
       poll: true,
       flush_interval: :timer.seconds(3),
-      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
-      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
+      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency],
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size],
       task_supervisor: __MODULE__.TaskSupervisor,
       metadata: [fetcher: :celo_accounts]
     ]
@@ -124,7 +122,13 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
   end
 
   defp import_accounts(accounts) do
+    addresses =
+      Addresses.extract_addresses(%{
+        celo_accounts: accounts
+      })
+
     import_params = %{
+      addresses: %{params: addresses},
       celo_accounts: %{params: accounts},
       timeout: :infinity
     }

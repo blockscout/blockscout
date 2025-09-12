@@ -108,9 +108,9 @@ defmodule BlockScoutWeb.AccessHelper do
   """
   @spec conn_to_ip_string(Plug.Conn.t()) :: String.t()
   def conn_to_ip_string(conn) do
-    is_blockscout_behind_proxy = Application.get_env(:block_scout_web, :api_rate_limit)[:is_blockscout_behind_proxy]
+    config = Application.get_env(:block_scout_web, :remote_ip)
 
-    remote_ip_from_headers = is_blockscout_behind_proxy && RemoteIp.from(conn.req_headers)
+    remote_ip_from_headers = config[:is_blockscout_behind_proxy] && RemoteIp.from(conn.req_headers, config)
     ip = remote_ip_from_headers || conn.remote_ip
 
     to_string(:inet_parse.ntoa(ip))

@@ -8,7 +8,7 @@ defmodule Explorer.Chain.ContractMethod do
   import Ecto.Query, only: [from: 2]
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, MethodIdentifier, SmartContract}
+  alias Explorer.Chain.{Data, Hash, MethodIdentifier, SmartContract}
   alias Explorer.{Chain, Repo}
 
   typed_schema "contract_methods" do
@@ -67,7 +67,7 @@ defmodule Explorer.Chain.ContractMethod do
   @doc """
   Query that finds limited number of contract methods by selector id
   """
-  @spec find_contract_method_query(binary(), integer()) :: Ecto.Query.t()
+  @spec find_contract_method_query(binary() | Data.t(), integer()) :: Ecto.Query.t()
   def find_contract_method_query(method_id, limit) do
     from(
       contract_method in __MODULE__,

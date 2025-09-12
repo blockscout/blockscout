@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   alias BlockScoutWeb.API.V2.{AdvancedFilterView, CsvExportController}
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{AdvancedFilter, ContractMethod, Data, Token, Transaction}
+  alias Explorer.Chain.{Address.Reputation, AdvancedFilter, ContractMethod, Data, Token, Transaction}
   alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
   alias Plug.Conn
 
@@ -45,6 +45,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   @methods_filter_limit 20
   @tokens_filter_limit 20
+
+  @token_options [api?: true, necessity_by_association: %{Reputation.reputation_association() => :optional}]
 
   @doc """
   Function responsible for `api/v2/advanced-filters/` endpoint.
@@ -190,7 +192,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     |> Enum.reject(&(&1 == "native"))
     |> Enum.uniq()
     |> Enum.take(@tokens_filter_limit)
-    |> Token.get_by_contract_address_hashes(@api_true)
+    |> Token.get_by_contract_address_hashes(@token_options)
     |> Map.new(fn token -> {token.contract_address_hash, token} end)
   end
 

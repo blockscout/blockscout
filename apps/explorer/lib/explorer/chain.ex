@@ -3053,11 +3053,14 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec fetch_last_token_balances(Hash.Address.t(), [api?]) :: []
+  @spec fetch_last_token_balances(Hash.Address.t(), [api? | necessity_by_association_option]) :: []
   def fetch_last_token_balances(address_hash, options \\ []) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     address_hash
     |> CurrentTokenBalance.last_token_balances()
     |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
+    |> join_associations(necessity_by_association)
     |> select_repo(options).all()
   end
 
@@ -3066,6 +3069,7 @@ defmodule Explorer.Chain do
     filter = Keyword.get(options, :token_type)
     options = Keyword.delete(options, :token_type)
     paging_options = Keyword.get(options, :paging_options)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     case paging_options do
       %PagingOptions{key: {nil, 0, _id}} ->
@@ -3076,6 +3080,7 @@ defmodule Explorer.Chain do
         |> CurrentTokenBalance.last_token_balances(options, filter)
         |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> page_current_token_balances(paging_options)
+        |> join_associations(necessity_by_association)
         |> select_repo(options).all()
     end
   end

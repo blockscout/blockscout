@@ -3,35 +3,54 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP2535 do
   Module for fetching proxy implementation from https://eips.ethereum.org/EIPS/eip-2535 (Diamond Proxy)
   """
 
-  # 52ef6b2c = keccak256(facetAddresses())
-  @facet_addresses_signature "52ef6b2c"
+  alias ABI.TypeDecoder
+  alias Explorer.Chain.{Data, Hash}
+  alias Explorer.Chain.SmartContract.Proxy.ResolverBehaviour
 
-  alias Explorer.Chain
-  alias Explorer.Chain.Hash
-  alias Explorer.SmartContract.Helper, as: SmartContractHelper
+  @behaviour ResolverBehaviour
 
-  @facet_addresses_method_abi [
-    %{
-      "inputs" => [],
-      "name" => "facetAddresses",
-      "outputs" => [%{"internalType" => "address[]", "name" => "facetAddresses_", "type" => "address[]"}],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
+  # 0x52ef6b2c = keccak256(facetAddresses())
+  @facet_addresses_signature "0x52ef6b2c"
 
-  @spec get_implementation_address_hash_strings(Hash.Address.t(), [Chain.api?()]) :: [binary()]
-  def get_implementation_address_hash_strings(proxy_address_hash, _options \\ []) do
-    case @facet_addresses_signature
-         |> SmartContractHelper.get_binary_string_from_contract_getter(
-           to_string(proxy_address_hash),
-           @facet_addresses_method_abi
-         ) do
-      implementation_addresses when is_list(implementation_addresses) ->
-        implementation_addresses
+  @max_implementations_number_per_proxy 100
 
-      _ ->
-        []
+  def quick_resolve_implementations(_proxy_address, _proxy_type),
+    do:
+      {:cont,
+       %{
+         implementation_getter: {:call, @facet_addresses_signature}
+       }}
+
+  def resolve_implementations(_proxy_address, _proxy_type, prefetched_values) do
+    with {:ok, value} <- Map.fetch(prefetched_values, :implementation_getter),
+         {:ok, address_hashes} <- extract_address_hashes(value) do
+      {:ok, address_hashes}
+    else
+      :error -> :error
+      _ -> nil
+    end
+  end
+
+  # Decodes unique non-zero address hashes from raw smart-contract hex response
+  @spec extract_address_hashes(String.t() | nil) :: {:ok, [Hash.Address.t()]} | :error | nil
+  defp extract_address_hashes(value) do
+    with false <- is_nil(value),
+         {:ok, %Data{bytes: bytes}} <- Data.cast(value),
+         [all_address_hashes] when is_list(all_address_hashes) <-
+           (try do
+              TypeDecoder.decode_raw(bytes, [{:array, :address}])
+            rescue
+              _ -> nil
+            end) do
+      {:ok,
+       all_address_hashes
+       |> Enum.reject(&(&1 == <<0::160>>))
+       |> Enum.map(&(&1 |> Hash.Address.cast() |> elem(1)))
+       |> Enum.take(@max_implementations_number_per_proxy)
+       |> Enum.uniq()}
+    else
+      :error -> :error
+      _ -> nil
     end
   end
 end

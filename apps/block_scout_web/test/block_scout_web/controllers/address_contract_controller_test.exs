@@ -55,7 +55,8 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
         block_index: 0
       )
 
-      TestHelper.get_all_proxies_implementation_zero_addresses()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address)))
 

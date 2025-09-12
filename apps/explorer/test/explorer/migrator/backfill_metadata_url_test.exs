@@ -346,5 +346,101 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
 
       assert MigrationStatus.get_status("backfill_metadata_url") == "completed"
     end
+
+    test "regression for https://github.com/blockscout/blockscout/issues/12389" do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        metadata: %{awesome: "metadata"},
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 0
+      )
+
+      insert(:token_instance,
+        metadata: %{awesome: "metadata"},
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1
+      )
+
+      token_contract_address_hash_string = to_string(token.contract_address_hash)
+
+      encoded_url_2 =
+        "0x" <>
+          (ABI.TypeEncoder.encode(
+             ["http://example.com/api/card/{id}/" <> String.duplicate("a", 3000)],
+             %ABI.FunctionSelector{
+               function: nil,
+               types: [
+                 :string
+               ]
+             }
+           )
+           |> Base.encode16(case: :lower))
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [
+             %{
+               id: id_1,
+               jsonrpc: "2.0",
+               method: "eth_call",
+               params: [
+                 %{
+                   data: "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000000",
+                   to: ^token_contract_address_hash_string
+                 },
+                 "latest"
+               ]
+             },
+             %{
+               id: id_2,
+               jsonrpc: "2.0",
+               method: "eth_call",
+               params: [
+                 %{
+                   data: "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000001",
+                   to: ^token_contract_address_hash_string
+                 },
+                 "latest"
+               ]
+             }
+           ],
+           _options ->
+          {:ok,
+           [
+             %{
+               id: id_1,
+               jsonrpc: "2.0",
+               result:
+                 "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004768747470733a2f2f6170692e63727970746f736861636b2e636c75622f676f7068657273000000000000000000000000000000000000000000000000002f6a736f6e2f3235343300000000000000000000000000000000000000000000000000"
+             },
+             %{id: id_2, jsonrpc: "2.0", result: encoded_url_2}
+           ]}
+        end
+      )
+
+      assert MigrationStatus.get_status("backfill_metadata_url") == nil
+
+      BackfillMetadataURL.start_link([])
+      Process.sleep(100)
+
+      [instance_1, instance_2] =
+        Instance
+        |> order_by([i], asc: i.token_id)
+        |> Repo.all()
+
+      assert instance_1.skip_metadata_url == false
+      assert instance_2.skip_metadata_url == false
+
+      assert is_nil(instance_1.metadata)
+      assert !is_nil(instance_2.metadata)
+
+      assert instance_2.metadata == %{"awesome" => "metadata"}
+      assert String.length(instance_2.metadata_url) == 2048
+      assert instance_1.error == "not_printable"
+
+      assert MigrationStatus.get_status("backfill_metadata_url") == "completed"
+    end
   end
 end

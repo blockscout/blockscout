@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
   @moduledoc false
   require OpenApiSpex
 
+  alias BlockScoutWeb.Schemas.API.V2.Address
   alias OpenApiSpex.Schema
 
   @filecoin_robust_address_schema %Schema{
@@ -29,19 +30,25 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
           type: %Schema{
             type: :string,
             enum: [:regular, :validator, :group],
-            nullable: true
+            nullable: false
           },
           name: %Schema{type: :string, nullable: true},
           metadata_url: %Schema{type: :string, nullable: true},
-          nonvoting_locked_celo: %Schema{type: :string, nullable: true},
-          locked_celo: %Schema{type: :string, nullable: true}
+          nonvoting_locked_celo: %Schema{type: :string, nullable: false},
+          locked_celo: %Schema{type: :string, nullable: false},
+          vote_signer_address: %Schema{allOf: [Address], nullable: true},
+          validator_signer_address: %Schema{allOf: [Address], nullable: false},
+          attestation_signer_address: %Schema{allOf: [Address], nullable: false}
         },
         required: [
           :type,
           :name,
           :metadata_url,
           :nonvoting_locked_celo,
-          :locked_celo
+          :locked_celo,
+          :vote_signer_address,
+          :validator_signer_address,
+          :attestation_signer_address
         ],
         example: %{
           type: "validator",

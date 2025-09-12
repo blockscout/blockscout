@@ -63,7 +63,8 @@ defmodule Explorer.MetadataURIValidator do
   """
   @spec validate_uri(String.t()) :: :ok | {:error, atom()}
   def validate_uri(uri) do
-    with {:empty_host, %URI{host: host, scheme: scheme}} when host not in ["", nil] <- {:empty_host, URI.parse(uri)},
+    with {:not_printable, false} <- {:not_printable, not String.printable?(uri)},
+         {:empty_host, %URI{host: host, scheme: scheme}} when host not in ["", nil] <- {:empty_host, URI.parse(uri)},
          {:disallowed_protocol, false} <- {:disallowed_protocol, scheme not in allowed_uri_protocols()},
          {:nxdomain, ip_list} when not is_nil(ip_list) <- {:nxdomain, host_to_ip_list(host)},
          {:blacklist, false} <- {:blacklist, not Enum.all?(ip_list, &allowed_ip?/1)} do

@@ -86,7 +86,8 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         contract_code_md5: "123"
       )
 
-      TestHelper.get_all_proxies_implementation_zero_addresses()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       path =
         smart_contract_path(BlockScoutWeb.Endpoint, :index,
@@ -106,6 +107,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
     test "lists [] proxy read only functions if no verified eip-1967 implementation" do
       token_contract_address = insert(:contract_address)
+      implementation_address = insert(:address)
 
       insert(:smart_contract,
         address_hash: token_contract_address.hash,
@@ -123,44 +125,8 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         contract_code_md5: "123"
       )
 
-      blockchain_get_implementation_mock()
-
-      path =
-        smart_contract_path(BlockScoutWeb.Endpoint, :index,
-          hash: token_contract_address.hash,
-          type: :proxy,
-          action: :read
-        )
-
-      conn =
-        build_conn()
-        |> put_req_header("x-requested-with", "xmlhttprequest")
-        |> get(path)
-
-      assert conn.status == 200
-      assert conn.assigns.read_only_functions == []
-    end
-
-    test "lists [] proxy read only functions if no verified eip-1967 implementation and eth_getStorageAt returns not normalized address hash" do
-      token_contract_address = insert(:contract_address)
-
-      insert(:smart_contract,
-        address_hash: token_contract_address.hash,
-        abi: [
-          %{
-            "type" => "function",
-            "stateMutability" => "nonpayable",
-            "payable" => false,
-            "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
-            "name" => "implementation",
-            "inputs" => [],
-            "constant" => false
-          }
-        ],
-        contract_code_md5: "123"
-      )
-
-      blockchain_get_implementation_mock_2()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests(eip1967: implementation_address.hash)
 
       path =
         smart_contract_path(BlockScoutWeb.Endpoint, :index,
@@ -274,19 +240,6 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000000"}]}
       end
-    )
-  end
-
-  defp blockchain_get_implementation_mock do
-    EthereumJSONRPC.Mox
-    |> TestHelper.mock_logic_storage_pointer_request(false, "0xcebb2CCCFe291F0c442841cBE9C1D06EED61Ca02")
-  end
-
-  defp blockchain_get_implementation_mock_2 do
-    EthereumJSONRPC.Mox
-    |> TestHelper.mock_logic_storage_pointer_request(
-      false,
-      "0x000000000000000000000000cebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"
     )
   end
 end

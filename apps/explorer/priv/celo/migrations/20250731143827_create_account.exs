@@ -27,8 +27,23 @@ defmodule Explorer.Repo.Celo.Migrations.CreateAccount do
       add(:nonvoting_locked_celo, :numeric, precision: 100, null: false)
       add(:locked_celo, :numeric, precision: 100, null: false)
 
-      # add(:attestations_requested, :integer, null: false, default: 0)
-      # add(:attestations_fulfilled, :integer, null: false, default: 0)
+      add(
+        :vote_signer_address_hash,
+        references(:addresses, column: :hash, type: :bytea),
+        null: true
+      )
+
+      add(
+        :validator_signer_address_hash,
+        references(:addresses, column: :hash, type: :bytea),
+        null: true
+      )
+
+      add(
+        :attestation_signer_address_hash,
+        references(:addresses, column: :hash, type: :bytea),
+        null: true
+      )
 
       timestamps()
     end

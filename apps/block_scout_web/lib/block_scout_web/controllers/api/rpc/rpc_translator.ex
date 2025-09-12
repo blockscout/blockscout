@@ -20,8 +20,51 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
 
   alias BlockScoutWeb.API.APILogger
   alias BlockScoutWeb.API.RPC.RPCView
+
+  alias BlockScoutWeb.API.RPC.{
+    AddressController,
+    BlockController,
+    CeloController,
+    ContractController,
+    LogsController,
+    RPCView,
+    StatsController,
+    TokenController,
+    TransactionController
+  }
+
   alias Phoenix.Controller
   alias Plug.Conn
+
+  @on_load :load_atoms
+
+  @doc """
+  Ensures that the specified controller modules are loaded into memory.
+
+  This function iterates over a predefined list of controller modules and calls `Code.ensure_loaded?/1`
+  on each, which loads the module if it hasn't been loaded yet. This is useful for ensuring that
+  all necessary controllers are available before performing operations that depend on them.
+
+  Returns `:ok` after attempting to load all modules.
+  """
+  @spec load_atoms() :: :ok
+  def load_atoms do
+    Enum.each(
+      [
+        AddressController,
+        BlockController,
+        CeloController,
+        ContractController,
+        LogsController,
+        StatsController,
+        TokenController,
+        TransactionController
+      ],
+      &Code.ensure_loaded?/1
+    )
+
+    :ok
+  end
 
   def init(opts) do
     opts

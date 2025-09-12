@@ -5,15 +5,19 @@ on:
   push:
     branches:
       - production-fuse
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 9.0.2
+      RELEASE_VERSION: 9.1.0
       DOCKER_CHAIN_NAME: fuse
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup repo
         uses: ./.github/actions/setup-repo
         id: setup
@@ -29,7 +33,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
+          tags: ghcr.io/blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}-private:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64

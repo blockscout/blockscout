@@ -9,6 +9,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
 
+  import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
+
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
     only: [proxy_implementations_association: 0, proxy_implementations_smart_contracts_association: 0]
 
@@ -199,7 +201,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       [
         necessity_by_association: %{
           [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-          [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
+          [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+          [token: reputation_association()] => :optional
         }
       ]
       |> Keyword.merge(@api_true)

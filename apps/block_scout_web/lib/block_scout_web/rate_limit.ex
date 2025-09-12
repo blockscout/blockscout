@@ -37,8 +37,8 @@ defmodule BlockScoutWeb.RateLimit do
 
     user_api_key = get_api_key(conn)
 
-    with {:api_key, false} <- {:api_key, has_api_key_param?(conn) && user_api_key == static_api_key},
-         {:plan, plan} when plan in [false, nil] <- {:plan, has_api_key_param?(conn) && get_plan(conn.query_params)} do
+    with {:api_key, false} <- {:api_key, valid_api_key?(user_api_key) && user_api_key == static_api_key},
+         {:plan, plan} when plan in [false, nil] <- {:plan, valid_api_key?(user_api_key) && get_plan(conn.query_params)} do
       ip_result =
         rate_limit("graphql_#{ip_string}", config[:time_interval_limit_by_ip], config[:limit_by_ip], multiplier)
 
@@ -225,8 +225,9 @@ defmodule BlockScoutWeb.RateLimit do
   defp rate_limit_by_static_api_key(conn, route_config, default_config, global_config, bucket_key_prefix) do
     config = config_or_default(route_config, default_config)
     static_api_key = global_config[:static_api_key_value]
+    user_api_key = get_api_key(conn)
 
-    if has_api_key_param?(conn) && get_api_key(conn) == static_api_key do
+    if valid_api_key?(user_api_key) && user_api_key == static_api_key do
       rate_limit(static_api_key, config[:period], config[:limit], config[:cost] || 1, bucket_key_prefix)
     else
       :skip
@@ -318,8 +319,7 @@ defmodule BlockScoutWeb.RateLimit do
   defp check_no_rate_limit_api_key(conn, no_rate_limit_api_key) do
     user_api_key = get_api_key(conn)
 
-    has_api_key_param?(conn) && !is_nil(user_api_key) && String.trim(user_api_key) !== "" &&
-      user_api_key == no_rate_limit_api_key
+    valid_api_key?(user_api_key) && user_api_key == no_rate_limit_api_key
   end
 
   @doc """
@@ -359,9 +359,17 @@ defmodule BlockScoutWeb.RateLimit do
     end
   end
 
-  defp has_api_key_param?(conn), do: Map.has_key?(conn.query_params, "apikey")
+  defp valid_api_key?(api_key), do: !is_nil(api_key) && String.trim(api_key) !== ""
 
-  defp get_api_key(conn), do: Map.get(conn.query_params, "apikey")
+  defp get_api_key(conn) do
+    case Conn.get_req_header(conn, "x-api-key") do
+      [api_key] ->
+        api_key
+
+      _ ->
+        Map.get(conn.query_params, "apikey")
+    end
+  end
 
   defp get_plan(query_params) do
     with true <- query_params && Map.has_key?(query_params, "apikey"),

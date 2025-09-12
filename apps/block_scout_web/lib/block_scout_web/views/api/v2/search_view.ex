@@ -43,7 +43,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
         search_result.circulating_market_cap && to_string(search_result.circulating_market_cap),
       "is_verified_via_admin_panel" => search_result.is_verified_via_admin_panel,
       "certified" => search_result.certified || false,
-      "priority" => search_result.priority
+      "priority" => search_result.priority,
+      "reputation" => search_result.reputation
     }
   end
 
@@ -56,7 +57,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "is_smart_contract_verified" => search_result.verified,
       "ens_info" => search_result[:ens_info],
       "certified" => if(search_result.certified, do: search_result.certified, else: false),
-      "priority" => search_result.priority
+      "priority" => search_result.priority,
+      "reputation" => search_result.reputation
     }
   end
 
@@ -70,7 +72,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "is_smart_contract_verified" => search_result.verified,
       "ens_info" => search_result[:ens_info],
       "certified" => if(search_result.certified, do: search_result.certified, else: false),
-      "priority" => search_result.priority
+      "priority" => search_result.priority,
+      "reputation" => search_result.reputation
     }
   end
 
@@ -84,7 +87,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "ens_info" => search_result[:ens_info],
       "certified" => if(search_result.certified, do: search_result.certified, else: false),
       "priority" => search_result.priority,
-      "metadata" => search_result.metadata
+      "metadata" => search_result.metadata,
+      "reputation" => search_result.reputation
     }
   end
 

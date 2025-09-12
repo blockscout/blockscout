@@ -30,6 +30,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
               | :addresses
               | :smart_contracts
               | :arbitrum_batch_l2_blocks
+              | :smart_contracts_additional_sources
 
   @doc """
   Specifies the type of operation to be performed on the database index.

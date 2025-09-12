@@ -70,7 +70,8 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "burnt_fees_percentage" => burnt_fees_percentage(block.burnt_fees, block.transactions_fees),
       "type" => block |> BlockView.block_type() |> String.downcase(),
       "transaction_fees" => block.transactions_fees,
-      "withdrawals_count" => count_withdrawals(block)
+      "withdrawals_count" => count_withdrawals(block),
+      "is_pending_update" => block.refetch_needed
     }
     |> chain_type_fields(block, single_block?)
   end

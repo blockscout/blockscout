@@ -361,8 +361,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       items_from_db_queue = [token_info_item_1, token_info_item_2]
 
       items_from_db_queue
-      |> TokenInfoExportQueue.delete_query()
-      |> Repo.transaction()
+      |> Enum.each(fn item ->
+        item
+        |> TokenInfoExportQueue.delete_query()
+        |> Repo.delete_all()
+      end)
 
       assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
       assert {:ok, {:chunks_processed, _}} = MultichainSearch.batch_export_token_info(items_from_db_queue)
@@ -400,8 +403,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       items_from_db_queue = [token_info_item_1, token_info_item_2]
 
       items_from_db_queue
-      |> TokenInfoExportQueue.delete_query()
-      |> Repo.transaction()
+      |> Enum.each(fn item ->
+        item
+        |> TokenInfoExportQueue.delete_query()
+        |> Repo.delete_all()
+      end)
 
       assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
 
@@ -496,8 +502,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         end
 
       items_from_db_queue
-      |> TokenInfoExportQueue.delete_query()
-      |> Repo.transaction()
+      |> Enum.each(fn item ->
+        item
+        |> TokenInfoExportQueue.delete_query()
+        |> Repo.delete_all()
+      end)
 
       assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
 
@@ -558,8 +567,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       items_from_db_queue = 10 |> insert_list(:multichain_search_db_export_token_info_queue)
 
       items_from_db_queue
-      |> TokenInfoExportQueue.delete_query()
-      |> Repo.transaction()
+      |> Enum.each(fn item ->
+        item
+        |> TokenInfoExportQueue.delete_query()
+        |> Repo.delete_all()
+      end)
 
       assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
       assert {:error, results} = MultichainSearch.batch_export_token_info(items_from_db_queue)
@@ -596,8 +608,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       items_from_db_queue = 15 |> insert_list(:multichain_search_db_export_token_info_queue)
 
       items_from_db_queue
-      |> TokenInfoExportQueue.delete_query()
-      |> Repo.transaction()
+      |> Enum.each(fn item ->
+        item
+        |> TokenInfoExportQueue.delete_query()
+        |> Repo.delete_all()
+      end)
 
       assert Repo.aggregate(TokenInfoExportQueue, :count) == 0
       assert {:error, results} = MultichainSearch.batch_export_token_info(items_from_db_queue)

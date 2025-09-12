@@ -17,7 +17,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Migrated do
   """
 
   use Utils.RuntimeEnvHelper,
-    auth0_application_identifier: [:ueberauth, Ueberauth.Strategy.Auth0.OAuth, :auth0_application_id]
+    auth0_application_identifier: [:ueberauth, [Ueberauth.Strategy.Auth0.OAuth, :auth0_application_id]]
 
   alias Explorer.ThirdPartyIntegrations.Auth0.Internal
   alias Ueberauth.Auth

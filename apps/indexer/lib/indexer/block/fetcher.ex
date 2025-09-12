@@ -58,8 +58,6 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.Optimism.Withdrawals, as: OptimismWithdrawals
 
-  alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
-
   alias Indexer.Transform.Scroll.L1FeeParams, as: ScrollL1FeeParams
 
   alias Indexer.Transform.Arbitrum.Messaging, as: ArbitrumMessaging
@@ -184,13 +182,6 @@ defmodule Indexer.Block.Fetcher do
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          optimism_withdrawals =
            if(callback_module == Indexer.Block.Realtime.Fetcher, do: OptimismWithdrawals.parse(logs), else: []),
-         polygon_edge_withdrawals =
-           if(callback_module == Indexer.Block.Realtime.Fetcher, do: Withdrawals.parse(logs), else: []),
-         polygon_edge_deposit_executes =
-           if(callback_module == Indexer.Block.Realtime.Fetcher,
-             do: DepositExecutes.parse(logs),
-             else: []
-           ),
          scroll_l1_fee_params =
            if(callback_module == Indexer.Block.Realtime.Fetcher,
              do: ScrollL1FeeParams.parse(logs),
@@ -264,8 +255,6 @@ defmodule Indexer.Block.Fetcher do
            %{
              transactions_with_receipts: transactions_with_receipts,
              optimism_withdrawals: optimism_withdrawals,
-             polygon_edge_withdrawals: polygon_edge_withdrawals,
-             polygon_edge_deposit_executes: polygon_edge_deposit_executes,
              polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
              scroll_l1_fee_params: scroll_l1_fee_params,
              shibarium_bridge_operations: shibarium_bridge_operations,
@@ -320,15 +309,6 @@ defmodule Indexer.Block.Fetcher do
   defp do_import_options(:optimism, basic_import_options, %{optimism_withdrawals: optimism_withdrawals}) do
     basic_import_options
     |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
-  end
-
-  defp do_import_options(:polygon_edge, basic_import_options, %{
-         polygon_edge_withdrawals: polygon_edge_withdrawals,
-         polygon_edge_deposit_executes: polygon_edge_deposit_executes
-       }) do
-    basic_import_options
-    |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
-    |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
   end
 
   defp do_import_options(:polygon_zkevm, basic_import_options, %{

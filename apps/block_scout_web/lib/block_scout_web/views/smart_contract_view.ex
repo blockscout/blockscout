@@ -109,22 +109,22 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_with_type(value, string, names, index, _components) when string in ["string", :string],
-    do: render_type_value("string", Helper.sanitize_input(value), fetch_name(names, index))
+    do: render_type_value("string", Helper.escape_minimal(value), fetch_name(names, index))
 
   def values_with_type(value, "bytes" <> _ = bytes_type, names, index, _components),
-    do: render_type_value(bytes_type, Helper.sanitize_input(value), fetch_name(names, index))
+    do: render_type_value(bytes_type, Helper.escape_minimal(value), fetch_name(names, index))
 
   def values_with_type(value, bytes, names, index, _components) when bytes in [:bytes],
-    do: render_type_value("bytes", Helper.sanitize_input(value), fetch_name(names, index))
+    do: render_type_value("bytes", Helper.escape_minimal(value), fetch_name(names, index))
 
   def values_with_type(value, bool, names, index, _components) when bool in ["bool", :bool],
-    do: render_type_value("bool", Helper.sanitize_input(to_string(value)), fetch_name(names, index))
+    do: render_type_value("bool", Helper.escape_minimal(to_string(value)), fetch_name(names, index))
 
   def values_with_type(value, type, names, index, _components),
-    do: render_type_value(type, Helper.sanitize_input(value), fetch_name(names, index))
+    do: render_type_value(type, Helper.escape_minimal(value), fetch_name(names, index))
 
   def values_with_type(value, :error, _components),
-    do: render_type_value("error", Helper.sanitize_input(value), "error")
+    do: render_type_value("error", Helper.escape_minimal(value), "error")
 
   def cast_address(value) do
     case HashAddress.cast(value) do
@@ -166,11 +166,11 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp render_type_value(type, value, type) do
-    "<div class=\"pl-3\"><i>(#{Helper.sanitize_input(type)})</i> : #{value}</div>"
+    "<div class=\"pl-3\"><i>(#{Helper.escape_minimal(type)})</i> : #{value}</div>"
   end
 
   defp render_type_value(type, value, name) do
-    "<div class=\"pl-3\"><i><span style=\"color: black\">#{Helper.sanitize_input(name)}</span> (#{Helper.sanitize_input(type)})</i> : #{value}</div>"
+    "<div class=\"pl-3\"><i><span style=\"color: black\">#{Helper.escape_minimal(name)}</span> (#{Helper.escape_minimal(type)})</i> : #{value}</div>"
   end
 
   defp render_array_type_value(type, values, name) do

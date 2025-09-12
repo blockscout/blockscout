@@ -8,6 +8,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
 
   alias Explorer.Chain.{
     Address,
+    Address.Reputation,
     Hash,
     SmartContractAdditionalSource
   }
@@ -77,6 +78,8 @@ defmodule Explorer.Chain.SmartContract.Schema do
           references: :address_hash,
           foreign_key: :address_hash
         )
+
+        has_one(:reputation, Reputation, foreign_key: :address_hash, references: :address_hash)
 
         timestamps()
 
@@ -961,14 +964,11 @@ defmodule Explorer.Chain.SmartContract do
       |> __MODULE__.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
 
-    # Prepares changesets for additional sources associated with the contract
-    new_contract_additional_source = %SmartContractAdditionalSource{}
-
     smart_contract_additional_sources_changesets =
       if secondary_sources do
         secondary_sources
         |> Enum.map(fn changeset ->
-          new_contract_additional_source
+          %SmartContractAdditionalSource{}
           |> SmartContractAdditionalSource.changeset(changeset)
         end)
       else
@@ -1040,50 +1040,62 @@ defmodule Explorer.Chain.SmartContract do
   def update_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
     address_hash = Map.get(attrs, :address_hash)
 
-    # Removes all additional sources associated with the contract
-    query_sources =
-      from(
-        source in SmartContractAdditionalSource,
-        where: source.address_hash == ^address_hash
-      )
-
-    _delete_sources = Repo.delete_all(query_sources)
-
-    # Retrieve the existing smart contract
-    smart_contract = address_hash_to_smart_contract(address_hash)
-
-    # Updates existing changeset and extends it with external libraries.
-    # As part of changeset preparation and verification, contract methods are
-    # updated as so if new ABI does not contain some of previous methods, they
-    # are still kept in the database
-    smart_contract_changeset =
-      smart_contract
-      |> __MODULE__.changeset(attrs)
-      |> Changeset.put_change(:external_libraries, external_libraries)
-
-    # Prepares changesets for additional sources associated with the contract
-    new_contract_additional_source = %SmartContractAdditionalSource{}
-
-    smart_contract_additional_sources_changesets =
-      if secondary_sources do
-        secondary_sources
-        |> Enum.map(fn changeset ->
-          new_contract_additional_source
-          |> SmartContractAdditionalSource.changeset(changeset)
-        end)
-      else
-        []
-      end
-
     # Prepares the queries to clear the primary flag for the contract address in
     # Explorer.Chain.Address.Name if any (enforce ShareLocks tables order (see
     # docs: sharelocks.md)) and updated the contract details.
     insert_contract_query =
       Multi.new()
+      |> Multi.run(:acquire_smart_contract, fn repo, _ ->
+        # Get smart contract with lock INSIDE the transaction
+        smart_contract =
+          address_hash
+          |> get_by_address_hash_query()
+          |> lock("FOR UPDATE")
+          |> repo.one()
+
+        {:ok, smart_contract}
+      end)
+      |> Multi.run(:delete_sources, fn repo, _ ->
+        {count, _} =
+          repo.delete_all(
+            from(
+              source in SmartContractAdditionalSource,
+              where: source.address_hash == ^address_hash
+            )
+          )
+
+        {:ok, count}
+      end)
       |> Multi.run(:clear_primary_address_names, fn repo, _ ->
         AddressName.clear_primary_address_names(repo, address_hash)
       end)
-      |> Multi.update(:smart_contract, smart_contract_changeset)
+      |> Multi.run(
+        :smart_contract,
+        fn repo, %{acquire_smart_contract: smart_contract} ->
+          smart_contract
+          |> __MODULE__.changeset(attrs)
+          |> Changeset.put_change(:external_libraries, external_libraries)
+          |> repo.update()
+        end
+      )
+      |> Multi.run(
+        :set_primary_address_name,
+        fn repo, %{smart_contract: %SmartContract{name: name}} ->
+          result = AddressName.create_primary_address_name(repo, name, address_hash)
+          {:ok, result}
+        end
+      )
+
+    smart_contract_additional_sources_changesets =
+      if secondary_sources do
+        secondary_sources
+        |> Enum.map(fn changeset ->
+          %SmartContractAdditionalSource{}
+          |> SmartContractAdditionalSource.changeset(changeset)
+        end)
+      else
+        []
+      end
 
     # Updates the queries from the previous step with inserting additional sources
     # of the contract
@@ -1098,9 +1110,6 @@ defmodule Explorer.Chain.SmartContract do
     insert_result =
       insert_contract_query_with_additional_sources
       |> Repo.transaction()
-
-    # Set the primary mark for the contract name
-    AddressName.create_primary_address_name(Repo, Changeset.get_field(smart_contract_changeset, :name), address_hash)
 
     case insert_result do
       {:ok, %{smart_contract: smart_contract}} ->
@@ -1145,7 +1154,7 @@ defmodule Explorer.Chain.SmartContract do
                 implementation_address_fetched?: false,
                 refetch_necessity_checked?: false
               },
-              Keyword.put(options, :proxy_without_abi?, true)
+              options
             )
 
           {implementation_smart_contract, true}

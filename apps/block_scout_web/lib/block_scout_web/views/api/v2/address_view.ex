@@ -146,7 +146,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
               token_balance.address_hash,
               token_balance
             )
-        )
+        ),
+      "reputation" => token_balance.reputation
     }
   end
 
@@ -183,7 +184,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
   defp prepare_nft(nft, token) do
     Map.merge(
-      %{"token_type" => token.type, "value" => value(token.type, nft)},
+      %{"token_type" => token.type, "value" => value(token.type, nft), "reputation" => token.reputation},
       TokenView.prepare_token_instance(nft, token)
     )
   end
@@ -195,7 +196,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "token_instances" =>
         Enum.map(collection.preloaded_token_instances, fn instance ->
           prepare_nft_for_collection(collection.token.type, instance)
-        end)
+        end),
+      "reputation" => collection.reputation
     }
   end
 

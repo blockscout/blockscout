@@ -3,7 +3,7 @@ defmodule Indexer.Utils.EventNotificationsCleaner do
   Module is responsible for cleaning up event notifications from the database.
   """
 
-  alias Explorer.Repo
+  alias Explorer.Repo.EventNotifications, as: EventNotificationsRepo
   alias Explorer.Utility.EventNotification
 
   import Ecto.Query
@@ -31,7 +31,7 @@ defmodule Indexer.Utils.EventNotificationsCleaner do
     {count, _} =
       EventNotification
       |> where([en], en.inserted_at < ago(^max_age(), "millisecond"))
-      |> Repo.delete_all()
+      |> EventNotificationsRepo.delete_all()
 
     Logger.info("Deleted #{count} event notifications")
   end

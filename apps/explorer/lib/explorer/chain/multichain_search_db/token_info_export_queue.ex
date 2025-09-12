@@ -7,7 +7,6 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
 
   import Ecto.Query
 
-  alias Ecto.Multi
   alias Explorer.Repo
 
   @required_attrs ~w(address_hash data_type data)a
@@ -79,26 +78,19 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
   end
 
   @doc """
-    Constructs DELETE FROM queries for the token info items to be deleted from the queue.
+    Constructs query for DELETE FROM query for the token info item to be deleted from the queue.
 
     ## Parameters
-    - `queue_items`: A list of items to be deleted from the queue. Each item is identified by its primary key.
+    - `queue_item`: An item to be deleted from the queue. The item is identified by its primary key.
 
     ## Returns
-    - An `Ecto.Multi` struct containing the delete operations.
+    - An `Ecto.Query` struct containing the delete operation.
   """
-  @spec delete_query([%{:address_hash => binary(), :data_type => atom(), optional(:data) => map()}]) :: Multi.t()
-  def delete_query(queue_items) do
-    queue_items
-    |> Enum.reduce(Multi.new(), fn queue_item, multi_acc ->
-      Multi.delete_all(
-        multi_acc,
-        {queue_item.address_hash, queue_item.data_type},
-        from(q in __MODULE__,
-          where: q.address_hash == ^queue_item.address_hash and q.data_type == ^queue_item.data_type
-        )
-      )
-    end)
+  @spec delete_query(%{:address_hash => binary(), :data_type => atom(), optional(:data) => map()}) :: Ecto.Query.t()
+  def delete_query(queue_item) do
+    from(q in __MODULE__,
+      where: q.address_hash == ^queue_item.address_hash and q.data_type == ^queue_item.data_type
+    )
   end
 
   @doc """

@@ -18,7 +18,6 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
 
   @default_max_batch_size 1000
   @default_max_concurrency 10
-  @delete_queries_chunk_size 10
   @failed_to_export_data_error "Batch token info export attempt to the Multichain Search DB failed"
   @fetcher_name :multichain_search_db_token_info_export_queue
   @queue_size_info "Queue size"
@@ -83,7 +82,6 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
   end
 
   # Removes items successfully sent to Multichain service from db queue.
-  # The list is split into small chunks to prevent db deadlocks.
   #
   # ## Parameters
   # - `items`: The list of queue items to delete from the queue.
@@ -93,11 +91,10 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue do
   @spec delete_queue_items([map()]) :: [map()]
   defp delete_queue_items(items) do
     items
-    |> Enum.chunk_every(@delete_queries_chunk_size)
-    |> Enum.each(fn chunk_items ->
-      chunk_items
+    |> Enum.each(fn item ->
+      item
       |> TokenInfoExportQueue.delete_query()
-      |> Repo.transaction()
+      |> Repo.delete_all()
     end)
 
     items

@@ -32,12 +32,6 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
           Indexer.Fetcher.Optimism.WithdrawalEvent
         ]
 
-      :polygon_edge ->
-        [
-          Indexer.Fetcher.PolygonEdge.Deposit,
-          Indexer.Fetcher.PolygonEdge.WithdrawalExit
-        ]
-
       :polygon_zkevm ->
         [
           Indexer.Fetcher.PolygonZkevm.BridgeL1

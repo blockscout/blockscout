@@ -3,11 +3,11 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-  alias BlockScoutWeb.API.V2.BlobView
 
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
+      next_page_params: 4,
       put_key_value_to_paging_options: 3,
       token_transfers_next_page_params: 3,
       paging_options: 1,
@@ -29,6 +29,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   import Explorer.MicroserviceInterfaces.Metadata,
     only: [maybe_preload_metadata: 1, maybe_preload_metadata_to_transaction: 1]
 
+  import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
+
   import Ecto.Query,
     only: [
       preload: 2
@@ -37,10 +39,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   require Logger
 
   alias BlockScoutWeb.AccessHelper
+  alias BlockScoutWeb.API.V2.{BlobView, Ethereum.DepositController, Ethereum.DepositView}
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
+  alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Cache.Counters.{NewPendingTransactionsCount, Transactions24hCount}
   alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
@@ -102,13 +106,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   @token_transfers_necessity_by_association %{
     [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-    [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
+    [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+    [token: reputation_association()] => :optional
   }
 
   @token_transfers_in_transaction_necessity_by_association %{
     [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
     [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-    token: :required
+    [token: reputation_association()] => :optional
   }
 
   @internal_transaction_necessity_by_association [
@@ -705,6 +710,68 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         transaction_fees_avg_24h: transaction_fees_avg
       }
     )
+  end
+
+  @doc """
+  Handles `api/v2/transactions/:transaction_hash_param/beacon/deposits` endpoint.
+  Fetches beacon deposits included in a specific transaction with pagination support.
+
+  This endpoint retrieves all beacon deposits that were included in the
+  specified transactions. The results include preloaded associations for both the from_address and
+  withdrawal_address, including scam badges, names, smart contracts, and proxy
+  implementations. The response is paginated and may include ENS and metadata
+  enrichment if those services are enabled.
+
+  ## Parameters
+  - `conn`: The Plug connection.
+  - `params`: A map containing:
+    - `"transaction_hash_param"`: The transaction hash to fetch deposits from.
+    - Optional pagination parameter:
+      - `"index"`: non-negative integer, the starting index for pagination.
+
+  ## Returns
+  - `{:error, :not_found}` - If the transaction is not found.
+  - `{:error, {:invalid, :hash}}` - If the transaction hash format is invalid.
+  - `Plug.Conn.t()` - A 200 response with rendered deposits and pagination
+    information when successful.
+  """
+  @spec beacon_deposits(Plug.Conn.t(), map()) ::
+          {:format, :error}
+          | {:not_found, {:error, :not_found}}
+          | {:restricted_access, true}
+          | Plug.Conn.t()
+  def beacon_deposits(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
+    with {:ok, _transaction, transaction_hash} <- validate_transaction(transaction_hash_string, params) do
+      full_options =
+        [
+          necessity_by_association: %{
+            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+            [withdrawal_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
+              :optional
+          },
+          api?: true
+        ]
+        |> Keyword.merge(DepositController.paging_options(params))
+
+      deposit_plus_one = BeaconDeposit.from_transaction_hash(transaction_hash, full_options)
+      {deposits, next_page} = split_list_by_page(deposit_plus_one)
+
+      next_page_params =
+        next_page
+        |> next_page_params(
+          deposits,
+          params,
+          DepositController.paging_function()
+        )
+
+      conn
+      |> put_status(200)
+      |> put_view(DepositView)
+      |> render(:deposits, %{
+        deposits: deposits |> maybe_preload_ens() |> maybe_preload_metadata(),
+        next_page_params: next_page_params
+      })
+    end
   end
 
   @doc """

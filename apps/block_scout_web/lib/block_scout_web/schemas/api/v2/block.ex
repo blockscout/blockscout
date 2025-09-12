@@ -228,7 +228,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
         |> put_in([:properties, :excess_blob_gas], General.IntegerStringNullable)
         |> put_in([:properties, :blob_gas_price], General.IntegerString)
         |> put_in([:properties, :burnt_blob_fees], General.IntegerString)
-        |> update_in([:required], &([:blob_transactions_count, :blob_gas_used, :excess_blob_gas] ++ &1))
+        |> put_in([:properties, :beacon_deposits_count], %Schema{type: :integer, nullable: true})
+        |> update_in(
+          [:required],
+          &([:blob_transactions_count, :blob_gas_used, :excess_blob_gas, :beacon_deposits_count] ++ &1)
+        )
 
       :celo ->
         schema
@@ -296,7 +300,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
         burnt_fees_percentage: %Schema{type: :number, format: :float, nullable: true},
         type: %Schema{type: :string, nullable: false, enum: ["block", "uncle", "reorg"]},
         transaction_fees: General.IntegerString,
-        withdrawals_count: %Schema{type: :integer, nullable: true}
+        withdrawals_count: %Schema{type: :integer, nullable: true},
+        is_pending_update: %Schema{type: :boolean, nullable: false}
       },
       required: [
         :height,
@@ -322,7 +327,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
         :burnt_fees_percentage,
         :type,
         :transaction_fees,
-        :withdrawals_count
+        :withdrawals_count,
+        :is_pending_update
       ]
     }
     |> ChainTypeCustomizations.chain_type_fields()

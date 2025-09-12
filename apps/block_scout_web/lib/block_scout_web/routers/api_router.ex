@@ -190,6 +190,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if @chain_type == :ethereum do
         get("/:transaction_hash_param/blobs", V2.TransactionController, :blobs)
       end
+
+      chain_scope :ethereum do
+        get("/:transaction_hash_param/beacon/deposits", V2.TransactionController, :beacon_deposits)
+      end
     end
 
     scope "/token-transfers" do
@@ -219,6 +223,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if @chain_type == :scroll do
         get("/scroll-batch/:batch_number", V2.BlockController, :scroll_batch)
       end
+
+      chain_scope :ethereum do
+        get("/:block_hash_or_number/beacon/deposits", V2.BlockController, :beacon_deposits)
+      end
     end
 
     scope "/addresses" do
@@ -246,6 +254,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       chain_scope :celo do
         get("/:address_hash_param/celo/election-rewards", V2.AddressController, :celo_election_rewards)
         get("/:address_hash_param/celo/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
+      end
+
+      chain_scope :ethereum do
+        get("/:address_hash_param/beacon/deposits", V2.AddressController, :beacon_deposits)
       end
     end
 
@@ -294,7 +306,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/batches", V2.OptimismController, :batches)
         get("/batches/count", V2.OptimismController, :batches_count)
         get("/batches/da/celestia/:height/:commitment", V2.OptimismController, :batch_by_celestia_blob)
-        get("/batches/:internal_id", V2.OptimismController, :batch_by_internal_id)
+        get("/batches/:number", V2.OptimismController, :batch_by_number)
         get("/output-roots", V2.OptimismController, :output_roots)
         get("/output-roots/count", V2.OptimismController, :output_roots_count)
         get("/deposits", V2.OptimismController, :deposits)
@@ -315,15 +327,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/", V2.CeloController, :epochs)
         get("/:number", V2.CeloController, :epoch)
         get("/:number/election-rewards/:type", V2.CeloController, :election_rewards)
-      end
-    end
-
-    scope "/polygon-edge" do
-      chain_scope :polygon_edge do
-        get("/deposits", V2.PolygonEdgeController, :deposits)
-        get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
-        get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
-        get("/withdrawals/count", V2.PolygonEdgeController, :withdrawals_count)
       end
     end
 
@@ -425,6 +428,13 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
       scope "/metadata" do
         get("/addresses", V2.Proxy.MetadataController, :addresses)
+      end
+    end
+
+    chain_scope :ethereum do
+      scope "/beacon" do
+        get("/deposits", V2.Ethereum.DepositController, :list)
+        get("/deposits/count", V2.Ethereum.DepositController, :count)
       end
     end
 

@@ -2,7 +2,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   @moduledoc """
   Module for universal proxying 3rd party API endpoints
   """
-
+  require Logger
   alias Explorer.{Helper, HttpClient}
 
   @recv_timeout 60_000
@@ -29,6 +29,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
 
   @allowed_methods [:get, :post, :put, :patch, :delete]
   @reserved_param_types ~w(address chain_id chain_id_dependent)
+  @unexpected_error "Unexpected error when calling proxied endpoint"
 
   @cache_name :universal_proxy_config
 
@@ -105,14 +106,15 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
     with {:invalid_config, false} <- {:invalid_config, is_nil(url)},
          {:invalid_config, false} <- {:invalid_config, is_nil(method)},
          {:ok, %{status_code: status, body: body}} <-
-           HttpClient.request(method, url, headers, body, timeout: @recv_timeout) do
+           HttpClient.request(method, url, headers, body, recv_timeout: @recv_timeout) do
       {Helper.decode_json(body), status}
     else
       {:invalid_config, true} ->
         {"Invalid config: #{error_message}", 422}
 
-      _ ->
-        {"Unexpected error when calling proxied endpoint", 500}
+      err ->
+        Logger.error(fn -> ["#{@unexpected_error}: ", inspect(err)] end)
+        {@unexpected_error, 500}
     end
   end
 

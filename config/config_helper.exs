@@ -17,7 +17,6 @@ defmodule ConfigHelper do
         ethereum: Explorer.Repo.Beacon,
         filecoin: Explorer.Repo.Filecoin,
         optimism: Explorer.Repo.Optimism,
-        polygon_edge: Explorer.Repo.PolygonEdge,
         polygon_zkevm: Explorer.Repo.PolygonZkevm,
         rsk: Explorer.Repo.RSK,
         scroll: Explorer.Repo.Scroll,
@@ -36,7 +35,8 @@ defmodule ConfigHelper do
       [
         {parse_bool_env_var("BRIDGED_TOKENS_ENABLED"), Explorer.Repo.BridgedTokens},
         {parse_bool_env_var("MUD_INDEXER_ENABLED"), Explorer.Repo.Mud},
-        {parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"), Explorer.Repo.ShrunkInternalTransactions}
+        {parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"), Explorer.Repo.ShrunkInternalTransactions},
+        {mode() in [:indexer, :api], Explorer.Repo.EventNotifications}
       ]
       |> Enum.filter(&elem(&1, 0))
       |> Enum.map(&elem(&1, 1))
@@ -355,7 +355,6 @@ defmodule ConfigHelper do
     "ethereum",
     "filecoin",
     "optimism",
-    "polygon_edge",
     "polygon_zkevm",
     "rsk",
     "scroll",

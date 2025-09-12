@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   alias Explorer.Chain.{
     Address,
     Address.CurrentTokenBalance,
+    Beacon.Deposit,
     Block,
     InternalTransaction,
     Log,
@@ -188,6 +189,17 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     [to_string(owner_address_hash)]
   end
 
+  defp item_to_address_hash_strings(%Deposit{
+         from_address_hash: from_address_hash,
+         withdrawal_address_hash: withdrawal_address_hash
+       }) do
+    if withdrawal_address_hash do
+      [to_string(withdrawal_address_hash), to_string(from_address_hash)]
+    else
+      [to_string(from_address_hash)]
+    end
+  end
+
   defp put_ens_names(names, items) do
     Enum.map(items, &put_meta_to_item(&1, names, :ens_domain_name))
   end
@@ -290,6 +302,23 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
          field_to_put_info
        ) do
     %Instance{instance | owner: alter_address(owner_address, owner_address_hash, names, field_to_put_info)}
+  end
+
+  defp put_meta_to_item(
+         %Deposit{
+           from_address: from_address,
+           from_address_hash: from_address_hash,
+           withdrawal_address: withdrawal_address,
+           withdrawal_address_hash: withdrawal_address_hash
+         } = deposit,
+         names,
+         field_to_put_info
+       ) do
+    %Deposit{
+      deposit
+      | from_address: alter_address(from_address, from_address_hash, names, field_to_put_info),
+        withdrawal_address: alter_address(withdrawal_address, withdrawal_address_hash, names, field_to_put_info)
+    }
   end
 
   defp alter_address(address, nil, _names, _field), do: address

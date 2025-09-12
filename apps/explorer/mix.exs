@@ -24,7 +24,7 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "9.0.2",
+      version: "9.1.0",
       xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.InternalTransaction]]
     ]
   end
@@ -95,11 +95,10 @@ defmodule Explorer.Mixfile do
       {:poison, "~> 4.0.1"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
-      # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
-      {:prometheus, "~> 4.0", override: true},
+      {:prometheus, "~> 6.0", override: true},
       # Prometheus metrics for query duration
       {:prometheus_ecto, "~> 1.4.3"},
-      {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
+      {:prometheus_ex, "~> 5.0.0", override: true},
       # bypass optional dependency
       {:plug_cowboy, "~> 2.2", only: [:dev, :test]},
       {:que, "~> 0.10.1"},

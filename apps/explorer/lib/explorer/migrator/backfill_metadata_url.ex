@@ -143,7 +143,7 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
   defp process_common_url(url) do
     case MetadataURIValidator.validate_uri(url) do
       :ok ->
-        %{metadata_url: url, skip_metadata_url: false}
+        %{metadata_url: String.slice(url, 0, 2048), skip_metadata_url: false}
 
       {:error, reason} ->
         %{

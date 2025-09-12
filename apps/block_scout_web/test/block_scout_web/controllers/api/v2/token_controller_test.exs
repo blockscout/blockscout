@@ -630,6 +630,67 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       check_paginated_response(response, response_2nd_page, tokens)
     end
 
+    test "get token with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      insert(:token)
+
+      request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/tokens")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+
+      assert response == conn |> get("/api/v2/tokens") |> json_response(200)
+    end
+
+    test "get token with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      target_token = insert(:token)
+      insert(:scam_badge_to_address, address_hash: target_token.contract_address_hash)
+
+      request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/tokens")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/tokens")
+      response = json_response(request, 200)
+
+      assert response["items"] == []
+    end
+
+    test "get token with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      insert(:token)
+
+      request = conn |> get("/api/v2/tokens")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
+    test "get token with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      target_token = insert(:token)
+      insert(:scam_badge_to_address, address_hash: target_token.contract_address_hash)
+
+      request = conn |> get("/api/v2/tokens")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
     test "tokens are filtered by single type", %{conn: conn} do
       erc_20_tokens =
         for i <- 0..50 do
@@ -1718,7 +1779,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "don't fetch token instance metadata for non-existent token instance", %{
       conn: conn,
-      v2_secret_key: v2_secret_key
+      v2_secret_key: _v2_secret_key
     } do
       token = insert(:token, type: "ERC-721")
       token_id = 0

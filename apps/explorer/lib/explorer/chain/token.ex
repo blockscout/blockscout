@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Token.Schema do
   @moduledoc false
   use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.{Address, Address.Reputation, Hash}
 
   if @bridged_tokens_enabled do
     @bridged_field [
@@ -44,6 +44,8 @@ defmodule Explorer.Chain.Token.Schema do
           type: Hash.Address,
           null: false
         )
+
+        has_one(:reputation, Reputation, foreign_key: :address_hash, references: :contract_address_hash)
 
         unquote_splicing(@bridged_field)
 
@@ -141,6 +143,17 @@ defmodule Explorer.Chain.Token do
   @required_attrs ~w(contract_address_hash type)a
   @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block metadata_updated_at updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel volume_24h)a
 
+  @doc """
+    Returns the list of allowed NFT type labels.
+  """
+  @spec allowed_nft_type_labels() :: [String.t()]
+  def allowed_nft_type_labels,
+    do: [
+      "ERC-1155",
+      "ERC-404",
+      "ERC-721"
+    ]
+
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do
     additional_attrs = if BridgedToken.enabled?(), do: [:bridged], else: []
@@ -171,7 +184,7 @@ defmodule Explorer.Chain.Token do
         changeset
 
       property ->
-        put_change(changeset, key, Helper.sanitize_input(property))
+        put_change(changeset, key, Helper.escape_minimal(property))
     end
   end
 
@@ -384,9 +397,15 @@ defmodule Explorer.Chain.Token do
   @doc """
     Gets tokens with given contract address hashes.
   """
-  @spec get_by_contract_address_hashes([Hash.Address.t()], [Chain.api?()]) :: [Token.t()]
+  @spec get_by_contract_address_hashes([Hash.Address.t()], [Chain.api?() | Chain.necessity_by_association_option()]) ::
+          [Token.t()]
   def get_by_contract_address_hashes(hashes, options) do
-    Chain.select_repo(options).all(from(t in __MODULE__, where: t.contract_address_hash in ^hashes))
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    __MODULE__
+    |> where([t], t.contract_address_hash in ^hashes)
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
   end
 
   @doc """

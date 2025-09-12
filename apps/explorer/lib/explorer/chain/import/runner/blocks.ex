@@ -291,6 +291,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     {_num, transactions} = repo.update_all(update_query, [], timeout: timeout)
 
+    transactions
+    |> Enum.map(& &1.hash)
+    |> PendingOperationsHelper.delete_related_transaction_operations()
+
     {:ok, transactions}
   rescue
     postgrex_error in Postgrex.Error ->
@@ -542,6 +546,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timeout: timeout
       )
 
+    removed_consensus_block_numbers =
+      removed_consensus_blocks
+      |> Enum.map(fn {number, _hash} -> number end)
+
+    if not Enum.empty?(removed_consensus_block_numbers) do
+      GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, removed_consensus_block_numbers |> Enum.min()})
+    end
+
     repo.update_all(
       from(
         transaction in Transaction,
@@ -566,8 +578,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       timeout: timeout
     )
 
-    removed_consensus_blocks
-    |> Enum.map(fn {number, _hash} -> number end)
+    removed_consensus_block_numbers
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
     |> MissingRangesManipulator.add_ranges_by_block_numbers()
 

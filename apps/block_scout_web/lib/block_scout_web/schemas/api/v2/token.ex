@@ -42,6 +42,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
 
   alias BlockScoutWeb.Schemas.API.V2.General
   alias BlockScoutWeb.Schemas.API.V2.Token.{ChainTypeCustomizations, Type}
+  alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -62,7 +63,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         volume_24h: General.FloatStringNullable,
         total_supply: General.IntegerStringNullable,
         icon_url: General.URLNullable,
-        circulating_market_cap: General.FloatStringNullable
+        circulating_market_cap: General.FloatStringNullable,
+        reputation: %Schema{
+          type: :string,
+          enum: Reputation.enum_values(),
+          description: "Reputation of the token",
+          nullable: true
+        }
       },
       required: [
         :address_hash,
@@ -75,7 +82,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         :volume_24h,
         :total_supply,
         :icon_url,
-        :circulating_market_cap
+        :circulating_market_cap,
+        :reputation
       ]
     }
     |> ChainTypeCustomizations.chain_type_fields()

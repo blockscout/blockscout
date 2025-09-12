@@ -23,6 +23,28 @@ defmodule Explorer.Chain.PendingOperationsHelper do
     end
   end
 
+  @doc """
+  Deletes all entities from `PendingTransactionOperation` related to provided `transaction_hashes`.
+  """
+  @spec delete_related_transaction_operations([Hash.Full.t()]) :: {non_neg_integer(), nil}
+  def delete_related_transaction_operations(transaction_hashes) do
+    pending_operations_query =
+      from(
+        pto in PendingTransactionOperation,
+        where: pto.transaction_hash in ^transaction_hashes,
+        order_by: [asc: :transaction_hash],
+        lock: "FOR UPDATE"
+      )
+
+    Repo.delete_all(
+      from(
+        pto in PendingTransactionOperation,
+        join: s in subquery(pending_operations_query),
+        on: pto.transaction_hash == s.transaction_hash
+      )
+    )
+  end
+
   def actual_entity do
     case pending_operations_type() do
       "blocks" -> PendingBlockOperation
@@ -68,7 +90,8 @@ defmodule Explorer.Chain.PendingOperationsHelper do
         :finish
 
       pbo_params ->
-        Repo.insert_all(PendingBlockOperation, Helper.add_timestamps(pbo_params), on_conflict: :nothing)
+        filtered_pbo_params = Enum.reject(pbo_params, &is_nil(&1.block_hash))
+        Repo.insert_all(PendingBlockOperation, Helper.add_timestamps(filtered_pbo_params), on_conflict: :nothing)
 
         block_numbers_to_delete = Enum.map(pbo_params, & &1.block_number)
 
@@ -76,7 +99,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
           from(
             pto in PendingTransactionOperation,
             join: t in assoc(pto, :transaction),
-            where: t.block_number in ^block_numbers_to_delete
+            where: is_nil(t.block_number) or t.block_number in ^block_numbers_to_delete
           )
 
         Repo.delete_all(delete_query)

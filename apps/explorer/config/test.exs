@@ -20,6 +20,18 @@ config :explorer, Explorer.Repo,
   migration_lock: nil,
   log: false
 
+config :explorer, Explorer.Repo.EventNotifications,
+  database: database,
+  hostname: hostname,
+  url: database_url,
+  pool: Ecto.Adapters.SQL.Sandbox,
+  # Default of `5_000` was too low for `BlockFetcher` test
+  ownership_timeout: :timer.minutes(1),
+  timeout: :timer.seconds(60),
+  queue_target: 1000,
+  migration_lock: nil,
+  log: false
+
 # Configure API database
 config :explorer, Explorer.Repo.Replica1,
   database: database,
