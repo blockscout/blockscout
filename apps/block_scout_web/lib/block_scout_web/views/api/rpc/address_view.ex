@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
 
   alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
   alias BlockScoutWeb.API.RPC.RPCView
-  alias Explorer.Chain.{DenormalizationHelper, Transaction}
+  alias Explorer.Chain.{DenormalizationHelper, InternalTransaction, Transaction}
 
   def render("listaccounts.json", %{accounts: accounts}) do
     accounts = Enum.map(accounts, &prepare_account/1)
@@ -146,7 +146,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "index" => to_string(internal_transaction.index),
       "input" => "#{internal_transaction.input}",
       "type" => "#{internal_transaction.type}",
-      "callType" => "#{internal_transaction.call_type}",
+      "callType" => "#{InternalTransaction.call_type(internal_transaction)}",
       "gas" => "#{internal_transaction.gas}",
       "gasUsed" => "#{internal_transaction.gas_used}",
       "isError" => if(internal_transaction.error, do: "1", else: "0"),

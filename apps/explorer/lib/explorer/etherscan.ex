@@ -83,6 +83,7 @@ defmodule Explorer.Etherscan do
     input
     type
     call_type
+    call_type_enum
     gas
     gas_used
     error

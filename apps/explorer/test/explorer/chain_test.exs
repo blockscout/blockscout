@@ -1286,7 +1286,7 @@ defmodule Explorer.ChainTest do
                 ],
                 internal_transactions: [
                   %InternalTransaction{
-                    call_type: :call,
+                    call_type_enum: :call,
                     created_contract_code: nil,
                     error: nil,
                     gas: ^gas_int,
