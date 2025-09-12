@@ -40,6 +40,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     WithdrawalView
   }
 
+  alias BlockScoutWeb.Schemas.Helper, as: SchemasHelper
   alias Explorer.{Chain, Market, PagingOptions}
   alias Explorer.Chain.{Address, Beacon.Deposit, Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Address.{CoinBalance, Counters}
@@ -816,7 +817,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              days: %Schema{type: :integer, nullable: false},
              items: %Schema{type: :array, items: Schemas.CoinBalanceByDay}
            },
-           nullable: false
+           nullable: false,
+           additionalProperties: false
          }},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -1012,28 +1014,39 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     responses: [
       ok:
         {"List of native coin holders with their balances, with pagination.", "application/json",
-         %Schema{
-           title: "AddressesList",
-           allOf: [
-             paginated_response(
-               items: Schemas.Address,
-               next_page_params_example: %{
-                 "fetched_coin_balance" => "124355417998347240251800",
-                 "hash" => "0x59708733fbbf64378d9293ec56b977c011a08fd2",
-                 "items_count" => 50,
-                 "transactions_count" => nil
-               },
-               title_prefix: "AddressList"
-             ),
-             %Schema{
-               properties: %{
-                 exchange_rate: Schemas.General.FloatStringNullable,
-                 total_supply: Schemas.General.FloatStringNullable
-               },
-               required: [:exchange_rate, :total_supply]
-             }
-           ]
-         }},
+         SchemasHelper.extend_schema(
+           paginated_response(
+             items:
+               Schemas.Address.schema()
+               |> SchemasHelper.extend_schema(
+                 title: "AddressWithCoinBalanceAndTransactionsCount",
+                 properties: %{
+                   coin_balance: Schemas.General.IntegerStringNullable,
+                   transactions_count: %Schema{
+                     anyOf: [
+                       Schemas.General.IntegerString,
+                       # TODO: replace empty string with null?
+                       Schemas.General.EmptyString
+                     ],
+                     nullable: true
+                   }
+                 },
+                 required: [:coin_balance, :transactions_count]
+               ),
+             next_page_params_example: %{
+               "fetched_coin_balance" => "124355417998347240251800",
+               "hash" => "0x59708733fbbf64378d9293ec56b977c011a08fd2",
+               "items_count" => 50,
+               "transactions_count" => nil
+             },
+             title_prefix: "AddressList"
+           ),
+           properties: %{
+             exchange_rate: Schemas.General.FloatStringNullable,
+             total_supply: Schemas.General.FloatStringNullable
+           },
+           required: [:exchange_rate, :total_supply]
+         )},
       forbidden: ForbiddenResponse.response()
     ]
 

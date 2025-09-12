@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Withdrawal do
       :index,
       :validator_index,
       :amount
-    ]
+    ],
+    additionalProperties: false
   })
 end

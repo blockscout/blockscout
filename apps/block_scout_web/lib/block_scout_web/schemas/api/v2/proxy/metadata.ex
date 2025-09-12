@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.Metadata do
     properties: %{
       tags: %Schema{description: "Metadata tags linked with the address", type: :array, items: MetadataTag}
     },
-    required: [:tags]
+    required: [:tags],
+    additionalProperties: false
   })
 end

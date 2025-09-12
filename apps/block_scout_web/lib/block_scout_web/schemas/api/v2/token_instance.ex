@@ -53,6 +53,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
       :thumbnails,
       :media_type,
       :media_url
-    ]
+    ],
+    nullable: false,
+    additionalProperties: false
   })
 end
