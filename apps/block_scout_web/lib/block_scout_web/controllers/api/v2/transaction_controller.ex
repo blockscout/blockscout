@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
     :celo ->
       @chain_type_transaction_necessity_by_association %{
-        :gas_token => :optional
+        [gas_token: reputation_association()] => :optional
       }
 
     _ ->
