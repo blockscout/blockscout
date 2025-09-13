@@ -10,10 +10,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
     The module processes logs from the `SequencerBatchDelivered` events emitted by
     the Arbitrum `SequencerInbox` contract to extract batch details. It maintains
     linkages between batches and their corresponding rollup blocks and transactions.
-    For batches stored in Data Availability solutions like AnyTrust or Celestia,
-    it retrieves DA information to locate the batch data. The module also tracks
-    cross-chain messages initiated in rollup blocks associated with new batches,
-    updating their status to committed (`:sent`).
+    For batches stored in Data Availability solutions like AnyTrust, Celestia, or
+    EigenDA, it retrieves DA information to locate the batch data. The module also
+    tracks cross-chain messages initiated in rollup blocks associated with new
+    batches, updating their status to committed (`:sent`).
 
     For any blocks or transactions missing in the database, data is requested in
     chunks from the rollup RPC endpoint by `eth_getBlockByNumber`. Additionally,

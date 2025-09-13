@@ -6,6 +6,81 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
   interacting with core Arbitrum protocol contracts including:
   """
 
+  # EigenDA type definitions - extracted for reusability
+  @eigen_da_bn254_g1_point_type {:tuple,
+   [
+     # X
+     {:uint, 256},
+     # Y
+     {:uint, 256}
+   ]}
+
+  @eigen_da_quorum_blob_param_type {:tuple,
+   [
+     # quorumNumber
+     {:uint, 8},
+     # adversaryThresholdPercentage
+     {:uint, 8},
+     # confirmationThresholdPercentage
+     {:uint, 8},
+     # chunkLength
+     {:uint, 32}
+   ]}
+
+  @eigen_da_batch_header_type {:tuple,
+   [
+     # blobHeadersRoot
+     {:bytes, 32},
+     # quorumNumbers
+     :bytes,
+     # signedStakeForQuorums
+     :bytes,
+     # referenceBlockNumber
+     {:uint, 32}
+   ]}
+
+  @eigen_da_batch_metadata_type {:tuple,
+   [
+     # BatchHeader
+     @eigen_da_batch_header_type,
+     # signatoryRecordHash
+     {:bytes, 32},
+     # confirmationBlockNumber
+     {:uint, 32}
+   ]}
+
+  @eigen_da_blob_verification_proof_type {:tuple,
+   [
+     # batchId
+     {:uint, 32},
+     # blobIndex
+     {:uint, 32},
+     # BatchMetadata
+     @eigen_da_batch_metadata_type,
+     # inclusionProof
+     :bytes,
+     # quorumIndices
+     :bytes
+   ]}
+
+  @eigen_da_blob_header_type {:tuple,
+   [
+     # BN254.G1Point commitment
+     @eigen_da_bn254_g1_point_type,
+     # dataLength
+     {:uint, 32},
+     # QuorumBlobParam[] quorumBlobParams
+     {:array, @eigen_da_quorum_blob_param_type}
+   ]}
+
+  @eigen_da_cert_type {:tuple,
+   [
+     # BlobVerificationProof
+     @eigen_da_blob_verification_proof_type,
+     # BlobHeader
+     @eigen_da_blob_header_type
+   ]}
+
   @selector_outbox "ce11e6ab"
   @selector_sequencer_inbox "ee35f327"
   @selector_bridge "e78cea92"
@@ -544,6 +619,76 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
               {:bytes, 32}
             ]}
          ]}
+      ]
+    }
+
+  @doc """
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchFromEigenDA(
+        uint256 sequenceNumber,
+        EigenDACert calldata cert,
+        IGasRefunder gasRefunder,
+        uint256 afterDelayedMessagesRead,
+        uint256 prevMessageCount,
+        uint256 newMessageCount
+      )
+  """
+  def add_sequencer_l2_batch_from_eigen_da_selector_with_abi,
+    do: %ABI.FunctionSelector{
+      function: "addSequencerL2BatchFromEigenDA",
+      types: [
+        {:uint, 256},
+        # EigenDACert structure
+        @eigen_da_cert_type,
+        :address,
+        {:uint, 256},
+        {:uint, 256},
+        {:uint, 256}
+      ]
+    }
+
+  @doc """
+    Returns ABI definition for EigenDACert structure for encoding purposes.
+
+    The EigenDACert contains BlobVerificationProof and BlobHeader with full nested structures.
+  """
+  def eigen_da_cert_abi,
+    do: %ABI.FunctionSelector{
+      function: nil,
+      types: [
+        # EigenDACert structure
+        @eigen_da_cert_type
+      ]
+    }
+
+  @doc """
+    Returns ABI definition for BlobVerificationProof structure for encoding purposes.
+
+    The BlobVerificationProof contains batchId, blobIndex, BatchMetadata, inclusionProof, and quorumIndices.
+  """
+  def eigen_da_blob_verification_proof_abi,
+    # https://github.com/Layr-Labs/eigenda/blob/6c1deb51fced68efb1aaa585dd5ddb6a27f88637/contracts/src/core/libraries/v1/EigenDATypesV1.sol#L36-L55
+    do: %ABI.FunctionSelector{
+      function: nil,
+      types: [
+        # BlobVerificationProof
+        @eigen_da_blob_verification_proof_type
+      ]
+    }
+
+  @doc """
+    Returns ABI definition for BlobHeader structure for encoding purposes.
+
+    The BlobHeader contains BN254.G1Point commitment, dataLength, and quorumBlobParams array.
+  """
+  def eigen_da_blob_header_abi,
+    # https://github.com/Layr-Labs/eigenda/blob/6c1deb51fced68efb1aaa585dd5ddb6a27f88637/contracts/src/core/libraries/v1/EigenDATypesV1.sol#L18-L29
+    do: %ABI.FunctionSelector{
+      function: nil,
+      types: [
+        # BlobHeader
+        @eigen_da_blob_header_type
       ]
     }
 end

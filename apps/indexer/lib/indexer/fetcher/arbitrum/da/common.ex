@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1]
 
-  alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
+  alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia, Eigenda}
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: Db
 
   alias Explorer.Chain.Arbitrum
@@ -23,15 +23,16 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
 
     ## Returns
     - `{status, da_type, da_info}` where `da_type` is one of `:in_blob4844`,
-      `:in_calldata`, `:in_celestia`, `:in_anytrust`, or `nil` if the accompanying
-      data cannot be parsed or is of an unsupported type. `da_info` contains the DA
-      info descriptor for Celestia or Anytrust.
+      `:in_calldata`, `:in_celestia`, `:in_anytrust`, `:in_eigenda`, or `nil` if
+      the accompanying data cannot be parsed or is of an unsupported type.
+      `da_info` contains the DA info descriptor for Celestia, Anytrust, or EigenDA.
   """
   @spec examine_batch_accompanying_data(non_neg_integer(), binary()) ::
           {:ok, :in_blob4844, nil}
           | {:ok, :in_calldata, nil}
           | {:ok, :in_celestia, Celestia.t()}
           | {:ok, :in_anytrust, Anytrust.t()}
+          | {:ok, :in_eigenda, Eigenda.t()}
           | {:error, nil, nil}
   def examine_batch_accompanying_data(batch_number, batch_accompanying_data) do
     case batch_accompanying_data do
@@ -43,9 +44,9 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
   @doc """
     Prepares data availability (DA) information for import.
 
-    This function processes a list of DA information, either from Celestia or Anytrust,
-    preparing it for database import. It handles deduplication of records within the same
-    processing chunk and against existing database records.
+    This function processes a list of DA information, either from Celestia, Anytrust, or
+    EigenDA, preparing it for database import. It handles deduplication of records
+    within the same processing chunk and against existing database records.
 
     ## Parameters
     - `da_info`: A list of DA information structs.
@@ -58,7 +59,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
         the current batch and against existing database records.
       - A list of batch-to-blob associations (`BatchToDaBlob`) ready for import.
   """
-  @spec prepare_for_import([Celestia.t() | Anytrust.t() | map()], %{
+  @spec prepare_for_import([Celestia.t() | Anytrust.t() | Eigenda.t() | map()], %{
           :sequencer_inbox_address => String.t(),
           :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
         }) :: {[Arbitrum.DaMultiPurposeRecord.to_import()], [Arbitrum.BatchToDaBlob.to_import()]}
@@ -69,7 +70,8 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
     initial_acc = {
       %{
         celestia: %{},
-        anytrust: %{}
+        anytrust: %{},
+        eigenda: %{}
       },
       [],
       MapSet.new()
@@ -105,6 +107,16 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
               updated_cache
             }
 
+          %Eigenda{} ->
+            {updated_records, updated_batches} =
+              Eigenda.prepare_for_import({da_records_by_type.eigenda, batch_to_blob_acc}, info)
+
+            {
+              %{da_records_by_type | eigenda: updated_records},
+              updated_batches,
+              cache
+            }
+
           _ ->
             {da_records_by_type, batch_to_blob_acc, cache}
         end
@@ -123,19 +135,21 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
   #
   # ## Parameters
   # - `da_records_by_type`: A map containing candidate records organized by DA type
-  #   (`:celestia` and `:anytrust`), where each type has a map of records keyed by `data_key`.
+  #   (`:celestia`, `:anytrust`, and `:eigenda`), where each type has a map of records keyed by `data_key`.
   #
   # ## Returns
   # - A list of `DaMultiPurposeRecord` records after conflict resolution, ready for import.
   @spec eliminate_conflicts(%{
           celestia: %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()},
-          anytrust: %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}
+          anytrust: %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()},
+          eigenda: %{binary() => Arbitrum.DaMultiPurposeRecord.to_import()}
         }) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
   defp eliminate_conflicts(da_records_by_type) do
     # Define the types and their corresponding resolution modules
     type_configs = [
       {:celestia, da_records_by_type.celestia, &Celestia.resolve_conflict/2},
-      {:anytrust, da_records_by_type.anytrust, &Anytrust.resolve_conflict/2}
+      {:anytrust, da_records_by_type.anytrust, &Anytrust.resolve_conflict/2},
+      {:eigenda, da_records_by_type.eigenda, &Eigenda.resolve_conflict/2}
     ]
 
     # Process each type using the same pattern
@@ -148,7 +162,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
   # Processes candidate DA records using a type-specific resolution function.
   #
   # This function takes a map of candidate DA records and a resolution function specific
-  # to the DA type (Celestia or AnyTrust). It fetches any existing records from the
+  # to the DA type (Celestia, AnyTrust, or EigenDA). It fetches any existing records from the
   # database with matching data keys and uses the resolution function to determine
   # which records should be imported.
   #
@@ -188,16 +202,16 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
 
     ## Parameters
     - `da_type`: The type of data availability, which can be `:in_blob4844`, `:in_calldata`,
-      `:in_celestia`, `:in_anytrust`, or `nil`.
+      `:in_celestia`, `:in_anytrust`, `:in_eigenda`, or `nil`.
 
     ## Returns
-    - `true` if the DA type is `:in_celestia` or `:in_anytrust`, indicating that the data
-      requires import.
+    - `true` if the DA type is `:in_celestia`, `:in_anytrust`, or `:in_eigenda`, indicating
+      that the data requires import.
     - `false` for all other DA types, indicating that the data does not require import.
   """
-  @spec required_import?(:in_blob4844 | :in_calldata | :in_celestia | :in_anytrust | nil) :: boolean()
+  @spec required_import?(:in_blob4844 | :in_calldata | :in_celestia | :in_anytrust | :in_eigenda | nil) :: boolean()
   def required_import?(da_type) do
-    da_type in [:in_celestia, :in_anytrust]
+    da_type in [:in_celestia, :in_anytrust, :in_eigenda]
   end
 
   # Parses data availability information based on the header flag.
@@ -205,6 +219,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
           {:ok, :in_calldata, nil}
           | {:ok, :in_celestia, Celestia.t()}
           | {:ok, :in_anytrust, Anytrust.t()}
+          | {:ok, :in_eigenda, Eigenda.t()}
           | {:error, nil, nil}
   defp parse_data_availability_info(batch_number, <<
          header_flag::size(8),
@@ -216,17 +231,25 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
         {:ok, :in_calldata, nil}
 
       32 ->
+        # 0x20
         log_error("ZERO HEAVY messages are not supported.")
         {:error, nil, nil}
 
       99 ->
+        # 0x63
         Celestia.parse_batch_accompanying_data(batch_number, rest)
 
       128 ->
+        # 0x80
         Anytrust.parse_batch_accompanying_data(batch_number, rest)
 
       136 ->
+        # 0x88
         Anytrust.parse_batch_accompanying_data(batch_number, rest)
+
+      237 ->
+        # 0xed
+        Eigenda.parse_batch_accompanying_data(batch_number, rest)
 
       _ ->
         log_error("Unknown header flag found during an attempt to parse DA data: #{header_flag}")

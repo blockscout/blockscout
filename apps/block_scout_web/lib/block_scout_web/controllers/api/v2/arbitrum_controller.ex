@@ -138,23 +138,23 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/arbitrum/batches/da/:data_hash` or
-    `/api/v2/arbitrum/batches/da/:transaction_commitment/:height` endpoints.
+    Function to handle GET requests to `/api/v2/arbitrum/batches/da/.../:data_hash` or
+    `/api/v2/arbitrum/batches/da/celestia/:transaction_commitment/:height` endpoints.
 
-    For AnyTrust data hash, the function can be called in two ways:
+    For AnyTrust and EigenDA data hash, the function can be called in two ways:
     1. Without type parameter - returns the most recent batch for the data hash
     2. With type=all parameter - returns all batches for the data hash
 
     ## Parameters
     - `conn`: The connection struct
     - `params`: A map that may contain:
-      * `data_hash` - The AnyTrust data hash
+      * `data_hash` - The AnyTrust or EigenDA data hash
       * `transaction_commitment` and `height` - For Celestia data
       * `type` - Optional parameter to specify return type ("all" for all batches)
   """
   @spec batch_by_data_availability_info(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batch_by_data_availability_info(conn, %{"data_hash" => data_hash} = params) do
-    # In case of AnyTrust, `data_key` is the hash of the data itself
+    # In case of AnyTrust or EigenDA, `data_key` is the hash of the data itself
     case Map.get(params, "type") do
       "all" -> all_batches_by_data_availability_info(conn, data_hash, params)
       _ -> one_batch_by_data_availability_info(conn, data_hash, params)
@@ -185,7 +185,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   #
   # ## Parameters
   # - `conn`: The connection struct
-  # - `data_hash`: The AnyTrust data hash
+  # - `data_hash`: The AnyTrust or EigenDA data hash
   # - `params`: The original request parameters
   #
   # ## Returns
@@ -205,7 +205,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   #
   # ## Parameters
   # - `conn`: The connection struct
-  # - `data_hash`: The AnyTrust data hash
+  # - `data_hash`: The AnyTrust or EigenDA data hash
   # - `params`: The original request parameters (for pagination)
   #
   # ## Returns
