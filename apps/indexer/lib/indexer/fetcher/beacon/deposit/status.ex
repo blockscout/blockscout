@@ -72,14 +72,25 @@ defmodule Indexer.Fetcher.Beacon.Deposit.Status do
         not (^QueryHelper.tuple_in([:pubkey, :withdrawal_credentials, :amount, :signature, :block_timestamp], ids))
       )
 
+    batch_size = 100
+
     query =
       from(
         deposit in Deposit,
         where: deposit.status == :pending,
-        where: ^tuple_not_in
+        where: ^tuple_not_in,
+        select: deposit.id,
+        order_by: [asc: deposit.id]
       )
 
-    Repo.update_all(query, set: [status: "completed", updated_at: DateTime.utc_now()])
+    query
+    |> Repo.stream()
+    |> Stream.chunk_every(batch_size)
+    |> Enum.each(fn batch_ids ->
+      Deposit
+      |> where([deposit], deposit.id in ^batch_ids)
+      |> Repo.update_all(set: [status: "completed", updated_at: DateTime.utc_now()])
+    end)
   end
 
   defp slot_to_timestamp(slot) do
