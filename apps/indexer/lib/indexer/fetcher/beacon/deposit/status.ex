@@ -83,9 +83,12 @@ defmodule Indexer.Fetcher.Beacon.Deposit.Status do
         order_by: [asc: deposit.index]
       )
 
-    query
-    |> Repo.stream()
-    |> Stream.chunk_every(batch_size)
+    all_batch_ids =
+      query
+      |> Repo.all(timeout: :infinity)
+
+    all_batch_ids
+    |> Enum.chunk_every(batch_size)
     |> Enum.each(fn batch_ids ->
       Deposit
       |> where([deposit], deposit.index in ^batch_ids)
