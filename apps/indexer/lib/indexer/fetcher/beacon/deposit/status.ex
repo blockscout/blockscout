@@ -79,8 +79,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit.Status do
         deposit in Deposit,
         where: deposit.status == :pending,
         where: ^tuple_not_in,
-        select: deposit.id,
-        order_by: [asc: deposit.id]
+        select: deposit.index,
+        order_by: [asc: deposit.index]
       )
 
     query
@@ -88,7 +88,7 @@ defmodule Indexer.Fetcher.Beacon.Deposit.Status do
     |> Stream.chunk_every(batch_size)
     |> Enum.each(fn batch_ids ->
       Deposit
-      |> where([deposit], deposit.id in ^batch_ids)
+      |> where([deposit], deposit.index in ^batch_ids)
       |> Repo.update_all(set: [status: "completed", updated_at: DateTime.utc_now()])
     end)
   end
