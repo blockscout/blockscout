@@ -32,12 +32,6 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
           Indexer.Fetcher.Optimism.WithdrawalEvent
         ]
 
-      :polygon_edge ->
-        [
-          Indexer.Fetcher.PolygonEdge.Deposit,
-          Indexer.Fetcher.PolygonEdge.WithdrawalExit
-        ]
-
       :polygon_zkevm ->
         [
           Indexer.Fetcher.PolygonZkevm.BridgeL1
@@ -105,6 +99,9 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
   @impl GenServer
   def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
+
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when RPC issues
+    :timer.sleep(2000)
 
     modules_using_reorg_monitor =
       modules_can_use_reorg_monitor()

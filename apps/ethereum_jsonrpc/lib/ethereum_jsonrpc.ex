@@ -9,12 +9,12 @@ defmodule EthereumJSONRPC do
       config :ethereum_jsonrpc,
         url: "http://localhost:8545",
         trace_url: "http://localhost:8545",
-        http: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
+        http: [recv_timeout: 60_000, timeout: 60_000, pool: :ethereum_jsonrpc]
 
 
   Note: the tracing node URL is provided separately from `:url`, via `:trace_url`. The trace URL and is used for
-  `fetch_internal_transactions`, which is only a supported method on tracing nodes. The `:http` option is passed
-  directly to the HTTP library (`HTTPoison`), which forwards the options down to `:hackney`.
+  `fetch_internal_transactions`, which is only a supported method on tracing nodes. The `:http` option is adapted
+  to the HTTP library (`HTTPoison` or `Tesla.Mint`).
 
   ## Throttling
 
@@ -34,6 +34,7 @@ defmodule EthereumJSONRPC do
     FetchedBalances,
     FetchedBeneficiaries,
     FetchedCodes,
+    Nonces,
     Receipts,
     RequestCoordinator,
     Subscription,
@@ -238,6 +239,48 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches transactions count for every `block_number`
+  """
+  @spec fetch_transactions_count([integer()], json_rpc_named_arguments) ::
+          {:ok, %{transactions_count_map: %{integer() => integer()}, errors: [{:error, map()}]}}
+          | {:error, reason :: term()}
+  def fetch_transactions_count(block_numbers, json_rpc_named_arguments) do
+    id_to_params = EthereumJSONRPC.id_to_params(block_numbers)
+
+    id_to_params
+    |> Enum.map(fn {id, number} ->
+      EthereumJSONRPC.request(%{
+        id: id,
+        method: "eth_getBlockTransactionCountByNumber",
+        params: [EthereumJSONRPC.integer_to_quantity(number)]
+      })
+    end)
+    |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+    |> case do
+      {:ok, responses} ->
+        %{errors: errors, counts: counts} =
+          responses
+          |> EthereumJSONRPC.sanitize_responses(id_to_params)
+          |> Enum.reduce(%{errors: [], counts: %{}}, fn
+            %{id: id, result: nil}, %{errors: errors} = acc ->
+              error = {:error, %{code: 404, message: "Not Found", data: Map.fetch!(id_to_params, id)}}
+              %{acc | errors: [error | errors]}
+
+            %{id: id, result: count}, %{counts: counts} = acc ->
+              %{acc | counts: Map.put(counts, Map.fetch!(id_to_params, id), EthereumJSONRPC.quantity_to_integer(count))}
+
+            %{id: id, error: error}, %{errors: errors} = acc ->
+              %{acc | errors: [{:error, Map.put(error, :data, Map.fetch!(id_to_params, id))} | errors]}
+          end)
+
+        {:ok, %{transactions_count_map: Map.new(counts), errors: errors}}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
     Fetches contract code for multiple addresses at specified block numbers.
 
     This function takes a list of parameters, each containing an address and a
@@ -272,6 +315,44 @@ defmodule EthereumJSONRPC do
            |> FetchedCodes.requests()
            |> json_rpc(json_rpc_named_arguments) do
       {:ok, FetchedCodes.from_responses(responses, id_to_params)}
+    end
+  end
+
+  @doc """
+    Fetches address nonces for multiple addresses at specified block numbers.
+
+    This function takes a list of parameters, each containing an address and a
+    block number, and retrieves the nonce for each address at the specified
+    block.
+
+    ## Parameters
+    - `params_list`: A list of maps, each containing:
+      - `:block_quantity`: The block number (as a quantity string) at which to fetch the nonce.
+      - `:address`: The address of the contract to fetch the nonce for.
+    - `json_rpc_named_arguments`: A keyword list of JSON-RPC configuration options.
+
+    ## Returns
+    - `{:ok, fetched_nonces}`, where `fetched_nonces` is a `Nonces.t()` struct containing:
+      - `params_list`: A list of successfully fetched code parameters, each containing:
+        - `address`: The contract address.
+        - `block_number`: The block number at which the nonce was fetched.
+        - `nonce`: The fetched nonce.
+      - `errors`: A list of errors encountered during the fetch operation.
+    - `{:error, reason}`: An error occurred during the fetch operation.
+  """
+  @spec fetch_nonces(
+          [%{required(:block_quantity) => quantity, required(:address) => address()}],
+          json_rpc_named_arguments
+        ) :: {:ok, Nonces.t()} | {:error, reason :: term}
+  def fetch_nonces(params_list, json_rpc_named_arguments)
+      when is_list(params_list) and is_list(json_rpc_named_arguments) do
+    id_to_params = id_to_params(params_list)
+
+    with {:ok, responses} <-
+           id_to_params
+           |> Nonces.requests()
+           |> json_rpc(json_rpc_named_arguments) do
+      {:ok, Nonces.from_responses(responses, id_to_params)}
     end
   end
 

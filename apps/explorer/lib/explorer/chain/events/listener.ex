@@ -5,8 +5,8 @@ defmodule Explorer.Chain.Events.Listener do
 
   use GenServer
 
-  alias Explorer.Repo
   alias Explorer.Repo.ConfigHelper
+  alias Explorer.Repo.EventNotifications, as: EventNotificationsRepo
   alias Explorer.Utility.EventNotification
   alias Postgrex.Notifications
 
@@ -17,7 +17,7 @@ defmodule Explorer.Chain.Events.Listener do
   def init(channel) do
     {:ok, pid} =
       :explorer
-      |> Application.get_env(Explorer.Repo)
+      |> Application.get_env(EventNotificationsRepo)
       |> Keyword.merge(listener_db_parameters())
       |> Notifications.start_link()
 
@@ -40,7 +40,7 @@ defmodule Explorer.Chain.Events.Listener do
 
   defp expand_payload(payload) do
     case Integer.parse(payload) do
-      {event_notification_id, ""} -> fetch_and_delete_event_notification(event_notification_id)
+      {event_notification_id, ""} -> fetch_event_notification(event_notification_id)
       _ -> payload
     end
   end
@@ -68,25 +68,18 @@ defmodule Explorer.Chain.Events.Listener do
     end)
   end
 
-  defp fetch_and_delete_event_notification(id) do
-    case Repo.get(EventNotification, id) do
+  defp fetch_event_notification(id) do
+    case EventNotificationsRepo.get(EventNotification, id) do
       nil ->
         nil
 
-      %{data: data} = notification ->
-        try do
-          Repo.delete(notification)
-        rescue
-          Ecto.StaleEntryError -> nil
-        end
-
+      %{data: data} ->
         data
     end
   end
 
   defp listener_db_parameters do
-    listener_db_url = Application.get_env(:explorer, Repo)[:listener_url] || Application.get_env(:explorer, Repo)[:url]
-
+    listener_db_url = Application.get_env(:explorer, EventNotificationsRepo)[:url]
     ConfigHelper.extract_parameters(listener_db_url)
   end
 end

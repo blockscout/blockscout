@@ -68,14 +68,34 @@ defmodule Explorer.Chain.Search do
           {[], nil}
 
         {:address_hash, address_hash} ->
-          {address_hash
-           |> search_token_by_address_hash_query()
-           |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
-           |> union_all(
-             ^(address_hash
-               |> search_address_by_address_hash_query())
-           )
-           |> select_repo(options).all(), nil}
+          tac_operation_task = Task.async(fn -> search_tac_operations(query_string, paging_options) end)
+
+          addresses_and_tokens = address_hash_search_if_first_page(paging_options, address_hash, options)
+
+          %{items: tac_operation_results, next_page_params: tac_operation_next_page_params} =
+            await_task_with_paging(tac_operation_task)
+
+          trim_list_and_prepare_next_page_params(
+            addresses_and_tokens ++ tac_operation_results,
+            paging_options,
+            query_string,
+            %{},
+            !is_nil(tac_operation_next_page_params)
+          )
+
+        {:ton_address, _ton_address} ->
+          tac_operation_task = Task.async(fn -> search_tac_operations(query_string, paging_options) end)
+
+          %{items: tac_operation_results, next_page_params: tac_operation_next_page_params} =
+            await_task_with_paging(tac_operation_task)
+
+          trim_list_and_prepare_next_page_params(
+            tac_operation_results,
+            paging_options,
+            query_string,
+            %{},
+            !is_nil(tac_operation_next_page_params)
+          )
 
         {:filecoin, filecoin_address} ->
           {filecoin_address
@@ -83,38 +103,19 @@ defmodule Explorer.Chain.Search do
            |> select_repo(options).all(), nil}
 
         {:full_hash, full_hash} ->
-          tac_operation_task = Task.async(fn -> search_tac_operation(query_string) end)
+          tac_operation_task = Task.async(fn -> search_tac_operations(query_string, paging_options) end)
+          results = full_hash_search_if_first_page(paging_options, full_hash, options)
 
-          transaction_block_query =
-            full_hash
-            |> search_transaction_query()
-            |> union_all(^search_block_by_hash_query(full_hash))
+          %{items: tac_operation_results, next_page_params: tac_operation_next_page_params} =
+            await_task_with_paging(tac_operation_task)
 
-          transaction_block_op_query =
-            if UserOperation.enabled?() do
-              user_operation_query = search_user_operation_query(full_hash)
-
-              transaction_block_query
-              |> union_all(^user_operation_query)
-            else
-              transaction_block_query
-            end
-
-          result_query =
-            if Application.get_env(:explorer, :chain_type) == :ethereum do
-              blob_query = search_blob_query(full_hash)
-
-              transaction_block_op_query
-              |> union_all(^blob_query)
-            else
-              transaction_block_op_query
-            end
-
-          results = select_repo(options).all(result_query)
-
-          tac_operation_results = await_task(tac_operation_task)
-
-          {results ++ tac_operation_results, nil}
+          trim_list_and_prepare_next_page_params(
+            results ++ tac_operation_results,
+            paging_options,
+            query_string,
+            %{},
+            !is_nil(tac_operation_next_page_params)
+          )
 
         {:number, block_number} ->
           {block_number
@@ -171,6 +172,50 @@ defmodule Explorer.Chain.Search do
     {prepared_results, next_page_params}
   end
 
+  defp address_hash_search_if_first_page(%PagingOptions{key: nil}, address_hash, options) do
+    address_hash
+    |> search_token_by_address_hash_query()
+    |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
+    |> union_all(
+      ^(address_hash
+        |> search_address_by_address_hash_query())
+    )
+    |> select_repo(options).all()
+  end
+
+  defp address_hash_search_if_first_page(_, _address_hash, _options), do: []
+
+  defp full_hash_search_if_first_page(%PagingOptions{key: nil}, full_hash, options) do
+    transaction_block_query =
+      full_hash
+      |> search_transaction_query()
+      |> union_all(^search_block_by_hash_query(full_hash))
+
+    transaction_block_op_query =
+      if UserOperation.enabled?() do
+        user_operation_query = search_user_operation_query(full_hash)
+
+        transaction_block_query
+        |> union_all(^user_operation_query)
+      else
+        transaction_block_query
+      end
+
+    result_query =
+      if Application.get_env(:explorer, :chain_type) == :ethereum do
+        blob_query = search_blob_query(full_hash)
+
+        transaction_block_op_query
+        |> union_all(^blob_query)
+      else
+        transaction_block_op_query
+      end
+
+    select_repo(options).all(result_query)
+  end
+
+  defp full_hash_search_if_first_page(_, _full_hash, _options), do: []
+
   defp order_and_page_text_search_result(query, paging_options) do
     query
     |> subquery()
@@ -191,7 +236,7 @@ defmodule Explorer.Chain.Search do
   defp maybe_fetch_metadata_tags(query_string, next_page_params, false) do
     metadata_task = Task.async(fn -> Metadata.search_tags_by_name(query_string, next_page_params) end)
 
-    await_metadata_task(metadata_task)
+    await_task_with_paging(metadata_task)
   end
 
   defp maybe_fetch_metadata_tags(_query_string, _next_page_params, true) do
@@ -210,6 +255,7 @@ defmodule Explorer.Chain.Search do
 
   @spec prepare_search_query(binary(), {:some, binary()} | :none) ::
           {:address_hash, Hash.Address.t()}
+          | {:ton_address, Ton.Address.t()}
           | {:filecoin, any()}
           | {:full_hash, Hash.t()}
           | {:number, non_neg_integer()}
@@ -219,6 +265,7 @@ defmodule Explorer.Chain.Search do
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp prepare_search_query(query, {:some, prepared_term}) do
     address_hash_result = Chain.string_to_address_hash(query)
+    ton_address_result = Ton.parse_address(query)
     filecoin_address_result = maybe_parse_filecoin_address(query)
     full_hash_result = Chain.string_to_full_hash(query)
     non_negative_integer_result = ExplorerHelper.safe_parse_non_negative_integer(query)
@@ -228,6 +275,10 @@ defmodule Explorer.Chain.Search do
       match?({:ok, _hash}, address_hash_result) ->
         {:ok, hash} = address_hash_result
         {:address_hash, hash}
+
+      match?({:ok, _address}, ton_address_result) ->
+        {:ok, ton_address} = ton_address_result
+        {:ton_address, ton_address}
 
       match?({:ok, _address}, filecoin_address_result) ->
         {:ok, filecoin_address} = filecoin_address_result
@@ -313,16 +364,21 @@ defmodule Explorer.Chain.Search do
           []
 
         {:address_hash, address_hash} ->
-          [
-            address_hash
-            |> search_token_by_address_hash_query()
-            |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
-            |> union_all(
-              ^(address_hash
-                |> search_address_by_address_hash_query())
-            )
-            |> select_repo(options).all()
-          ]
+          tac_operation_task = Task.async(fn -> search_tac_operations(query_string, paging_options) end)
+
+          addresses_and_tokens = address_hash_search_if_first_page(paging_options, address_hash, options)
+
+          %{items: tac_operation_results} = await_task_with_paging(tac_operation_task)
+
+          [addresses_and_tokens, tac_operation_results]
+
+        {:ton_address, _ton_address} ->
+          tac_operation_task = Task.async(fn -> search_tac_operations(query_string, paging_options) end)
+
+          %{items: tac_operation_results} =
+            await_task_with_paging(tac_operation_task)
+
+          [tac_operation_results]
 
         {:filecoin, filecoin_address} ->
           [
@@ -332,37 +388,11 @@ defmodule Explorer.Chain.Search do
           ]
 
         {:full_hash, full_hash} ->
-          tac_operation_task = Task.async(fn -> search_tac_operation(query_string) end)
+          tac_operation_task = Task.async(fn -> search_tac_operations(query_string, paging_options) end)
+          results = full_hash_search_if_first_page(paging_options, full_hash, options)
+          %{items: tac_operation_results} = await_task_with_paging(tac_operation_task)
 
-          transaction_block_query =
-            full_hash
-            |> search_transaction_query()
-            |> union_all(^search_block_by_hash_query(full_hash))
-
-          transaction_block_op_query =
-            if UserOperation.enabled?() do
-              user_operation_query = search_user_operation_query(full_hash)
-
-              transaction_block_query
-              |> union_all(^user_operation_query)
-            else
-              transaction_block_query
-            end
-
-          result_query =
-            if Application.get_env(:explorer, :chain_type) == :ethereum do
-              blob_query = search_blob_query(full_hash)
-
-              transaction_block_op_query
-              |> union_all(^blob_query)
-            else
-              transaction_block_op_query
-            end
-
-          results = select_repo(options).all(result_query)
-          tac_operation_results = await_task(tac_operation_task)
-
-          [results ++ tac_operation_results]
+          [results, tac_operation_results]
 
         {:number, block_number} ->
           [
@@ -426,7 +456,7 @@ defmodule Explorer.Chain.Search do
 
     labels_results = term |> search_label_query(paging_options) |> select_repo(options).all()
 
-    %{items: metadata_tags} = (metadata_task && await_metadata_task(metadata_task)) || %{items: []}
+    %{items: metadata_tags} = (metadata_task && await_task_with_paging(metadata_task)) || %{items: []}
 
     metadata_tags_addresses =
       metadata_tags
@@ -447,8 +477,8 @@ defmodule Explorer.Chain.Search do
     end
   end
 
-  defp await_metadata_task(metadata_task) do
-    case Task.yield(metadata_task, 5000) || Task.shutdown(metadata_task) do
+  defp await_task_with_paging(task) do
+    case Task.yield(task, 5000) || Task.shutdown(task) do
       {:ok, {:ok, result}} ->
         result
 
@@ -795,9 +825,7 @@ defmodule Explorer.Chain.Search do
                "circulating_market_cap" => circulating_market_cap,
                "fiat_value" => fiat_value,
                "is_verified_via_admin_panel" => is_verified_via_admin_panel,
-               "holders_count" => holder_count,
-               # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
-               "holder_count" => holder_count,
+               "holder_count" => holders_count,
                "name" => name,
                "inserted_at" => inserted_at
              }
@@ -813,7 +841,7 @@ defmodule Explorer.Chain.Search do
           circulating_market_cap: parse_possible_nil(circulating_market_cap),
           fiat_value: parse_possible_nil(fiat_value),
           is_verified_via_admin_panel: parse_possible_nil(is_verified_via_admin_panel),
-          holder_count: parse_possible_nil(holder_count),
+          holder_count: parse_possible_nil(holders_count),
           name: name,
           inserted_at: inserted_at
         },
@@ -910,21 +938,34 @@ defmodule Explorer.Chain.Search do
     end
   end
 
-  defp search_tac_operation(search_query) do
-    case TACOperationLifecycle.get_operation_by_id(search_query) do
-      {:ok, operation} ->
-        [
-          search_fields()
-          |> Map.merge(%{
-            type: "tac_operation",
-            tac_operation: operation,
-            address_hash: nil,
-            timestamp: nil
-          })
-        ]
+  defp search_tac_operations(search_query, paging_options) do
+    case paging_options do
+      %PagingOptions{key: %{"tac_operation" => nil}} -> {:ok, %{items: [], next_page_params: nil}}
+      %PagingOptions{key: %{"tac_operation" => page_params}} -> do_search_tac_operations(search_query, page_params)
+      _ -> do_search_tac_operations(search_query, nil)
+    end
+  end
 
-      _ ->
-        []
+  defp do_search_tac_operations(search_query, page_params) do
+    case TACOperationLifecycle.get_operations_by_id_or_sender_or_transaction_hash(search_query, page_params) do
+      {:ok, %{items: operations, next_page_params: next_page_params}} ->
+        {:ok,
+         %{
+           items:
+             Enum.map(operations, fn operation ->
+               search_fields()
+               |> Map.merge(%{
+                 type: "tac_operation",
+                 tac_operation: operation,
+                 address_hash: nil,
+                 timestamp: nil
+               })
+             end),
+           next_page_params: next_page_params
+         }}
+
+      error ->
+        error
     end
   end
 
@@ -1030,17 +1071,22 @@ defmodule Explorer.Chain.Search do
     |> Map.put(:priority, 1)
   end
 
-  @paginated_types ["label", "contract", "token", "metadata_tag"]
+  @paginated_types ["label", "contract", "token", "metadata_tag", "tac_operation"]
 
   defp trim_list_and_prepare_next_page_params(
          items,
          %PagingOptions{page_size: page_size, key: prev_options},
          query,
          metadata_tags_params,
-         metadata_tags_next_page?
+         microservice_task_next_page?
        )
-       when length(items) > page_size - 1 or metadata_tags_next_page? do
-    {items, [first_element_of_the_next_page | _]} = Enum.split(items, page_size - 1)
+       when length(items) > page_size - 1 or microservice_task_next_page? do
+    {items, first_element_of_the_next_page} =
+      case Enum.split(items, page_size - 1) do
+        {items, [first_element_of_the_next_page | _]} -> {items, first_element_of_the_next_page}
+        {items, []} -> {items, nil}
+      end
+
     prev_options = prev_options || %{}
 
     base_params =
@@ -1105,7 +1151,7 @@ defmodule Explorer.Chain.Search do
            circulating_market_cap: circulating_market_cap,
            exchange_rate: exchange_rate,
            is_verified_via_admin_panel: is_verified_via_admin_panel,
-           holder_count: holder_count,
+           holder_count: holders_count,
            name: name,
            inserted_at: inserted_at,
            type: "token"
@@ -1118,9 +1164,7 @@ defmodule Explorer.Chain.Search do
       "circulating_market_cap" => circulating_market_cap,
       "fiat_value" => exchange_rate,
       "is_verified_via_admin_panel" => is_verified_via_admin_panel,
-      "holders_count" => holder_count,
-      # todo: It should be removed in favour `holders_count` property with the next release after 8.0.0
-      "holder_count" => holder_count,
+      "holder_count" => holders_count,
       "name" => name,
       "inserted_at" => inserted_at_datetime
     }
@@ -1176,6 +1220,13 @@ defmodule Explorer.Chain.Search do
           else: 0
         )
     }
+  end
+
+  defp paging_params(
+         %{type: "tac_operation", tac_operation: %{"timestamp" => timestamp}},
+         _
+       ) do
+    %{"page_token" => timestamp |> DateTime.from_iso8601() |> elem(1) |> DateTime.to_unix()}
   end
 
   defp metadata_tag_to_paging_params(%{metadata: metadata}) do

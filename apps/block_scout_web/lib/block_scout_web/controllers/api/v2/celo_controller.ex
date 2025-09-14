@@ -10,7 +10,6 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     ]
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
-  import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
 
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Celo.{ElectionReward, Epoch}
@@ -42,12 +41,11 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
     {epochs, next_page} =
       options
-      |> Epoch.fetched_epochs()
+      |> Epoch.all()
       |> split_list_by_page()
 
     filtered_params =
       params
-      |> delete_parameters_from_next_page_params()
       |> Map.drop(["number"])
 
     next_page_params =
@@ -181,7 +179,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
           {:ok, non_neg_integer()} | {:error, {:invalid, :number}}
   defp parse_epoch_number(number) do
     case safe_parse_non_negative_integer(number) do
-      {:ok, epoch_number} -> {:ok, epoch_number}
+      {:ok, epoch_number} when epoch_number < 32_768 -> {:ok, epoch_number}
       _ -> {:error, {:invalid, :number}}
     end
   end

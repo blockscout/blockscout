@@ -8,6 +8,7 @@ defmodule Indexer.Fetcher.TokenUpdater do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, Token}
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Token.MetadataRetriever
   alias Indexer.BufferedTask
   alias Timex.Duration
@@ -78,13 +79,23 @@ defmodule Indexer.Fetcher.TokenUpdater do
 
   @doc false
   def update_metadata(metadata_list) when is_list(metadata_list) do
-    Enum.each(metadata_list, fn %{contract_address_hash: contract_address_hash} = metadata ->
+    metadata_list
+    |> Enum.reduce(%{}, fn %{contract_address_hash: contract_address_hash} = metadata, acc ->
       {:ok, hash} = Hash.Address.cast(contract_address_hash)
 
-      with {:ok, %Token{cataloged: true} = token} <- Chain.token_from_address_hash(hash) do
-        update_metadata(token, metadata)
+      case Chain.token_from_address_hash(hash) do
+        {:ok, %Token{cataloged: true} = token} ->
+          update_metadata(token, metadata)
+          data_for_multichain = MultichainSearch.prepare_token_metadata_for_queue(token, metadata)
+          Map.put(acc, hash.bytes, data_for_multichain)
+
+        _ ->
+          acc
       end
     end)
+    |> MultichainSearch.send_token_info_to_queue(:metadata)
+
+    :ok
   end
 
   def update_metadata(%Token{} = token, metadata) do

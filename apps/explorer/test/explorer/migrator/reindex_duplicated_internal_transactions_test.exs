@@ -6,7 +6,7 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactionsTest do
   alias Explorer.Repo
 
   test "Reindex duplicated internal transactions" do
-    transaction_from_invalid_block =
+    transaction_from_invalid_block_1 =
       :transaction
       |> insert()
       |> with_block()
@@ -14,11 +14,11 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactionsTest do
     Enum.each(1..10, fn index ->
       insert(
         :internal_transaction,
-        transaction: transaction_from_invalid_block,
+        transaction: transaction_from_invalid_block_1,
         index: index,
-        block_number: transaction_from_invalid_block.block_number,
-        transaction_index: transaction_from_invalid_block.index,
-        block_hash: transaction_from_invalid_block.block_hash,
+        block_number: transaction_from_invalid_block_1.block_number,
+        transaction_index: transaction_from_invalid_block_1.index,
+        block_hash: transaction_from_invalid_block_1.block_hash,
         block_index: index
       )
     end)
@@ -26,11 +26,40 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactionsTest do
     Enum.each(11..13, fn index ->
       insert(
         :internal_transaction,
-        transaction: transaction_from_invalid_block,
+        transaction: transaction_from_invalid_block_1,
         index: index - 10,
-        block_number: transaction_from_invalid_block.block_number,
-        transaction_index: transaction_from_invalid_block.index,
-        block_hash: transaction_from_invalid_block.block_hash,
+        block_number: transaction_from_invalid_block_1.block_number,
+        transaction_index: transaction_from_invalid_block_1.index,
+        block_hash: transaction_from_invalid_block_1.block_hash,
+        block_index: index
+      )
+    end)
+
+    transaction_from_invalid_block_2 =
+      :transaction
+      |> insert()
+      |> with_block()
+
+    Enum.each(1..10, fn index ->
+      insert(
+        :internal_transaction,
+        transaction: transaction_from_invalid_block_2,
+        index: index,
+        block_number: transaction_from_invalid_block_2.block_number,
+        transaction_index: transaction_from_invalid_block_2.index,
+        block_hash: transaction_from_invalid_block_2.block_hash,
+        block_index: index
+      )
+    end)
+
+    Enum.each(11..13, fn index ->
+      insert(
+        :internal_transaction,
+        transaction: transaction_from_invalid_block_2,
+        index: index - 10,
+        block_number: nil,
+        transaction_index: transaction_from_invalid_block_2.index,
+        block_hash: transaction_from_invalid_block_2.block_hash,
         block_index: index
       )
     end)
@@ -70,9 +99,18 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactionsTest do
       assert it.block_hash == transaction_from_valid_block.block_hash
     end)
 
-    pbo = Repo.one(PendingBlockOperation)
+    pending_operations = Repo.all(PendingBlockOperation)
 
-    assert pbo.block_hash == transaction_from_invalid_block.block_hash
-    assert pbo.block_number == transaction_from_invalid_block.block_number
+    assert Enum.count(pending_operations) == 2
+
+    assert Enum.any?(pending_operations, fn pbo ->
+             pbo.block_hash == transaction_from_invalid_block_1.block_hash and
+               pbo.block_number == transaction_from_invalid_block_1.block_number
+           end)
+
+    assert Enum.any?(pending_operations, fn pbo ->
+             pbo.block_hash == transaction_from_invalid_block_2.block_hash and
+               pbo.block_number == transaction_from_invalid_block_2.block_number
+           end)
   end
 end

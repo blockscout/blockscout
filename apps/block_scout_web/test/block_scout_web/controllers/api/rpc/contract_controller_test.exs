@@ -76,6 +76,14 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     }
   end
 
+  setup do
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+    on_exit(fn ->
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+    end)
+  end
+
   describe "listcontracts" do
     setup do
       %{params: %{"module" => "contract", "action" => "listcontracts"}}
@@ -1054,11 +1062,17 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         |> json_response(200)
     end
 
-    test "get not empty list", %{conn: conn, params: params} do
+    test "get contract creation info from a transaction", %{conn: conn, params: params} do
       address_1 = build(:address)
       address = insert(:contract_address)
+      {:ok, block_timestamp, _} = DateTime.from_iso8601("2021-05-05T21:42:11.000000Z")
+      unix_timestamp = DateTime.to_unix(block_timestamp, :second)
 
-      transaction = insert(:transaction, created_contract_address: address)
+      transaction =
+        insert(:transaction,
+          created_contract_address: address,
+          block_timestamp: block_timestamp
+        )
 
       %{
         "status" => "1",
@@ -1067,7 +1081,11 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           %{
             "contractAddress" => contract_address,
             "contractCreator" => contract_creator,
-            "txHash" => transaction_hash
+            "txHash" => transaction_hash,
+            "blockNumber" => block_number,
+            "timestamp" => timestamp,
+            "contractFactory" => "",
+            "creationBytecode" => creation_bytecode
           }
         ]
       } =
@@ -1078,6 +1096,98 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert contract_address == to_string(address.hash)
       assert contract_creator == to_string(transaction.from_address_hash)
       assert transaction_hash == to_string(transaction.hash)
+      assert block_number == to_string(transaction.block_number)
+      assert timestamp == to_string(unix_timestamp)
+      assert creation_bytecode == to_string(transaction.input)
+    end
+
+    test "get contract creation info via internal transaction", %{conn: conn, params: params} do
+      {:ok, block_timestamp, _} = DateTime.from_iso8601("2021-05-05T21:42:11.000000Z")
+      unix_timestamp = DateTime.to_unix(block_timestamp, :second)
+
+      block = insert(:block, timestamp: block_timestamp)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      internal_transaction =
+        insert(:internal_transaction_create,
+          transaction: transaction,
+          index: 1,
+          block_hash: transaction.block_hash,
+          block_index: transaction.index
+        )
+
+      address = internal_transaction.created_contract_address
+
+      %{
+        "status" => "1",
+        "message" => "OK",
+        "result" => [
+          %{
+            "contractAddress" => contract_address,
+            "contractCreator" => contract_creator,
+            "txHash" => transaction_hash,
+            "blockNumber" => block_number,
+            "timestamp" => timestamp,
+            "contractFactory" => contract_factory,
+            "creationBytecode" => creation_bytecode
+          }
+        ]
+      } =
+        conn
+        |> get("/api", Map.put(params, "contractaddresses", to_string(address)))
+        |> json_response(200)
+
+      assert contract_address == to_string(internal_transaction.created_contract_address_hash)
+      assert contract_creator == to_string(internal_transaction.transaction.from_address_hash)
+      assert transaction_hash == to_string(internal_transaction.transaction.hash)
+      assert block_number == to_string(internal_transaction.transaction.block_number)
+      assert timestamp == to_string(unix_timestamp)
+      assert contract_factory == to_string(internal_transaction.from_address_hash)
+      assert creation_bytecode == to_string(internal_transaction.init)
+    end
+
+    test "get contract creation info via internal transaction with index 0 and parent transaction - contractFactory should be empty",
+         %{
+           conn: conn,
+           params: params
+         } do
+      {:ok, block_timestamp, _} = DateTime.from_iso8601("2021-05-05T21:42:11.000000Z")
+      block = insert(:block, timestamp: block_timestamp)
+      contract_address = insert(:contract_address)
+
+      # Create a transaction that creates the contract
+      transaction =
+        :transaction
+        |> insert(created_contract_address: contract_address)
+        |> with_block(block)
+
+      # Also create an internal transaction with index 0 for the same contract
+      insert(:internal_transaction_create,
+        transaction: transaction,
+        # index 0 should result in empty contractFactory
+        index: 0,
+        created_contract_address: contract_address,
+        block_hash: transaction.block_hash,
+        block_index: transaction.index
+      )
+
+      assert %{
+               "result" => [
+                 %{
+                   "contractFactory" => "",
+                   "contractCreator" => contract_creator
+                 }
+               ]
+             } =
+               conn
+               |> get("/api", Map.put(params, "contractaddresses", to_string(contract_address)))
+               |> json_response(200)
+
+      assert contract_creator == to_string(transaction.from_address_hash)
     end
   end
 

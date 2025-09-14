@@ -13,10 +13,11 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
-  import Explorer.Helper, only: [add_0x_prefix: 1, decode_data: 2]
+  import Explorer.Helper, only: [decode_data: 2]
 
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.PolygonZkevm.Reader
   alias Indexer.Helper, as: IndexerHelper
   alias Indexer.Transform.Addresses
@@ -229,7 +230,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     [
       leaf_type,
       origin_network,
-      origin_address,
+      origin_address_bytes,
       destination_network,
       _destination_address,
       amount,
@@ -237,7 +238,9 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
       deposit_count
     ] = decode_data(event.data, @bridge_event_params)
 
-    {token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id_l2), amount,
+    {:ok, origin_address_hash} = Hash.Address.cast(origin_address_bytes)
+
+    {token_address_by_origin_address(origin_address_hash, origin_network, leaf_type, rollup_network_id_l2), amount,
      deposit_count, destination_network}
   end
 
@@ -378,7 +381,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   defp token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id_l2) do
     with true <- leaf_type != 1,
-         token_address = add_0x_prefix(origin_address),
+         token_address = to_string(origin_address),
          true <- token_address != burn_address_hash_string() do
       if origin_network != rollup_network_id_l2 do
         # this is L1 address

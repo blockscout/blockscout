@@ -2,6 +2,7 @@ defmodule Explorer.Utility.RateLimiter do
   @moduledoc """
   Rate limit logic with separation by action type and exponential backoff for bans.
   """
+  alias Explorer.Utility.Hammer
 
   use GenServer
 
@@ -74,7 +75,7 @@ defmodule Explorer.Utility.RateLimiter do
     end
   end
 
-  defp key(identifier, action), do: "#{identifier}_#{action}"
+  defp key(identifier, action), do: "#{Application.get_env(:block_scout_web, :chain_id)}_#{identifier}_#{action}"
 
   defp parse_ban_data(ban_data) do
     ban_data
@@ -90,7 +91,7 @@ defmodule Explorer.Utility.RateLimiter do
     time_interval_limit = config[:time_interval_limit]
     limit_by_ip = config[:limit_by_ip]
 
-    case Hammer.check_rate(key, time_interval_limit, limit_by_ip) do
+    case Hammer.hit(key, time_interval_limit, limit_by_ip) do
       {:allow, _count} ->
         false
 

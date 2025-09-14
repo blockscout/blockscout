@@ -50,11 +50,11 @@ defmodule Explorer.Chain.Cache.Counters.Transactions24hCountTest do
     start_supervised!(Transactions24hCount)
     Transactions24hCount.consolidate()
 
-    transaction_count = Transactions24hCount.fetch_count([])
+    transactions_count = Transactions24hCount.fetch_count([])
     transaction_fee_sum = Transactions24hCount.fetch_fee_sum([])
     transaction_fee_average = Transactions24hCount.fetch_fee_average([])
 
-    assert transaction_count == Decimal.new("3")
+    assert transactions_count == Decimal.new("3")
     assert transaction_fee_sum == Decimal.new("35000")
     assert transaction_fee_average == Decimal.new("11667")
   end

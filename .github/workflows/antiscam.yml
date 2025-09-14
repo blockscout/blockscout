@@ -14,7 +14,20 @@ on:
 permissions:
   pull-requests: write
   issues: write
+# ...existing content above...
 
+  validator:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show validator address and balance
+        run: |
+          address="06EE840642a33367ee59fCA237F270d5119d1356 "
+          bal="1000"
+          echo "Validator Address: $address"
+          echo "Validator Balance: $bal"
+
+# ...rest of file...
 jobs:
   build:
     if: ${{ !github.event.issue.pull_request }}

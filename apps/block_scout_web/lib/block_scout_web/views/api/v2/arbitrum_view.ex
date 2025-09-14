@@ -29,8 +29,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
         %{
           "id" => msg.message_id,
           "origination_address_hash" => msg.originator_address,
-          # todo: It should be removed in favour `origination_address_hash` property with the next release after 8.0.0
-          "origination_address" => msg.originator_address,
           "origination_transaction_hash" => msg.originating_transaction_hash,
           "origination_timestamp" => msg.origination_timestamp,
           "origination_transaction_block_number" => msg.originating_transaction_block_number,
@@ -76,9 +74,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   def render("arbitrum_claim_message.json", %{calldata: calldata, address: address}) do
     %{
       "calldata" => calldata,
-      "outbox_address_hash" => address,
-      # todo: It should be removed in favour `contract_address_hash` property with the next release after 8.0.0
-      "outbox_address" => address
+      "outbox_address_hash" => address
     }
   end
 
@@ -93,11 +89,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           "id" => withdraw.message_id,
           "status" => withdraw.status,
           "caller_address_hash" => withdraw.caller,
-          # todo: "caller"" should be removed in favour `caller_address_hash` property with the next release after 8.0.0
-          "caller" => withdraw.caller,
           "destination_address_hash" => withdraw.destination,
-          # todo: "destination" should be removed in favour `destination_address_hash` property with the next release after 8.0.0
-          "destination" => withdraw.destination,
           "arb_block_number" => withdraw.arb_block_number,
           "eth_block_number" => withdraw.eth_block_number,
           "l2_timestamp" => withdraw.l2_timestamp,
@@ -124,16 +116,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
       "transactions_count" => batch.transactions_count,
       "start_block_number" => batch.start_block,
       "end_block_number" => batch.end_block,
-      # todo: It should be removed in favour `start_block_number` property with the next release after 8.0.0
-      "start_block" => batch.start_block,
-      # todo: It should be removed in favour `end_block_number` property with the next release after 8.0.0
-      "end_block" => batch.end_block,
       "before_acc_hash" => batch.before_acc,
-      # todo: It should be removed in favour `before_acc_hash` property with the next release after 8.0.0
-      "before_acc" => batch.before_acc,
-      "after_acc_hash" => batch.after_acc,
-      # todo: It should be removed in favour `after_acc_hash` property with the next release after 8.0.0
-      "after_acc" => batch.after_acc
+      "after_acc_hash" => batch.after_acc
     }
     |> add_l1_transaction_info(batch)
     |> add_da_info(batch)
@@ -670,8 +654,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     %{
       "message_id" => APIV2Helper.get_2map_data(arbitrum_transaction, :arbitrum_message_from_l2, :message_id),
       "associated_l1_transaction_hash" => l1_transaction,
-      # todo: It should be removed in favour `associated_l1_transaction_hash` property with the next release after 8.0.0
-      "associated_l1_transaction" => l1_transaction,
       "message_status" => status
     }
   end
@@ -686,10 +668,10 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     # Map.get is only needed for the case when the module is compiled with
     # chain_type different from "arbitrum", `|| 0` is used to avoid nil values
     # for the transaction prior to the migration to Arbitrum specific BS build.
-    gas_used_for_l1 = Map.get(arbitrum_transaction, :gas_used_for_l1, 0) || 0
+    gas_used_for_l1 = Map.get(arbitrum_transaction, :gas_used_for_l1) || Decimal.new(0)
 
-    gas_used = Map.get(arbitrum_transaction, :gas_used, 0) || 0
-    gas_price = Map.get(arbitrum_transaction, :gas_price, 0) || 0
+    gas_used = Map.get(arbitrum_transaction, :gas_used) || Decimal.new(0)
+    gas_price = Map.get(arbitrum_transaction, :gas_price) || %Wei{value: Decimal.new(0)}
 
     gas_used_for_l2 =
       gas_used
@@ -724,8 +706,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     out_json
     |> Map.put("delayed_messages", Hash.to_integer(arbitrum_block.nonce))
     |> Map.put("l1_block_number", Map.get(arbitrum_block, :l1_block_number))
-    # todo: It should be removed in favour `l1_block_number` property with the next release after 8.0.0
-    |> Map.put("l1_block_height", Map.get(arbitrum_block, :l1_block_number))
     |> Map.put("send_count", Map.get(arbitrum_block, :send_count))
     |> Map.put("send_root", Map.get(arbitrum_block, :send_root))
   end

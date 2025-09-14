@@ -4,7 +4,7 @@ defmodule Utils.MixProject do
   def project do
     [
       app: :utils,
-      version: "8.1.1",
+      version: "9.0.2",
       build_path: "../../_build",
       # config_path: "../../config/config.exs",
       deps_path: "../../deps",
@@ -23,7 +23,7 @@ defmodule Utils.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :tesla]
     ]
   end
 
@@ -32,7 +32,8 @@ defmodule Utils.MixProject do
     [
       {:credo, "~> 1.5", only: [:test, :dev], runtime: false},
       {:httpoison, "~> 2.0"},
-      {:mime, "~> 2.0"}
+      {:mime, "~> 2.0"},
+      {:tesla, "~> 1.15.3"}
     ]
   end
 

@@ -42,9 +42,7 @@ defmodule Explorer.Chain.Cache.Counters.TokenHoldersCount do
 
   def fetch(address_hash) do
     if cache_expired?(address_hash) do
-      Task.start_link(fn ->
-        update_cache(address_hash)
-      end)
+      update_cache(address_hash)
     end
 
     fetch_count_from_cache(address_hash)
@@ -71,26 +69,26 @@ defmodule Explorer.Chain.Cache.Counters.TokenHoldersCount do
     put_into_db_cache(address_hash, new_data)
   end
 
-  def fetch_count_from_cache(address_hash) do
+  defp fetch_count_from_cache(address_hash) do
     address_hash_string = to_string(address_hash)
     key = "hash_#{address_hash_string}"
 
     Helper.fetch_from_ets_cache(@cache_name, key) || fetch_from_db_cache(address_hash)
   end
 
-  def fetch_updated_at_from_cache(address_hash, cache_name) do
+  defp fetch_updated_at_from_cache(address_hash, cache_name) do
     address_hash_string = to_string(address_hash)
     key = "hash_#{address_hash_string}_#{@ets_last_update_key}"
 
     Helper.fetch_from_ets_cache(cache_name, key)
   end
 
-  def fetch_from_db_cache(address_hash) do
+  defp fetch_from_db_cache(address_hash) do
     token = Token.get_by_contract_address_hash(address_hash, @api_true)
-    token.holder_count || 0
+    (token && token.holder_count) || 0
   end
 
-  def put_into_db_cache(address_hash, count) do
+  defp put_into_db_cache(address_hash, count) do
     Token.update_token_holder_count(address_hash, count)
   end
 

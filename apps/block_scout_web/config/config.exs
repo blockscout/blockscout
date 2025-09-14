@@ -18,7 +18,7 @@ config :block_scout_web,
   session_cookie_ttl: 60 * 60 * 24 * 7,
   invalid_session_key: "invalid_session",
   api_v2_temp_token_key: "api_v2_temp_token",
-  http_adapter: HTTPoison
+  http_client: Explorer.HttpClient.Tesla
 
 config :block_scout_web,
   admin_panel_enabled: ConfigHelper.parse_bool_env_var("ADMIN_PANEL_ENABLED")
@@ -118,20 +118,9 @@ config :ueberauth, Ueberauth,
     }
   ]
 
-redis_url = System.get_env("API_RATE_LIMIT_HAMMER_REDIS_URL")
+config :oauth2, adapter: Tesla.Adapter.Mint
 
-if is_nil(redis_url) or redis_url == "" do
-  config :hammer, backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
-else
-  config :hammer,
-    backend:
-      {Hammer.Backend.Redis,
-       [
-         delete_buckets_timeout: 60_000 * 10,
-         expiry_ms: 60_000 * 60 * 4,
-         redis_url: redis_url
-       ]}
-end
+config :tesla, adapter: Tesla.Adapter.Mint
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

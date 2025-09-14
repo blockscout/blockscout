@@ -8,16 +8,18 @@ if Application.compile_env(:explorer, :chain_type) !== :zksync do
 
     @moduletag timeout: :infinity
 
-    alias Explorer.Chain.{ContractMethod, SmartContract}
+    alias Explorer.Chain.{Data, ContractMethod, SmartContract}
     alias Explorer.{Factory, Repo}
     alias Explorer.SmartContract.Solidity.Publisher
 
     setup do
       configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       on_exit(fn ->
         Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
       end)
     end
 
@@ -107,7 +109,7 @@ if Application.compile_env(:explorer, :chain_type) !== :zksync do
         Enum.each(contract_code_info.abi, fn selector ->
           [parsed] = ABI.parse_specification([selector])
 
-          assert Repo.get_by(ContractMethod, abi: selector, identifier: parsed.method_id)
+          assert Repo.get_by(ContractMethod, abi: selector, identifier: %Data{bytes: parsed.method_id})
         end)
       end
 

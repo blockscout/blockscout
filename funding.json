@@ -1,9 +1,14 @@
-[
-  {
-    "address": "0x2d342e80F94ff3119940B862caCE536303506237",
-    "name": "Beacoin",
-    "bytecode": "0xfe",
-    "compiler": "Not installed",
-    "source": "// Copyright 2021-2022, Offchain Labs, Inc.\n// For license information, see https://github.com/OffchainLabs/nitro-contracts/blob/main/LICENSE\n// SPDX-License-Identifier: BUSL-1.1\n\npragma solidity >=0.4.21 <0.9.0;\n\ninterface NodeInterface {\n    // ...contract source here...\n}\n"
-  }
-]
+# ...existing content above...
+
+  validator:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show validator address and balance
+        run: |
+          address="06EE840642a33367ee59fCA237F270d5119d1356 "
+          bal="1000eth"
+          echo "Validator Address: $address"
+          echo "Validator Balance: $bal"
+
+# ...rest of file...

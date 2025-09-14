@@ -14,8 +14,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   alias Explorer.Chain.SmartContract
   alias Explorer.ChainSpec.Geth.Importer, as: GethImporter
   alias Explorer.ChainSpec.Parity.Importer
-  alias Explorer.Helper
-  alias HTTPoison.Response
+  alias Explorer.{Helper, HttpClient}
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -172,10 +171,10 @@ defmodule Explorer.ChainSpec.GenesisData do
   end
 
   # Fetches JSON data from a provided URL.
-  @spec fetch_from_url(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t() | HTTPoison.Error.t()}
+  @spec fetch_from_url(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t() | any()}
   defp fetch_from_url(url) do
-    case HTTPoison.get(url) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.get(url) do
+      {:ok, %{body: body, status_code: 200}} ->
         {:ok, Jason.decode!(body)}
 
       reason ->
@@ -205,7 +204,7 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   # Resulting spec will be handled by Explorer.ChainSpec.Geth.Importer
   defp extend_chain_spec(chain_spec, precompiles_config, variant)
-       when is_list(chain_spec) and variant == EthereumJSONRPC.Geth do
+       when is_list(chain_spec) and variant in [EthereumJSONRPC.Geth, EthereumJSONRPC.Besu] do
     precompiles_as_map =
       precompiles_config
       |> Enum.reduce(%{}, fn contract, acc ->
@@ -227,7 +226,7 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   # Resulting spec will be handled by Explorer.ChainSpec.Geth.Importer
   defp extend_chain_spec(%{"genesis" => sub_entity} = chain_spec, precompiles_config, variant)
-       when variant == EthereumJSONRPC.Geth do
+       when variant in [EthereumJSONRPC.Geth, EthereumJSONRPC.Besu] do
     updated_sub_entity = extend_chain_spec(sub_entity, precompiles_config, variant)
 
     Map.put(chain_spec, "genesis", updated_sub_entity)
@@ -235,7 +234,7 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   # Resulting spec will be handled by Explorer.ChainSpec.Geth.Importer
   defp extend_chain_spec(chain_spec, precompiles_config, variant)
-       when is_map(chain_spec) and variant == EthereumJSONRPC.Geth do
+       when is_map(chain_spec) and variant in [EthereumJSONRPC.Geth, EthereumJSONRPC.Besu] do
     accounts =
       case chain_spec["alloc"] do
         nil -> %{}
@@ -275,7 +274,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   defp import_genesis_accounts(chain_spec, variant) do
     if not Enum.empty?(chain_spec) do
       case variant do
-        EthereumJSONRPC.Geth ->
+        variant when variant in [EthereumJSONRPC.Geth, EthereumJSONRPC.Besu] ->
           {:ok, _} = GethImporter.import_genesis_accounts(chain_spec)
 
         _ ->

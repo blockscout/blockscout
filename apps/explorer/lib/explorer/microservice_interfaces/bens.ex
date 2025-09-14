@@ -3,13 +3,12 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     Interface to interact with Blockscout ENS microservice
   """
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, HttpClient}
   alias Explorer.Chain.Address.MetadataPreloader
 
   alias Explorer.Chain.{Address, Transaction}
 
   alias Explorer.Utility.Microservice
-  alias HTTPoison.Response
 
   require Logger
 
@@ -92,8 +91,8 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+      {:ok, %{body: body, status_code: 200}} ->
         Jason.decode(body)
 
       {_, error} ->
@@ -113,8 +112,8 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   defp http_get_request(url, query_params) do
-    case HTTPoison.get(url, [], params: query_params) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+    case HttpClient.get(url, [], params: query_params) do
+      {:ok, %{body: body, status_code: 200}} ->
         Jason.decode(body)
 
       {_, error} ->

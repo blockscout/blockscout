@@ -1,5 +1,5 @@
 defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   import Mox
 
