@@ -309,8 +309,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       token = insert(:token)
       token_contract_address_hash = token.contract_address_hash
 
-      %Address{hash: address_hash} =
-        address =
+      address =
         insert_address_with_token_balances(%{
           previous: %{value: 2},
           current: %{block_number: block_number, value: 3},
@@ -326,18 +325,26 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       assert count(Address.TokenBalance) == 3
       assert count(Address.CurrentTokenBalance) == 1
-      assert Repo.one(Address.CurrentTokenBalance).value == Decimal.new("3")
+
+      initial_value = Decimal.new("3")
+
+      assert %Address.CurrentTokenBalance{block_number: ^block_number, value: ^initial_value} =
+               Repo.one(Address.CurrentTokenBalance)
 
       # Test and assert
 
       insert(:block, number: block_number, consensus: true)
-      previous_block_number = block_number - 1
 
       run_block_consensus_change(block, true, options)
 
       assert count(Address.TokenBalance) == 2
       assert count(Address.CurrentTokenBalance) == 1
-      assert Repo.one(Address.CurrentTokenBalance).value == Decimal.new("2")
+
+      previous_block_number = block_number - 1
+      expected_value = Decimal.new("2")
+
+      assert %Address.CurrentTokenBalance{block_number: ^previous_block_number, value: ^expected_value} =
+               Repo.one(Address.CurrentTokenBalance)
     end
 
     test "a non-holder reverting to a holder increases the holder_count",
