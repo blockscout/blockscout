@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   import Ecto.Query, only: [dynamic: 1, dynamic: 2, from: 2, where: 3, subquery: 1]
   import Explorer.Chain.Import.Runner.Helper, only: [chain_type_dependent_import: 3]
+  import Explorer.QueryHelper, only: [select_ctid: 1, join_on_ctid: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
 
@@ -720,7 +721,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     ordered_query =
       from(tb in Address.TokenBalance,
         where: tb.block_number in ^non_consensus_block_numbers,
-        select: %{ctid: fragment("?.\"ctid\"", tb)},
+        select: select_ctid(tb),
         # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
         order_by: [
           tb.token_contract_address_hash,
@@ -735,7 +736,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       from(tb in Address.TokenBalance,
         select: map(tb, [:address_hash, :token_contract_address_hash, :block_number]),
         inner_join: ordered_address_token_balance in subquery(ordered_query),
-        on: fragment("?.\"ctid\" = ?.\"ctid\"", tb, ordered_address_token_balance)
+        on: join_on_ctid(tb, ordered_address_token_balance)
       )
 
     try do
@@ -756,7 +757,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     ordered_query =
       from(ctb in Address.CurrentTokenBalance,
         where: ctb.block_number in ^non_consensus_block_numbers,
-        select: %{ctid: fragment("?.\"ctid\"", ctb)},
+        select: select_ctid(ctb),
         # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
         order_by: [
           ctb.token_contract_address_hash,
@@ -779,7 +780,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
             :value
           ]),
         inner_join: ordered_address_current_token_balance in subquery(ordered_query),
-        on: fragment("?.\"ctid\" = ?.\"ctid\"", ctb, ordered_address_current_token_balance)
+        on: join_on_ctid(ctb, ordered_address_current_token_balance)
       )
 
     try do
