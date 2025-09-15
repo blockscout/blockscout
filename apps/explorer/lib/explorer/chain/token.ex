@@ -391,7 +391,12 @@ defmodule Explorer.Chain.Token do
   end
 
   def get_by_contract_address_hash(hash, options) do
-    Chain.select_repo(options).get_by(__MODULE__, contract_address_hash: hash)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    __MODULE__
+    |> where([t], t.contract_address_hash == ^hash)
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).one()
   end
 
   @doc """

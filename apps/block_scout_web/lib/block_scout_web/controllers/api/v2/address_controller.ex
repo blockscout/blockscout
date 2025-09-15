@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   case @chain_type do
     :celo ->
       @chain_type_transaction_necessity_by_association %{
-        :gas_token => :optional
+        [gas_token: reputation_association()] => :optional
       }
 
     _ ->

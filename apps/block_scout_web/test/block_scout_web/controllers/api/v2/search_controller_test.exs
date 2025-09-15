@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   use BlockScoutWeb.ConnCase
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.{Address, Block}
   alias Explorer.Tags.AddressTag
@@ -2435,18 +2436,20 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       request = get(conn, "/api/v2/search/quick?q=#{address_hash}")
       assert response = json_response(request, 200)
 
+      address_result = %{
+        "address_hash" => address_hash,
+        "certified" => false,
+        "ens_info" => nil,
+        "is_smart_contract_verified" => false,
+        "name" => nil,
+        "priority" => 0,
+        "type" => "address",
+        "url" => "/address/#{address_hash}",
+        "reputation" => "ok"
+      }
+
       correct_response = [
-        %{
-          "address_hash" => address_hash,
-          "certified" => false,
-          "ens_info" => nil,
-          "is_smart_contract_verified" => false,
-          "name" => nil,
-          "priority" => 0,
-          "type" => "address",
-          "url" => "/address/#{address_hash}",
-          "reputation" => "ok"
-        }
+        if(@chain_type == :filecoin, do: Map.put(address_result, "filecoin_robust_address", nil), else: address_result)
         | for(
             i <- 0..48,
             do: %{
