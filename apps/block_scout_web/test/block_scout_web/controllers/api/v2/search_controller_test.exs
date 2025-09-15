@@ -2460,7 +2460,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
             "name" => nil,
             "priority" => 0,
             "type" => "address",
-            "url" => "/address/#{address_hash}"
+            "url" => "/address/#{address_hash}",
+            "reputation" => "ok"
           }
           | for(
               i <- 0..48,
