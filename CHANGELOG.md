@@ -118,6 +118,8 @@
 | `INDEXER_POLYGON_EDGE_L2_STATE_RECEIVER_CONTRACT` | The address of StateReceiver contract on L2 (child chain) used to fetch deposit executes. Required for deposit events indexing. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
 | `INDEXER_POLYGON_EDGE_L2_DEPOSITS_START_BLOCK` | The number of start block on L2 (child chain) to index deposit executes. If the table of deposit executes is not empty, the process will fill gaps and then continue indexing from the last indexed message. If empty or not defined, the deposit executes are not indexed. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
 | `INDEXER_POLYGON_EDGE_ETH_GET_LOGS_RANGE_SIZE` | Block range size for eth\_getLogs request in Polygon Edge indexer modules. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+| `ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL` | Airtable URL for public tag requests functionality |  | v5.0.0+ |  | v9.1.0 |
+| `ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY` | Airtable API key for public tag requests functionality |  | v5.0.0+ |  | v9.1.0 |
 
 
 ## 9.0.2
