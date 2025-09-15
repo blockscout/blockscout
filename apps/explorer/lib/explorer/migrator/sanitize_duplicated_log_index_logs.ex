@@ -125,6 +125,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
           :token,
           :transaction,
           :token_instance,
+          :reputation,
           :__meta__
         ])
       end)
@@ -160,6 +161,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
           :is_unique,
           :owner,
           :token,
+          :reputation,
           :__meta__
         ])
       end)

@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   case @chain_type do
     :celo ->
       @chain_type_transaction_necessity_by_association %{
-        :gas_token => :optional
+        [gas_token: reputation_association()] => :optional
       }
 
     _ ->
@@ -1308,13 +1308,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params([
-          "epoch_number",
-          "amount",
-          "associated_account_address_hash",
-          "type",
-          "items_count"
-        ]),
+        define_paging_params(["items_count", "epoch_number", "amount", "associated_account_address_hash", "type"]),
     responses: [
       ok:
         {"Celo election rewards for the specified address.", "application/json",
