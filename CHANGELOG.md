@@ -19,6 +19,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix errors in celo epochs endpoints([#13201](https://github.com/blockscout/blockscout/pull/13201))
 - Fix api/v2/addresses/{hash}/celo/election-rewards pagination ([#13215](https://github.com/blockscout/blockscout/pull/13215))
 - Add reputation preload for celo gas_token ([#13200](https://github.com/blockscout/blockscout/pull/13200))
 - Mark completed deposits in batches ([#13210](https://github.com/blockscout/blockscout/pull/13210))
