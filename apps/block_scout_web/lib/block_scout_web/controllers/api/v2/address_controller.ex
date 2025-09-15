@@ -1308,14 +1308,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["epoch_number", "amount", "associated_account_address_hash", "type"]),
+        define_paging_params(["items_count", "epoch_number", "amount", "associated_account_address_hash", "type"]),
     responses: [
       ok:
         {"Celo election rewards for the specified address.", "application/json",
          paginated_response(
            items: Schemas.Celo.ElectionReward,
            next_page_params_example: %{
-             "block_number" => 100,
+             "epoch_number" => 100,
+             "items_count" => 50,
              "amount" => "1000000000000000000",
              "associated_account_address_hash" => "0x1234567890123456789012345678901234567890",
              "type" => "validator"
