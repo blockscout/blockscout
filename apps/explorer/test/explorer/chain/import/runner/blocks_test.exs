@@ -239,7 +239,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     #
     # Here, we intentionally insert an Address.TokenBalance entry but omit corresponding Address.CurrentTokenBalance
     # for the `_to_not_derive_address_hash`, as otherwise even if that Address.CurrentTokenBalance is derived it
-    # still won't be inserted and retured due to on_conflict statement. In production it should be impossible
+    # still won't be inserted and returned due to on_conflict statement. In production it should be impossible
     # for the Address.CurrentTokenBalance to be missing if corresponding Address.TokenBalance exists.
     test "derive_address_current_token_balances only updates rows removed by delete_address_current_token_balances",
          %{consensus_block: %{number: block_number} = block, options: options} do

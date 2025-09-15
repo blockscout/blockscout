@@ -82,7 +82,7 @@ defmodule Explorer.QueryHelper do
   """
   defmacro select_ctid(table_binding) do
     quote do
-      %{ctid: fragment("?.\"ctid\"", unquote(table_binding))}
+      %{ctid: fragment(~s(?."ctid"), unquote(table_binding))}
     end
   end
 
@@ -94,7 +94,7 @@ defmodule Explorer.QueryHelper do
   """
   defmacro join_on_ctid(first_table_binding, second_table_binding) do
     quote do
-      fragment("?.\"ctid\" = ?.\"ctid\"", unquote(first_table_binding), unquote(second_table_binding))
+      fragment(~s(?."ctid" = ?."ctid"), unquote(first_table_binding), unquote(second_table_binding))
     end
   end
 end
