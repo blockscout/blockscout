@@ -62,7 +62,9 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Remove quantile_estimator dep ([#13190](https://github.com/blockscout/blockscout/pull/13190))
+- Add support of Scroll codecv8 ([#13090](https://github.com/blockscout/blockscout/pull/13090))
 - Change release workflow ([#13087](https://github.com/blockscout/blockscout/issues/13087))
+- Add INDEXER_DISABLE_OPTIMISM_INTEROP_MULTICHAIN_EXPORT env variable ([#13051](https://github.com/blockscout/blockscout/pull/13051))
 - Update and format pull request template ([#13028](https://github.com/blockscout/blockscout/issues/13028))
 - Add final check for ReindexDuplicatedInternalTransactions ([#13091](https://github.com/blockscout/blockscout/issues/13091))
 - Remove obsolete circleci config ([#13097](https://github.com/blockscout/blockscout/issues/13097))
