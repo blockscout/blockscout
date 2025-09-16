@@ -34,6 +34,12 @@ defmodule Explorer.Chain.Celo.Account do
   * `metadata_url` - URL to additional account metadata
   * `locked_celo` - total amount of CELO locked by this account
   * `nonvoting_locked_celo` - amount of locked CELO that is not used for voting
+  * `vote_signer_address_hash` – Address authorized to vote in governance and
+    validator elections on behalf of this account.
+  * `validator_signer_address_hash` – Address authorized to manage a validator
+    or validator group and sign consensus messages for this account.
+  * `attestation_signer_address_hash` – Address whose key this account uses to
+    sign attestations on the Attestations contract.
   """
   @primary_key false
   typed_schema "celo_accounts" do
