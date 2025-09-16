@@ -63,7 +63,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Executed do
             log_info("The batch #{expected_batch_number} looks like executed")
 
             execute_transaction_receipt =
-              Rpc.fetch_transaction_receipt_by_hash(transaction_hash, json_l1_rpc_named_arguments)
+              RPC.fetch_transaction_receipt_by_hash(transaction_hash, json_l1_rpc_named_arguments)
 
             batches_numbers_from_rpc = get_executed_batches_from_logs(execute_transaction_receipt["logs"])
 
@@ -78,7 +78,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Executed do
   end
 
   defp get_executed_batches_from_logs(logs) do
-    executed_batches = Rpc.filter_logs_and_extract_topic_at(logs, @block_execution_event, 1)
+    executed_batches = RPC.filter_logs_and_extract_topic_at(logs, @block_execution_event, 1)
     log_info("Discovered #{length(executed_batches)} executed batches in the executing transaction")
 
     executed_batches

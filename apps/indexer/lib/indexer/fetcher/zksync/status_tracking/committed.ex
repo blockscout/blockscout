@@ -63,7 +63,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Committed do
             log_info("The batch #{expected_batch_number} looks like committed")
 
             commit_transaction_receipt =
-              Rpc.fetch_transaction_receipt_by_hash(transaction_hash, json_l1_rpc_named_arguments)
+              RPC.fetch_transaction_receipt_by_hash(transaction_hash, json_l1_rpc_named_arguments)
 
             batches_numbers_from_rpc = get_committed_batches_from_logs(commit_transaction_receipt["logs"])
 
@@ -78,7 +78,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Committed do
   end
 
   defp get_committed_batches_from_logs(logs) do
-    committed_batches = Rpc.filter_logs_and_extract_topic_at(logs, @block_commit_event, 1)
+    committed_batches = RPC.filter_logs_and_extract_topic_at(logs, @block_commit_event, 1)
     log_info("Discovered #{length(committed_batches)} committed batches in the commitment transaction")
 
     committed_batches

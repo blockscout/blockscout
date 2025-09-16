@@ -18,7 +18,7 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
 
   alias Explorer.Chain.ZkSync.Reader
   alias Indexer.Fetcher.ZkSync.Discovery.Workers
-  alias Indexer.Fetcher.ZkSync.Utils.Rpc
+  alias Indexer.Fetcher.ZkSync.Utils.RPC
 
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_info: 1]
 
@@ -68,7 +68,7 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
           log_info("No batches found in DB. Will start with the latest batch available by RPC")
           # The value received from RPC is decremented in order to not waste
           # the first iteration of handling `:continue` message.
-          Rpc.fetch_latest_sealed_batch_number(state.config.json_rpc_named_arguments) - 1
+          RPC.fetch_latest_sealed_batch_number(state.config.json_rpc_named_arguments) - 1
 
         latest_handled_batch_number ->
           latest_handled_batch_number
@@ -116,7 +116,7 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
       ) do
     log_info("Checking for a new batch or batches")
 
-    latest_sealed_batch_number = Rpc.fetch_latest_sealed_batch_number(json_rpc_named_arguments)
+    latest_sealed_batch_number = RPC.fetch_latest_sealed_batch_number(json_rpc_named_arguments)
 
     {new_state, handle_duration} =
       if latest_handled_batch_number < latest_sealed_batch_number do

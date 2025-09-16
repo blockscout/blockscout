@@ -36,7 +36,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
       when (is_binary(batch_number) or is_integer(batch_number)) and
              transaction_type in [:commit_transaction, :prove_transaction, :execute_transaction] and
              is_list(json_l2_rpc_named_arguments) do
-    batch_from_rpc = Rpc.fetch_batch_details_by_batch_number(batch_number, json_l2_rpc_named_arguments)
+    batch_from_rpc = RPC.fetch_batch_details_by_batch_number(batch_number, json_l2_rpc_named_arguments)
 
     status_changed_or_error =
       case Reader.batch(
@@ -51,7 +51,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
 
     l1_transaction = get_l1_transaction_from_batch(batch_from_rpc, transaction_type)
 
-    if l1_transaction.hash != Rpc.get_binary_zero_hash() and status_changed_or_error in [true, :error] do
+    if l1_transaction.hash != RPC.get_binary_zero_hash() and status_changed_or_error in [true, :error] do
       l1_transactions = Db.get_indices_for_l1_transactions(%{l1_transaction.hash => l1_transaction})
 
       {:look_for_batches, l1_transaction.hash, l1_transactions}
@@ -85,7 +85,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
 
     transaction_hash_db_bytes =
       if is_nil(transaction_hash_db) do
-        Rpc.get_binary_zero_hash()
+        RPC.get_binary_zero_hash()
       else
         transaction_hash_db.hash.bytes
       end
@@ -163,7 +163,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
         |> Enum.reduce([], fn batch, batches ->
           [
             batch
-            |> Rpc.transform_transaction_batch_to_map()
+            |> RPC.transform_transaction_batch_to_map()
             |> Map.merge(map_to_update)
             | batches
           ]

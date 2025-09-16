@@ -5,7 +5,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
   """
 
   alias EthereumJSONRPC.Block.ByNumber
-  alias Indexer.Fetcher.ZkSync.Utils.Rpc
+  alias Indexer.Fetcher.ZkSync.Utils.RPC
 
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_info: 1, log_details_chunk_handling: 4]
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
@@ -100,7 +100,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
   end
 
   defp add_l1_transaction_to_list(l1_transactions, l1_transaction) do
-    if l1_transaction.hash != Rpc.get_binary_zero_hash() do
+    if l1_transaction.hash != RPC.get_binary_zero_hash() do
       Map.put(l1_transactions, l1_transaction.hash, l1_transaction)
     else
       l1_transactions
@@ -151,11 +151,11 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
 
         details =
           requests
-          |> Rpc.fetch_batches_details(json_rpc_named_arguments)
+          |> RPC.fetch_batches_details(json_rpc_named_arguments)
           |> Enum.reduce(
             details,
             fn resp, details ->
-              Map.put(details, resp.id, Rpc.transform_batch_details_to_map(resp.result))
+              Map.put(details, resp.id, RPC.transform_batch_details_to_map(resp.result))
             end
           )
 
@@ -233,7 +233,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
           requests
       end
     end)
-    |> Rpc.fetch_blocks_ranges(json_rpc_named_arguments)
+    |> RPC.fetch_blocks_ranges(json_rpc_named_arguments)
     |> Enum.reduce(batches_dst, fn resp, updated_batches ->
       Map.update!(updated_batches, resp.id, fn batch ->
         [start_block, end_block] = resp.result
@@ -301,7 +301,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
       finalized_chunked_requests
       |> Enum.reduce({blocks_to_batches, []}, fn requests, {blocks, l2_transactions} ->
         requests
-        |> Rpc.fetch_blocks_details(json_rpc_named_arguments)
+        |> RPC.fetch_blocks_details(json_rpc_named_arguments)
         |> extract_block_hash_and_transactions_list(blocks, l2_transactions)
       end)
 
@@ -370,7 +370,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
   # transactions lists. The block hash and transaction hashes are used to build associations
   # with the corresponding batches by utilizing their numbers.
   #
-  # This function is not part of the `Indexer.Fetcher.ZkSync.Utils.Rpc` module since the resulting
+  # This function is not part of the `Indexer.Fetcher.ZkSync.Utils.RPC` module since the resulting
   # lists are too specific for further import to the database.
   #
   # ## Parameters

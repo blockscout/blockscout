@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
+defmodule Indexer.Fetcher.ZkSync.Utils.RPC do
   @moduledoc """
     Common functions to handle RPC calls for Indexer.Fetcher.ZkSync fetchers
   """

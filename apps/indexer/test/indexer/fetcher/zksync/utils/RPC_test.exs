@@ -1,11 +1,11 @@
-defmodule Indexer.Fetcher.ZkSync.Utils.RpcTest do
+defmodule Indexer.Fetcher.ZkSync.Utils.RPCTest do
   use EthereumJSONRPC.Case
   use Explorer.DataCase
 
   import Mox
 
   alias Explorer.Chain.Hash
-  alias Indexer.Fetcher.ZkSync.Utils.Rpc, as: ZksyncRpc
+  alias Indexer.Fetcher.ZkSync.Utils.RPC, as: ZksyncRpc
 
   setup :set_mox_global
   setup :verify_on_exit!

@@ -58,8 +58,8 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
 
           :look_for_batches ->
             log_info("The batch #{expected_batch_number} looks like proven")
-            prove_transaction = Rpc.fetch_transaction_by_hash(transaction_hash, json_l1_rpc_named_arguments)
-            batches_numbers_from_rpc = Rpc.get_proven_batches_from_calldata(prove_transaction["input"])
+            prove_transaction = RPC.fetch_transaction_by_hash(transaction_hash, json_l1_rpc_named_arguments)
+            batches_numbers_from_rpc = RPC.get_proven_batches_from_calldata(prove_transaction["input"])
 
             associate_and_import_or_prepare_for_recovery(
               batches_numbers_from_rpc,
