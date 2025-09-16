@@ -340,6 +340,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         address_hash_string
         |> Chain.hash_to_address(
           necessity_by_association: %{
+            :scam_badge => :optional,
             :names => :optional,
             :smart_contract => :optional,
             proxy_implementations_association() => :optional
