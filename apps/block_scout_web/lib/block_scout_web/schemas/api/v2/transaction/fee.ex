@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.Fee do
         enum: ["maximum", "actual"]
       },
       value: General.IntegerStringNullable
-    }
+    },
+    additionalProperties: false
   })
 end

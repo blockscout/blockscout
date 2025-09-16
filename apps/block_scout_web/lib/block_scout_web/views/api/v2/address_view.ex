@@ -195,15 +195,15 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "amount" => string_or_null(collection.distinct_token_instances_count || collection.value),
       "token_instances" =>
         Enum.map(collection.preloaded_token_instances, fn instance ->
-          prepare_nft_for_collection(collection.token.type, instance)
+          prepare_nft_for_collection(collection.token.type, instance, collection.reputation)
         end),
       "reputation" => collection.reputation
     }
   end
 
-  defp prepare_nft_for_collection(token_type, instance) do
+  defp prepare_nft_for_collection(token_type, instance, reputation) do
     Map.merge(
-      %{"token_type" => token_type, "value" => value(token_type, instance)},
+      %{"token_type" => token_type, "value" => value(token_type, instance), "reputation" => reputation},
       TokenView.prepare_token_instance(instance, nil)
     )
   end

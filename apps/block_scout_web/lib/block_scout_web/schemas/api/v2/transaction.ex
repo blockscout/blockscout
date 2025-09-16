@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   alias BlockScoutWeb.API.V2.ZkSyncView
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
   alias BlockScoutWeb.Schemas.API.V2.Transaction.Fee
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
   @zksync_schema %Schema{
@@ -31,7 +32,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       :prove_transaction_timestamp,
       :execute_transaction_hash,
       :execute_transaction_timestamp
-    ]
+    ],
+    additionalProperties: false
   }
 
   @arbitrum_commitment_transaction_schema %Schema{
@@ -42,7 +44,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       timestamp: General.TimestampNullable,
       status: %Schema{type: :string, enum: ["unfinalized", "finalized"], nullable: true}
     },
-    required: [:hash, :timestamp, :status]
+    required: [:hash, :timestamp, :status],
+    additionalProperties: false
   }
 
   @arbitrum_schema %Schema{
@@ -76,14 +79,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
             ],
             nullable: false
           }
-        }
+        },
+        additionalProperties: false
       },
       gas_used_for_l1: General.IntegerString,
       gas_used_for_l2: General.IntegerString,
       poster_fee: General.IntegerString,
       network_fee: General.IntegerString
     },
-    required: [:gas_used_for_l1, :gas_used_for_l2, :poster_fee, :network_fee]
+    required: [:gas_used_for_l1, :gas_used_for_l2, :poster_fee, :network_fee],
+    additionalProperties: false
   }
 
   @optimism_withdrawal_schema %Schema{
@@ -94,7 +99,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       status: %Schema{type: :string, nullable: false},
       l1_transaction_hash: General.FullHashNullable
     },
-    required: [:nonce, :status, :l1_transaction_hash]
+    required: [:nonce, :status, :l1_transaction_hash],
+    additionalProperties: false
   }
 
   @scroll_schema %Schema{
@@ -127,7 +133,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       :l1_gas_used,
       :l2_fee,
       :l2_block_status
-    ]
+    ],
+    additionalProperties: false
   }
 
   @doc """
@@ -145,124 +152,154 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
     case Application.get_env(:explorer, :chain_type) do
       :polygon_zkevm ->
         schema
-        |> put_in([:properties, :zkevm_batch_number], %Schema{type: :integer, nullable: true})
-        |> put_in([:properties, :zkevm_sequence_hash], General.FullHash)
-        |> put_in([:properties, :zkevm_verify_hash], General.FullHash)
-        |> put_in([:properties, :zkevm_status], %Schema{
-          type: :string,
-          enum: ["Confirmed by Sequencer", "L1 Confirmed"],
-          nullable: false
-        })
+        |> Helper.extend_schema(
+          properties: %{
+            zkevm_batch_number: %Schema{type: :integer, nullable: true},
+            zkevm_sequence_hash: General.FullHash,
+            zkevm_verify_hash: General.FullHash,
+            zkevm_status: %Schema{
+              type: :string,
+              enum: ["Confirmed by Sequencer", "L1 Confirmed"],
+              nullable: false
+            }
+          }
+        )
 
       :zksync ->
-        schema
-        |> put_in([:properties, :zksync], @zksync_schema)
+        schema |> Helper.extend_schema(properties: %{zksync: @zksync_schema})
 
       :arbitrum ->
-        schema
-        |> put_in([:properties, :arbitrum], @arbitrum_schema)
+        schema |> Helper.extend_schema(properties: %{arbitrum: @arbitrum_schema})
 
       :optimism ->
         schema
-        |> put_in([:properties, :l1_fee], General.IntegerString)
-        |> put_in([:properties, :l1_fee_scalar], General.IntegerString)
-        |> put_in([:properties, :l1_gas_price], General.IntegerString)
-        |> put_in([:properties, :l1_gas_used], General.IntegerString)
-        |> put_in([:properties, :op_withdrawals], %Schema{
-          type: :array,
-          items: @optimism_withdrawal_schema,
-          nullable: false
-        })
-        |> put_in([:properties, :op_interop], %Schema{
-          type: :object,
-          nullable: false,
+        |> Helper.extend_schema(
           properties: %{
-            nonce: %Schema{type: :integer},
-            status: %Schema{type: :string, nullable: false, enum: ["Sent", "Relayed", "Failed"]},
-            sender_address_hash: General.AddressHashNullable,
-            target_address_hash: General.AddressHashNullable,
-            payload: General.HexString,
-            relay_chain: %Schema{type: :object, nullable: true},
-            relay_transaction_hash: General.FullHashNullable,
-            init_chain: %Schema{type: :object, nullable: true},
-            init_transaction_hash: General.FullHashNullable
-          },
-          required: [:nonce, :status, :sender_address_hash, :target_address_hash, :payload]
-        })
+            l1_fee: General.IntegerString,
+            l1_fee_scalar: General.IntegerString,
+            l1_gas_price: General.IntegerString,
+            l1_gas_used: General.IntegerString,
+            op_withdrawals: %Schema{
+              type: :array,
+              items: @optimism_withdrawal_schema,
+              nullable: false
+            },
+            op_interop: %Schema{
+              type: :object,
+              nullable: false,
+              properties: %{
+                nonce: %Schema{type: :integer},
+                status: %Schema{type: :string, nullable: false, enum: ["Sent", "Relayed", "Failed"]},
+                sender_address_hash: General.AddressHashNullable,
+                target_address_hash: General.AddressHashNullable,
+                payload: General.HexString,
+                relay_chain: %Schema{type: :object, nullable: true},
+                relay_transaction_hash: General.FullHashNullable,
+                init_chain: %Schema{type: :object, nullable: true},
+                init_transaction_hash: General.FullHashNullable
+              },
+              required: [:nonce, :status, :sender_address_hash, :target_address_hash, :payload],
+              additionalProperties: false
+            }
+          }
+        )
 
       :scroll ->
-        schema
-        |> put_in([:properties, :scroll], @scroll_schema)
+        schema |> Helper.extend_schema(properties: %{scroll: @scroll_schema})
 
       :suave ->
         schema
-        |> put_in([:properties, :allowed_peekers], %Schema{type: :array, items: General.AddressHash, nullable: false})
-        |> put_in([:properties, :execution_node], Address)
-        |> put_in([:properties, :wrapped], %Schema{
-          type: :object,
-          nullable: false,
+        |> Helper.extend_schema(
           properties: %{
-            type: %Schema{type: :integer},
-            nonce: %Schema{type: :integer, nullable: true},
-            to: Address,
-            gas_limit: General.IntegerStringNullable,
-            gas_price: General.IntegerStringNullable,
-            fee: Fee,
-            max_priority_fee_per_gas: General.IntegerStringNullable,
-            max_fee_per_gas: General.IntegerStringNullable,
-            value: General.IntegerStringNullable,
-            hash: General.FullHash,
-            method: General.MethodNameNullable,
-            decoded_input: %Schema{allOf: [General.DecodedInput], nullable: true},
-            raw_input: General.HexString
+            allowed_peekers: %Schema{type: :array, items: General.AddressHash, nullable: false},
+            execution_node: Address,
+            wrapped: %Schema{
+              type: :object,
+              nullable: false,
+              properties: %{
+                type: %Schema{type: :integer},
+                nonce: %Schema{type: :integer, nullable: true},
+                to: Address,
+                gas_limit: General.IntegerStringNullable,
+                gas_price: General.IntegerStringNullable,
+                fee: Fee,
+                max_priority_fee_per_gas: General.IntegerStringNullable,
+                max_fee_per_gas: General.IntegerStringNullable,
+                value: General.IntegerStringNullable,
+                hash: General.FullHash,
+                method: General.MethodNameNullable,
+                decoded_input: %Schema{allOf: [General.DecodedInput], nullable: true},
+                raw_input: General.HexString
+              },
+              additionalProperties: false
+            }
           }
-        })
+        )
 
       :stability ->
         schema
-        |> put_in([:properties, :stability_fee], %Schema{
-          type: :object,
-          nullable: false,
+        |> Helper.extend_schema(
           properties: %{
-            token: Token,
-            validator_address: Address,
-            dapp_address: Address,
-            total_fee: General.IntegerString,
-            dapp_fee: General.IntegerString,
-            validator_fee: General.IntegerString
-          },
-          required: [:token, :validator_address, :dapp_address, :total_fee, :dapp_fee, :validator_fee]
-        })
+            stability_fee: %Schema{
+              type: :object,
+              nullable: false,
+              properties: %{
+                token: Token,
+                validator_address: Address,
+                dapp_address: Address,
+                total_fee: General.IntegerString,
+                dapp_fee: General.IntegerString,
+                validator_fee: General.IntegerString
+              },
+              required: [:token, :validator_address, :dapp_address, :total_fee, :dapp_fee, :validator_fee],
+              additionalProperties: false
+            }
+          }
+        )
 
       :ethereum ->
         schema
-        |> put_in([:properties, :max_fee_per_blob_gas], General.IntegerString)
-        |> put_in([:properties, :blob_versioned_hashes], %Schema{type: :array, items: General.FullHash, nullable: false})
-        |> put_in([:properties, :blob_gas_used], General.IntegerString)
-        |> put_in([:properties, :blob_gas_price], General.IntegerString)
-        |> put_in([:properties, :burnt_blob_fee], General.IntegerString)
+        |> Helper.extend_schema(
+          properties: %{
+            max_fee_per_blob_gas: General.IntegerString,
+            blob_versioned_hashes: %Schema{type: :array, items: General.FullHash, nullable: false},
+            blob_gas_used: General.IntegerString,
+            blob_gas_price: General.IntegerString,
+            burnt_blob_fee: General.IntegerString
+          }
+        )
 
       :celo ->
         schema
-        |> put_in([:properties, :celo], %Schema{
-          type: :object,
-          nullable: false,
-          properties: %{gas_token: %Schema{oneOf: [Token], nullable: true}},
-          required: [:gas_token]
-        })
-        |> update_in([:required], &[:celo | &1])
+        |> Helper.extend_schema(
+          properties: %{
+            celo: %Schema{
+              type: :object,
+              nullable: false,
+              properties: %{gas_token: %Schema{allOf: [Token], nullable: true}},
+              required: [:gas_token],
+              additionalProperties: false
+            }
+          },
+          required: [:celo]
+        )
 
       :zilliqa ->
         schema
-        |> put_in([:properties, :zilliqa], %Schema{
-          type: :object,
-          nullable: false,
+        |> Helper.extend_schema(
           properties: %{
-            is_scilla: %Schema{type: :boolean, nullable: false}
+            zilliqa: %Schema{
+              type: :object,
+              nullable: false,
+              properties: %{
+                is_scilla: %Schema{type: :boolean, nullable: false}
+              },
+              required: [:is_scilla],
+              additionalProperties: false
+            }
           },
-          required: [:is_scilla]
-        })
-        |> update_in([:required], &[:zilliqa | &1])
+          required: [:zilliqa]
+        )
 
       _ ->
         schema
@@ -360,7 +397,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
               type: :object,
               properties: %{raw: %Schema{anyOf: [General.HexString, %Schema{type: :string}], nullable: true}},
               required: [:raw],
-              nullable: false
+              nullable: false,
+              additionalProperties: false
             }
           ],
           nullable: true
@@ -390,7 +428,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
                 description: "Transaction action details (json formatted)",
                 nullable: false
               }
-            }
+            },
+            additionalProperties: false
           },
           nullable: true
         },
@@ -462,7 +501,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         :has_error_in_internal_transactions,
         :authorization_list,
         :is_pending_update
-      ]
+      ],
+      additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()
   )

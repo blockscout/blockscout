@@ -91,7 +91,8 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
            properties: %{
              deposits_count: %Schema{type: :integer, nullable: false}
            },
-           required: [:deposits_count]
+           required: [:deposits_count],
+           additionalProperties: false
          }},
       forbidden: ForbiddenResponse.response()
     ]

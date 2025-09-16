@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
 
   alias BlockScoutWeb.Schemas.API.V2.Celo.ElectionReward.Type, as: CeloElectionRewardType
   alias BlockScoutWeb.Schemas.API.V2.Token.Type, as: TokenType
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.{Parameter, Schema}
 
   defmodule AddressHash do
@@ -68,15 +69,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       case Application.get_env(:explorer, :chain_type) do
         :filecoin ->
           schema
-          |> put_in(
-            [:properties, :filecoin_robust_address],
-            %Schema{
-              type: :string,
-              example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-              nullable: true
-            }
+          |> Helper.extend_schema(
+            properties: %{
+              filecoin_robust_address: %Schema{
+                type: :string,
+                example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
+                nullable: true
+              }
+            },
+            required: [:filecoin_robust_address]
           )
-          |> update_in([:required], &[:filecoin_robust_address | &1])
 
         _ ->
           schema
@@ -98,7 +100,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
           address_hash: AddressHash,
           name: %Schema{type: :string, nullable: true}
         },
-        required: [:address_hash, :name]
+        required: [:address_hash, :name],
+        additionalProperties: false
       }
       |> ChainTypeCustomizations.chain_type_fields()
     )
@@ -114,7 +117,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
         display_name: %Schema{type: :string, nullable: false},
         label: %Schema{type: :string, nullable: false}
       },
-      required: [:address_hash, :display_name, :label]
+      required: [:address_hash, :display_name, :label],
+      additionalProperties: false
     })
   end
 
@@ -127,7 +131,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
         display_name: %Schema{type: :string, nullable: false},
         label: %Schema{type: :string, nullable: false}
       },
-      required: [:display_name, :label]
+      required: [:display_name, :label],
+      additionalProperties: false
     })
   end
 
@@ -198,12 +203,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
                 nullable: false
               }
             },
-            nullable: false
+            nullable: false,
+            additionalProperties: false
           }
         }
       },
       required: [:method_id, :method_call, :parameters],
-      nullable: false
+      nullable: false,
+      additionalProperties: false
     })
   end
 
@@ -238,13 +245,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
               }
             },
             required: [:name, :type, :indexed, :value],
-            nullable: false
+            nullable: false,
+            additionalProperties: false
           },
           nullable: false
         }
       },
       required: [:method_id, :method_call, :parameters],
-      nullable: false
+      nullable: false,
+      additionalProperties: false
     })
   end
 
@@ -479,7 +488,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
         }
       },
       required: [:items, :next_page_params],
-      nullable: false
+      nullable: false,
+      additionalProperties: false
     }
   end
 

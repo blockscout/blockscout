@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.TabsCounters do
       validations_count: %Schema{type: :integer, nullable: false},
       celo_election_rewards_count: %Schema{type: :integer, nullable: false},
       beacon_deposits_count: %Schema{type: :integer, nullable: false}
-    }
+    },
+    additionalProperties: false
   })
 end
