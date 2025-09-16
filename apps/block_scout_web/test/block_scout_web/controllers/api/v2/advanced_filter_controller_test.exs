@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       assert response ==
                conn
@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "scam"
+      assert List.first(response["items"])["token"]["reputation"] == "scam"
 
       request = conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
       response = json_response(request, 200)
@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       request = conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       request = conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "empty list", %{conn: conn} do

@@ -1225,7 +1225,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       assert response == conn |> get("/api/v2/addresses/#{address.hash}/token-transfers") |> json_response(200)
     end
@@ -1254,7 +1254,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "scam"
+      assert List.first(response["items"])["token"]["reputation"] == "scam"
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/token-transfers")
       response = json_response(request, 200)
@@ -1281,7 +1281,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> get("/api/v2/addresses/#{address.hash}/token-transfers")
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "get token transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -1306,7 +1306,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> get("/api/v2/addresses/#{address.hash}/token-transfers")
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "get 200 on non existing address", %{conn: conn} do
@@ -2417,7 +2417,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response)["reputation"] == "ok"
+      assert List.first(response)["token"]["reputation"] == "ok"
 
       assert response == conn |> get("/api/v2/addresses/#{address.hash}/token-balances") |> json_response(200)
     end
@@ -2438,7 +2438,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response)["reputation"] == "scam"
+      assert List.first(response)["token"]["reputation"] == "scam"
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/token-balances")
       response = json_response(request, 200)
@@ -2458,7 +2458,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> get("/api/v2/addresses/#{address.hash}/token-balances")
       response = json_response(request, 200)
 
-      assert List.first(response)["reputation"] == "ok"
+      assert List.first(response)["token"]["reputation"] == "ok"
     end
 
     test "get smart-contract with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -2475,7 +2475,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> get("/api/v2/addresses/#{address.hash}/token-balances")
       response = json_response(request, 200)
 
-      assert List.first(response)["reputation"] == "ok"
+      assert List.first(response)["token"]["reputation"] == "ok"
     end
 
     test "get empty list on non existing address", %{conn: conn} do
@@ -3130,7 +3130,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/addresses/#{address.hash}/tokens")
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       assert response == conn |> get("/api/v2/addresses/#{address.hash}/tokens") |> json_response(200)
     end
@@ -3154,7 +3154,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/addresses/#{address.hash}/tokens")
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "scam"
+      assert List.first(response["items"])["token"]["reputation"] == "scam"
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/tokens")
       response = json_response(request, 200)
@@ -3178,7 +3178,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> get("/api/v2/addresses/#{address.hash}/tokens")
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "get token balances with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -3200,7 +3200,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> get("/api/v2/addresses/#{address.hash}/tokens")
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "get empty list on non existing address", %{conn: conn} do
@@ -4107,7 +4107,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       assert response == conn |> get(endpoint.(address.hash), %{"type" => "ERC-721"}) |> json_response(200)
 
@@ -4116,7 +4116,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       assert response == conn |> get(endpoint.(address.hash), %{"type" => "ERC-1155"}) |> json_response(200)
 
@@ -4125,7 +4125,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       assert response == conn |> get(endpoint.(address.hash), %{"type" => "ERC-404"}) |> json_response(200)
     end
@@ -4185,7 +4185,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "scam"
+      assert List.first(response["items"])["token"]["reputation"] == "scam"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-721"})
       response = json_response(request, 200)
@@ -4198,7 +4198,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "scam"
+      assert List.first(response["items"])["token"]["reputation"] == "scam"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-1155"})
       response = json_response(request, 200)
@@ -4211,7 +4211,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "scam"
+      assert List.first(response["items"])["token"]["reputation"] == "scam"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-404"})
       response = json_response(request, 200)
@@ -4268,17 +4268,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-721"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-1155"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-404"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "get token with scam reputation with hide_scam_addresses=false", %{conn: conn, endpoint: endpoint} do
@@ -4335,17 +4335,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-721"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-1155"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       request = conn |> get(endpoint.(address.hash), %{"type" => "ERC-404"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "get paginated ERC-721 nft", %{conn: conn, endpoint: endpoint} do
@@ -4832,7 +4832,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       assert response ==
                conn
@@ -4846,7 +4846,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       assert response ==
                conn
@@ -4860,7 +4860,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       assert response ==
                conn
@@ -4958,7 +4958,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "scam"
+      assert List.first(response["items"])["token"]["reputation"] == "scam"
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-721"})
       response = json_response(request, 200)
@@ -4972,7 +4972,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "scam"
+      assert List.first(response["items"])["token"]["reputation"] == "scam"
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-1155"})
       response = json_response(request, 200)
@@ -4986,7 +4986,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "scam"
+      assert List.first(response["items"])["token"]["reputation"] == "scam"
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-404"})
       response = json_response(request, 200)
@@ -5076,17 +5076,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-721"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-1155"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-404"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "get nft collections with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -5177,17 +5177,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-721"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-1155"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-404"})
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "get 200 on non existing address", %{conn: conn, endpoint: endpoint} do

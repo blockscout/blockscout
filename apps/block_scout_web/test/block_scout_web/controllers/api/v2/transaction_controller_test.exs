@@ -231,7 +231,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/transactions/#{transaction.hash}")
       response = json_response(request, 200)
 
-      assert List.first(response["token_transfers"])["reputation"] == "ok"
+      assert List.first(response["token_transfers"])["token"]["reputation"] == "ok"
 
       assert response == conn |> get("/api/v2/transactions/#{transaction.hash}") |> json_response(200)
     end
@@ -263,7 +263,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/transactions/#{transaction.hash}")
       response = json_response(request, 200)
 
-      assert List.first(response["token_transfers"])["reputation"] == "scam"
+      assert List.first(response["token_transfers"])["token"]["reputation"] == "scam"
 
       request = conn |> get("/api/v2/transactions/#{transaction.hash}")
       response = json_response(request, 200)
@@ -296,7 +296,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> get("/api/v2/transactions/#{transaction.hash}")
       response = json_response(request, 200)
 
-      assert List.first(response["token_transfers"])["reputation"] == "ok"
+      assert List.first(response["token_transfers"])["token"]["reputation"] == "ok"
     end
 
     test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -326,7 +326,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> get("/api/v2/transactions/#{transaction.hash}")
       response = json_response(request, 200)
 
-      assert List.first(response["token_transfers"])["reputation"] == "ok"
+      assert List.first(response["token_transfers"])["token"]["reputation"] == "ok"
     end
 
     test "return 404 on non existing transaction", %{conn: conn} do
@@ -796,7 +796,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       assert response == conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers") |> json_response(200)
     end
@@ -832,7 +832,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "scam"
+      assert List.first(response["items"])["token"]["reputation"] == "scam"
 
       request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
       response = json_response(request, 200)
@@ -865,7 +865,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -895,7 +895,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "return 404 on non existing transaction", %{conn: conn} do

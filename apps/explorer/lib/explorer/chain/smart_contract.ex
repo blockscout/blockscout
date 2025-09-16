@@ -1475,7 +1475,7 @@ defmodule Explorer.Chain.SmartContract do
       end
 
     addresses_query
-    |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses_with_select(:hash, options)
     |> SortingHelper.apply_sorting(sorting_options, default_sorting_options)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting_options)
     |> Chain.join_associations(necessity_by_association)
