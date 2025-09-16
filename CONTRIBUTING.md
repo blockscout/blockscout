@@ -83,6 +83,39 @@ When contributing to the codebase, please adhere to the following naming convent
 
 By following these conventions, we can maintain a clean and understandable codebase.
 
+### Acronym Naming Convention in Module Names
+
+To ensure clarity and consistency in module names, well-known acronyms should be kept fully uppercase. This follows established conventions used by popular Elixir libraries and enhances readability by making it clear where an acronym ends and a new word begins.
+
+**Well-known acronyms that should be uppercase:**
+- `HTTP` (not `Http`) - e.g., `HTTPClient`, `HTTPoisonHelper`
+- `CSV` (not `Csv`) - e.g., `CSVExport`, `CSVHelper`
+- `JSON` (not `Json`) - e.g., `JSONParser`, `EthereumJSONRPC`
+- `API` (not `Api`) - e.g., `APIController`, `V2.API`
+- `URI` (not `Uri`) - e.g., `URIValidator`, `MetadataURI`
+- `UUID` (not `Uuid`) - e.g., `UUIDGenerator`, `Ecto.UUID`
+- `RPC` (not `Rpc`) - e.g., `JSONRPCClient`, `EthereumRPC`
+- `HTML` (not `Html`) - e.g., `HTMLParser`, `HTMLHelper`
+- `CSS` (not `Css`) - e.g., `CSSCompiler`, `CSSProcessor`
+- `SQL` (not `Sql`) - e.g., `SQLQuery`, `SQLBuilder`
+- `XML` (not `Xml`) - e.g., `XMLParser`, `XMLExporter`
+- `DB` (not `Db`) - e.g., `DBConnection`, `EthBytecodeDB`
+
+**Examples of correct module naming:**
+```elixir
+# ✅ Correct
+defmodule Explorer.Chain.CSVExport.Helper
+defmodule Utils.HTTPClient.TeslaHelper
+defmodule Explorer.SmartContract.EthBytecodeDBInterface
+
+# ❌ Incorrect  
+defmodule Explorer.Chain.CsvExport.Helper
+defmodule Utils.HttpClient.TeslaHelper
+defmodule Explorer.SmartContract.EthBytecodeDbInterface
+```
+
+This convention aligns with established Elixir community practices and popular libraries like `HTTPoison`, `Ecto.UUID`, and `Absinthe.Plug.GraphiQL`.
+
 ### API V2 Naming Convention
 
 When contributing to the API v2, please adhere to the following naming conventions for response fields to ensure clarity and consistency:
