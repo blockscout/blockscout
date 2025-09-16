@@ -308,7 +308,7 @@ defmodule BlockScoutWeb.Notifier do
 
     preloads =
       if API_V2.enabled?(),
-        do: base_preloads ++ [token_transfers: [token: Reputation.reputation_association()]],
+        do: [{:token_transfers, [token: Reputation.reputation_association()]} | base_preloads],
         else: base_preloads
 
     transactions
