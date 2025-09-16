@@ -116,6 +116,22 @@ defmodule Explorer.SmartContract.EthBytecodeDbInterface
 
 This convention aligns with established Elixir community practices and popular libraries like `HTTPoison`, `Ecto.UUID`, and `Absinthe.Plug.GraphiQL`.
 
+**Migration Strategy for Existing Code:**
+
+When updating existing modules to follow this convention:
+1. **Start with isolated modules** - modules with fewer dependencies and references
+2. **Rename the file** - e.g., `http_client.ex` → `HTTP_client.ex` or create new file
+3. **Update the module definition** - e.g., `defmodule Utils.HttpClient` → `defmodule Utils.HTTPClient`
+4. **Update all references systematically**:
+   - `alias` statements
+   - Function calls
+   - Configuration entries
+   - Comments and documentation
+5. **Remove the old file** after ensuring all references are updated
+6. **Test thoroughly** to ensure no breakage
+
+For large-scale changes affecting many modules (like `CsvExport` → `CSVExport`), coordinate the changes to minimize merge conflicts and ensure all references are updated atomically.
+
 ### API V2 Naming Convention
 
 When contributing to the API v2, please adhere to the following naming conventions for response fields to ensure clarity and consistency:
