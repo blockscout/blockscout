@@ -583,7 +583,7 @@ defmodule Explorer.Chain.InternalTransaction do
     (query || __MODULE__)
     |> where(
       [it],
-      fragment("(SELECT block_hash FROM pending_block_operations WHERE block_hash = ? LIMIT 1) IS NULL", it.block_hash)
+      fragment("NOT EXISTS (SELECT 1 FROM pending_block_operations WHERE block_hash = ?)", it.block_hash)
     )
   end
 
@@ -997,7 +997,10 @@ defmodule Explorer.Chain.InternalTransaction do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       query
       |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
-      |> where([internal_transaction, transaction], transaction.block_hash == internal_transaction.block_hash)
+      # todo: this additional check causes performance issues at /api/v2/internal-transactions endpoint
+      # In the future we plan to extract reorg data into separate tables, so the main tables will no longer contain
+      # reorged data, and this check will no longer be necessary..
+      # |> where([internal_transaction, transaction], transaction.block_hash == internal_transaction.block_hash)
       |> where([_internal_transaction, transaction], transaction.block_consensus == true)
     else
       query

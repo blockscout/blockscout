@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
     with {:ok, number} <- parse_epoch_number(number_string),
          {:ok, epoch} <- Epoch.from_number(number, options) do
-      aggregated_rewards = ElectionReward.epoch_number_to_rewards_aggregated_by_type(epoch.number, options)
+      aggregated_rewards = ElectionReward.epoch_number_to_rewards_aggregated_by_type(epoch.number, api?: true)
 
       conn
       |> render(:celo_epoch, %{

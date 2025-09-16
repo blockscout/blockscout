@@ -22,6 +22,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.TokenBalance do
         nullable: true
       }
     },
-    required: [:value, :token, :token_id, :token_instance, :reputation]
+    required: [:value, :token, :token_id, :token_instance, :reputation],
+    additionalProperties: false
   })
 end

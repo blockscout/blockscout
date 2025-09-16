@@ -35,6 +35,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Beacon.Deposit do
       :signature,
       :status,
       :from_address
-    ]
+    ],
+    additionalProperties: false
   })
 end

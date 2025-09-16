@@ -65,6 +65,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.InternalTransaction do
       :index,
       :gas_limit,
       :block_index
-    ]
+    ],
+    additionalProperties: false
   })
 end

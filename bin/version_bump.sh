@@ -65,8 +65,8 @@ bump_version() {
     done
 
     sed -i '' "s/version: \"$current_version\"/version: \"$new_version\"/" "$CONFIG_FILE"
-    sed -i '' "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_FILE"
-    sed -i '' "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_NO_SERVICES_FILE"
+    # sed -i '' "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_FILE"
+    # sed -i '' "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_NO_SERVICES_FILE"
     sed -i '' "s/RELEASE_VERSION ?= '$current_version'/RELEASE_VERSION ?= '$new_version'/" "$MAKE_FILE"
 
     # Replace the old version with the new version in the GitHub workflows files

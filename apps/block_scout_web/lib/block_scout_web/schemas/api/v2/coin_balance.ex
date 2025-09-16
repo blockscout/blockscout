@@ -22,6 +22,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.CoinBalance do
       :delta,
       :value,
       :block_timestamp
-    ]
+    ],
+    additionalProperties: false
   })
 end

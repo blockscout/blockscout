@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.MetadataTag do
       ordinal: %Schema{type: :integer, nullable: false},
       meta: %Schema{type: :object, nullable: false}
     },
-    required: [:slug, :name, :tagType, :ordinal, :meta]
+    required: [:slug, :name, :tagType, :ordinal, :meta],
+    additionalProperties: false
   })
 end
