@@ -1193,7 +1193,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert ens["ens_info"]["name"] == name
     end
 
-    if Application.compile_env(:explorer, :chain_type) == :default do
+    if @chain_type == :default do
       test "finds a TAC operation", %{conn: conn} do
         bypass = Bypass.open()
         tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
@@ -2197,7 +2197,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              end)
     end
 
-    if Application.compile_env(:explorer, :chain_type) == :default do
+    if @chain_type == :default do
       test "finds a TAC operation", %{conn: conn} do
         bypass = Bypass.open()
         tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
