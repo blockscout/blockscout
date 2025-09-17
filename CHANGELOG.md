@@ -18,6 +18,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Do not modify deposit indexer state on reorgs ([#13236](https://github.com/blockscout/blockscout/pull/13236))
 - Refactoring reputation ([#13221](https://github.com/blockscout/blockscout/issues/13221))
 
 ## 9.1.0

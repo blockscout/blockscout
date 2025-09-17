@@ -106,15 +106,17 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
         timeout: :infinity
       )
 
-    deposit_index = Enum.min(deleted_deposits, fn -> state.deposit_index + 1 end)
-
-    {:noreply,
-     %{
-       state
-       | deposit_index: deposit_index - 1,
-         last_processed_log_block_number: block_number,
-         last_processed_log_index: -1
-     }}
+    # todo: temporarily do not modify state of the indexer on reorgs.
+    # It should be handled by a separate process.
+    # deposit_index = Enum.min(deleted_deposits, fn -> state.deposit_index + 1 end)
+    # {:noreply,
+    #  %{
+    #    state
+    #    | deposit_index: deposit_index - 1,
+    #      last_processed_log_block_number: block_number,
+    #      last_processed_log_index: -1
+    #  }}
+    {:noreply, state}
   rescue
     postgrex_error in Postgrex.Error ->
       Logger.error(
