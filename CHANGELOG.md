@@ -1,5 +1,15 @@
 # Changelog
 
+## 9.1.1
+
+### 🚀 Features
+
+- Auto assert_schema in tests ([#13029](https://github.com/blockscout/blockscout/issues/13029))
+
+### ⚙️ Miscellaneous Tasks
+
+- Refactoring reputation ([#13221](https://github.com/blockscout/blockscout/issues/13221))
+
 ## 9.1.0
 
 ### 🚀 Features
@@ -103,7 +113,6 @@
 | `INDEXER_DISABLE_BEACON_DEPOSIT_STATUS_FETCHER`               | If `true`, the Beacon deposit status fetcher won't be started. Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                                                                                                    | Version: v9.1.0+ <br />Default: `false` <br />Applications: Indexer                  |
 | `INDEXER_BEACON_DEPOSIT_STATUS_FETCHER_EPOCH_DURATION`        | Epoch duration in the Beacon chain in seconds. Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                                                                                                                    | Version: v9.1.0+ <br />Default: `384` <br />Applications: Indexer                    |
 | `INDEXER_BEACON_DEPOSIT_STATUS_FETCHER_REFERENCE_TIMESTAMP`   | Any past finalized Beacon Chain epoch UTC timestamp. Used as reference for status fetcher scheduling. Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                                                             | Version: v9.1.0+ <br />Default: `1722024023` <br />Applications: Indexer             |
-
 
 
 ### Deprecated ENV variables
