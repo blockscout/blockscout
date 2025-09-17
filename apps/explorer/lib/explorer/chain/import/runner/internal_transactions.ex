@@ -253,6 +253,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         set: [
           block_number: fragment("EXCLUDED.block_number"),
           call_type: fragment("EXCLUDED.call_type"),
+          call_type_enum: fragment("EXCLUDED.call_type_enum"),
           created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
           created_contract_code: fragment("EXCLUDED.created_contract_code"),
           error: fragment("EXCLUDED.error"),
@@ -278,10 +279,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
       where:
         fragment(
-          "(EXCLUDED.transaction_hash, EXCLUDED.index, EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.transaction_hash, EXCLUDED.index, EXCLUDED.call_type, EXCLUDED.call_type_enum, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           internal_transaction.transaction_hash,
           internal_transaction.index,
           internal_transaction.call_type,
+          internal_transaction.call_type_enum,
           internal_transaction.created_contract_address_hash,
           internal_transaction.created_contract_code,
           internal_transaction.error,

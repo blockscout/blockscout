@@ -776,6 +776,10 @@ config :explorer, Explorer.Migrator.BackfillMultichainSearchDB,
   concurrency: 1,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_BATCH_SIZE", 10)
 
+config :explorer, Explorer.Migrator.BackfillCallTypeEnum,
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_CALL_TYPE_ENUM_CONCURRENCY", 1),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_CALL_TYPE_ENUM_BATCH_SIZE", 100)
+
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation,
   check_interval: ConfigHelper.parse_time_env_var("MIGRATION_HEAVY_INDEX_OPERATIONS_CHECK_INTERVAL", "10m")
 

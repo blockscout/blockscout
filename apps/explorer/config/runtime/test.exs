@@ -75,6 +75,7 @@ for migrator <- [
       Explorer.Migrator.MergeAdjacentMissingBlockRanges,
       Explorer.Migrator.UnescapeQuotesInTokens,
       Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
+      Explorer.Migrator.BackfillCallTypeEnum,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
