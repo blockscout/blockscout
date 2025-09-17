@@ -6,6 +6,10 @@
 
 - Auto assert_schema in tests ([#13029](https://github.com/blockscout/blockscout/issues/13029))
 
+### 🐛 Bug Fixes
+
+- Remove requirement for beacon deposit indexes to be sequential ([#13228](https://github.com/blockscout/blockscout/pull/13228))
+
 ### ⚙️ Miscellaneous Tasks
 
 - Refactoring reputation ([#13221](https://github.com/blockscout/blockscout/issues/13221))
