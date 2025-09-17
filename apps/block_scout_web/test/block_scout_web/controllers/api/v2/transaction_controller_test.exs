@@ -1546,6 +1546,188 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 5
     end
+
+    test "return state changes with token transfers and verify token is correctly loaded", %{conn: conn} do
+      block_before = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      token = insert(:token, type: "ERC-20", symbol: "TEST", name: "Test Token")
+      from_address = insert(:address)
+      to_address = insert(:address)
+
+      # Create token transfer
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_contract_address_hash: token.contract_address_hash,
+        from_address: from_address,
+        from_address_hash: from_address.hash,
+        to_address: to_address,
+        to_address_hash: to_address.hash,
+        amount: Decimal.new(100),
+        token: token,
+        token_ids: nil
+      )
+
+      # Set up coin balances for transaction participants
+      insert(:address_coin_balance,
+        address: transaction.from_address,
+        address_hash: transaction.from_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.to_address,
+        address_hash: transaction.to_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.block.miner,
+        address_hash: transaction.block.miner_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      # Set up token balances
+      insert(:address_current_token_balance,
+        address: from_address,
+        address_hash: from_address.hash,
+        token_contract_address_hash: token.contract_address_hash,
+        block_number: block_before.number,
+        value: Decimal.new(1000)
+      )
+
+      insert(:address_current_token_balance,
+        address: to_address,
+        address_hash: to_address.hash,
+        token_contract_address_hash: token.contract_address_hash,
+        block_number: block_before.number,
+        value: Decimal.new(0)
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+      assert is_list(response["items"])
+
+      # Find the token state changes (should have at least from and to addresses)
+      token_state_changes = Enum.filter(response["items"], fn item -> item["type"] == "token" end)
+      assert length(token_state_changes) >= 2
+
+      # Verify token information is properly loaded in at least one state change
+      token_state_change = Enum.find(token_state_changes, fn item -> not is_nil(item["token"]) end)
+      assert token_state_change
+
+      token_data = token_state_change["token"]
+      assert token_data["symbol"] == "TEST"
+      assert token_data["name"] == "Test Token"
+      assert token_data["type"] == "ERC-20"
+      assert token_data["address_hash"] == to_string(token.contract_address_hash)
+      assert token_data["reputation"] == "ok"
+    end
+
+    test "return state changes with scam token reputation properly set", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      block_before = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      # Create a token
+      token = insert(:token, type: "ERC-20", symbol: "SCAM", name: "Scam Token")
+      from_address = insert(:address)
+      to_address = insert(:address)
+
+      # Create scam badge for the token address to mark it as scam
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      # Create token transfer
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_contract_address_hash: token.contract_address_hash,
+        from_address: from_address,
+        from_address_hash: from_address.hash,
+        to_address: to_address,
+        to_address_hash: to_address.hash,
+        amount: Decimal.new(100),
+        token: token,
+        token_ids: nil
+      )
+
+      # Set up coin balances for transaction participants
+      insert(:address_coin_balance,
+        address: transaction.from_address,
+        address_hash: transaction.from_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.to_address,
+        address_hash: transaction.to_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.block.miner,
+        address_hash: transaction.block.miner_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      # Set up token balances
+      insert(:address_current_token_balance,
+        address: from_address,
+        address_hash: from_address.hash,
+        token_contract_address_hash: token.contract_address_hash,
+        block_number: block_before.number,
+        value: Decimal.new(1000)
+      )
+
+      insert(:address_current_token_balance,
+        address: to_address,
+        address_hash: to_address.hash,
+        token_contract_address_hash: token.contract_address_hash,
+        block_number: block_before.number,
+        value: Decimal.new(0)
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+      assert is_list(response["items"])
+
+      # Find the token state changes
+      token_state_changes = Enum.filter(response["items"], fn item -> item["type"] == "token" end)
+      assert length(token_state_changes) >= 2
+
+      # Verify that the token has scam reputation
+      token_state_change = Enum.find(token_state_changes, fn item -> not is_nil(item["token"]) end)
+      assert token_state_change
+
+      token_data = token_state_change["token"]
+      assert token_data["reputation"] == "scam"
+      assert token_data["symbol"] == "SCAM"
+      assert token_data["name"] == "Scam Token"
+    end
   end
 
   if Application.compile_env(:explorer, :chain_type) == :celo do
@@ -2731,7 +2913,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response = json_response(request, 200)
 
       token_json = Enum.at(response["data"]["summaries"], 0)["summary_template_variables"]["incoming_token"]["value"]
-      dbg(token_json)
       assert token_json["address_hash"] == to_string(token.contract_address_hash)
       assert token_json["symbol"] == token.symbol
       assert token_json["reputation"] == "scam"
