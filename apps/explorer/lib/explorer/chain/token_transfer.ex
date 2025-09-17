@@ -9,7 +9,6 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
 
   alias Explorer.Chain.{
     Address,
-    Address.Reputation,
     Block,
     Hash,
     Transaction
@@ -101,8 +100,6 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
         )
 
         has_one(:token, through: [:token_contract_address, :token])
-
-        has_one(:reputation, Reputation, foreign_key: :address_hash, references: :token_contract_address_hash)
 
         timestamps()
 
@@ -579,7 +576,7 @@ defmodule Explorer.Chain.TokenTransfer do
       |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
       |> preload([token: token], [{:token, token}])
       |> filter_by_type(token_types)
-      |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:token_contract_address_hash, options)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
       |> handle_paging_options(paging_options)
     else
       to_address_hash_query =
@@ -589,7 +586,7 @@ defmodule Explorer.Chain.TokenTransfer do
         |> filter_by_token_address_hash(token_address_hash)
         |> filter_by_type(token_types)
         |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
-        |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:token_contract_address_hash, options)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> handle_paging_options(paging_options)
         |> Chain.wrapped_union_subquery()
 
@@ -600,7 +597,7 @@ defmodule Explorer.Chain.TokenTransfer do
         |> filter_by_token_address_hash(token_address_hash)
         |> filter_by_type(token_types)
         |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
-        |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:token_contract_address_hash, options)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> handle_paging_options(paging_options)
         |> Chain.wrapped_union_subquery()
 

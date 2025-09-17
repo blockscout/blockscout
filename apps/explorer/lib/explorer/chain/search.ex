@@ -552,7 +552,7 @@ defmodule Explorer.Chain.Search do
     base_query
     |> apply_sorting([], @token_sorting)
     |> page_search_results(paging_options, "token")
-    |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:contract_address_hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses_for_search(:contract_address_hash, options)
     |> select(^(token_search_fields() |> add_reputation_to_search_fields(options)))
   end
 
@@ -567,7 +567,7 @@ defmodule Explorer.Chain.Search do
       )
 
     query
-    |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:contract_address_hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses_for_search(:contract_address_hash, options)
     |> select(^(token_search_fields() |> add_reputation_to_search_fields(options)))
   end
 
@@ -590,7 +590,7 @@ defmodule Explorer.Chain.Search do
       )
 
     base_query
-    |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:address_hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses_for_search(:address_hash, options)
     |> select(^contract_search_fields)
     |> apply_sorting([], @contract_sorting)
     |> page_search_results(paging_options, "contract")
@@ -755,7 +755,7 @@ defmodule Explorer.Chain.Search do
       as: :metadata_tag,
       on: address.hash == tag.address_hash
     )
-    |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses_for_search(:hash, options)
     |> select(^(metadata_tags_search_fields() |> add_reputation_to_search_fields(options)))
   end
 

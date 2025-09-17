@@ -306,7 +306,10 @@ defmodule BlockScoutWeb.Notifier do
       to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
     ]
 
-    preloads = if API_V2.enabled?(), do: [:token_transfers | base_preloads], else: base_preloads
+    preloads =
+      if API_V2.enabled?(),
+        do: [{:token_transfers, [token: Reputation.reputation_association()]} | base_preloads],
+        else: base_preloads
 
     transactions
     |> Repo.preload(preloads)
@@ -403,7 +406,7 @@ defmodule BlockScoutWeb.Notifier do
       )
       when type in [:realtime, :on_demand] do
     address_current_token_balances
-    |> Repo.preload(:token)
+    |> Repo.preload(token: Reputation.reputation_association())
     |> Enum.group_by(& &1.token_type)
     |> Enum.each(fn {token_type, balances} ->
       broadcast_token_balances(address_hash, token_type, balances)
