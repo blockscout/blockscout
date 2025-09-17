@@ -11,6 +11,10 @@
 - Fix logic of checking finishing of heavy DB index operation ([#13231](https://github.com/blockscout/blockscout/pull/13231))
 - Remove requirement for beacon deposit indexes to be sequential ([#13228](https://github.com/blockscout/blockscout/pull/13228))
 
+### ⚡ Performance
+
+- Improve perf of internal transactions retrieval from the DB ([#13232](https://github.com/blockscout/blockscout/pull/13232))
+
 ### ⚙️ Miscellaneous Tasks
 
 - Refactoring reputation ([#13221](https://github.com/blockscout/blockscout/issues/13221))
