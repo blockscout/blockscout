@@ -93,9 +93,16 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
 
   @impl GenServer
   def handle_cast({:lost_consensus, block_number}, %__MODULE__{} = state) do
+    max_reorg_depth_block_number = block_number + 64
+
     {_deleted_deposits_count, deleted_deposits} =
       Repo.delete_all(
-        from(d in Deposit, where: d.block_number >= ^block_number, select: d.index),
+        from(
+          d in Deposit,
+          where: d.block_number > ^block_number,
+          where: d.block_number <= ^max_reorg_depth_block_number,
+          select: d.index
+        ),
         timeout: :infinity
       )
 
