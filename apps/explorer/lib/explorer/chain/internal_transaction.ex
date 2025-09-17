@@ -581,7 +581,7 @@ defmodule Explorer.Chain.InternalTransaction do
   of internal_transactions
   """
   def where_nonpending_block(query \\ nil) do
-    estimated_pbo_count = CacheCountersHelper.estimated_count_from("pending_block_operations")
+    estimated_pbo_count = CacheCountersHelper.estimated_count_from("pending_block_operations") || 0
 
     # NOT EXISTS query practically performs better on smaller tables
     # while the indexed LEFT JOIN IS NULL query is better for larger tables
