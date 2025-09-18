@@ -345,7 +345,8 @@ defmodule Explorer.Chain.TokenTransferTest do
               index: 0
             ),
           block: block,
-          address_hash: address.hash
+          address_hash: address.hash,
+          address: address
         )
 
       block_number = log.block_number
