@@ -1631,7 +1631,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert token_data["symbol"] == "TEST"
       assert token_data["name"] == "Test Token"
       assert token_data["type"] == "ERC-20"
-      assert token_data["address_hash"] == to_string(token.contract_address_hash)
+      assert token_data["address_hash"] == to_string(token.contract_address)
       assert token_data["reputation"] == "ok"
     end
 
@@ -1727,6 +1727,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert token_data["reputation"] == "scam"
       assert token_data["symbol"] == "SCAM"
       assert token_data["name"] == "Scam Token"
+      assert token_data["address_hash"] == to_string(token.contract_address)
     end
   end
 
