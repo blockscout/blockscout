@@ -287,7 +287,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         necessity_by_association: %{
           [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
           [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-          :token => :optional
+          [token: reputation_association()] => :optional
         }
       ]
       |> Keyword.merge(@api_true)
