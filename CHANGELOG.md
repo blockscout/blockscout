@@ -13,6 +13,7 @@
 - Add reputation preload to state changes and bridged tokens ([#13235](https://github.com/blockscout/blockscout/pull/13235))
 - Soften deposits deletion condition ([#13234](https://github.com/blockscout/blockscout/pull/13234))
 - Fix logic of checking finishing of heavy DB index operation ([#13231](https://github.com/blockscout/blockscout/pull/13231))
+- some flapping explorer/indexer tests ([#13230](https://github.com/blockscout/blockscout/pull/13230))
 - Remove requirement for beacon deposit indexes to be sequential ([#13228](https://github.com/blockscout/blockscout/pull/13228))
 
 ### ⚡ Performance
