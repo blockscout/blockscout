@@ -8,6 +8,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix condition in Indexer.Fetcher.OnDemand.TokenTotalSupply fetcher ([#13240](https://github.com/blockscout/blockscout/pull/13240))
 - Add reputation preload to state changes and bridged tokens ([#13235](https://github.com/blockscout/blockscout/pull/13235))
 - Soften deposits deletion condition ([#13234](https://github.com/blockscout/blockscout/pull/13234))
 - Fix logic of checking finishing of heavy DB index operation ([#13231](https://github.com/blockscout/blockscout/pull/13231))
