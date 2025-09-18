@@ -2,8 +2,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   use EthereumJSONRPC.Case, async: false
   use BlockScoutWeb.ConnCase
   use BlockScoutWeb.ChannelCase, async: false
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   import Mox
+  import Ecto.Query, only: [from: 2]
 
   alias Explorer.{Repo, TestHelper}
 
@@ -2482,5 +2484,177 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     assert Enum.count(second_page_resp["items"]) == 1
     assert second_page_resp["next_page_params"] == nil
     compare_holders_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
+  end
+
+  if @bridged_tokens_enabled do
+    describe "/tokens/bridged" do
+      test "returns empty list when no bridged tokens", %{conn: conn} do
+        request = get(conn, "/api/v2/tokens/bridged")
+
+        assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+      end
+
+      test "returns bridged tokens list", %{conn: conn} do
+        # Create a token
+        token = insert(:token, %{total_supply: 1000})
+
+        # Update token to set bridged flag directly in the database
+        Explorer.Repo.update_all(
+          from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token.contract_address_hash),
+          set: [bridged: true]
+        )
+
+        # Create a bridged token record
+        {:ok, _bridged_token} =
+          Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+            home_token_contract_address_hash: token.contract_address_hash,
+            foreign_chain_id: 1,
+            foreign_token_contract_address_hash: build(:address).hash,
+            type: "omni",
+            exchange_rate: Decimal.new("1.5")
+          })
+
+        request = get(conn, "/api/v2/tokens/bridged")
+
+        assert response = json_response(request, 200)
+        assert %{"items" => items, "next_page_params" => _} = response
+        assert length(items) == 1
+
+        item = List.first(items)
+        assert item["address_hash"] == Address.checksum(token.contract_address_hash)
+        assert item["name"] == token.name
+        assert item["symbol"] == token.symbol
+        assert item["bridge_type"] == "omni"
+        assert item["origin_chain_id"] == "1"
+        assert is_binary(item["foreign_address"])
+      end
+
+      test "filters bridged tokens by search query", %{conn: conn} do
+        # Create first token
+        token1 = insert(:token, %{total_supply: 1000, name: "TestToken", symbol: "TEST"})
+
+        Explorer.Repo.update_all(
+          from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token1.contract_address_hash),
+          set: [bridged: true]
+        )
+
+        {:ok, _bridged_token1} =
+          Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+            home_token_contract_address_hash: token1.contract_address_hash,
+            foreign_chain_id: 1,
+            foreign_token_contract_address_hash: build(:address).hash,
+            type: "omni"
+          })
+
+        # Create second token with different name
+        token2 = insert(:token, %{total_supply: 2000, name: "OtherToken", symbol: "OTHER"})
+
+        Explorer.Repo.update_all(
+          from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token2.contract_address_hash),
+          set: [bridged: true]
+        )
+
+        {:ok, _bridged_token2} =
+          Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+            home_token_contract_address_hash: token2.contract_address_hash,
+            foreign_chain_id: 1,
+            foreign_token_contract_address_hash: build(:address).hash,
+            type: "amb"
+          })
+
+        # Search for "Test"
+        request = get(conn, "/api/v2/tokens/bridged", %{"q" => "Test"})
+
+        assert response = json_response(request, 200)
+        assert %{"items" => items} = response
+        assert length(items) == 1
+
+        item = List.first(items)
+        assert item["name"] == "TestToken"
+        assert item["symbol"] == "TEST"
+      end
+
+      test "filters bridged tokens by chain ids", %{conn: conn} do
+        # Create tokens on different chains
+        token1 = insert(:token, %{total_supply: 1000})
+
+        Explorer.Repo.update_all(
+          from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token1.contract_address_hash),
+          set: [bridged: true]
+        )
+
+        {:ok, _bridged_token1} =
+          Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+            home_token_contract_address_hash: token1.contract_address_hash,
+            foreign_chain_id: 1,
+            foreign_token_contract_address_hash: build(:address).hash,
+            type: "omni"
+          })
+
+        token2 = insert(:token, %{total_supply: 2000})
+
+        Explorer.Repo.update_all(
+          from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token2.contract_address_hash),
+          set: [bridged: true]
+        )
+
+        {:ok, _bridged_token2} =
+          Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+            home_token_contract_address_hash: token2.contract_address_hash,
+            foreign_chain_id: 56,
+            foreign_token_contract_address_hash: build(:address).hash,
+            type: "amb"
+          })
+
+        # Filter by chain id 1
+        request = get(conn, "/api/v2/tokens/bridged", %{"chain_ids" => "1"})
+
+        assert response = json_response(request, 200)
+        assert %{"items" => items} = response
+        assert length(items) == 1
+
+        item = List.first(items)
+        assert item["origin_chain_id"] == "1"
+      end
+
+      test "supports pagination", %{conn: conn} do
+        # Create 51 bridged tokens to trigger pagination (default page size is 50)
+        _tokens =
+          for i <- 1..51 do
+            token = insert(:token, %{total_supply: 1000 * i, name: "Token#{i}", symbol: "T#{i}"})
+
+            Explorer.Repo.update_all(
+              from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token.contract_address_hash),
+              set: [bridged: true]
+            )
+
+            {:ok, _bridged_token} =
+              Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+                home_token_contract_address_hash: token.contract_address_hash,
+                foreign_chain_id: 1,
+                foreign_token_contract_address_hash: build(:address).hash,
+                type: "omni"
+              })
+
+            token
+          end
+
+        # Test first page (should have 50 items and next_page_params)
+        request = get(conn, "/api/v2/tokens/bridged")
+
+        assert response = json_response(request, 200)
+        assert %{"items" => items, "next_page_params" => next_page_params} = response
+        assert length(items) == 50
+        assert next_page_params != nil
+
+        # Test second page (should have 1 item and no next_page_params)
+        request = get(conn, "/api/v2/tokens/bridged", next_page_params)
+
+        assert response = json_response(request, 200)
+        assert %{"items" => items, "next_page_params" => next_page_params} = response
+        assert length(items) == 1
+        assert next_page_params == nil
+      end
+    end
   end
 end
