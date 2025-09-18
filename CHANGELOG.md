@@ -8,6 +8,7 @@
 
 ### 🐛 Bug Fixes
 
+- Add reputation preload for user op body for transaction interpreter ([#13241](https://github.com/blockscout/blockscout/pull/13241))
 - Fix condition in Indexer.Fetcher.OnDemand.TokenTotalSupply fetcher ([#13240](https://github.com/blockscout/blockscout/pull/13240))
 - Add reputation preload to state changes and bridged tokens ([#13235](https://github.com/blockscout/blockscout/pull/13235))
 - Soften deposits deletion condition ([#13234](https://github.com/blockscout/blockscout/pull/13234))
