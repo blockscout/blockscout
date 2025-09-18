@@ -2530,37 +2530,37 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       end
 
       test "filters bridged tokens by search query", %{conn: conn} do
-      # Create first token
-      token1 = insert(:token, %{total_supply: 1000, name: "TestToken", symbol: "TEST"})
+        # Create first token
+        token1 = insert(:token, %{total_supply: 1000, name: "TestToken", symbol: "TEST"})
 
-      Explorer.Repo.update_all(
-        from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token1.contract_address_hash),
-        set: [bridged: true]
-      )
+        Explorer.Repo.update_all(
+          from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token1.contract_address_hash),
+          set: [bridged: true]
+        )
 
-      {:ok, _bridged_token1} =
-        Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
-          home_token_contract_address_hash: token1.contract_address_hash,
-          foreign_chain_id: 1,
-          foreign_token_contract_address_hash: build(:address).hash,
-          type: "omni"
-        })
+        {:ok, _bridged_token1} =
+          Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+            home_token_contract_address_hash: token1.contract_address_hash,
+            foreign_chain_id: 1,
+            foreign_token_contract_address_hash: build(:address).hash,
+            type: "omni"
+          })
 
-      # Create second token with different name
-      token2 = insert(:token, %{total_supply: 2000, name: "OtherToken", symbol: "OTHER"})
+        # Create second token with different name
+        token2 = insert(:token, %{total_supply: 2000, name: "OtherToken", symbol: "OTHER"})
 
-      Explorer.Repo.update_all(
-        from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token2.contract_address_hash),
-        set: [bridged: true]
-      )
+        Explorer.Repo.update_all(
+          from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token2.contract_address_hash),
+          set: [bridged: true]
+        )
 
-      {:ok, _bridged_token2} =
-        Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
-          home_token_contract_address_hash: token2.contract_address_hash,
-          foreign_chain_id: 1,
-          foreign_token_contract_address_hash: build(:address).hash,
-          type: "amb"
-        })
+        {:ok, _bridged_token2} =
+          Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+            home_token_contract_address_hash: token2.contract_address_hash,
+            foreign_chain_id: 1,
+            foreign_token_contract_address_hash: build(:address).hash,
+            type: "amb"
+          })
 
         # Search for "Test"
         request = get(conn, "/api/v2/tokens/bridged", %{"q" => "Test"})
@@ -2575,36 +2575,36 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       end
 
       test "filters bridged tokens by chain ids", %{conn: conn} do
-      # Create tokens on different chains
-      token1 = insert(:token, %{total_supply: 1000})
+        # Create tokens on different chains
+        token1 = insert(:token, %{total_supply: 1000})
 
-      Explorer.Repo.update_all(
-        from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token1.contract_address_hash),
-        set: [bridged: true]
-      )
+        Explorer.Repo.update_all(
+          from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token1.contract_address_hash),
+          set: [bridged: true]
+        )
 
-      {:ok, _bridged_token1} =
-        Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
-          home_token_contract_address_hash: token1.contract_address_hash,
-          foreign_chain_id: 1,
-          foreign_token_contract_address_hash: build(:address).hash,
-          type: "omni"
-        })
+        {:ok, _bridged_token1} =
+          Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+            home_token_contract_address_hash: token1.contract_address_hash,
+            foreign_chain_id: 1,
+            foreign_token_contract_address_hash: build(:address).hash,
+            type: "omni"
+          })
 
-      token2 = insert(:token, %{total_supply: 2000})
+        token2 = insert(:token, %{total_supply: 2000})
 
-      Explorer.Repo.update_all(
-        from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token2.contract_address_hash),
-        set: [bridged: true]
-      )
+        Explorer.Repo.update_all(
+          from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token2.contract_address_hash),
+          set: [bridged: true]
+        )
 
-      {:ok, _bridged_token2} =
-        Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
-          home_token_contract_address_hash: token2.contract_address_hash,
-          foreign_chain_id: 56,
-          foreign_token_contract_address_hash: build(:address).hash,
-          type: "amb"
-        })
+        {:ok, _bridged_token2} =
+          Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+            home_token_contract_address_hash: token2.contract_address_hash,
+            foreign_chain_id: 56,
+            foreign_token_contract_address_hash: build(:address).hash,
+            type: "amb"
+          })
 
         # Filter by chain id 1
         request = get(conn, "/api/v2/tokens/bridged", %{"chain_ids" => "1"})
@@ -2619,21 +2619,25 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       test "supports pagination", %{conn: conn} do
         # Create 51 bridged tokens to trigger pagination (default page size is 50)
-        _tokens = for i <- 1..51 do
-          token = insert(:token, %{total_supply: 1000 * i, name: "Token#{i}", symbol: "T#{i}"})
-          Explorer.Repo.update_all(
-            from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token.contract_address_hash),
-            set: [bridged: true]
-          )
-          {:ok, _bridged_token} =
-            Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
-              home_token_contract_address_hash: token.contract_address_hash,
-              foreign_chain_id: 1,
-              foreign_token_contract_address_hash: build(:address).hash,
-              type: "omni"
-            })
-          token
-        end
+        _tokens =
+          for i <- 1..51 do
+            token = insert(:token, %{total_supply: 1000 * i, name: "Token#{i}", symbol: "T#{i}"})
+
+            Explorer.Repo.update_all(
+              from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token.contract_address_hash),
+              set: [bridged: true]
+            )
+
+            {:ok, _bridged_token} =
+              Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+                home_token_contract_address_hash: token.contract_address_hash,
+                foreign_chain_id: 1,
+                foreign_token_contract_address_hash: build(:address).hash,
+                type: "omni"
+              })
+
+            token
+          end
 
         # Test first page (should have 50 items and next_page_params)
         request = get(conn, "/api/v2/tokens/bridged")
