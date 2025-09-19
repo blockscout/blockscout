@@ -287,28 +287,28 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         original_celo_config = Application.get_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts)
 
         # Set up Celo core contracts configuration for base fee
-        fee_handler_address = "0x" <> String.duplicate("1", 40)
-        governance_address = "0x" <> String.duplicate("2", 40)
-        celo_token_address = "0x" <> String.duplicate("3", 40)
+        fee_handler_address = insert(:address)
+        governance_address = insert(:address)
+        celo_token_address = insert(:address)
 
         celo_config = [
           contracts: %{
             "addresses" => %{
               "FeeHandler" => [
                 %{
-                  "address" => fee_handler_address,
+                  "address" => to_string(fee_handler_address.hash),
                   "updated_at_block_number" => 0
                 }
               ],
               "Governance" => [
                 %{
-                  "address" => governance_address,
+                  "address" => to_string(governance_address.hash),
                   "updated_at_block_number" => 0
                 }
               ],
               "GoldToken" => [
                 %{
-                  "address" => celo_token_address,
+                  "address" => to_string(celo_token_address.hash),
                   "updated_at_block_number" => 0
                 }
               ]
@@ -317,7 +317,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
               "FeeHandler" => %{
                 "FeeBeneficiarySet" => [
                   %{
-                    "address_hash" => "0x" <> String.duplicate("4", 40),
+                    "address_hash" => to_string(insert(:address).hash),
                     "updated_at_block_number" => 0
                   }
                 ],
@@ -334,21 +334,14 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
         Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, celo_config)
 
-        address = insert(:address, hash: celo_token_address)
-
         # Create a CELO token for the response
-        celo_token =
-          insert(:token,
-            contract_address_hash: celo_token_address,
-            contract_address: address,
-            symbol: "CELO",
-            name: "Celo",
-            type: "ERC-20"
-          )
-
-        # Create addresses for fee handler and beneficiary
-        fee_handler_address_record = insert(:address, hash: fee_handler_address)
-        fee_beneficiary_address_record = insert(:address, hash: "0x" <> String.duplicate("4", 40))
+        insert(:token,
+          contract_address_hash: celo_token_address.hash,
+          contract_address: celo_token_address,
+          symbol: "CELO",
+          name: "Celo",
+          type: "ERC-20"
+        )
 
         # Create a block with base fee and transactions
         block =
@@ -358,20 +351,19 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
           )
 
         # Create transactions for the block to calculate burnt fees
-        transactions =
-          for index <- 0..2 do
-            insert(:transaction,
-              block_hash: block.hash,
-              block_number: block.number,
-              # 2 gwei
-              gas_price: 2_000_000_000,
-              gas_used: 21_000,
-              max_fee_per_gas: 2_000_000_000,
-              max_priority_fee_per_gas: 1_000_000_000,
-              cumulative_gas_used: 21_000,
-              index: index
-            )
-          end
+        for index <- 0..2 do
+          insert(:transaction,
+            block_hash: block.hash,
+            block_number: block.number,
+            # 2 gwei
+            gas_price: 2_000_000_000,
+            gas_used: 21_000,
+            max_fee_per_gas: 2_000_000_000,
+            max_priority_fee_per_gas: 1_000_000_000,
+            cumulative_gas_used: 21_000,
+            index: index
+          )
+        end
 
         # Make the request
         request = get(conn, "/api/v2/blocks/#{block.hash}")
@@ -423,21 +415,21 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         original_celo_config = Application.get_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts)
 
         # Set up Celo core contracts configuration with only governance (no fee handler)
-        governance_address = "0x" <> String.duplicate("2", 40)
-        celo_token_address = "0x" <> String.duplicate("3", 40)
+        governance_address = insert(:address)
+        celo_token_address = insert(:address)
 
         celo_config = [
           contracts: %{
             "addresses" => %{
               "Governance" => [
                 %{
-                  "address" => governance_address,
+                  "address" => to_string(governance_address.hash),
                   "updated_at_block_number" => 0
                 }
               ],
               "GoldToken" => [
                 %{
-                  "address" => celo_token_address,
+                  "address" => to_string(celo_token_address.hash),
                   "updated_at_block_number" => 0
                 }
               ]
@@ -447,19 +439,14 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
         Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, celo_config)
 
-        address = insert(:address, hash: celo_token_address)
         # Create a CELO token for the response
-        celo_token =
-          insert(:token,
-            contract_address_hash: celo_token_address,
-            contract_address: address,
-            symbol: "CELO",
-            name: "Celo",
-            type: "ERC-20"
-          )
-
-        # Create governance address
-        governance_address_record = insert(:address, hash: governance_address)
+        insert(:token,
+          contract_address_hash: celo_token_address.hash,
+          contract_address: celo_token_address,
+          symbol: "CELO",
+          name: "Celo",
+          type: "ERC-20"
+        )
 
         # Create a block with base fee and transactions
         block =
@@ -469,20 +456,19 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
           )
 
         # Create transactions for the block to calculate burnt fees
-        transactions =
-          for index <- 0..2 do
-            insert(:transaction,
-              block_hash: block.hash,
-              block_number: block.number,
-              # 2 gwei
-              gas_price: 2_000_000_000,
-              gas_used: 21_000,
-              max_fee_per_gas: 2_000_000_000,
-              max_priority_fee_per_gas: 1_000_000_000,
-              cumulative_gas_used: 21_000,
-              index: index
-            )
-          end
+        for index <- 0..2 do
+          insert(:transaction,
+            block_hash: block.hash,
+            block_number: block.number,
+            # 2 gwei
+            gas_price: 2_000_000_000,
+            gas_used: 21_000,
+            max_fee_per_gas: 2_000_000_000,
+            max_priority_fee_per_gas: 1_000_000_000,
+            cumulative_gas_used: 21_000,
+            index: index
+          )
+        end
 
         # Make the request
         request = get(conn, "/api/v2/blocks/#{block.hash}")
