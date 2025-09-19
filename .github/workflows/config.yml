@@ -46,10 +46,11 @@ jobs:
         run: |
           echo "matrix=$(node -e '
 
-            // Add/remove CI matrix chain types here
             const defaultChainTypes = ["default"];
 
+            // Add/remove CI matrix chain types here
             const chainTypes = [
+              "default",
               "arbitrum",
               "blackfort",
               "celo",
@@ -67,23 +68,26 @@ jobs:
               "neon"
             ];
 
-            const extraChainTypes = [];
-
-            // Chain type matrix we use in master branch
-            const allChainTypes = [].concat(defaultChainTypes, chainTypes, extraChainTypes);
+            // Add/remove CI matrix chain types for "ci:core" label here
+            const coreChainTypes = [
+              "default",
+              "ethereum",
+              "optimism",
+              "celo"
+            ];
 
             const labels = ${{ github.event_name == 'pull_request' && toJson(github.event.pull_request.labels.*.name) || '[]' }};
             const ciLabels = labels.filter(label => label.startsWith("ci:"));
-            const labeledChainTypes = [].concat(
-              defaultChainTypes.filter(chainType => ciLabels.includes("ci:" + chainType)),
-              chainTypes.filter(chainType => ciLabels.includes("ci:all") || ciLabels.includes("ci:" + chainType)),
-              extraChainTypes.filter(chainType => ciLabels.includes("ci:" + chainType))
+            const labeledChainTypes = chainTypes.filter(chainType =>
+              ciLabels.includes("ci:all") ||
+              ciLabels.includes("ci:core") && coreChainTypes.includes(chainType) ||
+              ciLabels.includes("ci:" + chainType)
             );
 
             // Chain type matrix we use in PRs to master branch
             const ciChainTypes = labeledChainTypes.length > 0 ? labeledChainTypes : defaultChainTypes;
 
-            const matrix = { "chain-type": ${{ github.event_name == 'pull_request' && 'ciChainTypes' || 'allChainTypes' }} };
+            const matrix = { "chain-type": ${{ github.event_name == 'pull_request' && 'ciChainTypes' || 'chainTypes' }} };
             console.log(JSON.stringify(matrix));
           ')" >> $GITHUB_OUTPUT
 
