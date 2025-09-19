@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   use BlockScoutWeb, :view
 
   import Ecto.Query, only: [from: 2]
+  import Explorer.Helper, only: [truncate_address_hash: 1, decode_data: 2]
 
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
@@ -182,6 +183,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         conn: conn
       }) do
     respected_games = Withdrawal.respected_games(@api_true)
+    portal_contract_address_hash = Withdrawal.portal_contract_address()
 
     %{
       items:
@@ -213,6 +215,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
           {status, challenge_period_end} = Withdrawal.status(w, respected_games, @api_true)
 
+          {sender_address_hash, target_address_hash, msg_value, msg_gas_limit, msg_data} = withdrawal_msg_transaction_fields(w)
+
           %{
             "msg_nonce_raw" => Decimal.to_string(w.msg_nonce, :normal),
             "msg_nonce" => msg_nonce,
@@ -222,7 +226,13 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l2_timestamp" => w.l2_timestamp,
             "status" => status,
             "l1_transaction_hash" => w.l1_transaction_hash,
-            "challenge_period_end" => challenge_period_end
+            "challenge_period_end" => challenge_period_end,
+            "portal_contract_address_hash" => portal_contract_address_hash,
+            "msg_sender_address_hash" => sender_address_hash,
+            "msg_target_address_hash" => target_address_hash,
+            "msg_value" => msg_value,
+            "msg_gas_limit" => msg_gas_limit,
+            "msg_data" => msg_data
           }
         end),
       next_page_params: next_page_params
@@ -451,14 +461,30 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   defp add_optimism_fields(out_json, transaction_hash) do
+    portal_contract_address_hash = Withdrawal.portal_contract_address()
+
     withdrawals =
       transaction_hash
       |> Withdrawal.transaction_statuses()
-      |> Enum.map(fn {nonce, status, l1_transaction_hash} ->
+      |> Enum.map(fn {nonce, status, l1_transaction_hash, nonce_raw, msg_log_sender_address_hash, msg_log_target_address_hash, msg_log_data} ->
+        {sender_address_hash, target_address_hash, value, gas_limit, data} =
+          withdrawal_msg_transaction_fields(%{
+            msg_log_sender_address_hash: msg_log_sender_address_hash,
+            msg_log_target_address_hash: msg_log_target_address_hash,
+            msg_log_data: msg_log_data
+          })
+
         %{
           "nonce" => nonce,
           "status" => status,
-          "l1_transaction_hash" => l1_transaction_hash
+          "l1_transaction_hash" => l1_transaction_hash,
+          "portal_contract_address_hash" => portal_contract_address_hash,
+          "msg_nonce_raw" => nonce_raw,
+          "msg_sender_address_hash" => sender_address_hash,
+          "msg_target_address_hash" => target_address_hash,
+          "msg_value" => value,
+          "msg_gas_limit" => gas_limit,
+          "msg_data" => data
         }
       end)
 
@@ -482,6 +508,25 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     case Map.fetch(message, chain_key) do
       {:ok, chain} -> Map.put(msg, Atom.to_string(chain_key), chain)
       _ -> msg
+    end
+  end
+
+  defp withdrawal_msg_transaction_fields(w) do
+    sender_address_hash =
+      if not is_nil(w.msg_log_sender_address_hash) do
+        truncate_address_hash(w.msg_log_sender_address_hash)
+      end
+
+    target_address_hash =
+      if not is_nil(w.msg_log_target_address_hash) do
+        truncate_address_hash(w.msg_log_target_address_hash)
+      end
+
+    if is_nil(w.msg_log_data) do
+      {sender_address_hash, target_address_hash, nil, nil, nil}
+    else
+      [msg_value, msg_gas_limit, msg_data, _withdrawal_hash] = decode_data(w.msg_log_data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
+      {sender_address_hash, target_address_hash, to_string(msg_value), to_string(msg_gas_limit), "0x" <> Base.encode16(msg_data, case: :lower)}
     end
   end
 end

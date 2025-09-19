@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
 
   alias Explorer.Application.Constants
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, Hash, Transaction}
+  alias Explorer.Chain.{Block, Log, Hash, Transaction}
   alias Explorer.Chain.Cache.OptimismFinalizationPeriod
   alias Explorer.Chain.Optimism.{DisputeGame, OutputRoot, WithdrawalEvent}
   alias Explorer.{Helper, PagingOptions, Repo}
@@ -24,6 +24,9 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
 
   @dispute_game_finality_delay_seconds "optimism_dispute_game_finality_delay_seconds"
   @proof_maturity_delay_seconds "optimism_proof_maturity_delay_seconds"
+
+  # 32-byte signature of the event MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
+  @message_passed_event "0x02a52367d10742d8032712c1bb8e0144ff1ec5ffda1ed7d70bb05a2744955054"
 
   @required_attrs ~w(msg_nonce hash l2_transaction_hash l2_block_number)a
   @game_fields ~w(created_at resolved_at status)a
@@ -74,6 +77,8 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
             on: w.l2_block_number == l2_block.number,
             left_join: we in WithdrawalEvent,
             on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
+            left_join: log in Log,
+            on: log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and log.second_topic == fragment("convert_numeric_to_bytea(msg_nonce)"),
             select: %{
               msg_nonce: w.msg_nonce,
               hash: w.hash,
@@ -81,7 +86,10 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
               l2_timestamp: l2_block.timestamp,
               l2_transaction_hash: w.l2_transaction_hash,
               l1_transaction_hash: we.l1_transaction_hash,
-              from: l2_transaction.from_address_hash
+              from: l2_transaction.from_address_hash,
+              msg_log_sender_address_hash: log.third_topic,
+              msg_log_target_address_hash: log.fourth_topic,
+              msg_log_data: log.data
             }
           )
 
@@ -144,11 +152,16 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         on: w.l2_block_number == l2_block.number and l2_block.consensus == true,
         left_join: we in WithdrawalEvent,
         on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
+        left_join: log in Log,
+        on: log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and log.second_topic == fragment("convert_numeric_to_bytea(msg_nonce)"),
         select: %{
           hash: w.hash,
           l2_block_number: w.l2_block_number,
           l1_transaction_hash: we.l1_transaction_hash,
-          msg_nonce: w.msg_nonce
+          msg_nonce: w.msg_nonce,
+          msg_log_sender_address_hash: log.third_topic,
+          msg_log_target_address_hash: log.fourth_topic,
+          msg_log_data: log.data
         }
       )
 
@@ -162,7 +175,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         )
 
       {status, _} = status(w, nil, @api_true)
-      {msg_nonce, status, w.l1_transaction_hash}
+      {msg_nonce, status, w.l1_transaction_hash, w.msg_nonce, w.msg_log_sender_address_hash, w.msg_log_target_address_hash, w.msg_log_data}
     end)
   end
 
@@ -433,6 +446,20 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       else
         {@withdrawal_status_ready_for_relay, nil}
       end
+    end
+  end
+
+  def message_passed_event, do: @message_passed_event
+
+  def portal_contract_address_constant, do: "optimism_portal_contract_address"
+
+  def portal_contract_address do
+    portal_address = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:portal]
+
+    if Indexer.Helper.address_correct?(portal_address) do
+      portal_address
+    else
+      Constants.get_constant_value(portal_contract_address_constant(), @api_true)
     end
   end
 end

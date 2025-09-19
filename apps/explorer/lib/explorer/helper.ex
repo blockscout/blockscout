@@ -39,7 +39,7 @@ defmodule Explorer.Helper do
   address.
 
   ## Parameters
-  - `address_hash` (`EthereumJSONRPC.hash()` | `nil`): The full address hash to
+  - `address_hash` (`EthereumJSONRPC.hash()` | `Hash.t()` | `nil`): The full address hash to
     be truncated, or `nil`.
 
   ## Returns
@@ -51,11 +51,20 @@ defmodule Explorer.Helper do
       iex> truncate_address_hash("0x000000000000000000000000abcdef1234567890abcdef1234567890abcdef")
       "0xabcdef1234567890abcdef1234567890abcdef"
 
+      iex> truncate_address_hash(%Explorer.Chain.Hash{byte_count: 32, bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 66, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7>>})
+      "0x4200000000000000000000000000000000000007"
+
       iex> truncate_address_hash(nil)
       "0x0000000000000000000000000000000000000000"
   """
-  @spec truncate_address_hash(EthereumJSONRPC.hash() | nil) :: EthereumJSONRPC.address()
+  @spec truncate_address_hash(EthereumJSONRPC.hash() | Hash.t() | nil) :: EthereumJSONRPC.address()
   def truncate_address_hash(address_hash)
+
+  def truncate_address_hash(%Hash{} = address_hash) do
+    address_hash
+    |> Hash.to_string()
+    |> truncate_address_hash()
+  end
 
   def truncate_address_hash(nil), do: burn_address_hash_string()
 
