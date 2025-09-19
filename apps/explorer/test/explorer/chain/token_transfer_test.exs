@@ -383,7 +383,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         |> to_string()
         |> String.replace_prefix("0x000000000000000000000000", "0x")
 
-      token_contract_address = insert(:address, hash: log.address_hash)
+      token_contract_address = log.address
       to_address = insert(:address, hash: to_address_hash)
       from_address = insert(:address, hash: from_address_hash)
 
