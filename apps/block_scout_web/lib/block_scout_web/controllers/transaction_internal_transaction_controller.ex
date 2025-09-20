@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
         |> Keyword.merge(paging_options(params))
 
       internal_transactions_plus_one =
-        InternalTransaction.transaction_to_internal_transactions(transaction_hash, full_options)
+        InternalTransaction.transaction_to_internal_transactions(transaction, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 

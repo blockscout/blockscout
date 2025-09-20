@@ -229,7 +229,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       @internal_transaction_necessity_by_association
       |> Keyword.merge(@api_true)
 
-    transaction.hash
+    transaction
     |> InternalTransaction.transaction_to_internal_transactions(full_options)
     |> Enum.take(@items_limit)
   end
