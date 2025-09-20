@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
 
     Migrations:
     - Explorer.Repo.Optimism.Migrations.AddCelestiaBlobMetadata
+    - Explorer.Repo.Optimism.Migrations.AddAltDABlobs
   """
 
   use Explorer.Schema
@@ -20,7 +21,7 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
 
   @typedoc """
     * `key` - A unique id (key) of the blob.
-    * `type` - A type of the blob (`celestia` or `eip4844`).
+    * `type` - A type of the blob (`celestia`, `eip4844`, or `alt_da`).
     * `metadata` - A map containing metadata of the blob.
     * `l1_transaction_hash` - The corresponding L1 transaction hash which point to the blob.
     * `l1_timestamp` - The timestamp of the L1 transaction.
@@ -30,7 +31,7 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
   @primary_key {:id, :integer, autogenerate: false}
   typed_schema "op_frame_sequence_blobs" do
     field(:key, :binary)
-    field(:type, Ecto.Enum, values: [:celestia, :eip4844])
+    field(:type, Ecto.Enum, values: [:celestia, :eip4844, :alt_da])
     field(:metadata, :map)
     field(:l1_transaction_hash, Hash.Full)
     field(:l1_timestamp, :utc_datetime_usec)
@@ -59,10 +60,10 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
     - `options`: A keyword list of options that may include whether to use a replica database.
 
     ## Returns
-    - A tuple {type, blobs} where `type` can be one of: `in_blob4844`, `in_celestia`, `in_calldata`.
+    - A tuple {type, blobs} where `type` can be one of: `in_blob4844`, `in_celestia`, `in_alt_da`, `in_calldata`.
       The `blobs` in the list of blobs related to the specified frame sequence id sorted by an entity id.
   """
-  @spec list(non_neg_integer(), list()) :: {:in_blob4844 | :in_celestia | :in_calldata, [map()]}
+  @spec list(non_neg_integer(), list()) :: {:in_blob4844 | :in_celestia | :in_alt_da | :in_calldata, [map()]}
   def list(frame_sequence_id, options \\ []) do
     repo = select_repo(options)
 
@@ -102,12 +103,26 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
         }
       end)
 
+    alt_da_blobs =
+      blobs
+      |> Enum.filter(fn b -> b.type == :alt_da end)
+      |> Enum.map(fn b ->
+        %{
+          "commitment" => b.metadata["commitment"],
+          "l1_transaction_hash" => b.l1_transaction_hash,
+          "l1_timestamp" => b.l1_timestamp
+        }
+      end)
+
     cond do
       not Enum.empty?(eip4844_blobs) ->
         {:in_blob4844, eip4844_blobs}
 
       not Enum.empty?(celestia_blobs) ->
         {:in_celestia, celestia_blobs}
+
+      not Enum.empty?(alt_da_blobs) ->
+        {:in_alt_da, alt_da_blobs}
 
       true ->
         {:in_calldata, []}
