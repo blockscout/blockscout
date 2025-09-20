@@ -6,8 +6,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   values via `<pre>` tags, and that is hard to do in an eex template.
   """
   use BlockScoutWeb, :view
-
-  import Phoenix.LiveView.Helpers, only: [sigil_H: 2]
+  use Phoenix.LiveView
 
   alias ABI.FunctionSelector
   alias Phoenix.HTML
