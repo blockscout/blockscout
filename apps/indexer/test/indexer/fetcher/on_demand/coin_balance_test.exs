@@ -7,7 +7,6 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
   import Mox
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
-  alias Explorer.Chain
   alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Wei

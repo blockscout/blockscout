@@ -2,6 +2,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.ChainTypeCustomizations do
   @moduledoc false
   require OpenApiSpex
 
+  alias BlockScoutWeb.Schemas.API.V2.General
+  alias BlockScoutWeb.Schemas.Helper
   alias Explorer.Chain.BridgedToken
   alias OpenApiSpex.Schema
 
@@ -15,8 +17,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.ChainTypeCustomizations do
     case Application.get_env(:explorer, :chain_type) do
       :filecoin ->
         schema
-        |> put_in([:properties, :filecoin_robust_address], @filecoin_robust_address_schema)
-        |> update_in([:required], &[:filecoin_robust_address | &1])
+        |> Helper.extend_schema(
+          properties: %{filecoin_robust_address: @filecoin_robust_address_schema},
+          required: [:filecoin_robust_address]
+        )
 
       _ ->
         schema
@@ -51,13 +55,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
       type: :object,
       properties: %{
         address_hash: General.AddressHash,
-        symbol: %Schema{type: :string, nullable: false},
-        name: %Schema{type: :string, nullable: false},
+        symbol: %Schema{type: :string, nullable: true},
+        name: %Schema{type: :string, nullable: true},
         decimals: General.IntegerStringNullable,
-        type: %Schema{
-          anyOf: [Type],
-          nullable: true
-        },
+        type: %Schema{allOf: [Type], nullable: true},
         holders_count: General.IntegerStringNullable,
         exchange_rate: General.FloatStringNullable,
         volume_24h: General.FloatStringNullable,
@@ -84,7 +85,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         :icon_url,
         :circulating_market_cap,
         :reputation
-      ]
+      ],
+      additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()
     |> ChainTypeCustomizations.maybe_append_bridged_info()

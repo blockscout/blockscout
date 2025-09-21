@@ -93,21 +93,30 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
 
   @impl GenServer
   def handle_cast({:lost_consensus, block_number}, %__MODULE__{} = state) do
+    max_reorg_depth_block_number = block_number + 64
+
     {_deleted_deposits_count, deleted_deposits} =
       Repo.delete_all(
-        from(d in Deposit, where: d.block_number >= ^block_number, select: d.index),
+        from(
+          d in Deposit,
+          where: d.block_number > ^block_number,
+          where: d.block_number <= ^max_reorg_depth_block_number,
+          select: d.index
+        ),
         timeout: :infinity
       )
 
-    deposit_index = Enum.min(deleted_deposits, fn -> state.deposit_index + 1 end)
-
-    {:noreply,
-     %{
-       state
-       | deposit_index: deposit_index - 1,
-         last_processed_log_block_number: block_number,
-         last_processed_log_index: -1
-     }}
+    # todo: temporarily do not modify state of the indexer on reorgs.
+    # It should be handled by a separate process.
+    # deposit_index = Enum.min(deleted_deposits, fn -> state.deposit_index + 1 end)
+    # {:noreply,
+    #  %{
+    #    state
+    #    | deposit_index: deposit_index - 1,
+    #      last_processed_log_block_number: block_number,
+    #      last_processed_log_index: -1
+    #  }}
+    {:noreply, state}
   rescue
     postgrex_error in Postgrex.Error ->
       Logger.error(
@@ -141,40 +150,45 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
       )
       |> Enum.map(&log_to_deposit/1)
 
+    # todo: sequential? check is removed as a hard requirement for deposits indexing
+    # since block ranges are found where node doesn't return deposits
+    # thus making the deposit index sequence non-sequential.
+    # We need a separate process which will monitor missed deposits
+    # after we check the nature of those missing deposit indexes.
     case sequential?(deposit_index, deposits) do
       {:error, prev, curr} ->
         Logger.error("Non-sequential deposits detected: #{inspect(prev)} followed by #{inspect(curr)}")
-        Process.send_after(self(), :process_logs, interval * 10)
-        {:noreply, state}
 
       _ ->
-        {deposits_count, _} =
-          Repo.insert_all(Deposit, set_status(deposits, domain_deposit, genesis_fork_version),
-            on_conflict: :replace_all,
-            conflict_target: [:index]
-          )
-
-        if deposits_count < batch_size do
-          Process.send_after(self(), :process_logs, interval)
-        else
-          Process.send(self(), :process_logs, [])
-        end
-
-        last_deposit =
-          List.last(deposits, %{
-            index: state.deposit_index,
-            block_number: state.last_processed_log_block_number,
-            log_index: state.last_processed_log_index
-          })
-
-        {:noreply,
-         %__MODULE__{
-           state
-           | deposit_index: last_deposit.index,
-             last_processed_log_block_number: last_deposit.block_number,
-             last_processed_log_index: last_deposit.log_index
-         }}
+        :ok
     end
+
+    {deposits_count, _} =
+      Repo.insert_all(Deposit, set_status(deposits, domain_deposit, genesis_fork_version),
+        on_conflict: :replace_all,
+        conflict_target: [:index]
+      )
+
+    if deposits_count < batch_size do
+      Process.send_after(self(), :process_logs, interval)
+    else
+      Process.send(self(), :process_logs, [])
+    end
+
+    last_deposit =
+      List.last(deposits, %{
+        index: state.deposit_index,
+        block_number: state.last_processed_log_block_number,
+        log_index: state.last_processed_log_index
+      })
+
+    {:noreply,
+     %__MODULE__{
+       state
+       | deposit_index: last_deposit.index,
+         last_processed_log_block_number: last_deposit.block_number,
+         last_processed_log_index: last_deposit.log_index
+     }}
   end
 
   @abi ABI.parse_specification(

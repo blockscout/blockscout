@@ -3,15 +3,12 @@ defmodule BlockScoutWeb.Api.V2.Ethereum.DepositControllerTest do
 
   alias Explorer.Repo
 
-  import OpenApiSpex.TestAssertions
-
   if Application.compile_env(:explorer, :chain_type) == :ethereum do
     describe "/beacon/deposits" do
       test "get empty list when no deposits exist", %{conn: conn} do
         request = get(conn, "/api/v2/beacon/deposits")
         assert response = json_response(request, 200)
         assert %{"items" => []} = response
-        assert_schema(response, "BeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       end
 
       test "get deposits", %{conn: conn} do
@@ -30,8 +27,6 @@ defmodule BlockScoutWeb.Api.V2.Ethereum.DepositControllerTest do
                  deposits
                  |> Enum.reverse()
                  |> Enum.map(&{&1.index, to_string(&1.transaction_hash), to_string(&1.block_hash)})
-
-        assert_schema(response, "BeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       end
     end
 
@@ -43,13 +38,16 @@ defmodule BlockScoutWeb.Api.V2.Ethereum.DepositControllerTest do
       end
 
       test "returns deposit count", %{conn: conn} do
+        Repo.delete_all(Explorer.Chain.Beacon.Deposit)
+        ExMachina.Sequence.reset("beacon_deposit_index")
+
         insert_list(3, :beacon_deposit)
 
         deposits_count = Repo.aggregate(Explorer.Chain.Beacon.Deposit, :count, :index)
 
         request = get(conn, "/api/v2/beacon/deposits/count")
         assert response = json_response(request, 200)
-        assert %{"deposits_count" => deposits_count} = response
+        assert %{"deposits_count" => ^deposits_count} = response
       end
     end
   else

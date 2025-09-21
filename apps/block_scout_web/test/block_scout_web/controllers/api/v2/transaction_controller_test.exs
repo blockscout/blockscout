@@ -4,10 +4,9 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
-  import Ecto.Query, only: [from: 2]
 
   alias Explorer.Account.{Identity, WatchlistAddress}
-  alias Explorer.Chain.{Address, Data, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.{Repo, TestHelper}
 
@@ -231,7 +230,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/transactions/#{transaction.hash}")
       response = json_response(request, 200)
 
-      assert List.first(response["token_transfers"])["reputation"] == "ok"
+      assert List.first(response["token_transfers"])["token"]["reputation"] == "ok"
 
       assert response == conn |> get("/api/v2/transactions/#{transaction.hash}") |> json_response(200)
     end
@@ -263,7 +262,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/transactions/#{transaction.hash}")
       response = json_response(request, 200)
 
-      assert List.first(response["token_transfers"])["reputation"] == "scam"
+      assert List.first(response["token_transfers"])["token"]["reputation"] == "scam"
 
       request = conn |> get("/api/v2/transactions/#{transaction.hash}")
       response = json_response(request, 200)
@@ -296,7 +295,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> get("/api/v2/transactions/#{transaction.hash}")
       response = json_response(request, 200)
 
-      assert List.first(response["token_transfers"])["reputation"] == "ok"
+      assert List.first(response["token_transfers"])["token"]["reputation"] == "ok"
     end
 
     test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -326,7 +325,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> get("/api/v2/transactions/#{transaction.hash}")
       response = json_response(request, 200)
 
-      assert List.first(response["token_transfers"])["reputation"] == "ok"
+      assert List.first(response["token_transfers"])["token"]["reputation"] == "ok"
     end
 
     test "return 404 on non existing transaction", %{conn: conn} do
@@ -796,7 +795,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
 
       assert response == conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers") |> json_response(200)
     end
@@ -832,7 +831,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "scam"
+      assert List.first(response["items"])["token"]["reputation"] == "scam"
 
       request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
       response = json_response(request, 200)
@@ -865,7 +864,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -895,7 +894,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = conn |> get("/api/v2/transactions/#{transaction.hash}/token-transfers")
       response = json_response(request, 200)
 
-      assert List.first(response["items"])["reputation"] == "ok"
+      assert List.first(response["items"])["token"]["reputation"] == "ok"
     end
 
     test "return 404 on non existing transaction", %{conn: conn} do
@@ -1547,6 +1546,189 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 5
     end
+
+    test "return state changes with token transfers and verify token is correctly loaded", %{conn: conn} do
+      block_before = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      token = insert(:token, type: "ERC-20", symbol: "TEST", name: "Test Token")
+      from_address = insert(:address)
+      to_address = insert(:address)
+
+      # Create token transfer
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_contract_address_hash: token.contract_address_hash,
+        from_address: from_address,
+        from_address_hash: from_address.hash,
+        to_address: to_address,
+        to_address_hash: to_address.hash,
+        amount: Decimal.new(100),
+        token: token,
+        token_ids: nil
+      )
+
+      # Set up coin balances for transaction participants
+      insert(:address_coin_balance,
+        address: transaction.from_address,
+        address_hash: transaction.from_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.to_address,
+        address_hash: transaction.to_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.block.miner,
+        address_hash: transaction.block.miner_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      # Set up token balances
+      insert(:address_current_token_balance,
+        address: from_address,
+        address_hash: from_address.hash,
+        token_contract_address_hash: token.contract_address_hash,
+        block_number: block_before.number,
+        value: Decimal.new(1000)
+      )
+
+      insert(:address_current_token_balance,
+        address: to_address,
+        address_hash: to_address.hash,
+        token_contract_address_hash: token.contract_address_hash,
+        block_number: block_before.number,
+        value: Decimal.new(0)
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+      assert is_list(response["items"])
+
+      # Find the token state changes (should have at least from and to addresses)
+      token_state_changes = Enum.filter(response["items"], fn item -> item["type"] == "token" end)
+      assert length(token_state_changes) >= 2
+
+      # Verify token information is properly loaded in at least one state change
+      token_state_change = Enum.find(token_state_changes, fn item -> not is_nil(item["token"]) end)
+      assert token_state_change
+
+      token_data = token_state_change["token"]
+      assert token_data["symbol"] == "TEST"
+      assert token_data["name"] == "Test Token"
+      assert token_data["type"] == "ERC-20"
+      assert token_data["address_hash"] == to_string(token.contract_address)
+      assert token_data["reputation"] == "ok"
+    end
+
+    test "return state changes with scam token reputation properly set", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      block_before = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      # Create a token
+      token = insert(:token, type: "ERC-20", symbol: "SCAM", name: "Scam Token")
+      from_address = insert(:address)
+      to_address = insert(:address)
+
+      # Create scam badge for the token address to mark it as scam
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      # Create token transfer
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_contract_address_hash: token.contract_address_hash,
+        from_address: from_address,
+        from_address_hash: from_address.hash,
+        to_address: to_address,
+        to_address_hash: to_address.hash,
+        amount: Decimal.new(100),
+        token: token,
+        token_ids: nil
+      )
+
+      # Set up coin balances for transaction participants
+      insert(:address_coin_balance,
+        address: transaction.from_address,
+        address_hash: transaction.from_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.to_address,
+        address_hash: transaction.to_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.block.miner,
+        address_hash: transaction.block.miner_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      # Set up token balances
+      insert(:address_current_token_balance,
+        address: from_address,
+        address_hash: from_address.hash,
+        token_contract_address_hash: token.contract_address_hash,
+        block_number: block_before.number,
+        value: Decimal.new(1000)
+      )
+
+      insert(:address_current_token_balance,
+        address: to_address,
+        address_hash: to_address.hash,
+        token_contract_address_hash: token.contract_address_hash,
+        block_number: block_before.number,
+        value: Decimal.new(0)
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+      assert is_list(response["items"])
+
+      # Find the token state changes
+      token_state_changes = Enum.filter(response["items"], fn item -> item["type"] == "token" end)
+      assert length(token_state_changes) >= 2
+
+      # Verify that the token has scam reputation
+      token_state_change = Enum.find(token_state_changes, fn item -> not is_nil(item["token"]) end)
+      assert token_state_change
+
+      token_data = token_state_change["token"]
+      assert token_data["reputation"] == "scam"
+      assert token_data["symbol"] == "SCAM"
+      assert token_data["name"] == "Scam Token"
+      assert token_data["address_hash"] == to_string(token.contract_address)
+    end
   end
 
   if Application.compile_env(:explorer, :chain_type) == :celo do
@@ -1975,36 +2157,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
   end
 
-  defp compare_item(%Transaction{} = transaction, json, wl_names) do
-    assert to_string(transaction.hash) == json["hash"]
-    assert transaction.block_number == json["block_number"]
-    assert to_string(transaction.value.value) == json["value"]
-    assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
-    assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
-
-    assert json["to"]["watchlist_names"] ==
-             if(wl_names[transaction.to_address_hash],
-               do: [
-                 %{
-                   "display_name" => wl_names[transaction.to_address_hash],
-                   "label" => wl_names[transaction.to_address_hash]
-                 }
-               ],
-               else: []
-             )
-
-    assert json["from"]["watchlist_names"] ==
-             if(wl_names[transaction.from_address_hash],
-               do: [
-                 %{
-                   "display_name" => wl_names[transaction.from_address_hash],
-                   "label" => wl_names[transaction.from_address_hash]
-                 }
-               ],
-               else: []
-             )
-  end
-
   defp compare_item(%BeaconDeposit{} = deposit, json) do
     index = deposit.index
     transaction_hash = to_string(deposit.transaction_hash)
@@ -2042,6 +2194,36 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                "from_address" => %{"hash" => ^from_address_hash}
              } = json
     end
+  end
+
+  defp compare_item(%Transaction{} = transaction, json, wl_names) do
+    assert to_string(transaction.hash) == json["hash"]
+    assert transaction.block_number == json["block_number"]
+    assert to_string(transaction.value.value) == json["value"]
+    assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
+
+    assert json["to"]["watchlist_names"] ==
+             if(wl_names[transaction.to_address_hash],
+               do: [
+                 %{
+                   "display_name" => wl_names[transaction.to_address_hash],
+                   "label" => wl_names[transaction.to_address_hash]
+                 }
+               ],
+               else: []
+             )
+
+    assert json["from"]["watchlist_names"] ==
+             if(wl_names[transaction.from_address_hash],
+               do: [
+                 %{
+                   "display_name" => wl_names[transaction.from_address_hash],
+                   "label" => wl_names[transaction.from_address_hash]
+                 }
+               ],
+               else: []
+             )
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, transactions) do
@@ -2413,18 +2595,17 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       transaction = :transaction |> insert() |> with_block()
 
-      log =
-        insert(:log,
-          transaction: transaction,
-          first_topic: TestHelper.topic(topic1),
-          second_topic: TestHelper.topic(topic2),
-          third_topic: nil,
-          fourth_topic: nil,
-          data: log_data,
-          address: address,
-          block: transaction.block,
-          block_number: transaction.block_number
-        )
+      insert(:log,
+        transaction: transaction,
+        first_topic: TestHelper.topic(topic1),
+        second_topic: TestHelper.topic(topic2),
+        third_topic: nil,
+        fourth_topic: nil,
+        data: log_data,
+        address: address,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
 
       insert(:proxy_implementation,
         proxy_address_hash: address.hash,
@@ -2495,18 +2676,17 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       transaction = :transaction |> insert() |> with_block()
 
-      log =
-        insert(:log,
-          transaction: transaction,
-          first_topic: TestHelper.topic(topic1),
-          second_topic: TestHelper.topic(topic2),
-          third_topic: nil,
-          fourth_topic: nil,
-          data: log_data,
-          address: address,
-          block: transaction.block,
-          block_number: transaction.block_number
-        )
+      insert(:log,
+        transaction: transaction,
+        first_topic: TestHelper.topic(topic1),
+        second_topic: TestHelper.topic(topic2),
+        third_topic: nil,
+        fourth_topic: nil,
+        data: log_data,
+        address: address,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
 
       insert(:proxy_implementation,
         proxy_address_hash: address.hash,
@@ -2527,9 +2707,228 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  if @chain_type == :neon do
-    import Ecto.Query, only: [from: 2]
+  describe "/transactions/{transaction_hash}/summary" do
+    setup do
+      original_config =
+        Application.get_env(:block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation)
 
+      original_tesla_adapter = Application.get_env(:tesla, :adapter)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      on_exit(fn ->
+        Application.put_env(
+          :block_scout_web,
+          BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+          original_config
+        )
+
+        Application.put_env(:tesla, :adapter, original_tesla_adapter)
+      end)
+    end
+
+    test "success preload template variables", %{conn: conn} do
+      bypass = Bypass.open()
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+        enabled: true,
+        service_url: "http://localhost:#{bypass.port}"
+      )
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      token = insert(:token)
+      address = insert(:address)
+
+      tx_interpretation_response = """
+       {
+        "success": true,
+        "data": {
+            "summaries": [
+                {
+                    "summary_template": "{action_type} {outgoing_amount} {native} for {incoming_amount} {incoming_token} on {market}",
+                    "summary_template_variables": {
+                        "action_type": {
+                            "type": "string",
+                            "value": "Swap"
+                        },
+                        "outgoing_amount": {
+                            "type": "currency",
+                            "value": "0.3"
+                        },
+                        "incoming_amount": {
+                            "type": "currency",
+                            "value": "9693.997876398680187001"
+                        },
+                        "incoming_token": {
+                            "type": "token",
+                            "value": {
+                                "address_hash": "#{token.contract_address_hash}"
+                            }
+                        },
+                        "rnd_address": {
+                            "type": "address",
+                            "value": {
+                                "hash": "#{address.hash}"
+                            }
+                        },
+                        "market": {
+                            "type": "dexTag",
+                            "value": {
+                                "name": "Uniswap V3",
+                                "icon": "https://blockscout-content.s3.amazonaws.com/uniswap.png",
+                                "url": "https://uniswap.org/?utm_source=Blockscout"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+      }
+      """
+
+      Bypass.expect_once(
+        bypass,
+        "GET",
+        "/cache/#{to_string(transaction.hash)}",
+        fn conn ->
+          Plug.Conn.resp(conn, 404, "Not Found")
+        end
+      )
+
+      Bypass.expect_once(
+        bypass,
+        "POST",
+        "/transactions/summary",
+        fn conn ->
+          Plug.Conn.resp(conn, 200, tx_interpretation_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary")
+      assert response = json_response(request, 200)
+
+      token_json = Enum.at(response["data"]["summaries"], 0)["summary_template_variables"]["incoming_token"]["value"]
+      assert token_json["address_hash"] == to_string(token.contract_address_hash)
+      assert token_json["symbol"] == token.symbol
+      assert token_json["reputation"] == "ok"
+
+      address_json = Enum.at(response["data"]["summaries"], 0)["summary_template_variables"]["rnd_address"]["value"]
+      assert Map.has_key?(address_json, "ens_domain_name")
+      assert address_json["hash"] == to_string(address.hash)
+
+      Bypass.down(bypass)
+    end
+
+    test "success preload template variables when scam token", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      bypass = Bypass.open()
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+        enabled: true,
+        service_url: "http://localhost:#{bypass.port}"
+      )
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      token = insert(:token)
+      address = insert(:address)
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+      insert(:scam_badge_to_address, address_hash: address.hash)
+
+      tx_interpretation_response = """
+       {
+        "success": true,
+        "data": {
+            "summaries": [
+                {
+                    "summary_template": "{action_type} {outgoing_amount} {native} for {incoming_amount} {incoming_token} on {market}",
+                    "summary_template_variables": {
+                        "action_type": {
+                            "type": "string",
+                            "value": "Swap"
+                        },
+                        "outgoing_amount": {
+                            "type": "currency",
+                            "value": "0.3"
+                        },
+                        "incoming_amount": {
+                            "type": "currency",
+                            "value": "9693.997876398680187001"
+                        },
+                        "incoming_token": {
+                            "type": "token",
+                            "value": {
+                                "address_hash": "#{token.contract_address_hash}"
+                            }
+                        },
+                        "rnd_address": {
+                            "type": "address",
+                            "value": {
+                                "hash": "#{address.hash}"
+                            }
+                        },
+                        "market": {
+                            "type": "dexTag",
+                            "value": {
+                                "name": "Uniswap V3",
+                                "icon": "https://blockscout-content.s3.amazonaws.com/uniswap.png",
+                                "url": "https://uniswap.org/?utm_source=Blockscout"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+      }
+      """
+
+      Bypass.expect_once(
+        bypass,
+        "GET",
+        "/cache/#{to_string(transaction.hash)}",
+        fn conn ->
+          Plug.Conn.resp(conn, 404, "Not Found")
+        end
+      )
+
+      Bypass.expect_once(
+        bypass,
+        "POST",
+        "/transactions/summary",
+        fn conn ->
+          Plug.Conn.resp(conn, 200, tx_interpretation_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary")
+      assert response = json_response(request, 200)
+
+      token_json = Enum.at(response["data"]["summaries"], 0)["summary_template_variables"]["incoming_token"]["value"]
+      assert token_json["address_hash"] == to_string(token.contract_address_hash)
+      assert token_json["symbol"] == token.symbol
+      assert token_json["reputation"] == "scam"
+
+      address_json = Enum.at(response["data"]["summaries"], 0)["summary_template_variables"]["rnd_address"]["value"]
+      assert Map.has_key?(address_json, "ens_domain_name")
+      assert address_json["hash"] == to_string(address.hash)
+      assert address_json["reputation"] == "scam"
+      assert address_json["is_scam"] == true
+
+      Bypass.down(bypass)
+    end
+  end
+
+  if @chain_type == :neon do
     describe "neon linked transactions service" do
       test "fetches data from the node and caches in the db", %{conn: conn} do
         transaction = insert(:transaction)

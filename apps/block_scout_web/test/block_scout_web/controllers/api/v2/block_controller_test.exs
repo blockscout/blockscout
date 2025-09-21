@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   use BlockScoutWeb.ConnCase
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Withdrawal}
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
@@ -279,6 +280,232 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert refetch_block_response["is_pending_update"] == true
       assert no_refetch_block_response["is_pending_update"] == false
     end
+
+    if @chain_type == :celo do
+      test "get block with Celo base fee information when chain type is celo", %{conn: conn} do
+        # Store original configuration
+        original_celo_config = Application.get_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts)
+
+        # Set up Celo core contracts configuration for base fee
+        fee_handler_address = insert(:address)
+        governance_address = insert(:address)
+        celo_token_address = insert(:address)
+
+        celo_config = [
+          contracts: %{
+            "addresses" => %{
+              "FeeHandler" => [
+                %{
+                  "address" => to_string(fee_handler_address.hash),
+                  "updated_at_block_number" => 0
+                }
+              ],
+              "Governance" => [
+                %{
+                  "address" => to_string(governance_address.hash),
+                  "updated_at_block_number" => 0
+                }
+              ],
+              "GoldToken" => [
+                %{
+                  "address" => to_string(celo_token_address.hash),
+                  "updated_at_block_number" => 0
+                }
+              ]
+            },
+            "events" => %{
+              "FeeHandler" => %{
+                "FeeBeneficiarySet" => [
+                  %{
+                    "address_hash" => to_string(insert(:address).hash),
+                    "updated_at_block_number" => 0
+                  }
+                ],
+                "BurnFractionSet" => [
+                  %{
+                    "value" => "500000000000000000000000",
+                    "updated_at_block_number" => 0
+                  }
+                ]
+              }
+            }
+          }
+        ]
+
+        Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, celo_config)
+
+        # Create a CELO token for the response
+        insert(:token,
+          contract_address_hash: celo_token_address.hash,
+          contract_address: celo_token_address,
+          symbol: "CELO",
+          name: "Celo",
+          type: "ERC-20"
+        )
+
+        # Create a block with base fee and transactions
+        block =
+          insert(:block,
+            # 1 gwei
+            base_fee_per_gas: 1_000_000_000
+          )
+
+        # Create transactions for the block to calculate burnt fees
+        for index <- 0..2 do
+          insert(:transaction,
+            block_hash: block.hash,
+            block_number: block.number,
+            # 2 gwei
+            gas_price: 2_000_000_000,
+            gas_used: 21_000,
+            max_fee_per_gas: 2_000_000_000,
+            max_priority_fee_per_gas: 1_000_000_000,
+            cumulative_gas_used: 21_000,
+            index: index
+          )
+        end
+
+        # Make the request
+        request = get(conn, "/api/v2/blocks/#{block.hash}")
+        assert response = json_response(request, 200)
+
+        # Verify basic block information
+        compare_item(block, response)
+
+        # Verify Celo-specific information is present
+        assert Map.has_key?(response, "celo")
+        celo_info = response["celo"]
+
+        # Verify epoch information
+        assert Map.has_key?(celo_info, "epoch_number")
+        assert Map.has_key?(celo_info, "is_epoch_block")
+        assert celo_info["is_epoch_block"] == false
+
+        # Verify base fee information is present
+        assert Map.has_key?(celo_info, "base_fee")
+        assert base_fee_info = celo_info["base_fee"]
+
+        # Verify base fee structure
+        assert Map.has_key?(base_fee_info, "recipient")
+        assert Map.has_key?(base_fee_info, "amount")
+        assert Map.has_key?(base_fee_info, "token")
+        assert Map.has_key?(base_fee_info, "breakdown")
+
+        # Verify token information
+        token_info = base_fee_info["token"]
+        assert token_info["symbol"] == "CELO"
+        assert token_info["name"] == "Celo"
+
+        # Verify recipient information
+        recipient = base_fee_info["recipient"]
+        assert Map.has_key?(recipient, "hash")
+
+        # Verify breakdown structure
+        breakdown = base_fee_info["breakdown"]
+        assert is_list(breakdown)
+
+        # Restore original configuration
+        on_exit(fn ->
+          Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, original_celo_config)
+        end)
+      end
+
+      test "get block with Celo governance base fee when fee handler is not available", %{conn: conn} do
+        # Store original configuration
+        original_celo_config = Application.get_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts)
+
+        # Set up Celo core contracts configuration with only governance (no fee handler)
+        governance_address = insert(:address)
+        celo_token_address = insert(:address)
+
+        celo_config = [
+          contracts: %{
+            "addresses" => %{
+              "Governance" => [
+                %{
+                  "address" => to_string(governance_address.hash),
+                  "updated_at_block_number" => 0
+                }
+              ],
+              "GoldToken" => [
+                %{
+                  "address" => to_string(celo_token_address.hash),
+                  "updated_at_block_number" => 0
+                }
+              ]
+            }
+          }
+        ]
+
+        Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, celo_config)
+
+        # Create a CELO token for the response
+        insert(:token,
+          contract_address_hash: celo_token_address.hash,
+          contract_address: celo_token_address,
+          symbol: "CELO",
+          name: "Celo",
+          type: "ERC-20"
+        )
+
+        # Create a block with base fee and transactions
+        block =
+          insert(:block,
+            # 1 gwei
+            base_fee_per_gas: 1_000_000_000
+          )
+
+        # Create transactions for the block to calculate burnt fees
+        for index <- 0..2 do
+          insert(:transaction,
+            block_hash: block.hash,
+            block_number: block.number,
+            # 2 gwei
+            gas_price: 2_000_000_000,
+            gas_used: 21_000,
+            max_fee_per_gas: 2_000_000_000,
+            max_priority_fee_per_gas: 1_000_000_000,
+            cumulative_gas_used: 21_000,
+            index: index
+          )
+        end
+
+        # Make the request
+        request = get(conn, "/api/v2/blocks/#{block.hash}")
+        assert response = json_response(request, 200)
+
+        # Verify basic block information
+        compare_item(block, response)
+
+        # Verify Celo-specific information is present
+        assert Map.has_key?(response, "celo")
+        celo_info = response["celo"]
+
+        # Verify epoch information
+        assert Map.has_key?(celo_info, "epoch_number")
+        assert Map.has_key?(celo_info, "is_epoch_block")
+
+        # Verify base fee information is present (may be nil if governance fallback doesn't work)
+        assert Map.has_key?(celo_info, "base_fee")
+        assert base_fee_info = celo_info["base_fee"]
+
+        # Verify base fee structure for governance case
+        assert Map.has_key?(base_fee_info, "recipient")
+        assert Map.has_key?(base_fee_info, "amount")
+        assert Map.has_key?(base_fee_info, "token")
+        assert Map.has_key?(base_fee_info, "breakdown")
+
+        # For governance case, breakdown should be empty
+        breakdown = base_fee_info["breakdown"]
+        assert is_list(breakdown)
+        assert Enum.empty?(breakdown)
+
+        # Restore original configuration
+        on_exit(fn ->
+          Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, original_celo_config)
+        end)
+      end
+    end
   end
 
   describe "/blocks/{block_hash_or_number}/transactions" do
@@ -524,25 +751,16 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         block = build(:block)
 
         request = get(conn, "/api/v2/blocks/#{block.hash}/beacon/deposits")
-        response = json_response(request, 404)
+        json_response(request, 404)
       end
 
-      # test "get 422 on invalid block", %{conn: conn} do
-      #   request = get(conn, "/api/v2/blocks/invalid/beacon/deposits")
-      #   response = json_response(request, 422)
+      test "get 422 on invalid block", %{conn: conn} do
+        request_1 = get(conn, "/api/v2/blocks/0x123123/beacon/deposits")
+        assert %{"message" => "Invalid hash"} = json_response(request_1, 422)
 
-      #   assert %{
-      #            "errors" => [
-      #              %{
-      #                "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
-      #                "source" => %{"pointer" => "/address_hash_param"},
-      #                "title" => "Invalid value"
-      #              }
-      #            ]
-      #          } = response
-
-      #   assert_schema(response, "JsonErrorResponse", BlockScoutWeb.ApiSpec.spec())
-      # end
+        request_2 = get(conn, "/api/v2/blocks/123qwe/beacon/deposits")
+        assert %{"message" => "Invalid number"} = json_response(request_2, 422)
+      end
 
       test "get deposits", %{conn: conn} do
         block = insert(:block)
@@ -558,8 +776,6 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         assert response_2nd_page = json_response(request_2nd_page, 200)
 
         check_paginated_response(response, response_2nd_page, deposits)
-        # assert_schema(response, "BlockBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
-        # assert_schema(response_2nd_page, "BlockBeaconDepositsPaginatedResponse", BlockScoutWeb.ApiSpec.spec())
       end
     else
       test "returns an error about chain type", %{conn: conn} do

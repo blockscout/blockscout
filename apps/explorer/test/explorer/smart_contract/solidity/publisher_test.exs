@@ -1,9 +1,10 @@
-if Application.compile_env(:explorer, :chain_type) !== :zksync do
-  defmodule Explorer.SmartContract.Solidity.PublisherTest do
-    use ExUnit.Case, async: true
+defmodule Explorer.SmartContract.Solidity.PublisherTest do
+  use ExUnit.Case, async: true
+  use Explorer.DataCase
 
-    use Explorer.DataCase
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
+  if @chain_type == :default do
     doctest Explorer.SmartContract.Solidity.Publisher
 
     @moduletag timeout: :infinity

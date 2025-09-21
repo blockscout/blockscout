@@ -15,7 +15,6 @@ on:
       - production-lukso
       - production-rsk
       - production-sokol
-      - production-suave
       - production-xdai
       - production-zkevm
       - production-zksync
@@ -68,7 +67,7 @@ jobs:
               "neon"
             ];
 
-            const extraChainTypes = ["suave"];
+            const extraChainTypes = [];
 
             // Chain type matrix we use in master branch
             const allChainTypes = [].concat(defaultChainTypes, chainTypes, extraChainTypes);

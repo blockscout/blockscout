@@ -16,8 +16,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.SignedAuthorization do
       r: General.IntegerString,
       s: General.IntegerString,
       v: %Schema{type: :integer, nullable: false},
-      authority: General.AddressHash
+      authority: General.AddressHash,
+      status: %Schema{
+        type: :string,
+        enum: ["ok", "invalid_chain_id", "invalid_signature", "invalid_nonce"],
+        nullable: true
+      }
     },
-    required: [:address_hash, :chain_id, :nonce, :r, :s, :v, :authority]
+    required: [:address_hash, :chain_id, :nonce, :r, :s, :v, :authority, :status],
+    additionalProperties: false
   })
 end

@@ -166,20 +166,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
             {:stop, :normal, state}
 
           migration_status ->
-            Process.send(self(), :check_if_db_operation_need_to_be_started, [])
+            Process.send(self(), :check_db_index_operation_progress, [])
             {:noreply, state}
         end
-      end
-
-      @impl true
-      def handle_info(:check_if_db_operation_need_to_be_started, state) do
-        if db_operation_is_ready_to_start?() do
-          Process.send(self(), :check_db_index_operation_progress, [])
-        else
-          schedule_next_db_operation_readiness_check()
-        end
-
-        {:noreply, state}
       end
 
       @impl true
@@ -188,9 +177,14 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
                {:index_operation_progress, check_db_index_operation_progress()},
              {:db_index_operation_status, :not_initialized} <-
                {:db_index_operation_status, db_index_operation_status()} do
-          MigrationStatus.set_status(migration_name(), "started")
-          db_index_operation()
-          schedule_next_db_operation_status_check()
+          if db_operation_is_ready_to_start?() do
+            MigrationStatus.set_status(migration_name(), "started")
+            db_index_operation()
+            schedule_next_db_operation_status_check()
+          else
+            schedule_next_db_operation_readiness_check()
+          end
+
           {:noreply, state}
         else
           {:index_operation_progress, _status} ->
@@ -253,7 +247,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
       defp schedule_next_db_operation_readiness_check(timeout \\ nil) do
         Process.send_after(
           self(),
-          :check_if_db_operation_need_to_be_started,
+          :check_db_index_operation_progress,
           timeout || HeavyDbIndexOperationHelper.get_check_interval()
         )
       end

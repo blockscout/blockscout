@@ -868,18 +868,20 @@ defmodule Explorer.Factory do
   end
 
   def token_transfer_log_factory do
-    token_contract_address = build(:address)
     to_address = build(:address)
     from_address = build(:address)
 
-    transaction = build(:transaction, to_address: token_contract_address, from_address: from_address)
+    contract_code = Map.fetch!(contract_code_info(), :bytecode)
+    token_address = insert(:contract_address, contract_code: contract_code)
+
+    transaction = build(:transaction, to_address: token_address, from_address: from_address)
 
     log_params = %{
       first_topic: TokenTransfer.constant(),
       second_topic: zero_padded_address_hash_string(from_address.hash),
       third_topic: zero_padded_address_hash_string(to_address.hash),
-      address_hash: token_contract_address.hash,
-      address: nil,
+      address_hash: token_address.hash,
+      address: token_address,
       data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
       transaction: transaction
     }
@@ -921,6 +923,30 @@ defmodule Explorer.Factory do
       from_address: from_address,
       to_address: to_address,
       token_contract_address: token_address,
+      token_type: token.type,
+      transaction: log.transaction,
+      log_index: log.index,
+      block_consensus: true
+    }
+  end
+
+  def token_transfer_with_predefined_params_factory(%{log: log, block: block}) do
+    to_address_hash = address_hash_from_zero_padded_hash_string(to_string(log.third_topic))
+    from_address_hash = address_hash_from_zero_padded_hash_string(to_string(log.second_topic))
+
+    # `to_address` is the only thing that isn't created from the token_transfer_log_factory
+    to_address = build(:address, hash: to_address_hash)
+    from_address = build(:address, hash: from_address_hash)
+
+    token = insert(:token, contract_address: log.address)
+
+    %TokenTransfer{
+      block: block,
+      amount: Decimal.new(1),
+      block_number: block.number,
+      from_address: from_address,
+      to_address: to_address,
+      token_contract_address: log.address,
       token_type: token.type,
       transaction: log.transaction,
       log_index: log.index,
@@ -1509,7 +1535,7 @@ defmodule Explorer.Factory do
 
     amount = Map.get(attrs, :deposit_amount, sequence("beacon_deposit_amount", & &1))
     signature_raw = Map.get(attrs, :deposit_signature, sequence("beacon_deposit_signature", &<<&1::768>>))
-    index = Map.get(attrs, :deposit_index, sequence("beacon_deposit_index", & &1))
+    index = Map.get_lazy(attrs, :deposit_index, fn -> sequence("beacon_deposit_index", & &1) end)
 
     <<_::bytes-4, data_raw::binary>> =
       ABI.TypeEncoder.encode(

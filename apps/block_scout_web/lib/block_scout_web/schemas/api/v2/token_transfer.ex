@@ -31,7 +31,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
     TransactionHashCustomization
   }
 
-  alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -55,13 +54,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       block_hash: General.FullHash,
       block_number: %Schema{type: :integer, nullable: false},
       log_index: %Schema{type: :integer, nullable: false},
-      token_type: Token.Type,
-      reputation: %Schema{
-        type: :string,
-        enum: Reputation.enum_values(),
-        description: "Reputation of the token transfer",
-        nullable: true
-      }
+      token_type: Token.Type
     },
     required: [
       :transaction_hash,
@@ -75,9 +68,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
       :block_hash,
       :block_number,
       :log_index,
-      :token_type,
-      :reputation
-    ]
+      :token_type
+    ],
+    additionalProperties: false
   })
 end
 
@@ -92,9 +85,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TotalERC721 do
     type: :object,
     properties: %{
       token_id: General.IntegerStringNullable,
-      token_instance: %Schema{type: :object, anyOf: [TokenInstance], nullable: true}
+      token_instance: %Schema{allOf: [TokenInstance], nullable: true}
     },
-    required: [:token_id, :token_instance]
+    required: [:token_id, :token_instance],
+    additionalProperties: false
   })
 end
 
@@ -111,9 +105,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TotalERC1155 do
       token_id: General.IntegerStringNullable,
       value: General.IntegerStringNullable,
       decimals: General.IntegerStringNullable,
-      token_instance: %Schema{type: :object, anyOf: [TokenInstance], nullable: true}
+      token_instance: %Schema{allOf: [TokenInstance], nullable: true}
     },
-    required: [:token_id, :value, :decimals, :token_instance]
+    required: [:token_id, :value, :decimals, :token_instance],
+    additionalProperties: false
   })
 end
 
@@ -129,6 +124,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.Total do
       value: General.IntegerStringNullable,
       decimals: General.IntegerStringNullable
     },
-    required: [:value, :decimals]
+    required: [:value, :decimals],
+    additionalProperties: false
   })
 end

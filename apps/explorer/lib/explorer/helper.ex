@@ -254,12 +254,12 @@ defmodule Explorer.Helper do
 
   The modified query with scam addresses hidden, if applicable.
   """
-  @spec maybe_hide_scam_addresses(nil | Ecto.Query.t(), atom(), [
+  @spec maybe_hide_scam_addresses_with_select(nil | Ecto.Query.t(), atom(), [
           Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
         ]) :: Ecto.Query.t()
-  def maybe_hide_scam_addresses(nil, _address_hash_key, _options), do: nil
+  def maybe_hide_scam_addresses_with_select(nil, _address_hash_key, _options), do: nil
 
-  def maybe_hide_scam_addresses(query, address_hash_key, options) do
+  def maybe_hide_scam_addresses_with_select(query, address_hash_key, options) do
     cond do
       Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
         query
@@ -285,12 +285,12 @@ defmodule Explorer.Helper do
   @doc """
   Conditionally hides scam addresses in the given query, does not select the reputation field.
   """
-  @spec maybe_hide_scam_addresses_without_select(nil | Ecto.Query.t(), atom(), [
+  @spec maybe_hide_scam_addresses(nil | Ecto.Query.t(), atom(), [
           Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
         ]) :: Ecto.Query.t()
-  def maybe_hide_scam_addresses_without_select(nil, _address_hash_key, _options), do: nil
+  def maybe_hide_scam_addresses(nil, _address_hash_key, _options), do: nil
 
-  def maybe_hide_scam_addresses_without_select(query, address_hash_key, options) do
+  def maybe_hide_scam_addresses(query, address_hash_key, options) do
     cond do
       Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
         query
@@ -299,7 +299,6 @@ defmodule Explorer.Helper do
 
       Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
         query
-        |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
 
       true ->
         query
@@ -307,39 +306,26 @@ defmodule Explorer.Helper do
   end
 
   @doc """
-  Conditionally hides scam addresses in the given query with aggregate functions.
+  Conditionally hides scam addresses in the given query, does not select the reputation field.
   """
-  @spec maybe_hide_scam_addresses_with_aggregate(nil | Ecto.Query.t(), atom(), [
+  @spec maybe_hide_scam_addresses_for_search(nil | Ecto.Query.t(), atom(), [
           Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
         ]) :: Ecto.Query.t()
-  def maybe_hide_scam_addresses_with_aggregate(nil, _address_hash_key, _options), do: nil
+  def maybe_hide_scam_addresses_for_search(nil, _address_hash_key, _options), do: nil
 
-  def maybe_hide_scam_addresses_with_aggregate(query, address_hash_key, options) do
+  def maybe_hide_scam_addresses_for_search(query, address_hash_key, options) do
     cond do
       Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
         query
         |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
         |> where([sabm: sabm], is_nil(sabm.address_hash))
-        |> select_merge([q], %{reputation: %Reputation{reputation: "ok"}})
 
       Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
         query
         |> join(:left, [q], sabm in ScamBadgeToAddress, as: :sabm, on: sabm.address_hash == field(q, ^address_hash_key))
-        |> select_merge([q, sabm: sabm], %{
-          reputation: %Reputation{
-            reputation:
-              fragment(
-                "CASE WHEN MAX(CASE WHEN ? THEN 0 ELSE 1 END) = 0 THEN ? ELSE ? END",
-                is_nil(sabm.address_hash),
-                "ok",
-                "scam"
-              )
-          }
-        })
 
       true ->
         query
-        |> select_merge([q], %{reputation: %Reputation{reputation: "ok"}})
     end
   end
 

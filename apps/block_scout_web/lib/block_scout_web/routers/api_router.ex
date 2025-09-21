@@ -306,7 +306,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/batches", V2.OptimismController, :batches)
         get("/batches/count", V2.OptimismController, :batches_count)
         get("/batches/da/celestia/:height/:commitment", V2.OptimismController, :batch_by_celestia_blob)
-        get("/batches/:internal_id", V2.OptimismController, :batch_by_internal_id)
+        get("/batches/:number", V2.OptimismController, :batch_by_number)
         get("/output-roots", V2.OptimismController, :output_roots)
         get("/output-roots/count", V2.OptimismController, :output_roots_count)
         get("/deposits", V2.OptimismController, :deposits)

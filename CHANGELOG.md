@@ -1,5 +1,33 @@
 # Changelog
 
+## 9.1.1
+
+### 🚀 Features
+
+- Auto assert_schema in tests ([#13029](https://github.com/blockscout/blockscout/issues/13029))
+
+### 🐛 Bug Fixes
+
+- Fix token transfer test for celo ([#13250](https://github.com/blockscout/blockscout/pull/13250))
+- Add reputation preload to celo base fee ([#13248](https://github.com/blockscout/blockscout/pull/13248))
+- Add reputation preload for user op body for transaction interpreter ([#13241](https://github.com/blockscout/blockscout/pull/13241))
+- Fix condition in Indexer.Fetcher.OnDemand.TokenTotalSupply fetcher ([#13240](https://github.com/blockscout/blockscout/pull/13240))
+- Add reputation preload to state changes and bridged tokens ([#13235](https://github.com/blockscout/blockscout/pull/13235))
+- Soften deposits deletion condition ([#13234](https://github.com/blockscout/blockscout/pull/13234))
+- Fix logic of checking finishing of heavy DB index operation ([#13231](https://github.com/blockscout/blockscout/pull/13231))
+- some flapping explorer/indexer tests ([#13230](https://github.com/blockscout/blockscout/pull/13230))
+- Remove requirement for beacon deposit indexes to be sequential ([#13228](https://github.com/blockscout/blockscout/pull/13228))
+
+### ⚡ Performance
+
+- Improve perf of internal transactions retrieval from the DB ([#13232](https://github.com/blockscout/blockscout/pull/13232))
+
+### ⚙️ Miscellaneous Tasks
+
+- Fix tests ([#13244](https://github.com/blockscout/blockscout/pull/13244))
+- Do not modify deposit indexer state on reorgs ([#13236](https://github.com/blockscout/blockscout/pull/13236))
+- Refactoring reputation ([#13221](https://github.com/blockscout/blockscout/issues/13221))
+
 ## 9.1.0
 
 ### 🚀 Features
@@ -19,6 +47,13 @@
 
 ### 🐛 Bug Fixes
 
+- Fix errors in celo epochs endpoints([#13201](https://github.com/blockscout/blockscout/pull/13201))
+- Fix api/v2/addresses/{hash}/celo/election-rewards pagination ([#13215](https://github.com/blockscout/blockscout/pull/13215))
+- Add reputation preload for celo gas_token ([#13200](https://github.com/blockscout/blockscout/pull/13200))
+- Mark completed deposits in batches ([#13210](https://github.com/blockscout/blockscout/pull/13210))
+- Adjustments in address nft and collections endpoints ([#13192](https://github.com/blockscout/blockscout/pull/13192))
+- Fix batch's number processing from the socket event ([#13181](https://github.com/blockscout/blockscout/pull/13181))
+- Delete PTOs for forked transactions ([#13145](https://github.com/blockscout/blockscout/pull/13145))
 - Pagination and filtering issues in `/addresses/:hash/nft` ([#13175](https://github.com/blockscout/blockscout/pull/13175))
 - Fix reputation preload for ERC-404 collections ([#13174](https://github.com/blockscout/blockscout/pull/13174))
 - Add reputation to token, rework reputation preload ([#13149](https://github.com/blockscout/blockscout/pull/13149))
@@ -49,10 +84,15 @@
 ### ⚡ Performance
 
 - Optimize maybe_hide_scam_addresses/3 query ([#12927](https://github.com/blockscout/blockscout/issues/12927))
+- Fix perf of finding non pending block in internal transactions related queries ([#13189](https://github.com/blockscout/blockscout/pull/13189))
+- Internal transactions REST API endpoint perf tradeoff ([#13191](https://github.com/blockscout/blockscout/pull/13191))
 
 ### ⚙️ Miscellaneous Tasks
 
+- Remove quantile_estimator dep ([#13190](https://github.com/blockscout/blockscout/pull/13190))
+- Add support of Scroll codecv8 ([#13090](https://github.com/blockscout/blockscout/pull/13090))
 - Change release workflow ([#13087](https://github.com/blockscout/blockscout/issues/13087))
+- Add INDEXER_DISABLE_OPTIMISM_INTEROP_MULTICHAIN_EXPORT env variable ([#13051](https://github.com/blockscout/blockscout/pull/13051))
 - Update and format pull request template ([#13028](https://github.com/blockscout/blockscout/issues/13028))
 - Add final check for ReindexDuplicatedInternalTransactions ([#13091](https://github.com/blockscout/blockscout/issues/13091))
 - Remove obsolete circleci config ([#13097](https://github.com/blockscout/blockscout/issues/13097))
@@ -85,7 +125,12 @@
 | `INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_ENQUEUE_BUSY_WAITING_TIMEOUT` | Timeout before new attempt to append item to multichain DB counters export queue if it's full. [Time format](backend-env-variables.md#time-format). Implemented in [#13007](https://github.com/blockscout/blockscout/pull/13007).                               | Version: v9.1.0\+ <br />Default: `1s`<br />Applications: Indexer              |
 | `INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_MAX_QUEUE_SIZE`               | Maximum size of multichain DB counters export queue. Implemented in [#13007](https://github.com/blockscout/blockscout/pull/13007).                                                                                                                              | Version: v9.1.0\+ <br />Default: `1000`<br />Applications: Indexer            |
 | `INDEXER_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_INIT_QUERY_LIMIT`             | Limit of the init query for processing the counters export queue to the Multichain DB. Implemented in [#13007](https://github.com/blockscout/blockscout/pull/13007).                                                                                            | Version: v9.1.0\+ <br />Default: `1000` <br />Applications: Indexer           |
-
+| `INDEXER_DISABLE_BEACON_DEPOSIT_FETCHER`                      | If `true`, the Beacon deposit fetcher won't be started. Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                                                                                                           | Version: v9.1.0+ <br />Default: `false` <br />Applications: Indexer                  |
+| `INDEXER_BEACON_DEPOSIT_FETCHER_INTERVAL`                     | The interval indicating how often deposit events should be queried. [Time format](/setup/env-variables/backend-envs-chain-specific#time-format). Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                  | Version: v9.1.0+ <br />Default: `6s` <br />Applications: Indexer                     |
+| `INDEXER_BEACON_DEPOSIT_FETCHER_BATCH_SIZE`                   | The batch size specifies how many events are retrieved in a single database query. Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                                                                                | Version: v9.1.0+ <br />Default: `1000` <br />Applications: Indexer                   |
+| `INDEXER_DISABLE_BEACON_DEPOSIT_STATUS_FETCHER`               | If `true`, the Beacon deposit status fetcher won't be started. Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                                                                                                    | Version: v9.1.0+ <br />Default: `false` <br />Applications: Indexer                  |
+| `INDEXER_BEACON_DEPOSIT_STATUS_FETCHER_EPOCH_DURATION`        | Epoch duration in the Beacon chain in seconds. Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                                                                                                                    | Version: v9.1.0+ <br />Default: `384` <br />Applications: Indexer                    |
+| `INDEXER_BEACON_DEPOSIT_STATUS_FETCHER_REFERENCE_TIMESTAMP`   | Any past finalized Beacon Chain epoch UTC timestamp. Used as reference for status fetcher scheduling. Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                                                             | Version: v9.1.0+ <br />Default: `1722024023` <br />Applications: Indexer             |
 
 
 ### Deprecated ENV variables
@@ -102,6 +147,8 @@
 | `INDEXER_POLYGON_EDGE_L2_STATE_RECEIVER_CONTRACT` | The address of StateReceiver contract on L2 (child chain) used to fetch deposit executes. Required for deposit events indexing. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
 | `INDEXER_POLYGON_EDGE_L2_DEPOSITS_START_BLOCK` | The number of start block on L2 (child chain) to index deposit executes. If the table of deposit executes is not empty, the process will fill gaps and then continue indexing from the last indexed message. If empty or not defined, the deposit executes are not indexed. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
 | `INDEXER_POLYGON_EDGE_ETH_GET_LOGS_RANGE_SIZE` | Block range size for eth\_getLogs request in Polygon Edge indexer modules. Implemented in [#8180](https://github.com/blockscout/blockscout/pull/8180). |  | v5.3.0+ |  | v9.1.0 |
+| `ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL` | Airtable URL for public tag requests functionality |  | v5.0.0+ |  | v9.1.0 |
+| `ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY` | Airtable API key for public tag requests functionality |  | v5.0.0+ |  | v9.1.0 |
 
 
 ## 9.0.2

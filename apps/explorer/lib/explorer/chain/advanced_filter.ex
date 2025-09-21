@@ -59,8 +59,6 @@ defmodule Explorer.Chain.AdvancedFilter do
 
     has_one(:token_transfer, TokenTransfer, foreign_key: :transaction_hash, references: :hash, null: true)
 
-    has_one(:reputation, Reputation, foreign_key: :address_hash, references: :hash)
-
     field(:fee, :decimal)
 
     field(:block_number, :integer)
@@ -238,8 +236,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       block_number: token_transfer.block_number,
       transaction_index: token_transfer.transaction.index,
       token_transfer_index: token_transfer.log_index,
-      token_transfer_batch_index: token_transfer.reverse_index_in_batch,
-      reputation: token_transfer.token.reputation
+      token_transfer_batch_index: token_transfer.reverse_index_in_batch
     }
   end
 
@@ -519,7 +516,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       |> page_token_transfers(paging_options)
 
     token_transfer_query
-    |> ExplorerHelper.maybe_hide_scam_addresses_without_select(:token_contract_address_hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> limit_query(paging_options)
     |> query_function.(false)
     |> limit_query(paging_options)

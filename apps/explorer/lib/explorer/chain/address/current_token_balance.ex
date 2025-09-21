@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
 
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Token}
-  alias Explorer.Chain.Address.{Reputation, TokenBalance}
+  alias Explorer.Chain.Address.TokenBalance
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -54,8 +54,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       type: Hash.Address,
       null: false
     )
-
-    has_one(:reputation, Reputation, foreign_key: :address_hash, references: :token_contract_address_hash)
 
     timestamps()
   end
