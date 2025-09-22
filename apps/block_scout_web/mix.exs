@@ -133,7 +133,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
-      {:poison, "~> 4.0.1"},
+      {:poison, "~> 5.0.0"},
       {:postgrex, ">= 0.0.0"},
       {:prometheus, "~> 6.0", override: true},
       # Gather methods for Phoenix requests
