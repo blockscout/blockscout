@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
 
   alias Explorer.Application.Constants
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, Log, Hash, Transaction}
+  alias Explorer.Chain.{Block, Hash, Log, Transaction}
   alias Explorer.Chain.Cache.OptimismFinalizationPeriod
   alias Explorer.Chain.Optimism.{DisputeGame, OutputRoot, WithdrawalEvent}
   alias Explorer.{Helper, PagingOptions, Repo}
@@ -78,7 +78,9 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
             left_join: we in WithdrawalEvent,
             on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
             left_join: log in Log,
-            on: log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and log.second_topic == fragment("convert_numeric_to_bytea(msg_nonce)"),
+            on:
+              log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and
+                log.second_topic == fragment("convert_numeric_to_bytea(msg_nonce)"),
             select: %{
               msg_nonce: w.msg_nonce,
               hash: w.hash,
@@ -141,9 +143,10 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   @doc """
     Gets withdrawal statuses for Optimism Withdrawal transaction.
     For each withdrawal associated with this transaction,
-    returns the status and the corresponding L1 transaction hash if the status is `Relayed`.
+    returns the status, the corresponding L1 transaction hash if the status is `Relayed`,
+    and withdrawal message's data (such as nonce, sender, target, etc.).
   """
-  @spec transaction_statuses(Hash.t()) :: [{non_neg_integer(), String.t(), Hash.t() | nil}]
+  @spec transaction_statuses(Hash.t()) :: [{non_neg_integer(), String.t(), map()}]
   def transaction_statuses(l2_transaction_hash) do
     query =
       from(w in __MODULE__,
@@ -153,7 +156,9 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         left_join: we in WithdrawalEvent,
         on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
         left_join: log in Log,
-        on: log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and log.second_topic == fragment("convert_numeric_to_bytea(msg_nonce)"),
+        on:
+          log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and
+            log.second_topic == fragment("convert_numeric_to_bytea(msg_nonce)"),
         select: %{
           hash: w.hash,
           l2_block_number: w.l2_block_number,
@@ -175,7 +180,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         )
 
       {status, _} = status(w, nil, @api_true)
-      {msg_nonce, status, w.l1_transaction_hash, w.msg_nonce, w.msg_log_sender_address_hash, w.msg_log_target_address_hash, w.msg_log_data}
+      {msg_nonce, status, w}
     end)
   end
 
