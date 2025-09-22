@@ -249,6 +249,7 @@ defmodule Indexer.Fetcher.Optimism do
             |> quantity_to_integer()
 
           if not is_nil(optimism_portal) do
+            # we save the OptimismPortal contract address to use it in other modules (e.g. by `BlockScoutWeb.API.V2.OptimismView`)
             Constants.set_constant_value(Withdrawal.portal_contract_address_constant(), optimism_portal)
           end
 

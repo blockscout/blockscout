@@ -145,6 +145,12 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     For each withdrawal associated with this transaction,
     returns the status, the corresponding L1 transaction hash if the status is `Relayed`,
     and withdrawal message's data (such as nonce, sender, target, etc.).
+
+    ## Parameters
+    - `l2_transaction_hash`: The transaction hash associated with the withdrawal.
+
+    ## Returns
+    - A tuple containing the withdrawal message nonce, the withdrawal status, and a map with other message's data.
   """
   @spec transaction_statuses(Hash.t()) :: [{non_neg_integer(), String.t(), map()}]
   def transaction_statuses(l2_transaction_hash) do
@@ -454,10 +460,27 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     end
   end
 
+  @doc """
+    Returns a signature of the `MessagePassed` event emitted by `L2ToL1MessagePasser` contract
+    in form of 0x-prefixed string.
+
+    ## Returns
+    - A 0x-prefixed string representing the signature.
+  """
+  @spec message_passed_event() :: String.t()
   def message_passed_event, do: @message_passed_event
 
-  def portal_contract_address_constant, do: "optimism_portal_contract_address"
+  @doc """
+    Returns `OptimismPortal` contract address. First, the function tries to get the address from the
+    `INDEXER_OPTIMISM_L1_PORTAL_CONTRACT` env variable. If that's not defined, the address is retrieved
+    from the database (constants table) where it was saved by other modules. If the address is unknown,
+    the function returns `nil`.
 
+    ## Returns
+    - The OptimismPortal contract address in form of 0x-prefixed string.
+    - `nil` if the address cannot be determined.
+  """
+  @spec portal_contract_address() :: String.t() | nil
   def portal_contract_address do
     portal_address = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:portal]
 
@@ -467,4 +490,6 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       Constants.get_constant_value(portal_contract_address_constant(), @api_true)
     end
   end
+
+  def portal_contract_address_constant, do: "optimism_portal_contract_address"
 end

@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.{Block, Data, Hash, Transaction}
   alias Explorer.Chain.Optimism.{DisputeGame, FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
 
   @api_true [api?: true]
@@ -451,7 +451,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     |> add_optional_transaction_field(transaction, :l1_fee_scalar)
     |> add_optional_transaction_field(transaction, :l1_gas_price)
     |> add_optional_transaction_field(transaction, :l1_gas_used)
-    |> add_optimism_fields(transaction.hash)
+    |> add_optimism_fields(transaction)
   end
 
   defp add_optional_transaction_field(out_json, transaction, field) do
@@ -461,11 +461,21 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     end
   end
 
-  defp add_optimism_fields(out_json, transaction_hash) do
+  # Extends the json output for a transaction adding Optimism-related info to the output
+  # (such as related withdrawals, interop messages).
+  #
+  # ## Parameters
+  # - `out_json`: A map defining output json which will be extended.
+  # - `transaction`: transaction structure containing necessary data for the OP fields.
+  #
+  # ## Returns
+  # - An extended map containing `op_withdrawals`, `op_interop_messages` (optional).
+  @spec add_optimism_fields(map(), Transaction.t()) :: map()
+  defp add_optimism_fields(out_json, transaction) do
     portal_contract_address_hash = Withdrawal.portal_contract_address()
 
     withdrawals =
-      transaction_hash
+      transaction.hash
       |> Withdrawal.transaction_statuses()
       |> Enum.map(fn {nonce, status, w} ->
         {sender_address_hash, target_address_hash, value, gas_limit, data} = withdrawal_msg_transaction_fields(w)
@@ -485,7 +495,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       end)
 
     interop_messages =
-      transaction_hash
+      transaction.hash
       |> InteropMessage.messages_by_transaction()
 
     out_json = Map.put(out_json, "op_withdrawals", withdrawals)
@@ -507,6 +517,23 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     end
   end
 
+  # Retrieves withdrawal message transaction fields from the `MessagePassed` event emitted by `L2ToL1MessagePasser` contract.
+  #
+  # The event looks as follows:
+  # MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
+  #
+  # ## Parameters
+  # - `w`: A map containing `msg_log_sender_address_hash`, `msg_log_target_address_hash`, and `msg_log_data` components
+  #        of the `MessagePassed` event.
+  #
+  # ## Returns
+  # - A tuple containing the following fields in form of string (each one can be `nil`):
+  #   {sender address, target address, value, gas limit, data}
+  @spec withdrawal_msg_transaction_fields(%{
+          msg_log_sender_address_hash: Hash.t(),
+          msg_log_target_address_hash: Hash.t(),
+          msg_log_data: Data.t()
+        }) :: {String.t() | nil, String.t() | nil, String.t() | nil, String.t() | nil, String.t() | nil}
   defp withdrawal_msg_transaction_fields(w) do
     sender_address_hash =
       if not is_nil(w.msg_log_sender_address_hash) do
