@@ -2929,6 +2929,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   if @chain_type == :neon do
+    import Ecto.Query, only: [from: 2]
+
     describe "neon linked transactions service" do
       test "fetches data from the node and caches in the db", %{conn: conn} do
         transaction = insert(:transaction)
