@@ -477,6 +477,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/batches/count", V2.ArbitrumController, :batches_count)
         get("/batches/:batch_number", V2.ArbitrumController, :batch)
         get("/batches/da/anytrust/:data_hash", V2.ArbitrumController, :batch_by_data_availability_info)
+        get("/batches/da/eigenda/:data_hash", V2.ArbitrumController, :batch_by_data_availability_info)
 
         get(
           "/batches/da/celestia/:height/:transaction_commitment",
