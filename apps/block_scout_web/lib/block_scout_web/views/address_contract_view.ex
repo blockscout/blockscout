@@ -1,10 +1,10 @@
 defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
+  use Phoenix.LiveView
 
   require Logger
 
   import Explorer.Helper, only: [decode_data: 2]
-  import Phoenix.LiveView.Helpers, only: [sigil_H: 2]
 
   alias ABI.FunctionSelector
   alias Explorer.Chain

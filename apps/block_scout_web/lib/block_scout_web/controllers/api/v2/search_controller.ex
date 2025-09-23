@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.API.V2.SearchController do
-  use Phoenix.Controller
+  use Phoenix.Controller, namespace: BlockScoutWeb
 
   import BlockScoutWeb.Chain, only: [from_param: 1, fetch_scam_token_toggle: 2]
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens_info_to_search_results: 1]
