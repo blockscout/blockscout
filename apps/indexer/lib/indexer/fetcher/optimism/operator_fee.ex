@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
 
   require Logger
 
-  use Indexer.Fetcher, restart: :permanent
+  use Indexer.Fetcher, restart: :transient
   use Spandex.Decorators
 
   import Ecto.Query
@@ -64,7 +64,7 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
         fetcher: @fetcher_name
       )
 
-      GenServer.stop(__MODULE__, :shutdown)
+      Process.send(__MODULE__, :shutdown, [])
       initial_acc
     else
       isthmus_timestamp_l2 = Application.get_env(:indexer, Indexer.Fetcher.Optimism)[:isthmus_timestamp_l2]
@@ -86,7 +86,7 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
         )
 
         Constants.set_constant_value(@fetcher_finished_constant_key, "true")
-        GenServer.stop(__MODULE__, :shutdown)
+        Process.send(__MODULE__, :shutdown, [])
       end
 
       acc
@@ -115,7 +115,10 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
       )
 
     receipts
-    |> Enum.map(&Receipt.elixir_to_params(&1.result))
+    |> Enum.map(& &1.result)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&Receipt.to_elixir/1)
+    |> Enum.map(&Receipt.elixir_to_params/1)
     |> Enum.each(fn receipt ->
       now = DateTime.utc_now()
 

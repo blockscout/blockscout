@@ -1440,7 +1440,7 @@ defmodule Explorer.Chain.Transaction do
 
   ## Parameters
   - `initial`: The initial accumulator value.
-  - `reducer`: A function that takes an entry (as a map) and the current accumulator, returning the updated accumulator.
+  - `reducer`: A function that takes an entry and the current accumulator, returning the updated accumulator.
   - `start_timestamp`: A timestamp starting from which the transactions should be scanned.
 
   ## Returns
@@ -1448,18 +1448,19 @@ defmodule Explorer.Chain.Transaction do
   """
   @spec stream_transactions_without_operator_fee(
           initial :: accumulator,
-          reducer :: (entry :: map(), accumulator -> accumulator),
+          reducer :: (entry :: Hash.t(), accumulator -> accumulator),
           start_timestamp :: non_neg_integer()
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_transactions_without_operator_fee(initial, reducer, start_timestamp) when is_function(reducer, 2) do
     limit = Application.get_env(:indexer, Indexer.Fetcher.Optimism.OperatorFee)[:init_limit]
+    start_datetime = DateTime.from_unix!(start_timestamp)
 
     __MODULE__
     |> select([t], t.hash)
     |> where(
       [t],
-      t.block_timestamp >= ^start_timestamp and t.block_consensus == true and is_nil(t.operator_fee_constant)
+      t.block_timestamp >= ^start_datetime and t.block_consensus == true and is_nil(t.operator_fee_constant)
     )
     |> limit(^limit)
     |> Repo.stream_reduce(initial, reducer)
