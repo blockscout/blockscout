@@ -17,6 +17,8 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
+  import Ecto.Query
+
   import EthereumJSONRPC,
     only: [
       json_rpc: 2
