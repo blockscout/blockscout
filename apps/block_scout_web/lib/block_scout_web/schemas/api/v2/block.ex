@@ -187,12 +187,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
     additionalProperties: false
   }
 
-  @doc """
-    Returns the Celo schema.
-  """
-  @spec celo_schema() :: Schema.t()
-  def celo_schema, do: @celo_schema
-
   @zilliqa_schema %Schema{
     type: :object,
     nullable: false,
