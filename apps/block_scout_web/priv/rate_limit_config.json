@@ -8,6 +8,13 @@
   "api/v2/import/smart-contracts/:param": {
     "ignore": true
   },
+  "api/v2/stats": {    
+    "ip": {
+      "period": "1m",
+      "limit": 600
+    },
+    "isolate_rate_limit?": true
+  },
   "api/account/v2/authenticate_via_wallet": {
     "recaptcha_to_bypass_429": true,
     "ip": {
