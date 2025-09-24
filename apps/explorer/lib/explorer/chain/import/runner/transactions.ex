@@ -656,13 +656,15 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       |> Enum.map(fn %{block_hash: block_hash} -> block_hash end)
       |> Enum.uniq()
 
+    all_block_hashes = Enum.uniq(block_hashes ++ transactions_block_hashes)
+
     if Enum.empty?(block_hashes) do
       {:ok, []}
     else
       query =
         from(
           block in Block,
-          where: block.hash in ^block_hashes,
+          where: block.hash in ^all_block_hashes,
           # Enforce Block ShareLocks order (see docs: sharelocks.md)
           order_by: [asc: block.hash],
           lock: "FOR NO KEY UPDATE"
@@ -694,7 +696,12 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       try do
         {_, result} =
           repo.update_all(
-            from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
+            from(b in Block,
+              join: s in subquery(query),
+              on: b.hash == s.hash,
+              where: b.hash in ^block_hashes,
+              select: b.number
+            ),
             [set: [refetch_needed: true, updated_at: updated_at]],
             timeout: timeout
           )
