@@ -83,7 +83,24 @@ jobs:
             // Chain type matrix we use in PRs to master branch
             const ciChainTypes = labeledChainTypes.length > 0 ? labeledChainTypes : defaultChainTypes;
 
-            const matrix = { "chain-type": ${{ github.event_name == 'pull_request' && 'ciChainTypes' || 'allChainTypes' }} };
+            // Check for bridged tokens label
+            const hasBridgedTokensLabel = ciLabels.includes("ci:bridged-tokens");
+
+            // Create matrix combinations
+            const targetChainTypes = ${{ github.event_name == 'pull_request' && 'ciChainTypes' || 'allChainTypes' }};
+            const bridgedTokensConfigs = hasBridgedTokensLabel ? [false, true] : [false];
+            
+            const matrixIncludes = [];
+            for (const chainType of targetChainTypes) {
+              for (const bridgedTokens of bridgedTokensConfigs) {
+                matrixIncludes.push({
+                  "chain-type": chainType,
+                  "bridged-tokens": bridgedTokens
+                });
+              }
+            }
+
+            const matrix = { "include": matrixIncludes };
             console.log(JSON.stringify(matrix));
           ')" >> $GITHUB_OUTPUT
 
@@ -243,9 +260,9 @@ jobs:
         id: dialyzer-cache
         with:
           path: priv/plts
-          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-${{ matrix.chain-type }}-dialyzer-mixlockhash-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-${{ matrix.chain-type }}-${{ matrix.bridged-tokens }}-dialyzer-mixlockhash-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-${{ matrix.chain-type }}-dialyzer-mixlockhash-
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-${{ matrix.chain-type }}-${{ matrix.bridged-tokens }}-dialyzer-mixlockhash-
 
       - name: Conditionally build Dialyzer Cache
         if: steps.dialyzer-cache.output.cache-hit != 'true'
@@ -254,11 +271,13 @@ jobs:
           mix dialyzer --plt
         env:
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          BRIDGED_TOKENS_ENABLED: ${{ matrix.bridged-tokens }}
 
       - name: Run Dialyzer
         run: mix dialyzer --halt-exit-status
         env:
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          BRIDGED_TOKENS_ENABLED: ${{ matrix.bridged-tokens }}
 
   gettext:
     name: Missing translation keys check
@@ -553,6 +572,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          BRIDGED_TOKENS_ENABLED: ${{ matrix.bridged-tokens }}
 
   test_nethermind_mox_explorer:
     strategy:
@@ -629,6 +649,7 @@ jobs:
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
           WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
+          BRIDGED_TOKENS_ENABLED: ${{ matrix.bridged-tokens }}
 
   test_nethermind_mox_indexer:
     strategy:
@@ -697,6 +718,7 @@ jobs:
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
           WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
+          BRIDGED_TOKENS_ENABLED: ${{ matrix.bridged-tokens }}
 
   test_nethermind_mox_block_scout_web:
     strategy:
@@ -799,3 +821,4 @@ jobs:
           SOURCIFY_INTEGRATION_ENABLED: "true"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
           WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
+          BRIDGED_TOKENS_ENABLED: ${{ matrix.bridged-tokens }}
