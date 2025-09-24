@@ -373,8 +373,9 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   # Adds data availability (DA) information to the given output JSON based on the batch container type.
   #
   # This function enriches the output JSON with data availability information based on
-  # the type of batch container. It handles different DA types, including AnyTrust and
-  # Celestia, and generates the appropriate DA data for inclusion in the output.
+  # the type of batch container. It handles different DA types, including AnyTrust,
+  # Celestia, and EigenDA, and generates the appropriate DA data for inclusion in the
+  # output.
   #
   # ## Parameters
   # - `out_json`: The initial JSON map to be enriched with DA information.
@@ -384,7 +385,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   # - An updated JSON map containing the data availability information.
   @spec add_da_info(map(), %{
           :__struct__ => L1Batch,
-          :batch_container => :in_anytrust | :in_celestia | atom() | nil,
+          :batch_container => :in_anytrust | :in_celestia | :in_eigenda | atom() | nil,
           :number => non_neg_integer(),
           optional(any()) => any()
         }) :: map()
@@ -394,6 +395,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
         nil -> %{"batch_data_container" => nil}
         :in_anytrust -> generate_anytrust_certificate(batch.number)
         :in_celestia -> generate_celestia_da_info(batch.number)
+        :in_eigenda -> generate_eigen_da_info(batch.number)
         value -> %{"batch_data_container" => to_string(value)}
       end
 
@@ -468,6 +470,20 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     |> Map.merge(%{
       "height" => Map.get(da_info, "height"),
       "transaction_commitment" => Map.get(da_info, "transaction_commitment")
+    })
+  end
+
+  # Generates EigenDA information for the given batch number.
+  @spec generate_eigen_da_info(non_neg_integer()) :: map()
+  defp generate_eigen_da_info(batch_number) do
+    out = %{"batch_data_container" => "in_eigenda"}
+
+    da_info = SettlementReader.get_da_info_by_batch_number(batch_number)
+
+    out
+    |> Map.merge(%{
+      "blob_header" => Map.get(da_info, "blob_header"),
+      "blob_verification_proof" => Map.get(da_info, "blob_verification_proof")
     })
   end
 
