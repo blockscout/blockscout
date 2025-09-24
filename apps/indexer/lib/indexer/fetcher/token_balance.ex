@@ -163,11 +163,7 @@ defmodule Indexer.Fetcher.TokenBalance do
 
   defp handle_missing_balance_of_tokens(failed_token_balances) do
     {missing_balance_of_balances, other_failed_balances} =
-      Enum.split_with(failed_token_balances, fn
-        %{error: :unable_to_decode} -> true
-        %{error: error} when is_binary(error) -> String.match?(error, ~r/execution.*revert/)
-        _ -> false
-      end)
+      Enum.split_with(failed_token_balances, &EthereumJSONRPC.contract_failure?/1)
 
     MissingBalanceOfToken.insert_from_params(missing_balance_of_balances)
 
