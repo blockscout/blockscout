@@ -15,16 +15,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Response.ChainTypeCustomizations do
     }
   }
 
-  @blob_gas_price_ethereum_schema %Schema{
-    type: :integer,
-    nullable: true
-  }
-
-  @burnt_blob_fees_ethereum_schema %Schema{
-    type: :integer,
-    nullable: true
-  }
-
   @optimism_schema %Schema{
     type: :object,
     properties: %{
@@ -81,8 +71,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Response.ChainTypeCustomizations do
 
       :ethereum ->
         schema
-        |> put_in([:properties, :blob_gas_price], @blob_gas_price_ethereum_schema)
-        |> put_in([:properties, :burnt_blob_fees], @burnt_blob_fees_ethereum_schema)
         |> update_in([:required], &[:blob_gas_price, :burnt_blob_fees | &1])
 
       :optimism ->
