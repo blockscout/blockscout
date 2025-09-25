@@ -57,15 +57,6 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.PagingOptions
 
-  defimpl Poison.Encoder, for: Decimal do
-    def encode(value, _opts) do
-      # silence the xref warning
-      decimal = Decimal
-
-      [?\", decimal.to_string(value), ?\"]
-    end
-  end
-
   @page_size page_size()
   @default_paging_options default_paging_options()
   @address_hash_len 40
