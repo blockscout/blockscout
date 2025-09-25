@@ -130,11 +130,11 @@ defmodule BlockScoutWeb.ChainTest do
     end
   end
 
-  describe "Poison.encode!" do
+  describe "Jason.encode!" do
     test "correctly encodes decimal values" do
       val = Decimal.from_float(5.55)
 
-      assert "\"5.55\"" == Poison.encode!(val)
+      assert "\"5.55\"" == Jason.encode!(val)
     end
   end
 end
