@@ -9,7 +9,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy.SocketHandler do
   @spec init(req :: :cowboy_req.req(), opts :: keyword()) ::
           {:cowboy_websocket, :cowboy_req.req(), map()}
   def init(req, opts) do
-    {:cowboy_websocket, req, %{target: nil, opts: opts}}
+    {:cowboy_websocket, req, %{target: nil, opts: opts}, %{idle_timeout: :infinity}}
   end
 
   # called once WebSocket upgraded
