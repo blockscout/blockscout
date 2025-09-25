@@ -667,7 +667,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           where: block.hash in ^all_block_hashes,
           # Enforce Block ShareLocks order (see docs: sharelocks.md)
           order_by: [asc: block.hash],
-          lock: "FOR NO KEY UPDATE"
+          lock: "FOR UPDATE"
         )
 
       transactions_query =
