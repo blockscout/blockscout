@@ -113,7 +113,7 @@ defmodule BlockScoutWeb.Endpoint do
       websocket_proxies
       |> Enum.map(fn {platform_id, url} ->
         {"/api/v2/proxy/3rdparty/#{platform_id}", Explorer.ThirdPartyIntegrations.UniversalProxy.SocketHandler,
-         [timeout: 45_000, platform_id: platform_id, url: url]}
+         [url: url]}
       end)
 
     all_routes =
