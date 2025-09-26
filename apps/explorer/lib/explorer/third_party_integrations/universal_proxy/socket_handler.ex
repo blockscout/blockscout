@@ -7,7 +7,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy.SocketHandler do
 
   # called after HTTP handshake
   @spec init(req :: :cowboy_req.req(), opts :: keyword()) ::
-          {:cowboy_websocket, :cowboy_req.req(), map()}
+          {:cowboy_websocket, :cowboy_req.req(), map(), map()}
   def init(req, opts) do
     {:cowboy_websocket, req, %{target: nil, opts: opts}, %{idle_timeout: :infinity}}
   end
