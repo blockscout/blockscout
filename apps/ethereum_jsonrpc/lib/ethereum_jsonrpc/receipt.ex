@@ -25,8 +25,8 @@ defmodule EthereumJSONRPC.Receipt do
                              l1_fee_scalar: non_neg_integer(),
                              l1_gas_price: non_neg_integer(),
                              l1_gas_used: non_neg_integer(),
-                             operator_fee_scalar: non_neg_integer(),
-                             operator_fee_constant: non_neg_integer()
+                             operator_fee_scalar: non_neg_integer() | nil,
+                             operator_fee_constant: non_neg_integer() | nil
                            ]
                          )
 

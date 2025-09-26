@@ -2086,25 +2086,15 @@ defmodule Explorer.Chain.Transaction do
     - The calculated operator fee for the given transaction.
   """
   @spec operator_fee(Transaction.t()) :: Decimal.t()
-  def operator_fee(transaction) do
-    gas_used =
-      if is_nil(transaction.gas_used) do
-        transaction.gas
-      else
-        transaction.gas_used
-      end
-
-    operator_fee_scalar =
-      case Map.get(transaction, :operator_fee_scalar) do
-        nil -> Decimal.new(0)
-        value -> value
-      end
-
-    operator_fee_constant =
-      case Map.get(transaction, :operator_fee_constant) do
-        nil -> Decimal.new(0)
-        value -> value
-      end
+  def operator_fee(
+        %Transaction{
+          gas: gas,
+          gas_used: gas_used
+        } = transaction
+      ) do
+    gas_used = gas_used || gas
+    operator_fee_scalar = Map.get(transaction, :operator_fee_scalar) || Decimal.new(0)
+    operator_fee_constant = Map.get(transaction, :operator_fee_constant) || Decimal.new(0)
 
     gas_used
     |> Decimal.mult(operator_fee_scalar)
