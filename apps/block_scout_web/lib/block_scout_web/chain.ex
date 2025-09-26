@@ -627,6 +627,20 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: %{block_index: index}}]
   end
 
+  def paging_options(%{block_index: index_string}) when is_binary(index_string) do
+    case Integer.parse(index_string) do
+      {index, ""} ->
+        [paging_options: %{@default_paging_options | key: %{block_index: index}}]
+
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{block_index: index}) when is_integer(index) do
+    [paging_options: %{@default_paging_options | key: %{block_index: index}}]
+  end
+
   # Clause for `Explorer.Chain.Blackfort.Validator`,
   #  returned by `BlockScoutWeb.API.V2.ValidatorController.blackfort_validators_list/2` (`/api/v2/validators/blackfort`)
   def paging_options(%{
@@ -1026,6 +1040,11 @@ defmodule BlockScoutWeb.Chain do
       {:error, :invalid} ->
         {:error, {:invalid, :number}}
     end
+  end
+
+  def parse_block_hash_or_number_param(number)
+      when is_integer(number) do
+    {:ok, :number, number}
   end
 
   @doc """
