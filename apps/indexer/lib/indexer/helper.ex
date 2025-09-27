@@ -772,32 +772,37 @@ defmodule Indexer.Helper do
   end
 
   @doc """
-    Sends HTTP GET request to the given URL and returns JSON response. Makes max 10 attempts and then returns an error in case of failure.
+    Sends HTTP GET request to the given URL and returns a response. Makes max 10 attempts and then returns an error in case of failure.
     There is a timeout between attempts (increasing from 3 seconds to 20 minutes max as the number of attempts increases).
 
     ## Parameters
     - `url`: The URL which needs to be requested.
+    - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Jason.decode`.
     - `attempts_done`: The number of attempts done. Incremented by the function itself.
 
     ## Returns
-    - `{:ok, response}` where `response` is a map decoded from a JSON object.
+    - `{:ok, response}` where `response` is a map decoded from a JSON object, or the raw bytes (depending on the `response_format` parameter).
     - `{:error, reason}` in case of failure (after three unsuccessful attempts).
   """
-  @spec http_get_request(String.t(), non_neg_integer()) :: {:ok, map()} | {:error, any()}
-  def http_get_request(url, attempts_done \\ 0) do
+  @spec http_get_request(String.t(), :json | :raw, non_neg_integer()) :: {:ok, map() | binary()} | {:error, any()}
+  def http_get_request(url, response_format \\ :json, attempts_done \\ 0) do
     recv_timeout = 5_000
     connect_timeout = 8_000
     client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
 
     case Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: connect_timeout]]]) do
       {:ok, %{body: body, status: 200}} ->
-        Jason.decode(body)
+        if response_format == :json do
+          Jason.decode(body)
+        else
+          {:ok, body}
+        end
 
       {:ok, %{body: body, status: _}} ->
-        http_get_request_error(url, body, attempts_done)
+        http_get_request_error(url, response_format, body, attempts_done)
 
       {:error, error} ->
-        http_get_request_error(url, error, attempts_done)
+        http_get_request_error(url, response_format, error, attempts_done)
     end
   end
 
@@ -805,14 +810,15 @@ defmodule Indexer.Helper do
   #
   # ## Parameters
   # - `url`: The URL which needs to be requested.
+  # - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Jason.decode`.
   # - `error`: The error description for logging purposes.
   # - `attempts_done`: The number of attempts done. Incremented by the function itself.
   #
   # ## Returns
   # - `{:ok, response}` tuple if the re-call was successful.
   # - `{:error, reason}` if all attempts were failed.
-  @spec http_get_request_error(String.t(), any(), non_neg_integer()) :: {:ok, map()} | {:error, any()}
-  defp http_get_request_error(url, error, attempts_done) do
+  @spec http_get_request_error(String.t(), :json | :raw, any(), non_neg_integer()) :: {:ok, map()} | {:error, any()}
+  defp http_get_request_error(url, response_format, error, attempts_done) do
     old_truncate = Application.get_env(:logger, :truncate)
     Logger.configure(truncate: :infinity)
 
@@ -832,7 +838,7 @@ defmodule Indexer.Helper do
       # wait up to 20 minutes and then retry
       :timer.sleep(min(3000 * Integer.pow(2, attempts_done - 1), 1_200_000))
       Logger.info("Retry to send the request to #{url} ...")
-      http_get_request(url, attempts_done)
+      http_get_request(url, response_format, attempts_done)
     else
       {:error, "Error while sending request to #{url}"}
     end

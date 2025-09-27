@@ -1,6 +1,6 @@
 # Since this is a copy of https://github.com/blockscout/devcontainer-elixir/blob/main/Dockerfile
 # So after successful testing this file, the original one must be updated as well.
-ARG VARIANT="1.17.3-erlang-27.1-debian-bullseye-20240926"
+ARG VARIANT="1.17.3-erlang-27.1.3-debian-bookworm-20250811"
 FROM hexpm/elixir:${VARIANT}
 
 # ARGs declared before FROM are not persisted beyond the FROM instruction.
