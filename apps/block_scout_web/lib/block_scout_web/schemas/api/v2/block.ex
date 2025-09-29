@@ -180,7 +180,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
           }
         },
         required: [:recipient, :amount, :token, :breakdown],
-        additionalProperties: true
+        additionalProperties: false
       }
     },
     required: [:is_epoch_block, :epoch_number, :l1_era_finalized_epoch_number],
@@ -271,12 +271,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
         schema
         |> Helper.extend_schema(
           properties: %{
-            blob_transactions_count: %Schema{type: :integer, nullable: false},
+            blob_transactions_count: %Schema{type: :integer, minimum: 0, nullable: false},
             blob_gas_used: General.IntegerStringNullable,
             excess_blob_gas: General.IntegerStringNullable,
             blob_gas_price: General.IntegerStringNullable,
             burnt_blob_fees: General.IntegerString,
-            beacon_deposits_count: %Schema{type: :integer, nullable: true}
+            beacon_deposits_count: %Schema{type: :integer, minimum: 0, nullable: true}
           },
           required: [:blob_transactions_count, :blob_gas_used, :excess_blob_gas, :beacon_deposits_count]
         )
@@ -363,7 +363,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
     %{
       type: :object,
       properties: %{
-        height: %Schema{type: :integer, nullable: false},
+        height: %Schema{type: :integer, nullable: false, minimum: 0},
         timestamp: General.Timestamp,
         transactions_count: %Schema{type: :integer, nullable: false},
         internal_transactions_count: %Schema{type: :integer, nullable: true},
@@ -371,8 +371,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         size: %Schema{type: :integer, nullable: false},
         hash: General.FullHash,
         parent_hash: General.FullHash,
-        difficulty: General.IntegerString,
-        total_difficulty: General.IntegerString,
+        difficulty: General.IntegerStringNullable,
+        total_difficulty: General.IntegerStringNullable,
         gas_used: General.IntegerString,
         gas_limit: General.IntegerString,
         nonce: General.HexStringNullable,
@@ -396,7 +396,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         burnt_fees_percentage: %Schema{type: :number, format: :float, nullable: true},
         type: %Schema{type: :string, nullable: false, enum: ["block", "uncle", "reorg"]},
         transaction_fees: General.IntegerString,
-        withdrawals_count: %Schema{type: :integer, nullable: true},
+        withdrawals_count: %Schema{type: :integer, minimum: 0, nullable: true},
         is_pending_update: %Schema{type: :boolean, nullable: false}
       },
       required: required_fields(),

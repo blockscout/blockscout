@@ -627,16 +627,6 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: %{block_index: index}}]
   end
 
-  def paging_options(%{block_index: index_string}) when is_binary(index_string) do
-    case Integer.parse(index_string) do
-      {index, ""} ->
-        [paging_options: %{@default_paging_options | key: %{block_index: index}}]
-
-      _ ->
-        [paging_options: @default_paging_options]
-    end
-  end
-
   def paging_options(%{block_index: index}) when is_integer(index) do
     [paging_options: %{@default_paging_options | key: %{block_index: index}}]
   end

@@ -108,7 +108,7 @@ defmodule BlockScoutWeb.PagingHelper do
   def chain_ids_filter_options(_), do: [chain_id: []]
 
   def type_filter_options(%{"type" => type}) do
-    [type: type |> parse_filter(General.allowed_type_labels()) |> Enum.map(&String.to_existing_atom/1)]
+    [type: type |> parse_filter(General.allowed_transaction_types()) |> Enum.map(&String.to_existing_atom/1)]
   end
 
   def type_filter_options(_params), do: [type: []]

@@ -11,25 +11,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   alias Explorer.Chain.InternalTransaction.CallType
   alias OpenApiSpex.{Parameter, Schema}
 
+  @base_transaction_types [
+    "coin_transfer",
+    "contract_call",
+    "contract_creation",
+    "token_transfer",
+    "token_creation"
+  ]
+
   case @chain_type do
     :ethereum ->
-      @allowed_type_labels [
-        "coin_transfer",
-        "contract_call",
-        "contract_creation",
-        "token_transfer",
-        "token_creation",
-        "blob_transaction"
-      ]
+      @allowed_transaction_types ["blob_transaction" | @base_transaction_types]
 
     _ ->
-      @allowed_type_labels [
-        "coin_transfer",
-        "contract_call",
-        "contract_creation",
-        "token_transfer",
-        "token_creation"
-      ]
+      @allowed_transaction_types @base_transaction_types
   end
 
   defmodule AddressHash do
@@ -324,7 +319,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :block_number_param,
       in: :path,
-      schema: %Schema{type: :integer},
+      schema: %Schema{type: :integer, minimum: 0},
       required: true
     }
   end
@@ -344,7 +339,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       * reorg - Only show reorgs
       * uncle - Only show uncle blocks
       * block - Only show main blocks
-      If omitted, all blocks are returned.
+      If omitted, default value "block" is used.
       """
     }
   end
@@ -371,7 +366,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :type,
       in: :query,
-      schema: %Schema{type: :string, enum: @allowed_type_labels},
+      schema: %Schema{type: :string, enum: @allowed_transaction_types},
       required: false,
       description: """
       Filter transactions by type:
@@ -653,7 +648,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @paging_params %{
     "block_number" => %Parameter{
       in: :query,
-      schema: %Schema{type: :integer},
+      schema: %Schema{type: :integer, minimum: 0},
       required: false,
       description: "Block number for paging",
       name: :block_number
@@ -870,6 +865,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @doc """
   Returns the list of allowed transaction type labels based on the configured chain type.
   """
-  @spec allowed_type_labels() :: [String.t()]
-  def allowed_type_labels, do: @allowed_type_labels
+  @spec allowed_transaction_types() :: [String.t()]
+  def allowed_transaction_types, do: @allowed_transaction_types
 end

@@ -231,7 +231,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     description: "Retrieves L2 blocks that are bound to a specific Arbitrum batch number.",
     parameters:
       base_params() ++
-        [batch_number_param(), block_type_param()] ++
+        [batch_number_param()] ++
         define_paging_params(["block_number", "items_count"]),
     responses: [
       ok:
@@ -254,6 +254,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   """
   @spec arbitrum_batch(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def arbitrum_batch(conn, %{batch_number_param: batch_number} = params) do
+    # todo: remove select_block_type() as it is actually not processed in the endpoint
     full_options =
       params
       |> select_block_type()
@@ -279,7 +280,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     description: "Retrieves L2 blocks that are bound to a specific Optimism batch number.",
     parameters:
       base_params() ++
-        [batch_number_param(), block_type_param()] ++
+        [batch_number_param()] ++
         define_paging_params(["block_number", "items_count"]),
     responses: [
       ok:
@@ -302,6 +303,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   """
   @spec optimism_batch(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def optimism_batch(conn, %{batch_number_param: batch_number} = params) do
+    # todo: remove select_block_type() as it is actually not processed in the endpoint
     full_options =
       params
       |> select_block_type()
@@ -328,7 +330,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     description: "Retrieves L2 blocks that are bound to a specific Scroll batch number.",
     parameters:
       base_params() ++
-        [batch_number_param(), block_type_param()] ++
+        [batch_number_param()] ++
         define_paging_params(["block_number", "items_count"]),
     responses: [
       ok:
@@ -351,6 +353,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   """
   @spec scroll_batch(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def scroll_batch(conn, %{batch_number_param: batch_number} = params) do
+    # todo: remove select_block_type() as it is actually not processed in the endpoint
     full_options =
       params
       |> select_block_type()
