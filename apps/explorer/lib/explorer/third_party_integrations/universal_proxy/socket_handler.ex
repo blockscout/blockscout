@@ -48,6 +48,10 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy.SocketHandler do
     {:reply, {:close, 1011, "Target connection lost"}, %{state | target: nil}}
   end
 
+  def websocket_info({:EXIT, pid, _reason}, %{target: pid} = state) do
+    {:reply, {:close, 1011, "Target connection lost"}, %{state | target: nil}}
+  end
+
   @spec websocket_info(msg :: tuple(), state :: map()) :: {:ok, map()} | {:reply, tuple(), map()}
   def websocket_info({:from_target, msg, :type, type}, state) do
     {:reply, {type, msg}, state}
