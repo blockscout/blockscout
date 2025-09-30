@@ -49,8 +49,8 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy.SocketHandler do
   end
 
   @spec websocket_info(msg :: tuple(), state :: map()) :: {:ok, map()} | {:reply, tuple(), map()}
-  def websocket_info({:from_target, msg}, state) do
-    {:reply, {:text, msg}, state}
+  def websocket_info({:from_target, msg, :type, type}, state) do
+    {:reply, {type, msg}, state}
   end
 
   def websocket_info(_, state), do: {:ok, state}

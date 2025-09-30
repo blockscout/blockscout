@@ -15,12 +15,12 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy.TargetClient do
 
   @impl true
   def handle_frame({:text, msg}, %{parent: parent} = state) do
-    send(parent, {:from_target, msg})
+    send(parent, {:from_target, msg, :type, :text})
     {:ok, state}
   end
 
   def handle_frame({:binary, msg}, %{parent: parent} = state) do
-    send(parent, {:from_target, msg})
+    send(parent, {:from_target, msg, :type, :binary})
     {:ok, state}
   end
 
