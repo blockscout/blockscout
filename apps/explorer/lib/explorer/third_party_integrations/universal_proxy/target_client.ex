@@ -19,6 +19,11 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy.TargetClient do
     {:ok, state}
   end
 
+  def handle_frame({:binary, msg}, %{parent: parent} = state) do
+    send(parent, {:from_target, msg})
+    {:ok, state}
+  end
+
   @spec forward(pid :: pid(), msg :: String.t()) :: :ok | {:error, term()}
   def forward(pid, msg) do
     WebSockex.send_frame(pid, {:text, msg})
