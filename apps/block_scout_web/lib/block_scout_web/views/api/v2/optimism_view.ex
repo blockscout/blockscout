@@ -361,7 +361,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           :l2_end_block_number => non_neg_integer(),
           :transactions_count => non_neg_integer(),
           :l1_transaction_hashes => list(),
-          :batch_data_container => :in_blob4844 | :in_celestia | :in_calldata | nil
+          :batch_data_container => :in_blob4844 | :in_celestia | :in_alt_da | :in_calldata | nil
         }
   defp render_base_info_for_batch(number, l2_block_number_from, l2_block_number_to, transactions_count, batch) do
     FrameSequence.prepare_base_info_for_batch(
