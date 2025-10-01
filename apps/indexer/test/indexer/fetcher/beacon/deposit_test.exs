@@ -335,172 +335,173 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
                  Repo.all(from(d in Deposit, order_by: [asc: :index]))
       end
 
-      test "fails to process non-sequential logs (logs starts not from 0, between batches)" do
-        deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
+      # todo: return these tests when sequentiality requirement is added back
+      # test "fails to process non-sequential logs (logs starts not from 0, between batches)" do
+      #   deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
-        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
+      #   transaction_a_to_be_ignored = insert(:transaction) |> with_block()
 
-        _log_to_be_ignored_a =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 1,
-            transaction: transaction_a_to_be_ignored,
-            block: transaction_a_to_be_ignored.block
-          )
+      #   _log_to_be_ignored_a =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 1,
+      #       transaction: transaction_a_to_be_ignored,
+      #       block: transaction_a_to_be_ignored.block
+      #     )
 
-        transaction_a = insert(:transaction) |> with_block()
+      #   transaction_a = insert(:transaction) |> with_block()
 
-        _log_a =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 2,
-            transaction: transaction_a,
-            block: transaction_a.block
-          )
+      #   _log_a =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 2,
+      #       transaction: transaction_a,
+      #       block: transaction_a.block
+      #     )
 
-        transaction_b = insert(:transaction) |> with_block()
+      #   transaction_b = insert(:transaction) |> with_block()
 
-        _log_b =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 3,
-            transaction: transaction_b,
-            block: transaction_b.block
-          )
+      #   _log_b =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 3,
+      #       transaction: transaction_b,
+      #       block: transaction_b.block
+      #     )
 
-        log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, @state) end)
+      #   log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, @state) end)
 
-        assert log =~ "Non-sequential deposits detected:"
+      #   assert log =~ "Non-sequential deposits detected:"
 
-        assert [] == Repo.all(Deposit)
-      end
+      #   assert [] == Repo.all(Deposit)
+      # end
 
-      test "fails to process non-sequential logs (non-sequential between, between batches)" do
-        deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
+      # test "fails to process non-sequential logs (non-sequential between, between batches)" do
+      #   deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
-        transaction_a = insert(:transaction) |> with_block()
+      #   transaction_a = insert(:transaction) |> with_block()
 
-        log_a =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 0,
-            transaction: transaction_a,
-            block: transaction_a.block
-          )
+      #   log_a =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 0,
+      #       transaction: transaction_a,
+      #       block: transaction_a.block
+      #     )
 
-        log_a_transaction_hash = log_a.transaction_hash
-        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
+      #   log_a_transaction_hash = log_a.transaction_hash
+      #   transaction_a_to_be_ignored = insert(:transaction) |> with_block()
 
-        _log_to_be_ignored_a =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 2,
-            transaction: transaction_a_to_be_ignored,
-            block: transaction_a_to_be_ignored.block
-          )
+      #   _log_to_be_ignored_a =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 2,
+      #       transaction: transaction_a_to_be_ignored,
+      #       block: transaction_a_to_be_ignored.block
+      #     )
 
-        transaction_b = insert(:transaction) |> with_block()
+      #   transaction_b = insert(:transaction) |> with_block()
 
-        _log_b =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 3,
-            transaction: transaction_b,
-            block: transaction_b.block
-          )
+      #   _log_b =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 3,
+      #       transaction: transaction_b,
+      #       block: transaction_b.block
+      #     )
 
-        {:noreply, new_state} = DepositFetcher.handle_info(:process_logs, @state)
+      #   {:noreply, new_state} = DepositFetcher.handle_info(:process_logs, @state)
 
-        log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, new_state) end)
+      #   log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, new_state) end)
 
-        assert log =~ "Non-sequential deposits detected:"
+      #   assert log =~ "Non-sequential deposits detected:"
 
-        assert [%Deposit{transaction_hash: ^log_a_transaction_hash}] = Repo.all(Deposit)
-      end
+      #   assert [%Deposit{transaction_hash: ^log_a_transaction_hash}] = Repo.all(Deposit)
+      # end
 
-      test "fails to process non-sequential logs (logs starts not from 0, inside batch)" do
-        state = Map.put(@state, :batch_size, 5)
+      # test "fails to process non-sequential logs (logs starts not from 0, inside batch)" do
+      #   state = Map.put(@state, :batch_size, 5)
 
-        deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
+      #   deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
-        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
+      #   transaction_a_to_be_ignored = insert(:transaction) |> with_block()
 
-        _log_to_be_ignored_a =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 1,
-            transaction: transaction_a_to_be_ignored,
-            block: transaction_a_to_be_ignored.block
-          )
+      #   _log_to_be_ignored_a =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 1,
+      #       transaction: transaction_a_to_be_ignored,
+      #       block: transaction_a_to_be_ignored.block
+      #     )
 
-        transaction_a = insert(:transaction) |> with_block()
+      #   transaction_a = insert(:transaction) |> with_block()
 
-        _log_a =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 2,
-            transaction: transaction_a,
-            block: transaction_a.block
-          )
+      #   _log_a =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 2,
+      #       transaction: transaction_a,
+      #       block: transaction_a.block
+      #     )
 
-        transaction_b = insert(:transaction) |> with_block()
+      #   transaction_b = insert(:transaction) |> with_block()
 
-        _log_b =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 3,
-            transaction: transaction_b,
-            block: transaction_b.block
-          )
+      #   _log_b =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 3,
+      #       transaction: transaction_b,
+      #       block: transaction_b.block
+      #     )
 
-        log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, state) end)
+      #   log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, state) end)
 
-        assert log =~ "Non-sequential deposits detected:"
+      #   assert log =~ "Non-sequential deposits detected:"
 
-        assert [] == Repo.all(Deposit)
-      end
+      #   assert [] == Repo.all(Deposit)
+      # end
 
-      test "fails to process non-sequential logs (non-sequential between, inside batch)" do
-        state = Map.put(@state, :batch_size, 5)
+      # test "fails to process non-sequential logs (non-sequential between, inside batch)" do
+      #   state = Map.put(@state, :batch_size, 5)
 
-        deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
+      #   deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
-        transaction_a = insert(:transaction) |> with_block()
+      #   transaction_a = insert(:transaction) |> with_block()
 
-        _log_a =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 0,
-            transaction: transaction_a,
-            block: transaction_a.block
-          )
+      #   _log_a =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 0,
+      #       transaction: transaction_a,
+      #       block: transaction_a.block
+      #     )
 
-        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
+      #   transaction_a_to_be_ignored = insert(:transaction) |> with_block()
 
-        _log_to_be_ignored_a =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 2,
-            transaction: transaction_a_to_be_ignored,
-            block: transaction_a_to_be_ignored.block
-          )
+      #   _log_to_be_ignored_a =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 2,
+      #       transaction: transaction_a_to_be_ignored,
+      #       block: transaction_a_to_be_ignored.block
+      #     )
 
-        transaction_b = insert(:transaction) |> with_block()
+      #   transaction_b = insert(:transaction) |> with_block()
 
-        _log_b =
-          insert(:beacon_deposit_log,
-            address: deposit_contract_address,
-            deposit_index: 3,
-            transaction: transaction_b,
-            block: transaction_b.block
-          )
+      #   _log_b =
+      #     insert(:beacon_deposit_log,
+      #       address: deposit_contract_address,
+      #       deposit_index: 3,
+      #       transaction: transaction_b,
+      #       block: transaction_b.block
+      #     )
 
-        log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, state) end)
+      #   log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, state) end)
 
-        assert log =~ "Non-sequential deposits detected:"
+      #   assert log =~ "Non-sequential deposits detected:"
 
-        assert [] = Repo.all(Deposit)
-      end
+      #   assert [] = Repo.all(Deposit)
+      # end
 
       test "signature verification" do
         state = Map.put(@state, :batch_size, 5)

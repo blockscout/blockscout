@@ -3,11 +3,29 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   This module defines the schema for general types used in the API.
   """
   require OpenApiSpex
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.Schemas.API.V2.Celo.ElectionReward.Type, as: CeloElectionRewardType
   alias BlockScoutWeb.Schemas.API.V2.Token.Type, as: TokenType
   alias BlockScoutWeb.Schemas.Helper
+  alias Explorer.Chain.InternalTransaction.CallType
   alias OpenApiSpex.{Parameter, Schema}
+
+  @base_transaction_types [
+    "coin_transfer",
+    "contract_call",
+    "contract_creation",
+    "token_transfer",
+    "token_creation"
+  ]
+
+  case @chain_type do
+    :ethereum ->
+      @allowed_transaction_types ["blob_transaction" | @base_transaction_types]
+
+    _ ->
+      @allowed_transaction_types @base_transaction_types
+  end
 
   defmodule AddressHash do
     @moduledoc false
@@ -281,6 +299,140 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for a block hash or number in the path.
+  """
+  @spec block_hash_or_number_param() :: Parameter.t()
+  def block_hash_or_number_param do
+    %Parameter{
+      name: :block_hash_or_number_param,
+      in: :path,
+      schema: %Schema{anyOf: [%Schema{type: :integer}, FullHash]},
+      required: true
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a block number in the path.
+  """
+  @spec block_number_param() :: Parameter.t()
+  def block_number_param do
+    %Parameter{
+      name: :block_number_param,
+      in: :path,
+      schema: %Schema{type: :integer, minimum: 0},
+      required: true
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for filtering blocks by type (uncle or reorg).
+  """
+  @spec block_type_param() :: Parameter.t()
+  def block_type_param do
+    %Parameter{
+      name: :type,
+      in: :query,
+      schema: %Schema{type: :string, enum: ["uncle", "reorg", "block"]},
+      required: false,
+      description: """
+      Filter by block type:
+      * reorg - Only show reorgs
+      * uncle - Only show uncle blocks
+      * block - Only show main blocks
+      If omitted, default value "block" is used.
+      """
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a batch number in the path.
+  """
+  @spec batch_number_param() :: Parameter.t()
+  def batch_number_param do
+    %Parameter{
+      name: :batch_number,
+      in: :path,
+      schema: %Schema{type: :integer, minimum: 0},
+      required: true,
+      description: "Batch number"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for filtering transactions by type.
+  """
+  @spec transaction_type_param() :: Parameter.t()
+  def transaction_type_param do
+    %Parameter{
+      name: :type,
+      in: :query,
+      schema: %Schema{type: :string, enum: @allowed_transaction_types},
+      required: false,
+      description: """
+      Filter transactions by type:
+      * coin_transfer - Only show coin transfer transactions
+      * contract_call - Only show contract call transactions
+      * contract_creation - Only show contract creation transactions
+      * token_transfer - Only show token transfer transactions
+      * token_creation - Only show token creation transactions
+      * blob_transaction - Only show blob transactions (Ethereum only)
+      """
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for filtering internal transactions by type.
+  """
+  @spec internal_transaction_type_param() :: Parameter.t()
+  def internal_transaction_type_param do
+    %Parameter{
+      name: :internal_type,
+      in: :query,
+      schema: %Schema{
+        type: :string,
+        enum: Explorer.Chain.InternalTransaction.Type.values()
+      },
+      required: false,
+      description: """
+      Filter internal transactions by type:
+      * all - Show all internal transactions (default)
+      * call - Only show call internal transactions
+      * create - Only show create internal transactions
+      * create2 - Only show create2 internal transactions
+      * reward - Only show reward internal transactions
+      * selfdestruct - Only show selfdestruct internal transactions
+      * stop - Only show stop internal transactions
+      * invalid - Only show invalid internal transactions (Arbitrum only)
+      """
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for filtering internal transactions by call type.
+  """
+  @spec internal_transaction_call_type_param() :: Parameter.t()
+  def internal_transaction_call_type_param do
+    %Parameter{
+      name: :call_type,
+      in: :query,
+      schema: %Schema{
+        type: :string,
+        enum: CallType.values()
+      },
+      required: false,
+      description: """
+      Filter internal transactions by call type:
+      * all - Show all internal transactions (default)
+      * call - Only show call internal transactions
+      * callcode - Only show callcode internal transactions
+      * delegatecall - Only show delegatecall internal transactions
+      * staticcall - Only show staticcall internal transactions
+      * invalid - Only show invalid internal transactions (Arbitrum only)
+      """
+    }
+  end
+
+  @doc """
   Returns a parameter definition for filtering transactions by direction (to/from).
   """
   @spec direction_filter_param() :: Parameter.t()
@@ -499,7 +651,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @paging_params %{
     "block_number" => %Parameter{
       in: :query,
-      schema: %Schema{type: :integer},
+      schema: %Schema{type: :integer, minimum: 0},
       required: false,
       description: "Block number for paging",
       name: :block_number
@@ -538,6 +690,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Transaction index for paging",
       name: :index
+    },
+    "block_index" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer},
+      required: false,
+      description: "Block index for paging",
+      name: :block_index
     },
     "inserted_at" => %Parameter{
       in: :query,
@@ -705,4 +864,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       Map.get(@paging_params, field) || raise "Unknown paging param: #{field}"
     end)
   end
+
+  @doc """
+  Returns the list of allowed transaction type labels based on the configured chain type.
+  """
+  @spec allowed_transaction_types() :: [String.t()]
+  def allowed_transaction_types, do: @allowed_transaction_types
 end
