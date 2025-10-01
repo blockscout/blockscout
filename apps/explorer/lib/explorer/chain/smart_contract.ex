@@ -211,8 +211,11 @@ defmodule Explorer.Chain.SmartContract do
                          end)
 
   @languages_enum @default_languages ++ @chain_type_languages
-  @language_string_to_atom @languages_enum
-                           |> Enum.map(&elem(&1, 0))
+  @language_atoms @languages_enum
+                  |> Enum.map(&elem(&1, 0))
+  @language_strings @language_atoms
+                    |> Enum.map(&to_string(&1))
+  @language_string_to_atom @language_atoms
                            |> Map.new(&{to_string(&1), &1})
 
   @type base_language :: :solidity | :vyper | :yul | :geas
@@ -229,7 +232,15 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-    Returns list of languages supported by the database schema.
+    Returns list of languages (as strings) supported by the database schema.
+  """
+  @spec language_strings() :: [String.t()]
+  def language_strings do
+    @language_strings
+  end
+
+  @doc """
+    Returns list of languages as map(string to atom) supported by the database schema.
   """
   @spec language_string_to_atom() :: %{String.t() => atom()}
   def language_string_to_atom do
