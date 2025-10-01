@@ -34,11 +34,25 @@ defmodule BlockScoutWeb.PagingHelper do
     end
   end
 
+  def paging_options(%{block_number: block_number, index: index}, [:validated | _]) do
+    [paging_options: %{@default_paging_options | key: {block_number, index}}]
+  end
+
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}, [:pending | _]) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_full_hash(hash_string) do
       [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
     else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{inserted_at: inserted_at, hash: hash_string}, [:pending | _]) do
+    case string_to_full_hash(hash_string) do
+      {:ok, hash} ->
+        [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
+
       _ ->
         [paging_options: @default_paging_options]
     end
@@ -92,6 +106,11 @@ defmodule BlockScoutWeb.PagingHelper do
     if(filter == [], do: [fallback], else: filter)
   end
 
+  def filter_options(%{filter: filter}, fallback) do
+    filter = filter |> parse_filter(@allowed_filter_labels) |> Enum.map(&String.to_existing_atom/1)
+    if(filter == [], do: [fallback], else: filter)
+  end
+
   def filter_options(_params, fallback), do: [fallback]
 
   def chain_ids_filter_options(%{"chain_ids" => chain_id}) do
@@ -122,10 +141,18 @@ defmodule BlockScoutWeb.PagingHelper do
     [type: type |> parse_filter(General.allowed_transaction_types()) |> Enum.map(&String.to_existing_atom/1)]
   end
 
+  def type_filter_options(%{type: type}) do
+    [type: type |> parse_filter(General.allowed_transaction_types()) |> Enum.map(&String.to_existing_atom/1)]
+  end
+
   def type_filter_options(_params), do: [type: []]
 
   @spec internal_transaction_type_options(any()) :: [{:type, list()}]
   def internal_transaction_type_options(%{"type" => type}) do
+    [type: type |> parse_filter(InternalTransactionType.values()) |> Enum.map(&String.to_existing_atom/1)]
+  end
+
+  def internal_transaction_type_options(%{type: type}) do
     [type: type |> parse_filter(InternalTransactionType.values()) |> Enum.map(&String.to_existing_atom/1)]
   end
 
@@ -139,6 +166,10 @@ defmodule BlockScoutWeb.PagingHelper do
   def internal_transaction_call_type_options(_params), do: [call_type: []]
 
   def method_filter_options(%{"method" => method}) do
+    [method: parse_method_filter(method)]
+  end
+
+  def method_filter_options(%{method: method}) do
     [method: parse_method_filter(method)]
   end
 
@@ -224,6 +255,7 @@ defmodule BlockScoutWeb.PagingHelper do
       :address_hash_param,
       :batch_number_param,
       :block_hash_or_number_param,
+      :transaction_hash_param,
       :token_id_param,
       :token_id,
       :type,

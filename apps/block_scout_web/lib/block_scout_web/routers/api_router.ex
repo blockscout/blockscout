@@ -152,23 +152,23 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/stats", V2.TransactionController, :stats)
 
       if @chain_type == :polygon_zkevm do
-        get("/zkevm-batch/:batch_number", V2.TransactionController, :polygon_zkevm_batch)
+        get("/zkevm-batch/:batch_number_param", V2.TransactionController, :polygon_zkevm_batch)
       end
 
       if @chain_type == :zksync do
-        get("/zksync-batch/:batch_number", V2.TransactionController, :zksync_batch)
+        get("/zksync-batch/:batch_number_param", V2.TransactionController, :zksync_batch)
       end
 
       if @chain_type == :arbitrum do
-        get("/arbitrum-batch/:batch_number", V2.TransactionController, :arbitrum_batch)
+        get("/arbitrum-batch/:batch_number_param", V2.TransactionController, :arbitrum_batch)
       end
 
       if @chain_type == :optimism do
-        get("/optimism-batch/:batch_number", V2.TransactionController, :optimism_batch)
+        get("/optimism-batch/:batch_number_param", V2.TransactionController, :optimism_batch)
       end
 
       if @chain_type == :scroll do
-        get("/scroll-batch/:batch_number", V2.TransactionController, :scroll_batch)
+        get("/scroll-batch/:batch_number_param", V2.TransactionController, :scroll_batch)
       end
 
       if @chain_type == :suave do

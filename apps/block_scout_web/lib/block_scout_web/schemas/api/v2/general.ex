@@ -196,6 +196,32 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for an execution_node hash in the path.
+  """
+  @spec execution_node_hash_param() :: Parameter.t()
+  def execution_node_hash_param do
+    %Parameter{
+      name: :execution_node_hash_param,
+      in: :path,
+      schema: AddressHash,
+      required: true
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a transaction hash in the path.
+  """
+  @spec transaction_hash_param() :: Parameter.t()
+  def transaction_hash_param do
+    %Parameter{
+      name: :transaction_hash_param,
+      in: :path,
+      schema: FullHash,
+      required: true
+    }
+  end
+
+  @doc """
   Returns a parameter definition for a block hash or number in the path.
   """
   @spec block_hash_or_number_param() :: Parameter.t()
@@ -238,6 +264,39 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       * block - Only show main blocks
       If omitted, default value "block" is used.
       """
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for filtering transactions by type (validated or pending).
+  """
+  @spec transaction_filter_param() :: Parameter.t()
+  def transaction_filter_param do
+    %Parameter{
+      name: :filter,
+      in: :query,
+      schema: %Schema{type: :string, enum: ["validated", "pending"]},
+      required: false,
+      description: """
+      Filter by transaction type:
+      * validated - Only show validated transactions
+      * pending - Only show pending transactions
+      If omitted, default value "validated" is used.
+      """
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a request body used in the summary endpoint.
+  """
+  @spec just_request_body_param() :: Parameter.t()
+  def just_request_body_param do
+    %Parameter{
+      name: :just_request_body,
+      in: :query,
+      schema: %Schema{type: :boolean},
+      required: false,
+      description: "If true, returns only the request body in the summary endpoint"
     }
   end
 
@@ -861,12 +920,27 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       description: "Type for paging",
       name: :type
     },
+    "filter" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Filter for paging",
+      name: :filter
+    },
     "deposit_index" => %Parameter{
       in: :query,
       schema: %Schema{type: :integer, minimum: 0, maximum: 9_223_372_036_854_775_807},
       required: false,
       description: "Deposit index for paging",
       name: :index
+    },
+    # todo: remove in the future as this param is unused in the pagination of state changes
+    "state_changes" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer, nullable: true},
+      required: false,
+      description: "State changes for paging",
+      name: :state_changes
     }
   }
 

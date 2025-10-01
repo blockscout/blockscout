@@ -266,11 +266,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               "init_transaction_hash" => message.init_transaction_hash,
               "relay_transaction_hash" => message.relay_transaction_hash,
               "sender_address_hash" => message.sender_address_hash,
-              # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `sender_address_hash` property
-              "sender" => message.sender_address_hash,
               "target_address_hash" => message.target_address_hash,
-              # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `target_address_hash` property
-              "target" => message.target_address_hash,
               "payload" => message.payload
             }
 
@@ -516,8 +512,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     else
       out_json
       |> Map.put("op_interop_messages", interop_messages)
-      # TODO: remove the deprecated `op_interop` map after frontend switches to the new `op_interop_messages`
-      |> Map.put("op_interop", Enum.at(interop_messages, 0))
     end
   end
 
