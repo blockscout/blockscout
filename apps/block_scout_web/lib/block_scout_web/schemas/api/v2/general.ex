@@ -370,9 +370,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: """
       Filter transactions by type:
-      * all - Show all transactions (default)
-      * external - Only show external transactions
-      * internal - Only show internal transactions
+      * coin_transfer - Only show coin transfer transactions
+      * contract_call - Only show contract call transactions
+      * contract_creation - Only show contract creation transactions
+      * token_transfer - Only show token transfer transactions
+      * token_creation - Only show token creation transactions
+      * blob_transaction - Only show blob transactions (Ethereum only)
       """
     }
   end
