@@ -212,11 +212,14 @@ defmodule BlockScoutWeb.PagingHelper do
     |> Map.drop([
       :address_hash_param,
       :block_hash_or_number_param,
+      :token_id_param,
+      :token_id,
       :type,
       :apikey,
       "apikey",
       "block_hash_or_number",
       "block_hash_or_number_param",
+      "token_id_param",
       "transaction_hash_param",
       "address_hash_param",
       "type",
@@ -261,6 +264,10 @@ defmodule BlockScoutWeb.PagingHelper do
 
   @spec tokens_sorting(%{required(String.t()) => String.t()}) :: [{:sorting, SortingHelper.sorting_params()}]
   def tokens_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_tokens_sorting(sort_field, order)]
+  end
+
+  def tokens_sorting(%{sort: sort_field, order: order}) do
     [sorting: do_tokens_sorting(sort_field, order)]
   end
 

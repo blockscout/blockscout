@@ -299,6 +299,81 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for an address ID in the query.
+  """
+  @spec address_id_param() :: Parameter.t()
+  def address_id_param do
+    %Parameter{
+      name: :address_id,
+      in: :query,
+      schema: %Schema{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{40})$", nullable: false},
+      required: true,
+      description: "Address hash (0x-prefixed 40 hex characters) in CSV export"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for the start of the time period.
+  """
+  @spec from_period_param() :: Parameter.t()
+  def from_period_param do
+    %Parameter{
+      name: :from_period,
+      in: :query,
+      schema: %Schema{type: :string, nullable: false},
+      required: true,
+      description: "Start of the time period (ISO 8601 format) in CSV export"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for the end of the time period.
+  """
+  @spec to_period_param() :: Parameter.t()
+  def to_period_param do
+    %Parameter{
+      name: :to_period,
+      in: :query,
+      schema: %Schema{type: :string, nullable: false},
+      required: true,
+      description: "End of the time period (ISO 8601 format) In CSV export"
+    }
+  end
+
+  def filter_type_param do
+    %Parameter{
+      name: :filter_type,
+      in: :query,
+      schema: %Schema{type: :string, nullable: true},
+      required: false,
+      description: "Filter type in CSV export"
+    }
+  end
+
+  def filter_value_param do
+    %Parameter{
+      name: :filter_value,
+      in: :query,
+      schema: %Schema{type: :string, nullable: true},
+      required: false,
+      description: "Filter value in CSV export"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a holder address hash in the path.
+  """
+  @spec holder_address_hash_param() :: Parameter.t()
+  def holder_address_hash_param do
+    %Parameter{
+      name: :holder_address_hash,
+      in: :query,
+      schema: AddressHash,
+      required: false
+    }
+  end
+
+  @doc """
   Returns a parameter definition for a block hash or number in the path.
   """
   @spec block_hash_or_number_param() :: Parameter.t()
@@ -508,7 +583,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
           EmptyString,
           %Schema{
             type: :string,
-            pattern: ~r"^(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*$"
+            pattern: ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*\]?$/i
           }
         ]
       },
@@ -580,6 +655,48 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Filter token transfers by token contract address.",
       name: :token
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a token ID in the path.
+  """
+  @spec token_id_param() :: Parameter.t()
+  def token_id_param do
+    %Parameter{
+      name: :token_id_param,
+      in: :path,
+      schema: IntegerStringNullable,
+      required: true,
+      description: "Token ID for ERC-721/1155/404 tokens"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for API key used in rate limiting.
+  """
+  @spec admin_api_key_param() :: Parameter.t()
+  def admin_api_key_param do
+    %Parameter{
+      name: :x_api_key,
+      in: :header,
+      schema: %Schema{type: :string},
+      required: true,
+      description: "API key required for sensitive endpoints"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for reCAPTCHA response token.
+  """
+  @spec recaptcha_response_param() :: Parameter.t()
+  def recaptcha_response_param do
+    %Parameter{
+      name: :recaptcha_response,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "reCAPTCHA response token"
     }
   end
 
@@ -720,12 +837,41 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       description: "Address hash for paging",
       name: :hash
     },
+    # todo: consider refactoring to eliminate _2 suffix
+    "address_hash_2" => %Parameter{
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "Address hash for paging",
+      name: :address_hash
+    },
+    "address_hash_param" => %Parameter{
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "Address hash for paging",
+      name: :hash
+    },
+    "contract_address_hash" => %Parameter{
+      in: :query,
+      schema: AddressHashNullable,
+      required: false,
+      description: "Contract address hash for paging",
+      name: :contract_address_hash
+    },
     "value" => %Parameter{
       in: :query,
       schema: IntegerString,
       required: false,
       description: "Transaction value for paging",
       name: :value
+    },
+    "fiat_value" => %Parameter{
+      in: :query,
+      schema: FloatString,
+      required: false,
+      description: "Fiat value for paging",
+      name: :fiat_value
     },
     "fee" => %Parameter{
       in: :query,
@@ -740,6 +886,34 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Number of items returned per page",
       name: :items_count
+    },
+    "holders_count" => %Parameter{
+      in: :query,
+      schema: %Schema{anyOf: [IntegerString, EmptyString, NullString]},
+      required: false,
+      description: "Number of holders returned per page",
+      name: :holders_count
+    },
+    "is_name_null" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :boolean},
+      required: false,
+      description: "Is name null for paging",
+      name: :is_name_null
+    },
+    "market_cap" => %Parameter{
+      in: :query,
+      schema: %Schema{anyOf: [FloatString, EmptyString, NullString]},
+      required: false,
+      description: "Market cap for paging",
+      name: :market_cap
+    },
+    "name" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Name for paging",
+      name: :name
     },
     "batch_log_index" => %Parameter{
       in: :query,
@@ -817,6 +991,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Token ID for paging",
       name: :token_id
+    },
+    # todo: eliminate in favour token_id
+    "unique_token" => %Parameter{
+      in: :query,
+      schema: IntegerStringNullable,
+      required: false,
+      description: "Token ID for paging",
+      name: :unique_token
     },
     "token_type" => %Parameter{
       in: :query,

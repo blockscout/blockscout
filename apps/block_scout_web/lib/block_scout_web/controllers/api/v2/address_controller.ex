@@ -863,7 +863,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   operation :tokens,
     summary: "List token balances for an address with pagination and type filtering",
     description:
-      "Retrieves token balances for a specific address with pagination and filtering by token type. Useful for displaying large token portfolios.",
+      "Retrieves token balance for a specific address with pagination and filtering by token type. Useful for displaying large token portfolios.",
     parameters:
       base_params() ++
         [address_hash_param(), token_type_param()] ++

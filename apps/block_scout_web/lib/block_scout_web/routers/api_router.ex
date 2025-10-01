@@ -21,7 +21,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     graphql_max_complexity: [:block_scout_web, [Api.GraphQL, :max_complexity]],
     graphql_token_limit: [:block_scout_web, [Api.GraphQL, :token_limit]],
     reading_enabled: [:block_scout_web, [__MODULE__, :reading_enabled]],
-    writing_enabled: [:block_scout_web, [__MODULE__, :writing_enabled]]
+    writing_enabled: [:block_scout_web, [__MODULE__, :writing_enabled]],
+    bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   use Utils.RuntimeEnvHelper,
     mud_enabled?: [:explorer, [Explorer.Chain.Mud, :enabled]]
@@ -30,7 +31,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     AddressBadgesApiV2Router,
     APIKeyV2Router,
     SmartContractsApiV2Router,
-    TokensApiV2Router,
     UtilsApiV2Router
   }
 
@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   @max_query_string_length 5_000
 
   forward("/v2/smart-contracts", SmartContractsApiV2Router)
-  forward("/v2/tokens", TokensApiV2Router)
+  # forward("/v2/tokens", TokensApiV2Router)
 
   forward("/v2/key", APIKeyV2Router)
   forward("/v2/utils", UtilsApiV2Router)
@@ -92,6 +92,23 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(CheckApiV2)
   end
 
+  pipeline :api_v2_no_forgery_protect do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 20_000_000,
+      query_string_length: 5_000,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
+    plug(:accepts, ["json"])
+    plug(CheckApiV2)
+    plug(:fetch_session)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.ApiSpec)
+  end
+
   pipeline :api_v1_graphql do
     plug(
       Plug.Parsers,
@@ -123,6 +140,22 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     if @chain_type == :optimism do
       post("/optimism/interop/", V2.OptimismController, :interop_import)
+    end
+  end
+
+  scope "/v2", as: :api_v2_no_forgery_protect do
+    scope "/tokens" do
+      scope "/" do
+        pipe_through(:api_v2_no_forgery_protect)
+
+        patch("/:address_hash_param/instances/:token_id_param/refetch-metadata", V2.TokenController, :refetch_metadata)
+
+        patch(
+          "/:address_hash_param/instances/refetch-metadata",
+          V2.TokenController,
+          :trigger_nft_collection_metadata_refetch
+        )
+      end
     end
   end
 
@@ -194,6 +227,29 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if @chain_type == :ethereum do
         get("/:transaction_hash_param/beacon/deposits", V2.TransactionController, :beacon_deposits)
       end
+    end
+
+    scope "/tokens" do
+      if @bridged_tokens_enabled do
+        get("/bridged", V2.TokenController, :bridged_tokens_list)
+      end
+
+      get("/", V2.TokenController, :tokens_list)
+      get("/:address_hash_param", V2.TokenController, :token)
+      get("/:address_hash_param/counters", V2.TokenController, :counters)
+      get("/:address_hash_param/transfers", V2.TokenController, :transfers)
+      get("/:address_hash_param/holders", V2.TokenController, :holders)
+      get("/:address_hash_param/holders/csv", V2.CsvExportController, :export_token_holders)
+      get("/:address_hash_param/instances", V2.TokenController, :instances)
+      get("/:address_hash_param/instances/:token_id_param", V2.TokenController, :instance)
+      get("/:address_hash_param/instances/:token_id_param/transfers", V2.TokenController, :transfers_by_instance)
+      get("/:address_hash_param/instances/:token_id_param/holders", V2.TokenController, :holders_by_instance)
+
+      get(
+        "/:address_hash_param/instances/:token_id_param/transfers-count",
+        V2.TokenController,
+        :transfers_count_by_instance
+      )
     end
 
     scope "/token-transfers" do
