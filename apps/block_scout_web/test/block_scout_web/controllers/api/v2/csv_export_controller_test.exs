@@ -236,8 +236,8 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       {:ok, now} = DateTime.now("Etc/UTC")
 
-      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
-      to_period = now |> DateTime.to_iso8601()
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601() |> to_string()
+      to_period = now |> DateTime.to_iso8601() |> to_string()
 
       conn =
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/transactions/csv", %{
