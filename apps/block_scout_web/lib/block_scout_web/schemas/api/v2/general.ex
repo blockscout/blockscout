@@ -933,6 +933,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Deposit index for paging",
       name: :index
+    },
+    # todo: remove in the future as this param is unused in the pagination of state changes
+    "state_changes" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer, nullable: true},
+      required: false,
+      description: "State changes for paging",
+      name: :state_changes
     }
   }
 
