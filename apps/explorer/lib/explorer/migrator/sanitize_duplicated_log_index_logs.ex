@@ -8,7 +8,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
 
   import Ecto.Query
 
-  alias Explorer.Chain.Cache.BackgroundMigrations
+  alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
   alias Explorer.Chain.{Log, TokenTransfer}
   alias Explorer.Chain.Token.Instance
   alias Explorer.Migrator.FillingMigration
@@ -22,19 +22,16 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
   def migration_name, do: @migration_name
 
   @impl FillingMigration
+  def last_unprocessed_identifiers(%{"block_number_to_process" => -1} = state), do: {[], state}
+
   def last_unprocessed_identifiers(state) do
-    block_number = state[:block_number_to_process] || 0
+    block_number = state["block_number_to_process"] || BlockNumber.get_max()
 
     limit = batch_size() * concurrency()
 
-    ids =
-      block_number
-      |> unprocessed_data_query(block_number + limit)
-      |> Repo.all(timeout: :infinity)
-      |> Enum.group_by(& &1.block_hash)
-      |> Map.to_list()
+    from_block_number = max(block_number - limit, 0)
 
-    {ids, Map.put(state, :block_number_to_process, block_number + limit)}
+    {Enum.to_list(from_block_number..block_number), Map.put(state, "block_number_to_process", from_block_number - 1)}
   end
 
   @doc """
@@ -44,11 +41,6 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
   @spec unprocessed_data_query() :: nil
   def unprocessed_data_query do
     nil
-  end
-
-  def unprocessed_data_query(block_number_start, block_number_end) do
-    Log
-    |> where([l], l.block_number >= ^block_number_start and l.block_number < ^block_number_end)
   end
 
   @impl FillingMigration
@@ -63,7 +55,14 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
 
     :ok
   """
-  def update_batch(logs_by_block) do
+  def update_batch(block_numbers) do
+    logs_by_block =
+      Log
+      |> where([l], l.block_number in ^block_numbers)
+      |> Repo.all(timeout: :infinity)
+      |> Enum.group_by(& &1.block_hash)
+      |> Map.to_list()
+
     logs_to_update =
       logs_by_block
       |> Enum.map(&process_block/1)
