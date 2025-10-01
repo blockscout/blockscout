@@ -797,6 +797,9 @@ config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
   enabled: ConfigHelper.chain_type() == :arbitrum
 
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsOperatorFeeConstantIndex,
+  enabled: ConfigHelper.chain_type() == :optimism
+
 config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   enabled: ConfigHelper.chain_type() == :filecoin,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_BATCH_SIZE", 100),
