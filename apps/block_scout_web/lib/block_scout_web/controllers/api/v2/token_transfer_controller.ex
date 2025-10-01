@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.TokenTransferController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
   alias Explorer.{Chain, Helper, PagingOptions}
   alias Explorer.Chain.{TokenTransfer, Transaction}
 
@@ -26,6 +27,29 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
 
   @api_true [api?: true]
 
+  tags(["token_transfers"])
+
+  operation :token_transfers,
+    summary: "List token transfers",
+    description: "Retrieves token transfers with optional filtering and pagination.",
+    parameters:
+      base_params() ++
+        [token_type_param(), limit_param()] ++
+        define_paging_params(["index", "block_number"]),
+    responses: [
+      ok:
+        {"Token transfers", "application/json",
+         paginated_response(
+           items: BlockScoutWeb.Schemas.API.V2.TokenTransfer,
+           next_page_params_example: %{
+             "index" => 50,
+             "block_number" => 22_133_247
+           },
+           title_prefix: "TokenTransfers"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/token-transfers` endpoint.
   """
@@ -38,7 +62,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
       |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
                                                                         page_size: page_size
                                                                       } = paging_options ->
-        maybe_parsed_limit = Helper.parse_integer(params["limit"])
+        maybe_parsed_limit = Helper.parse_integer(params[:limit])
         %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
       end)
       |> Keyword.merge(token_transfers_types_options(params))

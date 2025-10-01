@@ -508,7 +508,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     responses: [
       ok:
         {"Transfer count for the instance.", "application/json",
-         %OpenApiSpex.Schema{type: :object, properties: %{transfers_count: %Schema{type: :integer}}}},
+         %Schema{type: :object, properties: %{transfers_count: %Schema{type: :integer}}}},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
@@ -662,7 +662,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     responses: [
       ok:
         {"Metadata refetch triggered.", "application/json",
-         %OpenApiSpex.Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
+         %Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
@@ -702,7 +702,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     responses: [
       ok:
         {"NFT collection metadata refetch triggered.", "application/json",
-         %OpenApiSpex.Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
+         %Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]

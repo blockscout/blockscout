@@ -141,6 +141,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/backend-version", V2.ConfigController, :backend_version)
       get("/csv-export", V2.ConfigController, :csv_export)
       get("/public-metrics", V2.ConfigController, :public_metrics)
+      get("/smart-contracts/languages", V2.ConfigController, :languages_list)
 
       if @chain_identity == {:optimism, :celo} do
         get("/celo", V2.ConfigController, :celo)
@@ -269,7 +270,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/indexing-status", V2.MainPageController, :indexing_status)
 
       if @chain_type == :optimism do
-        get("/optimism-deposits", V2.MainPageController, :optimism_deposits)
+        get("/optimism-deposits", V2.OptimismController, :main_page_deposits)
       end
 
       if @chain_type == :polygon_zkevm do
@@ -387,7 +388,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         end
 
         scope "/solidityscan" do
-          get("/smart-contracts/:address_hash/report", V2.SmartContractController, :solidityscan_report)
+          get("/smart-contracts/:address_hash/report", V2.Proxy.SolidityScanController, :solidityscan_report)
         end
       end
 
