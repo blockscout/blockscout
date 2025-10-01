@@ -491,5 +491,9 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     end
   end
 
+  @doc """
+  Returns the name of the optimism_portal_contract_address constant.
+  """
+  @spec portal_contract_address_constant() :: binary()
   def portal_contract_address_constant, do: "optimism_portal_contract_address"
 end
