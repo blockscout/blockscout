@@ -12,8 +12,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   import Explorer.Helper, only: [hash_to_binary: 1]
 
-  alias BlockScoutWeb.API.V2.ApiView
-  alias Explorer.Chain
+  alias BlockScoutWeb.API.V2.{ApiView, OptimismView}
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Data, Hash, Token, Transaction}
 
@@ -256,6 +256,23 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       deposits: deposits,
       next_page_params: next_page_params
     })
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/optimism/main-page/deposits` endpoint.
+  """
+  @spec main_page_deposits(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def main_page_deposits(conn, _params) do
+    recent_deposits =
+      Deposit.list(
+        paging_options: %PagingOptions{page_size: 6},
+        api?: true
+      )
+
+    conn
+    |> put_status(200)
+    |> put_view(OptimismView)
+    |> render(:optimism_deposits, %{deposits: recent_deposits})
   end
 
   @doc """
