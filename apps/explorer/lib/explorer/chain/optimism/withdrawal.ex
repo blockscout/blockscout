@@ -80,7 +80,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
             left_join: log in Log,
             on:
               log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and
-                log.second_topic == fragment("convert_numeric_to_bytea(msg_nonce)"),
+                log.second_topic == fragment("numeric_to_bytea32(msg_nonce)"),
             select: %{
               msg_nonce: w.msg_nonce,
               hash: w.hash,
@@ -164,7 +164,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         left_join: log in Log,
         on:
           log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and
-            log.second_topic == fragment("convert_numeric_to_bytea(msg_nonce)"),
+            log.second_topic == fragment("numeric_to_bytea32(msg_nonce)"),
         select: %{
           hash: w.hash,
           l2_block_number: w.l2_block_number,

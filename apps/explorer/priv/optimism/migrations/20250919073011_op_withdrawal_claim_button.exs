@@ -1,31 +1,29 @@
 defmodule Explorer.Repo.Optimism.Migrations.OPWithdrawalClaimButton do
   use Ecto.Migration
 
-  def change do
+  def up do
     execute("""
-    CREATE OR REPLACE FUNCTION convert_numeric_to_bytea(n NUMERIC, zero_left_pad INT default 32) RETURNS BYTEA AS $$
+    CREATE OR REPLACE FUNCTION numeric_to_bytea32(n NUMERIC)
+    RETURNS BYTEA AS $$
     DECLARE
-        result BYTEA := '';
+        zero_left_pad INT := 32;
+        bytes BYTEA := repeat(E'\\\\000', zero_left_pad)::bytea; -- preallocate zero bytes
         v INT;
-        i INT := 0;
+        pos INT := zero_left_pad - 1; -- index from rightmost byte
     BEGIN
-        WHILE n > 0 LOOP
+        WHILE n > 0 AND pos >= 0 LOOP
             v := n % 256;
-            result := SET_BYTE(('\\x00' || result), 0, v);
+            bytes := set_byte(bytes, pos, v);
             n := (n - v) / 256;
-            i := i + 1;
+            pos := pos - 1;
         END LOOP;
-
-        i := zero_left_pad - i;
-
-        WHILE i > 0 LOOP
-          result := '\\x00'::bytea || result;
-          i := i - 1;
-        END LOOP;
-
-        RETURN result;
+        RETURN bytes;
     END;
-    $$ LANGUAGE PLPGSQL IMMUTABLE STRICT;
+    $$ LANGUAGE plpgsql IMMUTABLE STRICT;
     """)
+  end
+
+  def down do
+    execute("DROP FUNCTION IF EXISTS numeric_to_bytea32(n NUMERIC);")
   end
 end
