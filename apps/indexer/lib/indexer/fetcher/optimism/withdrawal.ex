@@ -22,9 +22,6 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
   @fetcher_name :optimism_withdrawals
   @counter_type "optimism_withdrawals_fetcher_last_l2_block_hash"
 
-  # 32-byte signature of the event MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
-  @message_passed_event "0x02a52367d10742d8032712c1bb8e0144ff1ec5ffda1ed7d70bb05a2744955054"
-
   def child_spec(start_link_arguments) do
     spec = %{
       id: __MODULE__,
@@ -217,13 +214,15 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
          block_end,
          json_rpc_named_arguments
        ) do
+    message_passed_event = OptimismWithdrawal.message_passed_event()
+
     withdrawals =
       if scan_db do
         query =
           from(log in Log,
             select: {log.second_topic, log.data, log.transaction_hash, log.block_number},
             where:
-              log.first_topic == ^@message_passed_event and log.address_hash == ^message_passer and
+              log.first_topic == ^message_passed_event and log.address_hash == ^message_passer and
                 log.block_number >= ^block_start and log.block_number <= ^block_end
           )
 
@@ -238,7 +237,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
             block_start,
             block_end,
             message_passer,
-            [@message_passed_event],
+            [message_passed_event],
             json_rpc_named_arguments,
             0,
             3
