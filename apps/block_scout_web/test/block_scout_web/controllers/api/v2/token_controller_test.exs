@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   import Mox
+  import Ecto.Query, only: [from: 2]
 
   alias Explorer.{Repo, TestHelper}
 

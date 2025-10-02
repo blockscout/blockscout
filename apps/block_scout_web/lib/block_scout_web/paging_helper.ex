@@ -105,6 +105,17 @@ defmodule BlockScoutWeb.PagingHelper do
     ]
   end
 
+  def chain_ids_filter_options(%{chain_ids: chain_id}) do
+    [
+      chain_ids:
+        chain_id
+        |> String.split(",")
+        |> Enum.uniq()
+        |> Enum.map(&Helper.parse_integer/1)
+        |> Enum.filter(&Enum.member?(@allowed_chain_id, &1))
+    ]
+  end
+
   def chain_ids_filter_options(_), do: [chain_id: []]
 
   def type_filter_options(%{"type" => type}) do

@@ -340,6 +340,38 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a parameter definition for chain IDs in the query.
+  """
+  @spec chain_ids_param() :: Parameter.t()
+  def chain_ids_param do
+    %Parameter{
+      name: :chain_ids,
+      in: :query,
+      schema: %Schema{type: :string, nullable: true},
+      required: false,
+      description: "Chain IDs filter in Bridged tokens"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a search query in the query.
+  """
+  @spec q_param() :: Parameter.t()
+  def q_param do
+    %Parameter{
+      name: :q,
+      in: :query,
+      schema: %Schema{type: :string, nullable: true},
+      required: false,
+      description: "Search query filter"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a filter type in the query.
+  """
+  @spec filter_type_param() :: Parameter.t()
   def filter_type_param do
     %Parameter{
       name: :filter_type,
@@ -350,6 +382,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a parameter definition for a filter value in the query.
+  """
+  @spec filter_value_param() :: Parameter.t()
   def filter_value_param do
     %Parameter{
       name: :filter_value,
@@ -361,7 +397,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
-  Returns a parameter definition for a holder address hash in the path.
+  Returns a parameter definition for a holder address hash in the query.
   """
   @spec holder_address_hash_param() :: Parameter.t()
   def holder_address_hash_param do

@@ -70,7 +70,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
           enum: Reputation.enum_values(),
           description: "Reputation of the token",
           nullable: true
-        }
+        },
+        bridge_type: %Schema{
+          type: :string,
+          enum: ["omni", "amb"],
+          description: "Indicates if the token is native or bridged",
+          nullable: true
+        },
+        foreign_address: %Schema{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{40})$", nullable: true},
+        origin_chain_id: General.IntegerStringNullable
       },
       required: [
         :address_hash,

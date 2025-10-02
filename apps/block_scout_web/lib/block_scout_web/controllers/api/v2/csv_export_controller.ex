@@ -117,7 +117,14 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     description: "Exports token transfers for a specific address as a CSV file.",
     parameters:
       base_params() ++
-        [address_id_param(), from_period_param(), to_period_param(), filter_type_param(), filter_value_param()],
+        [
+          address_hash_param(),
+          address_id_param(),
+          from_period_param(),
+          to_period_param(),
+          filter_type_param(),
+          filter_value_param()
+        ],
     responses: [
       ok: {"CSV file of token transfers.", "application/csv", nil},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -135,7 +142,14 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     description: "Exports transactions for a specific address as a CSV file.",
     parameters:
       base_params() ++
-        [address_id_param(), from_period_param(), to_period_param(), filter_type_param(), filter_value_param()],
+        [
+          address_hash_param(),
+          address_id_param(),
+          from_period_param(),
+          to_period_param(),
+          filter_type_param(),
+          filter_value_param()
+        ],
     responses: [
       ok: {"CSV file of transactions.", "application/csv", nil},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -153,7 +167,14 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     description: "Exports internal transactions for a specific address as a CSV file.",
     parameters:
       base_params() ++
-        [address_id_param(), from_period_param(), to_period_param(), filter_type_param(), filter_value_param()],
+        [
+          address_hash_param(),
+          address_id_param(),
+          from_period_param(),
+          to_period_param(),
+          filter_type_param(),
+          filter_value_param()
+        ],
     responses: [
       ok: {"CSV file of internal transactions.", "application/csv", nil},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -171,7 +192,14 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     description: "Exports logs for a specific address as a CSV file.",
     parameters:
       base_params() ++
-        [address_id_param(), from_period_param(), to_period_param(), filter_type_param(), filter_value_param()],
+        [
+          address_hash_param(),
+          address_id_param(),
+          from_period_param(),
+          to_period_param(),
+          filter_type_param(),
+          filter_value_param()
+        ],
     responses: [
       ok: {"CSV file of logs.", "application/csv", nil},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -189,7 +217,14 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     description: "Exports Celo election rewards for a specific address as a CSV file.",
     parameters:
       base_params() ++
-        [address_id_param(), from_period_param(), to_period_param(), filter_type_param(), filter_value_param()],
+        [
+          address_hash_param(),
+          address_id_param(),
+          from_period_param(),
+          to_period_param(),
+          filter_type_param(),
+          filter_value_param()
+        ],
     responses: [
       ok: {"CSV file of Celo election rewards.", "application/csv", nil},
       unprocessable_entity: JsonErrorResponse.response(),
