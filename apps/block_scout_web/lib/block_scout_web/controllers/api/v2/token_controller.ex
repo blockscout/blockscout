@@ -570,7 +570,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
                                                                         page_size: page_size
                                                                       } = paging_options ->
-        maybe_parsed_limit = Helper.parse_integer(params["limit"])
+        maybe_parsed_limit = Helper.parse_integer(params[:limit])
         %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
       end)
       |> Keyword.merge(token_transfers_types_options(params))
