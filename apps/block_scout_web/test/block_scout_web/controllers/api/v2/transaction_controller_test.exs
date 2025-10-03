@@ -2085,8 +2085,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  describe "transactions/{transaction_hash}/beacon/deposits" do
-    if Application.compile_env(:explorer, :chain_type) == :ethereum do
+  if @chain_type == :ethereum do
+    describe "transactions/{transaction_hash}/beacon/deposits" do
       test "get 404 on non-existing transaction", %{conn: conn} do
         transaction = build(:transaction)
 
@@ -2110,13 +2110,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert response_2nd_page = json_response(request_2nd_page, 200)
 
         check_paginated_response(response, response_2nd_page, deposits)
-      end
-    else
-      test "returns an error about chain type", %{conn: conn} do
-        transaction = insert(:transaction)
-        request = get(conn, "/api/v2/transactions/#{transaction.hash}/beacon/deposits")
-        assert response = json_response(request, 404)
-        assert %{"message" => "Endpoint not available for current chain type"} = response
       end
     end
   end
