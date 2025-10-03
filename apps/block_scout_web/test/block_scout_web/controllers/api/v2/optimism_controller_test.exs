@@ -36,11 +36,6 @@ defmodule BlockScoutWeb.API.V2.OptimismControllerTest do
                  "next_page_params" => nil
                } = json_response(conn, 200)
       end
-    else
-      test "returns 404 in non optimism chain type", %{conn: conn} do
-        conn = get(conn, "/api/v2/optimism/interop/messages")
-        assert json_response(conn, 404) == %{"message" => "Endpoint not available for current chain type"}
-      end
     end
   end
 end

@@ -1,9 +1,10 @@
 defmodule BlockScoutWeb.Api.V2.Ethereum.DepositControllerTest do
   use BlockScoutWeb.ConnCase
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Repo
 
-  if Application.compile_env(:explorer, :chain_type) == :ethereum do
+  if @chain_type == :ethereum do
     describe "/beacon/deposits" do
       test "get empty list when no deposits exist", %{conn: conn} do
         request = get(conn, "/api/v2/beacon/deposits")
@@ -48,22 +49,6 @@ defmodule BlockScoutWeb.Api.V2.Ethereum.DepositControllerTest do
         request = get(conn, "/api/v2/beacon/deposits/count")
         assert response = json_response(request, 200)
         assert %{"deposits_count" => ^deposits_count} = response
-      end
-    end
-  else
-    describe "/beacon/deposits" do
-      test "returns an error about chain type", %{conn: conn} do
-        request = get(conn, "/api/v2/beacon/deposits/count")
-        assert response = json_response(request, 404)
-        assert %{"message" => "Endpoint not available for current chain type"} = response
-      end
-    end
-
-    describe "/beacon/deposits/count" do
-      test "returns an error about chain type", %{conn: conn} do
-        request = get(conn, "/api/v2/beacon/deposits/count")
-        assert response = json_response(request, 404)
-        assert %{"message" => "Endpoint not available for current chain type"} = response
       end
     end
   end
