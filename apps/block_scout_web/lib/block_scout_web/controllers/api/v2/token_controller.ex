@@ -562,7 +562,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   def tokens_list(conn, params) do
-    filter = params[:q]
+    filter = params["q"]
 
     options =
       params
@@ -622,7 +622,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   def bridged_tokens_list(conn, params) do
-    filter = params[:q]
+    filter = params["q"]
 
     options =
       params
