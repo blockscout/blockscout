@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.InternalTransactionView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.InternalTransaction
+  alias Explorer.Chain.{InternalTransaction, InternalTransactionArchive}
 
   use Gettext, backend: BlockScoutWeb.Gettext
 
@@ -27,4 +27,14 @@ defmodule BlockScoutWeb.InternalTransactionView do
   def type(%InternalTransaction{type: :create2}), do: gettext("Create2")
   def type(%InternalTransaction{type: :selfdestruct}), do: gettext("Self-Destruct")
   def type(%InternalTransaction{type: :reward}), do: gettext("Reward")
+
+  def type(%InternalTransactionArchive{type: :call, call_type: :call}), do: gettext("Call")
+  def type(%InternalTransactionArchive{type: :call, call_type: :callcode}), do: gettext("Call Code")
+  def type(%InternalTransactionArchive{type: :call, call_type: :delegatecall}), do: gettext("Delegate Call")
+  def type(%InternalTransactionArchive{type: :call, call_type: :staticcall}), do: gettext("Static Call")
+  def type(%InternalTransactionArchive{type: :call, call_type: :invalid}), do: gettext("Invalid")
+  def type(%InternalTransactionArchive{type: :create}), do: gettext("Create")
+  def type(%InternalTransactionArchive{type: :create2}), do: gettext("Create2")
+  def type(%InternalTransactionArchive{type: :selfdestruct}), do: gettext("Self-Destruct")
+  def type(%InternalTransactionArchive{type: :reward}), do: gettext("Reward")
 end

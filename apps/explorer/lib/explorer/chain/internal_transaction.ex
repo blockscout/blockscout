@@ -4,7 +4,7 @@ defmodule Explorer.Chain.InternalTransaction do
   use Explorer.Schema
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, Block, Data, Hash, PendingBlockOperation, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Data, Hash, InternalTransactionArchive, PendingBlockOperation, Transaction, Wei}
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
   alias Explorer.Chain.DenormalizationHelper
@@ -617,16 +617,21 @@ defmodule Explorer.Chain.InternalTransaction do
       the `index` that is passed.
 
   """
-  @spec all_transaction_to_internal_transactions(Hash.Full.t(), [
+  @spec all_transaction_to_internal_transactions(Transaction.t(), [
           Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
         ]) :: [
-          __MODULE__.t()
+          __MODULE__.t() | InternalTransactionArchive.t()
         ]
-  def all_transaction_to_internal_transactions(hash, options \\ []) when is_list(options) do
+  def all_transaction_to_internal_transactions(transaction, options \\ []) when is_list(options) do
+    data_source = choose_between_realtime_and_archive_data_source(transaction.block_number)
+    all_transaction_to_internal_transactions(transaction.hash, data_source, options)
+  end
+
+  defp all_transaction_to_internal_transactions(hash, data_source, options) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    __MODULE__
+    data_source
     |> for_parent_transaction(hash)
     |> Chain.join_associations(necessity_by_association)
     |> where_nonpending_block()
@@ -636,20 +641,25 @@ defmodule Explorer.Chain.InternalTransaction do
     |> Chain.select_repo(options).all()
   end
 
-  @spec transaction_to_internal_transactions(Hash.Full.t(), [
+  @spec transaction_to_internal_transactions(Transaction.t(), [
           Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
         ]) ::
           [
-            __MODULE__.t()
+            __MODULE__.t() | InternalTransactionArchive.t()
           ]
-  def transaction_to_internal_transactions(hash, options \\ []) when is_list(options) do
+  def transaction_to_internal_transactions(%Transaction{} = transaction, options \\ []) when is_list(options) do
+    data_source = choose_between_realtime_and_archive_data_source(transaction.block_number)
+    transaction_to_internal_transactions(transaction.hash, data_source, options)
+  end
+
+  defp transaction_to_internal_transactions(hash, data_source, options) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    __MODULE__
+    data_source
     |> for_parent_transaction(hash)
     |> Chain.join_associations(necessity_by_association)
-    |> where_transaction_has_multiple_internal_transactions()
+    |> data_source.where_transaction_has_multiple_internal_transactions()
     |> where_is_different_from_parent_transaction()
     |> where_nonpending_block()
     |> page_internal_transaction(paging_options)
@@ -659,19 +669,31 @@ defmodule Explorer.Chain.InternalTransaction do
     |> Chain.select_repo(options).all()
   end
 
-  @spec block_to_internal_transactions(Hash.Full.t(), [
+  @spec block_to_internal_transactions(Block.t(), [
           Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
         ]) ::
           [
-            __MODULE__.t()
+            __MODULE__.t() | InternalTransactionArchive.t()
           ]
-  def block_to_internal_transactions(hash, options \\ []) when is_list(options) do
+  def block_to_internal_transactions(block, options \\ []) when is_list(options) do
+    data_source = choose_between_realtime_and_archive_data_source(block.number)
+    block_to_internal_transactions(block.hash, data_source, options)
+  end
+
+  @spec block_to_internal_transactions(Block.t(), __MODULE__ | InternalTransactionArchive, [
+          Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
+        ]) ::
+          [
+            __MODULE__.t() | InternalTransactionArchive.t()
+          ]
+  defp block_to_internal_transactions(hash, data_source, options)
+       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     type_filter = Keyword.get(options, :type)
     call_type_filter = Keyword.get(options, :call_type)
 
-    __MODULE__
+    data_source
     |> where([internal_transaction], internal_transaction.block_hash == ^hash)
     |> Chain.join_associations(necessity_by_association)
     |> where_is_different_from_parent_transaction()
@@ -706,7 +728,7 @@ defmodule Explorer.Chain.InternalTransaction do
   """
   @spec address_to_internal_transactions(Hash.Address.t(), [paging_options | Chain.necessity_by_association_option()]) ::
           [
-            __MODULE__.t()
+            __MODULE__.t() | InternalTransactionArchive.t()
           ]
   def address_to_internal_transactions(hash, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
@@ -722,55 +744,254 @@ defmodule Explorer.Chain.InternalTransaction do
         []
 
       _ ->
-        if direction == nil || direction == "" do
-          query_to_address_hash_wrapped =
-            __MODULE__
-            |> where_nonpending_block()
-            |> where_address_fields_match(hash, :to_address_hash)
-            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-            |> where_is_different_from_parent_transaction()
-            |> common_where_limit_order(paging_options)
-            |> Chain.wrapped_union_subquery()
-
-          query_from_address_hash_wrapped =
-            __MODULE__
-            |> where_nonpending_block()
-            |> where_address_fields_match(hash, :from_address_hash)
-            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-            |> where_is_different_from_parent_transaction()
-            |> common_where_limit_order(paging_options)
-            |> Chain.wrapped_union_subquery()
-
-          query_created_contract_address_hash_wrapped =
-            __MODULE__
-            |> where_nonpending_block()
-            |> where_address_fields_match(hash, :created_contract_address_hash)
-            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-            |> where_is_different_from_parent_transaction()
-            |> common_where_limit_order(paging_options)
-            |> Chain.wrapped_union_subquery()
-
-          query_to_address_hash_wrapped
-          |> union_all(^query_from_address_hash_wrapped)
-          |> union_all(^query_created_contract_address_hash_wrapped)
-          |> Chain.wrapped_union_subquery()
-          |> common_where_and_order(paging_options)
-          |> preload(:block)
-          |> Chain.join_associations(necessity_by_association)
-          |> Chain.select_repo(options).all()
-          |> deduplicate_and_trim_internal_transactions(paging_options)
-        else
-          __MODULE__
-          |> where_nonpending_block()
-          |> where_address_fields_match(hash, direction)
-          |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-          |> where_is_different_from_parent_transaction()
-          |> common_where_limit_order(paging_options)
-          |> preload(:block)
-          |> Chain.join_associations(necessity_by_association)
-          |> Chain.select_repo(options).all()
-        end
+        direction
+        |> combine_address_to_internal_transactions_query(
+          hash,
+          from_block,
+          to_block,
+          paging_options
+        )
+        |> preload(:block)
+        |> Chain.join_associations(necessity_by_association)
+        |> Chain.select_repo(options).all()
+        |> deduplicate_and_trim_internal_transactions(paging_options)
     end
+  end
+
+  defp combine_address_to_internal_transactions_query(
+         direction,
+         hash,
+         from_block,
+         to_block,
+         paging_options
+       )
+       when not is_nil(from_block) and not is_nil(to_block) do
+    pivot_block_number = Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
+
+    cond do
+      is_nil(pivot_block_number) || pivot_block_number < from_block ->
+        do_address_to_internal_transactions_query(
+          direction,
+          hash,
+          __MODULE__,
+          from_block,
+          to_block,
+          paging_options
+        )
+
+      to_block < pivot_block_number ->
+        do_address_to_internal_transactions_query(
+          direction,
+          hash,
+          InternalTransactionArchive,
+          from_block,
+          to_block,
+          paging_options
+        )
+
+      from_block <= pivot_block_number && pivot_block_number <= to_block ->
+        direction
+        |> do_address_to_internal_transactions_query(
+          hash,
+          InternalTransactionArchive,
+          from_block,
+          pivot_block_number - 1,
+          paging_options
+        )
+        |> Chain.wrapped_union_subquery()
+        |> union_all(
+          ^do_address_to_internal_transactions_query(
+            direction,
+            hash,
+            __MODULE__,
+            pivot_block_number,
+            to_block,
+            paging_options
+          )
+        )
+    end
+  end
+
+  defp combine_address_to_internal_transactions_query(
+         direction,
+         hash,
+         from_block,
+         to_block,
+         paging_options
+       )
+       when not is_nil(from_block) do
+    pivot_block_number = Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
+
+    cond do
+      is_nil(pivot_block_number) || pivot_block_number < from_block ->
+        do_address_to_internal_transactions_query(
+          direction,
+          hash,
+          __MODULE__,
+          from_block,
+          to_block,
+          paging_options
+        )
+
+      from_block <= pivot_block_number ->
+        direction
+        |> do_address_to_internal_transactions_query(
+          hash,
+          InternalTransactionArchive,
+          from_block,
+          pivot_block_number - 1,
+          paging_options
+        )
+        |> Chain.wrapped_union_subquery()
+        |> union_all(
+          ^do_address_to_internal_transactions_query(
+            direction,
+            hash,
+            __MODULE__,
+            pivot_block_number,
+            to_block,
+            paging_options
+          )
+        )
+    end
+  end
+
+  defp combine_address_to_internal_transactions_query(
+         direction,
+         hash,
+         from_block,
+         to_block,
+         paging_options
+       )
+       when not is_nil(to_block) do
+    pivot_block_number = Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
+
+    cond do
+      is_nil(pivot_block_number) ->
+        do_address_to_internal_transactions_query(
+          direction,
+          hash,
+          __MODULE__,
+          from_block,
+          to_block,
+          paging_options
+        )
+
+      pivot_block_number <= to_block ->
+        direction
+        |> do_address_to_internal_transactions_query(
+          hash,
+          InternalTransactionArchive,
+          from_block,
+          pivot_block_number - 1,
+          paging_options
+        )
+        |> Chain.wrapped_union_subquery()
+        |> union_all(
+          ^do_address_to_internal_transactions_query(
+            direction,
+            hash,
+            __MODULE__,
+            pivot_block_number,
+            to_block,
+            paging_options
+          )
+        )
+
+      to_block < pivot_block_number ->
+        do_address_to_internal_transactions_query(
+          direction,
+          hash,
+          InternalTransactionArchive,
+          from_block,
+          to_block,
+          paging_options
+        )
+    end
+  end
+
+  defp combine_address_to_internal_transactions_query(
+         direction,
+         hash,
+         from_block,
+         to_block,
+         paging_options
+       ) do
+    pivot_block_number = Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
+
+    if is_nil(pivot_block_number) do
+      do_address_to_internal_transactions_query(
+        direction,
+        hash,
+        __MODULE__,
+        from_block,
+        to_block,
+        paging_options
+      )
+    else
+      direction
+      |> do_address_to_internal_transactions_query(
+        hash,
+        __MODULE__,
+        from_block,
+        to_block,
+        paging_options
+      )
+      |> Chain.wrapped_union_subquery()
+      |> union_all(
+        ^do_address_to_internal_transactions_query(
+          direction,
+          hash,
+          InternalTransactionArchive,
+          from_block,
+          to_block,
+          paging_options
+        )
+      )
+    end
+  end
+
+  defp do_address_to_internal_transactions_query(
+         direction,
+         hash,
+         data_source,
+         from_block,
+         to_block,
+         paging_options
+       ) do
+    if direction == nil || direction == "" do
+      query_to_address_hash_wrapped =
+        :to_address_hash
+        |> address_to_internal_transactions_by_type(hash, data_source, from_block, to_block, paging_options)
+        |> Chain.wrapped_union_subquery()
+
+      query_from_address_hash_wrapped =
+        :from_address_hash
+        |> address_to_internal_transactions_by_type(hash, data_source, from_block, to_block, paging_options)
+        |> Chain.wrapped_union_subquery()
+
+      query_created_contract_address_hash_wrapped =
+        :created_contract_address_hash
+        |> address_to_internal_transactions_by_type(hash, data_source, from_block, to_block, paging_options)
+        |> Chain.wrapped_union_subquery()
+
+      query_to_address_hash_wrapped
+      |> union(^query_from_address_hash_wrapped)
+      |> union(^query_created_contract_address_hash_wrapped)
+      |> Chain.wrapped_union_subquery()
+      |> common_where_limit_order(paging_options)
+    else
+      direction
+      |> address_to_internal_transactions_by_type(hash, data_source, from_block, to_block, paging_options)
+    end
+  end
+
+  defp address_to_internal_transactions_by_type(address_type, hash, data_source, from_block, to_block, paging_options) do
+    data_source
+    |> where_nonpending_block()
+    |> where_address_fields_match(hash, address_type)
+    |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+    |> common_where_limit_order(paging_options)
   end
 
   @doc """
@@ -802,17 +1023,17 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
-  defp page_internal_transaction(_, _, _ \\ %{index_internal_transaction_desc_order: false})
+  def page_internal_transaction(_, _, _ \\ %{index_internal_transaction_desc_order: false})
 
-  defp page_internal_transaction(query, %PagingOptions{key: nil}, _), do: query
+  def page_internal_transaction(query, %PagingOptions{key: nil}, _), do: query
 
-  defp page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}, %{
-         index_internal_transaction_desc_order: desc_order
-       }) do
+  def page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}, %{
+        index_internal_transaction_desc_order: desc_order
+      }) do
     hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, desc_order)
   end
 
-  defp page_internal_transaction(query, %PagingOptions{key: {0}}, %{index_internal_transaction_desc_order: desc_order}) do
+  def page_internal_transaction(query, %PagingOptions{key: {0}}, %{index_internal_transaction_desc_order: desc_order}) do
     if desc_order do
       query
     else
@@ -820,9 +1041,9 @@ defmodule Explorer.Chain.InternalTransaction do
     end
   end
 
-  defp page_internal_transaction(query, %PagingOptions{key: {index}}, %{
-         index_internal_transaction_desc_order: desc_order
-       }) do
+  def page_internal_transaction(query, %PagingOptions{key: {index}}, %{
+        index_internal_transaction_desc_order: desc_order
+      }) do
     if desc_order do
       where(query, [internal_transaction], internal_transaction.index < ^index)
     else
@@ -976,6 +1197,8 @@ defmodule Explorer.Chain.InternalTransaction do
         []
 
       _ ->
+        transaction_hash_from_options = Keyword.get(options, :transaction_hash)
+
         preloads =
           DenormalizationHelper.extend_transaction_preload([
             :block,
@@ -983,20 +1206,41 @@ defmodule Explorer.Chain.InternalTransaction do
             [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
           ])
 
-        __MODULE__
-        |> where_nonpending_block()
-        |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
-        |> where_internal_transactions_by_transaction_hash(Keyword.get(options, :transaction_hash))
-        |> where_consensus_transactions()
-        |> order_by([internal_transaction],
-          desc: internal_transaction.block_number,
-          desc: internal_transaction.transaction_index,
-          desc: internal_transaction.index
-        )
-        |> limit(^paging_options.page_size)
+        pivot_block_number =
+          Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
+
+        # todo: enhance logic to prevent requesting from both tables when pivot  block number is set and requested dataset effectively is in one table.
+        base_query =
+          if is_nil(pivot_block_number) do
+            __MODULE__
+            |> internal_transactions_query(paging_options, transaction_hash_from_options)
+          else
+            __MODULE__
+            |> internal_transactions_query(paging_options, transaction_hash_from_options)
+            |> Chain.wrapped_union_subquery()
+            |> union_all(
+              ^internal_transactions_query(InternalTransactionArchive, paging_options, transaction_hash_from_options)
+            )
+          end
+
+        base_query
         |> preload(^preloads)
         |> Chain.select_repo(options).all()
     end
+  end
+
+  defp internal_transactions_query(data_source, paging_options, transaction_hash_from_options) do
+    data_source
+    |> where_nonpending_block()
+    |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
+    |> where_internal_transactions_by_transaction_hash(transaction_hash_from_options)
+    |> where_consensus_transactions()
+    |> order_by([internal_transaction],
+      desc: internal_transaction.block_number,
+      desc: internal_transaction.transaction_index,
+      desc: internal_transaction.index
+    )
+    |> limit(^paging_options.page_size)
   end
 
   defp page_block_internal_transaction(query, %PagingOptions{key: %{block_index: block_index}}) do
@@ -1057,5 +1301,32 @@ defmodule Explorer.Chain.InternalTransaction do
       [internal_transaction],
       (internal_transaction.type == :call and internal_transaction.value > ^0) or internal_transaction.type != :call
     )
+  end
+
+  @doc """
+  Chooses the appropriate data source for internal transactions based on the given block number.
+
+  If the `block_number` is greater than the `pivot_block_number` configured in the
+  `:explorer` application for `Explorer.Chain.InternalTransactionArchive`, the function
+  returns the current module (`__MODULE__`). Otherwise, it selects the `InternalTransactionArchive`
+  module as the data source.
+
+  ## Parameters
+
+    - `block_number` (integer): The block number used to determine the data source.
+
+  ## Returns
+
+    - `module`: The module to be used as the data source, either `__MODULE__` or `InternalTransactionArchive`.
+  """
+  @spec choose_between_realtime_and_archive_data_source(non_neg_integer()) :: module()
+  def choose_between_realtime_and_archive_data_source(block_number) do
+    pivot_block_number = Application.get_env(:explorer, Explorer.Chain.InternalTransactionArchive)[:pivot_block_number]
+
+    if is_nil(pivot_block_number) || block_number > pivot_block_number do
+      __MODULE__
+    else
+      InternalTransactionArchive
+    end
   end
 end
