@@ -24,7 +24,9 @@ defmodule EthereumJSONRPC.Receipt do
                              l1_fee: non_neg_integer(),
                              l1_fee_scalar: non_neg_integer(),
                              l1_gas_price: non_neg_integer(),
-                             l1_gas_used: non_neg_integer()
+                             l1_gas_used: non_neg_integer(),
+                             operator_fee_scalar: non_neg_integer() | nil,
+                             operator_fee_constant: non_neg_integer() | nil
                            ]
                          )
 
@@ -127,7 +129,9 @@ defmodule EthereumJSONRPC.Receipt do
           l1_fee: 0,\
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
-          l1_gas_used: 0\
+          l1_gas_used: 0,\
+          operator_fee_scalar: nil,\
+          operator_fee_constant: nil\
       """
     :scroll -> """
           l1_fee: 0\
@@ -179,7 +183,9 @@ defmodule EthereumJSONRPC.Receipt do
           l1_fee: 0,\
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
-          l1_gas_used: 0\
+          l1_gas_used: 0,\
+          operator_fee_scalar: nil,\
+          operator_fee_constant: nil\
       """
     :scroll -> """
           l1_fee: 0\
@@ -243,12 +249,23 @@ defmodule EthereumJSONRPC.Receipt do
 
     :optimism ->
       defp chain_type_fields(params, elixir) do
+        isthmus_timestamp_l2 = Application.get_env(:indexer, Indexer.Fetcher.Optimism)[:isthmus_timestamp_l2]
+
+        {operator_fee_scalar_default, operator_fee_constant_default} =
+          if is_nil(isthmus_timestamp_l2) do
+            {nil, nil}
+          else
+            {0, 0}
+          end
+
         params
         |> Map.merge(%{
           l1_fee: Map.get(elixir, "l1Fee", 0),
           l1_fee_scalar: Map.get(elixir, "l1FeeScalar", 0),
           l1_gas_price: Map.get(elixir, "l1GasPrice", 0),
-          l1_gas_used: Map.get(elixir, "l1GasUsed", 0)
+          l1_gas_used: Map.get(elixir, "l1GasUsed", 0),
+          operator_fee_scalar: Map.get(elixir, "operatorFeeScalar", operator_fee_scalar_default),
+          operator_fee_constant: Map.get(elixir, "operatorFeeConstant", operator_fee_constant_default)
         })
       end
 
@@ -392,7 +409,7 @@ defmodule EthereumJSONRPC.Receipt do
   defp entry_to_elixir({key, quantity})
        when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex blobGasUsed
                       blobGasPrice l1Fee l1GasPrice l1GasUsed effectiveGasPrice gasUsedForL1
-                      l1BlobBaseFeeScalar l1BlobBaseFee l1BaseFeeScalar) do
+                      l1BlobBaseFeeScalar l1BlobBaseFee l1BaseFeeScalar operatorFeeScalar operatorFeeConstant) do
     result =
       if is_nil(quantity) do
         nil

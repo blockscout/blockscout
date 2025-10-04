@@ -693,6 +693,13 @@ defmodule Indexer.BufferedTask do
     {:noreply, flush(state)}
   end
 
+  # Handles graceful shutdown. A fetcher implementing BufferedTask behaviour
+  # can invoke `Process.send(__MODULE__, :shutdown, [])` to shutdown itself.
+  # Its `restart` configuration must be set to `:transient`.
+  def handle_info(:shutdown, state) do
+    {:stop, :shutdown, state}
+  end
+
   # Handles the successful completion of the initial streaming task.
   def handle_info({ref, :ok}, %__MODULE__{init_task: ref} = state) do
     {:noreply, state}
