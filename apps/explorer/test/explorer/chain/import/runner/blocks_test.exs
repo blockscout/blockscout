@@ -234,6 +234,119 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
                )
     end
 
+    # The test checks that `derive_address_current_token_balances` function derives balances only for removed block numbers,
+    # and not for all possible (address_hash, token_contract_address_hash) pairs, which would be very inefficient.
+    #
+    # Here, we intentionally insert an Address.TokenBalance entry but omit corresponding Address.CurrentTokenBalance
+    # for the `_to_not_derive_address_hash`, as otherwise even if that Address.CurrentTokenBalance is derived it
+    # still won't be inserted and returned due to on_conflict statement. In production it should be impossible
+    # for the Address.CurrentTokenBalance to be missing if corresponding Address.TokenBalance exists.
+    test "derive_address_current_token_balances only updates rows removed by delete_address_current_token_balances",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      # Setup
+
+      token = insert(:token)
+      token_contract_address_hash = token.contract_address_hash
+
+      %Address.TokenBalance{
+        address_hash: _to_not_derive_address_hash
+      } =
+        insert(:token_balance,
+          token_contract_address_hash: token_contract_address_hash,
+          block_number: block_number - 1,
+          value: 1
+        )
+
+      %Address{hash: to_derive_address_hash} =
+        insert_address_with_token_balances(%{
+          previous: %{value: 1},
+          current: %{block_number: block_number, value: 2},
+          token_contract_address_hash: token_contract_address_hash
+        })
+
+      assert count(Address.TokenBalance) == 3
+      assert count(Address.CurrentTokenBalance) == 1
+
+      # Test and assert
+
+      insert(:block, number: block_number, consensus: true)
+      previous_block_number = block_number - 1
+
+      assert {:ok,
+              %{
+                delete_address_current_token_balances: [
+                  %{
+                    address_hash: ^to_derive_address_hash,
+                    token_contract_address_hash: ^token_contract_address_hash
+                  }
+                ],
+                delete_address_token_balances: [
+                  %{
+                    address_hash: ^to_derive_address_hash,
+                    token_contract_address_hash: ^token_contract_address_hash,
+                    block_number: ^block_number
+                  }
+                ],
+                # the main assertion: should not be any other derived values
+                derive_address_current_token_balances: [
+                  %{
+                    address_hash: ^to_derive_address_hash,
+                    token_contract_address_hash: ^token_contract_address_hash,
+                    block_number: ^previous_block_number
+                  }
+                ],
+                blocks_update_token_holder_counts: []
+              }} = run_block_consensus_change(block, true, options)
+
+      assert count(Address.TokenBalance) == 2
+      assert count(Address.CurrentTokenBalance) == 1
+    end
+
+    test "derive_address_current_token_balances derives balances from latest token balances",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      # Setup
+
+      token = insert(:token)
+      token_contract_address_hash = token.contract_address_hash
+
+      address =
+        insert_address_with_token_balances(%{
+          previous: %{value: 2},
+          current: %{block_number: block_number, value: 3},
+          token_contract_address_hash: token_contract_address_hash
+        })
+
+      insert(:token_balance,
+        address: address,
+        token_contract_address_hash: token_contract_address_hash,
+        block_number: block_number - 2,
+        value: 1
+      )
+
+      assert count(Address.TokenBalance) == 3
+      assert count(Address.CurrentTokenBalance) == 1
+
+      initial_value = Decimal.new("3")
+
+      assert %Address.CurrentTokenBalance{block_number: ^block_number, value: ^initial_value} =
+               Repo.one(Address.CurrentTokenBalance)
+
+      # Test and assert
+
+      insert(:block, number: block_number, consensus: true)
+
+      run_block_consensus_change(block, true, options)
+
+      assert count(Address.TokenBalance) == 2
+      assert count(Address.CurrentTokenBalance) == 1
+
+      previous_block_number = block_number - 1
+      expected_value = Decimal.new("2")
+
+      assert %Address.CurrentTokenBalance{block_number: ^previous_block_number, value: ^expected_value} =
+               Repo.one(Address.CurrentTokenBalance)
+    end
+
     test "a non-holder reverting to a holder increases the holder_count",
          %{consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
       token = insert(:token)
