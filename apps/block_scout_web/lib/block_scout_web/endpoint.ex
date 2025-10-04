@@ -8,6 +8,8 @@ defmodule BlockScoutWeb.Endpoint do
     cookie_domain: [:block_scout_web, :cookie_domain],
     session_cookie_ttl: [:block_scout_web, :session_cookie_ttl]
 
+  alias Explorer.ThirdPartyIntegrations.UniversalProxy
+
   if @sql_sandbox do
     plug(Phoenix.Ecto.SQL.Sandbox, repo: Explorer.Repo)
   end
@@ -96,9 +98,32 @@ defmodule BlockScoutWeb.Endpoint do
   def init(_key, config) do
     if config[:load_from_system_env] do
       port = System.get_env("PORT") || raise "expected the PORT environment variable to be set"
-      {:ok, Keyword.put(config, :http, [:inet6, port: port])}
+      {:ok, Keyword.put(config, :http, [:inet6, port: port, dispatch: dispatch()])}
     else
-      {:ok, config}
+      {:ok,
+       config
+       |> Keyword.put(:http, Keyword.put_new(Keyword.get(config, :http), :dispatch, dispatch()))}
     end
+  end
+
+  defp dispatch do
+    websocket_proxies = UniversalProxy.websocket_proxies()
+
+    universal_proxy_routes =
+      websocket_proxies
+      |> Enum.map(fn {platform_id, url} ->
+        {"/api/v2/proxy/3rdparty/#{platform_id}", Explorer.ThirdPartyIntegrations.UniversalProxy.SocketHandler,
+         [url: url]}
+      end)
+
+    all_routes =
+      [
+        {:_, Phoenix.Endpoint.Cowboy2Handler, {BlockScoutWeb.Endpoint, []}} | universal_proxy_routes
+      ]
+      |> Enum.reverse()
+
+    [
+      {:_, all_routes}
+    ]
   end
 end
