@@ -1695,7 +1695,7 @@ defmodule Explorer.Chain do
 
   """
   @spec max_consensus_block_number(Keyword.t()) :: {:ok, Block.block_number()} | {:error, :not_found}
-  def max_consensus_block_number(options \\ []) do
+  def max_consensus_block_number(options \\ [api?: true]) do
     Block
     |> where(consensus: true)
     |> select_repo(options).aggregate(:max, :number)
