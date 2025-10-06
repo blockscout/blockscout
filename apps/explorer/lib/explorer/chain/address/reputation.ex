@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Address.Reputation do
       if Application.get_env(:block_scout_web, :hide_scam_addresses) do
         ScamBadgeToAddress
         |> where([sb], sb.address_hash in ^address_hashes)
-        |> Repo.all()
+        |> Repo.replica().all()
         |> Map.new(&{&1.address_hash, &1})
       else
         %{}
