@@ -3,6 +3,8 @@ defmodule Indexer.Block.Fetcher do
   Fetches and indexes block ranges.
   """
 
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   use Spandex.Decorators
 
   require Logger
@@ -212,7 +214,8 @@ defmodule Indexer.Block.Fetcher do
              transactions: transactions_with_receipts,
              transaction_actions: transaction_actions,
              withdrawals: withdrawals_params,
-             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations
+             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
+             celo_pending_account_operations: celo_pending_account_operations
            }),
          coin_balances_params_set =
            %{
@@ -841,11 +844,15 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp parse_celo_pending_account_operations(logs) do
-    logs
-    |> CeloAccountsTransform.parse()
-    |> Map.take([:accounts, :attestations_fulfilled, :attestations_requested])
-    |> Map.values()
-    |> Enum.concat()
-    |> Enum.uniq_by(& &1.address_hash)
+    if chain_type() == :celo do
+      logs
+      |> CeloAccountsTransform.parse()
+      |> Map.take([:accounts, :attestations_fulfilled, :attestations_requested])
+      |> Map.values()
+      |> Enum.concat()
+      |> Enum.uniq_by(& &1.address_hash)
+    else
+      []
+    end
   end
 end
