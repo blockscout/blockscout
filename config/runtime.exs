@@ -797,6 +797,9 @@ config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
   enabled: ConfigHelper.chain_type() == :arbitrum
 
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsOperatorFeeConstantIndex,
+  enabled: ConfigHelper.chain_type() == :optimism
+
 config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   enabled: ConfigHelper.chain_type() == :filecoin,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_BATCH_SIZE", 100),
@@ -913,6 +916,9 @@ trace_block_ranges =
 
 disable_multichain_search_db_export_counters_queue_fetcher =
   ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_MULTICHAIN_SEARCH_DB_EXPORT_COUNTERS_QUEUE_FETCHER")
+
+optimism_l2_isthmus_timestamp =
+  ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_ISTHMUS_TIMESTAMP")
 
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
@@ -1250,7 +1256,8 @@ config :indexer, Indexer.Fetcher.Optimism,
   l2_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L2_ETH_GET_LOGS_RANGE_SIZE", 250),
   block_duration: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_BLOCK_DURATION", 2),
   start_block_l1: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L1_START_BLOCK"),
-  portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL_CONTRACT")
+  portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL_CONTRACT"),
+  isthmus_timestamp_l2: optimism_l2_isthmus_timestamp
 
 config :indexer, Indexer.Fetcher.Optimism.Deposit,
   transaction_type: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L1_DEPOSITS_TRANSACTION_TYPE", 126)
@@ -1290,6 +1297,20 @@ config :indexer, Indexer.Fetcher.Optimism.Interop.MessageQueue,
 
 config :indexer, Indexer.Fetcher.Optimism.Interop.MultichainExport,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_MULTICHAIN_BATCH_SIZE", 100)
+
+config :indexer, Indexer.Fetcher.Optimism.OperatorFee,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_CONCURRENCY", 3),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_BATCH_SIZE", 100),
+  enqueue_busy_waiting_timeout:
+    ConfigHelper.parse_time_env_var(
+      "INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_ENQUEUE_BUSY_WAITING_TIMEOUT",
+      "1s"
+    ),
+  max_queue_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_MAX_QUEUE_SIZE", 1_000),
+  init_limit: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_INIT_QUERY_LIMIT", 1_000)
+
+config :indexer, Indexer.Fetcher.Optimism.OperatorFee.Supervisor,
+  disabled?: is_nil(optimism_l2_isthmus_timestamp) or ConfigHelper.chain_type() != :optimism
 
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"
