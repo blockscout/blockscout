@@ -8,8 +8,8 @@ defmodule Indexer.Fetcher.CoinBalance.Realtime do
 
   alias Explorer.Chain.{Block, Hash}
   alias Indexer.{BufferedTask, Tracer}
-  alias Indexer.Fetcher.CoinBalance.Realtime.Supervisor, as: CoinBalanceSupervisor
   alias Indexer.Fetcher.CoinBalance.Helper
+  alias Indexer.Fetcher.CoinBalance.Realtime.Supervisor, as: CoinBalanceSupervisor
 
   @behaviour BufferedTask
 
