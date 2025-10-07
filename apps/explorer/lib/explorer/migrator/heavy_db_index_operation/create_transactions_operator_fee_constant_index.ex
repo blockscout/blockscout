@@ -32,8 +32,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsOperatorFeeC
 
   @query_string """
   CREATE INDEX #{HeavyDbIndexOperationHelper.add_concurrently_flag?()} IF NOT EXISTS "#{@index_name}"
-   ON #{@table_name} (operator_fee_constant)
-   WHERE operator_fee_constant IS NULL;
+  ON #{@table_name} (operator_fee_constant)
+  WHERE operator_fee_constant IS NULL;
   """
 
   @impl HeavyDbIndexOperation
