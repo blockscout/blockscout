@@ -254,10 +254,18 @@ defmodule Indexer.Block.Catchup.Fetcher do
   end
 
   defp timeout_exception?(%{message: message}) when is_binary(message) do
-    String.match?(message, ~r/due to a timeout/) or String.match?(message, ~r/due to user request/)
+    match_timeout_exception?(message)
+  end
+
+  defp timeout_exception?(%{postgres: %{message: message}}) when is_binary(message) do
+    match_timeout_exception?(message)
   end
 
   defp timeout_exception?(_exception), do: false
+
+  defp match_timeout_exception?(error_message) do
+    String.match?(error_message, ~r/due to a timeout/) or String.match?(error_message, ~r/due to user request/)
+  end
 
   defp add_range_to_massive_blocks(range) do
     clear_missing_ranges(range)
