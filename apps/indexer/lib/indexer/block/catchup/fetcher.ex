@@ -29,7 +29,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
   alias Explorer.Chain.NullRoundHeight
-  alias Explorer.Utility.{MassiveBlock, MissingBlockRange, MissingRangesManipulator}
+  alias Explorer.Utility.{MassiveBlock, MissingBlockRange}
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.TaskSupervisor
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
@@ -236,7 +236,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
         acc
     end)
     |> numbers_to_ranges()
-    |> MissingRangesManipulator.clear_batch()
+    |> MissingBlockRange.clear_batch()
   end
 
   defp handle_null_rounds(errors) do
@@ -272,7 +272,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     success_numbers
     |> numbers_to_ranges()
-    |> MissingRangesManipulator.clear_batch()
+    |> MissingBlockRange.clear_batch()
   end
 
   defp block_error_to_number(%{data: %{number: number}}) when is_integer(number), do: number

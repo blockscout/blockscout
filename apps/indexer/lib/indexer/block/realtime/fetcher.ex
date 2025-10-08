@@ -35,7 +35,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Utility.MissingRangesManipulator
+  alias Explorer.Utility.MissingBlockRange
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
@@ -434,7 +434,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     case result do
       {:ok, %{inserted: inserted, errors: []}} ->
         log_import_timings(inserted, fetch_duration, time_before)
-        MissingRangesManipulator.clear_batch([block_number_to_fetch..block_number_to_fetch])
+        MissingBlockRange.clear_batch([block_number_to_fetch..block_number_to_fetch])
         Logger.debug("Fetched and imported.")
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
