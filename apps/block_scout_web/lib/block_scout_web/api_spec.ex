@@ -21,8 +21,16 @@ defmodule BlockScoutWeb.ApiSpec do
           email: "info@blockscout.com"
         }
       },
-      paths: ApiRouter |> Paths.from_router() |> Map.merge(Paths.from_router(TokensApiV2Router))
+      paths:
+        ApiRouter
+        |> Paths.from_router()
+        |> Map.merge(Paths.from_routes(routes_with_prefix(TokensApiV2Router, "/v2/tokens")))
     }
     |> OpenApiSpex.resolve_schema_modules()
+  end
+
+  defp routes_with_prefix(router, prefix) do
+    router.__routes__()
+    |> Enum.map(fn %{path: path} = route -> %{route | path: prefix <> path} end)
   end
 end

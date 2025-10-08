@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Holder do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.Address
+  alias BlockScoutWeb.Schemas.API.V2.{Address, General}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%Schema{
@@ -19,8 +19,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Holder do
     type: :object,
     properties: %{
       address: Address.schema(),
-      token_id: %Schema{type: :string, nullable: true},
-      value: %Schema{type: :string, nullable: false}
+      token_id: General.IntegerStringNullable,
+      value: General.IntegerString
     },
     required: [:address, :token_id, :value],
     additionalProperties: false,

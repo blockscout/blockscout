@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Counters do
   """
   require OpenApiSpex
 
+  alias BlockScoutWeb.Schemas.API.V2.General
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%Schema{
@@ -12,8 +13,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Counters do
     description: "Token counters response",
     type: :object,
     properties: %{
-      token_holders_count: %Schema{type: :string, example: "0"},
-      transfers_count: %Schema{type: :string, example: "0"}
+      token_holders_count: General.IntegerString,
+      transfers_count: General.IntegerString
     },
     required: [:token_holders_count, :transfers_count],
     additionalProperties: false,
