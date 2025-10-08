@@ -28,7 +28,7 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactions do
   def migration_name, do: @migration_name
 
   @impl FillingMigration
-  def last_unprocessed_identifiers(state) do
+  def last_unprocessed_identifiers(%{"last_processed_block_number" => _} = state) do
     limit = batch_size() * concurrency()
 
     ids =
@@ -40,30 +40,44 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactions do
 
     case {ids, state["step"]} do
       {[], step} when step != "finalize" ->
-        new_state = %{"step" => "finalize"}
+        new_state = Map.put(state, "step", "finalize")
         MigrationStatus.update_meta(migration_name(), new_state)
         last_unprocessed_identifiers(new_state)
 
-      {ids, _field} ->
+      {ids, step} when step != "finalize" ->
+        {ids, Map.put(state, "last_processed_block_number", Enum.max(ids))}
+
+      {ids, step} when step == "finalize" ->
         {ids, state}
     end
   end
 
-  @impl FillingMigration
-  def unprocessed_data_query(state) do
-    field =
-      case state["step"] do
-        "finalize" -> :block_hash
-        _ -> :block_number
-      end
+  def last_unprocessed_identifiers(state) do
+    state
+    |> Map.put("last_processed_block_number", -1)
+    |> last_unprocessed_identifiers()
+  end
 
-    from(
-      it in InternalTransaction,
-      where: not is_nil(field(it, ^field)),
-      group_by: [field(it, ^field), it.transaction_index, it.index],
-      having: count("*") > 1,
-      select: field(it, ^field)
-    )
+  @impl FillingMigration
+  def unprocessed_data_query(%{"last_processed_block_number" => last_processed_block_number} = state) do
+    if state["step"] == "finalize" do
+      from(
+        it in InternalTransaction,
+        select: it.block_hash,
+        where: not is_nil(it.block_hash),
+        group_by: [it.block_hash, it.transaction_index, it.index],
+        having: count("*") > 1
+      )
+    else
+      from(
+        it in InternalTransaction,
+        select: it.block_number,
+        where: not is_nil(it.block_number) and it.block_number >= ^last_processed_block_number,
+        group_by: [it.block_number, it.transaction_index, it.index],
+        having: count("*") > 1,
+        order_by: it.block_number
+      )
+    end
   end
 
   @impl FillingMigration
