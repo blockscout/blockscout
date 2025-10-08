@@ -9,6 +9,7 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactions do
   require Logger
 
   import Ecto.Query
+  import Explorer.QueryHelper, only: [select_ctid: 1, join_on_ctid: 2]
 
   alias Explorer.Repo
 
@@ -92,9 +93,23 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactions do
 
     result =
       Repo.transaction(fn ->
-        InternalTransaction
-        |> where([it], field(it, ^it_field) in ^block_numbers_or_hashes)
-        |> Repo.delete_all()
+        locked_internal_transactions_to_delete_query =
+          from(
+            it in InternalTransaction,
+            select: select_ctid(it),
+            where: field(it, ^it_field) in ^block_numbers_or_hashes,
+            order_by: [asc: it.transaction_hash, asc: it.index],
+            lock: "FOR UPDATE"
+          )
+
+        delete_query =
+          from(
+            it in InternalTransaction,
+            inner_join: locked_it in subquery(locked_internal_transactions_to_delete_query),
+            on: join_on_ctid(it, locked_it)
+          )
+
+        Repo.delete_all(delete_query)
 
         pbo_params =
           Block
@@ -104,8 +119,10 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactions do
           |> Repo.all()
           |> Enum.map(&Map.merge(&1, %{inserted_at: now, updated_at: now}))
 
+        ordered_pbo_params = Enum.sort_by(pbo_params, &{&1.block_hash})
+
         {_total, inserted} =
-          Repo.insert_all(PendingBlockOperation, pbo_params, on_conflict: :nothing, returning: [:block_number])
+          Repo.insert_all(PendingBlockOperation, ordered_pbo_params, on_conflict: :nothing, returning: [:block_number])
 
         inserted
       end)
