@@ -275,6 +275,7 @@ config :explorer,
   mode: app_mode,
   ecto_repos: ConfigHelper.repos(),
   chain_type: ConfigHelper.chain_type(),
+  chain_identity: ConfigHelper.chain_identity(),
   coin: coin,
   coin_name: System.get_env("COIN_NAME") || "ETH",
   allowed_solidity_evm_versions:
@@ -807,11 +808,11 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
 
 config :explorer, Explorer.Migrator.CeloL2Epochs,
   enabled:
-    ConfigHelper.chain_type() == :celo &&
+    ConfigHelper.chain_identity() == {:optimism, :celo} &&
       !is_nil(celo_l2_migration_block) &&
       !is_nil(celo_epoch_manager_contract_address)
 
-config :explorer, Explorer.Chain.Cache.CeloEpochs, enabled: ConfigHelper.chain_type() == :celo
+config :explorer, Explorer.Chain.Cache.CeloEpochs, enabled: ConfigHelper.chain_identity() == {:optimism, :celo}
 
 config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
@@ -1491,11 +1492,11 @@ config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes,
 
 config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor,
   enabled:
-    ConfigHelper.chain_type() == :celo and
+    ConfigHelper.chain_identity() == {:optimism, :celo} and
       not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CELO_VALIDATOR_GROUP_VOTES_FETCHER")
 
 celo_epoch_fetchers_enabled? =
-  ConfigHelper.chain_type() == :celo and
+  ConfigHelper.chain_identity() == {:optimism, :celo} and
     not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CELO_EPOCH_FETCHER")
 
 config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,

@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.API.V2.StatsController do
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
+
   use Phoenix.Controller, namespace: BlockScoutWeb
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.Chain.MarketHistoryChartController
@@ -79,6 +82,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "network_utilization_percentage" => network_utilization_percentage()
       }
       |> add_chain_type_fields()
+      |> add_chain_identity_fields()
       |> backward_compatibility(conn)
     )
   end
@@ -194,13 +198,18 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         response |> Map.put("last_output_root_size", fetch(@api_true))
       end
 
-    :celo ->
-      defp add_chain_type_fields(response) do
+    _ ->
+      defp add_chain_type_fields(response), do: response
+  end
+
+  case @chain_identity do
+    {:optimism, :celo} ->
+      defp add_chain_identity_fields(response) do
         alias Explorer.Chain.Cache.CeloEpochs
         response |> Map.put("celo", %{"epoch_number" => CeloEpochs.last_block_epoch_number()})
       end
 
     _ ->
-      defp add_chain_type_fields(response), do: response
+      defp add_chain_identity_fields(response), do: response
   end
 end

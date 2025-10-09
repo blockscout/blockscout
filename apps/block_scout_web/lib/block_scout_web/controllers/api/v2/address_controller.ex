@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.API.V2.AddressController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
   use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
   use OpenApiSpex.ControllerSpecs
 
@@ -55,8 +55,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 
-  case @chain_type do
-    :celo ->
+  case @chain_identity do
+    {:optimism, :celo} ->
       @chain_type_transaction_necessity_by_association %{
         [gas_token: reputation_association()] => :optional
       }

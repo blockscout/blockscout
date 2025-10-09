@@ -5,7 +5,9 @@ defmodule Explorer.Chain.Transaction.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.Transactions
   """
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   alias Explorer.Chain
 
@@ -138,28 +140,6 @@ defmodule Explorer.Chain.Transaction.Schema do
                             2
                           )
 
-                        :celo ->
-                          elem(
-                            quote do
-                              field(:gateway_fee, Wei)
-
-                              belongs_to(:gas_fee_recipient, Address,
-                                foreign_key: :gas_fee_recipient_address_hash,
-                                references: :hash,
-                                type: Hash.Address
-                              )
-
-                              belongs_to(:gas_token_contract_address, Address,
-                                foreign_key: :gas_token_contract_address_hash,
-                                references: :hash,
-                                type: Hash.Address
-                              )
-
-                              has_one(:gas_token, through: [:gas_token_contract_address, :token])
-                            end,
-                            2
-                          )
-
                         :arbitrum ->
                           elem(
                             quote do
@@ -201,6 +181,33 @@ defmodule Explorer.Chain.Transaction.Schema do
                         _ ->
                           []
                       end)
+
+  @chain_identity_fields (case @chain_identity do
+                            {:optimism, :celo} ->
+                              elem(
+                                quote do
+                                  field(:gateway_fee, Wei)
+
+                                  belongs_to(:gas_fee_recipient, Address,
+                                    foreign_key: :gas_fee_recipient_address_hash,
+                                    references: :hash,
+                                    type: Hash.Address
+                                  )
+
+                                  belongs_to(:gas_token_contract_address, Address,
+                                    foreign_key: :gas_token_contract_address_hash,
+                                    references: :hash,
+                                    type: Hash.Address
+                                  )
+
+                                  has_one(:gas_token, through: [:gas_token_contract_address, :token])
+                                end,
+                                2
+                              )
+
+                            _ ->
+                              []
+                          end)
 
   defmacro generate do
     quote do
@@ -292,6 +299,7 @@ defmodule Explorer.Chain.Transaction.Schema do
         has_one(:pending_operation, PendingTransactionOperation, foreign_key: :transaction_hash, references: :hash)
 
         unquote_splicing(@chain_type_fields)
+        unquote_splicing(@chain_identity_fields)
       end
     end
   end
@@ -304,6 +312,7 @@ defmodule Explorer.Chain.Transaction do
 
   use Utils.CompileTimeEnvHelper,
     chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity],
     decode_not_a_contract_calls: [:explorer, :decode_not_a_contract_calls]
 
   require Logger
@@ -354,12 +363,17 @@ defmodule Explorer.Chain.Transaction do
                                 :arbitrum ->
                                   ~w(gas_used_for_l1)a
 
-                                :celo ->
-                                  ~w(gateway_fee gas_fee_recipient_address_hash gas_token_contract_address_hash)a
-
                                 _ ->
                                   ~w()a
                               end)
+
+  @chain_identity_optional_attrs (case @chain_identity do
+                                    {:optimism, :celo} ->
+                                      ~w(gateway_fee gas_fee_recipient_address_hash gas_token_contract_address_hash)a
+
+                                    _ ->
+                                      ~w()a
+                                  end)
 
   @required_attrs ~w(from_address_hash gas hash input nonce value)a
 
@@ -682,7 +696,8 @@ defmodule Explorer.Chain.Transaction do
     attrs_to_cast =
       @required_attrs ++
         @optional_attrs ++
-        @chain_type_optional_attrs
+        @chain_type_optional_attrs ++
+        @chain_identity_optional_attrs
 
     transaction
     |> cast(attrs, attrs_to_cast)
@@ -812,7 +827,7 @@ defmodule Explorer.Chain.Transaction do
   def decoded_input_data(%NotLoaded{}, _, _, _, _),
     do: {:error, :not_loaded}
 
-  if @chain_type == :celo do
+  if @chain_identity == {:optimism, :celo} do
     # Celo's Epoch logs does not have an associated transaction and linked to
     # the block instead, so we discard these token transfers for transaction
     # decoding
@@ -2261,7 +2276,7 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
-  if @chain_type == :celo do
+  if @chain_identity == {:optimism, :celo} do
     defp decode_remaining_transaction({nil, nil}, _, _, _, _), do: nil
   end
 

@@ -3,6 +3,9 @@ defmodule Indexer.Block.FetcherTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
 
+  use Utils.CompileTimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   import Mox
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
@@ -805,7 +808,7 @@ defmodule Indexer.Block.FetcherTest do
     end
   end
 
-  if Application.compile_env(:explorer, :chain_type) == :celo do
+  if @chain_identity == {:optimism, :celo} do
     describe "import_range/2 celo" do
       setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
         CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
