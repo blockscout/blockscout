@@ -1,9 +1,9 @@
 defmodule BlockScoutWeb.API.V2.StatsController do
-  use Phoenix.Controller
-
   use Utils.CompileTimeEnvHelper,
     chain_type: [:explorer, :chain_type],
     chain_identity: [:explorer, :chain_identity]
+
+  use Phoenix.Controller, namespace: BlockScoutWeb
 
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.Chain.MarketHistoryChartController

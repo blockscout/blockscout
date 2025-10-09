@@ -13,13 +13,20 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   alias Explorer.Chain.Cache.{CeloCoreContracts, CeloEpochs}
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
   alias Explorer.Chain.Celo.{Epoch, EpochReward}
-  alias Explorer.Chain.{Block, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.{Address.Reputation, Block, Token, TokenTransfer, Transaction, Wei}
 
   @address_params [
     necessity_by_association: %{
       :names => :optional,
       :smart_contract => :optional,
       proxy_implementations_association() => :optional
+    },
+    api?: true
+  ]
+
+  @token_params [
+    necessity_by_association: %{
+      Reputation.reputation_association() => :optional
     },
     api?: true
   ]
@@ -499,7 +506,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           }
         )
 
-      celo_token = Token.get_by_contract_address_hash(celo_token_address_hash, api?: true)
+      celo_token = Token.get_by_contract_address_hash(celo_token_address_hash, @token_params)
 
       %{
         recipient: fee_handler_contract_address_info,
@@ -566,7 +573,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           address_hash
         )
 
-      celo_token = Token.get_by_contract_address_hash(celo_token_address_hash, api?: true)
+      celo_token = Token.get_by_contract_address_hash(celo_token_address_hash, @token_params)
 
       %{
         recipient: address_with_info,

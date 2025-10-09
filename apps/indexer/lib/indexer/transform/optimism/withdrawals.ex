@@ -5,11 +5,9 @@ defmodule Indexer.Transform.Optimism.Withdrawals do
 
   require Logger
 
+  alias Explorer.Chain.Optimism.Withdrawal
   alias Indexer.Fetcher.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Indexer.Helper
-
-  # 32-byte signature of the event MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
-  @message_passed_event "0x02a52367d10742d8032712c1bb8e0144ff1ec5ffda1ed7d70bb05a2744955054"
 
   @doc """
   Returns a list of withdrawals given a list of logs.
@@ -23,10 +21,11 @@ defmodule Indexer.Transform.Optimism.Withdrawals do
            message_passer = Application.get_env(:indexer, OptimismWithdrawal)[:message_passer],
            true <- Helper.address_correct?(message_passer) do
         message_passer = String.downcase(message_passer)
+        message_passed_event = Withdrawal.message_passed_event()
 
         logs
         |> Enum.filter(fn log ->
-          !is_nil(log.first_topic) && String.downcase(log.first_topic) == @message_passed_event &&
+          !is_nil(log.first_topic) && String.downcase(log.first_topic) == message_passed_event &&
             String.downcase(Helper.address_hash_to_string(log.address_hash)) == message_passer
         end)
         |> Enum.map(fn log ->

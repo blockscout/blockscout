@@ -58,8 +58,8 @@ defmodule Explorer.History.ProcessTest do
     state = %{historian: TestHistorian}
 
     # interval should be short enough that it doesn't slow down testing...
-    # ...but long enough to detect. 16ms should be detectable on the slowest dev machines
-    history_fetch_interval = 16
+    # ...but long enough to detect. 100ms should be detectable on the slowest dev machines
+    history_fetch_interval = 100
 
     now = DateTime.to_time(DateTime.utc_now())
     time_to_fetch_at = now |> Time.add(history_fetch_interval, :millisecond)
@@ -69,7 +69,7 @@ defmodule Explorer.History.ProcessTest do
     assert {:noreply, state} == HistoryProcess.handle_info({nil, {1, 0, {:ok, [record]}}}, state)
 
     # Message isn't sent before interval is up
-    refute_receive {:compile_historical_records, 2}, history_fetch_interval - 1
+    refute_receive {:compile_historical_records, 2}, history_fetch_interval - 50
 
     # Now message is sent
     assert_receive {:compile_historical_records, 2}

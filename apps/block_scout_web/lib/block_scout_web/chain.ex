@@ -57,15 +57,6 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.PagingOptions
 
-  defimpl Poison.Encoder, for: Decimal do
-    def encode(value, _opts) do
-      # silence the xref warning
-      decimal = Decimal
-
-      [?\", decimal.to_string(value), ?\"]
-    end
-  end
-
   @page_size page_size()
   @default_paging_options default_paging_options()
   @address_hash_len 40
@@ -636,6 +627,10 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: %{block_index: index}}]
   end
 
+  def paging_options(%{block_index: index}) when is_integer(index) do
+    [paging_options: %{@default_paging_options | key: %{block_index: index}}]
+  end
+
   # Clause for `Explorer.Chain.Blackfort.Validator`,
   #  returned by `BlockScoutWeb.API.V2.ValidatorController.blackfort_validators_list/2` (`/api/v2/validators/blackfort`)
   def paging_options(%{
@@ -1035,6 +1030,11 @@ defmodule BlockScoutWeb.Chain do
       {:error, :invalid} ->
         {:error, {:invalid, :number}}
     end
+  end
+
+  def parse_block_hash_or_number_param(number)
+      when is_integer(number) do
+    {:ok, :number, number}
   end
 
   @doc """

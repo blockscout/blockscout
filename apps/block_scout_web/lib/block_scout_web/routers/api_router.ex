@@ -122,7 +122,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     get("/smart-contracts/:address_hash_param", V2.ImportController, :try_to_search_contract)
 
-    chain_scope :optimism do
+    if @chain_type == :optimism do
       post("/optimism/interop/", V2.OptimismController, :interop_import)
     end
   end
@@ -164,7 +164,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/arbitrum-batch/:batch_number", V2.TransactionController, :arbitrum_batch)
       end
 
-      chain_scope :optimism do
+      if @chain_type == :optimism do
         get("/optimism-batch/:batch_number", V2.TransactionController, :optimism_batch)
       end
 
@@ -192,7 +192,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/:transaction_hash_param/blobs", V2.TransactionController, :blobs)
       end
 
-      chain_scope :ethereum do
+      if @chain_type == :ethereum do
         get("/:transaction_hash_param/beacon/deposits", V2.TransactionController, :beacon_deposits)
       end
     end
@@ -207,26 +207,26 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     scope "/blocks" do
       get("/", V2.BlockController, :blocks)
-      get("/:block_hash_or_number", V2.BlockController, :block)
-      get("/:block_hash_or_number/transactions", V2.BlockController, :transactions)
-      get("/:block_hash_or_number/internal-transactions", V2.BlockController, :internal_transactions)
-      get("/:block_hash_or_number/withdrawals", V2.BlockController, :withdrawals)
-      get("/:block_number/countdown", V2.BlockController, :block_countdown)
+      get("/:block_hash_or_number_param", V2.BlockController, :block)
+      get("/:block_hash_or_number_param/transactions", V2.BlockController, :transactions)
+      get("/:block_hash_or_number_param/internal-transactions", V2.BlockController, :internal_transactions)
+      get("/:block_hash_or_number_param/withdrawals", V2.BlockController, :withdrawals)
+      get("/:block_number_param/countdown", V2.BlockController, :block_countdown)
 
       if @chain_type == :arbitrum do
-        get("/arbitrum-batch/:batch_number", V2.BlockController, :arbitrum_batch)
+        get("/arbitrum-batch/:batch_number_param", V2.BlockController, :arbitrum_batch)
       end
 
-      chain_scope :optimism do
-        get("/optimism-batch/:batch_number", V2.BlockController, :optimism_batch)
+      if @chain_type == :optimism do
+        get("/optimism-batch/:batch_number_param", V2.BlockController, :optimism_batch)
       end
 
       if @chain_type == :scroll do
-        get("/scroll-batch/:batch_number", V2.BlockController, :scroll_batch)
+        get("/scroll-batch/:batch_number_param", V2.BlockController, :scroll_batch)
       end
 
-      chain_scope :ethereum do
-        get("/:block_hash_or_number/beacon/deposits", V2.BlockController, :beacon_deposits)
+      if @chain_type == :ethereum do
+        get("/:block_hash_or_number_param/beacon/deposits", V2.BlockController, :beacon_deposits)
       end
     end
 
@@ -257,7 +257,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/:address_hash_param/celo/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
       end
 
-      chain_scope :ethereum do
+      if @chain_type == :ethereum do
         get("/:address_hash_param/beacon/deposits", V2.AddressController, :beacon_deposits)
       end
     end
@@ -268,7 +268,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/transactions/watchlist", V2.MainPageController, :watchlist_transactions)
       get("/indexing-status", V2.MainPageController, :indexing_status)
 
-      chain_scope :optimism do
+      if @chain_type == :optimism do
         get("/optimism-deposits", V2.MainPageController, :optimism_deposits)
       end
 
@@ -299,7 +299,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
-    chain_scope :optimism do
+    if @chain_type == :optimism do
       scope "/optimism" do
         get("/txn-batches", V2.OptimismController, :transaction_batches)
         get("/txn-batches/count", V2.OptimismController, :transaction_batches_count)
@@ -432,7 +432,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
-    chain_scope :ethereum do
+    if @chain_type == :ethereum do
       scope "/beacon" do
         get("/deposits", V2.Ethereum.DepositController, :list)
         get("/deposits/count", V2.Ethereum.DepositController, :count)
@@ -499,6 +499,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/batches/count", V2.ArbitrumController, :batches_count)
         get("/batches/:batch_number", V2.ArbitrumController, :batch)
         get("/batches/da/anytrust/:data_hash", V2.ArbitrumController, :batch_by_data_availability_info)
+        get("/batches/da/eigenda/:data_hash", V2.ArbitrumController, :batch_by_data_availability_info)
 
         get(
           "/batches/da/celestia/:height/:transaction_commitment",

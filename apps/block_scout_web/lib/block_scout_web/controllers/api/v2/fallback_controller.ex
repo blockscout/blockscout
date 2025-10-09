@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.API.V2.FallbackController do
-  use Phoenix.Controller
+  use Phoenix.Controller, namespace: BlockScoutWeb
 
   require Logger
 

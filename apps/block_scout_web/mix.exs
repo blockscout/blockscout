@@ -121,18 +121,19 @@ defmodule BlockScoutWeb.Mixfile do
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:number, "~> 1.0.1"},
-      {:phoenix, "== 1.5.14"},
+      {:phoenix, "== 1.6.16"},
       {:phoenix_ecto, "~> 4.1"},
-      {:phoenix_html, "== 3.3.4"},
-      {:phoenix_live_reload, "~> 1.2", only: [:dev]},
-      {:phoenix_live_view, "~> 0.17"},
+      {:phoenix_html, "== 4.2.1"},
+      {:phoenix_html_helpers, "~> 1.0"},
+      {:phoenix_live_reload, "~> 1.6", only: [:dev]},
+      {:phoenix_live_view, "~> 1.1"},
       {:phoenix_pubsub, "~> 2.0"},
       {:prometheus_ex, "~> 5.0.0", override: true},
       # use `:cowboy` for WebServer with `:plug`
       {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
-      {:poison, "~> 4.0.1"},
+      {:poison, "~> 5.0.0"},
       {:postgrex, ">= 0.0.0"},
       {:prometheus, "~> 6.0", override: true},
       # Gather methods for Phoenix requests
