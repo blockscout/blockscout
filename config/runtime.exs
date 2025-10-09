@@ -275,6 +275,7 @@ config :explorer,
   mode: app_mode,
   ecto_repos: ConfigHelper.repos(),
   chain_type: ConfigHelper.chain_type(),
+  chain_identity: ConfigHelper.chain_identity(),
   coin: coin,
   coin_name: System.get_env("COIN_NAME") || "ETH",
   allowed_solidity_evm_versions:
