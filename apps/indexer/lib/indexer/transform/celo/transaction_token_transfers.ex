@@ -11,6 +11,9 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
   """
   require Logger
 
+  use Utils.RuntimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   import Indexer.Transform.TokenTransfers,
     only: [
       filter_tokens_for_supply_update: 1
@@ -47,7 +50,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
         }
   def parse_transactions(transactions) do
     token_transfers =
-      if Application.get_env(:explorer, :chain_type) == :celo do
+      if chain_identity() == {:optimism, :celo} do
         transactions
         |> Enum.filter(fn transaction -> transaction.value > 0 end)
         |> Enum.map(fn transaction ->

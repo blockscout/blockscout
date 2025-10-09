@@ -30,7 +30,7 @@ defmodule ConfigHelper do
           Explorer.Repo.Celo
         ]
       }
-      |> Map.get(chain_identity())
+      |> Map.get(chain_identity(), [])
 
     ext_repos =
       [

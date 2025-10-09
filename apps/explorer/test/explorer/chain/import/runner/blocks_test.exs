@@ -1,6 +1,8 @@
 defmodule Explorer.Chain.Import.Runner.BlocksTest do
   use Explorer.DataCase
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  use Utils.CompileTimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
 
   import Ecto.Query, only: [from: 2, select: 2, where: 2]
 
@@ -619,7 +621,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
               }} = Multi.new() |> Blocks.run(changes_list, options) |> Repo.transaction()
     end
 
-    if @chain_type == :celo do
+    if @chain_identity == :celo do
       test "removes celo epoch rewards and sets fetched? = false when starting block loses consensus", %{
         consensus_block: %{miner_hash: miner_hash} = parent_block,
         options: options

@@ -5,6 +5,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
   alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
+
   @zksync_schema %Schema{
     type: :object,
     nullable: false,
@@ -214,7 +218,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
   """
   @spec chain_type_fields(map()) :: map()
   def chain_type_fields(schema) do
-    case Application.get_env(:explorer, :chain_type) do
+    case chain_type() do
       :rsk ->
         schema
         |> Helper.extend_schema(
@@ -250,11 +254,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
           required: [:blob_transactions_count, :blob_gas_used, :excess_blob_gas, :beacon_deposits_count]
         )
 
-      :celo ->
-        schema |> Helper.extend_schema(properties: %{celo: @celo_schema}, required: [:celo])
-
       :zilliqa ->
         schema |> Helper.extend_schema(properties: %{zilliqa: @zilliqa_schema})
+
+      _ ->
+        schema
+    end
+    |> chain_identity_fields()
+  end
+
+  defp chain_identity_fields(schema) do
+    case chain_identity() do
+      {:optimism, :celo} ->
+        schema |> Helper.extend_schema(properties: %{celo: @celo_schema})
 
       _ ->
         schema

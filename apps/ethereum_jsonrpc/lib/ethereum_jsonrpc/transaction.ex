@@ -7,7 +7,13 @@ defmodule EthereumJSONRPC.Transaction do
   [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblockhashandindex),
   and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblocknumberandindex)
   """
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
+
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   import EthereumJSONRPC,
     only: [
@@ -64,15 +70,6 @@ defmodule EthereumJSONRPC.Transaction do
                            ]
                          )
 
-    :celo ->
-      @chain_type_fields quote(
-                           do: [
-                             gas_token_contract_address_hash: EthereumJSONRPC.address(),
-                             gas_fee_recipient_address_hash: EthereumJSONRPC.address(),
-                             gateway_fee: non_neg_integer()
-                           ]
-                         )
-
     :arbitrum ->
       @chain_type_fields quote(
                            do: [
@@ -82,6 +79,20 @@ defmodule EthereumJSONRPC.Transaction do
 
     _ ->
       @chain_type_fields quote(do: [])
+  end
+
+  case @chain_identity do
+    {:optimism, :celo} ->
+      @chain_identity_fields quote(
+                               do: [
+                                 gas_token_contract_address_hash: EthereumJSONRPC.address(),
+                                 gas_fee_recipient_address_hash: EthereumJSONRPC.address(),
+                                 gateway_fee: non_neg_integer()
+                               ]
+                             )
+
+    _ ->
+      @chain_identity_fields quote(do: [])
   end
 
   # todo: Check if it's possible to simplify by avoiding t -> elixir -> params conversions
@@ -140,7 +151,10 @@ defmodule EthereumJSONRPC.Transaction do
        * `"executionNode"` - `t:EthereumJSONRPC.address/0` of execution node (used by Suave).
        * `"requestRecord"` - map of wrapped transaction data (used by Suave).
       """
-    :celo -> """
+    _ -> ""
+  end}
+     #{case @chain_identity do
+    {:optimism, :celo} -> """
           * `"feeCurrency"` - `t:EthereumJSONRPC.address/0` of the currency used to pay for gas.
           * `"gatewayFee"` - `t:EthereumJSONRPC.quantity/0` of the gateway fee.
           * `"gatewayFeeRecipient"` - `t:EthereumJSONRPC.address/0` of the gateway fee recipient.
@@ -160,6 +174,7 @@ defmodule EthereumJSONRPC.Transaction do
 
   @type params :: %{
           unquote_splicing(@chain_type_fields),
+          unquote_splicing(@chain_identity_fields),
           block_hash: EthereumJSONRPC.hash(),
           block_number: non_neg_integer(),
           from_address_hash: EthereumJSONRPC.address(),
@@ -307,6 +322,7 @@ defmodule EthereumJSONRPC.Transaction do
     elixir
     |> do_elixir_to_params()
     |> chain_type_fields(elixir)
+    |> chain_identity_fields(elixir)
   end
 
   # Converts a map of the transaction parameters to the map with the corresponding atom parameters.
@@ -529,7 +545,7 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   defp chain_type_fields(params, elixir) do
-    case Application.get_env(:explorer, :chain_type) do
+    case chain_type() do
       :ethereum ->
         put_if_present(params, elixir, [
           {"blobVersionedHashes", :blob_versioned_hashes},
@@ -574,16 +590,23 @@ defmodule EthereumJSONRPC.Transaction do
           })
         end
 
-      :celo ->
+      :arbitrum ->
+        put_if_present(params, elixir, [
+          {"requestId", :request_id}
+        ])
+
+      _ ->
+        params
+    end
+  end
+
+  defp chain_identity_fields(params, elixir) do
+    case chain_identity() do
+      {:optimism, :celo} ->
         put_if_present(params, elixir, [
           {"feeCurrency", :gas_token_contract_address_hash},
           {"gatewayFee", :gateway_fee},
           {"gatewayFeeRecipient", :gas_fee_recipient_address_hash}
-        ])
-
-      :arbitrum ->
-        put_if_present(params, elixir, [
-          {"requestId", :request_id}
         ])
 
       _ ->
@@ -742,7 +765,7 @@ defmodule EthereumJSONRPC.Transaction do
     do: {key, value |> Enum.map(&SignedAuthorization.to_params/1)}
 
   # Celo-specific fields
-  if @chain_type == :celo do
+  if @chain_identity == {:optimism, :celo} do
     defp entry_to_elixir({key, value})
          when key in ~w(feeCurrency gatewayFeeRecipient),
          do: {key, value}
