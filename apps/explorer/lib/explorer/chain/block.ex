@@ -27,6 +27,7 @@ defmodule Explorer.Chain.Block.Schema do
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Zilliqa.AggregateQuorumCertificate, as: ZilliqaAggregateQuorumCertificate
   alias Explorer.Chain.Zilliqa.QuorumCertificate, as: ZilliqaQuorumCertificate
+  alias Explorer.Chain.Zilliqa.Zrc2.TokenTransfer, as: Zrc2TokenTransfer
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
 
   @chain_type_fields (case @chain_type do
@@ -113,6 +114,11 @@ defmodule Explorer.Chain.Block.Schema do
                               )
 
                               has_one(:zilliqa_aggregate_quorum_certificate, ZilliqaAggregateQuorumCertificate,
+                                foreign_key: :block_hash,
+                                references: :hash
+                              )
+
+                              has_many(:zrc2_token_transfer, Zrc2TokenTransfer,
                                 foreign_key: :block_hash,
                                 references: :hash
                               )
