@@ -11,14 +11,17 @@ defmodule Explorer.GraphQL do
       where: 3
     ]
 
+  alias Explorer.{Chain, Repo}
+
   alias Explorer.Chain.{
     Hash,
     InternalTransaction,
+    Token,
     TokenTransfer,
     Transaction
   }
 
-  alias Explorer.{Chain, Repo}
+  @api_true [api?: true]
 
   @doc """
   Returns a query to fetch transactions with a matching `to_address_hash`,
@@ -28,9 +31,10 @@ defmodule Explorer.GraphQL do
   """
   @spec address_to_transactions_query(Hash.Address.t(), :desc | :asc) :: Ecto.Query.t()
   def address_to_transactions_query(address_hash, order) do
+    dynamic = Transaction.where_transactions_to_from(address_hash)
+
     Transaction
-    |> where([transaction], transaction.to_address_hash == ^address_hash)
-    |> or_where([transaction], transaction.from_address_hash == ^address_hash)
+    |> where([transaction], ^dynamic)
     |> or_where([transaction], transaction.created_contract_address_hash == ^address_hash)
     |> order_by([transaction], [{^order, transaction.block_number}, {^order, transaction.index}])
   end
@@ -61,13 +65,12 @@ defmodule Explorer.GraphQL do
         it in InternalTransaction,
         inner_join: t in assoc(it, :transaction),
         order_by: [asc: it.index],
-        where: it.transaction_hash == ^hash,
-        select: it
+        where: it.transaction_hash == ^hash
       )
 
     query
     |> InternalTransaction.where_nonpending_block()
-    |> Chain.where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
   end
 
   @doc """
@@ -83,6 +86,31 @@ defmodule Explorer.GraphQL do
   end
 
   @doc """
+  Returns a token for a given contract address hash.
+  """
+  @spec get_token(map()) :: {:ok, Token.t()} | {:error, String.t()}
+  def get_token(%{contract_address_hash: _} = clauses) do
+    if token = Repo.replica().get_by(Token, clauses) do
+      {:ok, token}
+    else
+      {:error, "Token not found."}
+    end
+  end
+
+  @doc """
+  Returns a transaction for a given hash.
+  """
+  @spec get_transaction_by_hash(Hash.t()) :: {:ok, Transaction.t()} | {:error, String.t()}
+  def get_transaction_by_hash(hash) do
+    hash
+    |> Chain.hash_to_transaction(@api_true)
+    |> case do
+      {:ok, _} = result -> result
+      {:error, :not_found} -> {:error, "Transaction not found."}
+    end
+  end
+
+  @doc """
   Returns a query to fetch token transfers for a token contract address hash.
 
   Orders token transfers by descending block number.
@@ -93,8 +121,7 @@ defmodule Explorer.GraphQL do
       tt in TokenTransfer,
       inner_join: t in assoc(tt, :transaction),
       where: tt.token_contract_address_hash == ^token_contract_address_hash,
-      order_by: [desc: tt.block_number],
-      select: tt
+      order_by: [desc: tt.block_number, desc: tt.log_index]
     )
   end
 end

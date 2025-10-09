@@ -20,5 +20,5 @@ defmodule BlockScoutWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :block_scout_web
+  use Gettext.Backend, otp_app: :block_scout_web
 end

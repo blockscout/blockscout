@@ -24,12 +24,23 @@ defmodule BlockScoutWeb do
 
       import BlockScoutWeb.Controller
       import BlockScoutWeb.Router.Helpers
-      import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
-      import BlockScoutWeb.Gettext
+      import BlockScoutWeb.Routers.WebRouter.Helpers, except: [static_path: 2]
+      use Gettext, backend: BlockScoutWeb.Gettext
       import BlockScoutWeb.ErrorHelper
+      import BlockScoutWeb.Routers.AccountRouter.Helpers, except: [static_path: 2]
       import Plug.Conn
 
-      alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
+      import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
+        only: [proxy_implementations_association: 0, proxy_implementations_smart_contracts_association: 0]
+
+      alias BlockScoutWeb.Routers.AdminRouter.Helpers, as: AdminRoutes
+
+      alias BlockScoutWeb.Schemas.API.V2, as: Schemas
+      alias OpenApiSpex.{Schema, Reference}
+      alias OpenApiSpex.JsonErrorResponse
+      alias Schemas.ErrorResponses.ForbiddenResponse
+
+      import BlockScoutWeb.Schemas.API.V2.General
     end
   end
 
@@ -39,16 +50,14 @@ defmodule BlockScoutWeb do
         root: "lib/block_scout_web/templates",
         namespace: BlockScoutWeb
 
-      # Import convenience functions from controllers
-      import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
-
       # Use all HTML functionality (forms, tags, etc)
-      use Phoenix.HTML
+      import Phoenix.HTML
+      import Phoenix.HTML.Form
+      use PhoenixHTMLHelpers
 
       import BlockScoutWeb.{
         CurrencyHelper,
         ErrorHelper,
-        Gettext,
         Router.Helpers,
         TabHelper,
         Tokens.Helper,
@@ -56,7 +65,15 @@ defmodule BlockScoutWeb do
         WeiHelper
       }
 
-      import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
+      use Gettext, backend: BlockScoutWeb.Gettext
+
+      import BlockScoutWeb.Routers.AccountRouter.Helpers, except: [static_path: 2]
+
+      import Explorer.Chain.CurrencyHelper, only: [divide_decimals: 2]
+
+      import BlockScoutWeb.Routers.WebRouter.Helpers, except: [static_path: 2]
+
+      import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
     end
   end
 
@@ -73,7 +90,10 @@ defmodule BlockScoutWeb do
     quote do
       use Phoenix.Channel
 
-      import BlockScoutWeb.Gettext
+      use Gettext, backend: BlockScoutWeb.Gettext
+
+      import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+      import BlockScoutWeb.AccessHelper, only: [valid_address_hash_and_not_restricted_access?: 1]
     end
   end
 

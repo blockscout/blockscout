@@ -92,7 +92,7 @@ if ($transactionListPage.length) {
 
   connectElements({ store, elements })
 
-  const transactionsChannel = socket.channel('transactions:new_transaction')
+  const transactionsChannel = socket.channel('transactions_old:new_transaction')
   transactionsChannel.join()
   transactionsChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'

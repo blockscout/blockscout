@@ -9,7 +9,6 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
   alias Explorer.EnvVarTranslator
   alias Explorer.Tags.{AddressTag, AddressToTag}
   alias Explorer.Validator.MetadataRetriever
-  alias Poison.Parser
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -24,9 +23,6 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   @impl GenServer
   def handle_info(:fetch_tags, state) do
-    # set tag for every chainlink oracle
-    create_chainlink_oracle_tag()
-
     create_new_tags()
 
     send(self(), :bind_addresses)
@@ -47,7 +43,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set L2 tag
     set_l2_tag()
 
-    all_tags = AddressTag.get_all_tags()
+    all_tags = AddressTag.get_all()
 
     all_tags
     |> Enum.each(fn %{label: tag_name} ->
@@ -68,21 +64,6 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     |> String.replace(".", "_")
   end
 
-  def create_chainlink_oracle_tag do
-    chainlink_oracles_config = Application.get_env(:block_scout_web, :chainlink_oracles)
-
-    if chainlink_oracles_config do
-      chainlink_oracles_config
-      |> Parser.parse!(%{keys: :atoms!})
-      |> Enum.each(fn %{:name => name, :address => address} ->
-        chainlink_tag_name = "chainlink oracle #{String.downcase(name)}"
-        AddressTag.set_tag(chainlink_tag_name, chainlink_tag_name)
-        tag_id = AddressTag.get_tag_id(chainlink_tag_name)
-        AddressToTag.set_tag_to_addresses(tag_id, [address])
-      end)
-    end
-  end
-
   defp set_tag_for_multiple_env_var_addresses(env_vars, tag) do
     addresses =
       env_vars
@@ -92,7 +73,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
         |> String.downcase()
       end)
 
-    tag_id = AddressTag.get_tag_id(tag)
+    tag_id = AddressTag.get_id_by_label(tag)
     AddressToTag.set_tag_to_addresses(tag_id, addresses)
   end
 
@@ -112,23 +93,23 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
         end)
       end)
 
-    tag_id = AddressTag.get_tag_id(tag)
+    tag_id = AddressTag.get_id_by_label(tag)
     AddressToTag.set_tag_to_addresses(tag_id, addresses)
   end
 
-  def create_new_tags do
+  defp create_new_tags do
     tags = EnvVarTranslator.map_array_env_var_to_list(:new_tags)
 
     tags
     |> Enum.each(fn %{tag: tag_name, title: tag_display_name} ->
-      AddressTag.set_tag(tag_name, tag_display_name)
+      AddressTag.set(tag_name, tag_display_name)
     end)
   end
 
   defp set_tag_for_env_var_multiple_addresses(env_var, tag) do
     addresses = env_var_string_array_to_list(env_var)
 
-    tag_id = AddressTag.get_tag_id(tag)
+    tag_id = AddressTag.get_id_by_label(tag)
     AddressToTag.set_tag_to_addresses(tag_id, addresses)
   end
 
@@ -152,7 +133,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
   defp set_validator_tag do
     validators = MetadataRetriever.fetch_validators_list()
     FetchValidatorInfoOnDemand.trigger_fetch(validators)
-    tag_id = AddressTag.get_tag_id("validator")
+    tag_id = AddressTag.get_id_by_label("validator")
     AddressToTag.set_tag_to_addresses(tag_id, validators)
   end
 
@@ -176,29 +157,5 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_l2_tag do
     set_tag_for_multiple_env_var_addresses(["CUSTOM_CONTRACT_ADDRESSES_AOX"], "l2")
-  end
-
-  def set_chainlink_oracle_tag do
-    chainlink_oracles = chainlink_oracles_list()
-
-    tag_id = AddressTag.get_tag_id("chainlink oracle")
-    AddressToTag.set_tag_to_addresses(tag_id, chainlink_oracles)
-  end
-
-  defp chainlink_oracles_list do
-    chainlink_oracles_config = Application.get_env(:block_scout_web, :chainlink_oracles)
-
-    if chainlink_oracles_config do
-      try do
-        chainlink_oracles_config
-        |> Parser.parse!(%{keys: :atoms!})
-        |> Enum.map(fn %{:name => _name, :address => address} -> address end)
-      rescue
-        _ ->
-          []
-      end
-    else
-      []
-    end
   end
 end

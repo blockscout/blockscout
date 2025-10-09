@@ -6,7 +6,7 @@ defmodule EthereumJSONRPC.BlockTest do
   alias EthereumJSONRPC.Block
 
   describe "elixir_to_params/1" do
-    test "sets totalDifficulty to nil if it's empty" do
+    test "sets default values for params (incl. nil)" do
       result =
         Block.elixir_to_params(%{
           "difficulty" => 17_561_410_778,
@@ -55,32 +55,42 @@ defmodule EthereumJSONRPC.BlockTest do
                  transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
                  uncles: []
                }
-               |> (&if(Application.get_env(:explorer, :chain_type) == "rsk",
-                     do:
-                       Map.merge(
-                         &1,
-                         %{
-                           bitcoin_merged_mining_coinbase_transaction: nil,
-                           bitcoin_merged_mining_header: nil,
-                           bitcoin_merged_mining_merkle_proof: nil,
-                           hash_for_merged_mining: nil,
-                           minimum_gas_price: nil
-                         }
-                       ),
-                     else: &1
-                   )).()
-               |> (&if(Application.get_env(:explorer, :chain_type) == "ethereum",
-                     do:
-                       Map.merge(
-                         &1,
-                         %{
-                           withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-                           blob_gas_used: 0,
-                           excess_blob_gas: 0
-                         }
-                       ),
-                     else: &1
-                   )).()
+               |> Map.merge(chain_type_fields())
+    end
+
+    case Application.compile_env(:explorer, :chain_type) do
+      :rsk ->
+        defp chain_type_fields,
+          do: %{
+            bitcoin_merged_mining_coinbase_transaction: nil,
+            bitcoin_merged_mining_header: nil,
+            bitcoin_merged_mining_merkle_proof: nil,
+            hash_for_merged_mining: nil,
+            minimum_gas_price: nil
+          }
+
+      :ethereum ->
+        defp chain_type_fields,
+          do: %{
+            withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+            blob_gas_used: 0,
+            excess_blob_gas: 0
+          }
+
+      :arbitrum ->
+        defp chain_type_fields,
+          do: %{
+            send_root: nil,
+            send_count: nil,
+            l1_block_number: nil
+          }
+
+      :zilliqa ->
+        defp chain_type_fields,
+          do: %{zilliqa_view: nil}
+
+      _ ->
+        defp chain_type_fields, do: %{}
     end
   end
 

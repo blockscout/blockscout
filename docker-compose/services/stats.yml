@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   stats-db-init:
-    image: postgres:15
+    image: postgres:17
     volumes:
       - ./stats-db-data:/var/lib/postgresql/data
     entrypoint:
@@ -12,7 +12,7 @@ services:
         chown -R 2000:2000 /var/lib/postgresql/data
 
   stats-db:
-    image: postgres:15
+    image: postgres:17
     user: 2000:2000
     shm_size: 256m
     restart: always
@@ -45,7 +45,7 @@ services:
     env_file:
       -  ../envs/common-stats.env
     environment:
-      - STATS__DB_URL=postgres://stats:n0uejXPl61ci6ldCuE2gQU5Y@stats-db:5432/stats
+      - STATS__DB_URL=${STATS__DB_URL:-postgres://stats:n0uejXPl61ci6ldCuE2gQU5Y@stats-db:5432/stats}
       - STATS__BLOCKSCOUT_DB_URL=${STATS__BLOCKSCOUT_DB_URL:-postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@db:5432/blockscout}
-      - STATS__CREATE_DATABASE=true
-      - STATS__RUN_MIGRATIONS=true
+      - STATS__CREATE_DATABASE=${STATS__CREATE_DATABASE:-true}
+      - STATS__RUN_MIGRATIONS=${STATS__RUN_MIGRATIONS:-true}

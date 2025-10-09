@@ -1,8 +1,11 @@
 defmodule Explorer.Chain.SmartContract.ProxyTest do
   use Explorer.DataCase, async: false
   import Mox
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.SmartContract
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.TestHelper
 
   setup :verify_on_exit!
   setup :set_mox_global
@@ -129,63 +132,6 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       }
     ]
 
-    defp request_EIP1967_zero_implementations do
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-      end)
-      |> expect(:json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-      end)
-      |> expect(:json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-      end)
-    end
-
-    # EIP-1967 + EIP-1822
-    defp request_zero_implementations do
-      request_EIP1967_zero_implementations()
-      |> expect(:json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-      end)
-    end
-
     test "combine_proxy_implementation_abi/2 returns empty [] abi if proxy abi is null" do
       proxy_contract_address = insert(:contract_address)
 
@@ -194,23 +140,25 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
     end
 
     test "combine_proxy_implementation_abi/2 returns [] abi for unverified proxy" do
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
+
       proxy_contract_address = insert(:contract_address)
 
       smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [], contract_code_md5: "123")
 
-      request_zero_implementations()
-
       assert Proxy.combine_proxy_implementation_abi(smart_contract) == []
     end
 
     test "combine_proxy_implementation_abi/2 returns proxy abi if implementation is not verified" do
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
+
       proxy_contract_address = insert(:contract_address)
 
       smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
-
-      request_zero_implementations()
 
       assert Proxy.combine_proxy_implementation_abi(smart_contract) == @proxy_abi
     end
@@ -218,38 +166,27 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
     test "combine_proxy_implementation_abi/2 returns proxy + implementation abi if implementation is verified" do
       proxy_contract_address = insert(:contract_address)
 
-      smart_contract =
+      proxy_smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
       implementation_contract_address = insert(:contract_address)
 
-      insert(:smart_contract,
-        address_hash: implementation_contract_address.hash,
-        abi: @implementation_abi,
-        contract_code_md5: "123"
+      implementation_smart_contract =
+        insert(:smart_contract,
+          address_hash: implementation_contract_address.hash,
+          abi: @implementation_abi,
+          contract_code_md5: "123",
+          name: "impl"
+        )
+
+      insert(:proxy_implementation,
+        proxy_address_hash: proxy_contract_address.hash,
+        proxy_type: "eip1167",
+        address_hashes: [implementation_contract_address.hash],
+        names: [implementation_smart_contract.name]
       )
 
-      implementation_contract_address_hash_string =
-        Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
-
-      request_zero_implementations()
-
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
-             }
-           ]}
-        end
-      )
-
-      combined_abi = Proxy.combine_proxy_implementation_abi(smart_contract)
+      combined_abi = Proxy.combine_proxy_implementation_abi(proxy_smart_contract)
 
       assert Enum.any?(@proxy_abi, fn el -> el == Enum.at(@implementation_abi, 0) end) == false
       assert Enum.any?(@proxy_abi, fn el -> el == Enum.at(@implementation_abi, 1) end) == false
@@ -267,30 +204,20 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
                []
     end
 
-    test "get_implementation_abi_from_proxy/2 returns [] abi for unverified proxy" do
-      proxy_contract_address = insert(:contract_address)
-
-      smart_contract =
-        insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [], contract_code_md5: "123")
-
-      request_zero_implementations()
-
-      assert Proxy.combine_proxy_implementation_abi(smart_contract) == []
-    end
-
     test "get_implementation_abi_from_proxy/2 returns [] if implementation is not verified" do
       proxy_contract_address = insert(:contract_address)
 
       smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
-      request_zero_implementations()
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
 
       assert Proxy.get_implementation_abi_from_proxy(smart_contract, []) == []
     end
 
-    test "get_implementation_abi_from_proxy/2 returns implementation abi if implementation is verified" do
-      proxy_contract_address = insert(:contract_address)
+    test "get_implementation_abi_from_proxy/2 returns implementation abi if implementation is verified (basic_implementation proxy)" do
+      proxy_contract_address = insert(:contract_address, contract_code: "0xDEADBEEF5c60da1bDEADBEEF")
 
       smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
@@ -303,25 +230,8 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
         contract_code_md5: "123"
       )
 
-      implementation_contract_address_hash_string =
-        Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
-
-      request_zero_implementations()
-
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
-             }
-           ]}
-        end
-      )
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests(basic_implementation: implementation_contract_address.hash)
 
       implementation_abi = Proxy.get_implementation_abi_from_proxy(smart_contract, [])
 
@@ -342,25 +252,8 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
         contract_code_md5: "123"
       )
 
-      implementation_contract_address_hash_string =
-        Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
-
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn %{
-             id: _id,
-             method: "eth_getStorageAt",
-             params: [
-               _,
-               "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-               "latest"
-             ]
-           },
-           _options ->
-          {:ok, "0x000000000000000000000000" <> implementation_contract_address_hash_string}
-        end
-      )
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests(eip1967: implementation_contract_address.hash)
 
       implementation_abi = Proxy.get_implementation_abi_from_proxy(smart_contract, [])
 
@@ -391,8 +284,6 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       contract_code_md5: "123"
     )
 
-    beacon_contract_address_hash_string = Base.encode16(beacon_contract_address.hash.bytes, case: :lower)
-
     implementation_contract_address = insert(:contract_address)
 
     insert(:smart_contract,
@@ -400,167 +291,157 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       abi: @implementation_abi,
       contract_code_md5: "123"
     )
-
-    implementation_contract_address_hash_string =
-      Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
-
-    eip_1967_beacon_proxy_mock_requests(
-      beacon_contract_address_hash_string,
-      implementation_contract_address_hash_string,
-      :full_32
-    )
-
-    implementation_abi = Proxy.get_implementation_abi_from_proxy(smart_contract, [])
-    verify!(EthereumJSONRPC.Mox)
-
-    assert implementation_abi == @implementation_abi
-  end
-
-  test "get_implementation_abi_from_proxy/2 returns implementation abi in case of EIP-1967 proxy pattern (beacon contract) when eth_getStorageAt returns 20 bytes address" do
-    proxy_contract_address = insert(:contract_address)
-
-    smart_contract =
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [], contract_code_md5: "123")
-
-    beacon_contract_address = insert(:contract_address)
-
-    insert(:smart_contract,
-      address_hash: beacon_contract_address.hash,
-      abi: @beacon_abi,
-      contract_code_md5: "123"
-    )
-
-    beacon_contract_address_hash_string = Base.encode16(beacon_contract_address.hash.bytes, case: :lower)
-
-    implementation_contract_address = insert(:contract_address)
-
-    insert(:smart_contract,
-      address_hash: implementation_contract_address.hash,
-      abi: @implementation_abi,
-      contract_code_md5: "123"
-    )
-
-    implementation_contract_address_hash_string =
-      Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
-
-    eip_1967_beacon_proxy_mock_requests(
-      beacon_contract_address_hash_string,
-      implementation_contract_address_hash_string,
-      :exact_20
-    )
-
-    implementation_abi = Proxy.get_implementation_abi_from_proxy(smart_contract, [])
-    verify!(EthereumJSONRPC.Mox)
-
-    assert implementation_abi == @implementation_abi
-  end
-
-  test "get_implementation_abi_from_proxy/2 returns implementation abi in case of EIP-1967 proxy pattern (beacon contract) when eth_getStorageAt returns less 20 bytes address" do
-    proxy_contract_address = insert(:contract_address)
-
-    smart_contract =
-      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [], contract_code_md5: "123")
-
-    beacon_contract_address = insert(:contract_address)
-
-    insert(:smart_contract,
-      address_hash: beacon_contract_address.hash,
-      abi: @beacon_abi,
-      contract_code_md5: "123"
-    )
-
-    beacon_contract_address_hash_string = Base.encode16(beacon_contract_address.hash.bytes, case: :lower)
-
-    implementation_contract_address = insert(:contract_address)
-
-    insert(:smart_contract,
-      address_hash: implementation_contract_address.hash,
-      abi: @implementation_abi,
-      contract_code_md5: "123"
-    )
-
-    implementation_contract_address_hash_string =
-      Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
-
-    eip_1967_beacon_proxy_mock_requests(
-      beacon_contract_address_hash_string,
-      implementation_contract_address_hash_string,
-      :short
-    )
-
-    implementation_abi = Proxy.get_implementation_abi_from_proxy(smart_contract, [])
-    verify!(EthereumJSONRPC.Mox)
-
-    assert implementation_abi == @implementation_abi
-  end
-
-  defp eip_1967_beacon_proxy_mock_requests(
-         beacon_contract_address_hash_string,
-         implementation_contract_address_hash_string,
-         mode
-       ) do
-    response =
-      case mode do
-        :full_32 -> "0x000000000000000000000000" <> beacon_contract_address_hash_string
-        :exact_20 -> "0x" <> beacon_contract_address_hash_string
-        :short -> "0x" <> String.slice(beacon_contract_address_hash_string, 10..-1)
-      end
 
     EthereumJSONRPC.Mox
-    |> expect(
-      :json_rpc,
-      fn %{
-           id: _id,
-           method: "eth_getStorageAt",
-           params: [
-             _,
-             "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-             "latest"
-           ]
-         },
-         _options ->
-        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-      end
+    |> TestHelper.mock_generic_proxy_requests(
+      eip1967_beacon: beacon_contract_address.hash,
+      eip1967_beacon_implementation: implementation_contract_address.hash
     )
-    |> expect(
-      :json_rpc,
-      fn %{
-           id: _id,
-           method: "eth_getStorageAt",
-           params: [
-             _,
-             "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-             "latest"
-           ]
-         },
-         _options ->
-        {:ok, response}
-      end
-    )
-    |> expect(
-      :json_rpc,
-      fn [
-           %{
-             id: _id,
-             method: "eth_call",
-             params: [
-               %{data: "0x5c60da1b", to: "0x" <> ^beacon_contract_address_hash_string},
-               "latest"
-             ]
-           }
-         ],
-         _options ->
-        {
-          :ok,
-          [
-            %{
-              id: _id,
-              jsonrpc: "2.0",
-              result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
-            }
-          ]
-        }
-      end
-    )
+
+    implementation_abi = Proxy.get_implementation_abi_from_proxy(smart_contract, [])
+    verify!(EthereumJSONRPC.Mox)
+
+    assert implementation_abi == @implementation_abi
+  end
+
+  test "extract_address_hash/1" do
+    assert Proxy.extract_address_hash(nil) == nil
+    assert Proxy.extract_address_hash("0x") == nil
+    assert Proxy.extract_address_hash("0x0") == nil
+    assert Proxy.extract_address_hash("0x0000000000000000000000000000000000000000") == nil
+    assert Proxy.extract_address_hash("0x0000000000000000000000000000000000000000000000000000000000000000") == nil
+    assert Proxy.extract_address_hash("INVALID") == :error
+
+    # 20-bytes value
+    assert Proxy.extract_address_hash("0x1111111111111111111111111111111111111111") ==
+             {:ok,
+              %Hash{
+                byte_count: 20,
+                bytes: <<0x1111111111111111111111111111111111111111::160>>
+              }}
+
+    # 19-bytes value
+    assert Proxy.extract_address_hash("0x11111111111111111111111111111111111111") ==
+             {:ok,
+              %Hash{
+                byte_count: 20,
+                bytes: <<0x0011111111111111111111111111111111111111::160>>
+              }}
+
+    # 21-bytes value
+    assert Proxy.extract_address_hash("0x001111111111111111111111111111111111111111") ==
+             {:ok,
+              %Hash{
+                byte_count: 20,
+                bytes: <<0x1111111111111111111111111111111111111111::160>>
+              }}
+
+    # canonical 32-bytes value
+    assert Proxy.extract_address_hash("0x0000000000000000000000001111111111111111111111111111111111111111") ==
+             {:ok,
+              %Hash{
+                byte_count: 20,
+                bytes: <<0x1111111111111111111111111111111111111111::160>>
+              }}
+
+    # 33-bytes value
+    assert Proxy.extract_address_hash("0x000000000000000000000000001111111111111111111111111111111111111111") == nil
+  end
+
+  test "check proxy_contract?/1 function" do
+    smart_contract = insert(:smart_contract)
+
+    proxy =
+      :explorer
+      |> Application.get_env(:proxy)
+      |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+      |> Keyword.replace(:implementation_data_fetching_timeout, :timer.seconds(20))
+
+    Application.put_env(:explorer, :proxy, proxy)
+
+    refute_implementations(smart_contract.address_hash)
+
+    # fetch nil implementation and don't save it to db
+    EthereumJSONRPC.Mox
+    |> TestHelper.mock_generic_proxy_requests()
+
+    refute Proxy.proxy_contract?(smart_contract)
+    verify!(EthereumJSONRPC.Mox)
+    assert_empty_implementation(smart_contract.address_hash)
+
+    proxy =
+      :explorer
+      |> Application.get_env(:proxy)
+      |> Keyword.replace(:fallback_cached_implementation_data_ttl, 0)
+
+    Application.put_env(:explorer, :proxy, proxy)
+
+    EthereumJSONRPC.Mox
+    |> TestHelper.mock_generic_proxy_requests(eip1967: :error)
+
+    refute Proxy.proxy_contract?(smart_contract)
+    verify!(EthereumJSONRPC.Mox)
+
+    implementation_address = insert(:address)
+
+    EthereumJSONRPC.Mox
+    |> TestHelper.mock_generic_proxy_requests(eip1967: implementation_address.hash)
+
+    assert Proxy.proxy_contract?(smart_contract)
+    verify!(EthereumJSONRPC.Mox)
+    assert_implementation_address(smart_contract.address_hash)
+
+    assert Proxy.proxy_contract?(smart_contract)
+    verify!(EthereumJSONRPC.Mox)
+    assert_implementation_address(smart_contract.address_hash)
+
+    proxy =
+      :explorer
+      |> Application.get_env(:proxy)
+      |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+
+    Application.put_env(:explorer, :proxy, proxy)
+
+    assert Proxy.proxy_contract?(smart_contract)
+
+    proxy =
+      :explorer
+      |> Application.get_env(:proxy)
+      |> Keyword.replace(:fallback_cached_implementation_data_ttl, 0)
+
+    Application.put_env(:explorer, :proxy, proxy)
+
+    assert Proxy.proxy_contract?(smart_contract)
+    verify!(EthereumJSONRPC.Mox)
+
+    assert Proxy.proxy_contract?(smart_contract)
+    verify!(EthereumJSONRPC.Mox)
+
+    proxy =
+      :explorer
+      |> Application.get_env(:proxy)
+      |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+
+    Application.put_env(:explorer, :proxy, proxy)
+  end
+
+  def assert_implementation_address(address_hash) do
+    implementation = Implementation.get_proxy_implementations(address_hash)
+    assert implementation.proxy_type
+    assert implementation.updated_at
+    assert implementation.address_hashes
+  end
+
+  def refute_implementations(address_hash) do
+    implementations = Implementation.get_proxy_implementations(address_hash)
+    refute implementations
+  end
+
+  def assert_empty_implementation(address_hash) do
+    implementation = Implementation.get_proxy_implementations(address_hash)
+    assert is_nil(implementation.proxy_type)
+    assert implementation.updated_at
+    assert implementation.names == []
+    assert implementation.address_hashes == []
   end
 end

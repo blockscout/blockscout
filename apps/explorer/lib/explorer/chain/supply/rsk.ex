@@ -19,10 +19,10 @@ defmodule Explorer.Chain.Supply.RSK do
   @rsk_bridge_contract_address "0x0000000000000000000000000000000001000006"
 
   @spec market_cap(any()) :: Decimal.t()
-  def market_cap(%{usd_value: usd_value}) when not is_nil(usd_value) do
+  def market_cap(%{fiat_value: fiat_value}) when not is_nil(fiat_value) do
     btc = circulating()
 
-    Decimal.mult(btc, usd_value)
+    Decimal.mult(btc, fiat_value)
   end
 
   def market_cap(_), do: Decimal.new(0)
@@ -113,7 +113,7 @@ defmodule Explorer.Chain.Supply.RSK do
 
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    case EthereumJSONRPC.fetch_balances(params, json_rpc_named_arguments) do
+    case EthereumJSONRPC.fetch_balances(params, json_rpc_named_arguments, max_number) do
       {:ok,
        %FetchedBalances{
          errors: [],

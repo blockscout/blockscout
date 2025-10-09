@@ -20,16 +20,17 @@ defmodule Indexer.Fetcher.Beacon.Blob do
   @default_max_batch_size 10
   @default_max_concurrency 1
   @default_retries_limit 2
-  @default_retry_deadline :timer.minutes(5)
+  # 5 minutes in seconds
+  @default_retry_deadline 300
 
   @doc """
   Asynchronously fetches blobs for given `block_timestamp`.
   """
-  def async_fetch(block_timestamps) do
+  def async_fetch(block_timestamps, realtime?) do
     if BlobSupervisor.disabled?() do
       :ok
     else
-      BufferedTask.buffer(__MODULE__, block_timestamps |> Enum.map(&entry/1))
+      BufferedTask.buffer(__MODULE__, Enum.map(block_timestamps, &entry/1), realtime?)
     end
   end
 

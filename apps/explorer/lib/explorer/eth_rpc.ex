@@ -4,6 +4,10 @@ defmodule Explorer.EthRPC do
   """
   import Explorer.EthRpcHelper
 
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias Ecto.Type, as: EctoType
   alias Explorer.{BloomFilter, Chain, Helper, Repo}
 
@@ -19,7 +23,7 @@ defmodule Explorer.EthRPC do
   }
 
   alias Explorer.Chain.Cache.{BlockNumber, GasPriceOracle}
-  alias Explorer.Etherscan.{Blocks, Logs, RPC}
+  alias Explorer.Etherscan.{Blocks, Logs}
 
   @nil_gas_price_message "Gas price is not estimated yet"
 
@@ -846,31 +850,43 @@ defmodule Explorer.EthRPC do
   """
   @spec eth_get_transaction_by_hash(String.t()) :: {:ok, map() | nil} | {:error, String.t()}
   def eth_get_transaction_by_hash(transaction_hash_string) do
-    validate_and_render_transaction(transaction_hash_string, &render_transaction/1, api?: true)
+    necessity_by_association =
+      %{signed_authorizations: :optional}
+      |> Map.merge(chain_type_transaction_necessity_by_association())
+
+    validate_and_render_transaction(transaction_hash_string, &render_transaction/1,
+      api?: true,
+      necessity_by_association: necessity_by_association
+    )
   end
 
   defp render_transaction(transaction) do
-    {:ok,
-     %{
-       "blockHash" => transaction.block_hash,
-       "blockNumber" => encode_quantity(transaction.block_number),
-       "from" => transaction.from_address_hash,
-       "gas" => encode_quantity(transaction.gas),
-       "gasPrice" => transaction.gas_price |> Wei.to(:wei) |> encode_quantity(),
-       "maxPriorityFeePerGas" => transaction.max_priority_fee_per_gas |> Wei.to(:wei) |> encode_quantity(),
-       "maxFeePerGas" => transaction.max_fee_per_gas |> Wei.to(:wei) |> encode_quantity(),
-       "hash" => transaction.hash,
-       "input" => transaction.input,
-       "nonce" => encode_quantity(transaction.nonce),
-       "to" => transaction.to_address_hash,
-       "transactionIndex" => encode_quantity(transaction.index),
-       "value" => transaction.value |> Wei.to(:wei) |> encode_quantity(),
-       "type" => encode_quantity(transaction.type),
-       "chainId" => chain_id(),
-       "v" => encode_quantity(transaction.v),
-       "r" => encode_quantity(transaction.r),
-       "s" => encode_quantity(transaction.s)
-     }}
+    result =
+      %{
+        "blockHash" => transaction.block_hash,
+        "blockNumber" => encode_quantity(transaction.block_number),
+        "from" => transaction.from_address_hash,
+        "gas" => encode_quantity(transaction.gas),
+        "gasPrice" => transaction.gas_price |> Wei.to(:wei) |> encode_quantity(),
+        "hash" => transaction.hash,
+        "input" => transaction.input,
+        "nonce" => encode_quantity(transaction.nonce),
+        "to" => transaction.to_address_hash,
+        "transactionIndex" => encode_quantity(transaction.index),
+        "value" => transaction.value |> Wei.to(:wei) |> encode_quantity(),
+        "type" => encode_quantity(transaction.type) || "0x0",
+        "chainId" => chain_id(),
+        "v" => encode_quantity(transaction.v),
+        "r" => encode_quantity(transaction.r),
+        "s" => encode_quantity(transaction.s)
+      }
+      |> maybe_add_eip_1559_fields(transaction)
+      |> maybe_add_y_parity(transaction)
+      |> maybe_add_signed_authorizations(transaction)
+      |> maybe_add_chain_type_extra_transaction_info_properties(transaction)
+      |> maybe_add_access_list(transaction)
+
+    {:ok, result}
   end
 
   @doc """
@@ -878,7 +894,9 @@ defmodule Explorer.EthRPC do
   """
   @spec eth_get_transaction_receipt(String.t()) :: {:ok, map() | nil} | {:error, String.t()}
   def eth_get_transaction_receipt(transaction_hash_string) do
-    necessity_by_association = %{block: :optional, logs: :optional}
+    necessity_by_association =
+      %{block: :optional, logs: :optional}
+      |> Map.merge(chain_type_transaction_necessity_by_association())
 
     validate_and_render_transaction(transaction_hash_string, &render_transaction_receipt/1,
       api?: true,
@@ -886,34 +904,121 @@ defmodule Explorer.EthRPC do
     )
   end
 
+  defp chain_type_transaction_necessity_by_association do
+    if Application.get_env(:explorer, :chain_type) == :ethereum do
+      %{:beacon_blob_transaction => :optional}
+    else
+      %{}
+    end
+  end
+
   defp render_transaction_receipt(transaction) do
     {:ok, status} = Status.dump(transaction.status)
 
-    {:ok,
-     %{
-       "blockHash" => transaction.block_hash,
-       "blockNumber" => encode_quantity(transaction.block_number),
-       "contractAddress" => transaction.created_contract_address_hash,
-       "cumulativeGasUsed" => encode_quantity(transaction.cumulative_gas_used),
-       "effectiveGasPrice" =>
-         (transaction.gas_price || transaction |> Transaction.effective_gas_price())
-         |> Wei.to(:wei)
-         |> encode_quantity(),
-       "from" => transaction.from_address_hash,
-       "gasUsed" => encode_quantity(transaction.gas_used),
-       "logs" => Enum.map(transaction.logs, &render_log(&1, transaction)),
-       'logsBloom' => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
-       "status" => encode_quantity(status),
-       "to" => transaction.to_address_hash,
-       "transactionHash" => transaction.hash,
-       "transactionIndex" => encode_quantity(transaction.index),
-       "type" => encode_quantity(transaction.type)
-     }}
+    props =
+      %{
+        "blockHash" => transaction.block_hash,
+        "blockNumber" => encode_quantity(transaction.block_number),
+        "contractAddress" => transaction.created_contract_address_hash,
+        "cumulativeGasUsed" => encode_quantity(transaction.cumulative_gas_used),
+        "effectiveGasPrice" =>
+          (transaction.gas_price || transaction |> Transaction.effective_gas_price())
+          |> Wei.to(:wei)
+          |> encode_quantity(),
+        "from" => transaction.from_address_hash,
+        "gasUsed" => encode_quantity(transaction.gas_used),
+        "logs" => Enum.map(transaction.logs, &render_log(&1, transaction)),
+        "logsBloom" => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
+        "status" => encode_quantity(status),
+        "to" => transaction.to_address_hash,
+        "transactionHash" => transaction.hash,
+        "transactionIndex" => encode_quantity(transaction.index),
+        "type" => encode_quantity(transaction.type) || "0x0"
+      }
+      |> maybe_add_chain_type_extra_receipt_properties(transaction)
+
+    {:ok, props}
   end
+
+  defp maybe_add_eip_1559_fields(props, %Transaction{
+         max_fee_per_gas: max_fee_per_gas,
+         max_priority_fee_per_gas: max_priority_fee_per_gas
+       })
+       when not is_nil(max_fee_per_gas) and not is_nil(max_priority_fee_per_gas) do
+    props
+    |> Map.put("maxFeePerGas", max_fee_per_gas |> Wei.to(:wei) |> encode_quantity())
+    |> Map.put("maxPriorityFeePerGas", max_priority_fee_per_gas |> Wei.to(:wei) |> encode_quantity())
+  end
+
+  defp maybe_add_eip_1559_fields(props, _), do: props
+
+  # yParity shouldn't be added for legacy (type 0) and is_nil(type) transactions
+  defp maybe_add_y_parity(props, %Transaction{type: type, v: v}) when not is_nil(type) and type > 0 do
+    props
+    |> Map.put("yParity", encode_quantity(v))
+  end
+
+  defp maybe_add_y_parity(props, %Transaction{type: _type}), do: props
+
+  defp maybe_add_signed_authorizations(props, %Transaction{type: 4, signed_authorizations: signed_authorizations}) do
+    prepared_signed_authorizations =
+      signed_authorizations
+      |> Enum.map(fn signed_authorization ->
+        %{
+          "chainId" => String.downcase(integer_to_quantity(signed_authorization.chain_id)),
+          "nonce" => Helper.integer_to_hex(Decimal.to_integer(signed_authorization.nonce)),
+          "address" => to_string(signed_authorization.address),
+          "r" => Helper.decimal_to_hex(signed_authorization.r),
+          "s" => Helper.decimal_to_hex(signed_authorization.s),
+          "yParity" => Helper.integer_to_hex(signed_authorization.v)
+        }
+      end)
+
+    props
+    |> Map.put("authorizationList", prepared_signed_authorizations)
+  end
+
+  defp maybe_add_signed_authorizations(props, %Transaction{type: 4}) do
+    props
+    |> Map.put("authorizationList", [])
+  end
+
+  defp maybe_add_signed_authorizations(props, _transaction), do: props
+
+  defp maybe_add_access_list(props, %Transaction{type: type}) when not is_nil(type) and type > 0 do
+    props
+    |> Map.put("accessList", [])
+  end
+
+  defp maybe_add_access_list(props, _transaction), do: props
+
+  defp maybe_add_chain_type_extra_transaction_info_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
+    if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
+      props
+      |> Map.put("maxFeePerBlobGas", Helper.decimal_to_hex(beacon_blob_transaction.max_fee_per_blob_gas))
+      |> Map.put("blobVersionedHashes", beacon_blob_transaction.blob_versioned_hashes)
+    else
+      props
+    end
+  end
+
+  defp maybe_add_chain_type_extra_transaction_info_properties(props, _transaction), do: props
+
+  defp maybe_add_chain_type_extra_receipt_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
+    if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
+      props
+      |> Map.put("blobGasPrice", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_price))
+      |> Map.put("blobGasUsed", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_used))
+    else
+      props
+    end
+  end
+
+  defp maybe_add_chain_type_extra_receipt_properties(props, _transaction), do: props
 
   defp validate_and_render_transaction(transaction_hash_string, render_func, params) do
     with {:transaction_hash, {:ok, transaction_hash}} <-
-           {:transaction_hash, Chain.string_to_transaction_hash(transaction_hash_string)},
+           {:transaction_hash, Chain.string_to_full_hash(transaction_hash_string)},
          {:transaction, {:ok, transaction}} <- {:transaction, Chain.hash_to_transaction(transaction_hash, params)} do
       render_func.(transaction)
     else
@@ -935,7 +1040,6 @@ defmodule Explorer.EthRPC do
         address_or_topic_params
         |> Map.put(:from_block, from_block)
         |> Map.put(:to_block, to_block)
-        |> Map.put(:allow_non_consensus, true)
 
       logs =
         filter
@@ -1092,20 +1196,16 @@ defmodule Explorer.EthRPC do
         from_block = Map.get(filters, "fromBlock", "latest")
         to_block = Map.get(filters, "toBlock", "latest")
 
-        max_block_number =
-          if from_block == "latest" || to_block == "latest" do
-            max_consensus_block_number()
-          end
+        if from_block == "latest" || to_block == "latest" || from_block == "pending" || to_block == "pending" do
+          max_block_number = max_consensus_block_number()
 
-        pending_block_number =
-          if from_block == "pending" || to_block == "pending" do
-            max_non_consensus_block_number(max_block_number)
+          if is_nil(max_block_number) do
+            {:error, :empty}
+          else
+            to_block_numbers(from_block, to_block, max_block_number)
           end
-
-        if is_nil(pending_block_number) && from_block == "pending" && to_block == "pending" do
-          {:error, :empty}
         else
-          to_block_numbers(from_block, to_block, max_block_number, pending_block_number)
+          to_block_numbers(from_block, to_block, nil)
         end
 
       {:block, _} ->
@@ -1134,37 +1234,33 @@ defmodule Explorer.EthRPC do
 
   defp paging_options(_), do: {:ok, nil}
 
-  defp to_block_numbers(from_block, to_block, max_block_number, pending_block_number) do
-    actual_pending_block_number = pending_block_number || max_block_number
-
-    with {:ok, from} <-
-           to_block_number(from_block, max_block_number, actual_pending_block_number),
-         {:ok, to} <- to_block_number(to_block, max_block_number, actual_pending_block_number) do
+  defp to_block_numbers(from_block, to_block, max_block_number) do
+    with {:ok, from} <- to_block_number(from_block, max_block_number),
+         {:ok, to} <- to_block_number(to_block, max_block_number) do
       {:ok, from, to}
     end
   end
 
-  defp to_block_number(integer, _, _) when is_integer(integer), do: {:ok, integer}
-  defp to_block_number("latest", max_block_number, _), do: {:ok, max_block_number || 0}
-  defp to_block_number("earliest", _, _), do: {:ok, 0}
-  defp to_block_number("pending", max_block_number, nil), do: {:ok, max_block_number || 0}
-  defp to_block_number("pending", _, pending), do: {:ok, pending}
+  defp to_block_number(integer, _) when is_integer(integer), do: {:ok, integer}
+  defp to_block_number("latest", max_block_number), do: {:ok, max_block_number || 0}
+  defp to_block_number("pending", max_block_number), do: {:ok, max_block_number || 0}
+  defp to_block_number("earliest", _), do: {:ok, 0}
 
-  defp to_block_number("0x" <> number, _, _) do
+  defp to_block_number("0x" <> number, _) do
     case Integer.parse(number, 16) do
       {integer, ""} -> {:ok, integer}
       _ -> {:error, "invalid block number"}
     end
   end
 
-  defp to_block_number(number, _, _) when is_bitstring(number) do
+  defp to_block_number(number, _) when is_bitstring(number) do
     case Integer.parse(number, 16) do
       {integer, ""} -> {:ok, integer}
       _ -> {:error, "invalid block number"}
     end
   end
 
-  defp to_block_number(_, _, _), do: {:error, "invalid block number"}
+  defp to_block_number(_, _), do: {:error, "invalid block number"}
 
   defp to_number(number, error_message) when is_bitstring(number) do
     case Integer.parse(number, 16) do
@@ -1174,13 +1270,6 @@ defmodule Explorer.EthRPC do
   end
 
   defp to_number(_, error_message), do: {:error, error_message}
-
-  defp max_non_consensus_block_number(max) do
-    case RPC.max_non_consensus_block_number(max) do
-      {:ok, number} -> number
-      _ -> nil
-    end
-  end
 
   defp max_consensus_block_number do
     case Chain.max_consensus_block_number() do
@@ -1220,8 +1309,12 @@ defmodule Explorer.EthRPC do
     {:error, "Invalid params. Params must be a list."}
   end
 
+  defp do_eth_request(%{"jsonrpc" => jsonrpc, "method" => method}) do
+    do_eth_request(%{"jsonrpc" => jsonrpc, "method" => method, "params" => []})
+  end
+
   defp do_eth_request(_) do
-    {:error, "Method, params, and jsonrpc, are all required parameters."}
+    {:error, "Method, and jsonrpc are required parameters."}
   end
 
   defp get_action(action) do

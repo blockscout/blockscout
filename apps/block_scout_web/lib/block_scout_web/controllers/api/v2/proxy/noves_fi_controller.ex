@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.V2.Proxy.NovesFiController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.API.V2.{AddressController, TransactionController}
+  alias BlockScoutWeb.API.RPC.ContractController
+  alias BlockScoutWeb.API.V2.TransactionController
   alias Explorer.ThirdPartyIntegrations.NovesFi
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -16,8 +17,8 @@ defmodule BlockScoutWeb.API.V2.Proxy.NovesFiController do
              necessity_by_association: %{},
              api?: true
            ),
-         url = NovesFi.tx_url(transaction_hash_string),
-         {response, status} <- NovesFi.noves_fi_api_request(url, conn),
+         url = NovesFi.transaction_url(transaction_hash_string),
+         {response, status} <- NovesFi.api_request(url, conn),
          {:is_empty_response, false} <- {:is_empty_response, is_nil(response)} do
       conn
       |> put_status(status)
@@ -26,13 +27,13 @@ defmodule BlockScoutWeb.API.V2.Proxy.NovesFiController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/proxy/noves-fi/transactions/:transaction_hash_param/transaction` endpoint.
+    Function to handle GET requests to `/api/v2/proxy/noves-fi/addresses/:address_hash_param/transactions` endpoint.
   """
   @spec address_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def address_transactions(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, _address_hash, _address} <- AddressController.validate_address(address_hash_string, params),
-         url = NovesFi.address_txs_url(address_hash_string),
-         {response, status} <- NovesFi.noves_fi_api_request(url, conn),
+    with {:ok, _address_hash, _address} <- ContractController.validate_address(address_hash_string, params),
+         url = NovesFi.address_transactions_url(address_hash_string),
+         {response, status} <- NovesFi.api_request(url, conn),
          {:is_empty_response, false} <- {:is_empty_response, is_nil(response)} do
       conn
       |> put_status(status)
@@ -41,13 +42,13 @@ defmodule BlockScoutWeb.API.V2.Proxy.NovesFiController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/proxy/noves-fi/transactions` endpoint.
+    Function to handle GET requests to `/api/v2/proxy/noves-fi/transaction-descriptions` endpoint.
   """
   @spec describe_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def describe_transactions(conn, _) do
-    url = NovesFi.describe_txs_url()
+    url = NovesFi.describe_transactions_url()
 
-    with {response, status} <- NovesFi.noves_fi_api_request(url, conn, :post_transactions),
+    with {response, status} <- NovesFi.api_request(url, conn, :post_transactions),
          {:is_empty_response, false} <- {:is_empty_response, is_nil(response)} do
       conn
       |> put_status(status)

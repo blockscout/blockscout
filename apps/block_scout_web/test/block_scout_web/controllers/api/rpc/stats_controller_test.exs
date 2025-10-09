@@ -3,9 +3,9 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
 
   import Mox
 
-  alias Explorer.ExchangeRates
-  alias Explorer.ExchangeRates.Token
-  alias Explorer.ExchangeRates.Source.TestSource
+  alias Explorer.Market.Fetcher.Coin
+  alias Explorer.Market.Token
+  alias Explorer.Market.Source.TestSource
 
   describe "tokensupply" do
     test "with missing contract address", %{conn: conn} do
@@ -83,6 +83,68 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(tokensupply_schema(), response)
     end
+
+    test "with valid contract address and cmc format", %{conn: conn} do
+      token = insert(:token, total_supply: 110_052_089_716_627_912_057_222_572)
+
+      params = %{
+        "module" => "stats",
+        "action" => "tokensupply",
+        "contractaddress" => to_string(token.contract_address_hash),
+        "cmc" => "true"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> text_response(200)
+
+      assert response == "110052089.716627912"
+    end
+
+    test "with custom decimals and cmc format", %{conn: conn} do
+      token =
+        insert(:token,
+          total_supply: 1_234_567_890,
+          decimals: 6
+        )
+
+      params = %{
+        "module" => "stats",
+        "action" => "tokensupply",
+        "contractaddress" => to_string(token.contract_address_hash),
+        "cmc" => "true"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> text_response(200)
+
+      assert response == "1234.567890000"
+    end
+  end
+
+  test "with null decimals and cmc format", %{conn: conn} do
+    token =
+      insert(:token,
+        total_supply: 1_234_567_890,
+        decimals: nil
+      )
+
+    params = %{
+      "module" => "stats",
+      "action" => "tokensupply",
+      "contractaddress" => to_string(token.contract_address_hash),
+      "cmc" => "true"
+    }
+
+    assert response =
+             conn
+             |> get("/api", params)
+             |> text_response(200)
+
+    assert response == "1234567890.000000000"
   end
 
   describe "ethsupplyexchange" do
@@ -145,18 +207,20 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
 
     setup do
       # Use TestSource mock for this test set
-      configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
-      Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
-      Application.put_env(:explorer, Explorer.ExchangeRates, table_name: :rates)
-      Application.put_env(:explorer, Explorer.ExchangeRates, enabled: true)
+      coin_fetcher_configuration = Application.get_env(:explorer, Coin)
+      market_source_configuration = Application.get_env(:explorer, Explorer.Market.Source)
 
-      ExchangeRates.init([])
+      Application.put_env(:explorer, Explorer.Market.Source, native_coin_source: TestSource)
+      Application.put_env(:explorer, Coin, Keyword.merge(coin_fetcher_configuration, table_name: :rates, enabled: true))
 
-      :ok
+      Coin.init([])
 
       on_exit(fn ->
-        Application.put_env(:explorer, Explorer.ExchangeRates, configuration)
+        Application.put_env(:explorer, Coin, coin_fetcher_configuration)
+        Application.put_env(:explorer, Explorer.Market.Source, market_source_configuration)
       end)
+
+      :ok
     end
 
     test "returns the configured coin's price information", %{conn: conn} do
@@ -166,18 +230,17 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
         available_supply: Decimal.new("1000000.0"),
         total_supply: Decimal.new("1000000.0"),
         btc_value: Decimal.new("1.000"),
-        id: "test",
         last_updated: DateTime.utc_now(),
-        market_cap_usd: Decimal.new("1000000.0"),
-        tvl_usd: Decimal.new("2000000.0"),
+        market_cap: Decimal.new("1000000.0"),
+        tvl: Decimal.new("2000000.0"),
         name: "test",
         symbol: symbol,
-        usd_value: Decimal.new("1.0"),
-        volume_24h_usd: Decimal.new("1000.0"),
+        fiat_value: Decimal.new("1.0"),
+        volume_24h: Decimal.new("1000.0"),
         image_url: nil
       }
 
-      ExchangeRates.handle_info({nil, {:ok, [eth]}}, %{})
+      Coin.handle_info({nil, {{:ok, eth}, false}}, %{})
 
       params = %{
         "module" => "stats",
@@ -189,7 +252,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
       expected_result = %{
         "coin_btc" => to_string(eth.btc_value),
         "coin_btc_timestamp" => expected_timestamp,
-        "coin_usd" => to_string(eth.usd_value),
+        "coin_usd" => to_string(eth.fiat_value),
         "coin_usd_timestamp" => expected_timestamp
       }
 

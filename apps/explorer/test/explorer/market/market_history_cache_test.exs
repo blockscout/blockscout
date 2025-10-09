@@ -1,8 +1,8 @@
 defmodule Explorer.Market.MarketHistoryCacheTest do
   use Explorer.DataCase
 
-  alias Explorer.Market
   alias Explorer.Market.MarketHistoryCache
+  alias Explorer.Market.MarketHistory
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, {ConCache, MarketHistoryCache.cache_name()})
@@ -29,7 +29,7 @@ defmodule Explorer.Market.MarketHistoryCacheTest do
           }
         end
 
-      Market.bulk_insert_history(records)
+      MarketHistory.bulk_insert(records)
 
       refute fetch_data()
 
@@ -50,7 +50,7 @@ defmodule Explorer.Market.MarketHistoryCacheTest do
           }
         end
 
-      Market.bulk_insert_history(stale_records)
+      MarketHistory.bulk_insert(stale_records)
 
       MarketHistoryCache.fetch()
 

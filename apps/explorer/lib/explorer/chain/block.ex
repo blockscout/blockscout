@@ -1,21 +1,57 @@
 defmodule Explorer.Chain.Block.Schema do
-  @moduledoc false
+  @moduledoc """
+    Models blocks.
 
-  alias Explorer.Chain.{Address, Block, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Blocks
+  """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Hash,
+    InternalTransaction,
+    PendingBlockOperation,
+    Transaction,
+    Wei,
+    Withdrawal
+  }
+
+  alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
+  alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
+  alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
+  alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
+  alias Explorer.Chain.Zilliqa.AggregateQuorumCertificate, as: ZilliqaAggregateQuorumCertificate
+  alias Explorer.Chain.Zilliqa.QuorumCertificate, as: ZilliqaQuorumCertificate
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
 
-  @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
-                        "ethereum" ->
+  @chain_type_fields (case @chain_type do
+                        :ethereum ->
                           elem(
                             quote do
                               field(:blob_gas_used, :decimal)
                               field(:excess_blob_gas, :decimal)
+                              has_many(:beacon_deposits, BeaconDeposit, foreign_key: :block_hash, references: :hash)
                             end,
                             2
                           )
 
-                        "rsk" ->
+                        :optimism ->
+                          elem(
+                            quote do
+                              has_one(:op_transaction_batch, OptimismTransactionBatch,
+                                foreign_key: :l2_block_number,
+                                references: :number
+                              )
+
+                              has_one(:op_frame_sequence, through: [:op_transaction_batch, :frame_sequence])
+                            end,
+                            2
+                          )
+
+                        :rsk ->
                           elem(
                             quote do
                               field(:bitcoin_merged_mining_header, :binary)
@@ -27,7 +63,7 @@ defmodule Explorer.Chain.Block.Schema do
                             2
                           )
 
-                        "zksync" ->
+                        :zksync ->
                           elem(
                             quote do
                               has_one(:zksync_batch_block, ZkSyncBatchBlock, foreign_key: :hash, references: :hash)
@@ -35,6 +71,65 @@ defmodule Explorer.Chain.Block.Schema do
                               has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
                               has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
                               has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
+                            end,
+                            2
+                          )
+
+                        :celo ->
+                          elem(
+                            quote do
+                              has_one(:celo_initiated_epoch, CeloEpoch,
+                                foreign_key: :start_processing_block_hash,
+                                references: :hash
+                              )
+
+                              has_one(:celo_terminated_epoch, CeloEpoch,
+                                foreign_key: :end_processing_block_hash,
+                                references: :hash
+                              )
+                            end,
+                            2
+                          )
+
+                        :arbitrum ->
+                          elem(
+                            quote do
+                              field(:send_count, :integer)
+                              field(:send_root, Hash.Full)
+                              field(:l1_block_number, :integer)
+
+                              has_one(:arbitrum_batch_block, ArbitrumBatchBlock,
+                                foreign_key: :block_number,
+                                references: :number
+                              )
+
+                              has_one(:arbitrum_batch, through: [:arbitrum_batch_block, :batch])
+
+                              has_one(:arbitrum_commitment_transaction,
+                                through: [:arbitrum_batch, :commitment_transaction]
+                              )
+
+                              has_one(:arbitrum_confirmation_transaction,
+                                through: [:arbitrum_batch_block, :confirmation_transaction]
+                              )
+                            end,
+                            2
+                          )
+
+                        :zilliqa ->
+                          elem(
+                            quote do
+                              field(:zilliqa_view, :integer)
+
+                              has_one(:zilliqa_quorum_certificate, ZilliqaQuorumCertificate,
+                                foreign_key: :block_hash,
+                                references: :hash
+                              )
+
+                              has_one(:zilliqa_aggregate_quorum_certificate, ZilliqaAggregateQuorumCertificate,
+                                foreign_key: :block_hash,
+                                references: :hash
+                              )
                             end,
                             2
                           )
@@ -60,6 +155,12 @@ defmodule Explorer.Chain.Block.Schema do
         field(:refetch_needed, :boolean)
         field(:base_fee_per_gas, Wei)
         field(:is_empty, :boolean)
+        field(:aggregated?, :boolean, virtual: true)
+        field(:transactions_count, :integer, virtual: true)
+        field(:blob_transactions_count, :integer, virtual: true)
+        field(:transactions_fees, :decimal, virtual: true)
+        field(:burnt_fees, :decimal, virtual: true)
+        field(:priority_fees, :decimal, virtual: true)
 
         timestamps()
 
@@ -75,6 +176,8 @@ defmodule Explorer.Chain.Block.Schema do
 
         has_many(:transactions, Transaction, references: :hash)
         has_many(:transaction_forks, Transaction.Fork, foreign_key: :uncle_hash, references: :hash)
+
+        has_many(:internal_transactions, InternalTransaction, foreign_key: :block_hash, references: :hash)
 
         has_many(:rewards, Reward, foreign_key: :block_hash, references: :hash)
 
@@ -98,24 +201,31 @@ defmodule Explorer.Chain.Block do
   require Explorer.Chain.Block.Schema
 
   use Explorer.Schema
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Block.{EmissionReward, Reward}
-  alias Explorer.Repo
+  alias Explorer.{Helper, Repo}
+  alias Explorer.Utility.MissingRangesManipulator
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
-                  |> (&(case Application.compile_env(:explorer, :chain_type) do
-                          "rsk" ->
-                            &1 ++
-                              ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
-                          "ethereum" ->
-                            &1 ++
-                              ~w(blob_gas_used excess_blob_gas)a
+  @chain_type_optional_attrs (case @chain_type do
+                                :rsk ->
+                                  ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
-                          _ ->
-                            &1
-                        end)).()
+                                :ethereum ->
+                                  ~w(blob_gas_used excess_blob_gas)a
+
+                                :arbitrum ->
+                                  ~w(send_count send_root l1_block_number)a
+
+                                :zilliqa ->
+                                  ~w(zilliqa_view)a
+
+                                _ ->
+                                  ~w()a
+                              end)
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
@@ -150,17 +260,18 @@ defmodule Explorer.Chain.Block do
    * `size` - The size of the block in bytes.
    * `timestamp` - When the block was collated
    * `total_difficulty` - the total `difficulty` of the chain until this block.
+   * `refetch_needed` - `true` if block has missing data and has to be refetched.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
    * `base_fee_per_gas` - Minimum fee required per unit of gas. Fee adjusts based on network congestion.
-  #{case Application.compile_env(:explorer, :chain_type) do
-    "rsk" -> """
+  #{case @chain_type do
+    :rsk -> """
        * `bitcoin_merged_mining_header` - Bitcoin merged mining header on Rootstock chains.
        * `bitcoin_merged_mining_coinbase_transaction` - Bitcoin merged mining coinbase transaction on Rootstock chains.
        * `bitcoin_merged_mining_merkle_proof` - Bitcoin merged mining merkle proof on Rootstock chains.
        * `hash_for_merged_mining` - Hash for merged mining on Rootstock chains.
        * `minimum_gas_price` - Minimum block gas price on Rootstock chains.
       """
-    "ethereum" -> """
+    :ethereum -> """
        * `blob_gas_used` - The total amount of blob gas consumed by the transactions within the block.
        * `excess_blob_gas` - The running total of blob gas consumed in excess of the target, prior to the block.
       """
@@ -171,7 +282,7 @@ defmodule Explorer.Chain.Block do
 
   def changeset(%__MODULE__{} = block, attrs) do
     block
-    |> cast(attrs, @required_attrs ++ @optional_attrs)
+    |> cast(attrs, @required_attrs ++ @optional_attrs ++ @chain_type_optional_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
@@ -179,19 +290,13 @@ defmodule Explorer.Chain.Block do
 
   def number_only_changeset(%__MODULE__{} = block, attrs) do
     block
-    |> cast(attrs, @required_attrs ++ @optional_attrs)
+    |> cast(attrs, @required_attrs ++ @optional_attrs ++ @chain_type_optional_attrs)
     |> validate_required([:number])
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
   end
 
   def blocks_without_reward_query do
-    consensus_blocks_query =
-      from(
-        block in __MODULE__,
-        where: block.consensus == true
-      )
-
     validator_rewards =
       from(
         r in Reward,
@@ -199,10 +304,24 @@ defmodule Explorer.Chain.Block do
       )
 
     from(
-      b in subquery(consensus_blocks_query),
+      b in subquery(consensus_blocks_query()),
       left_join: r in subquery(validator_rewards),
       on: [block_hash: b.hash],
       where: is_nil(r.block_hash)
+    )
+  end
+
+  @doc """
+    Returns a query that filters blocks where consensus is true.
+
+    ## Returns
+    - An `Ecto.Query.t()` that can be used to fetch consensus blocks.
+  """
+  @spec consensus_blocks_query() :: Ecto.Query.t()
+  def consensus_blocks_query do
+    from(
+      block in __MODULE__,
+      where: block.consensus == true
     )
   end
 
@@ -253,7 +372,7 @@ defmodule Explorer.Chain.Block do
       if gas_price do
         gas_used
         |> Decimal.new()
-        |> Decimal.mult(gas_price_to_decimal(gas_price))
+        |> Decimal.mult(Helper.number_to_decimal(gas_price))
         |> Decimal.add(acc)
       else
         acc
@@ -271,14 +390,10 @@ defmodule Explorer.Chain.Block do
       if is_nil(beacon_blob_transaction) do
         nil
       else
-        gas_price_to_decimal(beacon_blob_transaction.blob_gas_price)
+        Helper.number_to_decimal(beacon_blob_transaction.blob_gas_price)
       end
     end)
   end
-
-  defp gas_price_to_decimal(nil), do: nil
-  defp gas_price_to_decimal(%Wei{} = wei), do: wei.value
-  defp gas_price_to_decimal(gas_price), do: Decimal.new(gas_price)
 
   @doc """
   Calculates burnt fees for the list of transactions (from a single block)
@@ -294,7 +409,7 @@ defmodule Explorer.Chain.Block do
         |> Decimal.new()
         |> Decimal.add(acc)
       end)
-      |> Decimal.mult(gas_price_to_decimal(base_fee_per_gas))
+      |> Decimal.mult(Helper.number_to_decimal(base_fee_per_gas))
     end
   end
 
@@ -342,16 +457,48 @@ defmodule Explorer.Chain.Block do
 
   def uncle_reward_coef, do: @uncle_reward_coef
 
+  # Gets EIP-1559 config actual for the given block number.
+  # If not found, returns EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR and EIP_1559_ELASTICITY_MULTIPLIER env values.
+  #
+  # ## Parameters
+  # - `block_number`: The given block number.
+  #
+  # ## Returns
+  # - `{denominator, multiplier}` tuple.
+  @spec get_eip1559_config(non_neg_integer()) :: {non_neg_integer(), non_neg_integer()}
+  defp get_eip1559_config(block_number) do
+    with true <- Application.get_env(:explorer, :chain_type) == :optimism,
+         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+         config = Explorer.Chain.Optimism.EIP1559ConfigUpdate.actual_config_for_block(block_number),
+         false <- is_nil(config) do
+      config
+    else
+      _ ->
+        {Application.get_env(:explorer, :base_fee_max_change_denominator),
+         Application.get_env(:explorer, :elasticity_multiplier)}
+    end
+  end
+
   @doc """
   Calculates the gas target for a given block.
 
   The gas target represents the percentage by which the actual gas used is above or below the gas target for the block, adjusted by the elasticity multiplier.
   If the `gas_limit` is greater than 0, it calculates the ratio of `gas_used` to `gas_limit` adjusted by this multiplier.
+
+  The multiplier is read from the `EIP_1559_ELASTICITY_MULTIPLIER` env variable or from the `op_eip1559_config_updates` table
+  as a dynamic parameter (if OP Holocene upgrade is activated).
+
+  ## Parameters
+  - `block`: A map representing block for which the gas target should be calculated.
+
+  ## Returns
+  - A float value representing the gas target percentage.
   """
   @spec gas_target(t()) :: float()
   def gas_target(block) do
     if Decimal.compare(block.gas_limit, 0) == :gt do
-      elasticity_multiplier = Application.get_env(:explorer, :elasticity_multiplier)
+      {_, elasticity_multiplier} = get_eip1559_config(block.number)
+
       ratio = Decimal.div(block.gas_used, Decimal.div(block.gas_limit, elasticity_multiplier))
       ratio |> Decimal.sub(1) |> Decimal.mult(100) |> Decimal.to_float()
     else
@@ -381,11 +528,11 @@ defmodule Explorer.Chain.Block do
       gas_target = gas_limit / elasticity_multiplier
       base_fee_for_next_block = base_fee_per_gas + (base_fee_per_gas * gas_used_delta / gas_target / base_fee_max_change_denominator)
 
-  where elasticity_multiplier is an env variable `EIP_1559_ELASTICITY_MULTIPLIER`,
-  `gas_used_delta` is the difference between the actual gas used and the target gas
-  and `base_fee_max_change_denominator` is an env variable `EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR` that limits the maximum change of the base fee from one block to the next.
-
-
+  where `elasticity_multiplier` is an env variable `EIP_1559_ELASTICITY_MULTIPLIER` or the dynamic value
+  got from the `op_eip1559_config_updates` database table. The `gas_used_delta` is the difference between
+  the actual gas used and the target gas. The `base_fee_max_change_denominator` is an env variable
+  `EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR` (or the dynamic value got from the `op_eip1559_config_updates`
+  table) that limits the maximum change of the base fee from one block to the next.
   """
   @spec next_block_base_fee_per_gas :: Decimal.t() | nil
   def next_block_base_fee_per_gas do
@@ -404,20 +551,175 @@ defmodule Explorer.Chain.Block do
 
   @spec next_block_base_fee_per_gas(t()) :: Decimal.t() | nil
   def next_block_base_fee_per_gas(block) do
-    elasticity_multiplier = Application.get_env(:explorer, :elasticity_multiplier)
-    base_fee_max_change_denominator = Application.get_env(:explorer, :base_fee_max_change_denominator)
+    {base_fee_max_change_denominator, elasticity_multiplier} = get_eip1559_config(block.number)
 
-    gas_target = Decimal.div(block.gas_limit, elasticity_multiplier)
+    gas_target = Decimal.div_int(block.gas_limit, elasticity_multiplier)
 
-    gas_used_delta = Decimal.sub(block.gas_used, gas_target)
+    lower_bound = Application.get_env(:explorer, :base_fee_lower_bound)
 
     base_fee_per_gas_decimal = block.base_fee_per_gas |> Wei.to(:wei)
 
     base_fee_per_gas_decimal &&
-      base_fee_per_gas_decimal
-      |> Decimal.mult(gas_used_delta)
-      |> Decimal.div(gas_target)
-      |> Decimal.div(base_fee_max_change_denominator)
-      |> Decimal.add(base_fee_per_gas_decimal)
+      block.gas_used
+      |> Decimal.gt?(gas_target)
+      |> if do
+        gas_used_delta = Decimal.sub(block.gas_used, gas_target)
+
+        base_fee_per_gas_decimal
+        |> get_base_fee_per_gas_delta(gas_used_delta, gas_target, base_fee_max_change_denominator)
+        |> Decimal.max(Decimal.new(1))
+        |> Decimal.add(base_fee_per_gas_decimal)
+      else
+        gas_used_delta = Decimal.sub(gas_target, block.gas_used)
+
+        base_fee_per_gas_decimal
+        |> get_base_fee_per_gas_delta(gas_used_delta, gas_target, base_fee_max_change_denominator)
+        |> Decimal.negate()
+        |> Decimal.add(base_fee_per_gas_decimal)
+      end
+      |> Decimal.max(lower_bound)
+  end
+
+  defp get_base_fee_per_gas_delta(base_fee_per_gas_decimal, gas_used_delta, gas_target, base_fee_max_change_denominator) do
+    base_fee_per_gas_decimal
+    |> Decimal.mult(gas_used_delta)
+    |> Decimal.div_int(gas_target)
+    |> Decimal.div_int(base_fee_max_change_denominator)
+  end
+
+  @spec set_refetch_needed(integer | [integer]) :: :ok
+  def set_refetch_needed(block_numbers) when is_list(block_numbers) do
+    query =
+      from(block in Block,
+        where: block.number in ^block_numbers,
+        # Enforce Block ShareLocks order (see docs: sharelocks.md)
+        order_by: [asc: block.hash],
+        lock: "FOR NO KEY UPDATE"
+      )
+
+    {_count, updated_numbers} =
+      Repo.update_all(
+        from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
+        set: [refetch_needed: true, updated_at: Timex.now()]
+      )
+
+    MissingRangesManipulator.add_ranges_by_block_numbers(updated_numbers)
+  end
+
+  def set_refetch_needed(block_number), do: set_refetch_needed([block_number])
+
+  @doc """
+  Generates a query to fetch blocks by their hashes.
+
+  ## Parameters
+
+    - `hashes`: A list of block hashes to filter by.
+
+  ## Returns
+
+    - An Ecto query that can be used to retrieve blocks matching the given hashes.
+  """
+  @spec by_hashes_query([binary()]) :: Ecto.Query.t()
+  def by_hashes_query(hashes) do
+    __MODULE__
+    |> where([block], block.hash in ^hashes)
+  end
+
+  @doc """
+  Calculates and aggregates transaction-related metrics for a block if not already aggregated.
+
+  This function processes all transactions in a block to compute aggregate
+  statistics including transaction counts, fees, burnt fees, and priority fees.
+  The aggregation only occurs if the block has not been previously aggregated
+  (when `aggregated?` is `nil` or `false`) and contains a list of transactions.
+
+  For each transaction, the function calculates:
+  - Total transaction fees (gas_used * gas_price)
+  - Burnt fees (gas_used * base_fee_per_gas)
+  - Priority fees paid to miners (min of priority fee and effective fee)
+  - Blob transaction detection (type 3 transactions)
+
+  ## Parameters
+  - `block`: A Block struct containing transactions to be aggregated
+
+  ## Returns
+  - Block struct with aggregated transaction metrics and `aggregated?` set to `true`
+  - Original block unchanged if already aggregated or transactions is not a list
+  """
+  @spec aggregate_transactions(t()) :: t()
+  def aggregate_transactions(%__MODULE__{transactions: transactions, aggregated?: aggregated?} = block)
+      when is_list(transactions) and aggregated? in [nil, false] do
+    aggregate_results =
+      Enum.reduce(
+        transactions,
+        %{
+          transactions_count: 0,
+          blob_transactions_count: 0,
+          transactions_fees: Decimal.new(0),
+          burnt_fees: Decimal.new(0),
+          priority_fees: Decimal.new(0)
+        },
+        &transaction_aggregator(&1, &2, block.base_fee_per_gas)
+      )
+
+    block
+    |> Map.merge(aggregate_results)
+    |> Map.put(:aggregated?, true)
+  end
+
+  def aggregate_transactions(block), do: block
+
+  defp transaction_aggregator(transaction, acc, block_base_fee_per_gas) do
+    gas_used = Helper.number_to_decimal(transaction.gas_used)
+
+    transaction_fees =
+      if is_nil(transaction.gas_price) do
+        acc.transactions_fees
+      else
+        gas_used
+        |> Decimal.new()
+        |> Decimal.mult(Helper.number_to_decimal(transaction.gas_price))
+        |> Decimal.add(acc.transactions_fees)
+      end
+
+    burnt_fees =
+      if is_nil(block_base_fee_per_gas) do
+        acc.burnt_fees
+      else
+        transaction.gas_used
+        |> Decimal.new()
+        |> Decimal.mult(Helper.number_to_decimal(block_base_fee_per_gas))
+        |> Decimal.add(acc.burnt_fees)
+      end
+
+    priority_fees =
+      block_base_fee_per_gas
+      |> is_nil()
+      |> if do
+        acc.priority_fees
+      else
+        max_fee = Helper.number_to_decimal(transaction.max_fee_per_gas || transaction.gas_price)
+        priority_fee = Helper.number_to_decimal(transaction.max_priority_fee_per_gas || transaction.gas_price)
+
+        max_fee
+        |> Decimal.eq?(Decimal.new(0))
+        |> if do
+          Decimal.new(0)
+        else
+          max_fee
+          |> Decimal.sub(Helper.number_to_decimal(block_base_fee_per_gas))
+          |> Decimal.min(priority_fee)
+          |> Decimal.mult(gas_used)
+        end
+        |> Decimal.add(acc.priority_fees)
+      end
+
+    %{
+      transactions_count: acc.transactions_count + 1,
+      blob_transactions_count: acc.blob_transactions_count + if(transaction.type == 3, do: 1, else: 0),
+      transactions_fees: transaction_fees,
+      burnt_fees: burnt_fees,
+      priority_fees: priority_fees
+    }
   end
 end

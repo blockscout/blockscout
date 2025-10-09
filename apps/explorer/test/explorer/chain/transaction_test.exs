@@ -5,7 +5,7 @@ defmodule Explorer.Chain.TransactionTest do
 
   alias Ecto.Changeset
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
-  alias Explorer.PagingOptions
+  alias Explorer.{PagingOptions, TestHelper}
 
   doctest Transaction
 
@@ -252,31 +252,35 @@ defmodule Explorer.Chain.TransactionTest do
     test "that a transaction that is not a contract call returns a commensurate error" do
       transaction = insert(:transaction)
 
-      assert {{:error, :not_a_contract_call}, _, _} = Transaction.decoded_input_data(transaction, [])
+      assert {:error, :not_a_contract_call} = Transaction.decoded_input_data(transaction, [])
     end
 
     test "that a contract call transaction that has no verified contract returns a commensurate error" do
       transaction =
         :transaction
-        |> insert(to_address: insert(:contract_address))
+        |> insert(to_address: insert(:contract_address), input: "0x1234567891")
         |> Repo.preload(to_address: :smart_contract)
 
-      assert {{:error, :contract_not_verified, []}, _, _} = Transaction.decoded_input_data(transaction, [])
+      assert {:error, :contract_not_verified, []} = Transaction.decoded_input_data(transaction, [])
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
+
       transaction =
         :transaction_to_verified_contract
         |> insert()
         |> Repo.preload(to_address: :smart_contract)
 
-      request_zero_implementations()
-
-      assert {{:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}, _, _} =
+      assert {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]} =
                Transaction.decoded_input_data(transaction, [])
     end
 
     test "that a contract call will look up a match in contract_methods table" do
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
+
       :transaction_to_verified_contract
       |> insert()
       |> Repo.preload(to_address: :smart_contract)
@@ -293,9 +297,42 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert(to_address: contract.address, input: "0x" <> input_data)
         |> Repo.preload(to_address: :smart_contract)
 
-      request_zero_implementations()
+      assert {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]} =
+               Transaction.decoded_input_data(transaction, [])
+    end
 
-      assert {{:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}, _, _} =
+    test "arguments name in function call replaced with argN if it's empty string" do
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
+
+      contract =
+        insert(:smart_contract,
+          contract_code_md5: "123",
+          abi: [
+            %{
+              "constant" => false,
+              "inputs" => [%{"name" => "", "type" => "uint256"}],
+              "name" => "set",
+              "outputs" => [],
+              "payable" => false,
+              "stateMutability" => "nonpayable",
+              "type" => "function"
+            }
+          ]
+        )
+        |> Repo.preload(:address)
+
+      input_data =
+        "set(uint)"
+        |> ABI.encode([10])
+        |> Base.encode16(case: :lower)
+
+      transaction =
+        :transaction
+        |> insert(to_address: contract.address, input: "0x" <> input_data)
+        |> Repo.preload(to_address: :smart_contract)
+
+      assert {:ok, "60fe47b1", "set(uint256 arg0)", [{"arg0", "uint256", 10}]} =
                Transaction.decoded_input_data(transaction, [])
     end
   end
@@ -788,59 +825,6 @@ defmodule Explorer.Chain.TransactionTest do
     end
   end
 
-  # EIP-1967 + EIP-1822
-  defp request_zero_implementations do
-    EthereumJSONRPC.Mox
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-  end
-
   describe "fee/2" do
     test "is_nil(gas_price), is_nil(gas_used)" do
       assert {:maximum, nil} == Transaction.fee(%Transaction{gas: 100_500, gas_price: nil, gas_used: nil}, :wei)
@@ -863,12 +847,12 @@ defmodule Explorer.Chain.TransactionTest do
         block: %{base_fee_per_gas: %Explorer.Chain.Wei{value: 42_000_000_000}}
       }
 
-      if Application.get_env(:explorer, :chain_type) == "optimism" do
-        {:actual, nil} ==
-          Transaction.fee(
-            transaction,
-            :wei
-          )
+      if Application.get_env(:explorer, :chain_type) == :optimism do
+        assert {:actual, nil} ==
+                 Transaction.fee(
+                   transaction,
+                   :wei
+                 )
       else
         assert {:actual, Decimal.new("5200000000000")} ==
                  Transaction.fee(
@@ -884,6 +868,15 @@ defmodule Explorer.Chain.TransactionTest do
                  %Transaction{gas_price: %Explorer.Chain.Wei{value: 2}, gas_used: Decimal.new(3)},
                  :wei
                )
+    end
+  end
+
+  describe "get_method_name/1" do
+    test "returns method name for transaction with input data starting with 0x" do
+      transaction =
+        :transaction |> insert(input: "0x3078f1140ab0ba")
+
+      assert "0x3078f114" == Transaction.get_method_name(transaction)
     end
   end
 end

@@ -7,10 +7,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   import EthereumJSONRPC,
     only: [
-      integer_to_quantity: 1,
-      json_rpc: 2,
       quantity_to_integer: 1,
-      request: 1,
       timestamp_to_datetime: 1
     ]
 
@@ -20,9 +17,9 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.PolygonZkevm.Reader
-  alias Explorer.SmartContract.Reader, as: SmartContractReader
-  alias Indexer.Helper
+  alias Indexer.Helper, as: IndexerHelper
   alias Indexer.Transform.Addresses
 
   # 32-byte signature of the event BridgeEvent(uint8 leafType, uint32 originNetwork, address originAddress, uint32 destinationNetwork, address destinationAddress, uint256 amount, bytes metadata, uint32 depositCount)
@@ -30,8 +27,12 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   @bridge_event_params [{:uint, 8}, {:uint, 32}, :address, {:uint, 32}, :address, {:uint, 256}, :bytes, {:uint, 32}]
 
   # 32-byte signature of the event ClaimEvent(uint32 index, uint32 originNetwork, address originAddress, address destinationAddress, uint256 amount)
-  @claim_event "0x25308c93ceeed162da955b3f7ce3e3f93606579e40fb92029faa9efe27545983"
-  @claim_event_params [{:uint, 32}, {:uint, 32}, :address, :address, {:uint, 256}]
+  @claim_event_v1 "0x25308c93ceeed162da955b3f7ce3e3f93606579e40fb92029faa9efe27545983"
+  @claim_event_v1_params [{:uint, 32}, {:uint, 32}, :address, :address, {:uint, 256}]
+
+  # 32-byte signature of the event ClaimEvent(uint256 globalIndex, uint32 originNetwork, address originAddress, address destinationAddress, uint256 amount)
+  @claim_event_v2 "0x1df3f2a973a00d6635911755c260704e95e8a5876997546798770f76396fda4d"
+  @claim_event_v2_params [{:uint, 256}, {:uint, 32}, :address, :address, {:uint, 256}]
 
   @symbol_method_selector "95d89b41"
   @decimals_method_selector "313ce567"
@@ -64,8 +65,11 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   @spec filter_bridge_events(list(), binary()) :: list()
   def filter_bridge_events(events, bridge_contract) do
     Enum.filter(events, fn event ->
-      Helper.address_hash_to_string(event.address_hash, true) == bridge_contract and
-        Enum.member?([@bridge_event, @claim_event], Helper.log_topic_to_string(event.first_topic))
+      IndexerHelper.address_hash_to_string(event.address_hash, true) == bridge_contract and
+        Enum.member?(
+          [@bridge_event, @claim_event_v1, @claim_event_v2],
+          IndexerHelper.log_topic_to_string(event.first_topic)
+        )
     end)
   end
 
@@ -76,38 +80,17 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   @spec get_logs_all({non_neg_integer(), non_neg_integer()}, binary(), list()) :: list()
   def get_logs_all({chunk_start, chunk_end}, bridge_contract, json_rpc_named_arguments) do
     {:ok, result} =
-      get_logs(
+      IndexerHelper.get_logs(
         chunk_start,
         chunk_end,
         bridge_contract,
-        [[@bridge_event, @claim_event]],
-        json_rpc_named_arguments
+        [[@bridge_event, @claim_event_v1, @claim_event_v2]],
+        json_rpc_named_arguments,
+        0,
+        IndexerHelper.infinite_retries_number()
       )
 
     Logs.elixir_to_params(result)
-  end
-
-  defp get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, retries \\ 100_000_000) do
-    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
-    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
-
-    req =
-      request(%{
-        id: 0,
-        method: "eth_getLogs",
-        params: [
-          %{
-            :fromBlock => processed_from_block,
-            :toBlock => processed_to_block,
-            :address => address,
-            :topics => topics
-          }
-        ]
-      })
-
-    error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
-
-    Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   @doc """
@@ -134,59 +117,81 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   Converts the list of zkEVM bridge events to the list of operations
   preparing them for importing to the database.
   """
-  @spec prepare_operations(list(), list() | nil, list(), map() | nil) :: list()
-  def prepare_operations(events, json_rpc_named_arguments, json_rpc_named_arguments_l1, block_to_timestamp \\ nil) do
+  @spec prepare_operations(
+          list(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer() | nil,
+          non_neg_integer(),
+          list() | nil,
+          list(),
+          map() | nil
+        ) ::
+          list()
+  def prepare_operations(
+        events,
+        rollup_network_id_l1,
+        rollup_network_id_l2,
+        rollup_index_l1,
+        rollup_index_l2,
+        json_rpc_named_arguments,
+        json_rpc_named_arguments_l1,
+        block_to_timestamp \\ nil
+      ) do
+    is_l1 = json_rpc_named_arguments == json_rpc_named_arguments_l1
+
+    events = filter_events(events, is_l1, rollup_network_id_l1, rollup_network_id_l2, rollup_index_l1, rollup_index_l2)
+
     {block_to_timestamp, token_address_to_id} =
       if is_nil(block_to_timestamp) do
+        # this function is called by the catchup indexer,
+        # so here we can use RPC calls as it's not so critical for delays as in realtime
         bridge_events = Enum.filter(events, fn event -> event.first_topic == @bridge_event end)
-
-        l1_token_addresses =
-          bridge_events
-          |> Enum.reduce(%MapSet{}, fn event, acc ->
-            case bridge_event_parse(event) do
-              {{nil, _}, _, _} -> acc
-              {{token_address, nil}, _, _} -> MapSet.put(acc, token_address)
-            end
-          end)
-          |> MapSet.to_list()
+        l1_token_addresses = l1_token_addresses_from_bridge_events(bridge_events, rollup_network_id_l2)
 
         {
           blocks_to_timestamps(bridge_events, json_rpc_named_arguments),
           token_addresses_to_ids(l1_token_addresses, json_rpc_named_arguments_l1)
         }
       else
-        # this is called in realtime
+        # this function is called in realtime by the transformer,
+        # so we don't use RPC calls to avoid delays and fetch token data
+        # in a separate fetcher
         {block_to_timestamp, %{}}
       end
 
-    Enum.map(events, fn event ->
+    events
+    |> Enum.map(fn event ->
       {index, l1_token_id, l1_token_address, l2_token_address, amount, block_number, block_timestamp} =
-        if event.first_topic == @bridge_event do
-          {
-            {l1_token_address, l2_token_address},
-            amount,
-            deposit_count
-          } = bridge_event_parse(event)
+        case event.first_topic do
+          @bridge_event ->
+            {
+              {l1_token_address, l2_token_address},
+              amount,
+              deposit_count,
+              _destination_network
+            } = bridge_event_parse(event, rollup_network_id_l2)
 
-          l1_token_id = Map.get(token_address_to_id, l1_token_address)
-          block_number = quantity_to_integer(event.block_number)
-          block_timestamp = Map.get(block_to_timestamp, block_number)
+            l1_token_id = Map.get(token_address_to_id, l1_token_address)
+            block_number = quantity_to_integer(event.block_number)
+            block_timestamp = Map.get(block_to_timestamp, block_number)
 
-          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
-          l1_token_address =
-            if is_nil(l1_token_id) do
-              l1_token_address
-            end
+            # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+            l1_token_address =
+              if is_nil(l1_token_id) do
+                l1_token_address
+              end
 
-          {deposit_count, l1_token_id, l1_token_address, l2_token_address, amount, block_number, block_timestamp}
-        else
-          [index, _origin_network, _origin_address, _destination_address, amount] =
-            decode_data(event.data, @claim_event_params)
+            {deposit_count, l1_token_id, l1_token_address, l2_token_address, amount, block_number, block_timestamp}
 
-          {index, nil, nil, nil, amount, nil, nil}
+          @claim_event_v1 ->
+            {index, amount} = claim_event_v1_parse(event)
+            {index, nil, nil, nil, amount, nil, nil}
+
+          @claim_event_v2 ->
+            {_mainnet_bit, _rollup_idx, index, _origin_network, amount} = claim_event_v2_parse(event)
+            {index, nil, nil, nil, amount, nil, nil}
         end
-
-      is_l1 = json_rpc_named_arguments == json_rpc_named_arguments_l1
 
       result = %{
         type: operation_type(event.first_topic, is_l1),
@@ -213,7 +218,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   defp blocks_to_timestamps(events, json_rpc_named_arguments) do
     events
-    |> Helper.get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+    |> IndexerHelper.get_blocks_by_events(json_rpc_named_arguments, IndexerHelper.infinite_retries_number())
     |> Enum.reduce(%{}, fn block, acc ->
       block_number = quantity_to_integer(Map.get(block, "number"))
       timestamp = timestamp_to_datetime(Map.get(block, "timestamp"))
@@ -221,19 +226,100 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     end)
   end
 
-  defp bridge_event_parse(event) do
+  defp bridge_event_parse(event, rollup_network_id_l2) do
     [
       leaf_type,
       origin_network,
-      origin_address,
-      _destination_network,
+      origin_address_bytes,
+      destination_network,
       _destination_address,
       amount,
       _metadata,
       deposit_count
     ] = decode_data(event.data, @bridge_event_params)
 
-    {token_address_by_origin_address(origin_address, origin_network, leaf_type), amount, deposit_count}
+    {:ok, origin_address_hash} = Hash.Address.cast(origin_address_bytes)
+
+    {token_address_by_origin_address(origin_address_hash, origin_network, leaf_type, rollup_network_id_l2), amount,
+     deposit_count, destination_network}
+  end
+
+  defp claim_event_v1_parse(event) do
+    [index, _origin_network, _origin_address, _destination_address, amount] =
+      decode_data(event.data, @claim_event_v1_params)
+
+    {index, amount}
+  end
+
+  defp claim_event_v2_parse(event) do
+    [global_index, origin_network, _origin_address, _destination_address, amount] =
+      decode_data(event.data, @claim_event_v2_params)
+
+    mainnet_bit = Bitwise.band(Bitwise.bsr(global_index, 64), 1)
+
+    bitmask_4bytes = 0xFFFFFFFF
+
+    rollup_index = Bitwise.band(Bitwise.bsr(global_index, 32), bitmask_4bytes)
+
+    index = Bitwise.band(global_index, bitmask_4bytes)
+
+    {mainnet_bit, rollup_index, index, origin_network, amount}
+  end
+
+  defp filter_events(events, is_l1, rollup_network_id_l1, rollup_network_id_l2, rollup_index_l1, rollup_index_l2) do
+    Enum.filter(events, fn event ->
+      case {event.first_topic, is_l1} do
+        {@bridge_event, true} -> filter_bridge_event_l1(event, rollup_network_id_l2)
+        {@bridge_event, false} -> filter_bridge_event_l2(event, rollup_network_id_l1, rollup_network_id_l2)
+        {@claim_event_v2, true} -> filter_claim_event_l1(event, rollup_index_l2)
+        {@claim_event_v2, false} -> filter_claim_event_l2(event, rollup_network_id_l1, rollup_index_l1)
+        _ -> true
+      end
+    end)
+  end
+
+  defp filter_bridge_event_l1(event, rollup_network_id_l2) do
+    {_, _, _, destination_network} = bridge_event_parse(event, rollup_network_id_l2)
+    # skip the Deposit event if it's for another rollup
+    destination_network == rollup_network_id_l2
+  end
+
+  defp filter_bridge_event_l2(event, rollup_network_id_l1, rollup_network_id_l2) do
+    {_, _, _, destination_network} = bridge_event_parse(event, rollup_network_id_l2)
+    # skip the Withdrawal event if it's for another L1 chain
+    destination_network == rollup_network_id_l1
+  end
+
+  defp filter_claim_event_l1(event, rollup_index_l2) do
+    {mainnet_bit, rollup_idx, _index, _origin_network, _amount} = claim_event_v2_parse(event)
+
+    if mainnet_bit != 0 do
+      Logger.error(
+        "L1 ClaimEvent has non-zero mainnet bit in the transaction #{event.transaction_hash}. This event will be ignored."
+      )
+    end
+
+    # skip the Withdrawal event if it's for another rollup or the source network is Ethereum Mainnet
+    rollup_idx == rollup_index_l2 and mainnet_bit == 0
+  end
+
+  defp filter_claim_event_l2(event, rollup_network_id_l1, rollup_index_l1) do
+    {mainnet_bit, rollup_idx, _index, origin_network, _amount} = claim_event_v2_parse(event)
+
+    # skip the Deposit event if it's from another L1 chain
+    (mainnet_bit == 1 and rollup_network_id_l1 == 0) or
+      (mainnet_bit == 0 and (rollup_idx == rollup_index_l1 or origin_network == rollup_network_id_l1))
+  end
+
+  defp l1_token_addresses_from_bridge_events(events, rollup_network_id_l2) do
+    events
+    |> Enum.reduce(%MapSet{}, fn event, acc ->
+      case bridge_event_parse(event, rollup_network_id_l2) do
+        {{nil, _}, _, _, _} -> acc
+        {{token_address, nil}, _, _, _} -> MapSet.put(acc, token_address)
+      end
+    end)
+    |> MapSet.to_list()
   end
 
   defp operation_type(first_topic, is_l1) do
@@ -279,23 +365,25 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     tokens_not_inserted =
       tokens_to_insert
       |> Enum.reject(fn token ->
-        Enum.any?(tokens_inserted, fn inserted -> token.address == Helper.address_hash_to_string(inserted.address) end)
+        Enum.any?(tokens_inserted, fn inserted ->
+          token.address == IndexerHelper.address_hash_to_string(inserted.address)
+        end)
       end)
       |> Enum.map(& &1.address)
 
     tokens_inserted_outside = Reader.token_addresses_to_ids_from_db(tokens_not_inserted)
 
     tokens_inserted
-    |> Enum.reduce(%{}, fn t, acc -> Map.put(acc, Helper.address_hash_to_string(t.address), t.id) end)
+    |> Enum.reduce(%{}, fn t, acc -> Map.put(acc, IndexerHelper.address_hash_to_string(t.address), t.id) end)
     |> Map.merge(tokens_existing)
     |> Map.merge(tokens_inserted_outside)
   end
 
-  defp token_address_by_origin_address(origin_address, origin_network, leaf_type) do
-    with true <- leaf_type != 1 and origin_network <= 1,
-         token_address = "0x" <> Base.encode16(origin_address, case: :lower),
+  defp token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id_l2) do
+    with true <- leaf_type != 1,
+         token_address = to_string(origin_address),
          true <- token_address != burn_address_hash_string() do
-      if origin_network == 0 do
+      if origin_network != rollup_network_id_l2 do
         # this is L1 address
         {token_address, nil}
       else
@@ -324,7 +412,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
       if status == :ok do
         response = parse_response(response)
 
-        address = Helper.address_hash_to_string(request.contract_address, true)
+        address = IndexerHelper.address_hash_to_string(request.contract_address, true)
 
         new_data = get_new_data(token_data_acc[address] || %{}, request, response)
 
@@ -350,9 +438,10 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
       end)
       |> List.flatten()
 
-    {responses, error_messages} = read_contracts_with_retries(requests, @erc20_abi, json_rpc_named_arguments, 3)
+    {responses, error_messages} =
+      IndexerHelper.read_contracts_with_retries(requests, @erc20_abi, json_rpc_named_arguments, 3)
 
-    if !Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
+    if not Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
       Logger.warning(
         "Cannot read symbol and decimals of an ERC-20 token contract. Error messages: #{Enum.join(error_messages, ", ")}. Addresses: #{Enum.join(token_addresses, ", ")}"
       )
@@ -361,38 +450,11 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     {requests, responses}
   end
 
-  defp read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left) when retries_left > 0 do
-    responses = SmartContractReader.query_contracts(requests, abi, json_rpc_named_arguments: json_rpc_named_arguments)
-
-    error_messages =
-      Enum.reduce(responses, [], fn {status, error_message}, acc ->
-        acc ++
-          if status == :error do
-            [error_message]
-          else
-            []
-          end
-      end)
-
-    if Enum.empty?(error_messages) do
-      {responses, []}
-    else
-      retries_left = retries_left - 1
-
-      if retries_left == 0 do
-        {responses, Enum.uniq(error_messages)}
-      else
-        :timer.sleep(1000)
-        read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left)
-      end
-    end
-  end
-
   defp get_new_data(data, request, response) do
     if atomized_key(request.method_id) == :symbol do
-      Map.put(data, :symbol, response)
+      Map.put(data, :symbol, Reader.sanitize_symbol(response))
     else
-      Map.put(data, :decimals, response)
+      Map.put(data, :decimals, Reader.sanitize_decimals(response))
     end
   end
 

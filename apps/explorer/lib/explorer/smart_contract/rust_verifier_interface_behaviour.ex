@@ -5,8 +5,8 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
   defmacro __using__(_) do
     # credo:disable-for-next-line
     quote([]) do
+      alias Explorer.HttpClient
       alias Explorer.Utility.Microservice
-      alias HTTPoison.Response
       require Logger
 
       @post_timeout :timer.minutes(5)
@@ -39,6 +39,18 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata), true)
       end
 
+      def zksync_verify_standard_json_input(
+            %{
+              "code" => _,
+              "solcCompiler" => _,
+              "zkCompiler" => _,
+              "input" => _
+            } = body,
+            metadata
+          ) do
+        http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata), true)
+      end
+
       def vyper_verify_multipart(
             %{
               "bytecode" => _,
@@ -63,14 +75,14 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         http_post_request(vyper_standard_json_verification_url(), append_metadata(body, metadata), true)
       end
 
-      def http_post_request(url, body, is_verification_request? \\ false) do
+      def http_post_request(url, body, is_verification_request?, options \\ []) do
         headers = [{"Content-Type", "application/json"}]
 
-        case HTTPoison.post(url, Jason.encode!(body), maybe_put_api_key_header(headers, is_verification_request?),
+        case HttpClient.post(url, Jason.encode!(body), maybe_put_api_key_header(headers, is_verification_request?),
                recv_timeout: @post_timeout
              ) do
-          {:ok, %Response{body: body, status_code: _}} ->
-            process_verifier_response(body)
+          {:ok, %{body: body, status_code: _}} ->
+            process_verifier_response(body, options)
 
           {:error, error} ->
             old_truncate = Application.get_env(:logger, :truncate)
@@ -101,11 +113,11 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       end
 
       def http_get_request(url) do
-        case HTTPoison.get(url) do
-          {:ok, %Response{body: body, status_code: 200}} ->
-            process_verifier_response(body)
+        case HttpClient.get(url) do
+          {:ok, %{body: body, status_code: 200}} ->
+            process_verifier_response(body, [])
 
-          {:ok, %Response{body: body, status_code: _}} ->
+          {:ok, %{body: body, status_code: _}} ->
             {:error, body}
 
           {:error, error} ->
@@ -132,42 +144,78 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         http_get_request(vyper_versions_list_url())
       end
 
-      def process_verifier_response(body) when is_binary(body) do
+      def process_verifier_response(body, options) when is_binary(body) do
         case Jason.decode(body) do
           {:ok, decoded} ->
-            process_verifier_response(decoded)
+            process_verifier_response(decoded, options)
 
           _ ->
             {:error, body}
         end
       end
 
-      def process_verifier_response(%{"status" => "SUCCESS", "source" => source}) do
+      def process_verifier_response(%{"status" => "SUCCESS", "source" => source}, _) do
         {:ok, source}
       end
 
-      def process_verifier_response(%{"status" => "FAILURE", "message" => error}) do
+      # zksync
+      def process_verifier_response(%{"verificationSuccess" => success}, _) do
+        {:ok, success}
+      end
+
+      # zksync
+      def process_verifier_response(%{"verificationFailure" => %{"message" => error}}, _) do
         {:error, error}
       end
 
-      def process_verifier_response(%{"compilerVersions" => versions}), do: {:ok, versions}
+      # zksync
+      def process_verifier_response(%{"compilationFailure" => %{"message" => error}}, _) do
+        {:error, error}
+      end
 
-      def process_verifier_response(other), do: {:error, other}
+      def process_verifier_response(%{"status" => "FAILURE", "message" => error}, _) do
+        {:error, error}
+      end
+
+      def process_verifier_response(%{"compilerVersions" => versions}, _), do: {:ok, versions}
+
+      # zksync
+      def process_verifier_response(%{"solcCompilers" => solc_compilers, "zkCompilers" => zk_compilers}, _),
+        do: {:ok, {solc_compilers, zk_compilers}}
+
+      def process_verifier_response(other, res) do
+        {:error, other}
+      end
+
+      # Uses url encoded ("%3A") version of ':', as ':' symbol breaks `Bypass` library during tests.
+      # https://github.com/PSPDFKit-labs/bypass/issues/122
 
       def solidity_multiple_files_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-multi-part"
+        do: base_api_url() <> "/verifier/solidity/sources%3Averify-multi-part"
 
-      def vyper_multiple_files_verification_url, do: "#{base_api_url()}" <> "/verifier/vyper/sources:verify-multi-part"
+      def vyper_multiple_files_verification_url,
+        do: base_api_url() <> "/verifier/vyper/sources%3Averify-multi-part"
 
       def vyper_standard_json_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/vyper/sources:verify-standard-json"
+        do: base_api_url() <> "/verifier/vyper/sources%3Averify-standard-json"
 
-      def solidity_standard_json_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-standard-json"
+      def solidity_standard_json_verification_url do
+        base_api_url() <> verifier_path() <> "/solidity/sources%3Averify-standard-json"
+      end
 
-      def versions_list_url, do: "#{base_api_url()}" <> "/verifier/solidity/versions"
+      def versions_list_url do
+        base_api_url() <> verifier_path() <> "/solidity/versions"
+      end
 
-      def vyper_versions_list_url, do: "#{base_api_url()}" <> "/verifier/vyper/versions"
+      defp verifier_path do
+        if Application.get_env(:explorer, :chain_type) == :zksync do
+          "/zksync-verifier"
+        else
+          "/verifier"
+        end
+      end
+
+      def vyper_versions_list_url, do: base_api_url() <> "/verifier/vyper/versions"
 
       def base_api_url, do: "#{base_url()}" <> "/api/v2"
 

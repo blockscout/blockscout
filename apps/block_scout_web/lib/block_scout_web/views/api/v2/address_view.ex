@@ -1,14 +1,14 @@
 defmodule BlockScoutWeb.API.V2.AddressView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
-  alias BlockScoutWeb.AddressView
+  alias BlockScoutWeb.{AddressContractView, AddressView}
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
-  alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.Token.Instance
 
   @api_true [api?: true]
@@ -34,7 +34,11 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   end
 
   def render("coin_balances_by_day.json", %{coin_balances_by_day: coin_balances_by_day}) do
-    Enum.map(coin_balances_by_day, &prepare_coin_balance_history_by_day_entry/1)
+    %{
+      :items => Enum.map(coin_balances_by_day, &prepare_coin_balance_history_by_day_entry/1),
+      :days =>
+        Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
+    }
   end
 
   def render("tokens.json", %{tokens: tokens, next_page_params: next_page_params}) do
@@ -48,9 +52,9 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         total_supply: total_supply
       }) do
     %{
-      items: Enum.map(addresses, &prepare_address/1),
+      items: Enum.map(addresses, &prepare_address_for_list/1),
       next_page_params: next_page_params,
-      exchange_rate: exchange_rate.usd_value,
+      exchange_rate: exchange_rate.fiat_value,
       total_supply: total_supply && to_string(total_supply)
     }
   end
@@ -67,75 +71,63 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     %{"items" => Enum.map(nft_collections, &prepare_nft_collection(&1)), "next_page_params" => next_page_params}
   end
 
-  @spec prepare_address(
-          {atom() | %{:fetched_coin_balance => any(), :hash => any(), optional(any()) => any()}, any()}
-          | Explorer.Chain.Address.t()
-        ) :: %{optional(:coin_balance) => any(), optional(:tx_count) => binary(), optional(<<_::32, _::_*8>>) => any()}
-  def prepare_address({address, tx_count}) do
+  @doc """
+  Prepares an address for display in the addresses list.
+
+  ## Parameters
+    - address: Address struct containing:
+      - `:hash` - address hash
+      - `:fetched_coin_balance` - current coin balance
+      - `:transactions_count` - number of transactions
+
+  ## Returns
+    - Map containing:
+      - `:hash` - address hash
+      - `:coin_balance` - current coin balance value
+      - `:transactions_count` - number of transactions as string
+      - Additional address info fields from Helper.address_with_info/4
+  """
+  @spec prepare_address_for_list(Address.t()) :: map()
+  def prepare_address_for_list(address) do
     nil
     |> Helper.address_with_info(address, address.hash, true)
-    |> Map.put(:tx_count, to_string(tx_count))
+    |> Map.put(:transactions_count, to_string(address.transactions_count))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
 
-  def prepare_address(address, conn \\ nil) do
+  @spec prepare_address(Address.t(), Plug.Conn.t()) :: map()
+  defp prepare_address(address, conn) do
     base_info = Helper.address_with_info(conn, address, address.hash, true)
 
-    {:ok, address_with_smart_contract} =
-      Chain.hash_to_address(
-        address.hash,
-        [necessity_by_association: %{:smart_contract => :optional}],
-        false
-      )
-
-    is_proxy = AddressView.smart_contract_is_proxy?(address_with_smart_contract, @api_true)
-
-    {implementation_address, implementation_name} =
-      with true <- is_proxy,
-           {address, name} <-
-             SmartContract.get_implementation_address_hash(address_with_smart_contract.smart_contract, @api_true),
-           false <- is_nil(address),
-           {:ok, address_hash} <- Chain.string_to_address_hash(address),
-           checksummed_address <- Address.checksum(address_hash) do
-        {checksummed_address, name}
-      else
-        _ ->
-          {nil, nil}
-      end
-
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
-    exchange_rate = Market.get_coin_exchange_rate().usd_value
+    exchange_rate = Market.get_coin_exchange_rate().fiat_value
 
-    creator_hash = AddressView.from_address_hash(address)
-    creation_tx = creator_hash && AddressView.transaction_hash(address)
+    creation_transaction = Address.creation_transaction(address)
+    creator_hash = creation_transaction && creation_transaction.from_address_hash
+    creation_transaction_hash = creator_hash && AddressView.transaction_hash(address)
     token = address.token && TokenView.render("token.json", %{token: address.token})
 
-    write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
-    read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
+    extended_info =
+      Map.merge(base_info, %{
+        "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
+        "creation_transaction_hash" => creation_transaction_hash,
+        "creation_status" => creation_status(address),
+        "token" => token,
+        "coin_balance" => balance,
+        "exchange_rate" => exchange_rate,
+        "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
+        "has_validated_blocks" => Counters.check_if_validated_blocks_at_address(address.hash, @api_true),
+        "has_logs" => Counters.check_if_logs_at_address(address.hash, @api_true),
+        "has_tokens" => Counters.check_if_tokens_at_address(address.hash, @api_true),
+        "has_token_transfers" => Counters.check_if_token_transfers_at_address(address.hash, @api_true),
+        "watchlist_address_id" => Chain.select_watchlist_address_id(get_watchlist_id(conn), address.hash),
+        "has_beacon_chain_withdrawals" => Counters.check_if_withdrawals_at_address(address.hash, @api_true)
+      })
 
-    Map.merge(base_info, %{
-      "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
-      "creation_tx_hash" => creation_tx,
-      "token" => token,
-      "coin_balance" => balance,
-      "exchange_rate" => exchange_rate,
-      "implementation_name" => implementation_name,
-      "implementation_address" => implementation_address,
-      "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
-      "has_custom_methods_read" => read_custom_abi?,
-      "has_custom_methods_write" => write_custom_abi?,
-      "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address),
-      "has_methods_write" => AddressView.smart_contract_with_write_functions?(address),
-      "has_methods_read_proxy" => is_proxy,
-      "has_methods_write_proxy" =>
-        AddressView.smart_contract_with_write_functions?(address_with_smart_contract) && is_proxy,
-      "has_decompiled_code" => AddressView.has_decompiled_code?(address),
-      "has_validated_blocks" => Counters.check_if_validated_blocks_at_address(address.hash, @api_true),
-      "has_logs" => Counters.check_if_logs_at_address(address.hash, @api_true),
-      "has_tokens" => Counters.check_if_tokens_at_address(address.hash, @api_true),
-      "has_token_transfers" => Counters.check_if_token_transfers_at_address(address.hash, @api_true),
-      "watchlist_address_id" => Chain.select_watchlist_address_id(get_watchlist_id(conn), address.hash),
-      "has_beacon_chain_withdrawals" => Counters.check_if_withdrawals_at_address(address.hash, @api_true)
+    extended_info
+    |> chain_type_fields(%{
+      address: address,
+      creation_transaction_from_address: creation_transaction && creation_transaction.from_address
     })
   end
 
@@ -230,20 +222,26 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         ) :: map()
   def fetch_and_render_token_instance(token_id, token, address_hash, token_balance) do
     token_instance =
-      case Chain.nft_instance_from_token_id_and_token_address(
+      case Instance.nft_instance_by_token_id_and_token_address(
              token_id,
              token.contract_address_hash,
              @api_true
            ) do
         # `%{hash: address_hash}` will match with `address_with_info(_, address_hash)` clause in `BlockScoutWeb.API.V2.Helper`
         {:ok, token_instance} ->
-          %Instance{token_instance | owner: %{hash: address_hash}, current_token_balance: token_balance}
+          %Instance{
+            token_instance
+            | owner: %{hash: address_hash},
+              owner_address_hash: address_hash,
+              current_token_balance: token_balance
+          }
 
         {:error, :not_found} ->
           %Instance{
             token_id: token_id,
             metadata: nil,
             owner: %Address{hash: address_hash},
+            owner_address_hash: address_hash,
             current_token_balance: token_balance,
             token_contract_address_hash: token.contract_address_hash
           }
@@ -254,5 +252,45 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       token_instance: token_instance,
       token: token
     })
+  end
+
+  @spec creation_status(Address.t()) :: :success | :failed | :selfdestructed | nil
+  defp creation_status(address) do
+    with true <- Address.smart_contract?(address),
+         {status, _bytecode} <- AddressContractView.contract_creation_code(address) do
+      case status do
+        :ok -> :success
+        :failed -> :failed
+        :selfdestructed -> :selfdestructed
+      end
+    else
+      _ -> nil
+    end
+  end
+
+  @spec chain_type_fields(
+          map(),
+          %{address: Address.t(), creation_transaction_from_address: Address.t()}
+        ) :: map()
+  case @chain_type do
+    :filecoin ->
+      defp chain_type_fields(result, %{creation_transaction_from_address: creation_transaction_from_address}) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.put_filecoin_robust_address(result, %{
+          address: creation_transaction_from_address,
+          field_prefix: "creator"
+        })
+      end
+
+    :zilliqa ->
+      defp chain_type_fields(result, %{address: address}) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.ZilliqaView.extend_address_json_response(result, address)
+      end
+
+    _ ->
+      defp chain_type_fields(result, _params) do
+        result
+      end
   end
 end

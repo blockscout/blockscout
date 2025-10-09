@@ -1,4 +1,3 @@
-# credo:disable-for-this-file
 defmodule Explorer.ChainSpec.Geth.Importer do
   @moduledoc """
   Imports data from Geth genesis.json.
@@ -10,7 +9,28 @@ defmodule Explorer.ChainSpec.Geth.Importer do
   alias Explorer.{Chain, Helper}
   alias Explorer.Chain.Hash.Address
 
+  @doc """
+    Imports genesis accounts into the database from a chain specification.
+
+    This function extracts genesis account information from a given chain specification,
+    including initial balances and contract bytecode. It enriches this data with additional
+    metadata, such as setting the block number to 0 (for genesis accounts) and determining
+    the day based on the timestamp of the first block. Subsequently, it imports the data
+    into `Explorer.Chain.Address`, `Explorer.Chain.Address.CoinBalance`, and
+    `Explorer.Chain.Address.CoinBalanceDaily` tables.
+
+    ## Parameters
+    - `chain_spec`: A map or list representing the chain specification that contains
+                    genesis account information. It may be structured directly as an
+                    account list or as part of a larger specification map.
+
+    ## Returns
+    - N/A
+  """
+  @spec import_genesis_accounts(map() | list()) :: any()
   def import_genesis_accounts(chain_spec) do
+    # credo:disable-for-previous-line Credo.Check.Design.DuplicatedCode
+    # It duplicates `import_genesis_accounts/1` from `Explorer.ChainSpec.Parity.Importer`
     balance_params =
       chain_spec
       |> genesis_accounts()
@@ -50,7 +70,32 @@ defmodule Explorer.ChainSpec.Geth.Importer do
     Chain.import(params)
   end
 
-  @spec genesis_accounts(any()) :: [%{address_hash: Address.t(), value: integer(), contract_code: String.t()}]
+  @doc """
+    Parses and returns the genesis account information from a chain specification.
+
+    It extracts account data such as address hashes, initial balances, and
+    optionally, contract bytecode for accounts defined in the genesis block of
+    a blockchain configuration.
+
+    ## Parameters
+    - `input`: Can be a list of account maps or a map of the entire chain specification.
+
+    ## Returns
+    - A list of maps, each representing an account with keys for the address hash,
+      balance , and optionally, the contract bytecode. Accounts without defined
+      balances are omitted.
+
+    ### Usage
+    - `genesis_accounts(%{"genesis" => genesis_data})`: Extracts accounts from
+      a nested genesis key.
+    - `genesis_accounts(chain_spec)`: Parses accounts from a chain specification that
+      includes an 'alloc' key.
+    - `genesis_accounts(list_of_accounts)`: Directly parses a list of account data.
+      Intended to be called after `genesis_accounts(%{"genesis" => genesis_data})` call.
+  """
+  @spec genesis_accounts(map() | list()) :: [
+          %{address_hash: Address.t(), value: non_neg_integer(), contract_code: String.t()}
+        ]
   def genesis_accounts(%{"genesis" => genesis}) do
     genesis_accounts(genesis)
   end
@@ -74,12 +119,23 @@ defmodule Explorer.ChainSpec.Geth.Importer do
     if accounts do
       parse_accounts(accounts)
     else
-      Logger.warn(fn -> "No accounts are defined in genesis" end)
+      Logger.warning(fn -> "No accounts are defined in genesis" end)
 
       []
     end
   end
 
+  # Parses account data from a provided map to extract address, balance, and optional contract code.
+  #
+  # ## Parameters
+  # - `accounts`: A map with accounts data.
+  #
+  # ## Returns
+  # - A list of maps with accounts data including address hashes, balances,
+  #   and any associated contract code.
+  @spec parse_accounts(%{binary() => map()}) :: [
+          %{:address_hash => Address.t(), value: non_neg_integer(), contract_code: String.t() | nil}
+        ]
   defp parse_accounts(accounts) do
     accounts
     |> Stream.filter(fn {_address, map} ->

@@ -19,6 +19,16 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     host: System.get_env("BLOCKSCOUT_HOST") || "localhost"
   ]
 
+config :block_scout_web, BlockScoutWeb.HealthEndpoint,
+  secret_key_base: System.get_env("SECRET_KEY_BASE"),
+  check_origin: System.get_env("CHECK_ORIGIN", "false") == "true" || false,
+  http: [port: port],
+  url: [
+    scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "https",
+    port: port,
+    host: System.get_env("BLOCKSCOUT_HOST") || "localhost"
+  ]
+
 ########################
 ### Ethereum JSONRPC ###
 ########################
@@ -51,63 +61,12 @@ config :explorer, Explorer.Repo.Account,
   ssl: ExplorerConfigHelper.ssl_enabled?(),
   queue_target: queue_target
 
-# Configure Beacon Chain database
-config :explorer, Explorer.Repo.Beacon,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
-
-# Configures BridgedTokens database
-config :explorer, Explorer.Repo.BridgedTokens,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
-
-# Configures Optimism database
-config :explorer, Explorer.Repo.Optimism,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
-
-# Configures PolygonEdge database
-config :explorer, Explorer.Repo.PolygonEdge,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
-
-# Configures PolygonZkevm database
-config :explorer, Explorer.Repo.PolygonZkevm,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
-
-# Configures ZkSync database
-config :explorer, Explorer.Repo.ZkSync,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
-
-# Configures Rootstock database
-config :explorer, Explorer.Repo.RSK,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
-
-# Configures Shibarium database
-config :explorer, Explorer.Repo.Shibarium,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+# Configures Mud database
+config :explorer, Explorer.Repo.Mud,
+  url: ExplorerConfigHelper.get_mud_db_url(),
+  pool_size: ConfigHelper.parse_integer_env_var("MUD_POOL_SIZE", 50),
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  queue_target: queue_target
 
 # Configures Suave database
 config :explorer, Explorer.Repo.Suave,
@@ -115,17 +74,43 @@ config :explorer, Explorer.Repo.Suave,
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
-# Configures Filecoin database
-config :explorer, Explorer.Repo.Filecoin,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+config :explorer, Explorer.Repo.EventNotifications,
+  url: ExplorerConfigHelper.get_event_notification_db_url(),
+  pool_size: ConfigHelper.parse_integer_env_var("DATABASE_EVENT_POOL_SIZE", 10),
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  queue_target: queue_target
 
-# Configures Stability database
-config :explorer, Explorer.Repo.Stability,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+# Actually the following repos are not started, and its pool size remains
+# unused. Separating repos for different chain type or feature flag is
+# implemented only for the sake of keeping DB schema update relevant to the
+# current chain type
+for repo <- [
+      # Feature dependent repos
+      Explorer.Repo.BridgedTokens,
+      Explorer.Repo.ShrunkInternalTransactions,
+
+      # Chain-type dependent repos
+      Explorer.Repo.Arbitrum,
+      Explorer.Repo.Beacon,
+      Explorer.Repo.Blackfort,
+      Explorer.Repo.Celo,
+      Explorer.Repo.Filecoin,
+      Explorer.Repo.Optimism,
+      Explorer.Repo.PolygonEdge,
+      Explorer.Repo.PolygonZkevm,
+      Explorer.Repo.RSK,
+      Explorer.Repo.Scroll,
+      Explorer.Repo.Shibarium,
+      Explorer.Repo.Stability,
+      Explorer.Repo.Zilliqa,
+      Explorer.Repo.ZkSync,
+      Explorer.Repo.Neon
+    ] do
+  config :explorer, repo,
+    url: System.get_env("DATABASE_URL"),
+    pool_size: 1,
+    ssl: ExplorerConfigHelper.ssl_enabled?()
+end
 
 variant = Variant.get()
 

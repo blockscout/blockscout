@@ -126,7 +126,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, balance_fields}} ->
+            {:"$gen_call", from, {:buffer, balance_fields, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:balance_fields, balance_fields})
           end
@@ -134,7 +134,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
 
       Process.register(pid, Indexer.Fetcher.CoinBalance.Catchup)
 
-      assert :ok = BlockReward.async_fetch([block_number])
+      assert :ok = BlockReward.async_fetch([block_number], false)
 
       wait_for_tasks(BlockReward)
 
@@ -199,7 +199,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, balance_fields}} ->
+            {:"$gen_call", from, {:buffer, balance_fields, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:balance_fields, balance_fields})
           end
@@ -207,7 +207,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
 
       Process.register(pid, Indexer.Fetcher.CoinBalance.Catchup)
 
-      assert :ok = BlockReward.async_fetch([block_number])
+      assert :ok = BlockReward.async_fetch([block_number], false)
 
       wait_for_tasks(BlockReward)
 
@@ -260,7 +260,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
         }
       end)
 
-      assert :ok = BlockReward.async_fetch([block_number])
+      assert :ok = BlockReward.async_fetch([block_number], false)
 
       wait_for_tasks(BlockReward)
 
@@ -334,7 +334,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, balance_fields}} ->
+            {:"$gen_call", from, {:buffer, balance_fields, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:balance_fields, balance_fields})
           end
@@ -424,7 +424,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, balance_fields}} ->
+            {:"$gen_call", from, {:buffer, balance_fields, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:balance_fields, balance_fields})
           end
@@ -508,7 +508,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, balance_fields}} ->
+            {:"$gen_call", from, {:buffer, balance_fields, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:balance_fields, balance_fields})
           end
@@ -645,7 +645,7 @@ defmodule Indexer.Fetcher.BlockRewardTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, balance_fields}} ->
+            {:"$gen_call", from, {:buffer, balance_fields, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:balance_fields, balance_fields})
           end

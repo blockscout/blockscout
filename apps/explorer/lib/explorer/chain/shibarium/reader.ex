@@ -19,24 +19,30 @@ defmodule Explorer.Chain.Shibarium.Reader do
   def deposits(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, default_paging_options())
 
-    base_query =
-      from(
-        sb in Bridge,
-        where: sb.operation_type == :deposit and not is_nil(sb.l1_block_number) and not is_nil(sb.l2_block_number),
-        select: %{
-          l1_block_number: sb.l1_block_number,
-          l1_transaction_hash: sb.l1_transaction_hash,
-          l2_transaction_hash: sb.l2_transaction_hash,
-          user: sb.user,
-          timestamp: sb.timestamp
-        },
-        order_by: [desc: sb.l1_block_number]
-      )
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
 
-    base_query
-    |> page_deposits(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
+      _ ->
+        base_query =
+          from(
+            sb in Bridge,
+            where: sb.operation_type == :deposit and not is_nil(sb.l1_block_number) and not is_nil(sb.l2_block_number),
+            select: %{
+              l1_block_number: sb.l1_block_number,
+              l1_transaction_hash: sb.l1_transaction_hash,
+              l2_transaction_hash: sb.l2_transaction_hash,
+              user: sb.user,
+              timestamp: sb.timestamp
+            },
+            order_by: [desc: sb.l1_block_number]
+          )
+
+        base_query
+        |> page_deposits(paging_options)
+        |> limit(^paging_options.page_size)
+        |> select_repo(options).all()
+    end
   end
 
   @doc """
@@ -60,24 +66,31 @@ defmodule Explorer.Chain.Shibarium.Reader do
   def withdrawals(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, default_paging_options())
 
-    base_query =
-      from(
-        sb in Bridge,
-        where: sb.operation_type == :withdrawal and not is_nil(sb.l1_block_number) and not is_nil(sb.l2_block_number),
-        select: %{
-          l2_block_number: sb.l2_block_number,
-          l2_transaction_hash: sb.l2_transaction_hash,
-          l1_transaction_hash: sb.l1_transaction_hash,
-          user: sb.user,
-          timestamp: sb.timestamp
-        },
-        order_by: [desc: sb.l2_block_number]
-      )
+    case paging_options do
+      %PagingOptions{key: 0} ->
+        []
 
-    base_query
-    |> page_withdrawals(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
+      _ ->
+        base_query =
+          from(
+            sb in Bridge,
+            where:
+              sb.operation_type == :withdrawal and not is_nil(sb.l1_block_number) and not is_nil(sb.l2_block_number),
+            select: %{
+              l2_block_number: sb.l2_block_number,
+              l2_transaction_hash: sb.l2_transaction_hash,
+              l1_transaction_hash: sb.l1_transaction_hash,
+              user: sb.user,
+              timestamp: sb.timestamp
+            },
+            order_by: [desc: sb.l2_block_number]
+          )
+
+        base_query
+        |> page_withdrawals(paging_options)
+        |> limit(^paging_options.page_size)
+        |> select_repo(options).all()
+    end
   end
 
   @doc """

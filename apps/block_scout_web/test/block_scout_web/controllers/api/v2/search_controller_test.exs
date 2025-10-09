@@ -1,22 +1,82 @@
 defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   use BlockScoutWeb.ConnCase
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.{Address, Block}
-  alias Explorer.Repo
   alias Explorer.Tags.AddressTag
-
-  setup do
-    insert(:block)
-    insert(:unique_smart_contract)
-    insert(:unique_token)
-    insert(:transaction)
-    address = insert(:address)
-    insert(:unique_address_name, address: address)
-
-    :ok
-  end
+  alias Plug.Conn.Query
 
   describe "/search" do
+    test "get token-transfers with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/search?q=#{token.name}")
+
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+
+      assert response == conn |> get("/api/v2/search?q=#{token.name}") |> json_response(200)
+    end
+
+    test "get smart-contract with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/search?q=#{token.name}")
+
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/search?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert response["items"] == []
+    end
+
+    test "get token-transfers with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      request = conn |> get("/api/v2/search?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
+    test "get token-transfers with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request = conn |> get("/api/v2/search?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
     test "search block", %{conn: conn} do
       block = insert(:block)
 
@@ -33,6 +93,24 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["block_number"] == block.number
       assert item["block_hash"] == to_string(block.hash)
       assert item["url"] =~ to_string(block.hash)
+
+      request = get(conn, "/api/v2/search?q=#{block.number}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      item = Enum.at(response["items"], 0)
+
+      assert item["type"] == "block"
+      assert item["block_number"] == block.number
+      assert item["block_hash"] == to_string(block.hash)
+      assert item["url"] =~ to_string(block.hash)
+      assert item["timestamp"] == block.timestamp |> to_string() |> String.replace(" ", "T")
+    end
+
+    test "search block with small and short number", %{conn: conn} do
+      block = insert(:block, number: 1)
 
       request = get(conn, "/api/v2/search?q=#{block.number}")
       assert response = json_response(request, 200)
@@ -95,7 +173,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       assert item["type"] == "address"
       assert item["name"] == name.name
-      assert item["address"] == Address.checksum(address.hash)
+      assert item["address_hash"] == Address.checksum(address.hash)
       assert item["url"] =~ Address.checksum(address.hash)
       assert item["is_smart_contract_verified"] == address.verified
     end
@@ -113,7 +191,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       assert item["type"] == "contract"
       assert item["name"] == contract.name
-      assert item["address"] == Address.checksum(contract.address_hash)
+      assert item["address_hash"] == Address.checksum(contract.address_hash)
       assert item["url"] =~ Address.checksum(contract.address_hash)
       assert item["is_smart_contract_verified"] == true
     end
@@ -133,7 +211,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["type"] == "contract"
       assert item["name"] == name
 
-      request_2 = get(conn, "/api/v2/search", response["next_page_params"])
+      request_2 = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
       assert response_2 = json_response(request_2, 200)
 
       assert Enum.count(response_2["items"]) == 1
@@ -145,6 +223,152 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["name"] == name
 
       assert item not in response["items"]
+    end
+
+    test "check pagination #1", %{conn: conn} do
+      name = "contract"
+      contracts = for(i <- 0..50, do: insert(:smart_contract, name: "#{name} #{i}")) |> Enum.sort_by(fn x -> x.name end)
+
+      tokens =
+        for i <- 0..50, do: insert(:token, name: "#{name} #{i}", circulating_market_cap: 10000 - i, holder_count: 0)
+
+      labels =
+        for(i <- 0..50, do: insert(:address_to_tag, tag: build(:address_tag, display_name: "#{name} #{i}")))
+        |> Enum.sort_by(fn x -> x.tag.display_name end)
+
+      request = get(conn, "/api/v2/search?q=#{name}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      assert Enum.at(response["items"], 0)["type"] == "label"
+      assert Enum.at(response["items"], 49)["type"] == "label"
+
+      request_2 = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_2 = json_response(request_2, 200)
+
+      assert Enum.count(response_2["items"]) == 50
+      assert response_2["next_page_params"] != nil
+      assert Enum.at(response_2["items"], 0)["type"] == "label"
+      assert Enum.at(response_2["items"], 1)["type"] == "token"
+      assert Enum.at(response_2["items"], 49)["type"] == "token"
+
+      request_3 = get(conn, "/api/v2/search", response_2["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_3 = json_response(request_3, 200)
+
+      assert Enum.count(response_3["items"]) == 50
+      assert response_3["next_page_params"] != nil
+      assert Enum.at(response_3["items"], 0)["type"] == "token"
+      assert Enum.at(response_3["items"], 1)["type"] == "token"
+      assert Enum.at(response_3["items"], 2)["type"] == "contract"
+      assert Enum.at(response_3["items"], 49)["type"] == "contract"
+
+      request_4 = get(conn, "/api/v2/search", response_3["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_4 = json_response(request_4, 200)
+
+      assert Enum.count(response_4["items"]) == 3
+      assert response_4["next_page_params"] == nil
+      assert Enum.all?(response_4["items"], fn x -> x["type"] == "contract" end)
+
+      labels_from_api = response["items"] ++ [Enum.at(response_2["items"], 0)]
+
+      assert labels
+             |> Enum.zip(labels_from_api)
+             |> Enum.all?(fn {label, item} ->
+               label.tag.display_name == item["name"] && item["type"] == "label" &&
+                 item["address_hash"] == Address.checksum(label.address_hash)
+             end)
+
+      tokens_from_api = Enum.slice(response_2["items"], 1, 49) ++ Enum.slice(response_3["items"], 0, 2)
+
+      assert tokens
+             |> Enum.zip(tokens_from_api)
+             |> Enum.all?(fn {token, item} ->
+               token.name == item["name"] && item["type"] == "token" &&
+                 item["address_hash"] == Address.checksum(token.contract_address_hash)
+             end)
+
+      contracts_from_api = Enum.slice(response_3["items"], 2, 48) ++ response_4["items"]
+
+      assert contracts
+             |> Enum.zip(contracts_from_api)
+             |> Enum.all?(fn {contract, item} ->
+               contract.name == item["name"] && item["type"] == "contract" &&
+                 item["address_hash"] == Address.checksum(contract.address_hash)
+             end)
+    end
+
+    test "check pagination #2 (token should be ranged by fiat_value)", %{conn: conn} do
+      name = "contract"
+      contracts = for(i <- 0..50, do: insert(:smart_contract, name: "#{name} #{i}")) |> Enum.sort_by(fn x -> x.name end)
+
+      tokens =
+        for i <- 0..50, do: insert(:token, name: "#{name} #{i}", fiat_value: 10000 - i, holder_count: 0)
+
+      labels =
+        for(i <- 0..50, do: insert(:address_to_tag, tag: build(:address_tag, display_name: "#{name} #{i}")))
+        |> Enum.sort_by(fn x -> x.tag.display_name end)
+
+      request = get(conn, "/api/v2/search?q=#{name}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      assert Enum.at(response["items"], 0)["type"] == "label"
+      assert Enum.at(response["items"], 49)["type"] == "label"
+
+      request_2 = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_2 = json_response(request_2, 200)
+
+      assert Enum.count(response_2["items"]) == 50
+      assert response_2["next_page_params"] != nil
+      assert Enum.at(response_2["items"], 0)["type"] == "label"
+      assert Enum.at(response_2["items"], 1)["type"] == "token"
+      assert Enum.at(response_2["items"], 49)["type"] == "token"
+
+      request_3 = get(conn, "/api/v2/search", response_2["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_3 = json_response(request_3, 200)
+
+      assert Enum.count(response_3["items"]) == 50
+      assert response_3["next_page_params"] != nil
+      assert Enum.at(response_3["items"], 0)["type"] == "token"
+      assert Enum.at(response_3["items"], 1)["type"] == "token"
+      assert Enum.at(response_3["items"], 2)["type"] == "contract"
+      assert Enum.at(response_3["items"], 49)["type"] == "contract"
+
+      request_4 = get(conn, "/api/v2/search", response_3["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_4 = json_response(request_4, 200)
+
+      assert Enum.count(response_4["items"]) == 3
+      assert response_4["next_page_params"] == nil
+      assert Enum.all?(response_4["items"], fn x -> x["type"] == "contract" end)
+
+      labels_from_api = response["items"] ++ [Enum.at(response_2["items"], 0)]
+
+      assert labels
+             |> Enum.zip(labels_from_api)
+             |> Enum.all?(fn {label, item} ->
+               label.tag.display_name == item["name"] && item["type"] == "label" &&
+                 item["address_hash"] == Address.checksum(label.address_hash)
+             end)
+
+      tokens_from_api = Enum.slice(response_2["items"], 1, 49) ++ Enum.slice(response_3["items"], 0, 2)
+
+      assert tokens
+             |> Enum.zip(tokens_from_api)
+             |> Enum.all?(fn {token, item} ->
+               token.name == item["name"] && item["type"] == "token" &&
+                 item["address_hash"] == Address.checksum(token.contract_address_hash)
+             end)
+
+      contracts_from_api = Enum.slice(response_3["items"], 2, 48) ++ response_4["items"]
+
+      assert contracts
+             |> Enum.zip(contracts_from_api)
+             |> Enum.all?(fn {contract, item} ->
+               contract.name == item["name"] && item["type"] == "contract" &&
+                 item["address_hash"] == Address.checksum(contract.address_hash)
+             end)
     end
 
     test "search token", %{conn: conn} do
@@ -161,7 +385,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["type"] == "token"
       assert item["name"] == token.name
       assert item["symbol"] == token.symbol
-      assert item["address"] == Address.checksum(token.contract_address_hash)
+      assert item["address_hash"] == Address.checksum(token.contract_address_hash)
       assert item["token_url"] =~ Address.checksum(token.contract_address_hash)
       assert item["address_url"] =~ Address.checksum(token.contract_address_hash)
       assert item["token_type"] == token.type
@@ -186,7 +410,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["type"] == "token"
       assert item["name"] == token.name
       assert item["symbol"] == token.symbol
-      assert item["address"] == Address.checksum(token.contract_address_hash)
+      assert item["address_hash"] == Address.checksum(token.contract_address_hash)
       assert item["token_url"] =~ Address.checksum(token.contract_address_hash)
       assert item["address_url"] =~ Address.checksum(token.contract_address_hash)
       assert item["token_type"] == token.type
@@ -202,9 +426,9 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
     end
 
     test "search transaction", %{conn: conn} do
-      tx = insert(:transaction, block_timestamp: nil)
+      transaction = insert(:transaction, block_timestamp: nil)
 
-      request = get(conn, "/api/v2/search?q=#{tx.hash}")
+      request = get(conn, "/api/v2/search?q=#{transaction.hash}")
       assert response = json_response(request, 200)
 
       assert Enum.count(response["items"]) == 1
@@ -213,26 +437,36 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       item = Enum.at(response["items"], 0)
 
       assert item["type"] == "transaction"
-      assert item["tx_hash"] == to_string(tx.hash)
-      assert item["url"] =~ to_string(tx.hash)
+      assert item["transaction_hash"] == to_string(transaction.hash)
+      assert item["url"] =~ to_string(transaction.hash)
       assert item["timestamp"] == nil
     end
 
     test "search transaction with timestamp", %{conn: conn} do
-      tx = :transaction |> insert() |> with_block()
+      transaction = :transaction |> insert()
+      block = insert(:block, hash: transaction.hash)
+      transaction |> with_block(block)
 
-      request = get(conn, "/api/v2/search?q=#{tx.hash}")
+      request = get(conn, "/api/v2/search?q=#{transaction.hash}")
       assert response = json_response(request, 200)
 
-      assert Enum.count(response["items"]) == 1
+      assert Enum.count(response["items"]) == 2
       assert response["next_page_params"] == nil
 
-      item = Enum.at(response["items"], 0)
+      transaction_item = Enum.find(response["items"], fn x -> x["type"] == "transaction" end)
 
-      assert item["type"] == "transaction"
-      assert item["tx_hash"] == to_string(tx.hash)
-      assert item["url"] =~ to_string(tx.hash)
-      assert item["timestamp"] == Repo.preload(tx, [:block]).block.timestamp |> to_string() |> String.replace(" ", "T")
+      assert transaction_item["type"] == "transaction"
+      assert transaction_item["transaction_hash"] == to_string(transaction.hash)
+      assert transaction_item["url"] =~ to_string(transaction.hash)
+
+      assert transaction_item["timestamp"] ==
+               block.timestamp |> to_string() |> String.replace(" ", "T")
+
+      block_item = Enum.find(response["items"], fn x -> x["type"] == "block" end)
+      assert block_item["type"] == "block"
+      assert block_item["block_hash"] == to_string(block.hash)
+      assert block_item["url"] =~ to_string(block.hash)
+      assert transaction_item["timestamp"] == block_item["timestamp"]
     end
 
     test "search tags", %{conn: conn} do
@@ -247,14 +481,14 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       item = Enum.at(response["items"], 0)
 
       assert item["type"] == "label"
-      assert item["address"] == Address.checksum(tag.address.hash)
+      assert item["address_hash"] == Address.checksum(tag.address.hash)
       assert item["name"] == tag.tag.display_name
       assert item["url"] =~ Address.checksum(tag.address.hash)
       assert item["is_smart_contract_verified"] == tag.address.verified
     end
 
     test "check that simultaneous search of ", %{conn: conn} do
-      block = insert(:block)
+      block = insert(:block, number: 10000)
 
       insert(:smart_contract, name: to_string(block.number))
       insert(:token, name: to_string(block.number))
@@ -271,6 +505,1331 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       assert Enum.count(response["items"]) == 4
       assert response["next_page_params"] == nil
+    end
+
+    test "search for a big positive integer", %{conn: conn} do
+      big_integer = :math.pow(2, 64) |> round |> :erlang.integer_to_binary()
+      request = get(conn, "/api/v2/search?q=#{big_integer}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 0
+      assert response["next_page_params"] == nil
+    end
+
+    test "search for a big negative integer", %{conn: conn} do
+      big_integer = (:math.pow(2, 64) - 1) |> round |> :erlang.integer_to_binary()
+      request = get(conn, "/api/v2/search?q=#{big_integer}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 0
+      assert response["next_page_params"] == nil
+    end
+
+    test "check pagination #3 (ens and metadata tags added)", %{conn: conn} do
+      bypass = Bypass.open()
+      metadata_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+      bens_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+      old_hide_scam_addresses = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, metadata_envs)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:block_scout_web, :hide_scam_addresses, old_hide_scam_addresses)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      name = "contract.eth"
+
+      contracts =
+        for(i <- 0..50, do: insert(:smart_contract, name: "#{name |> String.replace(".", " ")} #{i}"))
+        |> Enum.sort_by(fn x -> x.name end)
+
+      tokens =
+        for i <- 0..50,
+            do: insert(:token, name: "#{name |> String.replace(".", " ")} #{i}", fiat_value: 10000 - i, holder_count: 0)
+
+      labels =
+        for(
+          i <- 0..50,
+          do:
+            insert(:address_to_tag, tag: build(:address_tag, display_name: "#{name |> String.replace(".", " ")} #{i}"))
+        )
+        |> Enum.sort_by(fn x -> x.tag.display_name end)
+
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+      address_3 = build(:address)
+      address_4 = build(:address)
+      address_5 = insert(:address)
+
+      metadata_response_1 =
+        %{
+          "items" =>
+            for(
+              i <- 0..24,
+              do: %{
+                "tag" => %{
+                  "slug" => "#{name} #{i}",
+                  "name" => "#{name} #{i}",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_1)
+                ]
+              }
+            ) ++
+              for(
+                i <- 0..23,
+                do: %{
+                  "tag" => %{
+                    "slug" => "#{name} #{25 + i}",
+                    "name" => "#{name} #{25 + i}",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_2)
+                  ]
+                }
+              ) ++
+              [
+                %{
+                  "tag" => %{
+                    "slug" => "#{name} 49",
+                    "name" => "#{name} 49",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_3),
+                    to_string(address_4)
+                  ]
+                }
+              ],
+          "next_page_params" => %{
+            "page_token" => "0,celo:_eth_helper,name",
+            "page_size" => 50
+          }
+        }
+
+      metadata_response_2 = %{
+        "items" =>
+          for(
+            i <- 22..23,
+            do: %{
+              "tag" => %{
+                "slug" => "#{name} #{25 + i}",
+                "name" => "#{name} #{25 + i}",
+                "tagType" => "name",
+                "ordinal" => 0,
+                "meta" => "{}"
+              },
+              "addresses" => [
+                to_string(address_2)
+              ]
+            }
+          ) ++
+            [
+              %{
+                "tag" => %{
+                  "slug" => "#{name} 49",
+                  "name" => "#{name} 49",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_3),
+                  to_string(address_4)
+                ]
+              }
+            ] ++
+            [
+              %{
+                "tag" => %{
+                  "slug" => "#{name} 0",
+                  "name" => "#{name} 0",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_5)
+                ]
+              }
+            ],
+        "next_page_params" => nil
+      }
+
+      page_token_1 = "0,#{name} #{47},name"
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tags%3Asearch",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          case conn.params["page_token"] do
+            nil -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_1))
+            ^page_token_1 -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_2))
+            _ -> raise "Unexpected page_token"
+          end
+        end
+      )
+
+      ens_address = insert(:address)
+
+      ens_response = """
+      {
+      "items": [
+          {
+              "id": "0xee6c4522aab0003e8d14cd40a6af439055fd2577951148c14b6cea9a53475835",
+              "name": "#{name}",
+              "resolved_address": {
+                  "hash": "#{to_string(ens_address)}"
+              },
+              "owner": {
+                  "hash": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+              },
+              "wrapped_owner": null,
+              "registration_date": "2017-06-18T08:39:14.000Z",
+              "expiry_date": null,
+              "protocol": {
+                  "id": "ens",
+                  "short_name": "ENS",
+                  "title": "Ethereum Name Service",
+                  "description": "The Ethereum Name Service (ENS) is a distributed, open, and extensible naming system based on the Ethereum blockchain.",
+                  "deployment_blockscout_base_url": "https://eth.blockscout.com/",
+                  "tld_list": [
+                      "eth"
+                  ],
+                  "icon_url": "https://i.imgur.com/GOfUwCb.jpeg",
+                  "docs_url": "https://docs.ens.domains/"
+              }
+          }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/1/domains%3Alookup",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          Plug.Conn.resp(conn, 200, ens_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{name}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      assert Enum.at(response["items"], 0)["type"] == "ens_domain"
+      assert Enum.slice(response["items"], 1, 49) |> Enum.all?(fn x -> x["type"] == "label" end)
+
+      request_2 = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_2 = json_response(request_2, 200)
+
+      assert Enum.count(response_2["items"]) == 50
+      assert response_2["next_page_params"] != nil
+      assert Enum.at(response_2["items"], 0)["type"] == "label"
+      assert Enum.at(response_2["items"], 1)["type"] == "label"
+      assert Enum.slice(response_2["items"], 2, 48) |> Enum.all?(fn x -> x["type"] == "token" end)
+
+      request_3 = get(conn, "/api/v2/search", response_2["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_3 = json_response(request_3, 200)
+
+      assert Enum.count(response_3["items"]) == 50
+      assert response_3["next_page_params"] != nil
+
+      assert Enum.slice(response_3["items"], 0, 3) |> Enum.all?(fn x -> x["type"] == "token" end)
+      assert Enum.slice(response_3["items"], 3, 47) |> Enum.all?(fn x -> x["type"] == "metadata_tag" end)
+
+      request_4 = get(conn, "/api/v2/search", response_3["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_4 = json_response(request_4, 200)
+
+      assert Enum.count(response_4["items"]) == 50
+      assert response_4["next_page_params"] != nil
+
+      assert Enum.slice(response_4["items"], 0, 5) |> Enum.all?(fn x -> x["type"] == "metadata_tag" end)
+      assert Enum.slice(response_4["items"], 5, 45) |> Enum.all?(fn x -> x["type"] == "contract" end)
+
+      request_5 = get(conn, "/api/v2/search", response_4["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_5 = json_response(request_5, 200)
+
+      assert Enum.count(response_5["items"]) == 6
+      assert response_5["next_page_params"] == nil
+
+      assert Enum.all?(response_5["items"], fn x -> x["type"] == "contract" end)
+
+      labels_from_api = Enum.slice(response["items"], 1, 49) ++ Enum.slice(response_2["items"], 0, 2)
+
+      assert labels
+             |> Enum.zip(labels_from_api)
+             |> Enum.all?(fn {label, item} ->
+               label.tag.display_name == item["name"] && item["type"] == "label" &&
+                 item["address_hash"] == Address.checksum(label.address_hash)
+             end)
+
+      tokens_from_api = Enum.slice(response_2["items"], 2, 48) ++ Enum.slice(response_3["items"], 0, 3)
+
+      assert tokens
+             |> Enum.zip(tokens_from_api)
+             |> Enum.all?(fn {token, item} ->
+               token.name == item["name"] && item["type"] == "token" &&
+                 item["address_hash"] == Address.checksum(token.contract_address_hash)
+             end)
+
+      contracts_from_api = Enum.slice(response_4["items"], 5, 45) ++ response_5["items"]
+
+      assert contracts
+             |> Enum.zip(contracts_from_api)
+             |> Enum.all?(fn {contract, item} ->
+               contract.name == item["name"] && item["type"] == "contract" &&
+                 item["address_hash"] == Address.checksum(contract.address_hash)
+             end)
+
+      metadata_tags_from_api = Enum.slice(response_3["items"], 3, 47) ++ Enum.slice(response_4["items"], 0, 5)
+
+      metadata_tags =
+        ((metadata_response_1["items"] |> Enum.drop(-3)) ++ metadata_response_2["items"])
+        |> Enum.reduce([], fn x, acc ->
+          acc ++
+            Enum.map(x["addresses"], fn addr ->
+              {addr, x["tag"]}
+            end)
+        end)
+
+      assert metadata_tags
+             |> Enum.zip(metadata_tags_from_api)
+             |> Enum.all?(fn {{address_hash, tag}, api_item} ->
+               tag["name"] == api_item["metadata"]["name"] && tag["slug"] == api_item["metadata"]["slug"] &&
+                 api_item["type"] == "metadata_tag" &&
+                 api_item["address_hash"] == address_hash
+             end)
+
+      ens = Enum.at(response["items"], 0)
+      assert ens["address_hash"] == to_string(ens_address)
+      assert ens["ens_info"]["name"] == name
+    end
+
+    test "check pagination #4 (ens and metadata tags (complex case) added)", %{conn: conn} do
+      bypass = Bypass.open()
+      metadata_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+      bens_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, metadata_envs)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      name = "contract.eth"
+
+      contracts =
+        for(i <- 0..50, do: insert(:smart_contract, name: "#{name |> String.replace(".", " ")} #{i}"))
+        |> Enum.sort_by(fn x -> x.name end)
+
+      tokens =
+        for i <- 0..50,
+            do: insert(:token, name: "#{name |> String.replace(".", " ")} #{i}", fiat_value: 10000 - i, holder_count: 0)
+
+      labels =
+        for(
+          i <- 0..50,
+          do:
+            insert(:address_to_tag, tag: build(:address_tag, display_name: "#{name |> String.replace(".", " ")} #{i}"))
+        )
+        |> Enum.sort_by(fn x -> x.tag.display_name end)
+
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+      address_3 = build(:address)
+      address_4 = build(:address)
+      address_5 = insert(:address)
+
+      metadata_response_1 =
+        %{
+          "items" =>
+            for(
+              i <- 0..24,
+              do: %{
+                "tag" => %{
+                  "slug" => "#{name} #{i}",
+                  "name" => "#{name} #{i}",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_1)
+                ]
+              }
+            ) ++
+              for(
+                i <- 0..20,
+                do: %{
+                  "tag" => %{
+                    "slug" => "#{name} #{25 + i}",
+                    "name" => "#{name} #{25 + i}",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_2)
+                  ]
+                }
+              ) ++
+              [
+                %{
+                  "tag" => %{
+                    "slug" => "#{name} #{25 + 21}",
+                    "name" => "#{name} #{25 + 21}",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_2),
+                    to_string(address_3)
+                  ]
+                }
+              ] ++
+              for(
+                i <- 22..23,
+                do: %{
+                  "tag" => %{
+                    "slug" => "#{name} #{25 + i}",
+                    "name" => "#{name} #{25 + i}",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_2)
+                  ]
+                }
+              ) ++
+              [
+                %{
+                  "tag" => %{
+                    "slug" => "#{name} 49",
+                    "name" => "#{name} 49",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_4)
+                  ]
+                }
+              ],
+          "next_page_params" => %{
+            "page_token" => "0,celo:_eth_helper,name",
+            "page_size" => 50
+          }
+        }
+
+      metadata_response_2 = %{
+        "items" =>
+          [
+            %{
+              "tag" => %{
+                "slug" => "#{name} #{25 + 21}",
+                "name" => "#{name} #{25 + 21}",
+                "tagType" => "name",
+                "ordinal" => 0,
+                "meta" => "{}"
+              },
+              "addresses" => [
+                to_string(address_2),
+                to_string(address_3)
+              ]
+            }
+          ] ++
+            for(
+              i <- 22..23,
+              do: %{
+                "tag" => %{
+                  "slug" => "#{name} #{25 + i}",
+                  "name" => "#{name} #{25 + i}",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_2)
+                ]
+              }
+            ) ++
+            [
+              %{
+                "tag" => %{
+                  "slug" => "#{name} 49",
+                  "name" => "#{name} 49",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_4)
+                ]
+              }
+            ] ++
+            [
+              %{
+                "tag" => %{
+                  "slug" => "#{name} 0",
+                  "name" => "#{name} 0",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_5)
+                ]
+              }
+            ],
+        "next_page_params" => nil
+      }
+
+      page_token_1 = "0,#{name} #{46},name"
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tags%3Asearch",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          case conn.params["page_token"] do
+            nil -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_1))
+            ^page_token_1 -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_2))
+            _ -> raise "Unexpected page_token"
+          end
+        end
+      )
+
+      ens_address = insert(:address)
+
+      ens_response = """
+      {
+      "items": [
+          {
+              "id": "0xee6c4522aab0003e8d14cd40a6af439055fd2577951148c14b6cea9a53475835",
+              "name": "#{name}",
+              "resolved_address": {
+                  "hash": "#{to_string(ens_address)}"
+              },
+              "owner": {
+                  "hash": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+              },
+              "wrapped_owner": null,
+              "registration_date": "2017-06-18T08:39:14.000Z",
+              "expiry_date": null,
+              "protocol": {
+                  "id": "ens",
+                  "short_name": "ENS",
+                  "title": "Ethereum Name Service",
+                  "description": "The Ethereum Name Service (ENS) is a distributed, open, and extensible naming system based on the Ethereum blockchain.",
+                  "deployment_blockscout_base_url": "https://eth.blockscout.com/",
+                  "tld_list": [
+                      "eth"
+                  ],
+                  "icon_url": "https://i.imgur.com/GOfUwCb.jpeg",
+                  "docs_url": "https://docs.ens.domains/"
+              }
+          }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/1/domains%3Alookup",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          Plug.Conn.resp(conn, 200, ens_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{name}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      assert Enum.at(response["items"], 0)["type"] == "ens_domain"
+      assert Enum.slice(response["items"], 1, 49) |> Enum.all?(fn x -> x["type"] == "label" end)
+
+      request_2 = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_2 = json_response(request_2, 200)
+
+      assert Enum.count(response_2["items"]) == 50
+      assert response_2["next_page_params"] != nil
+      assert Enum.at(response_2["items"], 0)["type"] == "label"
+      assert Enum.at(response_2["items"], 1)["type"] == "label"
+      assert Enum.slice(response_2["items"], 2, 48) |> Enum.all?(fn x -> x["type"] == "token" end)
+
+      request_3 = get(conn, "/api/v2/search", response_2["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_3 = json_response(request_3, 200)
+
+      assert Enum.count(response_3["items"]) == 50
+      assert response_3["next_page_params"] != nil
+
+      assert Enum.slice(response_3["items"], 0, 3) |> Enum.all?(fn x -> x["type"] == "token" end)
+      assert Enum.slice(response_3["items"], 3, 47) |> Enum.all?(fn x -> x["type"] == "metadata_tag" end)
+
+      request_4 = get(conn, "/api/v2/search", response_3["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_4 = json_response(request_4, 200)
+
+      assert Enum.count(response_4["items"]) == 50
+      assert response_4["next_page_params"] != nil
+
+      assert Enum.slice(response_4["items"], 0, 5) |> Enum.all?(fn x -> x["type"] == "metadata_tag" end)
+      assert Enum.slice(response_4["items"], 5, 45) |> Enum.all?(fn x -> x["type"] == "contract" end)
+
+      request_5 = get(conn, "/api/v2/search", response_4["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_5 = json_response(request_5, 200)
+
+      assert Enum.count(response_5["items"]) == 6
+      assert response_5["next_page_params"] == nil
+
+      assert Enum.all?(response_5["items"], fn x -> x["type"] == "contract" end)
+
+      labels_from_api = Enum.slice(response["items"], 1, 49) ++ Enum.slice(response_2["items"], 0, 2)
+
+      assert labels
+             |> Enum.zip(labels_from_api)
+             |> Enum.all?(fn {label, item} ->
+               label.tag.display_name == item["name"] && item["type"] == "label" &&
+                 item["address_hash"] == Address.checksum(label.address_hash)
+             end)
+
+      tokens_from_api = Enum.slice(response_2["items"], 2, 48) ++ Enum.slice(response_3["items"], 0, 3)
+
+      assert tokens
+             |> Enum.zip(tokens_from_api)
+             |> Enum.all?(fn {token, item} ->
+               token.name == item["name"] && item["type"] == "token" &&
+                 item["address_hash"] == Address.checksum(token.contract_address_hash)
+             end)
+
+      contracts_from_api = Enum.slice(response_4["items"], 5, 45) ++ response_5["items"]
+
+      assert contracts
+             |> Enum.zip(contracts_from_api)
+             |> Enum.all?(fn {contract, item} ->
+               contract.name == item["name"] && item["type"] == "contract" &&
+                 item["address_hash"] == Address.checksum(contract.address_hash)
+             end)
+
+      metadata_tags_from_api = Enum.slice(response_3["items"], 3, 47) ++ Enum.slice(response_4["items"], 0, 5)
+
+      metadata_tags =
+        ((metadata_response_1["items"] |> Enum.drop(-4)) ++ metadata_response_2["items"])
+        |> Enum.reduce([], fn x, acc ->
+          acc ++
+            Enum.map(x["addresses"], fn addr ->
+              {addr, x["tag"]}
+            end)
+        end)
+
+      assert metadata_tags
+             |> Enum.zip(metadata_tags_from_api)
+             |> Enum.all?(fn {{address_hash, tag}, api_item} ->
+               tag["name"] == api_item["metadata"]["name"] && tag["slug"] == api_item["metadata"]["slug"] &&
+                 api_item["type"] == "metadata_tag" &&
+                 api_item["address_hash"] == address_hash
+             end)
+
+      ens = Enum.at(response["items"], 0)
+      assert ens["address_hash"] == to_string(ens_address)
+      assert ens["ens_info"]["name"] == name
+    end
+
+    if @chain_type == :default do
+      test "finds a TAC operation", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:38.000Z",
+              "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect_once(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{operation_id}")
+
+        assert %{
+                 "items" => [
+                   %{
+                     "priority" => 0,
+                     "tac_operation" => %{
+                       "operation_id" => operation_id,
+                       "sender" => nil,
+                       "timestamp" => "2025-05-14T19:16:38.000Z",
+                       "type" => "TON_TAC_TON"
+                     },
+                     "type" => "tac_operation"
+                   }
+                 ],
+                 "next_page_params" => nil
+               } == json_response(request, 200)
+      end
+
+      test "handles no results from TAC microservice", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
+
+        tac_response = """
+        {
+          "items": [],
+          "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{operation_id}")
+
+        assert %{
+                 "items" => [],
+                 "next_page_params" => nil
+               } == json_response(request, 200)
+      end
+
+      test "finds a TAC operation with transaction", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        transaction = insert(:transaction) |> with_block()
+
+        operation_id = "#{transaction.hash}"
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:38.000Z",
+              "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{operation_id}")
+        assert response = json_response(request, 200)
+
+        # tl to check order
+        assert %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => operation_id,
+                   "sender" => nil,
+                   "timestamp" => "2025-05-14T19:16:38.000Z",
+                   "type" => "TON_TAC_TON"
+                 },
+                 "type" => "tac_operation"
+               } in tl(response["items"])
+
+        assert %{
+                 "priority" => 0,
+                 "transaction_hash" => "#{transaction.hash}",
+                 "type" => "transaction",
+                 "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+                 "url" => "/tx/#{transaction.hash}"
+               } in response["items"]
+      end
+
+      test "finds a TAC operation with block", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        transaction = insert(:transaction) |> with_block()
+
+        operation_id = "#{transaction.block_hash}"
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:38.000Z",
+              "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{operation_id}")
+        assert response = json_response(request, 200)
+
+        # tl to check order
+        assert %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => operation_id,
+                   "sender" => nil,
+                   "timestamp" => "2025-05-14T19:16:38.000Z",
+                   "type" => "TON_TAC_TON"
+                 },
+                 "type" => "tac_operation"
+               } in tl(response["items"])
+
+        assert %{
+                 "block_hash" => "#{transaction.block_hash}",
+                 "block_number" => transaction.block_number,
+                 "block_type" => "block",
+                 "priority" => 3,
+                 "type" => "block",
+                 "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+                 "url" => "/block/#{transaction.block_hash}"
+               } in response["items"]
+      end
+
+      test "finds TAC operations by sender and paginates", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        address_hash = Address.checksum(insert(:address).hash)
+        operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
+
+        tac_first_response = """
+        {
+          "items": [
+          #{for i <- 10..59, do: """
+          {
+            "operation_id": "#{operation_id}",
+            "sender": "#{address_hash}",
+            "timestamp": "2025-05-14T19:16:#{i}.000Z",
+            "type": "TON_TAC_TON"
+          }#{if i == 59, do: "", else: ","}
+        """}
+          ],
+          "next_page_params": {
+            "page_token": 1747250219,
+            "page_size": 50
+          }
+        }
+        """
+
+        tac_second_response = """
+        {
+          "items": [
+          #{for i <- 10..59, do: """
+          {
+            "operation_id": "#{operation_id}",
+            "sender": "#{address_hash}",
+            "timestamp": "#{if i == 0, do: "2025-05-14T19:16:59.000Z", else: "2025-05-14T19:17:#{i}.000Z"}",
+            "type": "TON_TAC_TON"
+          }#{if i == 59, do: "", else: ","}
+        """}
+          ],
+          "next_page_params": {
+            "page_token": 1747250279,
+            "page_size": 50
+          }
+        }
+        """
+
+        tac_third_response = """
+        {
+          "items": [
+          {
+            "operation_id": "#{operation_id}",
+            "sender": "#{address_hash}",
+            "timestamp": "2025-05-14T19:18:01.000Z",
+            "type": "TON_TAC_TON"
+          }
+          ],
+          "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            case conn.params["page_token"] do
+              nil -> Plug.Conn.resp(conn, 200, tac_first_response)
+              "1747250218" -> Plug.Conn.resp(conn, 200, tac_second_response)
+              "1747250279" -> Plug.Conn.resp(conn, 200, tac_third_response)
+              _ -> raise "Unexpected page_token"
+            end
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{address_hash}")
+        assert response = json_response(request, 200)
+
+        second_page_request =
+          get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+
+        second_page_response = json_response(second_page_request, 200)
+
+        third_page_request =
+          get(conn, "/api/v2/search", second_page_response["next_page_params"] |> Query.encode() |> Query.decode())
+
+        assert %{
+                 "items" => [
+                   %{
+                     "priority" => 0,
+                     "tac_operation" => %{
+                       "operation_id" => operation_id,
+                       "sender" => address_hash,
+                       "timestamp" => "2025-05-14T19:18:01.000Z",
+                       "type" => "TON_TAC_TON"
+                     },
+                     "type" => "tac_operation"
+                   }
+                 ],
+                 "next_page_params" => nil
+               } == json_response(third_page_request, 200)
+      end
+
+      test "finds TAC operations by TON sender", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+              "type": "ROLLBACK",
+              "timestamp": "2025-06-05T12:21:11.000Z",
+              "sender": {
+                  "address": "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                  "blockchain": "TON"
+              }
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            case conn.params["q"] do
+              expected_q
+              when expected_q in [
+                     "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt",
+                     "UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko",
+                     "kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n",
+                     "0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi",
+                     "0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d"
+                   ] ->
+                Plug.Conn.resp(conn, 200, tac_response)
+
+              q ->
+                raise "Unexpected 'q' parameter #{inspect(q)}"
+            end
+          end
+        )
+
+        request =
+          get(conn, "/api/v2/search?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response["items"]
+
+        request =
+          get(conn, "/api/v2/search?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response["items"]
+
+        request =
+          get(conn, "/api/v2/search?q=#{URI.encode_www_form("UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response["items"]
+
+        request =
+          get(conn, "/api/v2/search?q=#{URI.encode_www_form("kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response["items"]
+
+        request =
+          get(conn, "/api/v2/search?q=#{URI.encode_www_form("0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response["items"]
+
+        request =
+          get(
+            conn,
+            "/api/v2/search?q=#{URI.encode_www_form("0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d")}"
+          )
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response["items"]
+      end
+
+      test "finds TAC operations with transaction and paginates", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
+
+        insert(:transaction, hash: operation_id)
+
+        tac_first_response = """
+        {
+          "items": [
+          #{for i <- 0..49, do: """
+          {
+            "operation_id": "#{operation_id}",
+            "sender": null,
+            "timestamp": "2025-05-14T19:16:#{i}.000Z",
+            "type": "TON_TAC_TON"
+          }#{if i == 49, do: "", else: ","}
+        """}
+          ],
+          "next_page_params": {
+            "page_token": 1747250209,
+            "page_size": 50
+          }
+        }
+        """
+
+        tac_second_response = """
+        {
+        "items": [
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:50.000Z",
+              "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            case conn.params["page_token"] do
+              nil -> Plug.Conn.resp(conn, 200, tac_first_response)
+              "1747250208" -> Plug.Conn.resp(conn, 200, tac_second_response)
+              _ -> raise "Unexpected page_token"
+            end
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{operation_id}")
+        assert response = json_response(request, 200)
+
+        next_page_request =
+          get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+
+        assert %{
+                 "items" => [
+                   %{
+                     "priority" => 0,
+                     "tac_operation" => %{
+                       "operation_id" => operation_id,
+                       "sender" => nil,
+                       "timestamp" => "2025-05-14T19:16:50.000Z",
+                       "type" => "TON_TAC_TON"
+                     },
+                     "type" => "tac_operation"
+                   }
+                 ],
+                 "next_page_params" => nil
+               } == json_response(next_page_request, 200)
+      end
     end
   end
 
@@ -373,6 +1932,76 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   end
 
   describe "/search/quick" do
+    test "get token with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/search/quick?q=#{token.name}")
+
+      response = json_response(request, 200)
+
+      assert List.first(response)["reputation"] == "ok"
+
+      assert response == conn |> get("/api/v2/search/quick?q=#{token.name}") |> json_response(200)
+    end
+
+    test "get token with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/search/quick?q=#{token.name}")
+
+      response = json_response(request, 200)
+
+      assert List.first(response)["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/search/quick?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert response == []
+    end
+
+    test "get token with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      request = conn |> get("/api/v2/search/quick?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert List.first(response)["reputation"] == "ok"
+    end
+
+    test "get token with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token = insert(:unique_token)
+
+      insert(:scam_badge_to_address, address_hash: token.contract_address_hash)
+
+      request = conn |> get("/api/v2/search/quick?q=#{token.name}")
+      response = json_response(request, 200)
+
+      assert List.first(response)["reputation"] == "ok"
+    end
+
     test "check that all categories are in response list", %{conn: conn} do
       name = "156000"
 
@@ -389,16 +2018,16 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response) == 50
 
-      assert response |> Enum.filter(fn x -> x["type"] == "label" end) |> Enum.map(fn x -> x["address"] end) ==
+      assert response |> Enum.filter(fn x -> x["type"] == "label" end) |> Enum.map(fn x -> x["address_hash"] end) ==
                tags |> Enum.reverse() |> Enum.take(16) |> Enum.map(fn tag -> Address.checksum(tag.address.hash) end)
 
-      assert response |> Enum.filter(fn x -> x["type"] == "contract" end) |> Enum.map(fn x -> x["address"] end) ==
+      assert response |> Enum.filter(fn x -> x["type"] == "contract" end) |> Enum.map(fn x -> x["address_hash"] end) ==
                contracts
                |> Enum.reverse()
                |> Enum.take(16)
                |> Enum.map(fn contract -> Address.checksum(contract.address_hash) end)
 
-      assert response |> Enum.filter(fn x -> x["type"] == "token" end) |> Enum.map(fn x -> x["address"] end) ==
+      assert response |> Enum.filter(fn x -> x["type"] == "token" end) |> Enum.map(fn x -> x["address_hash"] end) ==
                tokens
                |> Enum.reverse()
                |> Enum.sort_by(fn x -> x.is_verified_via_admin_panel end, :desc)
@@ -412,6 +2041,714 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       assert response |> Enum.filter(fn x -> x["block_type"] == "block" end) |> Enum.count() == 1
       assert response |> Enum.filter(fn x -> x["block_type"] == "reorg" end) |> Enum.count() == 1
+    end
+
+    test "check that all categories are in response list (ens + metadata included)", %{conn: conn} do
+      bypass = Bypass.open()
+      metadata_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+      bens_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, metadata_envs)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      name = "qwe.eth"
+
+      tags =
+        for _ <- 0..50 do
+          insert(:address_to_tag, tag: build(:address_tag, display_name: name |> String.replace(".", " ")))
+        end
+
+      contracts = insert_list(50, :smart_contract, name: name |> String.replace(".", " "))
+      tokens = insert_list(50, :token, name: name |> String.replace(".", " "))
+      ens_address = insert(:address)
+      address_1 = build(:address)
+
+      metadata_response =
+        %{
+          "items" =>
+            for(
+              i <- 0..49,
+              do: %{
+                "tag" => %{
+                  "slug" => "#{name} #{i}",
+                  "name" => "#{name} #{i}",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_1)
+                ]
+              }
+            ),
+          "next_page_params" => %{
+            "page_token" => "0,celo:_eth_helper,name",
+            "page_size" => 50
+          }
+        }
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tags%3Asearch",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response))
+        end
+      )
+
+      ens_response = """
+      {
+      "items": [
+          {
+              "id": "0xee6c4522aab0003e8d14cd40a6af439055fd2577951148c14b6cea9a53475835",
+              "name": "#{name}",
+              "resolved_address": {
+                  "hash": "#{to_string(ens_address)}"
+              },
+              "owner": {
+                  "hash": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+              },
+              "wrapped_owner": null,
+              "registration_date": "2017-06-18T08:39:14.000Z",
+              "expiry_date": null,
+              "protocol": {
+                  "id": "ens",
+                  "short_name": "ENS",
+                  "title": "Ethereum Name Service",
+                  "description": "The Ethereum Name Service (ENS) is a distributed, open, and extensible naming system based on the Ethereum blockchain.",
+                  "deployment_blockscout_base_url": "https://eth.blockscout.com/",
+                  "tld_list": [
+                      "eth"
+                  ],
+                  "icon_url": "https://i.imgur.com/GOfUwCb.jpeg",
+                  "docs_url": "https://docs.ens.domains/"
+              }
+          }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/1/domains%3Alookup",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          Plug.Conn.resp(conn, 200, ens_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/search/quick?q=#{name}")
+      assert response = json_response(request, 200)
+      assert Enum.count(response) == 50
+
+      assert response |> Enum.filter(fn x -> x["type"] == "label" end) |> Enum.map(fn x -> x["address_hash"] end) ==
+               tags |> Enum.reverse() |> Enum.take(12) |> Enum.map(fn tag -> Address.checksum(tag.address.hash) end)
+
+      assert response |> Enum.filter(fn x -> x["type"] == "contract" end) |> Enum.map(fn x -> x["address_hash"] end) ==
+               contracts
+               |> Enum.reverse()
+               |> Enum.take(12)
+               |> Enum.map(fn contract -> Address.checksum(contract.address_hash) end)
+
+      assert response |> Enum.filter(fn x -> x["type"] == "token" end) |> Enum.map(fn x -> x["address_hash"] end) ==
+               tokens
+               |> Enum.reverse()
+               |> Enum.sort_by(fn x -> x.is_verified_via_admin_panel end, :desc)
+               |> Enum.take(13)
+               |> Enum.map(fn token -> Address.checksum(token.contract_address_hash) end)
+
+      assert response |> Enum.filter(fn x -> x["type"] == "ens_domain" end) |> Enum.map(fn x -> x["address_hash"] end) ==
+               [
+                 to_string(ens_address)
+               ]
+
+      metadata_tags = response |> Enum.filter(fn x -> x["type"] == "metadata_tag" end)
+
+      assert Enum.count(metadata_tags) == 12
+
+      assert metadata_tags
+             |> Enum.with_index()
+             |> Enum.all?(fn {x, index} ->
+               x["address_hash"] == to_string(address_1) && x["metadata"]["name"] == "#{name} #{index}"
+             end)
+    end
+
+    if @chain_type == :default do
+      test "finds a TAC operation", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
+
+        tac_response = """
+        {
+        "items": [
+          {
+            "operation_id": "#{operation_id}",
+            "sender": null,
+            "timestamp": "2025-05-14T19:16:38.000Z",
+            "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => operation_id,
+                     "sender" => nil,
+                     "timestamp" => "2025-05-14T19:16:38.000Z",
+                     "type" => "TON_TAC_TON"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == json_response(request, 200)
+      end
+
+      test "finds a TAC operation with transaction", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        transaction = insert(:transaction) |> with_block()
+
+        operation_id = "#{transaction.hash}"
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:38.000Z",
+              "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+        assert response = json_response(request, 200)
+
+        # tl to check order
+        assert %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => operation_id,
+                   "sender" => nil,
+                   "timestamp" => "2025-05-14T19:16:38.000Z",
+                   "type" => "TON_TAC_TON"
+                 },
+                 "type" => "tac_operation"
+               } in tl(response)
+
+        assert %{
+                 "priority" => 0,
+                 "transaction_hash" => "#{transaction.hash}",
+                 "type" => "transaction",
+                 "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+                 "url" => "/tx/#{transaction.hash}"
+               } in response
+      end
+
+      test "finds a TAC operation with block", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        transaction = insert(:transaction) |> with_block()
+
+        operation_id = "#{transaction.block_hash}"
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "#{operation_id}",
+              "sender": null,
+              "timestamp": "2025-05-14T19:16:38.000Z",
+              "type": "TON_TAC_TON"
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+        assert response = json_response(request, 200)
+
+        # tl to check order
+        assert %{
+                 "priority" => 0,
+                 "tac_operation" => %{
+                   "operation_id" => operation_id,
+                   "sender" => nil,
+                   "timestamp" => "2025-05-14T19:16:38.000Z",
+                   "type" => "TON_TAC_TON"
+                 },
+                 "type" => "tac_operation"
+               } in tl(response)
+
+        assert %{
+                 "block_hash" => "#{transaction.block_hash}",
+                 "block_number" => transaction.block_number,
+                 "block_type" => "block",
+                 "priority" => 3,
+                 "type" => "block",
+                 "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+                 "url" => "/block/#{transaction.block_hash}"
+               } in response
+      end
+
+      test "finds a lot of TAC operations with address", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        address_hash = Address.checksum(insert(:address).hash)
+        operation_id = "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2"
+
+        tac_response =
+          """
+          {
+            "items": [
+            #{for i <- 0..49, do: """
+            {
+              "operation_id": "#{operation_id}",
+              "sender": "#{address_hash}",
+              "timestamp": "2025-05-14T19:16:#{i}.000Z",
+              "type": "TON_TAC_TON"
+            }#{if i == 49, do: "", else: ","}
+          """}
+            ],
+            "next_page_params": {
+              "page_token": "2025-05-14T19:16:49.000Z",
+              "page_size": 50
+            }
+          }
+          """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == address_hash
+
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search/quick?q=#{address_hash}")
+        assert response = json_response(request, 200)
+
+        correct_response = [
+          %{
+            "address_hash" => address_hash,
+            "certified" => false,
+            "ens_info" => nil,
+            "is_smart_contract_verified" => false,
+            "name" => nil,
+            "priority" => 0,
+            "type" => "address",
+            "url" => "/address/#{address_hash}",
+            "reputation" => "ok"
+          }
+          | for(
+              i <- 0..48,
+              do: %{
+                "priority" => 0,
+                "tac_operation" => %{
+                  "operation_id" => operation_id,
+                  "sender" => address_hash,
+                  "timestamp" => "2025-05-14T19:16:#{i}.000Z",
+                  "type" => "TON_TAC_TON"
+                },
+                "type" => "tac_operation"
+              }
+            )
+        ]
+
+        assert correct_response == response
+      end
+
+      test "finds a TAC operation with TON address", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        tac_response = """
+        {
+        "items": [
+          {
+              "operation_id": "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+              "type": "ROLLBACK",
+              "timestamp": "2025-06-05T12:21:11.000Z",
+              "sender": {
+                  "address": "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                  "blockchain": "TON"
+              }
+          }
+        ],
+        "next_page_params": null
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            case conn.params["q"] do
+              expected_q
+              when expected_q in [
+                     "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                     "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt",
+                     "UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko",
+                     "kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n",
+                     "0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi",
+                     "0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d"
+                   ] ->
+                Plug.Conn.resp(conn, 200, tac_response)
+
+              q ->
+                raise "Unexpected 'q' parameter #{inspect(q)}"
+            end
+          end
+        )
+
+        request =
+          get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+
+        request =
+          get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+
+        request =
+          get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+
+        request =
+          get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+
+        request =
+          get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi")}")
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+
+        request =
+          get(
+            conn,
+            "/api/v2/search/quick?q=#{URI.encode_www_form("0:67560e31eae4c26bc8e5ae1f185f25a99c9277a31c6b741436f99c3cc9aa319d")}"
+          )
+
+        assert response = json_response(request, 200)
+
+        assert [
+                 %{
+                   "priority" => 0,
+                   "tac_operation" => %{
+                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+                     "sender" => %{
+                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                       "blockchain" => "TON"
+                     },
+                     "timestamp" => "2025-06-05T12:21:11.000Z",
+                     "type" => "ROLLBACK"
+                   },
+                   "type" => "tac_operation"
+                 }
+               ] == response
+      end
+
+      test "finds a lot if TAC operations with transaction", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        transaction =
+          insert(:transaction, hash: "0x07d74803dd6fd1a684b50494c09e366f3a6be20cd09928ebdf80d178ce41b5a2")
+          |> with_block()
+
+        operation_id = "#{transaction.hash}"
+
+        tac_response = """
+        {
+          "items": [
+          #{for i <- 0..49, do: """
+          {
+            "operation_id": "#{operation_id}",
+            "sender": null,
+            "timestamp": "2025-05-14T19:16:#{i}.000Z",
+            "type": "TON_TAC_TON"
+          }#{if i == 49, do: "", else: ","}
+        """}
+          ],
+          "next_page_params": {
+            "page_token": "2025-05-14T19:16:49.000Z",
+            "page_size": 50
+          }
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          "/api/v1/tac/operations",
+          fn conn ->
+            assert conn.params["q"] == operation_id
+
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search/quick?q=#{operation_id}")
+        assert response = json_response(request, 200)
+
+        correct_response = [
+          %{
+            "priority" => 0,
+            "transaction_hash" => "#{transaction.hash}",
+            "type" => "transaction",
+            "timestamp" => "#{transaction.block_timestamp}" |> String.replace(" ", "T"),
+            "url" => "/tx/#{transaction.hash}"
+          }
+          | for(
+              i <- 0..48,
+              do: %{
+                "priority" => 0,
+                "tac_operation" => %{
+                  "operation_id" => operation_id,
+                  "sender" => nil,
+                  "timestamp" => "2025-05-14T19:16:#{i}.000Z",
+                  "type" => "TON_TAC_TON"
+                },
+                "type" => "tac_operation"
+              }
+            )
+        ]
+
+        assert correct_response == response
+      end
     end
 
     test "returns empty list and don't crash", %{conn: conn} do

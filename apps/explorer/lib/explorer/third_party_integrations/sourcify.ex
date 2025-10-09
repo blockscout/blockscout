@@ -2,11 +2,10 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   @moduledoc """
   Adapter for contracts verification with https://sourcify.dev/
   """
-  use Tesla
 
   alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.HttpClient
   alias Explorer.SmartContract.{Helper, RustVerifierInterface}
-  alias HTTPoison.{Error, Response}
   alias Tesla.Multipart
 
   @post_timeout :timer.seconds(30)
@@ -153,22 +152,22 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   def http_get_request(url, params) do
-    request = HTTPoison.get(url, [], params: params)
+    request = HttpClient.get(url, [], params: params)
 
     case request do
-      {:ok, %Response{body: body, status_code: 200}} ->
+      {:ok, %{body: body, status_code: 200}} ->
         process_sourcify_response(url, body)
 
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..526 ->
+      {:ok, %{body: body, status_code: status_code}} when status_code in 400..526 ->
         parse_http_error_response(body)
 
-      {:ok, %Response{status_code: status_code}} when status_code in 300..308 ->
+      {:ok, %{status_code: status_code}} when status_code in 300..308 ->
         {:error, "Sourcify redirected"}
 
-      {:ok, %Response{status_code: _status_code}} ->
+      {:ok, %{status_code: _status_code}} ->
         {:error, "Sourcify unexpected status code"}
 
-      {:error, %Error{reason: reason}} ->
+      {:error, reason} ->
         {:error, reason}
 
       _ ->
@@ -190,10 +189,10 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
 
   def http_post_request_rust_microservice(url, body) do
     request =
-      HTTPoison.post(url, Jason.encode!(body), [{"Content-Type", "application/json"}], recv_timeout: @post_timeout)
+      HttpClient.post(url, Jason.encode!(body), [{"Content-Type", "application/json"}], recv_timeout: @post_timeout)
 
     case request do
-      {:ok, %Response{body: body, status_code: 200}} ->
+      {:ok, %{body: body, status_code: 200}} ->
         process_sourcify_response(url, body)
 
       _ ->
@@ -367,13 +366,21 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     contract_name = settings |> Map.get("compilationTarget") |> Map.get("#{compilation_target_file_path}")
     optimizer = Map.get(settings, "optimizer")
 
+    runs =
+      optimizer
+      |> Map.get("runs")
+      |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+            do: to_string(&1),
+            else: &1
+          )).()
+
     params =
       %{}
       |> Map.put("name", contract_name)
       |> Map.put("compiler_version", compiler_version)
       |> Map.put("evm_version", Map.get(settings, "evmVersion"))
       |> Map.put("optimization", Map.get(optimizer, "enabled"))
-      |> Map.put("optimization_runs", Map.get(optimizer, "runs"))
+      |> Map.put("optimization_runs", runs)
       |> Map.put("external_libraries", Map.get(settings, "libraries"))
       |> Map.put("verified_via_sourcify", true)
       |> Map.put("compiler_settings", settings)
@@ -388,13 +395,10 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp prepare_additional_source(address_hash_string, %{"name" => _name, "content" => content, "path" => path}) do
-    splitted_path =
+    trimmed_path =
       path
       |> String.split("/")
-
-    trimmed_path =
-      splitted_path
-      |> Enum.slice(9..Enum.count(splitted_path))
+      |> Enum.slice(9..-1//-1)
       |> Enum.join("/")
 
     %{

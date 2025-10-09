@@ -101,7 +101,7 @@ defmodule EthereumJSONRPC.Encoder do
 
     decoded_data =
       result
-      |> String.slice(2..-1)
+      |> String.slice(2..-1//1)
       |> Base.decode16!(case: :lower)
       |> TypeDecoder.decode_raw(types_list)
       |> Enum.zip(types_list)
@@ -120,7 +120,7 @@ defmodule EthereumJSONRPC.Encoder do
   def unescape(data) do
     if String.starts_with?(data, "\\x") do
       charlist = String.to_charlist(data)
-      erlang_literal = '"#{charlist}"'
+      erlang_literal = ~c"\"#{charlist}\""
       {:ok, [{:string, _, unescaped_charlist}], _} = :erl_scan.string(erlang_literal)
       List.to_string(unescaped_charlist)
     else

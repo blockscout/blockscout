@@ -10,3 +10,4 @@ test
 erl_crash.dump
 logs
 apps/*/test
+.devcontainer

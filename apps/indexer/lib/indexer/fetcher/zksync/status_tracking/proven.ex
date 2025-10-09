@@ -3,7 +3,6 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
     Functionality to discover proven batches
   """
 
-  alias ABI.{FunctionSelector, TypeDecoder}
   alias Indexer.Fetcher.ZkSync.Utils.{Db, Rpc}
 
   import Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils,
@@ -50,8 +49,8 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
       expected_batch_number ->
         log_info("Checking if the batch #{expected_batch_number} was proven")
 
-        {next_action, tx_hash, l1_txs} =
-          check_if_batch_status_changed(expected_batch_number, :prove_tx, json_l2_rpc_named_arguments)
+        {next_action, transaction_hash, l1_transactions} =
+          check_if_batch_status_changed(expected_batch_number, :prove_transaction, json_l2_rpc_named_arguments)
 
         case next_action do
           :skip ->
@@ -59,79 +58,16 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
 
           :look_for_batches ->
             log_info("The batch #{expected_batch_number} looks like proven")
-            prove_tx = Rpc.fetch_tx_by_hash(tx_hash, json_l1_rpc_named_arguments)
-            batches_numbers_from_rpc = get_proven_batches_from_calldata(prove_tx["input"])
+            prove_transaction = Rpc.fetch_transaction_by_hash(transaction_hash, json_l1_rpc_named_arguments)
+            batches_numbers_from_rpc = Rpc.get_proven_batches_from_calldata(prove_transaction["input"])
 
-            associate_and_import_or_prepare_for_recovery(batches_numbers_from_rpc, l1_txs, tx_hash, :prove_id)
+            associate_and_import_or_prepare_for_recovery(
+              batches_numbers_from_rpc,
+              l1_transactions,
+              transaction_hash,
+              :prove_id
+            )
         end
     end
-  end
-
-  defp get_proven_batches_from_calldata(calldata) do
-    "0x7f61885c" <> encoded_params = calldata
-
-    # /// @param batchNumber Rollup batch number
-    # /// @param batchHash Hash of L2 batch
-    # /// @param indexRepeatedStorageChanges The serial number of the shortcut index that's used as a unique identifier for storage keys that were used twice or more
-    # /// @param numberOfLayer1Txs Number of priority operations to be processed
-    # /// @param priorityOperationsHash Hash of all priority operations from this batch
-    # /// @param l2LogsTreeRoot Root hash of tree that contains L2 -> L1 messages from this batch
-    # /// @param timestamp Rollup batch timestamp, have the same format as Ethereum batch constant
-    # /// @param commitment Verified input for the zkSync circuit
-    # struct StoredBatchInfo {
-    #     uint64 batchNumber;
-    #     bytes32 batchHash;
-    #     uint64 indexRepeatedStorageChanges;
-    #     uint256 numberOfLayer1Txs;
-    #     bytes32 priorityOperationsHash;
-    #     bytes32 l2LogsTreeRoot;
-    #     uint256 timestamp;
-    #     bytes32 commitment;
-    # }
-    # /// @notice Recursive proof input data (individual commitments are constructed onchain)
-    # struct ProofInput {
-    #     uint256[] recursiveAggregationInput;
-    #     uint256[] serializedProof;
-    # }
-    # proveBatches(StoredBatchInfo calldata _prevBatch, StoredBatchInfo[] calldata _committedBatches, ProofInput calldata _proof)
-
-    # IO.inspect(FunctionSelector.decode("proveBatches((uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32),(uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32)[],(uint256[],uint256[]))"))
-    [_prev_batch, proven_batches, _proof] =
-      TypeDecoder.decode(
-        Base.decode16!(encoded_params, case: :lower),
-        %FunctionSelector{
-          function: "proveBatches",
-          types: [
-            tuple: [
-              uint: 64,
-              bytes: 32,
-              uint: 64,
-              uint: 256,
-              bytes: 32,
-              bytes: 32,
-              uint: 256,
-              bytes: 32
-            ],
-            array:
-              {:tuple,
-               [
-                 uint: 64,
-                 bytes: 32,
-                 uint: 64,
-                 uint: 256,
-                 bytes: 32,
-                 bytes: 32,
-                 uint: 256,
-                 bytes: 32
-               ]},
-            tuple: [array: {:uint, 256}, array: {:uint, 256}]
-          ]
-        }
-      )
-
-    log_info("Discovered #{length(proven_batches)} proven batches in the prove tx")
-
-    proven_batches
-    |> Enum.map(fn batch_info -> elem(batch_info, 0) end)
   end
 end

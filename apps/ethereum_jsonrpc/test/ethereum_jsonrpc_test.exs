@@ -35,7 +35,8 @@ defmodule EthereumJSONRPCTest do
                [
                  %{block_quantity: "0x1", hash_data: hash}
                ],
-               json_rpc_named_arguments
+               json_rpc_named_arguments,
+               1
              ) ==
                {:ok,
                 %FetchedBalances{
@@ -47,6 +48,25 @@ defmodule EthereumJSONRPCTest do
                     }
                   ]
                 }}
+    end
+
+    test "fetch latest block number from node if it wasn't provided", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
+          [%{id: id, method: "eth_getBlockByNumber"}], _options -> block_response(id, false, "0x1")
+          _json, _options -> {:ok, [%{id: 0, result: "0x1"}]}
+        end)
+      end
+
+      assert {:ok, %FetchedBalances{}} =
+               EthereumJSONRPC.fetch_balances(
+                 [
+                   %{block_quantity: "0x1", hash_data: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"}
+                 ],
+                 json_rpc_named_arguments
+               )
     end
 
     test "with all invalid hash_data returns errors", %{json_rpc_named_arguments: json_rpc_named_arguments} do
@@ -90,7 +110,7 @@ defmodule EthereumJSONRPCTest do
                 ],
                 params_list: []
               }} =
-               EthereumJSONRPC.fetch_balances([%{block_quantity: "0x1", hash_data: "0x0"}], json_rpc_named_arguments)
+               EthereumJSONRPC.fetch_balances([%{block_quantity: "0x1", hash_data: "0x0"}], json_rpc_named_arguments, 1)
     end
 
     test "with a mix of valid and invalid hash_data returns both", %{
@@ -163,7 +183,8 @@ defmodule EthereumJSONRPCTest do
                      hash_data: "0x5"
                    }
                  ],
-                 json_rpc_named_arguments
+                 json_rpc_named_arguments,
+                 53
                )
 
       assert is_list(params_list)
@@ -918,9 +939,9 @@ defmodule EthereumJSONRPCTest do
     end
   end
 
-  describe "fetch_net_version/1" do
-    test "fetches net version", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      expected_version =
+  describe "fetch_chain_id/1" do
+    test "fetches chain id", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      expected_id =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Nethermind -> 77
           _variant -> 1
@@ -928,11 +949,11 @@ defmodule EthereumJSONRPCTest do
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, "#{expected_version}"}
+          {:ok, "#{expected_id}"}
         end)
       end
 
-      assert {:ok, ^expected_version} = EthereumJSONRPC.fetch_net_version(json_rpc_named_arguments)
+      assert {:ok, ^expected_id} = EthereumJSONRPC.fetch_chain_id(json_rpc_named_arguments)
     end
   end
 
@@ -1058,7 +1079,7 @@ defmodule EthereumJSONRPCSyncTest do
            ]}
       end)
 
-      Application.put_env(:ethereum_jsonrpc, :disable_archive_balances?, "true")
+      Application.put_env(:ethereum_jsonrpc, :disable_archive_balances?, true)
       Application.put_env(:ethereum_jsonrpc, :archive_balances_window, 1)
 
       assert EthereumJSONRPC.fetch_balances(

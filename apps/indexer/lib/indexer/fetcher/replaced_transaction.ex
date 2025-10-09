@@ -25,19 +25,22 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
     metadata: [fetcher: :replaced_transaction]
   ]
 
-  @spec async_fetch([
-          %{
-            required(:nonce) => non_neg_integer,
-            required(:from_address_hash) => Hash.Address.t(),
-            required(:block_hash) => Hash.Full.t()
-          }
-        ]) :: :ok
-  def async_fetch(transactions_fields, timeout \\ 5000) when is_list(transactions_fields) do
+  @spec async_fetch(
+          [
+            %{
+              required(:nonce) => non_neg_integer,
+              required(:from_address_hash) => Hash.Address.t(),
+              required(:block_hash) => Hash.Full.t()
+            }
+          ],
+          boolean()
+        ) :: :ok
+  def async_fetch(transactions_fields, realtime?, timeout \\ 5000) when is_list(transactions_fields) do
     if ReplacedTransactionSupervisor.disabled?() do
       :ok
     else
       entries = Enum.map(transactions_fields, &entry/1)
-      BufferedTask.buffer(__MODULE__, entries, timeout)
+      BufferedTask.buffer(__MODULE__, entries, realtime?, timeout)
     end
   end
 

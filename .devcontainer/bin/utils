@@ -1,0 +1,22 @@
+# Function to check server availability
+check_server_availability() {
+    local url=$1
+
+    curl --connect-timeout 3 --silent ${url} 1>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "VPN must be enabled to connect to ${url}"
+        exit 1
+    fi
+}
+
+# Function to check server accessibility with a POST request
+check_server_accessibility() {
+    local url=$1
+    local payload='[{"id":0,"params":["latest",false],"method":"eth_getBlockByNumber","jsonrpc":"2.0"}]'
+
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST ${url} -H "Content-Type: application/json" -d "${payload}")
+    if [ "$http_code" -ne 200 ]; then
+        echo "VPN must be enabled to access ${url} (HTTP status code: ${http_code})"
+        exit 1
+    fi
+}

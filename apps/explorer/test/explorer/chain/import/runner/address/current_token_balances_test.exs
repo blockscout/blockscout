@@ -273,6 +273,73 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       assert current_token_balance.value == Decimal.new(200)
     end
 
+    test "updates NFT when the new block number is greater", %{
+      address: address,
+      token: token,
+      options: options
+    } do
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 123,
+        token_type: "ERC-1155",
+        value: 100
+      )
+
+      run_changes(
+        %{
+          address_hash: address.hash,
+          block_number: 2,
+          token_contract_address_hash: token.contract_address_hash,
+          token_id: 123,
+          token_type: "ERC-1155",
+          value: Decimal.new(200),
+          value_fetched_at: DateTime.utc_now()
+        },
+        options
+      )
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
+
+      assert current_token_balance.block_number == 2
+      assert current_token_balance.value == Decimal.new(200)
+    end
+
+    test "ignores when the new value_fetched_at not set", %{
+      address: %Address{hash: address_hash} = address,
+      token: %Token{contract_address_hash: token_contract_address_hash},
+      options: options
+    } do
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token_contract_address_hash,
+        value: 200,
+        value_fetched_at: Timex.shift(Timex.now(), minutes: -2)
+      )
+
+      update_holder_count!(token_contract_address_hash, 1)
+
+      assert {:ok, %{address_current_token_balances: [], address_current_token_balances_update_token_holder_counts: []}} =
+               run_changes(
+                 %{
+                   address_hash: address_hash,
+                   token_contract_address_hash: token_contract_address_hash,
+                   block_number: 2,
+                   value: Decimal.new(100)
+                 },
+                 options
+               )
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address_hash)
+
+      assert current_token_balance.block_number == 1
+      assert current_token_balance.value == Decimal.new(200)
+    end
+
     test "ignores when the new block number is lesser", %{
       address: %Address{hash: address_hash} = address,
       token: %Token{contract_address_hash: token_contract_address_hash},
@@ -283,7 +350,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
         address: address,
         block_number: 2,
         token_contract_address_hash: token_contract_address_hash,
-        value: 200
+        value: 200,
+        value_fetched_at: Timex.shift(Timex.now(), minutes: -2)
       )
 
       update_holder_count!(token_contract_address_hash, 1)
@@ -294,7 +362,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                    address_hash: address_hash,
                    token_contract_address_hash: token_contract_address_hash,
                    block_number: 1,
-                   value: Decimal.new(100)
+                   value: Decimal.new(100),
+                   value_fetched_at: Timex.shift(Timex.now(), minutes: -1)
                  },
                  options
                )
@@ -303,6 +372,45 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
 
       assert current_token_balance.block_number == 2
       assert current_token_balance.value == Decimal.new(200)
+    end
+
+    test "ignores when the new value_fetched_at is lower (values compared correctly)", %{
+      address: %Address{hash: address_hash} = address,
+      token: %Token{contract_address_hash: token_contract_address_hash},
+      options: options
+    } do
+      time_before = ~U[2024-12-31 00:00:00.000000Z]
+      time_after = ~U[2025-01-01 00:00:00.000000Z]
+
+      assert time_before > time_after
+
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token_contract_address_hash,
+        value: 200,
+        value_fetched_at: time_after
+      )
+
+      update_holder_count!(token_contract_address_hash, 1)
+
+      assert {:ok, %{address_current_token_balances: [], address_current_token_balances_update_token_holder_counts: []}} =
+               run_changes(
+                 %{
+                   address_hash: address_hash,
+                   token_contract_address_hash: token_contract_address_hash,
+                   block_number: 1,
+                   value: Decimal.new(100),
+                   value_fetched_at: time_before
+                 },
+                 options
+               )
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address_hash)
+
+      assert Decimal.eq?(current_token_balance.value, 200)
+      assert Timex.equal?(current_token_balance.value_fetched_at, time_after)
     end
 
     test "a non-holder updating to a holder increases the holder_count", %{

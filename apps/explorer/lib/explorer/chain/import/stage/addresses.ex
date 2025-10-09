@@ -1,26 +1,26 @@
 defmodule Explorer.Chain.Import.Stage.Addresses do
   @moduledoc """
-  Imports addresses before anything else that references them because an unused address is still valid and recoverable
-  if the other stage(s) don't commit.
+  Import addresses.
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
 
   @behaviour Stage
 
-  @runner Runner.Addresses
+  @runners [
+    Runner.Addresses
+  ]
 
   @impl Stage
-  def runners, do: [@runner]
+  def runners, do: @runners
 
   @impl Stage
-  def all_runners,
-    do: runners()
+  def all_runners, do: runners()
 
-  @chunk_size 50
+  @addresses_chunk_size 50
 
   @impl Stage
   def multis(runner_to_changes_list, options) do
-    Stage.chunk_every(runner_to_changes_list, @runner, @chunk_size, options)
+    Stage.chunk_every(runner_to_changes_list, Runner.Addresses, @addresses_chunk_size, options)
   end
 end

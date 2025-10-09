@@ -6,27 +6,20 @@ defmodule BlockScoutWeb.AddressTransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-  import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+
+  import BlockScoutWeb.Chain,
+    only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias BlockScoutWeb.{AccessHelper, Controller, TransactionView}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Address
-
-  alias Explorer.Chain.CSVExport.{
-    AddressInternalTransactionCsvExporter,
-    AddressLogCsvExporter,
-    AddressTokenTransferCsvExporter,
-    AddressTransactionCsvExporter
-  }
 
   alias Explorer.Chain.{DenormalizationHelper, Transaction, Wei}
 
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
-
-  alias Plug.Conn
 
   @transaction_necessity_by_association [
     necessity_by_association: %{
@@ -46,7 +39,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
     address_options = [necessity_by_association: %{:names => :optional, :smart_contract => :optional}]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, address_options, false),
+         {:ok, address} <- Chain.hash_to_address(address_hash, address_options),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       options =
         @transaction_necessity_by_association
@@ -115,6 +108,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
   end
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
+    ip = AccessHelper.conn_to_ip_string(conn)
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
@@ -122,7 +117,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         conn,
         "index.html",
         address: address,
-        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
         exchange_rate: Market.get_coin_exchange_rate(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
@@ -152,7 +147,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
               conn,
               "index.html",
               address: address,
-              coin_balance_status: nil,
+              coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
               exchange_rate: Market.get_coin_exchange_rate(),
               filter: params["filter"],
               counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
@@ -164,115 +159,5 @@ defmodule BlockScoutWeb.AddressTransactionController do
             not_found(conn)
         end
     end
-  end
-
-  defp captcha_helper do
-    :block_scout_web
-    |> Application.get_env(:captcha_helper)
-  end
-
-  defp put_resp_params(conn) do
-    conn
-    |> put_resp_content_type("application/csv")
-    |> put_resp_header("content-disposition", "attachment;")
-    |> put_resp_cookie("csv-downloaded", "true", max_age: 86_400, http_only: false)
-    |> send_chunked(200)
-  end
-
-  defp items_csv(
-         conn,
-         %{
-           "address_id" => address_hash_string,
-           "from_period" => from_period,
-           "to_period" => to_period,
-           "recaptcha_response" => recaptcha_response
-         } = params,
-         csv_export_module
-       )
-       when is_binary(address_hash_string) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)},
-         {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
-      filter_type = Map.get(params, "filter_type")
-      filter_value = Map.get(params, "filter_value")
-
-      address_hash
-      |> csv_export_module.export(from_period, to_period, filter_type, filter_value)
-      |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
-        case Conn.chunk(conn, chunk) do
-          {:ok, conn} ->
-            {:cont, conn}
-
-          {:error, :closed} ->
-            {:halt, conn}
-        end
-      end)
-    else
-      :error ->
-        unprocessable_entity(conn)
-
-      {:address_exists, false} ->
-        not_found(conn)
-
-      {:recaptcha, false} ->
-        not_found(conn)
-    end
-  end
-
-  defp items_csv(
-         conn,
-         %{
-           "address_id" => address_hash_string,
-           "from_period" => from_period,
-           "to_period" => to_period
-         } = params,
-         csv_export_module
-       )
-       when is_binary(address_hash_string) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)},
-         true <- Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] do
-      filter_type = Map.get(params, "filter_type")
-      filter_value = Map.get(params, "filter_value")
-
-      address_hash
-      |> csv_export_module.export(from_period, to_period, filter_type, filter_value)
-      |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
-        case Conn.chunk(conn, chunk) do
-          {:ok, conn} ->
-            {:cont, conn}
-
-          {:error, :closed} ->
-            {:halt, conn}
-        end
-      end)
-    else
-      :error ->
-        unprocessable_entity(conn)
-
-      {:address_exists, false} ->
-        not_found(conn)
-
-      false ->
-        not_found(conn)
-    end
-  end
-
-  defp items_csv(conn, _, _), do: not_found(conn)
-
-  def token_transfers_csv(conn, params) do
-    items_csv(conn, params, AddressTokenTransferCsvExporter)
-  end
-
-  def transactions_csv(conn, params) do
-    items_csv(conn, params, AddressTransactionCsvExporter)
-  end
-
-  def internal_transactions_csv(conn, params) do
-    items_csv(conn, params, AddressInternalTransactionCsvExporter)
-  end
-
-  def logs_csv(conn, params) do
-    items_csv(conn, params, AddressLogCsvExporter)
   end
 end

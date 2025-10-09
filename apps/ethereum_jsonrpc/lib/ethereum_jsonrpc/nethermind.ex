@@ -59,6 +59,11 @@ defmodule EthereumJSONRPC.Nethermind do
     end
   end
 
+  @impl EthereumJSONRPC.Variant
+  def fetch_transaction_raw_traces(transaction_params, json_rpc_named_arguments) do
+    TraceReplayBlockTransactions.fetch_transaction_raw_traces(transaction_params, json_rpc_named_arguments)
+  end
+
   defp block_numbers_to_params_list(block_numbers) when is_list(block_numbers) do
     Enum.map(block_numbers, &%{block_quantity: integer_to_quantity(&1)})
   end

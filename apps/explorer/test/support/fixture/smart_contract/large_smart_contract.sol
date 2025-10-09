@@ -2763,7 +2763,7 @@ contract HomeWork is IHomeWork, ERC721Enumerable, IERC721Metadata, IERC1412 {
     view
     returns (address holder, uint256 score, bytes32 key)
   {
-    // Get the key and subbmitter holding the current high score.
+    // Get the key and submitter holding the current high score.
     key = _highScoreKey;
     holder = address(bytes20(key));
 

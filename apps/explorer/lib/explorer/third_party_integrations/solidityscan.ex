@@ -4,9 +4,8 @@ defmodule Explorer.ThirdPartyIntegrations.SolidityScan do
   """
 
   require Logger
-  alias Explorer.Helper
+  alias Explorer.{Helper, HttpClient}
 
-  @blockscout_platform_id "16"
   @recv_timeout 60_000
 
   @doc """
@@ -19,8 +18,8 @@ defmodule Explorer.ThirdPartyIntegrations.SolidityScan do
     url = base_url(address_hash_string)
 
     if url do
-      case HTTPoison.get(url, headers, recv_timeout: @recv_timeout) do
-        {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+      case HttpClient.get(url, headers, recv_timeout: @recv_timeout) do
+        {:ok, %{status_code: 200, body: body}} ->
           Helper.decode_json(body)
 
         _ ->
@@ -37,10 +36,14 @@ defmodule Explorer.ThirdPartyIntegrations.SolidityScan do
 
   defp base_url(address_hash_string) do
     if chain_id() && api_key() do
-      "https://api.solidityscan.com/api/v1/quickscan/#{@blockscout_platform_id}/#{chain_id()}/#{address_hash_string}"
+      "https://api.solidityscan.com/api/v1/quickscan/#{platform_id()}/#{chain_id()}/#{address_hash_string}"
     else
       nil
     end
+  end
+
+  defp platform_id do
+    Application.get_env(:explorer, __MODULE__)[:platform_id]
   end
 
   defp chain_id do

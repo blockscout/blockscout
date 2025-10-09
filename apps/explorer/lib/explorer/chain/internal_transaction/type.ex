@@ -4,15 +4,30 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   """
 
   use Ecto.Type
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   @typedoc """
    * `:call`
    * `:create`
+   * `:create2`
    * `:reward`
    * `:selfdestruct`
    * `:stop`
+   #{if @chain_type == :arbitrum do
+    """
+      * `:invalid`
+    """
+  else
+    ""
+  end}
   """
-  @type t :: :call | :create | :create2 | :reward | :selfdestruct | :stop
+  if @chain_type == :arbitrum do
+    @type_values ["call", "create", "create2", "reward", "selfdestruct", "stop", "invalid"]
+    @type t :: :call | :create | :create2 | :reward | :selfdestruct | :stop | :invalid
+  else
+    @type_values ["call", "create", "create2", "reward", "selfdestruct", "stop"]
+    @type t :: :call | :create | :create2 | :reward | :selfdestruct | :stop
+  end
 
   @doc """
   Casts `term` to `t:t/0`
@@ -58,13 +73,15 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   """
   @impl Ecto.Type
   @spec cast(term()) :: {:ok, t()} | :error
-  def cast(t) when t in ~w(call create create2 selfdestruct reward)a, do: {:ok, t}
-  def cast("call"), do: {:ok, :call}
-  def cast("create"), do: {:ok, :create}
-  def cast("create2"), do: {:ok, :create2}
-  def cast("reward"), do: {:ok, :reward}
-  def cast("selfdestruct"), do: {:ok, :selfdestruct}
-  def cast("stop"), do: {:ok, :stop}
+  def cast(type) when type in ~w(call create create2 selfdestruct reward)a, do: {:ok, type}
+
+  def cast(type) when type in ["call", "create", "create2", "reward", "selfdestruct", "stop"],
+    do: {:ok, String.to_existing_atom(type)}
+
+  if @chain_type == :arbitrum do
+    def cast("invalid"), do: {:ok, :invalid}
+  end
+
   def cast(_), do: :error
 
   @doc """
@@ -94,12 +111,12 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   """
   @impl Ecto.Type
   @spec dump(term()) :: {:ok, String.t()} | :error
-  def dump(:call), do: {:ok, "call"}
-  def dump(:create), do: {:ok, "create"}
-  def dump(:create2), do: {:ok, "create2"}
-  def dump(:reward), do: {:ok, "reward"}
-  def dump(:selfdestruct), do: {:ok, "selfdestruct"}
-  def dump(:stop), do: {:ok, "stop"}
+  def dump(type) when type in [:call, :create, :create2, :reward, :selfdestruct, :stop], do: {:ok, Atom.to_string(type)}
+
+  if @chain_type == :arbitrum do
+    def dump(:invalid), do: {:ok, "invalid"}
+  end
+
   def dump(_), do: :error
 
   @doc """
@@ -129,12 +146,13 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   """
   @impl Ecto.Type
   @spec load(term()) :: {:ok, t()} | :error
-  def load("call"), do: {:ok, :call}
-  def load("create"), do: {:ok, :create}
-  def load("create2"), do: {:ok, :create2}
-  def load("reward"), do: {:ok, :reward}
-  def load("selfdestruct"), do: {:ok, :selfdestruct}
-  def load("stop"), do: {:ok, :stop}
+  def load(type) when type in ["call", "create", "create2", "reward", "selfdestruct", "stop"],
+    do: {:ok, String.to_existing_atom(type)}
+
+  if @chain_type == :arbitrum do
+    def load("invalid"), do: {:ok, :invalid}
+  end
+
   # deprecated
   def load("suicide"), do: {:ok, :selfdestruct}
   def load(_), do: :error
@@ -145,4 +163,15 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   @impl Ecto.Type
   @spec type() :: :string
   def type, do: :string
+
+  @doc """
+  Returns the list of internal transaction type values.
+
+  ## Example
+
+    > Explorer.Chain.InternalTransaction.Type.values()
+    ["call", "create", "create2", "reward", "selfdestruct", "stop"]
+  """
+  @spec values :: [String.t()]
+  def values, do: @type_values
 end

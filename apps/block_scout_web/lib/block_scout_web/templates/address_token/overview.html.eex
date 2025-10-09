@@ -2,12 +2,12 @@
 <!-- USD value of the balance -->
 <% wei_value = if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>
 <% raw_usd_value =
-    case @exchange_rate.usd_value do
+    case @exchange_rate.fiat_value do
         %Decimal{} ->
             if wei_value do
                 %Wei{value: Decimal.new(wei_value)}
                 |> Wei.to(:ether)
-                |> Decimal.mult(@exchange_rate.usd_value)
+                |> Decimal.mult(@exchange_rate.fiat_value)
             else
                 Decimal.new(0)
             end
@@ -16,7 +16,7 @@
 %>
 <% data_usd_exchange_rate =
     unless AddressView.empty_exchange_rate?(@exchange_rate) do
-        "data-usd-exchange-rate='#{@exchange_rate.usd_value}' data-raw-usd-value='#{raw_usd_value}'"
+        "data-usd-exchange-rate='#{@exchange_rate.fiat_value}' data-raw-usd-value='#{raw_usd_value}'"
     end
 %>
 <% native_coin_balance_token = AddressView.balance(@address)

@@ -17,7 +17,7 @@ defmodule Indexer.Transform.AddressTokenBalances do
                                  to_address_hash: to_address_hash,
                                  token_contract_address_hash: token_contract_address_hash,
                                  token_ids: token_ids,
-                                 token_type: token_type
+                                 token: %{type: token_type}
                                },
                                acc
                                when is_integer(block_number) and is_binary(from_address_hash) and

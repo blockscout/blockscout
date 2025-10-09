@@ -31,12 +31,12 @@ defmodule Indexer.Fetcher.BlockReward do
   @doc """
   Asynchronously fetches block rewards for each `t:Explorer.Chain.Explorer.block_number/0`` in `block_numbers`.
   """
-  @spec async_fetch([Block.block_number()]) :: :ok
-  def async_fetch(block_numbers) when is_list(block_numbers) do
+  @spec async_fetch([Block.block_number()], boolean()) :: :ok
+  def async_fetch(block_numbers, realtime?) when is_list(block_numbers) do
     if BlockRewardSupervisor.disabled?() do
       :ok
     else
-      BufferedTask.buffer(__MODULE__, block_numbers)
+      BufferedTask.buffer(__MODULE__, block_numbers, realtime?)
     end
   end
 
@@ -192,7 +192,7 @@ defmodule Indexer.Fetcher.BlockReward do
       |> Chain.timestamp_by_block_hash()
 
     Enum.map(beneficiaries_params, fn %{block_hash: block_hash_str} = beneficiary ->
-      {:ok, block_hash} = Chain.string_to_block_hash(block_hash_str)
+      {:ok, block_hash} = Chain.string_to_full_hash(block_hash_str)
 
       case timestamp_by_block_hash do
         %{^block_hash => block_timestamp} ->

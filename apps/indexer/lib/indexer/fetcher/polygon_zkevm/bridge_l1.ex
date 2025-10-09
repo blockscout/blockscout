@@ -12,9 +12,10 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
   import Explorer.Helper, only: [parse_integer: 1]
 
   import Indexer.Fetcher.PolygonZkevm.Bridge,
-    only: [get_logs_all: 3, import_operations: 1, prepare_operations: 3]
+    only: [get_logs_all: 3, import_operations: 1, prepare_operations: 7]
 
   alias Explorer.Chain.PolygonZkevm.{Bridge, Reader}
+  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
@@ -53,11 +54,18 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
   @impl GenServer
   def handle_info(:init_with_delay, _state) do
     env = Application.get_all_env(:indexer)[__MODULE__]
+    env_l2 = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonZkevm.BridgeL2]
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
-         {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
+         _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
+         {:rollup_network_id_l1_is_valid, true} <-
+           {:rollup_network_id_l1_is_valid, !is_nil(env[:rollup_network_id_l1]) and env[:rollup_network_id_l1] >= 0},
+         {:rollup_network_id_l2_is_valid, true} <-
+           {:rollup_network_id_l2_is_valid,
+            !is_nil(env_l2[:rollup_network_id_l2]) and env_l2[:rollup_network_id_l2] > 0},
+         {:rollup_index_l2_undefined, false} <- {:rollup_index_l2_undefined, is_nil(env_l2[:rollup_index_l2])},
          {:bridge_contract_address_is_valid, true} <-
            {:bridge_contract_address_is_valid, Helper.address_correct?(env[:bridge_contract])},
          start_block = parse_integer(env[:start_block]),
@@ -70,8 +78,10 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
            {:start_block_valid,
             (start_block <= last_l1_block_number || last_l1_block_number == 0) && start_block <= safe_block,
             last_l1_block_number, safe_block},
-         {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)} do
+         {:ok, last_l1_transaction} <-
+           Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:l1_transaction_not_found, false} <-
+           {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)} do
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -80,19 +90,40 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
          bridge_contract: env[:bridge_contract],
          json_rpc_named_arguments: json_rpc_named_arguments,
          end_block: safe_block,
-         start_block: max(start_block, last_l1_block_number)
+         start_block: max(start_block, last_l1_block_number),
+         rollup_network_id_l1: env[:rollup_network_id_l1],
+         rollup_network_id_l2: env_l2[:rollup_network_id_l2],
+         rollup_index_l1: env[:rollup_index_l1],
+         rollup_index_l2: env_l2[:rollup_index_l2]
        }}
     else
       {:start_block_undefined, true} ->
         # the process shouldn't start if the start block is not defined
         {:stop, :normal, %{}}
 
-      {:reorg_monitor_started, false} ->
-        Logger.error("Cannot start this process as Indexer.Fetcher.RollupL1ReorgMonitor is not started.")
-        {:stop, :normal, %{}}
-
       {:rpc_undefined, true} ->
         Logger.error("L1 RPC URL is not defined.")
+        {:stop, :normal, %{}}
+
+      {:rollup_network_id_l1_is_valid, false} ->
+        Logger.error(
+          "Invalid network ID for L1. Please, check INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NETWORK_ID env variable."
+        )
+
+        {:stop, :normal, %{}}
+
+      {:rollup_network_id_l2_is_valid, false} ->
+        Logger.error(
+          "Invalid network ID for L2. Please, check INDEXER_POLYGON_ZKEVM_L2_BRIDGE_NETWORK_ID env variable."
+        )
+
+        {:stop, :normal, %{}}
+
+      {:rollup_index_l2_undefined, true} ->
+        Logger.error(
+          "Rollup index is undefined for L2. Please, check INDEXER_POLYGON_ZKEVM_L2_BRIDGE_ROLLUP_INDEX env variable."
+        )
+
         {:stop, :normal, %{}}
 
       {:bridge_contract_address_is_valid, false} ->
@@ -112,7 +143,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
 
         {:stop, :normal, %{}}
 
-      {:l1_tx_not_found, true} ->
+      {:l1_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check polygon_zkevm_bridge table."
         )
@@ -133,7 +164,11 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
           block_check_interval: block_check_interval,
           start_block: start_block,
           end_block: end_block,
-          json_rpc_named_arguments: json_rpc_named_arguments
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          rollup_network_id_l1: rollup_network_id_l1,
+          rollup_network_id_l2: rollup_network_id_l2,
+          rollup_index_l1: rollup_index_l1,
+          rollup_index_l2: rollup_index_l2
         } = state
       ) do
     time_before = Timex.now()
@@ -151,7 +186,14 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
           operations =
             {chunk_start, chunk_end}
             |> get_logs_all(bridge_contract, json_rpc_named_arguments)
-            |> prepare_operations(json_rpc_named_arguments, json_rpc_named_arguments)
+            |> prepare_operations(
+              rollup_network_id_l1,
+              rollup_network_id_l2,
+              rollup_index_l1,
+              rollup_index_l2,
+              json_rpc_named_arguments,
+              json_rpc_named_arguments
+            )
 
           import_operations(operations)
 
@@ -165,7 +207,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)
@@ -176,7 +218,9 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
       end)
 
     new_start_block = last_written_block + 1
-    {:ok, new_end_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+
+    {:ok, new_end_block} =
+      Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
     delay =
       if new_end_block == last_written_block do
@@ -195,6 +239,27 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary()
+  def l1_rpc_url do
+    Application.get_all_env(:indexer)[__MODULE__][:rpc]
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    for this module.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    module_config = Application.get_all_env(:indexer)[__MODULE__]
+    not is_nil(module_config[:start_block])
   end
 
   defp reorg_handle(reorg_block) do

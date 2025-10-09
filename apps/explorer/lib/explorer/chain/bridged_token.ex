@@ -6,6 +6,7 @@ defmodule Explorer.Chain.BridgedToken do
 
   import Ecto.Changeset
   import EthereumJSONRPC, only: [json_rpc: 2]
+  import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
   import Ecto.Query,
     only: [
@@ -20,6 +21,7 @@ defmodule Explorer.Chain.BridgedToken do
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
+    Address,
     BridgedToken,
     Hash,
     InternalTransaction,
@@ -29,6 +31,8 @@ defmodule Explorer.Chain.BridgedToken do
   }
 
   require Logger
+
+  # TODO: Consider using the `EthereumJSONRPC.ERC20` module to retrieve token metadata
 
   @default_paging_options %PagingOptions{page_size: 50}
   # keccak 256 from name()
@@ -213,50 +217,44 @@ defmodule Explorer.Chain.BridgedToken do
   """
   def fetch_omni_bridged_tokens_metadata(token_addresses) do
     Enum.each(token_addresses, fn token_address_hash ->
-      created_from_int_tx_success_query =
-        from(
-          it in InternalTransaction,
-          inner_join: t in assoc(it, :transaction),
-          where: it.created_contract_address_hash == ^token_address_hash,
-          where: t.status == ^1
-        )
+      created_from_internal_transaction_success_query =
+        Address.creation_internal_transaction_query(token_address_hash)
 
-      created_from_int_tx_success =
-        created_from_int_tx_success_query
-        |> limit(1)
+      created_from_internal_transaction_success =
+        created_from_internal_transaction_success_query
         |> Repo.one()
 
-      created_from_tx_query =
+      created_from_transaction_query =
         from(
           t in Transaction,
           where: t.created_contract_address_hash == ^token_address_hash
         )
 
-      created_from_tx =
-        created_from_tx_query
+      created_from_transaction =
+        created_from_transaction_query
         |> Repo.all()
         |> Enum.count() > 0
 
-      created_from_int_tx_query =
+      created_from_internal_transaction_query =
         from(
           it in InternalTransaction,
           where: it.created_contract_address_hash == ^token_address_hash
         )
 
-      created_from_int_tx =
-        created_from_int_tx_query
+      created_from_internal_transaction =
+        created_from_internal_transaction_query
         |> Repo.all()
         |> Enum.count() > 0
 
       cond do
-        created_from_tx ->
+        created_from_transaction ->
           set_token_bridged_status(token_address_hash, false)
 
-        created_from_int_tx && !created_from_int_tx_success ->
+        created_from_internal_transaction && !created_from_internal_transaction_success ->
           set_token_bridged_status(token_address_hash, false)
 
-        created_from_int_tx && created_from_int_tx_success ->
-          proceed_with_set_omni_status(token_address_hash, created_from_int_tx_success)
+        created_from_internal_transaction && created_from_internal_transaction_success ->
+          proceed_with_set_omni_status(token_address_hash, created_from_internal_transaction_success)
 
         true ->
           :ok
@@ -266,11 +264,11 @@ defmodule Explorer.Chain.BridgedToken do
     :ok
   end
 
-  defp proceed_with_set_omni_status(token_address_hash, created_from_int_tx_success) do
+  defp proceed_with_set_omni_status(token_address_hash, created_from_internal_transaction_success) do
     {:ok, eth_omni_status} =
       extract_omni_bridged_token_metadata_wrapper(
         token_address_hash,
-        created_from_int_tx_success,
+        created_from_internal_transaction_success,
         :eth_omni_bridge_mediator
       )
 
@@ -280,7 +278,7 @@ defmodule Explorer.Chain.BridgedToken do
       else
         extract_omni_bridged_token_metadata_wrapper(
           token_address_hash,
-          created_from_int_tx_success,
+          created_from_internal_transaction_success,
           :bsc_omni_bridge_mediator
         )
       end
@@ -291,7 +289,7 @@ defmodule Explorer.Chain.BridgedToken do
       else
         extract_omni_bridged_token_metadata_wrapper(
           token_address_hash,
-          created_from_int_tx_success,
+          created_from_internal_transaction_success,
           :poa_omni_bridge_mediator
         )
       end
@@ -301,9 +299,13 @@ defmodule Explorer.Chain.BridgedToken do
     end
   end
 
-  defp extract_omni_bridged_token_metadata_wrapper(token_address_hash, created_from_int_tx_success, mediator) do
+  defp extract_omni_bridged_token_metadata_wrapper(
+         token_address_hash,
+         created_from_internal_transaction_success,
+         mediator
+       ) do
     omni_bridge_mediator = Application.get_env(:explorer, __MODULE__)[mediator]
-    %{transaction_hash: transaction_hash} = created_from_int_tx_success
+    %{transaction_hash: transaction_hash} = created_from_internal_transaction_success
 
     if omni_bridge_mediator && omni_bridge_mediator !== "" do
       {:ok, omni_bridge_mediator_hash} = Chain.string_to_address_hash(omni_bridge_mediator)
@@ -319,7 +321,9 @@ defmodule Explorer.Chain.BridgedToken do
         created_by_amb_mediator_query
         |> Repo.all()
 
-      if Enum.count(created_by_amb_mediator) > 0 do
+      if Enum.empty?(created_by_amb_mediator) do
+        {:ok, false}
+      else
         extract_omni_bridged_token_metadata(
           token_address_hash,
           omni_bridge_mediator,
@@ -327,8 +331,6 @@ defmodule Explorer.Chain.BridgedToken do
         )
 
         {:ok, true}
-      else
-        {:ok, false}
       end
     else
       {:ok, false}
@@ -579,10 +581,10 @@ defmodule Explorer.Chain.BridgedToken do
            |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
          token0_hash <- parse_contract_response(token0_encoded, :address),
          token1_hash <- parse_contract_response(token1_encoded, :address),
-         false <- is_nil(token0_hash),
-         false <- is_nil(token1_hash),
-         token0_hash_str <- "0x" <> Base.encode16(token0_hash, case: :lower),
-         token1_hash_str <- "0x" <> Base.encode16(token1_hash, case: :lower),
+         {:ok, token0_hash} <- Hash.Address.cast(token0_hash),
+         {:ok, token1_hash} <- Hash.Address.cast(token1_hash),
+         token0_hash_str <- to_string(token0_hash),
+         token1_hash_str <- to_string(token1_hash),
          {:ok, "0x" <> token0_name_encoded} <-
            @name_signature
            |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
@@ -701,8 +703,8 @@ defmodule Explorer.Chain.BridgedToken do
          |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
       {:ok, "0x" <> token_encoded} ->
         with token_hash <- parse_contract_response(token_encoded, :address),
-             false <- is_nil(token_hash),
-             token_hash_str <- "0x" <> Base.encode16(token_hash, case: :lower),
+             {:ok, token_hash} <- Hash.Address.cast(token_hash),
+             token_hash_str <- to_string(token_hash),
              {:ok, "0x" <> token_decimals_encoded} <-
                @decimals_signature
                |> Contract.eth_call_request(token_hash_str, 1, nil, nil)
@@ -824,13 +826,18 @@ defmodule Explorer.Chain.BridgedToken do
   end
 
   defp update_transport_options_set_foreign_json_rpc(transport_options, foreign_json_rpc) do
-    Keyword.get_and_update(transport_options, :method_to_url, fn method_to_url ->
-      {_, updated_method_to_url} =
-        Keyword.get_and_update(method_to_url, :eth_call, fn eth_call ->
-          {eth_call, foreign_json_rpc}
-        end)
+    {_, updated_transport_options} =
+      Keyword.get_and_update(transport_options, :method_to_url, fn method_to_url ->
+        {_, updated_method_to_url} =
+          Keyword.get_and_update(method_to_url, :eth_call, fn eth_call ->
+            {eth_call, :eth_call}
+          end)
 
-      {method_to_url, updated_method_to_url}
+        {method_to_url, updated_method_to_url}
+      end)
+
+    Keyword.get_and_update(updated_transport_options, :eth_call_urls, fn eth_call_urls ->
+      {eth_call_urls, [foreign_json_rpc]}
     end)
   end
 
@@ -937,7 +944,7 @@ defmodule Explorer.Chain.BridgedToken do
         where: t.total_supply > ^0,
         where: t.bridged,
         select: {t, bt},
-        preload: [:contract_address]
+        preload: [:contract_address, ^reputation_association()]
       )
 
     base_query_with_paging =

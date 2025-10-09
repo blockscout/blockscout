@@ -8,7 +8,7 @@ defmodule EthereumJSONRPC.WebSocket do
   @behaviour Transport
 
   @enforce_keys ~w(url web_socket)a
-  defstruct ~w(url web_socket web_socket_options)a
+  defstruct ~w(url fallback_url web_socket web_socket_options)a
 
   @typedoc """
   WebSocket name
@@ -43,7 +43,7 @@ defmodule EthereumJSONRPC.WebSocket do
   Starts web socket attached to `url` with `options`.
   """
   # Return is same as `t:GenServer.on_start/0`
-  @callback start_link([(url :: String.t()) | (options :: term())]) ::
+  @callback start_link(url :: String.t(), options :: term()) ::
               {:ok, pid()} | :ignore | {:error, {:already_started, pid()} | (reason :: term())}
 
   @doc """

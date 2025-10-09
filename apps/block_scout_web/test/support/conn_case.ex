@@ -19,9 +19,11 @@ defmodule BlockScoutWeb.ConnCase do
     quote do
       # Import conveniences for testing with connections
       import Plug.Conn
-      import Phoenix.ConnTest
+      import Phoenix.ConnTest, except: [json_response: 2]
+      import BlockScoutWeb.TestApiSchemaAssertions, only: [json_response: 2]
       import BlockScoutWeb.Router.Helpers
-      import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
+      import BlockScoutWeb.Routers.WebRouter.Helpers, except: [static_path: 2]
+      import BlockScoutWeb.Routers.AccountRouter.Helpers, except: [static_path: 2]
       import Bureaucrat.Helpers
 
       # The default endpoint for testing
@@ -29,8 +31,8 @@ defmodule BlockScoutWeb.ConnCase do
 
       import Explorer.Factory
 
-      alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
-      alias BlockScoutWeb.ApiRouter.Helpers, as: ApiRoutes
+      alias BlockScoutWeb.Routers.AdminRouter.Helpers, as: AdminRoutes
+      alias BlockScoutWeb.Routers.ApiRouter.Helpers, as: ApiRoutes
     end
   end
 

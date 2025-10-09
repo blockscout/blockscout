@@ -113,6 +113,19 @@ defmodule Explorer.Chain.OrderedCache do
   @callback take_enough(integer()) :: [element] | nil
 
   @doc """
+  Behaves like `take_enough/1`, but addresses [#10445](https://github.com/blockscout/blockscout/issues/10445).
+  """
+  @callback atomic_take_enough(integer()) :: [element] | nil
+
+  @doc """
+  Processes the elements before updating the cache.
+  This function is called before the `update/1` function and can be used to
+  modify the elements to be inserted. Can be used to optimize memory usage along
+  with fetching time.
+  """
+  @callback sanitize_before_update(element) :: element
+
+  @doc """
   Adds an element, or a list of elements, to the cache.
   When the cache is full, only the most prevailing elements will be stored, based
   on `c:prevails?/2`.
@@ -164,6 +177,9 @@ defmodule Explorer.Chain.OrderedCache do
       @impl OrderedCache
       def element_to_id(element), do: element
 
+      @impl OrderedCache
+      def sanitize_before_update(element), do: element
+
       ### Straightforward fetching functions
 
       @impl OrderedCache
@@ -204,6 +220,22 @@ defmodule Explorer.Chain.OrderedCache do
         end
       end
 
+      @impl OrderedCache
+      def atomic_take_enough(amount) do
+        items =
+          cache_name()
+          |> ConCache.ets()
+          |> :ets.tab2list()
+
+        if amount <= Enum.count(items) - 1 do
+          items
+          |> Enum.reject(fn {key, _value} -> key == ids_list_key() end)
+          |> Enum.sort(&prevails?/2)
+          |> Enum.take(amount)
+          |> Enum.map(fn {_key, value} -> value end)
+        end
+      end
+
       ### Updating function
 
       def remove_deleted_from_index({:delete, _cache_pid, id}) do
@@ -223,11 +255,16 @@ defmodule Explorer.Chain.OrderedCache do
       def update(elements) when is_nil(elements), do: :ok
 
       def update(elements) when is_list(elements) do
+        prepared_elements =
+          elements
+          |> Enum.sort_by(&element_to_id(&1), &prevails?(&1, &2))
+          |> Enum.take(max_size())
+          |> do_preloads()
+          |> Enum.map(&{element_to_id(&1), sanitize_before_update(&1)})
+
         ConCache.update(cache_name(), ids_list_key(), fn ids ->
           updated_list =
-            elements
-            |> Enum.map(&{element_to_id(&1), &1})
-            |> Enum.sort(&prevails?(&1, &2))
+            prepared_elements
             |> merge_and_update(ids || [], max_size())
 
           # ids_list is set to never expire
@@ -236,6 +273,14 @@ defmodule Explorer.Chain.OrderedCache do
       end
 
       def update(element), do: update([element])
+
+      defp do_preloads(elements) do
+        if Enum.empty?(preloads()) do
+          elements
+        else
+          Explorer.Repo.preload(elements, preloads())
+        end
+      end
 
       defp merge_and_update(_candidates, existing, 0) do
         # if there is no more space in the list remove the remaining existing
@@ -290,7 +335,7 @@ defmodule Explorer.Chain.OrderedCache do
         # Different updates cannot interfere with the removed element because
         # if this was scheduled for removal it means it is too old, so following
         # updates cannot insert it in the future.
-        Task.start(fn ->
+        Task.start_link(fn ->
           Process.sleep(100)
 
           if is_list(key) do
@@ -302,17 +347,10 @@ defmodule Explorer.Chain.OrderedCache do
       end
 
       defp put_element(element_id, element) do
-        full_element =
-          if Enum.empty?(preloads()) do
-            element
-          else
-            Explorer.Repo.preload(element, preloads())
-          end
-
         # dirty puts are a little faster than puts with locks.
         # this is not a problem because this is the only function modifying rows
         # and it only gets called inside `update`, which works isolated
-        ConCache.dirty_put(cache_name(), element_id, full_element)
+        ConCache.dirty_put(cache_name(), element_id, element)
       end
 
       ### Supervisor's child specification
@@ -348,7 +386,8 @@ defmodule Explorer.Chain.OrderedCache do
                      max_size: 0,
                      preloads: 0,
                      prevails?: 2,
-                     element_to_id: 1
+                     element_to_id: 1,
+                     sanitize_before_update: 1
     end
   end
 end

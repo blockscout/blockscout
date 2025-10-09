@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "tuple") ->
         tuple_types =
           type
-          |> String.slice(0..-3)
+          |> String.slice(0..-3//1)
           |> supplement_type_with_components(components)
 
         values =
@@ -109,22 +109,22 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_with_type(value, string, names, index, _components) when string in ["string", :string],
-    do: render_type_value("string", Helper.sanitize_input(value), fetch_name(names, index))
+    do: render_type_value("string", Helper.escape_minimal(value), fetch_name(names, index))
 
   def values_with_type(value, "bytes" <> _ = bytes_type, names, index, _components),
-    do: render_type_value(bytes_type, Helper.sanitize_input(value), fetch_name(names, index))
+    do: render_type_value(bytes_type, Helper.escape_minimal(value), fetch_name(names, index))
 
   def values_with_type(value, bytes, names, index, _components) when bytes in [:bytes],
-    do: render_type_value("bytes", Helper.sanitize_input(value), fetch_name(names, index))
+    do: render_type_value("bytes", Helper.escape_minimal(value), fetch_name(names, index))
 
   def values_with_type(value, bool, names, index, _components) when bool in ["bool", :bool],
-    do: render_type_value("bool", Helper.sanitize_input(to_string(value)), fetch_name(names, index))
+    do: render_type_value("bool", Helper.escape_minimal(to_string(value)), fetch_name(names, index))
 
   def values_with_type(value, type, names, index, _components),
-    do: render_type_value(type, Helper.sanitize_input(value), fetch_name(names, index))
+    do: render_type_value(type, Helper.escape_minimal(value), fetch_name(names, index))
 
   def values_with_type(value, :error, _components),
-    do: render_type_value("error", Helper.sanitize_input(value), "error")
+    do: render_type_value("error", Helper.escape_minimal(value), "error")
 
   def cast_address(value) do
     case HashAddress.cast(value) do
@@ -132,7 +132,7 @@ defmodule BlockScoutWeb.SmartContractView do
         to_string(address)
 
       _ ->
-        Logger.warn(fn -> ["Error decoding address value: #{inspect(value)}"] end)
+        Logger.warning(fn -> ["Error decoding address value: #{inspect(value)}"] end)
         "(decoding error)"
     end
   end
@@ -165,30 +165,12 @@ defmodule BlockScoutWeb.SmartContractView do
     end)
   end
 
-  def binary_to_utf_string(item) do
-    case Integer.parse(to_string(item)) do
-      {item_integer, ""} ->
-        to_string(item_integer)
-
-      _ ->
-        if is_binary(item) do
-          add_0x(item)
-        else
-          to_string(item)
-        end
-    end
-  end
-
-  defp add_0x(item) do
-    "0x" <> Base.encode16(item, case: :lower)
-  end
-
   defp render_type_value(type, value, type) do
-    "<div class=\"pl-3\"><i>(#{Helper.sanitize_input(type)})</i> : #{value}</div>"
+    "<div class=\"pl-3\"><i>(#{Helper.escape_minimal(type)})</i> : #{value}</div>"
   end
 
   defp render_type_value(type, value, name) do
-    "<div class=\"pl-3\"><i><span style=\"color: black\">#{Helper.sanitize_input(name)}</span> (#{Helper.sanitize_input(type)})</i> : #{value}</div>"
+    "<div class=\"pl-3\"><i><span style=\"color: black\">#{Helper.escape_minimal(name)}</span> (#{Helper.escape_minimal(type)})</i> : #{value}</div>"
   end
 
   defp render_array_type_value(type, values, name) do
@@ -212,7 +194,7 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def decode_revert_reason(to_address, revert_reason, options \\ []) do
-    smart_contract = SmartContract.address_hash_to_smart_contract(to_address, options)
+    {smart_contract, _} = SmartContract.address_hash_to_smart_contract_with_bytecode_twin(to_address, options)
 
     Transaction.decoded_revert_reason(
       %Transaction{to_address: %{smart_contract: smart_contract}, hash: to_address},
@@ -221,26 +203,19 @@ defmodule BlockScoutWeb.SmartContractView do
     )
   end
 
-  def decode_hex_revert_reason(hex_revert_reason) do
-    case Integer.parse(hex_revert_reason, 16) do
-      {number, ""} ->
-        :binary.encode_unsigned(number)
-
-      _ ->
-        hex_revert_reason
-    end
-  end
-
   def not_last_element?(length, index), do: length > 1 and index < length - 1
 
   def cut_rpc_url(error) do
     transport_options = Application.get_env(:explorer, :json_rpc_named_arguments)[:transport_options]
 
-    error
-    |> String.replace(transport_options[:url], "rpc_url")
-    |> (&if(transport_options[:fallback_url],
-          do: String.replace(&1, transport_options[:fallback_url], "rpc_url"),
-          else: &1
-        )).()
+    all_urls =
+      (transport_options[:urls] || []) ++
+        (transport_options[:trace_urls] || []) ++
+        (transport_options[:eth_call_urls] || []) ++
+        (transport_options[:fallback_urls] || []) ++
+        (transport_options[:fallback_trace_urls] || []) ++
+        (transport_options[:fallback_eth_call_urls] || [])
+
+    String.replace(error, Enum.reject(all_urls, &(&1 in [nil, ""])), "rpc_url")
   end
 end

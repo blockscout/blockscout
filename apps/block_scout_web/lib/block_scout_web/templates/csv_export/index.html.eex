@@ -27,7 +27,7 @@
         id="export-csv-button"
         class="button button-primary"
         style="padding: 10px 25px;"
-        data-link=<%= BlockScoutWebController.full_path("/api/v1/#{type_download_path(@type)}") %>
+        data-link=<%= BlockScoutWebController.full_path("/api/v2/addresses/#{@address_hash_string}/#{type_download_path(@type)}") %>
         data-address-hash=<%= address_checksum(@address_hash_string) %>
         data-type=<%= @type %>
       ><%= gettext("Download") %></button>

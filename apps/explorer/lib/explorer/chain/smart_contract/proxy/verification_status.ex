@@ -8,6 +8,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.VerificationStatus do
   import Ecto.Changeset
 
   alias Explorer.Chain.Hash
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{Chain, Repo}
 
   @typep status :: integer() | atom()
@@ -93,7 +94,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.VerificationStatus do
   def validate_uid(<<_address::binary-size(40), timestamp_hex::binary>> = uid) do
     case Integer.parse(timestamp_hex, 16) do
       {timestamp, ""} ->
-        if DateTime.utc_now() |> DateTime.to_unix() > timestamp do
+        if DateTime.utc_now() |> DateTime.to_unix() >= timestamp do
           {:ok, uid}
         else
           :error
@@ -109,10 +110,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.VerificationStatus do
   @doc """
     Sets proxy verification result
   """
-  @spec set_proxy_verification_result({String.t() | nil | :empty, String.t() | nil | :empty}, String.t()) ::
-          __MODULE__.t()
-  def set_proxy_verification_result({empty_or_nil, _}, uid) when empty_or_nil in [:empty, nil],
-    do: update_status(uid, :fail)
+  @spec set_proxy_verification_result(Implementation.t() | :empty | :error, String.t()) :: __MODULE__.t()
+  def set_proxy_verification_result(%Implementation{}, uid), do: update_status(uid, :pass)
 
-  def set_proxy_verification_result({_, _}, uid), do: update_status(uid, :pass)
+  def set_proxy_verification_result(_empty_or_error, uid), do: update_status(uid, :fail)
 end

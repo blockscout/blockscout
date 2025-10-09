@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.API.V2.BlobController do
   """
   @spec blob(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def blob(conn, %{"blob_hash_param" => blob_hash_string} = _params) do
-    with {:format, {:ok, blob_hash}} <- {:format, Chain.string_to_transaction_hash(blob_hash_string)} do
+    with {:format, {:ok, blob_hash}} <- {:format, Chain.string_to_full_hash(blob_hash_string)} do
       transaction_hashes = Reader.blob_hash_to_transactions(blob_hash, api?: true)
 
       {status, blob} =

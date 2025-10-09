@@ -13,7 +13,7 @@ defmodule Indexer.Temporary.UncatalogedTokenTransfers do
   require Logger
 
   alias Explorer.Chain.TokenTransfer
-  alias Indexer.Block.Catchup.Fetcher
+  alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.Temporary.UncatalogedTokenTransfers
 
   def child_spec([init_arguments]) do
@@ -94,6 +94,11 @@ defmodule Indexer.Temporary.UncatalogedTokenTransfers do
   end
 
   defp async_push_front(block_numbers) do
-    Task.Supervisor.async_nolink(UncatalogedTokenTransfers.TaskSupervisor, Fetcher, :push_front, [block_numbers])
+    Task.Supervisor.async_nolink(
+      UncatalogedTokenTransfers.TaskSupervisor,
+      MissingRangesManipulator,
+      :add_ranges_by_block_numbers,
+      [block_numbers]
+    )
   end
 end

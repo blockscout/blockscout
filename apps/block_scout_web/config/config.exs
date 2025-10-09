@@ -17,10 +17,14 @@ config :block_scout_web,
   # 604800 seconds, 1 week
   session_cookie_ttl: 60 * 60 * 24 * 7,
   invalid_session_key: "invalid_session",
-  api_v2_temp_token_key: "api_v2_temp_token"
+  api_v2_temp_token_key: "api_v2_temp_token",
+  http_client: Explorer.HttpClient.Tesla
 
 config :block_scout_web,
-  admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
+  admin_panel_enabled: ConfigHelper.parse_bool_env_var("ADMIN_PANEL_ENABLED")
+
+config :block_scout_web,
+  disable_api?: ConfigHelper.parse_bool_env_var("DISABLE_API")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
@@ -72,7 +76,13 @@ config :logger, :api_v2,
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :api_v2]
 
-config :prometheus, BlockScoutWeb.Prometheus.Instrumenter,
+config :prometheus, BlockScoutWeb.Prometheus.PublicExporter,
+  path: "/public-metrics",
+  format: :auto,
+  registry: :public,
+  auth: false
+
+config :prometheus, BlockScoutWeb.Prometheus.PhoenixInstrumenter,
   # override default for Phoenix 1.4 compatibility
   # * `:transport_name` to `:transport`
   # * remove `:vsn`
@@ -84,15 +94,20 @@ config :prometheus, BlockScoutWeb.Prometheus.Instrumenter,
 
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
 
-config :block_scout_web, BlockScoutWeb.ApiRouter,
-  writing_enabled: System.get_env("API_V1_WRITE_METHODS_DISABLED") != "true",
-  reading_enabled: System.get_env("API_V1_READ_METHODS_DISABLED") != "true"
+config :block_scout_web, BlockScoutWeb.Routers.ApiRouter,
+  writing_enabled: !ConfigHelper.parse_bool_env_var("API_V1_WRITE_METHODS_DISABLED"),
+  reading_enabled: !ConfigHelper.parse_bool_env_var("API_V1_READ_METHODS_DISABLED")
 
-config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
+config :block_scout_web, BlockScoutWeb.Routers.WebRouter, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_WEBAPP")
 
 config :block_scout_web, BlockScoutWeb.CSPHeader,
   mixpanel_url: System.get_env("MIXPANEL_URL", "https://api-js.mixpanel.com"),
   amplitude_url: System.get_env("AMPLITUDE_URL", "https://api2.amplitude.com/2/httpapi")
+
+config :block_scout_web, Api.GraphQL,
+  enabled: ConfigHelper.parse_bool_env_var("API_GRAPHQL_ENABLED", "true"),
+  token_limit: ConfigHelper.parse_integer_env_var("API_GRAPHQL_TOKEN_LIMIT", 1000),
+  max_complexity: ConfigHelper.parse_integer_env_var("API_GRAPHQL_MAX_COMPLEXITY", 100)
 
 # Configures Ueberauth local settings
 config :ueberauth, Ueberauth,
@@ -103,20 +118,9 @@ config :ueberauth, Ueberauth,
     }
   ]
 
-redis_url = System.get_env("API_RATE_LIMIT_HAMMER_REDIS_URL")
+config :oauth2, adapter: Tesla.Adapter.Mint
 
-if is_nil(redis_url) or redis_url == "" do
-  config :hammer, backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
-else
-  config :hammer,
-    backend:
-      {Hammer.Backend.Redis,
-       [
-         delete_buckets_timeout: 60_000 * 10,
-         expiry_ms: 60_000 * 60 * 4,
-         redis_url: redis_url
-       ]}
-end
+config :tesla, adapter: Tesla.Adapter.Mint
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

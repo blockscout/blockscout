@@ -14,7 +14,7 @@ defmodule Explorer.Etherscan.Contracts do
   alias Explorer.Repo
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.Chain.SmartContract.Proxy.EIP1167
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   @doc """
     Returns address with preloaded SmartContract and proxy info if it exists
@@ -29,8 +29,7 @@ defmodule Explorer.Etherscan.Contracts do
         address ->
           address_with_smart_contract =
             Repo.replica().preload(address, [
-              [smart_contract: :smart_contract_additional_sources],
-              :decompiled_smart_contracts
+              [smart_contract: :smart_contract_additional_sources]
             ])
 
           if address_with_smart_contract.smart_contract do
@@ -41,12 +40,26 @@ defmodule Explorer.Etherscan.Contracts do
               | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
             }
           else
-            address_verified_twin_contract =
-              EIP1167.get_implementation_address(address_hash) || maybe_fetch_twin(twin_needed?, address_hash)
+            implementation_smart_contract =
+              SmartContract.single_implementation_smart_contract_from_proxy(
+                %{
+                  updated: %SmartContract{
+                    address_hash: address_hash,
+                    abi: nil
+                  },
+                  implementation_updated_at: nil,
+                  implementation_address_fetched?: false,
+                  refetch_necessity_checked?: false
+                },
+                []
+              )
+
+            address_verified_bytecode_twin_contract =
+              implementation_smart_contract || maybe_fetch_bytecode_twin(twin_needed?, address_hash)
 
             compose_address_with_smart_contract(
               address_with_smart_contract,
-              address_verified_twin_contract
+              address_verified_bytecode_twin_contract
             )
           end
       end
@@ -55,16 +68,16 @@ defmodule Explorer.Etherscan.Contracts do
     |> append_proxy_info()
   end
 
-  defp maybe_fetch_twin(twin_needed?, address_hash),
-    do: if(twin_needed?, do: SmartContract.get_address_verified_twin_contract(address_hash).verified_contract)
+  defp maybe_fetch_bytecode_twin(twin_needed?, address_hash),
+    do: if(twin_needed?, do: SmartContract.get_address_verified_bytecode_twin_contract(address_hash))
 
-  defp compose_address_with_smart_contract(address_with_smart_contract, address_verified_twin_contract) do
-    if address_verified_twin_contract do
-      formatted_code = format_source_code_output(address_verified_twin_contract)
+  defp compose_address_with_smart_contract(address_with_smart_contract, address_verified_bytecode_twin_contract) do
+    if address_verified_bytecode_twin_contract do
+      formatted_code = format_source_code_output(address_verified_bytecode_twin_contract)
 
       %{
         address_with_smart_contract
-        | smart_contract: %{address_verified_twin_contract | contract_source_code: formatted_code}
+        | smart_contract: %{address_verified_bytecode_twin_contract | contract_source_code: formatted_code}
       }
     else
       address_with_smart_contract
@@ -74,14 +87,13 @@ defmodule Explorer.Etherscan.Contracts do
   def append_proxy_info(%Address{smart_contract: smart_contract} = address) when not is_nil(smart_contract) do
     updated_smart_contract =
       if Proxy.proxy_contract?(smart_contract) do
+        implementation = Implementation.get_implementation(smart_contract)
+
         smart_contract
         |> Map.put(:is_proxy, true)
         |> Map.put(
-          :implementation_address_hash_string,
-          smart_contract
-          |> SmartContract.get_implementation_address_hash()
-          |> Tuple.to_list()
-          |> List.first()
+          :implementation_address_hash_strings,
+          implementation.address_hashes
         )
       else
         smart_contract
@@ -133,50 +145,13 @@ defmodule Explorer.Etherscan.Contracts do
     end)
   end
 
-  def list_decompiled_contracts(limit, offset, not_decompiled_with_version \\ nil) do
-    query =
-      from(
-        address in Address,
-        where: address.contract_code != <<>>,
-        where: not is_nil(address.contract_code),
-        where: address.decompiled == true,
-        limit: ^limit,
-        offset: ^offset,
-        order_by: [asc: address.inserted_at],
-        preload: [:smart_contract]
-      )
-
-    query
-    |> reject_decompiled_with_version(not_decompiled_with_version)
-    |> Repo.replica().all()
-  end
-
   def list_unordered_unverified_contracts(limit, offset) do
     query =
       from(
         address in Address,
-        where: address.contract_code != <<>>,
+        where: address.contract_code != ^%Explorer.Chain.Data{bytes: <<>>},
         where: not is_nil(address.contract_code),
         where: fragment("? IS NOT TRUE", address.verified),
-        limit: ^limit,
-        offset: ^offset
-      )
-
-    query
-    |> Repo.replica().all()
-    |> Enum.map(fn address ->
-      %{address | smart_contract: nil}
-    end)
-  end
-
-  def list_unordered_not_decompiled_contracts(limit, offset) do
-    query =
-      from(
-        address in Address,
-        where: fragment("? IS NOT TRUE", address.verified),
-        where: fragment("? IS NOT TRUE", address.decompiled),
-        where: address.contract_code != <<>>,
-        where: not is_nil(address.contract_code),
         limit: ^limit,
         offset: ^offset
       )
@@ -191,8 +166,8 @@ defmodule Explorer.Etherscan.Contracts do
   def list_empty_contracts(limit, offset) do
     query =
       from(address in Address,
-        where: address.contract_code == <<>>,
-        preload: [:smart_contract, :decompiled_smart_contracts],
+        where: address.contract_code == ^%Explorer.Chain.Data{bytes: <<>>},
+        preload: [:smart_contract],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
@@ -216,15 +191,4 @@ defmodule Explorer.Etherscan.Contracts do
   end
 
   defp format_source_code_output(smart_contract), do: smart_contract.contract_source_code
-
-  defp reject_decompiled_with_version(query, nil), do: query
-
-  defp reject_decompiled_with_version(query, reject_version) do
-    from(
-      address in query,
-      left_join: decompiled_smart_contract in assoc(address, :decompiled_smart_contracts),
-      on: decompiled_smart_contract.decompiler_version == ^reject_version,
-      where: is_nil(decompiled_smart_contract.address_hash)
-    )
-  end
 end

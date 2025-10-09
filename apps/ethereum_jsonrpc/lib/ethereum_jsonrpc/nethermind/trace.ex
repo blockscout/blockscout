@@ -4,6 +4,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
   [`trace_replayTransaction`](https://openethereum.github.io/JSONRPC-trace-module#trace_replaytransaction).
   """
 
+  import EthereumJSONRPC, only: [put_if_present: 3]
   alias EthereumJSONRPC.Nethermind.Trace.{Action, Result}
 
   @doc """
@@ -232,7 +233,13 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       input: input,
       value: value
     }
-    |> put_call_error_or_result(elixir)
+    |> put_if_present(elixir, [
+      {"error", :error}
+    ])
+    |> put_if_present(elixir |> Map.get("result", %{}), [
+      {"gasUsed", :gas_used},
+      {"output", :output}
+    ])
   end
 
   def elixir_to_params(%{"type" => "create" = type} = elixir) do
@@ -257,7 +264,14 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       value: value,
       transaction_index: transaction_index
     }
-    |> put_create_error_or_result(elixir)
+    |> put_if_present(elixir, [
+      {"error", :error}
+    ])
+    |> put_if_present(elixir |> Map.get("result", %{}), [
+      {"gasUsed", :gas_used},
+      {"code", :created_contract_code},
+      {"address", :created_contract_address_hash}
+    ])
   end
 
   def elixir_to_params(%{"type" => "suicide"} = elixir) do
@@ -470,32 +484,4 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
   end
 
   defp entry_to_elixir({"transactionIndex", index} = entry) when is_integer(index), do: entry
-
-  defp put_call_error_or_result(params, %{
-         "result" => %{"gasUsed" => gas_used, "output" => output}
-       }) do
-    Map.merge(params, %{gas_used: gas_used, output: output})
-  end
-
-  defp put_call_error_or_result(params, %{"error" => error}) do
-    Map.put(params, :error, error)
-  end
-
-  defp put_create_error_or_result(params, %{
-         "result" => %{
-           "address" => created_contract_address_hash,
-           "code" => code,
-           "gasUsed" => gas_used
-         }
-       }) do
-    Map.merge(params, %{
-      created_contract_code: code,
-      created_contract_address_hash: created_contract_address_hash,
-      gas_used: gas_used
-    })
-  end
-
-  defp put_create_error_or_result(params, %{"error" => error}) do
-    Map.put(params, :error, error)
-  end
 end

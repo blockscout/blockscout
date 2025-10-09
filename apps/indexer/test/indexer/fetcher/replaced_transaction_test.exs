@@ -71,13 +71,16 @@ defmodule Indexer.Fetcher.ReplacedTransactionTest do
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       assert :ok =
-               ReplacedTransaction.async_fetch([
-                 %{
-                   block_hash: mined_transaction.block_hash,
-                   nonce: mined_transaction.nonce,
-                   from_address_hash: mined_transaction.from_address_hash
-                 }
-               ])
+               ReplacedTransaction.async_fetch(
+                 [
+                   %{
+                     block_hash: mined_transaction.block_hash,
+                     nonce: mined_transaction.nonce,
+                     from_address_hash: mined_transaction.from_address_hash
+                   }
+                 ],
+                 false
+               )
 
       found_replaced_transaction =
         wait(fn ->

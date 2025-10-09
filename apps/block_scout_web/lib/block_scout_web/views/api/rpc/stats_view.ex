@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
       %{
         (prefix <> "btc") => rates.btc_value && to_string(rates.btc_value),
         (prefix <> "btc_timestamp") => timestamp,
-        (prefix <> "usd") => rates.usd_value && to_string(rates.usd_value),
+        (prefix <> "usd") => rates.fiat_value && to_string(rates.fiat_value),
         (prefix <> "usd_timestamp") => timestamp
       }
     else

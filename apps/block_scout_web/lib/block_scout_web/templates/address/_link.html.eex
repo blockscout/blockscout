@@ -1,6 +1,14 @@
+<% implementation_names = Implementation.names(@address) %>
+<% implementation_name =
+      if Enum.empty?(implementation_names) do
+        nil
+      else
+        implementation_names |> Enum.at(0)
+      end
+%>
 <%= if @address do %>
   <%= if assigns[:show_full_hash] do %>
-    <%= if name = if assigns[:ignore_implementation_name], do: primary_name(@address), else: implementation_name(@address) || primary_name(@address) do %>
+    <%= if name = if assigns[:ignore_implementation_name], do: primary_name(@address), else: implementation_name || primary_name(@address) do %>
       <span><%= name %> |
     <% end %>
     <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @address), "data-test": "address_hash_link", class: assigns[:class] do %>

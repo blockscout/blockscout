@@ -1,7 +1,10 @@
 defmodule Explorer.SmartContract.HelperTest do
   use ExUnit.Case, async: true
-
   use Explorer.DataCase
+
+  import Mox
+  setup :verify_on_exit!
+
   alias Explorer.SmartContract.Helper
 
   describe "payable?" do
@@ -126,7 +129,7 @@ defmodule Explorer.SmartContract.HelperTest do
   end
 
   describe "read_with_wallet_method?" do
-    test "returns payable method with output in the read tab" do
+    test "doesn't return payable method with output in the read tab" do
       function = %{
         "type" => "function",
         "stateMutability" => "payable",
@@ -135,7 +138,7 @@ defmodule Explorer.SmartContract.HelperTest do
         "inputs" => []
       }
 
-      assert Helper.read_with_wallet_method?(function)
+      refute Helper.read_with_wallet_method?(function)
     end
 
     test "doesn't return payable method with no output in the read tab" do
@@ -148,6 +151,79 @@ defmodule Explorer.SmartContract.HelperTest do
       }
 
       refute Helper.read_with_wallet_method?(function)
+    end
+  end
+
+  describe "get_binary_string_from_contract_getter/4" do
+    # TODO: https://github.com/blockscout/blockscout/issues/12544
+    # test "returns bytes starting from 0x" do
+    #   abi = [
+    #     %{
+    #       "type" => "function",
+    #       "stateMutability" => "view",
+    #       "outputs" => [%{"type" => "bytes16", "name" => "data", "internalType" => "bytes16"}],
+    #       "name" => "getData",
+    #       "inputs" => []
+    #     }
+    #   ]
+
+    #   expect(
+    #     EthereumJSONRPC.Mox,
+    #     :json_rpc,
+    #     fn [
+    #          %{
+    #            id: id,
+    #            method: "eth_call",
+    #            params: [%{data: "0x3bc5de30", to: "0x0000000000000000000000000000000000000001"}, _]
+    #          }
+    #        ],
+    #        _options ->
+    #       {:ok,
+    #        [%{id: id, jsonrpc: "2.0", result: "0x3078313233343536373839404142434400000000000000000000000000000000"}]}
+    #     end
+    #   )
+
+    #   assert "0x30783132333435363738394041424344" ==
+    #            Helper.get_binary_string_from_contract_getter(
+    #              "3bc5de30",
+    #              "0x0000000000000000000000000000000000000001",
+    #              abi
+    #            )
+    # end
+
+    test "returns address" do
+      abi = [
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "outputs" => [%{"type" => "address", "name" => "data", "internalType" => "address"}],
+          "name" => "getAddress",
+          "inputs" => []
+        }
+      ]
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [
+             %{
+               id: id,
+               method: "eth_call",
+               params: [%{data: "0x38cc4831", to: "0x0000000000000000000000000000000000000001"}, _]
+             }
+           ],
+           _options ->
+          {:ok,
+           [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000003078000000000000000000000000000000000001"}]}
+        end
+      )
+
+      assert "0x3078000000000000000000000000000000000001" ==
+               Helper.get_binary_string_from_contract_getter(
+                 "38cc4831",
+                 "0x0000000000000000000000000000000000000001",
+                 abi
+               )
     end
   end
 end

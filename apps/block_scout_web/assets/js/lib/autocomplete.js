@@ -140,7 +140,7 @@ const config = (id) => {
   }
 }
 const autoCompleteJS = document.querySelector('#main-search-autocomplete') && new AutoComplete(config('main-search-autocomplete'))
-// eslint-disable-next-line
+ 
 const autoCompleteJSMobile = document.querySelector('#main-search-autocomplete-mobile') && new AutoComplete(config('main-search-autocomplete-mobile'))
 
 const selection = (event) => {

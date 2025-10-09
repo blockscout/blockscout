@@ -20,6 +20,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
   ## Examples
 
+      iex(1)> Tesla.Test.expect_tesla_call(times: 1, returns: %Tesla.Env{status: 200, body: ""})
       iex(1)> Explorer.SmartContract.Solidity.CodeCompiler.run([
       ...>      name: "SimpleStorage",
       ...>      compiler_version: "v0.4.24+commit.e67f0147",
@@ -125,7 +126,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
         error ->
           error = parse_error(error)
-          Logger.warn(["There was an error compiling a provided contract: ", inspect(error)])
+          Logger.warning(["There was an error compiling a provided contract: ", inspect(error)])
           {:error, [first_error | _]} = error
           %{"message" => error_message} = first_error
           {:error, :compilation, error_message}
@@ -164,7 +165,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
         error ->
           error = parse_error(error)
-          Logger.warn(["There was an error compiling a provided contract: ", inspect(error)])
+          Logger.warning(["There was an error compiling a provided contract: ", inspect(error)])
           {:error, [first_error | _]} = error
           %{"message" => error_message} = first_error
           {:error, :compilation, error_message}

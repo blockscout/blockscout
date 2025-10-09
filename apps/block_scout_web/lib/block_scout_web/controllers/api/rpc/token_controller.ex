@@ -1,9 +1,9 @@
 defmodule BlockScoutWeb.API.RPC.TokenController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias BlockScoutWeb.API.RPC.Helper
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.BridgedToken
 
   def gettoken(conn, params) do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
     end
   end
 
-  if Application.compile_env(:explorer, BridgedToken)[:enabled] do
+  if @bridged_tokens_enabled do
     @api_true [api?: true]
     def bridgedtokenlist(conn, params) do
       import BlockScoutWeb.PagingHelper,
@@ -65,8 +65,9 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
           paging_options: 1
         ]
 
+      # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
       bridged_tokens =
-        if BridgedToken.enabled?() do
+        if Explorer.Chain.BridgedToken.enabled?() do
           options =
             params
             |> paging_options()
@@ -74,7 +75,8 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
             |> Keyword.merge(tokens_sorting(params))
             |> Keyword.merge(@api_true)
 
-          "" |> BridgedToken.list_top_bridged_tokens(options)
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+          "" |> Explorer.Chain.BridgedToken.list_top_bridged_tokens(options)
         else
           []
         end

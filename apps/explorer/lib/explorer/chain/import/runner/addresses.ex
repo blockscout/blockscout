@@ -3,14 +3,16 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   Bulk imports `t:Explorer.Chain.Address.t/0`.
   """
 
-  require Ecto.Query
+  import Ecto.Query, only: [from: 2]
+  import Explorer.Chain.Import.Runner.Helper, only: [chain_type_dependent_import: 3]
 
   alias Ecto.{Multi, Repo}
-  alias Explorer.Chain.{Address, Hash, Import, Transaction}
+  alias Explorer.Chain.Filecoin.PendingAddressOperation, as: FilecoinPendingAddressOperation
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Chain.{Address, Import, Transaction}
   alias Explorer.Prometheus.Instrumenter
 
-  import Ecto.Query, only: [from: 2]
+  require Ecto.Query
 
   @behaviour Import.Runner
 
@@ -71,7 +73,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     multi
     |> Multi.run(:filter_addresses, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
-        fn -> filter_addresses(repo, ordered_changes_list) end,
+        fn -> filter_addresses(repo, ordered_changes_list, options[option_key()][:fields_to_update]) end,
         :addresses,
         :addresses,
         :filter_addresses
@@ -98,15 +100,33 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
         :created_address_code_indexed_at_transactions
       )
     end)
+    |> chain_type_dependent_import(
+      :filecoin,
+      &Multi.run(
+        &1,
+        :filecoin_pending_address_operations,
+        fn repo, _ ->
+          Instrumenter.block_import_stage_runner(
+            fn -> filecoin_pending_address_operations(repo, ordered_changes_list, insert_options) end,
+            :addresses,
+            :addresses,
+            :filecoin_pending_address_operations
+          )
+        end
+      )
+    )
   end
 
   @impl Import.Runner
   def timeout, do: @timeout
 
+  @impl Import.Runner
+  def runner_specific_options, do: [:fields_to_update]
+
   ## Private Functions
 
-  @spec filter_addresses(Repo.t(), [map()]) :: {:ok, {[map()], map()}}
-  defp filter_addresses(repo, changes_list) do
+  @spec filter_addresses(Repo.t(), [map()], [atom()] | nil) :: {:ok, {[map()], map()}}
+  defp filter_addresses(repo, changes_list, fields_to_update) do
     hashes = Enum.map(changes_list, & &1.hash)
 
     existing_addresses_query =
@@ -125,7 +145,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       |> Enum.reduce([], fn address, acc ->
         existing_address = existing_addresses_map[address.hash]
 
-        if should_update?(address, existing_address) do
+        if should_update?(address, existing_address, fields_to_update) do
           [address | acc]
         else
           acc
@@ -136,9 +156,10 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     {:ok, {filtered_addresses, existing_addresses_map}}
   end
 
-  defp should_update?(new_address, existing_address) do
-    is_nil(existing_address) or
-      (not is_nil(new_address[:contract_code]) and new_address[:contract_code] != existing_address.contract_code) or
+  defp should_update?(_new_address, nil, _fields_to_replace), do: true
+
+  defp should_update?(new_address, existing_address, nil) do
+    (not is_nil(new_address[:contract_code]) and new_address[:contract_code] != existing_address.contract_code) or
       (not is_nil(new_address[:fetched_coin_balance_block_number]) and
          (is_nil(existing_address.fetched_coin_balance_block_number) or
             new_address[:fetched_coin_balance_block_number] >= existing_address.fetched_coin_balance_block_number)) or
@@ -146,13 +167,18 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
          (is_nil(existing_address.nonce) or new_address[:nonce] > existing_address.nonce))
   end
 
-  @spec insert(Repo.t(), [%{hash: Hash.Address.t()}], %{
+  defp should_update?(new_address, existing_address, fields_to_replace) do
+    fields_to_replace
+    |> Enum.any?(fn field -> Map.get(existing_address, field) != Map.get(new_address, field) end)
+  end
+
+  @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Address.t()]}
-  defp insert(repo, ordered_changes_list, %{timeout: timeout, timestamps: timestamps} = options)
-       when is_list(ordered_changes_list) do
+  def insert(repo, ordered_changes_list, %{timeout: timeout, timestamps: timestamps} = options)
+      when is_list(ordered_changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     Import.insert_changes_list(
@@ -215,7 +241,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       # where any of `set`s would make a change
       # This is so that tuples are only generated when a change would occur
       where:
-        fragment("COALESCE(?, EXCLUDED.contract_code) IS DISTINCT FROM ?", address.contract_code, address.contract_code) or
+        fragment("COALESCE(EXCLUDED.contract_code, ?) IS DISTINCT FROM ?", address.contract_code, address.contract_code) or
           fragment(
             "EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND (? IS NULL OR EXCLUDED.fetched_coin_balance_block_number >= ?)",
             address.fetched_coin_balance_block_number,
@@ -260,5 +286,29 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
           {:error, %{exception: postgrex_error, transaction_hashes: ordered_created_contract_hashes}}
       end
     end
+  end
+
+  defp filecoin_pending_address_operations(repo, addresses, %{timeout: timeout, timestamps: timestamps}) do
+    ordered_addresses =
+      addresses
+      |> Enum.map(
+        &%{
+          address_hash: &1.hash,
+          refetch_after: nil
+        }
+      )
+      |> Enum.sort_by(& &1.address_hash)
+      |> Enum.dedup_by(& &1.address_hash)
+
+    Import.insert_changes_list(
+      repo,
+      ordered_addresses,
+      conflict_target: :address_hash,
+      on_conflict: :nothing,
+      for: FilecoinPendingAddressOperation,
+      returning: true,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 end

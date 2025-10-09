@@ -12,6 +12,7 @@ defmodule Explorer.Chain.ImportTest do
     Log,
     Hash,
     Import,
+    InternalTransaction,
     PendingBlockOperation,
     Token,
     TokenTransfer,
@@ -19,6 +20,7 @@ defmodule Explorer.Chain.ImportTest do
   }
 
   alias Explorer.Chain.Events.Subscriber
+  alias Explorer.Utility.MissingBlockRange
 
   @moduletag :capturelog
 
@@ -165,6 +167,7 @@ defmodule Explorer.Chain.ImportTest do
             to_address_hash: "0x515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
             token_contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             token_type: "ERC-20",
+            token: %{type: "ERC-20"},
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
           }
         ],
@@ -370,17 +373,29 @@ defmodule Explorer.Chain.ImportTest do
               }} = Import.all(@import_data)
     end
 
-    test "block consensus removed if there was an exception in further steps" do
+    test "refetch_needed is set if there was an exception in further steps" do
       not_existing_block_hash = "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471db"
 
       incorrect_data =
-        update_in(@import_data, [:transactions, :params], fn params ->
+        update_in(@import_data, [:logs, :params], fn params ->
           [params |> Enum.at(0) |> Map.put(:block_hash, not_existing_block_hash)]
         end)
 
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+      on_exit(fn ->
+        Repo.delete_all(Address)
+        Repo.delete_all(Transaction)
+        Repo.delete_all(InternalTransaction)
+        Repo.delete_all(TokenTransfer)
+        Repo.delete_all(Token)
+        Repo.delete_all(MissingBlockRange)
+        Repo.delete_all(Block)
+      end)
+
       assert_raise(Postgrex.Error, fn -> Import.all(incorrect_data) end)
-      assert [] = Repo.all(Transaction)
-      assert %{consensus: false} = Repo.one(Block)
+      assert [] = Repo.all(Log)
+      assert %{consensus: true, refetch_needed: true} = Repo.one(Block)
     end
 
     test "inserts a token_balance" do
@@ -654,7 +669,7 @@ defmodule Explorer.Chain.ImportTest do
         }
       }
 
-      internal_txs_options = %{
+      internal_transactions_options = %{
         internal_transactions: %{
           params: [
             %{
@@ -679,12 +694,17 @@ defmodule Explorer.Chain.ImportTest do
         }
       }
 
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+
       assert {:ok, _} = Import.all(options)
 
       {:ok, block_hash_casted} = Explorer.Chain.Hash.Full.cast(block_hash)
       assert [^block_hash_casted] = Explorer.Repo.all(PendingBlockOperation.block_hashes())
 
-      assert {:ok, _} = Import.all(internal_txs_options)
+      assert {:ok, _} = Import.all(internal_transactions_options)
 
       assert [] == Explorer.Repo.all(PendingBlockOperation.block_hashes())
     end
@@ -745,7 +765,7 @@ defmodule Explorer.Chain.ImportTest do
         }
       }
 
-      internal_txs_options = %{
+      internal_transactions_options = %{
         internal_transactions: %{
           params: [
             %{
@@ -769,12 +789,17 @@ defmodule Explorer.Chain.ImportTest do
         }
       }
 
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+
       assert {:ok, _} = Import.all(options)
 
       {:ok, block_hash_casted} = Explorer.Chain.Hash.Full.cast(block_hash)
       assert [^block_hash_casted] = Explorer.Repo.all(PendingBlockOperation.block_hashes())
 
-      assert {:ok, _} = Import.all(internal_txs_options)
+      assert {:ok, _} = Import.all(internal_transactions_options)
 
       assert [] == Explorer.Repo.all(PendingBlockOperation.block_hashes())
     end
@@ -2144,7 +2169,94 @@ defmodule Explorer.Chain.ImportTest do
                  }
                })
 
-      assert %{value: nil} =
+      assert is_nil(
+               Repo.get_by(Address.CurrentTokenBalance,
+                 address_hash: address_hash,
+                 token_contract_address_hash: token_contract_address_hash
+               )
+             )
+
+      assert is_nil(
+               Repo.get_by(Address.TokenBalance,
+                 address_hash: address_hash,
+                 token_contract_address_hash: token_contract_address_hash,
+                 block_number: block_number
+               )
+             )
+    end
+
+    test "address_current_token_balances is derived during reorgs" do
+      %Block{number: block_number} = insert(:block, consensus: true)
+      previous_block_number = block_number - 1
+
+      %Address.TokenBalance{
+        address_hash: address_hash,
+        token_contract_address_hash: token_contract_address_hash,
+        value: previous_value,
+        block_number: previous_block_number
+      } = insert(:token_balance, block_number: previous_block_number)
+
+      address = Repo.get(Address, address_hash)
+
+      %Address.TokenBalance{
+        address_hash: ^address_hash,
+        token_contract_address_hash: token_contract_address_hash,
+        value: current_value,
+        block_number: ^block_number
+      } =
+        insert(:token_balance,
+          address: address,
+          token_contract_address_hash: token_contract_address_hash,
+          block_number: block_number
+        )
+
+      refute current_value == previous_value
+
+      %Address.CurrentTokenBalance{
+        address_hash: ^address_hash,
+        token_contract_address_hash: ^token_contract_address_hash,
+        block_number: ^block_number
+      } =
+        insert(:address_current_token_balance,
+          address: address,
+          token_contract_address_hash: token_contract_address_hash,
+          block_number: block_number,
+          value: current_value
+        )
+
+      miner_hash_after = address_hash()
+      from_address_hash_after = address_hash()
+      block_hash_after = block_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_after},
+                     %{hash: from_address_hash_after}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 1,
+                       gas_limit: 1,
+                       gas_used: 1,
+                       hash: block_hash_after,
+                       miner_hash: miner_hash_after,
+                       nonce: 1,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 1,
+                       timestamp: Timex.parse!("2019-01-01T02:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 1
+                     }
+                   ]
+                 }
+               })
+
+      assert %Address.CurrentTokenBalance{block_number: ^previous_block_number, value: ^previous_value} =
                Repo.get_by(Address.CurrentTokenBalance,
                  address_hash: address_hash,
                  token_contract_address_hash: token_contract_address_hash
@@ -2157,6 +2269,101 @@ defmodule Explorer.Chain.ImportTest do
                  block_number: block_number
                )
              )
+    end
+
+    test "address_token_balances and address_current_token_balances can be replaced during reorgs" do
+      %Block{number: block_number} = insert(:block, consensus: true)
+      value_before = Decimal.new(1)
+
+      %Address{hash: address_hash} = address = insert(:address)
+
+      %Address.TokenBalance{
+        address_hash: ^address_hash,
+        token_contract_address_hash: token_contract_address_hash,
+        block_number: ^block_number
+      } = insert(:token_balance, address: address, block_number: block_number, value: value_before)
+
+      %Address.CurrentTokenBalance{
+        address_hash: ^address_hash,
+        token_contract_address_hash: ^token_contract_address_hash,
+        block_number: ^block_number
+      } =
+        insert(:address_current_token_balance,
+          address: address,
+          token_contract_address_hash: token_contract_address_hash,
+          block_number: block_number,
+          value: value_before
+        )
+
+      miner_hash_after = address_hash()
+      from_address_hash_after = address_hash()
+      block_hash_after = block_hash()
+      value_after = Decimal.add(value_before, 1)
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: address_hash},
+                     %{hash: token_contract_address_hash},
+                     %{hash: miner_hash_after},
+                     %{hash: from_address_hash_after}
+                   ]
+                 },
+                 address_token_balances: %{
+                   params: [
+                     %{
+                       address_hash: address_hash,
+                       token_contract_address_hash: token_contract_address_hash,
+                       block_number: block_number,
+                       value: value_after,
+                       token_type: "ERC-20"
+                     }
+                   ]
+                 },
+                 address_current_token_balances: %{
+                   params: [
+                     %{
+                       address_hash: address_hash,
+                       token_contract_address_hash: token_contract_address_hash,
+                       block_number: block_number,
+                       value: value_after,
+                       token_type: "ERC-20"
+                     }
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 1,
+                       gas_limit: 1,
+                       gas_used: 1,
+                       hash: block_hash_after,
+                       miner_hash: miner_hash_after,
+                       nonce: 1,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 1,
+                       timestamp: Timex.parse!("2019-01-01T02:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 1
+                     }
+                   ]
+                 }
+               })
+
+      assert %Address.CurrentTokenBalance{value: ^value_after} =
+               Repo.get_by(Address.CurrentTokenBalance,
+                 address_hash: address_hash,
+                 token_contract_address_hash: token_contract_address_hash
+               )
+
+      assert %Address.TokenBalance{value: ^value_after} =
+               Repo.get_by(Address.TokenBalance,
+                 address_hash: address_hash,
+                 token_contract_address_hash: token_contract_address_hash,
+                 block_number: block_number
+               )
     end
   end
 end

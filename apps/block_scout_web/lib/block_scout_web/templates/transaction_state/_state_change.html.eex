@@ -9,7 +9,7 @@
       </dt>
     </td>
     <td class="stakes-td">
-      <%= render BlockScoutWeb.AddressView, "_link.html", address: @address, contract: BlockScoutWeb.AddressView.contract?(@address), use_custom_tooltip: false %>
+      <%= render BlockScoutWeb.AddressView, "_link.html", address: @address, contract: Address.smart_contract?(@address), use_custom_tooltip: false %>
     </td>
     <td class="stakes-td"></td>
     <td class="stakes-td"></td>
@@ -28,7 +28,7 @@
     <% else %>
       <td class="stakes-td"></td>
       <td class="stakes-td">
-        <%= render BlockScoutWeb.AddressView, "_link.html", address: @address, contract: BlockScoutWeb.AddressView.contract?(@address), use_custom_tooltip: false %>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @address, contract: Address.smart_contract?(@address), use_custom_tooltip: false %>
       </td>
     <% end %>
     <%= if not_negative?(@balance_before) and not_negative?(@balance_after) do %>

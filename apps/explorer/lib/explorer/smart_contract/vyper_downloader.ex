@@ -5,6 +5,7 @@ defmodule Explorer.SmartContract.VyperDownloader do
   """
   use GenServer
 
+  alias Explorer.HttpClient
   alias Explorer.SmartContract.CompilerVersion
 
   @latest_compiler_refetch_time :timer.minutes(30)
@@ -97,7 +98,7 @@ defmodule Explorer.SmartContract.VyperDownloader do
 
     releases_body =
       releases_path
-      |> HTTPoison.get!([], timeout: 60_000, recv_timeout: 60_000)
+      |> HttpClient.get!([], timeout: 60_000, recv_timeout: 60_000)
       |> Map.get(:body)
       |> Jason.decode!()
 
@@ -121,7 +122,11 @@ defmodule Explorer.SmartContract.VyperDownloader do
       end)
 
     download_path
-    |> HTTPoison.get!([], timeout: 60_000, recv_timeout: 60_000, follow_redirect: true, hackney: [force_redirect: true])
+    |> HttpClient.get!([],
+      timeout: 60_000,
+      recv_timeout: 60_000,
+      follow_redirect: true
+    )
     |> Map.get(:body)
   end
 end

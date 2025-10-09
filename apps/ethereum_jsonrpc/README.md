@@ -1,6 +1,6 @@
 # EthereumJSONRPC
 
-Ethereum JSONRPC client.
+The EthereumJSONRPC component is an Elixir library that interacts with Ethereum and EVM-compatible blockchains via JSON-RPC APIs. It constructs and sends both single and batch JSON-RPC requests while managing retries, timeouts, and throttling. The component abstracts transport mechanisms using a callback-based behaviour that supports HTTP, IPC, and WebSockets. It adapts to various Ethereum clients by implementing a variant behaviour for each, such as Geth, Nethermind, Erigon, Besu, and others. The library encodes function calls and decodes responses in accordance with ABI specifications. It retrieves diverse blockchain data including blocks, transactions, receipts, logs, and account balances. Additionally, it supports real-time updates through WebSocket subscriptions and monitors endpoint availability to switch to fallback URLs when needed. Request coordination is enhanced by a rolling window mechanism that prevents overwhelming the JSON-RPC node.
 
 ## Configuration
 
@@ -15,10 +15,10 @@ config :ethereum_jsonrpc,
 ```
 
 Note: the tracing node URL is provided separately from `:url`,
-via `:trace_url`. The trace URL and is used for
+via `:trace_url`. The trace URL is used for
 `fetch_internal_transactions`, which is only a supported method on
-tracing nodes. The `:http` option is passed directly to the HTTP
-library (`HTTPoison`), which forwards the options down to `:hackney`.
+tracing nodes. The `:http` option is adapted
+to the HTTP library (`HTTPoison` or `Tesla.Mint`).
 
 ## Testing
 

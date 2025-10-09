@@ -1,0 +1,79 @@
+name: Pre-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      number:
+        type: number
+        description: Number of pre-release alpha iteration
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  OTP_VERSION: ${{ vars.OTP_VERSION }}
+  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to GitHub Container Registry
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: 9.1.1
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup repo
+        uses: ./.github/actions/setup-repo
+        id: setup
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          docker-remote-multi-platform: true
+          docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
+          docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
+
+      - name: Build & Push Core Docker image (indexer + API)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout-private:master, ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+
+      - name: Build & Push Core Docker image (indexer)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          cache-from: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache
+          cache-to: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache,mode=max
+          tags: ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            DISABLE_API=true
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}

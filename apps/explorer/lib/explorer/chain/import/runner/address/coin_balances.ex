@@ -94,7 +94,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
         timestamps: timestamps
       )
 
-    {:ok, Enum.map(ordered_changes_list, &Map.take(&1, ~w(address_hash block_number)a))}
+    {:ok, Enum.map(ordered_changes_list, &Map.take(&1, ~w(address_hash block_number value)a))}
   end
 
   def default_on_conflict do

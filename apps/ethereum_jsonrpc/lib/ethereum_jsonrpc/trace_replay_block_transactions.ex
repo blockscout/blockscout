@@ -1,6 +1,6 @@
 defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
   @moduledoc """
-  Methods for processing the data from `trace_replayBlockTransactions` JSON RPC method
+  Methods for processing the data from `trace_replayTransaction` and `trace_replayBlockTransactions` JSON RPC methods
   """
   require Logger
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
@@ -48,6 +48,24 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
            |> trace_replay_block_transactions_requests()
            |> json_rpc(json_rpc_named_arguments) do
       trace_replay_block_transactions_responses_to_internal_transactions_params(responses, id_to_params, traces_module)
+    end
+  end
+
+  @doc """
+  Fetches the raw traces of transaction by `trace_replayTransaction` JSON RPC method.
+  """
+  @spec fetch_transaction_raw_traces(map(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {:ok, [map()]} | {:error, any()}
+  def fetch_transaction_raw_traces(%{hash: transaction_hash}, json_rpc_named_arguments) do
+    request = trace_replay_transaction_request(%{id: 0, hash_data: to_string(transaction_hash)})
+
+    case json_rpc(request, json_rpc_named_arguments) do
+      {:ok, response} ->
+        {:ok, Map.get(response, "trace", [])}
+
+      {:error, error} ->
+        Logger.error(inspect(error))
+        {:error, error}
     end
   end
 
@@ -144,8 +162,8 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
     request(%{id: id, method: "trace_replayBlockTransactions", params: [integer_to_quantity(block_number), ["trace"]]})
   end
 
-  def trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params, traces_module)
-      when is_list(responses) and is_map(id_to_params) do
+  defp trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params, traces_module)
+       when is_list(responses) and is_map(id_to_params) do
     with {:ok, traces} <- trace_replay_transaction_responses_to_first_trace(responses, id_to_params) do
       params =
         traces
@@ -236,6 +254,26 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
         "transactionIndex" => transaction_index,
         "transactionHash" => transaction_hash
       })
+
+    {:error, annotated_error}
+  end
+
+  defp trace_replay_transaction_response_to_first_trace(%{id: id, result: error_result}, id_to_params)
+       when is_map(id_to_params) do
+    %{
+      block_hash: block_hash,
+      block_number: block_number,
+      hash_data: transaction_hash,
+      transaction_index: transaction_index
+    } = Map.fetch!(id_to_params, id)
+
+    annotated_error = %{
+      "blockHash" => block_hash,
+      "blockNumber" => block_number,
+      "transactionIndex" => transaction_index,
+      "transactionHash" => transaction_hash,
+      "result" => error_result
+    }
 
     {:error, annotated_error}
   end

@@ -12,7 +12,7 @@ defmodule EthereumJSONRPC.FilecoinTest do
       initial_env = Application.get_all_env(:ethereum_jsonrpc)
       old_env = Application.get_env(:explorer, :chain_type)
 
-      Application.put_env(:explorer, :chain_type, "filecoin")
+      Application.put_env(:explorer, :chain_type, :filecoin)
 
       on_exit(fn ->
         Application.put_all_env([{:ethereum_jsonrpc, initial_env}])

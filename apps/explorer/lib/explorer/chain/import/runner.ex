@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Import.Runner do
   @type changes_list :: [changes]
 
   @type changeset_function_name :: atom
-  @type on_conflict :: :nothing | :replace_all | Ecto.Query.t()
+  @type on_conflict :: :nothing | :replace_all | {:replace, [atom()]} | Ecto.Query.t()
 
   @typedoc """
   Runner-specific options under `c:option_key/0` in all options passed to `c:run/3`.
@@ -31,7 +31,8 @@ defmodule Explorer.Chain.Import.Runner do
           required(:params) => [map()],
           optional(:on_conflict) => on_conflict(),
           optional(:timeout) => timeout,
-          optional(:with) => changeset_function_name()
+          optional(:with) => changeset_function_name(),
+          optional(:fields_to_update) => [atom()]
         }
 
   @doc """

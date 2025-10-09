@@ -63,7 +63,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens do
       |> Enum.map(fn operation -> operation.l1_token_address end)
       |> Enum.uniq()
 
-    BufferedTask.buffer(__MODULE__, l1_token_addresses)
+    BufferedTask.buffer(__MODULE__, l1_token_addresses, true)
   end
 
   defp defaults do

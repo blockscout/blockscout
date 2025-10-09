@@ -137,7 +137,19 @@ defmodule Indexer.Transform.TokenTransfersTest do
         ]
       }
 
+      env = Application.get_env(:explorer, Explorer.Chain.TokenTransfer)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Chain.TokenTransfer,
+        Keyword.put(env, :whitelisted_weth_contracts, [
+          weth_deposit_log.address_hash |> to_string() |> String.downcase()
+        ])
+      )
+
       assert TokenTransfers.parse(logs) == expected
+
+      Application.put_env(:explorer, Explorer.Chain.TokenTransfer, env)
     end
 
     test "parses ERC-721 transfer with addresses in data field" do
@@ -434,6 +446,147 @@ defmodule Indexer.Transform.TokenTransfersTest do
                  }
                ]
              }
+    end
+
+    test "Filters WETH transfers from not whitelisted tokens" do
+      logs = [
+        %{
+          address_hash: "0x0BE9e53fd7EDaC9F859882AfdDa116645287C629",
+          block_number: 23_704_638,
+          block_hash: "0x8f61c99b0dd1196714ffda5bf979a282e6a62fdd3cff25c291284e6b57de2106",
+          data: "0x00000000000000000000000000000000000000000000002be19edfcf6b480000",
+          first_topic: "0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c",
+          second_topic: "0x000000000000000000000000fb76e9e7d88e308ab530330ed90e84a952570319",
+          third_topic: nil,
+          fourth_topic: nil,
+          index: 1,
+          transaction_hash: "0x185889bc91372106ecf114a4e23f4ee615e131ae3e698078bd5d2ed7e3f55a49"
+        },
+        %{
+          address_hash: "0x0BE9e53fd7EDaC9F859882AfdDa116645287C629",
+          block_number: 23_704_608,
+          block_hash: "0x5a5e69984f78d65fc6d92e18058d21a9b114f1d56d06ca7aa017b3d87bf0491a",
+          data: "0x00000000000000000000000000000000000000000000000000e1315e1ebd28e8",
+          first_topic: "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65",
+          second_topic: "0x000000000000000000000000e3f85aad0c8dd7337427b9df5d0fb741d65eeeb5",
+          third_topic: nil,
+          fourth_topic: nil,
+          index: 1,
+          transaction_hash: "0x07510dbfddbac9064f7d607c2d9a14aa26fa19cdfcd578c0b585ff2395df543f"
+        }
+      ]
+
+      expected = %{token_transfers: [], tokens: []}
+
+      assert TokenTransfers.parse(logs) == expected
+    end
+
+    test "Filters duplicates WETH transfers" do
+      [log_1, _weth_deposit_log, log_2, _weth_withdrawal_log] =
+        logs = [
+          %{
+            address_hash: "0x0BE9e53fd7EDaC9F859882AfdDa116645287C629",
+            block_number: 23_704_638,
+            block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
+            data: "0x00000000000000000000000000000000000000000000002be19edfcf6b480000",
+            first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            fourth_topic: nil,
+            index: 1,
+            second_topic: "0x0000000000000000000000000000000000000000000000000000000000000000",
+            third_topic: "0x000000000000000000000000fb76e9e7d88e308ab530330ed90e84a952570319",
+            transaction_hash: "0x4011d9a930a3da620321589a54dc0ca3b88216b4886c7a7c3aaad1fb17702d35"
+          },
+          %{
+            address_hash: "0x0BE9e53fd7EDaC9F859882AfdDa116645287C629",
+            block_number: 23_704_638,
+            block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
+            data: "0x00000000000000000000000000000000000000000000002be19edfcf6b480000",
+            first_topic: "0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c",
+            second_topic: "0x000000000000000000000000fb76e9e7d88e308ab530330ed90e84a952570319",
+            third_topic: nil,
+            fourth_topic: nil,
+            index: 2,
+            transaction_hash: "0x4011d9a930a3da620321589a54dc0ca3b88216b4886c7a7c3aaad1fb17702d35"
+          },
+          %{
+            address_hash: "0xf2eec76e45b328df99a34fa696320a262cb92154",
+            block_number: 3_530_917,
+            block_hash: "0x5a5e69984f78d65fc6d92e18058d21a9b114f1d56d06ca7aa017b3d87bf0491a",
+            data: "0x00000000000000000000000000000000000000000000000000e1315e1ebd28e8",
+            first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            fourth_topic: nil,
+            index: 8,
+            second_topic: "0x000000000000000000000000e3f85aad0c8dd7337427b9df5d0fb741d65eeeb5",
+            third_topic: "0x0000000000000000000000000000000000000000000000000000000000000000",
+            transaction_hash: "0x185889bc91372106ecf114a4e23f4ee615e131ae3e698078bd5d2ed7e3f55a49"
+          },
+          %{
+            address_hash: "0xf2eec76e45b328df99a34fa696320a262cb92154",
+            block_number: 3_530_917,
+            block_hash: "0x5a5e69984f78d65fc6d92e18058d21a9b114f1d56d06ca7aa017b3d87bf0491a",
+            data: "0x00000000000000000000000000000000000000000000000000e1315e1ebd28e8",
+            first_topic: "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65",
+            second_topic: "0x000000000000000000000000e3f85aad0c8dd7337427b9df5d0fb741d65eeeb5",
+            third_topic: nil,
+            fourth_topic: nil,
+            index: 1,
+            transaction_hash: "0x185889bc91372106ecf114a4e23f4ee615e131ae3e698078bd5d2ed7e3f55a49"
+          }
+        ]
+
+      expected = %{
+        tokens: [
+          %{
+            contract_address_hash: log_2.address_hash,
+            type: "ERC-20"
+          },
+          %{
+            contract_address_hash: log_1.address_hash,
+            type: "ERC-20"
+          }
+        ],
+        token_transfers: [
+          %{
+            token_ids: nil,
+            amount: Decimal.new(63_386_150_072_297_704),
+            block_number: log_2.block_number,
+            log_index: log_2.index,
+            from_address_hash: truncated_hash(log_2.second_topic),
+            to_address_hash: truncated_hash(log_2.third_topic),
+            token_contract_address_hash: log_2.address_hash,
+            transaction_hash: log_2.transaction_hash,
+            token_type: "ERC-20",
+            block_hash: log_2.block_hash
+          },
+          %{
+            block_number: log_1.block_number,
+            log_index: log_1.index,
+            from_address_hash: truncated_hash(log_1.second_topic),
+            to_address_hash: truncated_hash(log_1.third_topic),
+            token_contract_address_hash: log_1.address_hash,
+            token_ids: nil,
+            transaction_hash: log_1.transaction_hash,
+            token_type: "ERC-20",
+            block_hash: log_1.block_hash,
+            amount: Decimal.new(809_467_672_956_315_893_760)
+          }
+        ]
+      }
+
+      env = Application.get_env(:explorer, Explorer.Chain.TokenTransfer)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Chain.TokenTransfer,
+        Keyword.put(env, :whitelisted_weth_contracts, [
+          log_1.address_hash |> to_string() |> String.downcase(),
+          log_2.address_hash |> to_string() |> String.downcase()
+        ])
+      )
+
+      assert TokenTransfers.parse(logs) == expected
+
+      Application.put_env(:explorer, Explorer.Chain.TokenTransfer, env)
     end
   end
 

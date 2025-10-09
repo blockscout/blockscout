@@ -1,14 +1,21 @@
 defmodule BlockScoutWeb.Account.CustomABIControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias BlockScoutWeb.Models.UserFromAuth
+  alias Explorer.Account.Identity
+  alias Explorer.TestHelper
 
   @custom_abi "[{\"type\":\"function\",\"outputs\":[{\"type\":\"string\",\"name\":\"\"}],\"name\":\"name\",\"inputs\":[],\"constant\":true}]"
 
   setup %{conn: conn} do
     auth = build(:auth)
 
-    {:ok, user} = UserFromAuth.find_or_create(auth)
+    on_exit(fn ->
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+    end)
+
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+    {:ok, user} = Identity.find_or_create(auth)
 
     {:ok, conn: Plug.Test.init_test_session(conn, current_user: user)}
   end
@@ -17,7 +24,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
     test "custom ABI page opens correctly", %{conn: conn} do
       result_conn =
         conn
-        |> get(custom_abi_path(conn, :index))
+        |> get("/account/custom_abi")
 
       assert html_response(result_conn, 200) =~ "Create a Custom ABI to interact with contracts."
     end
@@ -33,7 +40,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn =
         conn
-        |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
+        |> post("/account/custom_abi", %{"custom_abi" => custom_abi})
 
       assert html_response(result_conn, 200) =~ "Add Custom ABI"
       assert html_response(result_conn, 200) =~ to_string(contract_address.hash)
@@ -41,7 +48,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn_1 =
         conn
-        |> post(custom_abi_path(conn, :create, %{"custom_abi" => Map.put(custom_abi, "abi", "123")}))
+        |> post("/account/custom_abi", %{"custom_abi" => Map.put(custom_abi, "abi", "123")})
 
       assert html_response(result_conn_1, 200) =~ "Add Custom ABI"
       assert html_response(result_conn_1, 200) =~ to_string(contract_address.hash)
@@ -49,7 +56,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn_2 =
         conn
-        |> get(custom_abi_path(conn, :index))
+        |> get("/account/custom_abi")
 
       assert html_response(result_conn_2, 200) =~ "Create a Custom ABI to interact with contracts."
       refute html_response(result_conn_2, 200) =~ to_string(contract_address.hash)
@@ -66,17 +73,17 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn =
         conn
-        |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
+        |> post("/account/custom_abi", %{"custom_abi" => custom_abi})
 
-      assert redirected_to(result_conn) == custom_abi_path(conn, :index)
+      assert redirected_to(result_conn) == "/account/custom_abi"
 
-      result_conn_2 = get(result_conn, custom_abi_path(conn, :index))
+      result_conn_2 = get(result_conn, "/account/custom_abi")
       assert html_response(result_conn_2, 200) =~ to_string(contract_address.hash)
       assert html_response(result_conn_2, 200) =~ "Create a Custom ABI to interact with contracts."
 
       result_conn_1 =
         conn
-        |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
+        |> post("/account/custom_abi", %{"custom_abi" => custom_abi})
 
       assert html_response(result_conn_1, 200) =~ "Add Custom ABI"
       assert html_response(result_conn_1, 200) =~ to_string(contract_address.hash)
@@ -94,7 +101,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       result_conn =
         conn
-        |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
+        |> post("/account/custom_abi", %{"custom_abi" => custom_abi})
 
       assert html_response(result_conn, 200) =~ "Add Custom ABI"
       assert html_response(result_conn, 200) =~ to_string(contract_address.hash)
@@ -113,15 +120,15 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
           }
 
           assert conn
-                 |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
-                 |> redirected_to() == custom_abi_path(conn, :index)
+                 |> post("/account/custom_abi", %{"custom_abi" => custom_abi})
+                 |> redirected_to() == "/account/custom_abi"
 
           to_string(address.hash)
         end)
 
       assert abi_list =
                conn
-               |> get(custom_abi_path(conn, :index))
+               |> get("/account/custom_abi")
                |> html_response(200)
 
       Enum.each(addresses, fn address -> assert abi_list =~ address end)
@@ -136,7 +143,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       assert error_form =
                conn
-               |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
+               |> post("/account/custom_abi", %{"custom_abi" => custom_abi})
                |> html_response(200)
 
       assert error_form =~ "Add Custom ABI"
@@ -145,7 +152,7 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
 
       assert abi_list_new =
                conn
-               |> get(custom_abi_path(conn, :index))
+               |> get("/account/custom_abi")
                |> html_response(200)
 
       Enum.each(addresses, fn address -> assert abi_list_new =~ address end)
@@ -164,13 +171,16 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
           "[{\"type\":\"function\",\"outputs\":[{\"type\":\"string\",\"name\":\"\"}],\"name\":\"name\",\"inputs\":[],\"constant\":true},{\"type\":\"function\",\"outputs\":[{\"type\":\"bool\",\"name\":\"success\"}],\"name\":\"approve\",\"inputs\":[{\"type\":\"address\",\"name\":\"_spender\"},{\"type\":\"uint256\",\"name\":\"_value\"}],\"constant\":false}]"
       }
 
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
+
       result_conn =
         conn
-        |> post(custom_abi_path(conn, :create, %{"custom_abi" => custom_abi}))
+        |> post("/account/custom_abi", %{"custom_abi" => custom_abi})
 
-      assert redirected_to(result_conn) == custom_abi_path(conn, :index)
+      assert redirected_to(result_conn) == "/account/custom_abi"
 
-      result_conn_2 = get(result_conn, custom_abi_path(conn, :index))
+      result_conn_2 = get(result_conn, "/account/custom_abi")
       assert html_response(result_conn_2, 200) =~ to_string(contract_address.hash)
       assert html_response(result_conn_2, 200) =~ "Create a Custom ABI to interact with contracts."
 

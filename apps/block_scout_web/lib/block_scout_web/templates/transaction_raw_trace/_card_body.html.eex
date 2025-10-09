@@ -1,6 +1,6 @@
 <h2 class="card-title"><%= gettext "Raw Trace" %>
-  <%= if Enum.count(@internal_transactions) > 0 do %>
-    <% raw_trace_text = for {line, _} <- raw_traces_with_lines(@internal_transactions), do: line %>
+  <%= unless Enum.empty?(@raw_traces) do %>
+    <% raw_trace_text = for {line, _} <- raw_traces_with_lines(@raw_traces), do: line %>
     <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
       id: "tx-raw-trace-input",
       additional_classes: ["tx-raw-input", "transaction-input"],
@@ -10,10 +10,10 @@
       style: "float: right;" %>
   <% end %>
 </h2>
-<%= if Enum.count(@internal_transactions) > 0 do %>
-  <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="json "><%= for {line, number} <- raw_traces_with_lines(@internal_transactions) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
+<%= if Enum.empty?(@raw_traces) do %>
+<div class="tile tile-muted text-center">
+  <span><%= gettext "No trace entries found." %></span>
+</div>
 <% else %>
-  <div class="tile tile-muted text-center">
-    <span><%= gettext "No trace entries found." %></span>
-  </div>
+<pre class="pre-scrollable line-numbers" data-activate-highlight><code class="json "><%= for {line, number} <- raw_traces_with_lines(@raw_traces) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
 <% end %>

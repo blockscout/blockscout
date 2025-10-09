@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.TokenView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.NFTHelper
@@ -9,16 +10,18 @@ defmodule BlockScoutWeb.API.V2.TokenView do
 
   def render("token.json", %{token: nil = token, contract_address_hash: contract_address_hash}) do
     %{
-      "address" => Address.checksum(contract_address_hash),
+      "address_hash" => Address.checksum(contract_address_hash),
       "symbol" => nil,
       "name" => nil,
       "decimals" => nil,
       "type" => nil,
-      "holders" => nil,
+      "holders_count" => nil,
       "exchange_rate" => nil,
+      "volume_24h" => nil,
       "total_supply" => nil,
       "icon_url" => nil,
-      "circulating_market_cap" => nil
+      "circulating_market_cap" => nil,
+      "reputation" => nil
     }
     |> maybe_append_bridged_info(token)
   end
@@ -29,28 +32,29 @@ defmodule BlockScoutWeb.API.V2.TokenView do
 
   def render("token.json", %{token: token}) do
     %{
-      "address" => Address.checksum(token.contract_address_hash),
+      "address_hash" => Address.checksum(token.contract_address_hash),
       "symbol" => token.symbol,
       "name" => token.name,
       "decimals" => token.decimals,
       "type" => token.type,
-      "holders" => prepare_holders_count(token.holder_count),
+      "holders_count" => prepare_holders_count(token.holder_count),
       "exchange_rate" => exchange_rate(token),
       "volume_24h" => token.volume_24h,
       "total_supply" => token.total_supply,
       "icon_url" => token.icon_url,
-      "circulating_market_cap" => token.circulating_market_cap
+      "circulating_market_cap" => token.circulating_market_cap,
+      "reputation" => token.reputation
     }
     |> maybe_append_bridged_info(token)
+    |> chain_type_fields(%{address: token.contract_address, field_prefix: nil})
   end
 
-  def render("token_balances.json", %{
+  def render("token_holders.json", %{
         token_balances: token_balances,
-        next_page_params: next_page_params,
-        token: token
+        next_page_params: next_page_params
       }) do
     %{
-      "items" => Enum.map(token_balances, &prepare_token_balance(&1, token)),
+      "items" => Enum.map(token_balances, &prepare_token_holder(&1)),
       "next_page_params" => next_page_params
     }
   end
@@ -91,12 +95,11 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   def exchange_rate(%{fiat_value: fiat_value}) when not is_nil(fiat_value), do: to_string(fiat_value)
   def exchange_rate(_), do: nil
 
-  def prepare_token_balance(token_balance, token) do
+  defp prepare_token_holder(token_balance) do
     %{
       "address" => Helper.address_with_info(nil, token_balance.address, token_balance.address_hash, false),
       "value" => token_balance.value,
-      "token_id" => token_balance.token_id,
-      "token" => render("token.json", %{token: token})
+      "token_id" => token_balance.token_id
     }
   end
 
@@ -112,7 +115,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "external_app_url" => NFTHelper.external_url(instance),
       "animation_url" => instance.metadata && NFTHelper.retrieve_image(instance.metadata["animation_url"]),
       "image_url" => instance.metadata && NFTHelper.get_media_src(instance.metadata, false),
-      "is_unique" => instance.is_unique
+      "is_unique" => instance.is_unique,
+      "thumbnails" => instance.thumbnails,
+      "media_type" => instance.media_type,
+      "media_url" => Instance.get_media_url_from_metadata_for_nft_media_handler(instance.metadata)
     }
   end
 
@@ -138,5 +144,18 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     else
       map
     end
+  end
+
+  case @chain_type do
+    :filecoin ->
+      defp chain_type_fields(result, params) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.put_filecoin_robust_address(result, params)
+      end
+
+    _ ->
+      defp chain_type_fields(result, _params) do
+        result
+      end
   end
 end

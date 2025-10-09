@@ -1,14 +1,52 @@
 defmodule EthereumJSONRPC.Blocks do
   @moduledoc """
-  Blocks format as returned by [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash)
-  and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber) from batch requests.
+  Blocks format as returned by [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbyhash)
+  and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbynumber) from batch requests.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias EthereumJSONRPC.{Block, Transactions, Transport, Uncles, Withdrawals}
 
   @type elixir :: [Block.elixir()]
   @type params :: [Block.params()]
+
+  @default_struct_fields [
+    blocks_params: [],
+    block_second_degree_relations_params: [],
+    transactions_params: [],
+    withdrawals_params: [],
+    errors: []
+  ]
+
+  case @chain_type do
+    :zilliqa ->
+      @chain_type_fields quote(
+                           do: [
+                             zilliqa_quorum_certificates_params: [
+                               EthereumJSONRPC.Zilliqa.QuorumCertificate.params()
+                             ],
+                             zilliqa_aggregate_quorum_certificates_params: [
+                               EthereumJSONRPC.Zilliqa.AggregateQuorumCertificate.params()
+                             ],
+                             zilliqa_nested_quorum_certificates_params: [
+                               EthereumJSONRPC.Zilliqa.NestedQuorumCertificates.params()
+                             ]
+                           ]
+                         )
+
+      @chain_type_struct_fields [
+        zilliqa_quorum_certificates_params: [],
+        zilliqa_aggregate_quorum_certificates_params: [],
+        zilliqa_nested_quorum_certificates_params: []
+      ]
+
+    _ ->
+      @chain_type_struct_fields []
+      @chain_type_fields quote(do: [])
+  end
+
   @type t :: %__MODULE__{
+          unquote_splicing(@chain_type_fields),
           blocks_params: [map()],
           block_second_degree_relations_params: [map()],
           transactions_params: [map()],
@@ -16,12 +54,23 @@ defmodule EthereumJSONRPC.Blocks do
           errors: [Transport.error()]
         }
 
-  defstruct blocks_params: [],
-            block_second_degree_relations_params: [],
-            transactions_params: [],
-            withdrawals_params: [],
-            errors: []
+  defstruct @default_struct_fields ++ @chain_type_struct_fields
 
+  @doc """
+    Generates a list of JSON-RPC requests for fetching block data.
+
+    Takes a map of request IDs to parameters and a request function, and generates
+    a list of JSON-RPC requests by applying the request function to each parameter
+    set after adding the ID.
+
+    ## Parameters
+    - `id_to_params`: Map of request IDs to their corresponding request parameters
+    - `request`: Function that takes a parameter map and returns a JSON-RPC request
+
+    ## Returns
+    - List of JSON-RPC request maps ready to be sent to the Ethereum node
+  """
+  @spec requests(%{EthereumJSONRPC.request_id() => map()}, function()) :: [EthereumJSONRPC.Transport.request()]
   def requests(id_to_params, request) when is_map(id_to_params) and is_function(request, 1) do
     Enum.map(id_to_params, fn {id, params} ->
       params
@@ -30,7 +79,28 @@ defmodule EthereumJSONRPC.Blocks do
     end)
   end
 
-  @spec from_responses(list(), map()) :: t()
+  @doc """
+    Processes batch responses from JSON-RPC block requests into structured block data.
+
+    Converts raw JSON-RPC responses into a structured format containing block data,
+    transactions, uncles, withdrawals and any errors encountered during processing.
+    Sanitizes responses by handling missing IDs and adjusts errors to maintain
+    request-response correlation.
+
+    ## Parameters
+    - `responses`: List of JSON-RPC responses from block requests.
+    - `id_to_params`: Map of request IDs to their corresponding requests parameters.
+
+    ## Returns
+    A `t:t/0` struct containing:
+    - `blocks_params`: List of processed block parameters
+    - `block_second_degree_relations_params`: List of uncle block relations
+    - `transactions_params`: List of transaction parameters
+    - `withdrawals_params`: List of withdrawal parameters
+    - `errors`: List of errors encountered during processing, with adjusted IDs to
+      match original requests
+  """
+  @spec from_responses(EthereumJSONRPC.Transport.batch_response(), %{EthereumJSONRPC.request_id() => map()}) :: t()
   def from_responses(responses, id_to_params) when is_list(responses) and is_map(id_to_params) do
     %{errors: errors, blocks: blocks} =
       responses
@@ -62,6 +132,21 @@ defmodule EthereumJSONRPC.Blocks do
       transactions_params: transactions_params,
       withdrawals_params: withdrawals_params
     }
+    |> extend_with_chain_type_fields(elixir_blocks)
+  end
+
+  @spec extend_with_chain_type_fields(t(), elixir()) :: t()
+  case @chain_type do
+    :zilliqa ->
+      defp extend_with_chain_type_fields(%__MODULE__{} = blocks, elixir_blocks) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        EthereumJSONRPC.Zilliqa.Helper.extend_blocks_struct(blocks, elixir_blocks)
+      end
+
+    _ ->
+      defp extend_with_chain_type_fields(%__MODULE__{} = blocks, _elixir_blocks) do
+        blocks
+      end
   end
 
   @doc """
@@ -116,18 +201,26 @@ defmodule EthereumJSONRPC.Blocks do
           timestamp: Timex.parse!("1970-01-01T00:00:00Z", "{ISO:Extended:Z}"),
           total_difficulty: 131072,
           transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
-  #{case Application.compile_env(:explorer, :chain_type) do
-    "rsk" -> """
+  #{case @chain_type do
+    :rsk -> """
               bitcoin_merged_mining_coinbase_transaction: nil,\
               bitcoin_merged_mining_header: nil,\
               bitcoin_merged_mining_merkle_proof: nil,\
               hash_for_merged_mining: nil,\
               minimum_gas_price: nil,\
       """
-    "ethereum" -> """
+    :ethereum -> """
               withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
               blob_gas_used: 0,\
               excess_blob_gas: 0,\
+      """
+    :arbitrum -> """
+              send_root: nil,\
+              send_count: nil,\
+              l1_block_number: nil,\
+      """
+    :zilliqa -> """
+                zilliqa_view: nil,\
       """
     _ -> ""
   end}

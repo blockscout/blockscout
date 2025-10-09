@@ -6,18 +6,18 @@ updates:
     schedule:
       interval: "weekly"
       
-  - package-ecosystem: "npm"
-    directory: "/apps/block_scout_web/assets"
-    open-pull-requests-limit: 10
-    schedule:
-      interval: "monthly"
-    ignore:
-      - dependency-name: "bootstrap"
-      - dependency-name: "web3"
-        versions: ["4.x"]
+  # - package-ecosystem: "npm"
+  #   directory: "/apps/block_scout_web/assets"
+  #   open-pull-requests-limit: 10
+  #   schedule:
+  #     interval: "monthly"
+  #   ignore:
+  #     - dependency-name: "bootstrap"
+  #     - dependency-name: "web3"
+  #       versions: ["4.x"]
       
-  - package-ecosystem: "npm"
-    directory: "/apps/explorer"
-    open-pull-requests-limit: 10
-    schedule:
-      interval: "monthly"
+  # - package-ecosystem: "npm"
+  #   directory: "/apps/explorer"
+  #   open-pull-requests-limit: 10
+  #   schedule:
+  #     interval: "monthly"

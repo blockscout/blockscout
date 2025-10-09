@@ -9,7 +9,7 @@
           <%= if Enum.count(@api_keys) < Key.get_max_api_keys_count() do %>
             <div style="min-width: 100%;">
               <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
-                <%= gettext "Create an API key to use with your RPC и EthRPC API requests." %> <a href="https://docs.blockscout.com/for-users/api"> <%= gettext "Learn more" %></a>
+                <%= gettext "Create an API key to use with your RPC and EthRPC API requests." %> <a href="https://docs.blockscout.com/for-users/api"> <%= gettext "Learn more" %></a>
               </div>
             </div>
           <% else %>

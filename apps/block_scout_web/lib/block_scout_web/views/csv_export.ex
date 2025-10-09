@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.CsvExportView do
   alias BlockScoutWeb.Controller, as: BlockScoutWebController
   alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Explorer.Chain.CSVExport.Helper
+  alias Explorer.Chain.CsvExport.Helper
 
   defp type_display_name(type) do
     case type do
@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.CsvExportView do
   defp type_download_path(nil), do: ""
 
   defp type_download_path(type) do
-    type <> "-csv"
+    type <> "/csv"
   end
 
   defp address_checksum(address_hash_string) do

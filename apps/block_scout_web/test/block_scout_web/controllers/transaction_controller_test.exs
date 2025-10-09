@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.WebRouter.Helpers,
+  import BlockScoutWeb.Routers.WebRouter.Helpers,
     only: [transaction_path: 3]
 
   alias Explorer.Chain.Transaction
@@ -127,7 +127,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
       assert html_response(conn, 422)
     end
 
-    test "no redirect from tx page", %{conn: conn} do
+    test "no redirect from transaction page", %{conn: conn} do
       transaction = insert(:transaction)
       conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, transaction))
 

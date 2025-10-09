@@ -20,7 +20,7 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav">
-        <%= if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter)[:enabled] do %>
+        <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Routers.WebRouter)[:enabled] do %>
           <li class="nav-item dropdown">
             <a class="nav-link topnav-nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
@@ -83,7 +83,7 @@
               </span>
               <%= gettext("Tokens") %>
             </a>
-            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <div class="dropdown-menu" aria-labelledby="navbarTransactionsDropdown">
               <%= link(
                     gettext("All"),
                     class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
@@ -97,7 +97,7 @@
             </div>
           </li>
         <% end %>
-        <%= if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:reading_enabled] || Application.get_env(:block_scout_web, :api_url) do %>
+        <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Routers.ApiRouter)[:reading_enabled] || Application.get_env(:block_scout_web, :api_url) do %>
           <li class="nav-item dropdown">
             <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
@@ -105,7 +105,7 @@
               </span>
               <%= gettext("APIs") %>
             </a>
-            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <div class="dropdown-menu" aria-labelledby="navbarTransactionsDropdown">
               <%= link(
                     gettext("GraphQL"),
                     class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
@@ -136,7 +136,7 @@
                 <%= gettext("Stakes") %>
               <% end %>
             </a>
-            <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
+            <div class="dropdown-menu" aria-labelledby="navbarAppsDropdown">
               <%= if apps_menu == true do %>
                 <%= for %{url: url, title: title} = app <- apps_list() do %>
                     <%= if Map.has_key?(app, :embedded?) && app.embedded? do %>
@@ -161,19 +161,19 @@
             <%= subnetwork_title() %>
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-            <%= if Enum.count(main_nets) > 0 do %>
+            <%= unless Enum.empty?(main_nets) do %>
               <a class="dropdown-item header division">Mainnets</a>
               <%= for %{url: url, title: title} <- main_nets do %>
                 <a class="dropdown-item" href="<%= url %>"><%= title %></a>
               <% end %>
             <% end %>
-            <%= if Enum.count(test_nets) > 0 do %>
+            <%= unless Enum.empty?(test_nets) do %>
               <a class="dropdown-item header division">Testnets</a>
               <%= for %{url: url, title: title} <- test_nets do %>
                 <a class="dropdown-item" href="<%= url %>"><%= title %></a>
               <% end %>
             <% end %>
-            <%= if Enum.count(other_nets) > 0 do %>
+            <%= unless Enum.empty?(other_nets) do %>
               <a class="dropdown-item header division">Other Networks</a>
               <%= for %{url: url, title: title} <- other_nets do %>
                 <a class="dropdown-item" href="<%= url %>"><%= title %></a>

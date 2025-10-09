@@ -5,14 +5,17 @@ defmodule Explorer.Account.CustomABI do
   use Explorer.Schema
 
   alias ABI.FunctionSelector
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Account.Identity
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Hash
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Ecto.Changeset
 
   @max_abis_per_account 15
+
+  @user_not_found "User not found"
 
   typed_schema "account_custom_abis" do
     field(:abi, {:array, :map}, null: false)
@@ -21,6 +24,7 @@ defmodule Explorer.Account.CustomABI do
     field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
     field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
     field(:name, Explorer.Encrypted.Binary, null: false)
+    field(:user_created, :boolean, null: false, default: true)
 
     belongs_to(:identity, Identity, null: false)
 
@@ -35,7 +39,7 @@ defmodule Explorer.Account.CustomABI do
     |> validate_required(@attrs, message: "Required")
     |> validate_custom_abi()
     |> check_smart_contract_address()
-    |> foreign_key_constraint(:identity_id, message: "User not found")
+    |> foreign_key_constraint(:identity_id, message: @user_not_found)
     |> put_hashed_fields()
     |> unique_constraint([:identity_id, :address_hash_hash],
       message: "Custom ABI for this address has already been added before"
@@ -50,8 +54,9 @@ defmodule Explorer.Account.CustomABI do
   end
 
   defp put_hashed_fields(changeset) do
+    # Using force_change instead of put_change due to https://github.com/danielberkompas/cloak_ecto/issues/53
     changeset
-    |> put_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
+    |> force_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
   end
 
   defp check_smart_contract_address(%Changeset{changes: %{address_hash: address_hash}} = custom_abi) do
@@ -100,7 +105,7 @@ defmodule Explorer.Account.CustomABI do
   defp check_is_abi_valid?(%{abi: abi} = custom_abi, given_abi) when is_list(abi) do
     with true <- length(abi) > 0,
          filtered_abi <- filter_abi(abi),
-         true <- Enum.count(filtered_abi) > 0 do
+         false <- Enum.empty?(filtered_abi) do
       Map.put(custom_abi, :abi, filtered_abi)
     else
       _ ->
@@ -146,10 +151,62 @@ defmodule Explorer.Account.CustomABI do
 
   def custom_abi_count_constraint(%Changeset{} = custom_abi), do: custom_abi
 
+  @doc """
+  Creates a new custom ABI entry for a smart contract address.
+
+  The function performs several validations including checking the ABI format,
+  verifying the smart contract address, and ensuring the user hasn't exceeded their
+  ABI limit. The operation is executed within a database transaction that includes
+  identity verification.
+
+  ## Parameters
+  - `attrs`: A map containing:
+    - `identity_id`: The ID of the user creating the ABI
+    - `abi`: The ABI specification as a JSON string or list of maps
+    - `name`: The name for this custom ABI entry
+    - `address_hash`: The smart contract address this ABI corresponds to
+
+  ## Returns
+  - `{:ok, custom_abi}` if the creation is successful
+  - `{:error, changeset}` if:
+    - The identity doesn't exist
+    - The ABI format is invalid
+    - The address is not a smart contract
+    - The user has reached their ABI limit
+    - The ABI already exists for this address
+    - Required fields are missing
+  """
+  @spec create(map()) :: {:ok, t()} | {:error, Changeset.t()}
+  def create(%{identity_id: identity_id} = attrs) do
+    Multi.new()
+    |> Identity.acquire_with_lock(identity_id)
+    |> Multi.insert(:custom_abi, fn _ ->
+      %__MODULE__{}
+      |> changeset(attrs)
+    end)
+    |> Repo.account_repo().transaction()
+    |> case do
+      {:ok, %{custom_abi: custom_abi}} ->
+        {:ok, custom_abi}
+
+      {:error, :acquire_identity, :not_found, _changes} ->
+        {:error,
+         %__MODULE__{}
+         |> changeset(attrs)
+         |> add_error(:identity_id, @user_not_found,
+           constraint: :foreign,
+           constraint_name: "account_custom_abis_identity_id_fkey"
+         )}
+
+      {:error, _failed_operation, error, _changes} ->
+        {:error, error}
+    end
+  end
+
   def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> Repo.account_repo().insert()
+    {:error,
+     %__MODULE__{}
+     |> changeset(attrs)}
   end
 
   def custom_abis_by_identity_id_query(id) when not is_nil(id) do
@@ -176,12 +233,37 @@ defmodule Explorer.Account.CustomABI do
 
   def custom_abi_by_identity_id_and_address_hash_query(_, _), do: nil
 
+  @doc """
+  Retrieves a custom ABI for a given address hash and identity ID.
+
+  This function searches for a custom ABI associated with the provided address
+  hash and identity ID. It returns the first matching ABI if found, or nil if no
+  matching ABI exists.
+
+  ## Parameters
+  - `address_hash`: The address hash to search for. Can be a `Hash.Address.t()`,
+    `String.t()`, or `nil`.
+  - `identity_id`: The identity ID associated with the custom ABI. Can be an
+    `integer()` or `nil`.
+
+  ## Returns
+  - A `Explorer.Account.CustomABI` struct if a matching ABI is found.
+  - `nil` if no matching ABI is found or if either input is nil.
+  """
+  @spec get_custom_abi_by_identity_id_and_address_hash(Hash.Address.t() | String.t() | nil, integer() | nil) ::
+          __MODULE__.t() | nil
   def get_custom_abi_by_identity_id_and_address_hash(address_hash, identity_id)
       when not is_nil(identity_id) and not is_nil(address_hash) do
-    address_hash
-    |> hash_to_lower_case_string()
-    |> custom_abi_by_identity_id_and_address_hash_query(identity_id)
-    |> Repo.account_repo().one()
+    abis =
+      address_hash
+      |> hash_to_lower_case_string()
+      |> custom_abi_by_identity_id_and_address_hash_query(identity_id)
+      |> Repo.account_repo().all()
+
+    case abis do
+      [abi | _] -> abi
+      _ -> nil
+    end
   end
 
   def get_custom_abi_by_identity_id_and_address_hash(_, _), do: nil
@@ -223,4 +305,32 @@ defmodule Explorer.Account.CustomABI do
   end
 
   def get_max_custom_abis_count, do: @max_abis_per_account
+
+  @doc """
+  Merges custom ABIs from multiple identities into a primary identity.
+
+  This function updates all custom ABIs associated with the identities specified
+  in `ids_to_merge` to be associated with the `primary_id`. It also marks these
+  ABIs as not user-created in order to satisfy database constraint.
+
+  ## Parameters
+  - `multi`: An `Ecto.Multi` struct to which the merge operation will be added.
+  - `primary_id`: An integer representing the ID of the primary identity to
+    which the custom ABIs will be merged.
+  - `ids_to_merge`: A list of integer IDs representing the identities whose
+    custom ABIs will be merged into the primary identity.
+
+  ## Returns
+  - An updated `Ecto.Multi` struct with the merge operation added.
+  """
+  @spec merge(Multi.t(), integer(), [integer()]) :: Multi.t()
+  def merge(multi, primary_id, ids_to_merge) do
+    Multi.run(multi, :merge_custom_abis, fn repo, _ ->
+      {:ok,
+       repo.update_all(
+         from(key in __MODULE__, where: key.identity_id in ^ids_to_merge),
+         set: [identity_id: primary_id, user_created: false]
+       )}
+    end)
+  end
 end

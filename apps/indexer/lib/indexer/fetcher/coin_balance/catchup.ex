@@ -7,7 +7,7 @@ defmodule Indexer.Fetcher.CoinBalance.Catchup do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.{Block, Hash}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.CoinBalance.Catchup.Supervisor, as: CoinBalanceSupervisor
@@ -30,7 +30,7 @@ defmodule Indexer.Fetcher.CoinBalance.Catchup do
     else
       entries = Enum.map(balance_fields, &Helper.entry/1)
 
-      BufferedTask.buffer(__MODULE__, entries)
+      BufferedTask.buffer(__MODULE__, entries, false)
     end
   end
 
@@ -41,7 +41,7 @@ defmodule Indexer.Fetcher.CoinBalance.Catchup do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_balances(
+      CoinBalance.stream_unfetched_balances(
         initial,
         fn address_fields, acc ->
           address_fields
@@ -62,7 +62,7 @@ defmodule Indexer.Fetcher.CoinBalance.Catchup do
               tracer: Tracer
             )
   def run(entries, json_rpc_named_arguments) do
-    Helper.run(entries, json_rpc_named_arguments, true)
+    Helper.run(entries, json_rpc_named_arguments, :catchup)
   end
 
   defp defaults do

@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import $ from 'jquery'
 import { showAd } from './ad.js'
 

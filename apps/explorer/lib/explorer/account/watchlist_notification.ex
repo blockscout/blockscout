@@ -9,6 +9,7 @@ defmodule Explorer.Account.WatchlistNotification do
   import Ecto.Changeset
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
+  alias Ecto.Multi
   alias Explorer.Repo
   alias Explorer.Account.{Watchlist, WatchlistAddress}
 
@@ -17,7 +18,7 @@ defmodule Explorer.Account.WatchlistNotification do
     field(:block_number, :integer, null: false)
     field(:direction, :string, null: false)
     field(:method, :string, null: false)
-    field(:tx_fee, :decimal, null: false)
+    field(:transaction_fee, :decimal, null: false)
     field(:type, :string, null: false)
     field(:viewed_at, :integer, null: false)
     field(:name, Explorer.Encrypted.Binary, null: false)
@@ -41,7 +42,18 @@ defmodule Explorer.Account.WatchlistNotification do
   @doc false
   def changeset(watchlist_notifications, attrs) do
     watchlist_notifications
-    |> cast(attrs, [:amount, :direction, :name, :type, :method, :block_number, :tx_fee, :value, :decimals, :viewed_at])
+    |> cast(attrs, [
+      :amount,
+      :direction,
+      :name,
+      :type,
+      :method,
+      :block_number,
+      :transaction_fee,
+      :value,
+      :decimals,
+      :viewed_at
+    ])
     |> validate_required([
       :amount,
       :direction,
@@ -49,7 +61,7 @@ defmodule Explorer.Account.WatchlistNotification do
       :type,
       :method,
       :block_number,
-      :tx_fee,
+      :transaction_fee,
       :value,
       :decimals,
       :viewed_at
@@ -58,11 +70,12 @@ defmodule Explorer.Account.WatchlistNotification do
   end
 
   defp put_hashed_fields(changeset) do
+    # Using force_change instead of put_change due to https://github.com/danielberkompas/cloak_ecto/issues/53
     changeset
-    |> put_change(:from_address_hash_hash, hash_to_lower_case_string(get_field(changeset, :from_address_hash)))
-    |> put_change(:to_address_hash_hash, hash_to_lower_case_string(get_field(changeset, :to_address_hash)))
-    |> put_change(:transaction_hash_hash, hash_to_lower_case_string(get_field(changeset, :transaction_hash)))
-    |> put_change(:subject_hash, get_field(changeset, :subject))
+    |> force_change(:from_address_hash_hash, hash_to_lower_case_string(get_field(changeset, :from_address_hash)))
+    |> force_change(:to_address_hash_hash, hash_to_lower_case_string(get_field(changeset, :to_address_hash)))
+    |> force_change(:transaction_hash_hash, hash_to_lower_case_string(get_field(changeset, :transaction_hash)))
+    |> force_change(:subject_hash, get_field(changeset, :subject))
   end
 
   @doc """
@@ -82,5 +95,57 @@ defmodule Explorer.Account.WatchlistNotification do
 
   defp watchlist_notification_30_days_limit do
     Application.get_env(:explorer, Explorer.Account)[:notifications_limit_for_30_days]
+  end
+
+  @doc """
+  Merges watchlist notifications into a primary watchlist.
+
+  This function is used to merge notifications from multiple watchlists into a single primary watchlist.
+  It updates the `watchlist_id` of all notifications belonging to the watchlists being merged to point
+  to the primary watchlist.
+
+  ## Parameters
+
+    * `multi` - An `Ecto.Multi` struct representing the current multi-operation transaction.
+
+  ## Returns
+
+  Returns an updated `Ecto.Multi` struct with an additional `:merge_watchlist_notifications` operation.
+
+  ## Operation Details
+
+  The function adds a `:merge_watchlist_notifications` operation to the `Ecto.Multi` struct. This operation:
+
+  1. Identifies the primary watchlist and the watchlists to be merged from the results of previous operations.
+  2. Updates all notifications associated with the watchlists being merged:
+     - Sets their `watchlist_id` to the ID of the primary watchlist.
+
+
+  ## Notes
+
+  - This function assumes that the `Explorer.Account.Watchlist.acquire_for_merge/3` function has been called previously in the
+    `Ecto.Multi` chain to provide the necessary data for the merge operation.
+  - After this operation, all notifications from the merged watchlists will be associated with the
+    primary watchlist.
+  - This function is typically used as part of a larger watchlist merging process, which may include
+    merging other related data such as watchlist addresses.
+  """
+  @spec merge(Multi.t()) :: Multi.t()
+  def merge(multi) do
+    multi
+    |> Multi.run(:merge_watchlist_notifications, fn repo,
+                                                    %{
+                                                      acquire_primary_watchlist: [primary_watchlist | _],
+                                                      acquire_watchlists_to_merge: watchlists_to_merge
+                                                    } ->
+      primary_watchlist_id = primary_watchlist.id
+      watchlists_to_merge_ids = Enum.map(watchlists_to_merge, & &1.id)
+
+      {:ok,
+       repo.update_all(
+         from(notification in __MODULE__, where: notification.watchlist_id in ^watchlists_to_merge_ids),
+         set: [watchlist_id: primary_watchlist_id]
+       )}
+    end)
   end
 end

@@ -6,10 +6,14 @@ defmodule EthereumJSONRPC.Geth.Tracer do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
-  def replay(%{"structLogs" => logs, "gas" => top_call_gas, "returnValue" => return_value} = result, receipt, tx)
+  def replay(
+        %{"structLogs" => logs, "gas" => top_call_gas, "returnValue" => return_value} = result,
+        receipt,
+        transaction
+      )
       when is_list(logs) do
     %{"contractAddress" => contract_address} = receipt
-    %{"from" => from, "to" => to, "value" => value, "input" => input} = tx
+    %{"from" => from, "to" => to, "value" => value, "input" => input} = transaction
 
     top =
       to

@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.Token do
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Token
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Token.MetadataRetriever
   alias Indexer.{BufferedTask, Tracer}
 
@@ -60,19 +61,28 @@ defmodule Indexer.Fetcher.Token do
   @doc """
   Fetches token data asynchronously given a list of `t:Explorer.Chain.Token.t/0`s.
   """
-  @spec async_fetch([Address.t()]) :: :ok
-  def async_fetch(token_contract_addresses) do
-    BufferedTask.buffer(__MODULE__, token_contract_addresses)
+  @spec async_fetch([Address.t()], boolean()) :: :ok
+  def async_fetch(token_contract_addresses, realtime?) do
+    BufferedTask.buffer(__MODULE__, token_contract_addresses, realtime?)
   end
 
-  defp catalog_token(%Token{contract_address_hash: contract_address_hash} = token) do
-    token_params =
-      contract_address_hash
-      |> MetadataRetriever.get_functions_of()
-      |> Map.put(:cataloged, true)
+  defp catalog_token(token) do
+    token
+    |> MetadataRetriever.get_functions_of(set_skip_metadata: true)
+    |> case do
+      %{skip_metadata: false} ->
+        :ok
 
-    {:ok, _} = Chain.update_token(token, token_params)
-    :ok
+      token_params ->
+        data_for_multichain = MultichainSearch.prepare_token_metadata_for_queue(token, token_params)
+
+        %{}
+        |> Map.put(token.contract_address_hash.bytes, data_for_multichain)
+        |> MultichainSearch.send_token_info_to_queue(:metadata)
+
+        {:ok, _} = Token.update(token, Map.put(token_params, :cataloged, true))
+        :ok
+    end
   end
 
   defp defaults do

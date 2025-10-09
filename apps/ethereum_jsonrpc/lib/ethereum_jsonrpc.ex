@@ -9,12 +9,12 @@ defmodule EthereumJSONRPC do
       config :ethereum_jsonrpc,
         url: "http://localhost:8545",
         trace_url: "http://localhost:8545",
-        http: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
+        http: [recv_timeout: 60_000, timeout: 60_000, pool: :ethereum_jsonrpc]
 
 
   Note: the tracing node URL is provided separately from `:url`, via `:trace_url`. The trace URL and is used for
-  `fetch_internal_transactions`, which is only a supported method on tracing nodes. The `:http` option is passed
-  directly to the HTTP library (`HTTPoison`), which forwards the options down to `:hackney`.
+  `fetch_internal_transactions`, which is only a supported method on tracing nodes. The `:http` option is adapted
+  to the HTTP library (`HTTPoison` or `Tesla.Mint`).
 
   ## Throttling
 
@@ -34,10 +34,12 @@ defmodule EthereumJSONRPC do
     FetchedBalances,
     FetchedBeneficiaries,
     FetchedCodes,
+    Nonces,
     Receipts,
     RequestCoordinator,
     Subscription,
     Transport,
+    Utility.CommonHelper,
     Utility.EndpointAvailabilityObserver,
     Utility.RangesHelper,
     Variant
@@ -172,10 +174,10 @@ defmodule EthereumJSONRPC do
   """
   @spec execute_contract_functions([Contract.call()], [map()], json_rpc_named_arguments) :: [Contract.call_result()]
   def execute_contract_functions(functions, abi, json_rpc_named_arguments, leave_error_as_map \\ false) do
-    if Enum.count(functions) > 0 do
-      Contract.execute_contract_functions(functions, abi, json_rpc_named_arguments, leave_error_as_map)
-    else
+    if Enum.empty?(functions) do
       []
+    else
+      Contract.execute_contract_functions(functions, abi, json_rpc_named_arguments, leave_error_as_map)
     end
   end
 
@@ -186,43 +188,119 @@ defmodule EthereumJSONRPC do
           [%{required(:block_quantity) => quantity, required(:hash_data) => data()}],
           json_rpc_named_arguments
         ) :: {:ok, FetchedBalances.t()} | {:error, reason :: term}
-  def fetch_balances(params_list, json_rpc_named_arguments, chunk_size \\ nil)
+  def fetch_balances(params_list, json_rpc_named_arguments, latest_block_number \\ 0, chunk_size \\ nil)
       when is_list(params_list) and is_list(json_rpc_named_arguments) do
-    filtered_params =
-      if Application.get_env(:ethereum_jsonrpc, :disable_archive_balances?) do
-        {:ok, max_block_number} = fetch_block_number_by_tag("latest", json_rpc_named_arguments)
-        window = Application.get_env(:ethereum_jsonrpc, :archive_balances_window)
-
-        params_list
-        |> Enum.filter(fn
-          %{block_quantity: "latest"} -> true
-          %{block_quantity: block_quantity} -> quantity_to_integer(block_quantity) > max_block_number - window
-          _ -> false
-        end)
-      else
-        params_list
+    latest_block_number_params =
+      case latest_block_number do
+        0 -> fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+        number -> {:ok, number}
       end
 
-    filtered_params_in_range =
-      filtered_params
+    params_in_range =
+      params_list
       |> Enum.filter(fn
         %{block_quantity: block_quantity} ->
           block_quantity |> quantity_to_integer() |> RangesHelper.traceable_block_number?()
       end)
 
-    id_to_params = id_to_params(filtered_params_in_range)
+    trace_url_used? = !is_nil(json_rpc_named_arguments[:transport_options][:method_to_url][:eth_getBalance])
+    archive_disabled? = Application.get_env(:ethereum_jsonrpc, :disable_archive_balances?)
 
-    with {:ok, responses} <-
-           id_to_params
-           |> FetchedBalances.requests()
-           |> chunk_requests(chunk_size)
-           |> json_rpc(json_rpc_named_arguments) do
-      {:ok, FetchedBalances.from_responses(responses, id_to_params)}
+    {latest_balances_params, archive_balance_params} =
+      with true <- not trace_url_used? or archive_disabled?,
+           {:ok, max_block_number} <- latest_block_number_params do
+        window = Application.get_env(:ethereum_jsonrpc, :archive_balances_window)
+
+        Enum.split_with(params_in_range, fn
+          %{block_quantity: "latest"} -> true
+          %{block_quantity: block_quantity} -> quantity_to_integer(block_quantity) > max_block_number - window
+          _ -> false
+        end)
+      else
+        _ -> {params_in_range, []}
+      end
+
+    latest_id_to_params = id_to_params(latest_balances_params)
+    archive_id_to_params = id_to_params(archive_balance_params)
+
+    with {:ok, latest_responses} <- do_balances_request(latest_id_to_params, chunk_size, json_rpc_named_arguments),
+         {:ok, archive_responses} <-
+           maybe_request_archive_balances(
+             archive_id_to_params,
+             trace_url_used?,
+             archive_disabled?,
+             chunk_size,
+             json_rpc_named_arguments
+           ) do
+      latest_fetched_balances = FetchedBalances.from_responses(latest_responses, latest_id_to_params)
+      archive_fetched_balances = FetchedBalances.from_responses(archive_responses, archive_id_to_params)
+      {:ok, FetchedBalances.merge(latest_fetched_balances, archive_fetched_balances)}
     end
   end
 
   @doc """
-  Fetches code for each given `address` at the `block_number`.
+  Fetches transactions count for every `block_number`
+  """
+  @spec fetch_transactions_count([integer()], json_rpc_named_arguments) ::
+          {:ok, %{transactions_count_map: %{integer() => integer()}, errors: [{:error, map()}]}}
+          | {:error, reason :: term()}
+  def fetch_transactions_count(block_numbers, json_rpc_named_arguments) do
+    id_to_params = EthereumJSONRPC.id_to_params(block_numbers)
+
+    id_to_params
+    |> Enum.map(fn {id, number} ->
+      EthereumJSONRPC.request(%{
+        id: id,
+        method: "eth_getBlockTransactionCountByNumber",
+        params: [EthereumJSONRPC.integer_to_quantity(number)]
+      })
+    end)
+    |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+    |> case do
+      {:ok, responses} ->
+        %{errors: errors, counts: counts} =
+          responses
+          |> EthereumJSONRPC.sanitize_responses(id_to_params)
+          |> Enum.reduce(%{errors: [], counts: %{}}, fn
+            %{id: id, result: nil}, %{errors: errors} = acc ->
+              error = {:error, %{code: 404, message: "Not Found", data: Map.fetch!(id_to_params, id)}}
+              %{acc | errors: [error | errors]}
+
+            %{id: id, result: count}, %{counts: counts} = acc ->
+              %{acc | counts: Map.put(counts, Map.fetch!(id_to_params, id), EthereumJSONRPC.quantity_to_integer(count))}
+
+            %{id: id, error: error}, %{errors: errors} = acc ->
+              %{acc | errors: [{:error, Map.put(error, :data, Map.fetch!(id_to_params, id))} | errors]}
+          end)
+
+        {:ok, %{transactions_count_map: Map.new(counts), errors: errors}}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+    Fetches contract code for multiple addresses at specified block numbers.
+
+    This function takes a list of parameters, each containing an address and a
+    block number, and retrieves the contract code for each address at the
+    specified block.
+
+    ## Parameters
+    - `params_list`: A list of maps, each containing:
+      - `:block_quantity`: The block number (as a quantity string) at which to fetch the code.
+      - `:address`: The address of the contract to fetch the code for.
+    - `json_rpc_named_arguments`: A keyword list of JSON-RPC configuration options.
+
+    ## Returns
+    - `{:ok, fetched_codes}`, where `fetched_codes` is a `FetchedCodes.t()` struct containing:
+      - `params_list`: A list of successfully fetched code parameters, each containing:
+        - `address`: The contract address.
+        - `block_number`: The block number at which the code was fetched.
+        - `code`: The fetched contract code in hexadecimal format.
+      - `errors`: A list of errors encountered during the fetch operation.
+    - `{:error, reason}`: An error occurred during the fetch operation.
   """
   @spec fetch_codes(
           [%{required(:block_quantity) => quantity, required(:address) => address()}],
@@ -237,6 +315,44 @@ defmodule EthereumJSONRPC do
            |> FetchedCodes.requests()
            |> json_rpc(json_rpc_named_arguments) do
       {:ok, FetchedCodes.from_responses(responses, id_to_params)}
+    end
+  end
+
+  @doc """
+    Fetches address nonces for multiple addresses at specified block numbers.
+
+    This function takes a list of parameters, each containing an address and a
+    block number, and retrieves the nonce for each address at the specified
+    block.
+
+    ## Parameters
+    - `params_list`: A list of maps, each containing:
+      - `:block_quantity`: The block number (as a quantity string) at which to fetch the nonce.
+      - `:address`: The address of the contract to fetch the nonce for.
+    - `json_rpc_named_arguments`: A keyword list of JSON-RPC configuration options.
+
+    ## Returns
+    - `{:ok, fetched_nonces}`, where `fetched_nonces` is a `Nonces.t()` struct containing:
+      - `params_list`: A list of successfully fetched code parameters, each containing:
+        - `address`: The contract address.
+        - `block_number`: The block number at which the nonce was fetched.
+        - `nonce`: The fetched nonce.
+      - `errors`: A list of errors encountered during the fetch operation.
+    - `{:error, reason}`: An error occurred during the fetch operation.
+  """
+  @spec fetch_nonces(
+          [%{required(:block_quantity) => quantity, required(:address) => address()}],
+          json_rpc_named_arguments
+        ) :: {:ok, Nonces.t()} | {:error, reason :: term}
+  def fetch_nonces(params_list, json_rpc_named_arguments)
+      when is_list(params_list) and is_list(json_rpc_named_arguments) do
+    id_to_params = id_to_params(params_list)
+
+    with {:ok, responses} <-
+           id_to_params
+           |> Nonces.requests()
+           |> json_rpc(json_rpc_named_arguments) do
+      {:ok, Nonces.from_responses(responses, id_to_params)}
     end
   end
 
@@ -257,29 +373,43 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches blocks by block hashes.
 
-  Transaction data is included for each block.
+  Transaction data is included for each block by default.
+  Set `with_transactions` parameter to false to exclude tx data.
   """
-  @spec fetch_blocks_by_hash([hash()], json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
-  def fetch_blocks_by_hash(block_hashes, json_rpc_named_arguments) do
+  @spec fetch_blocks_by_hash([hash()], json_rpc_named_arguments, boolean()) ::
+          {:ok, Blocks.t()} | {:error, reason :: term}
+  def fetch_blocks_by_hash(block_hashes, json_rpc_named_arguments, with_transactions? \\ true) do
     block_hashes
     |> Enum.map(fn block_hash -> %{hash: block_hash} end)
-    |> fetch_blocks_by_params(&Block.ByHash.request/1, json_rpc_named_arguments)
+    |> fetch_blocks_by_params(&Block.ByHash.request(&1, with_transactions?), json_rpc_named_arguments)
   end
 
   @doc """
   Fetches blocks by block number range.
   """
   @spec fetch_blocks_by_range(Range.t(), json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
-  def fetch_blocks_by_range(_first.._last = range, json_rpc_named_arguments) do
+  def fetch_blocks_by_range(_first.._last//_ = range, json_rpc_named_arguments) do
     range
     |> Enum.map(fn number -> %{number: number} end)
     |> fetch_blocks_by_params(&Block.ByNumber.request/1, json_rpc_named_arguments)
   end
 
   @doc """
-  Fetches blocks by block number list.
+    Fetches blocks by their block numbers.
+
+    Retrieves block data for a list of block numbers, with optional inclusion of
+    transaction data.
+
+    ## Parameters
+    - `block_numbers`: List of block numbers to fetch
+    - `json_rpc_named_arguments`: Configuration for JSON-RPC connection
+    - `with_transactions?`: Whether to include transaction data in blocks (defaults to true)
+
+    ## Returns
+    - `{:ok, Blocks.t()}`: Successfully fetched and processed block data
+    - `{:error, reason}`: Error occurred during fetch or processing
   """
-  @spec fetch_blocks_by_numbers([block_number()], json_rpc_named_arguments, boolean()) ::
+  @spec fetch_blocks_by_numbers([block_number()], json_rpc_named_arguments(), boolean()) ::
           {:ok, Blocks.t()} | {:error, reason :: term}
   def fetch_blocks_by_numbers(block_numbers, json_rpc_named_arguments, with_transactions? \\ true) do
     block_numbers
@@ -288,7 +418,17 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Fetches block by "t:tag/0".
+    Fetches a block from the blockchain using a semantic tag identifier.
+
+    ## Parameters
+    - `tag`: One of "earliest", "latest", "pending", or "safe" to identify the block
+    - `json_rpc_named_arguments`: Configuration for the JSON-RPC connection
+
+    ## Returns
+    - `{:ok, Blocks.t()}` - Successfully retrieved block data
+    - `{:error, :invalid_tag}` - The provided tag is not recognized
+    - `{:error, :not_found}` - No block exists for the given tag
+    - `{:error, term()}` - Other errors that occurred during the request
   """
   @spec fetch_block_by_tag(tag(), json_rpc_named_arguments) ::
           {:ok, Blocks.t()} | {:error, reason :: :invalid_tag | :not_found | term()}
@@ -306,39 +446,42 @@ defmodule EthereumJSONRPC do
     |> fetch_blocks_by_params(&Block.ByNephew.request/1, json_rpc_named_arguments)
   end
 
-  @spec fetch_net_version(json_rpc_named_arguments) :: {:ok, non_neg_integer()} | {:error, reason :: term}
-  def fetch_net_version(json_rpc_named_arguments) do
+  @doc """
+    Fetches chain ID from RPC node using `eth_chainId` JSON-RPC request.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: A keyword list of JSON-RPC configuration options.
+
+    ## Returns
+    - `{:ok, id}` tuple where `id` is the chain id integer.
+    - `{:error, reason}` tuple in case of error.
+  """
+  @spec fetch_chain_id(json_rpc_named_arguments) :: {:ok, non_neg_integer()} | {:error, reason :: term}
+  def fetch_chain_id(json_rpc_named_arguments) do
     result =
-      %{id: 0, method: "net_version", params: []}
+      %{id: 0, method: "eth_chainId", params: []}
       |> request()
       |> json_rpc(json_rpc_named_arguments)
 
     case result do
-      {:ok, bin_number} -> {:ok, String.to_integer(bin_number)}
+      {:ok, id} -> {:ok, quantity_to_integer(id)}
       other -> other
     end
   end
 
   @doc """
-  Fetches block number by `t:tag/0`.
+    Fetches the block number for a block identified by a semantic tag.
 
-  ## Returns
+    ## Parameters
+    - `tag`: One of "earliest", "latest", "pending", or "safe" to identify the block
+    - `json_rpc_named_arguments`: Configuration for the JSON-RPC connection
 
-   * `{:ok, number}` - the block number for the given `tag`.
-   * `{:error, :invalid_tag}` - When `tag` is not a valid `t:tag/0`.
-   * `{:error, reason}` - other JSONRPC error.
-
+    ## Returns
+    - `{:ok, number}` - Successfully retrieved block number
+    - `{:error, :invalid_tag}` - The provided tag is not recognized
+    - `{:error, :not_found}` - No block exists for the given tag
+    - `{:error, term()}` - Other errors that occurred during the request
   """
-  @spec fetch_block_number_by_tag_op_version(tag(), json_rpc_named_arguments) ::
-          {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
-  def fetch_block_number_by_tag_op_version(tag, json_rpc_named_arguments)
-      when tag in ~w(earliest latest pending safe) do
-    %{id: 0, tag: tag}
-    |> Block.ByTag.request()
-    |> json_rpc(json_rpc_named_arguments)
-    |> Block.ByTag.number_from_result()
-  end
-
   @spec fetch_block_number_by_tag(tag(), json_rpc_named_arguments) ::
           {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
   def fetch_block_number_by_tag(tag, json_rpc_named_arguments) when tag in ~w(earliest latest pending safe) do
@@ -380,12 +523,66 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Retrieves Solana transactions that are linked to a given Neon transaction.
+
+  ## Parameters
+    - `transaction_hash`: The hash of the Neon transaction
+    - `json_rpc_named_arguments`: Named arguments for JSON RPC call
+
+  ## Returns
+    - `{:ok, list()}`: List of linked Solana transactions
+    - `{:error, reason}`: If the request fails
+  """
+  @spec get_linked_solana_transactions(
+          Explorer.Chain.Hash.t(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:ok, list()} | {:error, reason :: term}
+  def get_linked_solana_transactions(transaction_hash, json_rpc_named_arguments) do
+    r =
+      request(%{
+        id: 1,
+        method: "neon_getSolanaTransactionByNeonTransaction",
+        params: [to_string(transaction_hash)]
+      })
+
+    EthereumJSONRPC.json_rpc(r, json_rpc_named_arguments)
+  end
+
+  @doc """
   Fetches pending transactions from variant API.
   """
   def fetch_pending_transactions(json_rpc_named_arguments) do
     Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_pending_transactions(json_rpc_named_arguments)
   end
 
+  @doc """
+  Retrieves raw traces from Ethereum JSON RPC variant API.
+  """
+  def fetch_transaction_raw_traces(transaction_params, json_rpc_named_arguments) do
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_transaction_raw_traces(
+      transaction_params,
+      json_rpc_named_arguments
+    )
+  end
+
+  @doc """
+    Fetches transaction receipts and logs for a list of transactions.
+
+    Makes batch requests to retrieve receipts for multiple transactions and processes
+    them into a format suitable for database import.
+
+    ## Parameters
+    - `transactions_params`: List of transaction parameter maps, each containing:
+      - `gas`: Gas limit for the transaction
+      - `hash`: Transaction hash
+      - Additional optional parameters
+    - `json_rpc_named_arguments`: Configuration for JSON-RPC connection
+
+    ## Returns
+    - `{:ok, %{logs: list(), receipts: list()}}` - Successfully processed receipts
+      and logs ready for database import
+    - `{:error, reason}` - Error occurred during fetch or processing
+  """
   @spec fetch_transaction_receipts(
           [
             %{required(:gas) => non_neg_integer(), required(:hash) => hash, optional(atom) => any}
@@ -397,8 +594,27 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Assigns an id to each set of params in `params_list` for batch request-response correlation
+    Assigns a unique integer ID to each set of parameters in the given list.
+
+    This function is used to prepare parameters for batch request-response
+    correlation in JSON-RPC calls.
+
+    ## Parameters
+    - `params_list`: A list of parameter sets, where each set can be of any type.
+
+    ## Returns
+    A map where the keys are integer IDs (starting from 0) and the values are
+    the corresponding parameter sets from the input list.
+
+    ## Example
+      iex> id_to_params([%{block: 1}, %{block: 2}])
+      %{0 => %{block: 1}, 1 => %{block: 2}}
   """
+  @spec id_to_params([]) :: %{}
+  def id_to_params([]) do
+    %{}
+  end
+
   @spec id_to_params([params]) :: %{id => params} when id: non_neg_integer(), params: any()
   def id_to_params(params_list) do
     params_list
@@ -407,37 +623,89 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Assigns not matched ids between requests and responses to responses with incorrect ids
+   Sanitizes responses by assigning unmatched IDs to responses with missing IDs.
+
+   It handles cases where responses have missing (nil) IDs by assigning them
+   unmatched IDs from the id_to_params map.
+
+   ## Parameters
+   - `responses`: A list of response maps from a batch JSON-RPC call.
+   - `elements_with_ids`: A map or a list enumerating elements with request IDs
+
+   ## Returns
+   A list of sanitized response maps where each response has a valid ID.
+
+   ## Example
+      iex> responses = [%{id: 1, result: "ok"}, %{id: nil, result: "error"}]
+      iex> id_to_params = %{1 => %{}, 2 => %{}, 3 => %{}}
+      iex> EthereumJSONRPC.sanitize_responses(responses, id_to_params)
+      [%{id: 1, result: "ok"}, %{id: 2, result: "error"}]
+
+      iex> request_ids = [1, 2, 3]
+      iex> EthereumJSONRPC.sanitize_responses(responses, request_ids)
+      [%{id: 1, result: "ok"}, %{id: 2, result: "error"}]
   """
-  def sanitize_responses(responses, id_to_params) do
+  @spec sanitize_responses(Transport.batch_response(), %{id => params} | [id]) :: Transport.batch_response()
+        when id: EthereumJSONRPC.request_id(), params: any()
+  def sanitize_responses(responses, elements_with_ids)
+
+  def sanitize_responses(responses, id_to_params) when is_map(id_to_params) do
     responses
-    |> Enum.reduce(
-      {[], Map.keys(id_to_params) -- Enum.map(responses, & &1.id)},
-      fn
-        %{id: nil} = res, {result_res, [id | rest]} ->
-          Logger.error(
-            "Empty id in response: #{inspect(res)}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}"
-          )
-
-          {[%{res | id: id} | result_res], rest}
-
-        res, {result_res, non_matched} ->
-          {[res | result_res], non_matched}
-      end
-    )
+    |> Enum.reduce({[], Map.keys(id_to_params) -- Enum.map(responses, & &1.id)}, &sanitize_responses_reduce_fn/2)
     |> elem(0)
     |> Enum.reverse()
   end
 
+  def sanitize_responses(responses, request_ids) when is_list(request_ids) do
+    responses
+    |> Enum.reduce({[], request_ids -- Enum.map(responses, & &1.id)}, &sanitize_responses_reduce_fn/2)
+    |> elem(0)
+    |> Enum.reverse()
+  end
+
+  # Processes a single response during sanitization of batch responses.
+  #
+  # For responses with nil IDs, assigns the next available ID from the unmatched list
+  # and logs an error. For responses with valid IDs, simply accumulates them.
+  #
+  # ## Parameters
+  # - `res`: A single response from the batch
+  # - `{result_res, non_matched}`: Tuple containing accumulated responses and remaining
+  #   unmatched IDs
+  #
+  # ## Returns
+  # - `{result_res, non_matched}`: Updated accumulator tuple with processed response
+  @spec sanitize_responses_reduce_fn(Transport.response(), {Transport.batch_response(), [EthereumJSONRPC.request_id()]}) ::
+          {Transport.batch_response(), [EthereumJSONRPC.request_id()]}
+  defp sanitize_responses_reduce_fn(%{id: nil} = res, {result_res, [id | rest]}) do
+    Logger.error(
+      "Empty id in response: #{inspect(res)}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}"
+    )
+
+    {[%{res | id: id} | result_res], rest}
+  end
+
+  defp sanitize_responses_reduce_fn(res, {result_res, non_matched}) do
+    {[res | result_res], non_matched}
+  end
+
   @doc """
-    1. POSTs JSON `payload` to `url`
-    2. Decodes the response
-    3. Handles the response
+    Executes a JSON-RPC request with the specified transport and options.
 
-  ## Returns
+    Handles both single requests and batch requests. Uses the RequestCoordinator to
+    manage request throttling and retries. If a fallback URL is configured, it may
+    switch to it when the primary endpoint is unavailable.
 
-    * Handled response
-    * `{:error, reason}` if POST fails
+    ## Parameters
+    - `request`: A single request map or list of request maps to execute
+    - `named_arguments`: Configuration options including:
+      - `:transport`: The transport module to use (e.g. HTTP, WebSocket)
+      - `:transport_options`: Options for the transport including URLs
+      - `:throttle_timeout`: Maximum time to wait for throttled requests
+
+    ## Returns
+    - `{:ok, result}` on success with the JSON-RPC response
+    - `{:error, reason}` if the request fails
   """
   @spec json_rpc(Transport.request(), json_rpc_named_arguments) ::
           {:ok, Transport.result()} | {:error, reason :: term()}
@@ -461,9 +729,38 @@ defmodule EthereumJSONRPC do
     end
   end
 
+  defp do_balances_request(id_to_params, _chunk_size, _args) when id_to_params == %{}, do: {:ok, []}
+
+  defp do_balances_request(id_to_params, chunk_size, json_rpc_named_arguments) do
+    id_to_params
+    |> FetchedBalances.requests()
+    |> chunk_requests(chunk_size)
+    |> json_rpc(json_rpc_named_arguments)
+  end
+
+  defp archive_json_rpc_named_arguments(json_rpc_named_arguments) do
+    CommonHelper.put_in_keyword_nested(
+      json_rpc_named_arguments,
+      [:transport_options, :method_to_url, :eth_getBalance],
+      :trace
+    )
+  end
+
+  defp maybe_request_archive_balances(id_to_params, trace_url_used?, disabled?, chunk_size, json_rpc_named_arguments) do
+    if not trace_url_used? and not disabled? do
+      do_balances_request(id_to_params, chunk_size, archive_json_rpc_named_arguments(json_rpc_named_arguments))
+    else
+      {:ok, []}
+    end
+  end
+
+  # Replaces the URL with a fallback URL for non-HTTP transports.
+  @spec maybe_replace_url(String.t(), String.t(), Transport.t()) :: String.t()
   defp maybe_replace_url(url, _replace_url, EthereumJSONRPC.HTTP), do: url
   defp maybe_replace_url(url, replace_url, _), do: EndpointAvailabilityObserver.maybe_replace_url(url, replace_url, :ws)
 
+  # Increments error count for non-HTTP transports when endpoint errors occur
+  @spec maybe_inc_error_count(String.t(), EthereumJSONRPC.json_rpc_named_arguments(), Transport.t()) :: :ok
   defp maybe_inc_error_count(_url, _arguments, EthereumJSONRPC.HTTP), do: :ok
   defp maybe_inc_error_count(url, arguments, _), do: EndpointAvailabilityObserver.inc_error_count(url, arguments, :ws)
 
@@ -487,6 +784,24 @@ defmodule EthereumJSONRPC do
   def quantity_to_integer(_), do: nil
 
   @doc """
+  Sanitizes ID in JSON RPC request following JSON RPC [spec](https://www.jsonrpc.org/specification#request_object:~:text=An%20identifier%20established%20by%20the%20Client%20that%20MUST%20contain%20a%20String%2C%20Number%2C%20or%20NULL%20value%20if%20included.%20If%20it%20is%20not%20included%20it%20is%20assumed%20to%20be%20a%20notification.%20The%20value%20SHOULD%20normally%20not%20be%20Null%20%5B1%5D%20and%20Numbers%20SHOULD%20NOT%20contain%20fractional%20parts%20%5B2%5D).
+  """
+  @spec sanitize_id(quantity) :: non_neg_integer() | String.t() | nil
+
+  def sanitize_id(integer) when is_integer(integer), do: integer
+
+  def sanitize_id(string) when is_binary(string) do
+    # match ID string and ID string without non-ASCII characters
+    if string == for(<<c <- string>>, c < 128, into: "", do: <<c>>) do
+      string
+    else
+      nil
+    end
+  end
+
+  def sanitize_id(_), do: nil
+
+  @doc """
   Converts `t:non_neg_integer/0` to `t:quantity/0`
   """
   @spec integer_to_quantity(non_neg_integer | binary) :: quantity
@@ -499,7 +814,16 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  A request payload for a JSONRPC.
+    Creates a JSON-RPC 2.0 request payload from the provided map.
+
+    ## Parameters
+    - `map`: A map containing:
+      - `id`: Request identifier
+      - `method`: Name of the JSON-RPC method to call
+      - `params`: List of parameters to pass to the method
+
+    ## Returns
+    - A JSON-RPC 2.0 compliant request map with the "jsonrpc" field added
   """
   @spec request(%{id: request_id, method: String.t(), params: list()}) :: Transport.request()
   def request(%{method: method, params: params} = map)
@@ -565,6 +889,22 @@ defmodule EthereumJSONRPC do
     end
   end
 
+  # Fetches block data using the provided parameters and request function.
+  #
+  # Assigns unique IDs to each parameter set, generates JSON-RPC requests using the
+  # provided request function, executes them, and processes the responses into a
+  # structured format.
+  #
+  # ## Parameters
+  # - `params`: List of parameter maps for block requests
+  # - `request`: Function that takes a parameter map and returns a JSON-RPC request
+  # - `json_rpc_named_arguments`: Configuration for JSON-RPC connection
+  #
+  # ## Returns
+  # - `{:ok, Blocks.t()}`: Successfully fetched and processed block data
+  # - `{:error, reason}`: Error occurred during fetch or processing
+  @spec fetch_blocks_by_params([map()], function(), json_rpc_named_arguments()) ::
+          {:ok, Blocks.t()} | {:error, reason :: term()}
   defp fetch_blocks_by_params(params, request, json_rpc_named_arguments)
        when is_list(params) and is_function(request, 1) do
     id_to_params = id_to_params(params)
@@ -579,4 +919,68 @@ defmodule EthereumJSONRPC do
 
   defp chunk_requests(requests, nil), do: requests
   defp chunk_requests(requests, chunk_size), do: Enum.chunk_every(requests, chunk_size)
+
+  def put_if_present(result, transaction, keys) do
+    Enum.reduce(keys, result, fn key, acc ->
+      key_list = key |> Tuple.to_list()
+      from_key = Enum.at(key_list, 0)
+      to_key = Enum.at(key_list, 1)
+      opts = if Enum.count(key_list) > 2, do: Enum.at(key_list, 2), else: %{}
+
+      value = transaction[from_key] || opts[:default]
+
+      validate_key(acc, to_key, value, opts)
+    end)
+  end
+
+  defp validate_key(acc, _to_key, nil, _opts), do: acc
+
+  defp validate_key(acc, to_key, value, %{:validation => validation}) do
+    case validation do
+      :address_hash ->
+        if address_correct?(value), do: Map.put(acc, to_key, value), else: acc
+
+      _ ->
+        Map.put(acc, to_key, value)
+    end
+  end
+
+  defp validate_key(acc, to_key, value, _validation) do
+    Map.put(acc, to_key, value)
+  end
+
+  # todo: The similar function exists in Indexer application:
+  # Here is the room for future refactoring to keep a single function.
+  @spec address_correct?(binary()) :: boolean()
+  defp address_correct?(address) when is_binary(address) do
+    String.match?(address, ~r/^0x[[:xdigit:]]{40}$/i)
+  end
+
+  defp address_correct?(_address) do
+    false
+  end
+
+  @doc """
+  Determines whether a given error represents a contract execution failure.
+
+  This function checks if an error indicates a contract failure by examining
+  specific error patterns. It supports both map-based and tuple-based error
+  formats. The function identifies two types of contract failures:
+  1. Errors with the atom `:unable_to_decode`
+  2. Binary errors containing the pattern "execution" followed by "revert"
+
+  ## Parameters
+  - `error`: The error to check. Can be a map with an `:error` key, a tuple
+    `{:error, reason}`, or any other value.
+
+  ## Returns
+  - `true` if the error represents a contract failure
+  - `false` otherwise
+  """
+  @spec contract_failure?(any()) :: boolean()
+  def contract_failure?(%{error: :unable_to_decode}), do: true
+  def contract_failure?(%{error: error}) when is_binary(error), do: String.match?(error, ~r/execution.*revert/)
+  def contract_failure?({:error, :unable_to_decode}), do: true
+  def contract_failure?({:error, error}) when is_binary(error), do: String.match?(error, ~r/execution.*revert/)
+  def contract_failure?(_), do: false
 end

@@ -8,8 +8,10 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
       split_list_by_page: 1
     ]
 
-  alias Explorer.Chain.Cache.ShibariumCounter
+  alias Explorer.Chain.Cache.Counters.Shibarium.DepositsAndWithdrawalsCount
   alias Explorer.Chain.Shibarium.Reader
+
+  @api_true [api?: true]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -35,8 +37,8 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
   @spec deposits_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits_count(conn, _params) do
     count =
-      case ShibariumCounter.deposits_count(api?: true) do
-        0 -> Reader.deposits_count(api?: true)
+      case @api_true |> DepositsAndWithdrawalsCount.deposits_count() |> Decimal.to_integer() do
+        0 -> Reader.deposits_count(@api_true)
         value -> value
       end
 
@@ -67,8 +69,8 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
   @spec withdrawals_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals_count(conn, _params) do
     count =
-      case ShibariumCounter.withdrawals_count(api?: true) do
-        0 -> Reader.withdrawals_count(api?: true)
+      case @api_true |> DepositsAndWithdrawalsCount.withdrawals_count() |> Decimal.to_integer() do
+        0 -> Reader.withdrawals_count(@api_true)
         value -> value
       end
 

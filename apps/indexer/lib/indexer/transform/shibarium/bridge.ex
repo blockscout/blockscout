@@ -24,7 +24,7 @@ defmodule Indexer.Transform.Shibarium.Bridge do
 
     items =
       with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:start_block]),
-           false <- Application.get_env(:explorer, :chain_type) != "shibarium",
+           false <- Application.get_env(:explorer, :chain_type) != :shibarium,
            child_chain = Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:child_chain],
            weth = Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:weth],
            bone_withdraw = Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:bone_withdraw],
@@ -43,8 +43,8 @@ defmodule Indexer.Transform.Shibarium.Bridge do
 
         deposit_transaction_hashes =
           transactions_with_receipts
-          |> Enum.filter(fn tx -> tx.from_address_hash == burn_address_hash_string() end)
-          |> Enum.map(fn tx -> tx.hash end)
+          |> Enum.filter(fn transaction -> transaction.from_address_hash == burn_address_hash_string() end)
+          |> Enum.map(fn transaction -> transaction.hash end)
 
         deposit_events =
           logs
@@ -53,11 +53,11 @@ defmodule Indexer.Transform.Shibarium.Bridge do
 
         withdrawal_transaction_hashes =
           transactions_with_receipts
-          |> Enum.filter(fn tx ->
+          |> Enum.filter(fn transaction ->
             # filter by `withdraw(uint256 amount)` signature
-            String.downcase(String.slice(tx.input, 0..9)) == withdraw_method_signature()
+            String.downcase(String.slice(transaction.input, 0..9)) == withdraw_method_signature()
           end)
-          |> Enum.map(fn tx -> tx.hash end)
+          |> Enum.map(fn transaction -> transaction.hash end)
 
         withdrawal_events =
           logs

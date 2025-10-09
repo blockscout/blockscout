@@ -3,8 +3,19 @@ defmodule Explorer.Chain.InternalTransaction do
 
   use Explorer.Schema
 
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Block, Data, Hash, PendingBlockOperation, Transaction, Wei}
-  alias Explorer.Chain.InternalTransaction.{Action, CallType, Result, Type}
+  alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
+  alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
+  alias Explorer.Chain.DenormalizationHelper
+  alias Explorer.Chain.InternalTransaction.{CallType, Type}
+
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+
+  @typep paging_options :: {:paging_options, PagingOptions.t()}
+  @typep api? :: {:api?, true | false}
+
+  @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
    * `block_number` - the `t:Explorer.Chain.Block.t/0` `number` that the `transaction` is collated into.
@@ -34,6 +45,7 @@ defmodule Explorer.Chain.InternalTransaction do
   """
   @primary_key false
   typed_schema "internal_transactions" do
+    # todo: consider using enum: `field(:call_type, Ecto.Enum, values: [:call, :callcode, :delegatecall, :staticcall])`
     field(:call_type, CallType)
     field(:created_contract_code, Data)
     field(:error, :string)
@@ -44,6 +56,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:input, Data)
     field(:output, Data)
     field(:trace_address, {:array, :integer}, null: false)
+    # todo: consider using enum
     field(:type, Type, null: false)
     field(:value, Wei, null: false)
     field(:block_number, :integer)
@@ -229,6 +242,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   Failed `:call`s are not allowed to set `gas_used` or `output` because they are part of the successful `result` object
   in the Nethermind JSONRPC response.  They still need `input`, however.
+  The changeset will be fixed by `validate_call_error_or_result`, therefore the changeset is still valid.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -253,11 +267,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   }
       ...> )
       iex> changeset.valid?
-      false
-      iex> changeset.errors
-      [
-        output: {"can't be present for failed call", []}
-      ]
+      true
 
   Likewise, successful `:call`s require `input`, `gas_used` and `output` to be set.
 
@@ -290,6 +300,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   For failed `:create`, `created_contract_code`, `created_contract_address_hash`, and `gas_used` are not allowed to be
   set because they come from `result` object, which shouldn't be returned from Nethermind.
+  The changeset will be fixed by `validate_create_error_or_result`, therefore the changeset is still valid.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -313,13 +324,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   }
       iex> )
       iex> changeset.valid?
-      false
-      iex> changeset.errors
-      [
-        gas_used: {"can't be present for failed create", []},
-        created_contract_address_hash: {"can't be present for failed create", []},
-        created_contract_code: {"can't be present for failed create", []}
-      ]
+      true
 
   For successful `:create`,  `created_contract_code`, `created_contract_address_hash`, and `gas_used` are required.
 
@@ -417,9 +422,10 @@ defmodule Explorer.Chain.InternalTransaction do
     changeset
     |> cast(attrs, @call_allowed_fields)
     |> validate_required(@call_required_fields)
+    # TODO consider removing
     |> validate_call_error_or_result()
     |> check_constraint(:call_type, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
-    |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
+    |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_input)
     |> foreign_key_constraint(:transaction_hash)
     |> unique_constraint(:index)
   end
@@ -432,6 +438,7 @@ defmodule Explorer.Chain.InternalTransaction do
     changeset
     |> cast(attrs, @create_allowed_fields)
     |> validate_required(@create_required_fields)
+    # TODO consider removing
     |> validate_create_error_or_result()
     |> check_constraint(:init, message: ~S|can't be blank when type is 'create'|, name: :create_has_init)
     |> foreign_key_constraint(:transaction_hash)
@@ -478,8 +485,14 @@ defmodule Explorer.Chain.InternalTransaction do
   # Validates that :call `type` changeset either has an `error` or both `gas_used` and `output`
   defp validate_call_error_or_result(changeset) do
     case get_field(changeset, :error) do
-      nil -> validate_required(changeset, [:gas_used, :output], message: "can't be blank for successful call")
-      _ -> validate_disallowed(changeset, [:output], message: "can't be present for failed call")
+      nil ->
+        validate_required(changeset, [:gas_used, :output], message: "can't be blank for successful call")
+
+      _ ->
+        changeset
+        |> delete_change(:gas_used)
+        |> delete_change(:output)
+        |> validate_disallowed([:output], message: "can't be present for failed call")
     end
   end
 
@@ -489,8 +502,15 @@ defmodule Explorer.Chain.InternalTransaction do
   # `:created_contract_address_hash`
   defp validate_create_error_or_result(changeset) do
     case get_field(changeset, :error) do
-      nil -> validate_required(changeset, @create_success_fields, message: "can't be blank for successful create")
-      _ -> validate_disallowed(changeset, @create_success_fields, message: "can't be present for failed create")
+      nil ->
+        validate_required(changeset, @create_success_fields, message: "can't be blank for successful create")
+
+      _ ->
+        changeset
+        |> delete_change(:created_contract_code)
+        |> delete_change(:created_contract_address_hash)
+        |> delete_change(:gas_used)
+        |> validate_disallowed(@create_success_fields, message: "can't be present for failed create")
     end
   end
 
@@ -556,134 +576,486 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
-  def where_block_number_is_not_null(query) do
-    where(query, [t], not is_nil(t.block_number))
-  end
-
   @doc """
   Filters out internal_transactions of blocks that are flagged as needing fetching
   of internal_transactions
   """
   def where_nonpending_block(query \\ nil) do
-    (query || __MODULE__)
-    |> join(:left, [it], pending in assoc(it, :pending_block), as: :pending)
-    |> where([it, pending: pending], is_nil(pending.block_hash))
+    estimated_pbo_count = CacheCountersHelper.estimated_count_from("pending_block_operations") || 0
+
+    # NOT EXISTS query practically performs better on smaller tables
+    # while the indexed LEFT JOIN IS NULL query is better for larger tables
+    # The estimated count is used as a heuristic to decide which query to use
+    if estimated_pbo_count < 1_000 do
+      (query || __MODULE__)
+      |> where(
+        [it],
+        fragment("NOT EXISTS (SELECT 1 FROM pending_block_operations WHERE block_hash = ?)", it.block_hash)
+      )
+    else
+      (query || __MODULE__)
+      |> where(
+        [it],
+        fragment(
+          "(SELECT block_hash FROM pending_block_operations WHERE block_hash = ? LIMIT 1) IS NULL",
+          it.block_hash
+        )
+      )
+    end
   end
 
-  def internal_transactions_to_raw(internal_transactions) when is_list(internal_transactions) do
+  @doc """
+  `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`.
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest `{index}`). Results will be the internal transactions older than
+      the `index` that is passed.
+
+  """
+  @spec all_transaction_to_internal_transactions(Hash.Full.t(), [
+          Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
+        ]) :: [
+          __MODULE__.t()
+        ]
+  def all_transaction_to_internal_transactions(hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    __MODULE__
+    |> for_parent_transaction(hash)
+    |> Chain.join_associations(necessity_by_association)
+    |> where_nonpending_block()
+    |> page_internal_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([internal_transaction], asc: internal_transaction.index)
+    |> Chain.select_repo(options).all()
+  end
+
+  @spec transaction_to_internal_transactions(Hash.Full.t(), [
+          Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
+        ]) ::
+          [
+            __MODULE__.t()
+          ]
+  def transaction_to_internal_transactions(hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    __MODULE__
+    |> for_parent_transaction(hash)
+    |> Chain.join_associations(necessity_by_association)
+    |> where_transaction_has_multiple_internal_transactions()
+    |> where_is_different_from_parent_transaction()
+    |> where_nonpending_block()
+    |> page_internal_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([internal_transaction], asc: internal_transaction.index)
+    |> preload(:block)
+    |> Chain.select_repo(options).all()
+  end
+
+  @spec block_to_internal_transactions(Hash.Full.t(), [
+          Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
+        ]) ::
+          [
+            __MODULE__.t()
+          ]
+  def block_to_internal_transactions(hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    type_filter = Keyword.get(options, :type)
+    call_type_filter = Keyword.get(options, :call_type)
+
+    __MODULE__
+    |> where([internal_transaction], internal_transaction.block_hash == ^hash)
+    |> Chain.join_associations(necessity_by_association)
+    |> where_is_different_from_parent_transaction()
+    |> where_nonpending_block()
+    |> page_block_internal_transaction(paging_options)
+    |> filter_by_type(type_filter, call_type_filter)
+    |> filter_by_call_type(call_type_filter)
+    |> limit(^paging_options.page_size)
+    |> order_by([internal_transaction], asc: internal_transaction.block_index)
+    |> Chain.select_repo(options).all()
+  end
+
+  @doc """
+  `t:Explorer.Chain.InternalTransaction/0`s from the address with the given `hash`.
+
+  This function excludes any internal transactions in the results where the
+  internal transaction has no siblings within the parent transaction.
+
+  ## Options
+
+    * `:direction` - if specified, will filter internal transactions by address type. If `:to` is specified, only
+      internal transactions where the "to" address matches will be returned. Likewise, if `:from` is specified, only
+      internal transactions where the "from" address matches will be returned. If `:direction` is omitted, internal
+      transactions either to or from the address will be returned.
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`. If an association is
+      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the page `entries`.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest `{block_number, transaction_index, index}`) and. Results will be the internal
+      transactions older than the `block_number`, `transaction index`, and `index` that are passed.
+
+  """
+  @spec address_to_internal_transactions(Hash.Address.t(), [paging_options | Chain.necessity_by_association_option()]) ::
+          [
+            __MODULE__.t()
+          ]
+  def address_to_internal_transactions(hash, options \\ []) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    direction = Keyword.get(options, :direction)
+
+    from_block = Chain.from_block(options)
+    to_block = Chain.to_block(options)
+
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    case paging_options do
+      %PagingOptions{key: {0, 0, 0}} ->
+        []
+
+      _ ->
+        if direction == nil || direction == "" do
+          query_to_address_hash_wrapped =
+            __MODULE__
+            |> where_nonpending_block()
+            |> where_address_fields_match(hash, :to_address_hash)
+            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+            |> where_is_different_from_parent_transaction()
+            |> common_where_limit_order(paging_options)
+            |> Chain.wrapped_union_subquery()
+
+          query_from_address_hash_wrapped =
+            __MODULE__
+            |> where_nonpending_block()
+            |> where_address_fields_match(hash, :from_address_hash)
+            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+            |> where_is_different_from_parent_transaction()
+            |> common_where_limit_order(paging_options)
+            |> Chain.wrapped_union_subquery()
+
+          query_created_contract_address_hash_wrapped =
+            __MODULE__
+            |> where_nonpending_block()
+            |> where_address_fields_match(hash, :created_contract_address_hash)
+            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+            |> where_is_different_from_parent_transaction()
+            |> common_where_limit_order(paging_options)
+            |> Chain.wrapped_union_subquery()
+
+          query_to_address_hash_wrapped
+          |> union_all(^query_from_address_hash_wrapped)
+          |> union_all(^query_created_contract_address_hash_wrapped)
+          |> Chain.wrapped_union_subquery()
+          |> common_where_and_order(paging_options)
+          |> preload(:block)
+          |> Chain.join_associations(necessity_by_association)
+          |> Chain.select_repo(options).all()
+          |> deduplicate_and_trim_internal_transactions(paging_options)
+        else
+          __MODULE__
+          |> where_nonpending_block()
+          |> where_address_fields_match(hash, direction)
+          |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+          |> where_is_different_from_parent_transaction()
+          |> common_where_limit_order(paging_options)
+          |> preload(:block)
+          |> Chain.join_associations(necessity_by_association)
+          |> Chain.select_repo(options).all()
+        end
+    end
+  end
+
+  @doc """
+  Deduplicates and trims internal transactions based on the page_size specified in paging options.
+  """
+  @spec deduplicate_and_trim_internal_transactions([__MODULE__.t()], PagingOptions.t()) :: [__MODULE__.t()]
+  def deduplicate_and_trim_internal_transactions(internal_transactions, paging_options) do
     internal_transactions
-    |> Enum.map(&internal_transaction_to_raw/1)
-    |> add_subtraces()
-  end
-
-  defp internal_transaction_to_raw(%{type: :call} = transaction) do
-    %{
-      call_type: call_type,
-      to_address_hash: to_address_hash,
-      from_address_hash: from_address_hash,
-      input: input,
-      gas: gas,
-      value: value,
-      trace_address: trace_address
-    } = transaction
-
-    action = %{
-      "callType" => call_type,
-      "to" => to_address_hash,
-      "from" => from_address_hash,
-      "input" => input,
-      "gas" => gas,
-      "value" => value
-    }
-
-    %{
-      "type" => "call",
-      "action" => Action.to_raw(action),
-      "traceAddress" => trace_address
-    }
-    |> put_raw_call_error_or_result(transaction)
-  end
-
-  defp internal_transaction_to_raw(%{type: type} = transaction) when type in [:create, :create2] do
-    %{
-      from_address_hash: from_address_hash,
-      gas: gas,
-      init: init,
-      trace_address: trace_address,
-      value: value
-    } = transaction
-
-    action = %{"from" => from_address_hash, "gas" => gas, "init" => init, "value" => value}
-
-    %{
-      "type" => Atom.to_string(type),
-      "action" => Action.to_raw(action),
-      "traceAddress" => trace_address
-    }
-    |> put_raw_create_error_or_result(transaction)
-  end
-
-  defp internal_transaction_to_raw(%{type: :selfdestruct} = transaction) do
-    %{
-      to_address_hash: to_address_hash,
-      from_address_hash: from_address_hash,
-      trace_address: trace_address,
-      value: value
-    } = transaction
-
-    action = %{
-      "address" => from_address_hash,
-      "balance" => value,
-      "refundAddress" => to_address_hash
-    }
-
-    %{
-      "type" => "suicide",
-      "action" => Action.to_raw(action),
-      "traceAddress" => trace_address
-    }
-  end
-
-  defp add_subtraces(traces) do
-    Enum.map(traces, fn trace ->
-      Map.put(trace, "subtraces", count_subtraces(trace, traces))
+    |> Enum.uniq_by(fn internal_transaction ->
+      {internal_transaction.transaction_hash, internal_transaction.index}
     end)
+    |> Enum.take(paging_options.page_size)
   end
 
-  defp count_subtraces(%{"traceAddress" => trace_address}, traces) do
-    Enum.count(traces, fn %{"traceAddress" => trace_address_candidate} ->
-      direct_descendant?(trace_address, trace_address_candidate)
-    end)
+  defp common_where_limit_order(query, paging_options) do
+    query
+    |> common_where_and_order(paging_options)
+    |> limit(^paging_options.page_size)
   end
 
-  defp direct_descendant?([], [_]), do: true
-
-  defp direct_descendant?([elem | remaining_left], [elem | remaining_right]),
-    do: direct_descendant?(remaining_left, remaining_right)
-
-  defp direct_descendant?(_, _), do: false
-
-  defp put_raw_call_error_or_result(raw, %{error: error}) when not is_nil(error) do
-    Map.put(raw, "error", error)
+  defp common_where_and_order(query, paging_options) do
+    query
+    |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
+    |> order_by(
+      [it],
+      desc: it.block_number,
+      desc: it.transaction_index,
+      desc: it.index
+    )
   end
 
-  defp put_raw_call_error_or_result(raw, %{gas_used: gas_used, output: output}) do
-    Map.put(raw, "result", Result.to_raw(%{"gasUsed" => gas_used, "output" => output}))
-  end
+  defp page_internal_transaction(_, _, _ \\ %{index_internal_transaction_desc_order: false})
 
-  defp put_raw_create_error_or_result(raw, %{error: error}) when not is_nil(error) do
-    Map.put(raw, "error", error)
-  end
+  defp page_internal_transaction(query, %PagingOptions{key: nil}, _), do: query
 
-  defp put_raw_create_error_or_result(raw, %{
-         created_contract_code: code,
-         created_contract_address_hash: created_contract_address_hash,
-         gas_used: gas_used
+  defp page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}, %{
+         index_internal_transaction_desc_order: desc_order
        }) do
-    Map.put(
-      raw,
-      "result",
-      Result.to_raw(%{"gasUsed" => gas_used, "code" => code, "address" => created_contract_address_hash})
+    hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, desc_order)
+  end
+
+  defp page_internal_transaction(query, %PagingOptions{key: {0}}, %{index_internal_transaction_desc_order: desc_order}) do
+    if desc_order do
+      query
+    else
+      where(query, [internal_transaction], internal_transaction.index > 0)
+    end
+  end
+
+  defp page_internal_transaction(query, %PagingOptions{key: {index}}, %{
+         index_internal_transaction_desc_order: desc_order
+       }) do
+    if desc_order do
+      where(query, [internal_transaction], internal_transaction.index < ^index)
+    else
+      where(query, [internal_transaction], internal_transaction.index > ^index)
+    end
+  end
+
+  defp hardcoded_where_for_page_internal_transaction(query, 0, 0, index, false),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number == 0 and
+          internal_transaction.transaction_index == 0 and internal_transaction.index > ^index
+      )
+
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, 0, index, false),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number or
+          (internal_transaction.block_number == ^block_number and
+             internal_transaction.transaction_index == 0 and internal_transaction.index > ^index)
+      )
+
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, false),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number or
+          (internal_transaction.block_number == ^block_number and
+             internal_transaction.transaction_index < ^transaction_index) or
+          (internal_transaction.block_number == ^block_number and
+             internal_transaction.transaction_index == ^transaction_index and internal_transaction.index > ^index)
+      )
+
+  defp hardcoded_where_for_page_internal_transaction(query, 0, 0, index, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number == 0 and
+          internal_transaction.transaction_index == 0 and internal_transaction.index < ^index
+      )
+
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, 0, 0, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number
+      )
+
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, 0, index, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number or
+          (internal_transaction.block_number == ^block_number and
+             internal_transaction.transaction_index == 0 and internal_transaction.index < ^index)
+      )
+
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, 0, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number or
+          (internal_transaction.block_number == ^block_number and
+             internal_transaction.transaction_index < ^transaction_index)
+      )
+
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number or
+          (internal_transaction.block_number == ^block_number and
+             internal_transaction.transaction_index < ^transaction_index) or
+          (internal_transaction.block_number == ^block_number and
+             internal_transaction.transaction_index == ^transaction_index and internal_transaction.index < ^index)
+      )
+
+  defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
+    from(
+      child in query,
+      inner_join: transaction in assoc(child, :transaction),
+      where: transaction.hash == ^hash,
+      where: child.block_hash == transaction.block_hash
+    )
+  end
+
+  # filter by `type` is automatically ignored if `call_type_filter` is not empty,
+  # as applying both filter simultaneously have no sense
+  defp filter_by_type(query, _, [_ | _]), do: query
+  defp filter_by_type(query, [], _), do: query
+
+  defp filter_by_type(query, types, _) do
+    query
+    |> where([internal_transaction], internal_transaction.type in ^types)
+  end
+
+  defp filter_by_call_type(query, []), do: query
+
+  defp filter_by_call_type(query, call_types) do
+    query
+    |> where([internal_transaction], internal_transaction.call_type in ^call_types)
+  end
+
+  @doc """
+  Ensures the following conditions are true:
+
+    * excludes internal transactions of type call with no siblings in the
+      transaction
+    * includes internal transactions of type create, reward, or selfdestruct
+      even when they are alone in the parent transaction
+
+  """
+  @spec where_transaction_has_multiple_internal_transactions(Ecto.Query.t()) :: Ecto.Query.t()
+  def where_transaction_has_multiple_internal_transactions(query) do
+    where(
+      query,
+      [internal_transaction, transaction],
+      internal_transaction.type != ^:call or
+        fragment(
+          """
+          EXISTS (SELECT sibling.*
+          FROM internal_transactions AS sibling
+          WHERE sibling.transaction_hash = ? AND sibling.index != ?
+          )
+          """,
+          transaction.hash,
+          internal_transaction.index
+        )
+    )
+  end
+
+  @doc """
+  Returns the ordered paginated list of internal transactions (consensus blocks only) from the DB with address, block preloads
+  """
+  @spec fetch([paging_options | api?]) :: []
+  def fetch(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    case paging_options do
+      %PagingOptions{key: {0, 0}} ->
+        []
+
+      _ ->
+        preloads =
+          DenormalizationHelper.extend_transaction_preload([
+            :block,
+            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
+          ])
+
+        __MODULE__
+        |> where_nonpending_block()
+        |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
+        |> where_internal_transactions_by_transaction_hash(Keyword.get(options, :transaction_hash))
+        |> where_consensus_transactions()
+        |> order_by([internal_transaction],
+          desc: internal_transaction.block_number,
+          desc: internal_transaction.transaction_index,
+          desc: internal_transaction.index
+        )
+        |> limit(^paging_options.page_size)
+        |> preload(^preloads)
+        |> Chain.select_repo(options).all()
+    end
+  end
+
+  defp page_block_internal_transaction(query, %PagingOptions{key: %{block_index: block_index}}) do
+    query
+    |> where([internal_transaction], internal_transaction.block_index > ^block_index)
+  end
+
+  defp page_block_internal_transaction(query, _), do: query
+
+  def internal_transaction_to_block_paging_options(%__MODULE__{block_index: block_index}) do
+    %{"block_index" => block_index}
+  end
+
+  defp where_consensus_transactions(query) do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      query
+      |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
+      # todo: this additional check causes performance issues at /api/v2/internal-transactions endpoint
+      # In the future we plan to extract reorg data into separate tables, so the main tables will no longer contain
+      # reorged data, and this check will no longer be necessary..
+      # |> where([internal_transaction, transaction], transaction.block_hash == internal_transaction.block_hash)
+      |> where([_internal_transaction, transaction], transaction.block_consensus == true)
+    else
+      query
+      |> join(:inner, [internal_transaction], block in assoc(internal_transaction, :block))
+      |> where([_internal_transaction, block], block.consensus == true)
+    end
+  end
+
+  defp where_internal_transactions_by_transaction_hash(query, nil), do: query
+
+  defp where_internal_transactions_by_transaction_hash(query, transaction_hash) do
+    query
+    |> where([internal_transaction], internal_transaction.transaction_hash == ^transaction_hash)
+  end
+
+  @doc """
+  Conditionally filters internal transactions to include or exclude zero-value transfers.
+
+  When `include_zero` is `true`, the query remains unchanged and will return all
+  internal transactions regardless of their value. When `include_zero` is `false`,
+  the query is modified to exclude internal transactions where the transferred
+  value is zero, returning only transactions with positive Wei values.
+
+  ## Parameters
+  - `query`: An Ecto query for internal transactions
+  - `include_zero`: Whether to include zero-value internal transactions
+
+  ## Returns
+  - Modified Ecto query that either includes or excludes zero-value transfers
+  """
+  @spec include_zero_value(Ecto.Query.t(), boolean()) :: Ecto.Query.t()
+  def include_zero_value(query, true), do: query
+
+  def include_zero_value(query, false) do
+    where(
+      query,
+      [internal_transaction],
+      (internal_transaction.type == :call and internal_transaction.value > ^0) or internal_transaction.type != :call
     )
   end
 end

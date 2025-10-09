@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.CurrencyHelper do
   """
 
   alias BlockScoutWeb.CldrHelper.Number
+  alias Explorer.Chain.CurrencyHelper
 
   @doc """
   Formats the given integer value to a currency format.
@@ -79,7 +80,7 @@ defmodule BlockScoutWeb.CurrencyHelper do
       format_according_to_decimals(value, Decimal.new(18))
     else
       value
-      |> divide_decimals(decimals)
+      |> CurrencyHelper.divide_decimals(decimals)
       |> thousands_separator()
     end
   end
@@ -90,12 +91,5 @@ defmodule BlockScoutWeb.CurrencyHelper do
     else
       Decimal.to_string(value, :normal)
     end
-  end
-
-  @spec divide_decimals(Decimal.t(), Decimal.t()) :: Decimal.t()
-  def divide_decimals(%{sign: sign, coef: coef, exp: exp}, decimals) do
-    sign
-    |> Decimal.new(coef, exp - Decimal.to_integer(decimals))
-    |> Decimal.normalize()
   end
 end

@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.MainPageController do
-  use Phoenix.Controller
+  use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.{Chain, PagingOptions}
   alias BlockScoutWeb.API.V2.{BlockView, OptimismView, TransactionView}
@@ -8,17 +9,29 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+  import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
+
+  case @chain_type do
+    :celo ->
+      @chain_type_transaction_necessity_by_association %{
+        [gas_token: reputation_association()] => :optional
+      }
+
+    _ ->
+      @chain_type_transaction_necessity_by_association %{}
+  end
 
   @transactions_options [
-    necessity_by_association: %{
-      :block => :required,
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional
-    },
+    necessity_by_association:
+      %{
+        :block => :required,
+        [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
+          :optional,
+        [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+        [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
+      }
+      |> Map.merge(@chain_type_transaction_necessity_by_association),
     paging_options: %PagingOptions{page_size: 6},
     api?: true
   ]
@@ -29,12 +42,16 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     blocks =
       [paging_options: %PagingOptions{page_size: 4}, api?: true]
       |> Chain.list_blocks()
-      |> Repo.replica().preload([[miner: :names], :transactions, :rewards])
+      |> Repo.replica().preload([
+        [miner: [:names, :smart_contract, proxy_implementations_association()]],
+        :transactions,
+        :rewards
+      ])
 
     conn
     |> put_status(200)
     |> put_view(BlockView)
-    |> render(:blocks, %{blocks: blocks |> maybe_preload_ens()})
+    |> render(:blocks, %{blocks: blocks |> maybe_preload_ens() |> maybe_preload_metadata()})
   end
 
   def optimism_deposits(conn, _params) do
@@ -56,7 +73,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     conn
     |> put_status(200)
     |> put_view(TransactionView)
-    |> render(:transactions, %{transactions: recent_transactions |> maybe_preload_ens()})
+    |> render(:transactions, %{transactions: recent_transactions |> maybe_preload_ens() |> maybe_preload_metadata()})
   end
 
   def watchlist_transactions(conn, _params) do
@@ -67,7 +84,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:transactions_watchlist, %{
-        transactions: transactions |> maybe_preload_ens(),
+        transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
         watchlist_names: watchlist_names
       })
     end

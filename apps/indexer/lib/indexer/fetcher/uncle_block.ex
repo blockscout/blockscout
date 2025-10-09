@@ -34,13 +34,16 @@ defmodule Indexer.Fetcher.UncleBlock do
   Asynchronously fetches `t:Explorer.Chain.Block.t/0` for the given `nephew_hash` and `index`
   and updates `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` `block_fetched_at`.
   """
-  @spec async_fetch_blocks([%{required(:nephew_hash) => Hash.Full.t(), required(:index) => non_neg_integer()}]) :: :ok
-  def async_fetch_blocks(relations) when is_list(relations) do
+  @spec async_fetch_blocks(
+          [%{required(:nephew_hash) => Hash.Full.t(), required(:index) => non_neg_integer()}],
+          boolean()
+        ) :: :ok
+  def async_fetch_blocks(relations, realtime? \\ false) when is_list(relations) do
     if UncleBlockSupervisor.disabled?() do
       :ok
     else
       entries = Enum.map(relations, &entry/1)
-      BufferedTask.buffer(__MODULE__, entries)
+      BufferedTask.buffer(__MODULE__, entries, realtime?)
     end
   end
 

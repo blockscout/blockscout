@@ -121,7 +121,7 @@ defmodule Explorer.Chain.Hash do
   """
   @spec to_integer(t()) :: pos_integer()
   def to_integer(%__MODULE__{byte_count: byte_count, bytes: bytes}) do
-    <<integer::big-integer-size(byte_count)-unit(8)>> = bytes
+    <<integer::big-integer-size(byte_count)-unit(@bits_per_byte)>> = bytes
 
     integer
   end
@@ -153,7 +153,7 @@ defmodule Explorer.Chain.Hash do
   def to_iodata(%__MODULE__{byte_count: byte_count} = hash) do
     integer = to_integer(hash)
     hexadecimal_digit_count = byte_count_to_hexadecimal_digit_count(byte_count)
-    unprefixed = :io_lib.format('~#{hexadecimal_digit_count}.16.0b', [integer])
+    unprefixed = :io_lib.format(~c"~#{hexadecimal_digit_count}.16.0b", [integer])
 
     ["0x", unprefixed]
   end

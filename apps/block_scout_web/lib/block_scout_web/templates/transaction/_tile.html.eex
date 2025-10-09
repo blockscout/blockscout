@@ -1,13 +1,13 @@
 <% status = transaction_status(@transaction) %>
-<% error_in_internal_tx = @transaction.has_error_in_internal_txs %>
+<% error_in_internal_transaction = @transaction.has_error_in_internal_transactions %>
 <% current_user = AuthController.current_user(@conn) %>
-<% tx_tags = BlockScoutWeb.Models.GetTransactionTags.get_transaction_with_addresses_tags(@transaction, current_user) %>
+<% transaction_tags = BlockScoutWeb.Models.GetTransactionTags.get_transaction_with_addresses_tags(@transaction, current_user) %>
 <div class="tile tile-type-<%= type_suffix(@transaction) %> fade-in <%= status_class(@transaction) %>" data-test="<%= type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
   <div class="row tile-body" data-selector="token-transfers-toggle" data-test="chain_transaction">
     <!-- Color Block -->
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
       <div>
-        <%= if error_in_internal_tx do %>
+        <%= if error_in_internal_transaction do %>
           <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html", text: gettext("Error in internal transactions"), additional_classes: ["color-inherit"] %>
         <% end %>
         <span class="tile-label" data-test="transaction_type">
@@ -33,10 +33,10 @@
         <%= if method_name do %>
           <%= render BlockScoutWeb.FormView, "_tag.html", text: method_name, additional_classes: ["method", "ml-1"] %>
         <% end %>
-        <%= if tx_tags.personal_tx_tag && tx_tags.personal_tx_tag.name !== :error do %>
-          <%= render BlockScoutWeb.FormView, "_tag.html", text: tx_tags.personal_tx_tag.name, additional_classes: [tag_name_to_label(tx_tags.personal_tx_tag.name), "ml-1"] %>
+        <%= if transaction_tags.personal_transaction_tag && transaction_tags.personal_transaction_tag.name !== :error do %>
+          <%= render BlockScoutWeb.FormView, "_tag.html", text: transaction_tags.personal_transaction_tag.name, additional_classes: [tag_name_to_label(transaction_tags.personal_transaction_tag.name), "ml-1"] %>
         <% end %>
-        <%= render BlockScoutWeb.AddressView, "_labels.html", tags: tx_tags %>
+        <%= render BlockScoutWeb.AddressView, "_labels.html", tags: transaction_tags %>
       </div>
       </span>
       <span>

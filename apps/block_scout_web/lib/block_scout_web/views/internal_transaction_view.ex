@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.InternalTransactionView do
 
   alias Explorer.Chain.InternalTransaction
 
-  import BlockScoutWeb.Gettext
+  use Gettext, backend: BlockScoutWeb.Gettext
 
   @doc """
   Returns the formatted string for the type of the internal transaction.
@@ -22,6 +22,7 @@ defmodule BlockScoutWeb.InternalTransactionView do
   def type(%InternalTransaction{type: :call, call_type: :callcode}), do: gettext("Call Code")
   def type(%InternalTransaction{type: :call, call_type: :delegatecall}), do: gettext("Delegate Call")
   def type(%InternalTransaction{type: :call, call_type: :staticcall}), do: gettext("Static Call")
+  def type(%InternalTransaction{type: :call, call_type: :invalid}), do: gettext("Invalid")
   def type(%InternalTransaction{type: :create}), do: gettext("Create")
   def type(%InternalTransaction{type: :create2}), do: gettext("Create2")
   def type(%InternalTransaction{type: :selfdestruct}), do: gettext("Self-Destruct")

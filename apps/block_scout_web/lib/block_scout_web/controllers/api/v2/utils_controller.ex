@@ -18,9 +18,14 @@ defmodule BlockScoutWeb.API.V2.UtilsController do
          address_hash <- params["address_hash"] && Chain.string_to_address_hash(params["address_hash"]),
          {:format, true} <- {:format, match?({:ok, _hash}, address_hash) || is_nil(address_hash)} do
       smart_contract =
-        if address_hash, do: SmartContract.address_hash_to_smart_contract(elem(address_hash, 1), @api_true)
+        if address_hash do
+          {updated_smart_contract, _} =
+            SmartContract.address_hash_to_smart_contract_with_bytecode_twin(elem(address_hash, 1), @api_true)
 
-      {decoded_input, _abi_acc, _methods_acc} =
+          updated_smart_contract
+        end
+
+      decoded_input =
         Transaction.decoded_input_data(
           %Transaction{
             input: data,
@@ -29,7 +34,7 @@ defmodule BlockScoutWeb.API.V2.UtilsController do
           @api_true
         )
 
-      decoded_input_data = decoded_input |> TransactionView.format_decoded_input() |> TransactionView.decoded_input()
+      decoded_input_data = decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()
 
       conn
       |> json(%{result: decoded_input_data})

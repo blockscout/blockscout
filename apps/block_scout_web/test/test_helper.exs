@@ -22,7 +22,7 @@ Bureaucrat.start(
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter, Bureaucrat.Formatter])
 ExUnit.start()
 
-Mox.defmock(Explorer.ExchangeRates.Source.TestSource, for: Explorer.ExchangeRates.Source)
+Mox.defmock(Explorer.Market.Source.TestSource, for: Explorer.Market.Source)
 
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, :manual)
@@ -35,9 +35,12 @@ Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Beacon, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Stability, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.BridgedTokens, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Filecoin, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Mud, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.ShrunkInternalTransactions, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.EventNotifications, :manual)
 
-Absinthe.Test.prime(BlockScoutWeb.Schema)
+Absinthe.Test.prime(BlockScoutWeb.GraphQL.Schema)
 
 Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)
 
-Mox.defmock(BlockScoutWeb.TestCaptchaHelper, for: BlockScoutWeb.CaptchaHelper)
+Mox.defmock(Explorer.Mock.TeslaAdapter, for: Tesla.Adapter)

@@ -15,7 +15,7 @@
                   BlockScoutWeb.AddressView,
                   "_responsive_hash.html",
                   address: @token_transfer.from_address,
-                  contract: BlockScoutWeb.AddressView.contract?(@token_transfer.from_address),
+                  contract: Address.smart_contract?(@token_transfer.from_address),
                   use_custom_tooltip: false
                 ) %>
         <% end %>
@@ -25,7 +25,7 @@
                   BlockScoutWeb.AddressView,
                   "_responsive_hash.html",
                   address: @token_transfer.to_address,
-                  contract: BlockScoutWeb.AddressView.contract?(@token_transfer.to_address),
+                  contract: Address.smart_contract?(@token_transfer.to_address),
                   use_custom_tooltip: false
                 ) %>
         <% end %>

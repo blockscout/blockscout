@@ -7,7 +7,7 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
 
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.Hash
-  alias Explorer.ThirdPartyIntegrations.AirTable
+  alias Explorer.ThirdPartyIntegrations.AirTableAuditReport
 
   @max_reports_per_day_for_contract 5
 
@@ -39,7 +39,7 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
     waste_fields = association_fields ++ @local_fields
 
     chain =
-      Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host] <>
+      Helper.get_app_host() <>
         Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path]
 
     request |> Map.from_struct() |> Map.drop(waste_fields) |> Map.put(:chain, chain)
@@ -58,7 +58,9 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
     |> cast(attrs, @optional_fields ++ @required_fields)
     |> validate_required(@required_fields, message: "Required")
     |> validate_length(:submitter_email, max: @max_string_length)
-    |> validate_format(:submitter_email, ~r/^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i, message: "invalid email address")
+    |> validate_format(:submitter_email, ~r/^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i,
+      message: "invalid email address"
+    )
     |> validate_format(:submitter_name, ~r/[a-zA-Z ]+/i, message: "only letters are allowed")
     |> validate_length(:submitter_name, max: @max_string_length)
     |> validate_length(:project_name, max: @max_string_length)
@@ -106,7 +108,7 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> AirTable.submit()
+    |> AirTableAuditReport.submit()
     |> Repo.insert()
   end
 
