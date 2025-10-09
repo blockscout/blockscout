@@ -130,7 +130,7 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
     }
   }
 
-  @abis @abi |> Map.values() |> Enum.map(&Map.values/1) |> List.flatten()
+  @abis @abi |> Map.values() |> Enum.flat_map(&Map.values/1)
 
   @doc """
   Read Celo account data from core smart contracts.
@@ -250,11 +250,9 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account.Reader do
       }
     ]
 
-    abis = @abi |> Map.values() |> Enum.flat_map(&Map.values/1)
-
     requests
     |> read_contracts_with_retries(
-      abis,
+      @abis,
       json_rpc_named_arguments(),
       @repeated_request_max_retries
     )

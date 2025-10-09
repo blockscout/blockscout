@@ -48,7 +48,6 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
       attestations_fulfilled: get_addresses(logs, [Events.attestation_completed_event()], fn a -> a.fourth_topic end),
       attestations_requested:
         get_addresses(logs, [Events.attestation_issuer_selected_event()], fn a -> a.fourth_topic end),
-      # exchange_rates: get_rates(logs, oracle_address),
       wallets: get_wallets(logs)
     }
   end
@@ -165,13 +164,6 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
       Logger.error(fn -> "Unknown account event format: #{inspect(log)}" end)
       accounts
   end
-
-  # defp parse_rate_params(data) do
-  #   [timestamp, value] = decode_data(data, [{:uint, 256}, {:uint, 256}])
-
-  #   {value, Decimal.new("1000000000000000000000000"), timestamp}
-  # end
-
   defp parse_params(log, get_topic) do
     truncate_address_hash(get_topic.(log))
   end
