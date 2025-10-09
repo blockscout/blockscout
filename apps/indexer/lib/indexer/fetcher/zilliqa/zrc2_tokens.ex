@@ -9,14 +9,15 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   require Logger
 
   import Ecto.Query
+  import Explorer.Helper, only: [decode_data: 2]
 
-  alias Explorer.Repo
-  alias Explorer.Chain.{Block, Data, Hash, Log, TokenTransfer, Transaction}
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Block, Data, Hash, Log, SmartContract, TokenTransfer, Transaction}
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Zilliqa.Zrc2.TokenAdapter
 
   @fetcher_name :zilliqa_zrc2_tokens
-  @counter_type "zilliqa_zrc2_tokens_fetcher_max_block_number"
+  @counter_type "zilliqa_zrc2_tokens_fetcher_last_block_number"
 
   @zrc2_transfer_success_event "0xa5901fdb53ef45260c18811f35461e0eda2b6133d807dabbfb65314dd4fc2fac"
   @zrc2_transfer_from_success_event "0x96acecb2152edcc0681aa27d354d55d64192e86489ff8d5d903d63ef266755a1"
@@ -71,7 +72,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       logs = read_block_logs(block_number_to_analyze)
       transactions = read_transfer_transactions(logs)
 
-      # fetch_zrc2_token_transfers_and_adapters(logs, transactions)
+      fetch_zrc2_token_transfers_and_adapters(logs, transactions)
       # move_zrc2_token_transfers_to_token_transfers()
 
       LastFetchedCounter.upsert(%{
@@ -94,7 +95,87 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     {:noreply, state}
   end
 
-  # def fetch_zrc2_token_transfers_and_adapters(logs, transactions)
+  def fetch_zrc2_token_transfers_and_adapters(logs, _transactions) do
+    zrc2_logs =
+      Enum.filter(
+        logs,
+        &(Hash.to_string(&1.first_topic) in [
+            @zrc2_transfer_success_event,
+            @zrc2_transfer_from_success_event,
+            @zrc2_minted_event,
+            @zrc2_burnt_event
+          ])
+      )
+
+    adapter_address_hash_by_zrc2_address_hash =
+      zrc2_logs
+      |> Enum.reject(&Map.has_key?(&1, :adapter_address_hash))
+      |> Enum.map(& &1.address_hash)
+      |> Enum.uniq()
+      |> TokenAdapter.adapter_address_hash_by_zrc2_address_hash()
+
+    {zrc2_token_transfers, token_transfers} =
+      zrc2_logs
+      |> Enum.reduce({[], []}, fn log, {zrc2_token_transfers_acc, token_transfers_acc} ->
+        first_topic = Hash.to_string(log.first_topic)
+        params = zrc2_event_params(log.data)
+
+        {from_address_hash, to_address_hash, amount} =
+          cond do
+            first_topic in [@zrc2_transfer_success_event, @zrc2_transfer_from_success_event] ->
+              {params.sender, params.recipient, Decimal.new(params.amount)}
+
+            first_topic == @zrc2_minted_event ->
+              {SmartContract.burn_address_hash_string(), params.recipient, Decimal.new(params.amount)}
+
+            first_topic == @zrc2_burnt_event ->
+              {params.burn_account, SmartContract.burn_address_hash_string(), Decimal.new(params.amount)}
+          end
+
+        adapter_address_hash =
+          case Map.fetch(log, :adapter_address_hash) do
+            {:ok, adapter_address_hash} -> adapter_address_hash
+            :error -> Map.get(adapter_address_hash_by_zrc2_address_hash, log.address_hash)
+          end
+
+        token_transfer = %{
+          transaction_hash: log.transaction_hash,
+          log_index: log.index,
+          from_address_hash: from_address_hash,
+          to_address_hash: to_address_hash,
+          amount: amount,
+          block_number: log.block_number,
+          block_hash: log.block_hash
+        }
+
+        if is_nil(adapter_address_hash) do
+          # the adapter address is unknown yet, so place the token transfer to the `zrc2_token_transfers` table
+          {[Map.put(token_transfer, :zrc2_address_hash, log.address_hash) | zrc2_token_transfers_acc],
+           token_transfers_acc}
+        else
+          # the adapter address is already known, so place the token transfer directly to the `token_transfers` table
+          {zrc2_token_transfers_acc,
+           [
+             token_transfer
+             |> Map.put(:token_contract_address_hash, adapter_address_hash)
+             |> Map.put(:token_type, "ZRC-2")
+             |> Map.put(:block_consensus, true)
+             | token_transfers_acc
+           ]}
+        end
+      end)
+
+    tokens = Enum.map(token_transfers, &%{contract_address_hash: &1.token_contract_address_hash, type: &1.token_type})
+
+    {:ok, _} =
+      Chain.import(%{
+        # todo: addresses: ...,
+        tokens: %{params: tokens},
+        token_transfers: %{params: token_transfers},
+        zrc2_token_transfers: %{params: zrc2_token_transfers},
+        timeout: :infinity
+      })
+  end
 
   @spec read_block_logs(non_neg_integer()) :: [
           %{
@@ -103,6 +184,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
             address_hash: Hash.t(),
             transaction_hash: Hash.t(),
             index: non_neg_integer(),
+            block_number: non_neg_integer(),
             block_hash: Hash.t(),
             adapter_address_hash: Hash.t() | nil
           }
@@ -130,6 +212,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
           address_hash: l.address_hash,
           transaction_hash: l.transaction_hash,
           index: l.index,
+          block_number: l.block_number,
           block_hash: l.block_hash,
           adapter_address_hash: a.adapter_address_hash
         }
@@ -138,11 +221,15 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     )
   end
 
-  @spec read_transfer_transactions([%{first_topic: Hash.t(), transaction_hash: Hash.t(), adapter_address_hash: Hash.t() | nil}]) :: [%{hash: Hash.t(), input: Data.t(), to_address_hash: Hash.t()}]
+  @spec read_transfer_transactions([
+          %{first_topic: Hash.t(), transaction_hash: Hash.t(), adapter_address_hash: Hash.t() | nil}
+        ]) :: [%{hash: Hash.t(), input: Data.t(), to_address_hash: Hash.t()}]
   defp read_transfer_transactions(logs) do
     transaction_hashes =
       logs
-      |> Enum.filter(&(Hash.to_string(&1.first_topic) == @zrc2_transfer_success_event and is_nil(&1.adapter_address_hash)))
+      |> Enum.filter(
+        &(Hash.to_string(&1.first_topic) == @zrc2_transfer_success_event and is_nil(&1.adapter_address_hash))
+      )
       |> Enum.map(& &1.transaction_hash)
 
     Repo.all(
@@ -164,211 +251,14 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     Repo.aggregate(Block.consensus_blocks_query(), :max, :number)
   end
 
-  # defp find_and_save_withdrawals(
-  #        scan_db,
-  #        message_passer,
-  #        block_start,
-  #        block_end,
-  #        json_rpc_named_arguments
-  #      ) do
-  #   message_passed_event = OptimismWithdrawal.message_passed_event()
-
-  #   withdrawals =
-  #     if scan_db do
-  #       query =
-  #         from(log in Log,
-  #           select: {log.second_topic, log.data, log.transaction_hash, log.block_number},
-  #           where:
-  #             log.first_topic == ^message_passed_event and log.address_hash == ^message_passer and
-  #               log.block_number >= ^block_start and log.block_number <= ^block_end
-  #         )
-
-  #       query
-  #       |> Repo.all(timeout: :infinity)
-  #       |> Enum.map(fn {second_topic, data, l2_transaction_hash, l2_block_number} ->
-  #         event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number)
-  #       end)
-  #     else
-  #       {:ok, result} =
-  #         Helper.get_logs(
-  #           block_start,
-  #           block_end,
-  #           message_passer,
-  #           [message_passed_event],
-  #           json_rpc_named_arguments,
-  #           0,
-  #           3
-  #         )
-
-  #       Enum.map(result, fn event ->
-  #         event_to_withdrawal(
-  #           Enum.at(event["topics"], 1),
-  #           event["data"],
-  #           event["transactionHash"],
-  #           event["blockNumber"]
-  #         )
-  #       end)
-  #     end
-
-  #   {:ok, _} =
-  #     Chain.import(%{
-  #       optimism_withdrawals: %{params: withdrawals},
-  #       timeout: :infinity
-  #     })
-
-  #   Enum.count(withdrawals)
-  # end
-
-  # defp fill_block_range(
-  #        l2_block_start,
-  #        l2_block_end,
-  #        message_passer,
-  #        json_rpc_named_arguments,
-  #        eth_get_logs_range_size,
-  #        scan_db
-  #      ) do
-  #   chunks_number =
-  #     if scan_db do
-  #       1
-  #     else
-  #       ceil((l2_block_end - l2_block_start + 1) / eth_get_logs_range_size)
-  #     end
-
-  #   chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
-
-  #   Enum.reduce(chunk_range, 0, fn current_chunk, withdrawals_count_acc ->
-  #     chunk_start = l2_block_start + eth_get_logs_range_size * current_chunk
-
-  #     chunk_end =
-  #       if scan_db do
-  #         l2_block_end
-  #       else
-  #         min(chunk_start + eth_get_logs_range_size - 1, l2_block_end)
-  #       end
-
-  #     Helper.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, :L2)
-
-  #     withdrawals_count =
-  #       find_and_save_withdrawals(
-  #         scan_db,
-  #         message_passer,
-  #         chunk_start,
-  #         chunk_end,
-  #         json_rpc_named_arguments
-  #       )
-
-  #     Helper.log_blocks_chunk_handling(
-  #       chunk_start,
-  #       chunk_end,
-  #       l2_block_start,
-  #       l2_block_end,
-  #       "#{withdrawals_count} MessagePassed event(s)",
-  #       :L2
-  #     )
-
-  #     withdrawals_count_acc + withdrawals_count
-  #   end)
-  # end
-
-  # defp fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size) do
-  #   if start_block <= end_block do
-  #     fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, true)
-  #     fill_msg_nonce_gaps(start_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, false)
-  #     {last_l2_block_number, _, _} = get_last_l2_item()
-
-  #     fill_block_range(
-  #       max(start_block, last_l2_block_number),
-  #       end_block,
-  #       message_passer,
-  #       json_rpc_named_arguments,
-  #       eth_get_logs_range_size,
-  #       false
-  #     )
-
-  #     Optimism.set_last_block_hash_by_number(end_block, @counter_type, json_rpc_named_arguments)
-  #   end
-  # end
-
-  # defp fill_msg_nonce_gaps(
-  #        start_block_l2,
-  #        message_passer,
-  #        json_rpc_named_arguments,
-  #        eth_get_logs_range_size,
-  #        scan_db \\ true
-  #      ) do
-  #   nonce_min = Repo.aggregate(OptimismWithdrawal, :min, :msg_nonce)
-  #   nonce_max = Repo.aggregate(OptimismWithdrawal, :max, :msg_nonce)
-
-  #   with true <- !is_nil(nonce_min) and !is_nil(nonce_max),
-  #        starts = msg_nonce_gap_starts(nonce_max),
-  #        ends = msg_nonce_gap_ends(nonce_min),
-  #        min_block_l2 = l2_block_number_by_msg_nonce(nonce_min),
-  #        {new_starts, new_ends} =
-  #          if(start_block_l2 < min_block_l2,
-  #            do: {[start_block_l2 | starts], [min_block_l2 | ends]},
-  #            else: {starts, ends}
-  #          ),
-  #        true <- Enum.count(new_starts) == Enum.count(new_ends) do
-  #     new_starts
-  #     |> Enum.zip(new_ends)
-  #     |> Enum.each(fn {l2_block_start, l2_block_end} ->
-  #       withdrawals_count =
-  #         fill_block_range(
-  #           l2_block_start,
-  #           l2_block_end,
-  #           message_passer,
-  #           json_rpc_named_arguments,
-  #           eth_get_logs_range_size,
-  #           scan_db
-  #         )
-
-  #       if withdrawals_count > 0 do
-  #         log_fill_msg_nonce_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count)
-  #       end
-  #     end)
-
-  #     if scan_db do
-  #       fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, false)
-  #     end
-  #   end
-  # end
-
-  # # Determines the last saved L2 block number, the last saved transaction hash, and the transaction info for withdrawals.
-  # #
-  # # Utilized to start fetching from a correct block number after reorg has occurred.
-  # #
-  # # ## Parameters
-  # # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  # #                               Used to get transaction info by its hash from the RPC node.
-  # #                               Can be `nil` if the transaction info is not needed.
-  # #
-  # # ## Returns
-  # # - A tuple `{last_block_number, last_transaction_hash, last_transaction}` where
-  # #   `last_block_number` is the last block number found in the corresponding table (0 if not found),
-  # #   `last_transaction_hash` is the last transaction hash found in the corresponding table (nil if not found),
-  # #   `last_transaction` is the transaction info got from the RPC (nil if not found or not needed).
-  # # - A tuple `{:error, message}` in case the `eth_getTransactionByHash` RPC request failed.
-  # @spec get_last_l2_item(EthereumJSONRPC.json_rpc_named_arguments() | nil) ::
-  #         {non_neg_integer(), binary() | nil, map() | nil} | {:error, any()}
-  # defp get_last_l2_item(json_rpc_named_arguments \\ nil) do
-  #   Optimism.get_last_item(
-  #     :L2,
-  #     &OptimismWithdrawal.last_withdrawal_l2_block_number_query/0,
-  #     &OptimismWithdrawal.remove_withdrawals_query/1,
-  #     json_rpc_named_arguments,
-  #     @counter_type
-  #   )
-  # end
-
-  # defp log_fill_msg_nonce_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count) do
-  #   find_place = if scan_db, do: "in DB", else: "through RPC"
-
-  #   Logger.info(
-  #     "Filled gaps between L2 blocks #{l2_block_start} and #{l2_block_end}. #{withdrawals_count} event(s) were found #{find_place} and written to op_withdrawals table."
-  #   )
-  # end
-
-  # defp l2_block_number_by_msg_nonce(nonce) do
-  #   Repo.one(from(w in OptimismWithdrawal, select: w.l2_block_number, where: w.msg_nonce == ^nonce))
-  # end
+  @spec zrc2_event_params(Data.t()) :: [map()]
+  defp zrc2_event_params(log_data) do
+    log_data
+    |> decode_data([:string])
+    |> Enum.at(0)
+    |> Jason.decode!()
+    |> Map.get("params")
+    |> Enum.map(fn param -> {String.to_atom(param["vname"]), param["value"]} end)
+    |> Enum.into(%{})
+  end
 end

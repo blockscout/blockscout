@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenAdapter do
   use Explorer.Schema
 
   alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Repo
 
   @required_attrs ~w(zrc2_address_hash adapter_address_hash)a
 
@@ -45,5 +46,20 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenAdapter do
     |> foreign_key_constraint(:zrc2_address_hash)
     |> foreign_key_constraint(:adapter_address_hash)
     |> unique_constraint(:adapter_address_hash)
+  end
+
+  @spec adapter_address_hash_by_zrc2_address_hash([Hash.t()]) :: %{Hash.t() => Hash.t()}
+  def adapter_address_hash_by_zrc2_address_hash([]), do: %{}
+
+  def adapter_address_hash_by_zrc2_address_hash(zrc2_address_hashes) do
+    query =
+      from(a in __MODULE__,
+        select: {a.zrc2_address_hash, a.adapter_address_hash},
+        where: a.zrc2_address_hash in ^zrc2_address_hashes
+      )
+
+    query
+    |> Repo.all(timeout: :infinity)
+    |> Enum.into(%{})
   end
 end
