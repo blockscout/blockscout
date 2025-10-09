@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
   alias Explorer.Chain.{Address, Block, Transaction, PendingBlockOperation}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.{Chain, Repo}
   alias Explorer.Utility.MissingBlockRange
 
@@ -895,6 +896,64 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       }
 
       assert {:ok, [{0, _}, {1, _}]} = Blocks.process_blocks_consensus([new_block1_changes], Repo, opts)
+    end
+
+    test "does not trigger beacon deposit reorg handling on old blocks" do
+      Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: true)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: false)
+      end)
+
+      BlockNumber.set_max(100)
+
+      Process.register(self(), Indexer.Fetcher.Beacon.Deposit)
+
+      insert(:block, consensus: true, number: 0)
+      insert(:block, consensus: true, number: 1)
+      insert(:block, consensus: false, number: 2)
+
+      new_block0 = params_for(:block, miner_hash: insert(:address).hash, number: 0)
+      new_block1 = params_for(:block, miner_hash: insert(:address).hash, parent_hash: new_block0.hash, number: 1)
+
+      %Ecto.Changeset{valid?: true, changes: new_block1_changes} = Block.changeset(%Block{}, new_block1)
+
+      opts = %{
+        timeout: 60_000,
+        timestamps: %{updated_at: DateTime.utc_now()}
+      }
+
+      Blocks.process_blocks_consensus([new_block1_changes], Repo, opts)
+      refute_received {:"$gen_cast", {:lost_consensus, _}}
+    end
+
+    test "triggers beacon deposit reorg handling on fresh blocks" do
+      Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: true)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: false)
+      end)
+
+      BlockNumber.set_max(50)
+
+      Process.register(self(), Indexer.Fetcher.Beacon.Deposit)
+
+      insert(:block, consensus: true, number: 0)
+      insert(:block, consensus: true, number: 1)
+      insert(:block, consensus: false, number: 2)
+
+      new_block0 = params_for(:block, miner_hash: insert(:address).hash, number: 0)
+      new_block1 = params_for(:block, miner_hash: insert(:address).hash, parent_hash: new_block0.hash, number: 1)
+
+      %Ecto.Changeset{valid?: true, changes: new_block1_changes} = Block.changeset(%Block{}, new_block1)
+
+      opts = %{
+        timeout: 60_000,
+        timestamps: %{updated_at: DateTime.utc_now()}
+      }
+
+      Blocks.process_blocks_consensus([new_block1_changes], Repo, opts)
+      assert_received {:"$gen_cast", {:lost_consensus, _}}
     end
   end
 

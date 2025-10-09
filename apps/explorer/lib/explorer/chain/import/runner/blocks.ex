@@ -28,6 +28,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   }
 
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
@@ -551,8 +552,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       removed_consensus_blocks
       |> Enum.map(fn {number, _hash} -> number end)
 
-    if not Enum.empty?(removed_consensus_block_numbers) do
-      GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, removed_consensus_block_numbers |> Enum.min()})
+    maximum_block_number = BlockNumber.get_max()
+
+    minimum_recent_block_number =
+      removed_consensus_block_numbers
+      |> Enum.filter(fn n -> n >= maximum_block_number - 64 end)
+      |> Enum.min(fn -> nil end)
+
+    if minimum_recent_block_number do
+      GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, minimum_recent_block_number})
     end
 
     repo.update_all(
