@@ -164,6 +164,7 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
       Logger.error(fn -> "Unknown account event format: #{inspect(log)}" end)
       accounts
   end
+
   defp parse_params(log, get_topic) do
     truncate_address_hash(get_topic.(log))
   end
