@@ -87,9 +87,17 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
 
   @impl Stage
   def all_runners do
-    @runners_by_chain_type
-    |> Map.values()
-    |> Enum.concat()
+    chain_type_runners =
+      @runners_by_chain_type
+      |> Map.values()
+      |> Enum.concat()
+
+    chain_identity_runners =
+      @runners_by_chain_identity
+      |> Map.values()
+      |> Enum.concat()
+
+    chain_type_runners ++ chain_identity_runners
   end
 
   @impl Stage
