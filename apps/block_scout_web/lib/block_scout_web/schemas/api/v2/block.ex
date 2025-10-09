@@ -249,7 +249,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
   """
   @spec chain_type_fields(map()) :: map()
   def chain_type_fields(schema) do
-    case chain_type() do
+    chain_type()
+    |> case do
       :rsk ->
         schema
         |> Helper.extend_schema(
