@@ -1615,6 +1615,8 @@ config :nft_media_handler, Indexer.NFTMediaHandler.Backfiller,
 config :indexer, Indexer.Fetcher.Zilliqa.ScillaSmartContracts.Supervisor,
   disabled?: ConfigHelper.chain_type() != :zilliqa
 
+config :indexer, Indexer.Fetcher.Zilliqa.Zrc2Tokens.Supervisor, disabled?: ConfigHelper.chain_type() != :zilliqa
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
