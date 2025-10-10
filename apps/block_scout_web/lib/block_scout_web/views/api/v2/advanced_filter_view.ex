@@ -83,6 +83,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
 
         {opening_price, closing_price} = date_to_prices[DateTime.to_date(advanced_filter.timestamp)]
 
+        value = prepare_value(advanced_filter)
+
         [
           to_string(advanced_filter.hash),
           advanced_filter.type,
@@ -91,7 +93,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
           Address.checksum(advanced_filter.from_address_hash),
           Address.checksum(advanced_filter.to_address_hash),
           Address.checksum(advanced_filter.created_contract_address_hash),
-          decimal_to_string_xsd(advanced_filter.value),
+          value,
           if(advanced_filter.type != "coin_transfer",
             do: Address.checksum(advanced_filter.token_transfer.token.contract_address_hash),
             else: nil
@@ -111,6 +113,38 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
 
     Stream.concat([row_names], af_lists)
   end
+
+  defp prepare_value(
+         %{
+           type: type,
+           value: value,
+           token_transfer:
+             %{
+               token: token,
+               amount: amount
+             } = token_transfer
+         } = _advanced_filter
+       ) do
+    case type do
+      "coin_transfer" ->
+        value
+
+      "ERC-20" ->
+        if is_nil(token.decimals) or Decimal.equal?(token.decimals, 0) do
+          token_transfer.amount
+        else
+          Decimal.div(
+            amount,
+            Integer.pow(10, Decimal.to_integer(token.decimals))
+          )
+        end
+
+      _ ->
+        Enum.count(token_transfer.token_ids)
+    end
+  end
+
+  defp prepare_value(advanced_filter), do: advanced_filter.value
 
   defp prepare_advanced_filter(advanced_filter, decoded_input) do
     %{
