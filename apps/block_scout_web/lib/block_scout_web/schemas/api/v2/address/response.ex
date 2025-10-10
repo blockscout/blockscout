@@ -38,8 +38,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
           nonvoting_locked_celo: %Schema{type: :string, nullable: false},
           locked_celo: %Schema{type: :string, nullable: false},
           vote_signer_address: %Schema{allOf: [Address], nullable: true},
-          validator_signer_address: %Schema{allOf: [Address], nullable: false},
-          attestation_signer_address: %Schema{allOf: [Address], nullable: false}
+          validator_signer_address: %Schema{allOf: [Address], nullable: true},
+          attestation_signer_address: %Schema{allOf: [Address], nullable: true}
         },
         required: [
           :type,
@@ -56,7 +56,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
           name: "Celo Validator",
           metadata_url: "https://example.com/metadata",
           nonvoting_locked_celo: "1000000000000000000",
-          locked_celo: "2000000000000000000"
+          locked_celo: "2000000000000000000",
+          vote_signer_address: nil,
+          validator_signer_address: nil,
+          attestation_signer_address: nil
         }
       }
     },
