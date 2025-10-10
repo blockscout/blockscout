@@ -5,6 +5,20 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactionsTest do
   alias Explorer.Migrator.{MigrationStatus, ReindexDuplicatedInternalTransactions}
   alias Explorer.Repo
 
+  setup_all do
+    opts = Application.get_env(:explorer, Explorer.Migrator.ReindexDuplicatedInternalTransactions)
+
+    Application.put_env(:explorer, Explorer.Migrator.ReindexDuplicatedInternalTransactions,
+      batch_size: 1,
+      concurrency: 1,
+      timeout: 0
+    )
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.Migrator.ReindexDuplicatedInternalTransactions, opts)
+    end)
+  end
+
   test "Reindex duplicated internal transactions" do
     transaction_from_invalid_block_1 =
       :transaction
@@ -57,7 +71,7 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactionsTest do
         :internal_transaction,
         transaction: transaction_from_invalid_block_2,
         index: index - 10,
-        block_number: nil,
+        block_number: transaction_from_invalid_block_2.block_number,
         transaction_index: transaction_from_invalid_block_2.index,
         block_hash: transaction_from_invalid_block_2.block_hash,
         block_index: index
