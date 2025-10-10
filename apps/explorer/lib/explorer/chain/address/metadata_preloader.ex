@@ -11,6 +11,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     Beacon.Deposit,
     Block,
     InternalTransaction,
+    InternalTransactionArchive,
     Log,
     Token.Instance,
     TokenTransfer,
@@ -165,6 +166,13 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     [to_string(to_address_hash), to_string(from_address_hash)]
   end
 
+  defp item_to_address_hash_strings(%InternalTransactionArchive{
+         to_address_hash: to_address_hash,
+         from_address_hash: from_address_hash
+       }) do
+    [to_string(to_address_hash), to_string(from_address_hash)]
+  end
+
   defp item_to_address_hash_strings(%Log{address_hash: address_hash}) do
     [to_string(address_hash)]
   end
@@ -261,6 +269,24 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
          field_to_put_info
        ) do
     %InternalTransaction{
+      transaction
+      | to_address: alter_address(transaction.to_address, to_address_hash, names, field_to_put_info),
+        created_contract_address:
+          alter_address(transaction.created_contract_address, created_contract_address_hash, names, field_to_put_info),
+        from_address: alter_address(transaction.from_address, from_address_hash, names, field_to_put_info)
+    }
+  end
+
+  defp put_meta_to_item(
+         %InternalTransactionArchive{
+           to_address_hash: to_address_hash,
+           created_contract_address_hash: created_contract_address_hash,
+           from_address_hash: from_address_hash
+         } = transaction,
+         names,
+         field_to_put_info
+       ) do
+    %InternalTransactionArchive{
       transaction
       | to_address: alter_address(transaction.to_address, to_address_hash, names, field_to_put_info),
         created_contract_address:

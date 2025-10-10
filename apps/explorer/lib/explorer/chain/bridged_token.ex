@@ -12,6 +12,7 @@ defmodule Explorer.Chain.BridgedToken do
     only: [
       from: 2,
       limit: 2,
+      union_all: 2,
       where: 2
     ]
 
@@ -25,6 +26,7 @@ defmodule Explorer.Chain.BridgedToken do
     BridgedToken,
     Hash,
     InternalTransaction,
+    InternalTransactionArchive,
     Search,
     Token,
     Transaction
@@ -230,30 +232,38 @@ defmodule Explorer.Chain.BridgedToken do
           where: t.created_contract_address_hash == ^token_address_hash
         )
 
-      created_from_transaction =
+      created_from_transaction? =
         created_from_transaction_query
-        |> Repo.all()
-        |> Enum.count() > 0
+        |> Repo.exists?()
 
-      created_from_internal_transaction_query =
+      realtime_created_from_internal_transaction_query =
         from(
           it in InternalTransaction,
           where: it.created_contract_address_hash == ^token_address_hash
         )
 
-      created_from_internal_transaction =
+      archival_created_from_internal_transaction_query =
+        from(
+          it in InternalTransactionArchive,
+          where: it.created_contract_address_hash == ^token_address_hash
+        )
+
+      created_from_internal_transaction_query =
+        realtime_created_from_internal_transaction_query
+        |> union_all(^archival_created_from_internal_transaction_query)
+
+      created_from_internal_transaction? =
         created_from_internal_transaction_query
-        |> Repo.all()
-        |> Enum.count() > 0
+        |> Repo.exists?()
 
       cond do
-        created_from_transaction ->
+        created_from_transaction? ->
           set_token_bridged_status(token_address_hash, false)
 
-        created_from_internal_transaction && !created_from_internal_transaction_success ->
+        created_from_internal_transaction? && !created_from_internal_transaction_success ->
           set_token_bridged_status(token_address_hash, false)
 
-        created_from_internal_transaction && created_from_internal_transaction_success ->
+        created_from_internal_transaction? && created_from_internal_transaction_success ->
           proceed_with_set_omni_status(token_address_hash, created_from_internal_transaction_success)
 
         true ->
