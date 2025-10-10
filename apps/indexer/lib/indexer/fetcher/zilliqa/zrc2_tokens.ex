@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   alias Explorer.Chain.{Block, Data, Hash, Log, SmartContract, TokenTransfer, Transaction}
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Zilliqa.Zrc2.TokenAdapter
+  alias Indexer.Transform.Addresses
 
   @fetcher_name :zilliqa_zrc2_tokens
   @counter_type "zilliqa_zrc2_tokens_fetcher_last_block_number"
@@ -73,7 +74,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       transactions = read_transfer_transactions(logs)
 
       fetch_zrc2_token_transfers_and_adapters(logs, transactions)
-      # move_zrc2_token_transfers_to_token_transfers()
+      # todo: move_zrc2_token_transfers_to_token_transfers()
 
       LastFetchedCounter.upsert(%{
         counter_type: @counter_type,
@@ -95,7 +96,28 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     {:noreply, state}
   end
 
-  def fetch_zrc2_token_transfers_and_adapters(logs, _transactions) do
+  @spec fetch_zrc2_token_transfers_and_adapters(
+          [
+            %{
+              :first_topic => Hash.t(),
+              :data => Data.t(),
+              :address_hash => Hash.t(),
+              :transaction_hash => Hash.t(),
+              :index => non_neg_integer(),
+              :block_number => non_neg_integer(),
+              :block_hash => Hash.t(),
+              optional(:adapter_address_hash) => Hash.t() | nil
+            }
+          ],
+          [
+            %{
+              :hash => Hash.t(),
+              :input => Data.t(),
+              :to_address_hash => Hash.t()
+            }
+          ]
+        ) :: no_return()
+  def fetch_zrc2_token_transfers_and_adapters(logs, transactions) do
     zrc2_logs =
       Enum.filter(
         logs,
@@ -132,11 +154,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
               {params.burn_account, SmartContract.burn_address_hash_string(), Decimal.new(params.amount)}
           end
 
-        adapter_address_hash =
-          case Map.fetch(log, :adapter_address_hash) do
-            {:ok, adapter_address_hash} -> adapter_address_hash
-            :error -> Map.get(adapter_address_hash_by_zrc2_address_hash, log.address_hash)
-          end
+        adapter_address_hash = zrc2_log_adapter_address_hash(log, adapter_address_hash_by_zrc2_address_hash)
 
         token_transfer = %{
           transaction_hash: log.transaction_hash,
@@ -165,16 +183,79 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         end
       end)
 
+    addresses =
+      Addresses.extract_addresses(%{
+        token_transfers: token_transfers,
+        zrc2_token_transfers: zrc2_token_transfers
+      })
+
     tokens = Enum.map(token_transfers, &%{contract_address_hash: &1.token_contract_address_hash, type: &1.token_type})
 
     {:ok, _} =
       Chain.import(%{
-        # todo: addresses: ...,
+        addresses: %{params: addresses},
         tokens: %{params: tokens},
         token_transfers: %{params: token_transfers},
         zrc2_token_transfers: %{params: zrc2_token_transfers},
         timeout: :infinity
       })
+
+    transaction_by_hash =
+      transactions
+      |> Enum.map(&{&1.hash, &1})
+      |> Enum.into(%{})
+
+    zrc2_token_adapters =
+      zrc2_logs
+      |> Enum.filter(&(Hash.to_string(&1.first_topic) == @zrc2_transfer_success_event))
+      |> Enum.filter(&is_nil(zrc2_log_adapter_address_hash(&1, adapter_address_hash_by_zrc2_address_hash)))
+      |> Enum.filter(fn log ->
+        transaction_input = transaction_by_hash[log.transaction_hash].input.bytes
+
+        method_id =
+          if byte_size(transaction_input) >= 4 do
+            <<method_id::binary-size(4), _::binary>> = transaction_input
+            "0x" <> Base.encode16(method_id, case: :lower)
+          end
+
+        method_id == TokenTransfer.transfer_function_signature()
+      end)
+      |> Enum.reduce([], fn log, acc ->
+        transaction_hash = log.transaction_hash
+        to_address_hash = transaction_by_hash[transaction_hash].to_address_hash
+
+        # are there any `Transfer` logs emitted by the `to_address_hash` in this transaction?
+        erc20_transfer_event_found =
+          logs
+          |> Enum.filter(&(&1.transaction_hash == transaction_hash))
+          |> Enum.any?(
+            &(Hash.to_string(&1.first_topic) == TokenTransfer.constant() and &1.address_hash == to_address_hash)
+          )
+
+        if erc20_transfer_event_found do
+          acc
+        else
+          [%{adapter_address_hash: to_address_hash, zrc2_address_hash: log.address_hash} | acc]
+        end
+      end)
+
+    {:ok, _} =
+      Chain.import(%{
+        addresses: %{params: Addresses.extract_addresses(%{zrc2_token_adapters: zrc2_token_adapters})},
+        zrc2_token_adapters: %{params: zrc2_token_adapters},
+        timeout: :infinity
+      })
+  end
+
+  @spec zrc2_log_adapter_address_hash(
+          %{optional(:adapter_address_hash) => Hash.t() | nil, :address_hash => Hash.t()},
+          %{Hash.t() => Hash.t()}
+        ) :: Hash.t() | nil
+  defp zrc2_log_adapter_address_hash(log, adapter_address_hash_by_zrc2_address_hash) do
+    case Map.fetch(log, :adapter_address_hash) do
+      {:ok, adapter_address_hash} -> adapter_address_hash
+      :error -> Map.get(adapter_address_hash_by_zrc2_address_hash, log.address_hash)
+    end
   end
 
   @spec read_block_logs(non_neg_integer()) :: [
@@ -257,7 +338,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     |> decode_data([:string])
     |> Enum.at(0)
     |> Jason.decode!()
-    |> Map.get("params")
+    |> Map.get("params", nil)
     |> Enum.map(fn param -> {String.to_atom(param["vname"]), param["value"]} end)
     |> Enum.into(%{})
   end
