@@ -105,8 +105,8 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
     batch = select_repo(options).one(query)
 
     if not is_nil(batch) do
-      l2_block_number_from = TransactionBatch.edge_l2_block_number(number, :min)
-      l2_block_number_to = TransactionBatch.edge_l2_block_number(number, :max)
+      l2_block_number_from = TransactionBatch.edge_l2_block_number(number, :min, options)
+      l2_block_number_to = TransactionBatch.edge_l2_block_number(number, :max, options)
       transactions_count = Transaction.transaction_count_for_block_range(l2_block_number_from..l2_block_number_to)
 
       {batch_data_container, blobs} =
@@ -145,7 +145,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
     - `l2_block_number_from`: Start L2 block number of the batch block range.
     - `l2_block_number_to`: End L2 block number of the batch block range.
     - `transactions_count`: The L2 transaction count included into the blocks of the range.
-    - `batch_data_container`: Designates where the batch info is stored: :in_blob4844, :in_celestia, or :in_calldata.
+    - `batch_data_container`: Designates where the batch info is stored: :in_blob4844, :in_celestia, :in_alt_da, or :in_calldata.
                               Can be `nil` if the container is unknown.
     - `batch`: Either an `Explorer.Chain.Optimism.FrameSequence` entry or a map with
                the corresponding fields.
@@ -158,7 +158,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
           non_neg_integer(),
           non_neg_integer(),
           non_neg_integer(),
-          :in_blob4844 | :in_celestia | :in_calldata | nil,
+          :in_blob4844 | :in_celestia | :in_alt_da | :in_calldata | nil,
           __MODULE__.t()
           | %{:l1_timestamp => DateTime.t(), :l1_transaction_hashes => list(), optional(any()) => any()}
         ) :: %{
@@ -168,7 +168,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
           :l2_end_block_number => non_neg_integer(),
           :transactions_count => non_neg_integer(),
           :l1_transaction_hashes => list(),
-          :batch_data_container => :in_blob4844 | :in_celestia | :in_calldata | nil
+          :batch_data_container => :in_blob4844 | :in_celestia | :in_alt_da | :in_calldata | nil
         }
   def prepare_base_info_for_batch(
         number,

@@ -62,8 +62,8 @@ defmodule Explorer.Chain.Import.Runner.Celo.Accounts do
     # Enforce Celo.Epoch.Account ShareLocks order (see docs: sharelock.md)
     ordered_changes_list =
       changes_list
-      |> Enum.sort_by(& &1.address_hash)
       |> Enum.uniq_by(& &1.address_hash)
+      |> Enum.sort_by(& &1.address_hash)
 
     {:ok, inserted} =
       Import.insert_changes_list(

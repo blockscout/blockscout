@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_number:
-        description: 'Release number (e.g., v9.1.0, latest)'
+        description: 'Release number (e.g., v9.1.0)'
         required: true
         type: string
 
@@ -31,7 +31,7 @@ jobs:
 
       - name: Set source and target tags
         run: |
-          RELEASE_NUMBER="${{ github.event.inputs.release_number || 'latest' }}"
+          RELEASE_NUMBER="${{ github.event.inputs.release_number }}"
           SOURCE_TAG="${RELEASE_NUMBER}"
           TARGET_TAG="${RELEASE_NUMBER}"
           echo "SOURCE_TAG=${SOURCE_TAG}" >> $GITHUB_ENV
@@ -54,7 +54,6 @@ jobs:
             "blockscout-zkevm"
             "blockscout-rsk"
             "blockscout-scroll"
-            "blockscout-suave"
             "blockscout-zetachain"
             "blockscout-zilliqa"
             "blockscout-zksync"
@@ -96,7 +95,6 @@ jobs:
             "blockscout-zkevm"
             "blockscout-rsk"
             "blockscout-scroll"
-            "blockscout-suave"
             "blockscout-zetachain"
             "blockscout-zilliqa"
             "blockscout-zksync"

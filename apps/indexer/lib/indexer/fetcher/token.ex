@@ -67,22 +67,22 @@ defmodule Indexer.Fetcher.Token do
   end
 
   defp catalog_token(token) do
-    token_params =
-      token
-      |> MetadataRetriever.get_functions_of()
-      |> (&if(&1 == %{}, do: &1, else: Map.put(&1, :cataloged, true))).()
+    token
+    |> MetadataRetriever.get_functions_of(set_skip_metadata: true)
+    |> case do
+      %{skip_metadata: false} ->
+        :ok
 
-    {:ok, _} = Token.update(token, token_params)
+      token_params ->
+        data_for_multichain = MultichainSearch.prepare_token_metadata_for_queue(token, token_params)
 
-    if Map.get(token_params, :cataloged) do
-      data_for_multichain = MultichainSearch.prepare_token_metadata_for_queue(token, token_params)
+        %{}
+        |> Map.put(token.contract_address_hash.bytes, data_for_multichain)
+        |> MultichainSearch.send_token_info_to_queue(:metadata)
 
-      %{}
-      |> Map.put(token.contract_address_hash.bytes, data_for_multichain)
-      |> MultichainSearch.send_token_info_to_queue(:metadata)
+        {:ok, _} = Token.update(token, Map.put(token_params, :cataloged, true))
+        :ok
     end
-
-    :ok
   end
 
   defp defaults do

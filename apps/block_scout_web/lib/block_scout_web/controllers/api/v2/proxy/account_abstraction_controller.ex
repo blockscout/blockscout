@@ -27,6 +27,8 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
           {:error | :format | :transaction_interpreter_enabled | non_neg_integer(), any()} | Plug.Conn.t()
   def summary(conn, %{"operation_hash_param" => operation_hash_string, "just_request_body" => "true"}) do
     with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_full_hash(operation_hash_string)},
+         {:transaction_interpreter_enabled, true} <-
+           {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
          {200, %{"hash" => _} = user_op} <- AccountAbstraction.get_user_ops_by_hash(operation_hash_string) do
       conn
       |> json(TransactionInterpretationService.get_user_op_request_body(user_op))

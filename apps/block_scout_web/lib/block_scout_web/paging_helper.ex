@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.PagingHelper do
   import Explorer.Chain, only: [string_to_full_hash: 1]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
+  alias BlockScoutWeb.Schemas.API.V2.General
   alias Explorer.Chain.InternalTransaction.CallType, as: InternalTransactionCallType
   alias Explorer.Chain.InternalTransaction.Type, as: InternalTransactionType
   alias Explorer.Chain.{SmartContract, Transaction}
@@ -15,27 +16,6 @@ defmodule BlockScoutWeb.PagingHelper do
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
-
-  case @chain_type do
-    :ethereum ->
-      @allowed_type_labels [
-        "coin_transfer",
-        "contract_call",
-        "contract_creation",
-        "token_transfer",
-        "token_creation",
-        "blob_transaction"
-      ]
-
-    _ ->
-      @allowed_type_labels [
-        "coin_transfer",
-        "contract_call",
-        "contract_creation",
-        "token_transfer",
-        "token_creation"
-      ]
-  end
 
   @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
   @allowed_nft_type_labels ["ERC-721", "ERC-1155", "ERC-404"]
@@ -128,7 +108,7 @@ defmodule BlockScoutWeb.PagingHelper do
   def chain_ids_filter_options(_), do: [chain_id: []]
 
   def type_filter_options(%{"type" => type}) do
-    [type: type |> parse_filter(@allowed_type_labels) |> Enum.map(&String.to_existing_atom/1)]
+    [type: type |> parse_filter(General.allowed_transaction_types()) |> Enum.map(&String.to_existing_atom/1)]
   end
 
   def type_filter_options(_params), do: [type: []]
@@ -178,7 +158,7 @@ defmodule BlockScoutWeb.PagingHelper do
     |> Enum.uniq()
   end
 
-  def select_block_type(%{"type" => type}) do
+  def select_block_type(%{type: type}) do
     case String.downcase(type) do
       "uncle" ->
         [
@@ -231,10 +211,12 @@ defmodule BlockScoutWeb.PagingHelper do
     params
     |> Map.drop([
       :address_hash_param,
+      :block_hash_or_number_param,
       :type,
       :apikey,
       "apikey",
       "block_hash_or_number",
+      "block_hash_or_number_param",
       "transaction_hash_param",
       "address_hash_param",
       "type",

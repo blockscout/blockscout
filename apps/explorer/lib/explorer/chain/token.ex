@@ -365,7 +365,7 @@ defmodule Explorer.Chain.Token do
     sorted_paginated_query =
       Token
       |> Chain.join_associations(necessity_by_association)
-      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
+      |> ExplorerHelper.maybe_hide_scam_addresses_with_select(:contract_address_hash, options)
       |> apply_filter(token_type)
       |> SortingHelper.apply_sorting(sorting, @default_sorting)
       |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)

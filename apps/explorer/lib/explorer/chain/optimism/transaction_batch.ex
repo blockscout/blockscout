@@ -20,7 +20,7 @@ defmodule Explorer.Chain.Optimism.TransactionBatch do
 
   alias Explorer.Chain.Block
   alias Explorer.Chain.Optimism.FrameSequence
-  alias Explorer.{PagingOptions, Repo}
+  alias Explorer.PagingOptions
 
   @required_attrs ~w(l2_block_number frame_sequence_id)a
 
@@ -61,30 +61,33 @@ defmodule Explorer.Chain.Optimism.TransactionBatch do
     ## Parameters
     - `id`: The ID of the frame sequence for which the edge block number must be returned.
     - `type`: Can be :min or :max depending on which block number needs to be returned.
+    - `options`: A keyword list of options that may include whether to use a replica database.
 
     ## Returns
     - The min/max block number or `nil` if the block range is not found.
   """
-  @spec edge_l2_block_number(non_neg_integer(), :min | :max) :: non_neg_integer() | nil
-  def edge_l2_block_number(id, type) when type == :min and is_integer(id) and id >= 0 do
+  @spec edge_l2_block_number(non_neg_integer(), :min | :max, list()) :: non_neg_integer() | nil
+  def edge_l2_block_number(id, type, options \\ [])
+
+  def edge_l2_block_number(id, type, options) when type == :min and is_integer(id) and id >= 0 do
     query =
       id
       |> edge_l2_block_number_query()
       |> order_by([tb], asc: tb.l2_block_number)
 
-    Repo.replica().one(query)
+    select_repo(options).one(query)
   end
 
-  def edge_l2_block_number(id, type) when type == :max and is_integer(id) and id >= 0 do
+  def edge_l2_block_number(id, type, options) when type == :max and is_integer(id) and id >= 0 do
     query =
       id
       |> edge_l2_block_number_query()
       |> order_by([tb], desc: tb.l2_block_number)
 
-    Repo.replica().one(query)
+    select_repo(options).one(query)
   end
 
-  def edge_l2_block_number(_id, _type), do: nil
+  def edge_l2_block_number(_id, _type, _options), do: nil
 
   defp edge_l2_block_number_query(id) do
     from(

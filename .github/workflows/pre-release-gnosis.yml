@@ -1,9 +1,12 @@
-name: Release for SUAVE
+name: Pre-release for Gnosis Chain
 
 on:
   workflow_dispatch:
-  release:
-    types: [published]
+    inputs:
+      number:
+        type: number
+        description: Number of pre-release alpha iteration
+        required: true
 
 permissions:
   contents: read
@@ -18,7 +21,7 @@ jobs:
     name: Push Docker image to GitHub Container Registry
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 9.1.0
+      RELEASE_VERSION: 9.1.1
     steps:
       - uses: actions/checkout@v5
       - name: Setup repo
@@ -30,35 +33,37 @@ jobs:
           docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
-      - name: Build and push Docker image for SUAVE (indexer + API)
+      - name: Build and push Docker image for Gnosis Chain (indexer + API)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-suave-private:latest, ghcr.io/blockscout/blockscout-suave-private:${{ env.RELEASE_VERSION }}
+          tags: ghcr.io/blockscout/blockscout-xdai-private:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=suave
+            BRIDGED_TOKENS_ENABLED=true
+            CHAIN_TYPE=ethereum
 
-      - name: Build and push Docker image for SUAVE (indexer)
+      - name: Build and push Docker image for Gnosis Chain (indexer)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ghcr.io/blockscout/blockscout-suave-private:${{ env.RELEASE_VERSION }}-indexer
+          tags: ghcr.io/blockscout/blockscout-xdai-private:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
             DISABLE_API=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=suave
+            BRIDGED_TOKENS_ENABLED=true
+            CHAIN_TYPE=ethereum

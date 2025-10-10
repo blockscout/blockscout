@@ -116,10 +116,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
         :implementations,
         :is_verified,
         :ens_domain_name,
-        :metadata,
-        :private_tags,
-        :watchlist_names,
-        :public_tags
+        :metadata
       ],
       additionalProperties: false
     }

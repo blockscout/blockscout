@@ -1455,19 +1455,23 @@ defmodule Explorer.Chain.SmartContract do
     # If no sorting options are provided, we sort by `:id` descending only. If
     # there are some sorting options supplied, we sort by `:hash` ascending as a
     # secondary key.
-    {sorting_options, default_sorting_options} =
+    {sorting_options, default_sorting_options, use_legacy_query?} =
       options
       |> Keyword.get(:sorting)
       |> case do
         nil ->
-          {[], [{:desc, :id, :smart_contract}]}
+          {[], [{:desc, :id, :smart_contract}], true}
 
         options ->
-          {options, [asc: :hash]}
+          {options, [asc: :hash], false}
       end
 
+    # We don't use alias so the mock of background_migrations_finished?/0 in
+    # tests is working properly
+    #
+    # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
     addresses_query =
-      if background_migrations_finished?() do
+      if Explorer.Chain.SmartContract.background_migrations_finished?() and not use_legacy_query? do
         verified_addresses_query(options)
       else
         # Legacy query approach - will be removed in future releases
@@ -1475,7 +1479,7 @@ defmodule Explorer.Chain.SmartContract do
       end
 
     addresses_query
-    |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses_with_select(:hash, options)
     |> SortingHelper.apply_sorting(sorting_options, default_sorting_options)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting_options)
     |> Chain.join_associations(necessity_by_association)

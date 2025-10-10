@@ -1,8 +1,10 @@
-if Application.compile_env(:explorer, :chain_type) !== :zksync do
-  defmodule Explorer.SmartContract.Solidity.VerifierTest do
-    use ExUnit.Case, async: true
-    use Explorer.DataCase
+defmodule Explorer.SmartContract.Solidity.VerifierTest do
+  use ExUnit.Case, async: true
+  use Explorer.DataCase
 
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  if @chain_type == :default do
     @moduletag timeout: :infinity
 
     doctest Explorer.SmartContract.Solidity.Verifier

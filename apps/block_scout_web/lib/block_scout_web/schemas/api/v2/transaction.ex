@@ -200,7 +200,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
               },
               required: [:nonce, :status, :sender_address_hash, :target_address_hash, :payload],
               additionalProperties: false
-            }
+            },
+            operator_fee: General.IntegerString
           }
         )
 

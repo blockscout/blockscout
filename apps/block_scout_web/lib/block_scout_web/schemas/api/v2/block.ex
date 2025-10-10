@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       batch_data_container: %Schema{
         type: :string,
         nullable: true,
-        enum: ["in_blob4844", "in_calldata", "in_celestia", "in_anytrust"]
+        enum: ["in_blob4844", "in_calldata", "in_celestia", "in_anytrust", "in_eigenda"]
       },
       status: %Schema{
         type: :string,
@@ -91,6 +91,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
     additionalProperties: false
   }
 
+  @doc """
+    Returns the Blob4844 schema.
+  """
+  @spec blob4844_schema() :: Schema.t()
+  def blob4844_schema, do: @blob4844_schema
+
   @celestia_schema %Schema{
     type: :object,
     nullable: false,
@@ -105,6 +111,23 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
     additionalProperties: false
   }
 
+  @alt_da_schema %Schema{
+    type: :object,
+    nullable: false,
+    properties: %{
+      commitment: %Schema{type: :string, nullable: true},
+      l1_transaction_hash: General.FullHashNullable,
+      l1_timestamp: General.TimestampNullable
+    },
+    required: [:commitment, :l1_transaction_hash, :l1_timestamp]
+  }
+
+  @doc """
+    Returns the Celestia schema.
+  """
+  @spec celestia_schema() :: Schema.t()
+  def celestia_schema, do: @celestia_schema
+
   @optimism_schema %Schema{
     type: :object,
     nullable: false,
@@ -112,8 +135,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       number: %Schema{type: :integer, nullable: true},
       l1_timestamp: General.TimestampNullable,
       l1_transaction_hashes: %Schema{type: :array, items: General.FullHash, nullable: false},
-      batch_data_container: %Schema{type: :string, nullable: false, enum: ["in_blob4844", "in_celestia", "in_calldata"]},
-      blobs: %Schema{type: :array, items: %Schema{anyOf: [@blob4844_schema, @celestia_schema]}, nullable: false}
+      batch_data_container: %Schema{
+        type: :string,
+        nullable: false,
+        enum: ["in_blob4844", "in_celestia", "in_alt_da", "in_calldata"]
+      },
+      blobs: %Schema{
+        type: :array,
+        items: %Schema{anyOf: [@blob4844_schema, @celestia_schema, @alt_da_schema]},
+        nullable: false
+      }
     },
     required: [:number, :l1_timestamp, :l1_transaction_hashes, :batch_data_container],
     additionalProperties: false
@@ -240,12 +271,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
         schema
         |> Helper.extend_schema(
           properties: %{
-            blob_transactions_count: %Schema{type: :integer, nullable: false},
+            blob_transactions_count: %Schema{type: :integer, minimum: 0, nullable: false},
             blob_gas_used: General.IntegerStringNullable,
             excess_blob_gas: General.IntegerStringNullable,
-            blob_gas_price: General.IntegerString,
+            blob_gas_price: General.IntegerStringNullable,
             burnt_blob_fees: General.IntegerString,
-            beacon_deposits_count: %Schema{type: :integer, nullable: true}
+            beacon_deposits_count: %Schema{type: :integer, minimum: 0, nullable: true}
           },
           required: [:blob_transactions_count, :blob_gas_used, :excess_blob_gas, :beacon_deposits_count]
         )
@@ -262,20 +293,77 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
   end
 end
 
-defmodule BlockScoutWeb.Schemas.API.V2.Block do
+defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
   @moduledoc """
-  This module defines the schema for the Block struct.
+  This module defines common schema fields for block.
   """
-  require OpenApiSpex
-
-  alias BlockScoutWeb.Schemas.API.V2.{Address, Block.ChainTypeCustomizations, General}
+  alias BlockScoutWeb.Schemas.API.V2.{Address, General}
   alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(
+  @required_fields [
+    :height,
+    :timestamp,
+    :transactions_count,
+    :internal_transactions_count,
+    :miner,
+    :size,
+    :hash,
+    :parent_hash,
+    :difficulty,
+    :total_difficulty,
+    :gas_used,
+    :gas_limit,
+    :nonce,
+    :base_fee_per_gas,
+    :burnt_fees,
+    :priority_fee,
+    :uncles_hashes,
+    :rewards,
+    :gas_target_percentage,
+    :gas_used_percentage,
+    :burnt_fees_percentage,
+    :type,
+    :transaction_fees,
+    :withdrawals_count,
+    :is_pending_update
+  ]
+
+  @rewards_schema %Schema{
+    type: :array,
+    items: %Schema{
+      type: :object,
+      properties: %{
+        address_hash: General.AddressHash,
+        reward: General.IntegerString,
+        type: %Schema{type: :string, nullable: false}
+      },
+      required: [:type, :reward],
+      additionalProperties: false
+    },
+    nullable: false
+  }
+
+  @doc """
+    Returns the common rewards schema for block.
+  """
+  @spec rewards_schema() :: Schema.t()
+  def rewards_schema, do: @rewards_schema
+
+  @doc """
+    Returns the list of required fields for the block schema.
+  """
+  @spec required_fields() :: [atom()]
+  def required_fields, do: @required_fields
+
+  @doc """
+    Returns the common schema for block.
+  """
+  @spec schema() :: map()
+  def schema do
     %{
       type: :object,
       properties: %{
-        height: %Schema{type: :integer, nullable: false},
+        height: %Schema{type: :integer, nullable: false, minimum: 0},
         timestamp: General.Timestamp,
         transactions_count: %Schema{type: :integer, nullable: false},
         internal_transactions_count: %Schema{type: :integer, nullable: true},
@@ -283,8 +371,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
         size: %Schema{type: :integer, nullable: false},
         hash: General.FullHash,
         parent_hash: General.FullHash,
-        difficulty: General.IntegerString,
-        total_difficulty: General.IntegerString,
+        difficulty: General.IntegerStringNullable,
+        total_difficulty: General.IntegerStringNullable,
         gas_used: General.IntegerString,
         gas_limit: General.IntegerString,
         nonce: General.HexStringNullable,
@@ -302,56 +390,31 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block do
           },
           nullable: false
         },
-        rewards: %Schema{
-          type: :array,
-          items: %Schema{
-            type: :object,
-            properties: %{
-              type: %Schema{type: :string, nullable: false},
-              reward: General.IntegerString
-            },
-            required: [:type, :reward],
-            additionalProperties: false
-          },
-          nullable: false
-        },
+        rewards: @rewards_schema,
         gas_target_percentage: %Schema{type: :number, format: :float, nullable: false},
         gas_used_percentage: %Schema{type: :number, format: :float, nullable: false},
         burnt_fees_percentage: %Schema{type: :number, format: :float, nullable: true},
         type: %Schema{type: :string, nullable: false, enum: ["block", "uncle", "reorg"]},
         transaction_fees: General.IntegerString,
-        withdrawals_count: %Schema{type: :integer, nullable: true},
+        withdrawals_count: %Schema{type: :integer, minimum: 0, nullable: true},
         is_pending_update: %Schema{type: :boolean, nullable: false}
       },
-      required: [
-        :height,
-        :timestamp,
-        :transactions_count,
-        :internal_transactions_count,
-        :miner,
-        :size,
-        :hash,
-        :parent_hash,
-        :difficulty,
-        :total_difficulty,
-        :gas_used,
-        :gas_limit,
-        :nonce,
-        :base_fee_per_gas,
-        :burnt_fees,
-        :priority_fee,
-        :uncles_hashes,
-        :rewards,
-        :gas_target_percentage,
-        :gas_used_percentage,
-        :burnt_fees_percentage,
-        :type,
-        :transaction_fees,
-        :withdrawals_count,
-        :is_pending_update
-      ],
+      required: required_fields(),
       additionalProperties: false
     }
+  end
+end
+
+defmodule BlockScoutWeb.Schemas.API.V2.Block do
+  @moduledoc """
+  This module defines the schema for the Block struct.
+  """
+  require OpenApiSpex
+
+  alias BlockScoutWeb.Schemas.API.V2.{Block.ChainTypeCustomizations, Block.Common}
+
+  OpenApiSpex.schema(
+    Common.schema()
     |> ChainTypeCustomizations.chain_type_fields()
   )
 end

@@ -65,8 +65,9 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
           paging_options: 1
         ]
 
+      # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
       bridged_tokens =
-        if BridgedToken.enabled?() do
+        if Explorer.Chain.BridgedToken.enabled?() do
           options =
             params
             |> paging_options()
@@ -74,7 +75,8 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
             |> Keyword.merge(tokens_sorting(params))
             |> Keyword.merge(@api_true)
 
-          "" |> BridgedToken.list_top_bridged_tokens(options)
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+          "" |> Explorer.Chain.BridgedToken.list_top_bridged_tokens(options)
         else
           []
         end

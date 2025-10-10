@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.NFTCollection do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.{General, Token, TokenInstanceInList}
-  alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -17,15 +16,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.NFTCollection do
         type: :array,
         items: TokenInstanceInList,
         nullable: false
-      },
-      reputation: %Schema{
-        type: :string,
-        enum: Reputation.enum_values(),
-        description: "Reputation of the token collection",
-        nullable: true
       }
     },
-    required: [:token, :amount, :token_instances, :reputation],
+    required: [:token, :amount, :token_instances],
     additionalProperties: false
   })
 end

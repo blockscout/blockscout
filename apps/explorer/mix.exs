@@ -24,7 +24,7 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "9.1.0",
+      version: "9.1.1",
       xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.InternalTransaction]]
     ]
   end
@@ -91,8 +91,7 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 1.1.0"},
-      {:phoenix_html, "== 3.3.4"},
-      {:poison, "~> 4.0.1"},
+      {:poison, "~> 5.0.0"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       {:prometheus, "~> 6.0", override: true},

@@ -17,7 +17,7 @@ on:
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
-  RELEASE_VERSION: 9.1.0
+  RELEASE_VERSION: 9.1.1
 
 jobs:
   matrix-builder:
@@ -31,9 +31,8 @@ jobs:
           echo "matrix=$(node -e '
 
             // Add/remove CI matrix chain types here
-            const defaultChainTypes = ["default"];
-
             const chainTypes = [
+              "default",
               "arbitrum",
               "blackfort",
               "celo",
@@ -51,12 +50,7 @@ jobs:
               "neon"
             ];
 
-            const extraChainTypes = ["suave"];
-
-            // Chain type matrix we use in master branch
-            const allChainTypes = [].concat(defaultChainTypes, chainTypes, extraChainTypes);
-
-            const matrix = { "chain-type": ${{ 'allChainTypes' }} };
+            const matrix = { "chain-type": ${{ 'chainTypes' }} };
             console.log(JSON.stringify(matrix));
           ')" >> $GITHUB_OUTPUT
 

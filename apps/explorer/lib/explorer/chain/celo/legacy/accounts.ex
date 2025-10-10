@@ -48,19 +48,9 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
       attestations_fulfilled: get_addresses(logs, [Events.attestation_completed_event()], fn a -> a.fourth_topic end),
       attestations_requested:
         get_addresses(logs, [Events.attestation_issuer_selected_event()], fn a -> a.fourth_topic end),
-      # exchange_rates: get_rates(logs, oracle_address),
       wallets: get_wallets(logs)
     }
   end
-
-  # defp get_rates(logs, oracle_address) do
-  #   logs
-  #   |> Enum.filter(fn log ->
-  #     log.address_hash == oracle_address &&
-  #       log.first_topic == Events.oracle_reported_event()
-  #   end)
-  #   |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
-  # end
 
   def get_names(logs) do
     logs
@@ -141,24 +131,6 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
       accounts
   end
 
-  # defp do_parse_rate(log, rates) do
-  #   {numerator, denominator, stamp} = parse_rate_params(log.data)
-  #   numerator = Decimal.new(numerator)
-  #   denominator = Decimal.new(denominator)
-
-  #   if Decimal.new(0) == denominator do
-  #     rates
-  #   else
-  #     rate = Decimal.to_float(Decimal.div(denominator, numerator))
-  #     res = %{token: truncate_address_hash(log.second_topic), rate: rate, stamp: stamp}
-  #     [res | rates]
-  #   end
-  # rescue
-  #   _ in [FunctionClauseError, MatchError] ->
-  #     Logger.error(fn -> "Unknown oracle event format: #{inspect(log)}" end)
-  #     rates
-  # end
-
   defp do_parse_name(log, names) do
     [name] = decode_data(log.data, [:string])
 
@@ -192,12 +164,6 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
       Logger.error(fn -> "Unknown account event format: #{inspect(log)}" end)
       accounts
   end
-
-  # defp parse_rate_params(data) do
-  #   [timestamp, value] = decode_data(data, [{:uint, 256}, {:uint, 256}])
-
-  #   {value, Decimal.new("1000000000000000000000000"), timestamp}
-  # end
 
   defp parse_params(log, get_topic) do
     truncate_address_hash(get_topic.(log))

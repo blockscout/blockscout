@@ -113,7 +113,7 @@ defmodule Indexer.Fetcher.TokenInstance.RealtimeTest do
         %{token_contract_address_hash: token.contract_address_hash, token_ids: [Decimal.new(777)]}
       ])
 
-      :timer.sleep(150)
+      :timer.sleep(250)
 
       [instance] = Repo.all(Instance)
 

@@ -2,10 +2,11 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   use BlockScoutWeb, :view
 
   import Ecto.Query, only: [from: 2]
+  import Explorer.Helper, only: [truncate_address_hash: 1, decode_data: 2]
 
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.{Block, Data, Hash, Transaction}
   alias Explorer.Chain.Optimism.{DisputeGame, FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
 
   @api_true [api?: true]
@@ -182,6 +183,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         conn: conn
       }) do
     respected_games = Withdrawal.respected_games(@api_true)
+    portal_contract_address_hash = Withdrawal.portal_contract_address()
 
     %{
       items:
@@ -213,6 +215,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
           {status, challenge_period_end} = Withdrawal.status(w, respected_games, @api_true)
 
+          {sender_address_hash, target_address_hash, msg_value, msg_gas_limit, msg_data} =
+            withdrawal_msg_transaction_fields(w)
+
           %{
             "msg_nonce_raw" => Decimal.to_string(w.msg_nonce, :normal),
             "msg_nonce" => msg_nonce,
@@ -222,7 +227,13 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l2_timestamp" => w.l2_timestamp,
             "status" => status,
             "l1_transaction_hash" => w.l1_transaction_hash,
-            "challenge_period_end" => challenge_period_end
+            "challenge_period_end" => challenge_period_end,
+            "portal_contract_address_hash" => portal_contract_address_hash,
+            "msg_sender_address_hash" => sender_address_hash,
+            "msg_target_address_hash" => target_address_hash,
+            "msg_value" => msg_value,
+            "msg_gas_limit" => msg_gas_limit,
+            "msg_data" => msg_data
           }
         end),
       next_page_params: next_page_params
@@ -361,7 +372,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           :l2_end_block_number => non_neg_integer(),
           :transactions_count => non_neg_integer(),
           :l1_transaction_hashes => list(),
-          :batch_data_container => :in_blob4844 | :in_celestia | :in_calldata | nil
+          :batch_data_container => :in_blob4844 | :in_celestia | :in_alt_da | :in_calldata | nil
         }
   defp render_base_info_for_batch(number, l2_block_number_from, l2_block_number_to, transactions_count, batch) do
     FrameSequence.prepare_base_info_for_batch(
@@ -428,7 +439,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     - `transaction`: transaction structure containing extra Optimism-related info.
 
     ## Returns
-    An extended map containing `l1_*` and `op_withdrawals` items related to Optimism.
+    An extended map containing `l1_*`, `op_withdrawals`, `op_interop_messages`, and other items related to Optimism.
   """
   @spec extend_transaction_json_response(map(), %{
           :__struct__ => Explorer.Chain.Transaction,
@@ -440,7 +451,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     |> add_optional_transaction_field(transaction, :l1_fee_scalar)
     |> add_optional_transaction_field(transaction, :l1_gas_price)
     |> add_optional_transaction_field(transaction, :l1_gas_used)
-    |> add_optimism_fields(transaction.hash)
+    |> add_optimism_fields(transaction)
   end
 
   defp add_optional_transaction_field(out_json, transaction, field) do
@@ -450,23 +461,55 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     end
   end
 
-  defp add_optimism_fields(out_json, transaction_hash) do
+  # Extends the json output for a transaction adding Optimism-related info to the output
+  # (such as related withdrawals, operator fee, interop messages).
+  #
+  # ## Parameters
+  # - `out_json`: A map defining output json which will be extended.
+  # - `transaction`: transaction structure containing necessary data for the OP fields.
+  #
+  # ## Returns
+  # - An extended map containing `op_withdrawals`, `operator_fee` (optional), `op_interop_messages` (optional).
+  #   If the operator fee is zero, it's not presented in the resulting map.
+  @spec add_optimism_fields(map(), Transaction.t()) :: map()
+  defp add_optimism_fields(out_json, transaction) do
+    portal_contract_address_hash = Withdrawal.portal_contract_address()
+
     withdrawals =
-      transaction_hash
+      transaction.hash
       |> Withdrawal.transaction_statuses()
-      |> Enum.map(fn {nonce, status, l1_transaction_hash} ->
+      |> Enum.map(fn {nonce, status, w} ->
+        {sender_address_hash, target_address_hash, value, gas_limit, data} = withdrawal_msg_transaction_fields(w)
+
         %{
           "nonce" => nonce,
           "status" => status,
-          "l1_transaction_hash" => l1_transaction_hash
+          "l1_transaction_hash" => w.l1_transaction_hash,
+          "portal_contract_address_hash" => portal_contract_address_hash,
+          "msg_nonce_raw" => w.msg_nonce,
+          "msg_sender_address_hash" => sender_address_hash,
+          "msg_target_address_hash" => target_address_hash,
+          "msg_value" => value,
+          "msg_gas_limit" => gas_limit,
+          "msg_data" => data
         }
       end)
 
     interop_messages =
-      transaction_hash
+      transaction.hash
       |> InteropMessage.messages_by_transaction()
 
     out_json = Map.put(out_json, "op_withdrawals", withdrawals)
+
+    operator_fee = Transaction.operator_fee(transaction)
+
+    # credo:disable-for-next-line
+    out_json =
+      if Decimal.gt?(operator_fee, Decimal.new(0)) do
+        Map.put(out_json, "operator_fee", operator_fee)
+      else
+        out_json
+      end
 
     if interop_messages == [] do
       out_json
@@ -482,6 +525,45 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     case Map.fetch(message, chain_key) do
       {:ok, chain} -> Map.put(msg, Atom.to_string(chain_key), chain)
       _ -> msg
+    end
+  end
+
+  # Retrieves withdrawal message transaction fields from the `MessagePassed` event emitted by `L2ToL1MessagePasser` contract.
+  #
+  # The event looks as follows:
+  # MessagePassed(uint256 indexed nonce, address indexed sender, address indexed target, uint256 value, uint256 gasLimit, bytes data, bytes32 withdrawalHash)
+  #
+  # ## Parameters
+  # - `w`: A map containing `msg_log_sender_address_hash`, `msg_log_target_address_hash`, and `msg_log_data` components
+  #        of the `MessagePassed` event.
+  #
+  # ## Returns
+  # - A tuple containing the following fields in form of string (each one can be `nil`):
+  #   {sender address, target address, value, gas limit, data}
+  @spec withdrawal_msg_transaction_fields(%{
+          msg_log_sender_address_hash: Hash.t(),
+          msg_log_target_address_hash: Hash.t(),
+          msg_log_data: Data.t()
+        }) :: {String.t() | nil, String.t() | nil, String.t() | nil, String.t() | nil, String.t() | nil}
+  defp withdrawal_msg_transaction_fields(w) do
+    sender_address_hash =
+      if not is_nil(w.msg_log_sender_address_hash) do
+        truncate_address_hash(w.msg_log_sender_address_hash)
+      end
+
+    target_address_hash =
+      if not is_nil(w.msg_log_target_address_hash) do
+        truncate_address_hash(w.msg_log_target_address_hash)
+      end
+
+    if is_nil(w.msg_log_data) do
+      {sender_address_hash, target_address_hash, nil, nil, nil}
+    else
+      [msg_value, msg_gas_limit, msg_data, _withdrawal_hash] =
+        decode_data(w.msg_log_data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
+
+      {sender_address_hash, target_address_hash, to_string(msg_value), to_string(msg_gas_limit),
+       "0x" <> Base.encode16(msg_data, case: :lower)}
     end
   end
 end

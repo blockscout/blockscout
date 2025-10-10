@@ -1,5 +1,33 @@
 # Changelog
 
+## 9.1.1
+
+### 🚀 Features
+
+- Auto assert_schema in tests ([#13029](https://github.com/blockscout/blockscout/issues/13029))
+
+### 🐛 Bug Fixes
+
+- Fix token transfer test for celo ([#13250](https://github.com/blockscout/blockscout/pull/13250))
+- Add reputation preload to celo base fee ([#13248](https://github.com/blockscout/blockscout/pull/13248))
+- Add reputation preload for user op body for transaction interpreter ([#13241](https://github.com/blockscout/blockscout/pull/13241))
+- Fix condition in Indexer.Fetcher.OnDemand.TokenTotalSupply fetcher ([#13240](https://github.com/blockscout/blockscout/pull/13240))
+- Add reputation preload to state changes and bridged tokens ([#13235](https://github.com/blockscout/blockscout/pull/13235))
+- Soften deposits deletion condition ([#13234](https://github.com/blockscout/blockscout/pull/13234))
+- Fix logic of checking finishing of heavy DB index operation ([#13231](https://github.com/blockscout/blockscout/pull/13231))
+- some flapping explorer/indexer tests ([#13230](https://github.com/blockscout/blockscout/pull/13230))
+- Remove requirement for beacon deposit indexes to be sequential ([#13228](https://github.com/blockscout/blockscout/pull/13228))
+
+### ⚡ Performance
+
+- Improve perf of internal transactions retrieval from the DB ([#13232](https://github.com/blockscout/blockscout/pull/13232))
+
+### ⚙️ Miscellaneous Tasks
+
+- Fix tests ([#13244](https://github.com/blockscout/blockscout/pull/13244))
+- Do not modify deposit indexer state on reorgs ([#13236](https://github.com/blockscout/blockscout/pull/13236))
+- Refactoring reputation ([#13221](https://github.com/blockscout/blockscout/issues/13221))
+
 ## 9.1.0
 
 ### 🚀 Features
@@ -62,7 +90,9 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Remove quantile_estimator dep ([#13190](https://github.com/blockscout/blockscout/pull/13190))
+- Add support of Scroll codecv8 ([#13090](https://github.com/blockscout/blockscout/pull/13090))
 - Change release workflow ([#13087](https://github.com/blockscout/blockscout/issues/13087))
+- Add INDEXER_DISABLE_OPTIMISM_INTEROP_MULTICHAIN_EXPORT env variable ([#13051](https://github.com/blockscout/blockscout/pull/13051))
 - Update and format pull request template ([#13028](https://github.com/blockscout/blockscout/issues/13028))
 - Add final check for ReindexDuplicatedInternalTransactions ([#13091](https://github.com/blockscout/blockscout/issues/13091))
 - Remove obsolete circleci config ([#13097](https://github.com/blockscout/blockscout/issues/13097))
@@ -101,7 +131,6 @@
 | `INDEXER_DISABLE_BEACON_DEPOSIT_STATUS_FETCHER`               | If `true`, the Beacon deposit status fetcher won't be started. Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                                                                                                    | Version: v9.1.0+ <br />Default: `false` <br />Applications: Indexer                  |
 | `INDEXER_BEACON_DEPOSIT_STATUS_FETCHER_EPOCH_DURATION`        | Epoch duration in the Beacon chain in seconds. Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                                                                                                                    | Version: v9.1.0+ <br />Default: `384` <br />Applications: Indexer                    |
 | `INDEXER_BEACON_DEPOSIT_STATUS_FETCHER_REFERENCE_TIMESTAMP`   | Any past finalized Beacon Chain epoch UTC timestamp. Used as reference for status fetcher scheduling. Implemented in [#12985](https://github.com/blockscout/blockscout/pull/12985).                                                                                                                                             | Version: v9.1.0+ <br />Default: `1722024023` <br />Applications: Indexer             |
-
 
 
 ### Deprecated ENV variables

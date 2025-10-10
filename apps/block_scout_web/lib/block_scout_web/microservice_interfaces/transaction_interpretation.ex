@@ -22,6 +22,12 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @request_error_msg "Error while sending request to Transaction Interpretation Service"
   @api_true api?: true
   @items_limit 50
+  @token_options [
+    api?: true,
+    necessity_by_association: %{
+      reputation_association() => :optional
+    }
+  ]
   @internal_transaction_necessity_by_association [
     necessity_by_association: %{
       [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
@@ -281,7 +287,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         necessity_by_association: %{
           [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
           [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-          :token => :optional
+          [token: reputation_association()] => :optional
         }
       ]
       |> Keyword.merge(@api_true)
@@ -316,13 +322,15 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp preload_template_variable(%{"type" => "token", "value" => %{"address" => address_hash_string} = value}),
     do: %{
       "type" => "token",
-      "value" => address_hash_string |> Chain.token_from_address_hash(@api_true) |> token_from_db() |> Map.merge(value)
+      "value" =>
+        address_hash_string |> Chain.token_from_address_hash(@token_options) |> token_from_db() |> Map.merge(value)
     }
 
   defp preload_template_variable(%{"type" => "token", "value" => %{"address_hash" => address_hash_string} = value}),
     do: %{
       "type" => "token",
-      "value" => address_hash_string |> Chain.token_from_address_hash(@api_true) |> token_from_db() |> Map.merge(value)
+      "value" =>
+        address_hash_string |> Chain.token_from_address_hash(@token_options) |> token_from_db() |> Map.merge(value)
     }
 
   defp preload_template_variable(%{"type" => "address", "value" => %{"hash" => address_hash_string} = value}),
@@ -332,6 +340,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         address_hash_string
         |> Chain.hash_to_address(
           necessity_by_association: %{
+            :scam_badge => :optional,
             :names => :optional,
             :smart_contract => :optional,
             proxy_implementations_association() => :optional
