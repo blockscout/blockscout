@@ -69,7 +69,11 @@ defmodule Explorer.Chain.Cache.Counters.TokenTransfersCount do
     put_into_db_cache(address_hash, new_data)
   end
 
-  defp fetch_count_from_cache(address_hash) do
+  @doc """
+  Fetches the token transfers count from the cache or database.
+  """
+  @spec fetch_count_from_cache(binary()) :: integer()
+  def fetch_count_from_cache(address_hash) do
     address_hash_string = to_string(address_hash)
     key = "hash_#{address_hash_string}"
 
