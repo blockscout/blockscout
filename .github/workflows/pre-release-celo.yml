@@ -48,7 +48,7 @@ jobs:
           build-args: |
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=celo
+            CHAIN_TYPE=optimism-celo
 
       - name: Build and push Docker image for CELO (indexer)
         uses: docker/build-push-action@v6
@@ -65,4 +65,4 @@ jobs:
             DISABLE_API=true
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=celo
+            CHAIN_TYPE=optimism-celo
