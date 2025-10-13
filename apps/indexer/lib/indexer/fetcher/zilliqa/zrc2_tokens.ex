@@ -63,17 +63,28 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       {:stop, :normal, state}
     else
       Process.send(self(), :continue, [])
-      {:noreply, %{block_number_to_analyze: block_number_to_analyze}}
+      {:noreply, %{block_number_to_analyze: block_number_to_analyze, is_initial_block: true}}
     end
   end
 
   @impl GenServer
-  def handle_info(:continue, %{block_number_to_analyze: block_number_to_analyze}) do
+  def handle_info(:continue, %{block_number_to_analyze: block_number_to_analyze, is_initial_block: is_initial_block}) do
     if block_number_to_analyze > 0 do
+      cond do
+        is_initial_block ->
+          Logger.info("Handling blocks #{block_number_to_analyze}..#{div(block_number_to_analyze, 100) * 100 + 1}...")
+
+        rem(block_number_to_analyze, 100) == 0 ->
+          Logger.info("Handling blocks #{block_number_to_analyze}..#{block_number_to_analyze - 100 + 1}...")
+
+        true ->
+          :ok
+      end
+
       logs = read_block_logs(block_number_to_analyze)
       transactions = read_transfer_transactions(logs)
 
-      fetch_zrc2_token_transfers_and_adapters(logs, transactions)
+      fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_number_to_analyze)
       # todo: move_zrc2_token_transfers_to_token_transfers()
 
       LastFetchedCounter.upsert(%{
@@ -87,7 +98,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       Process.send_after(self(), :continue, :timer.seconds(10))
     end
 
-    {:noreply, %{block_number_to_analyze: max(block_number_to_analyze - 1, 0)}}
+    {:noreply, %{block_number_to_analyze: max(block_number_to_analyze - 1, 0), is_initial_block: false}}
   end
 
   @impl GenServer
@@ -115,9 +126,10 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
               :input => Data.t(),
               :to_address_hash => Hash.t()
             }
-          ]
+          ],
+          non_neg_integer()
         ) :: no_return()
-  def fetch_zrc2_token_transfers_and_adapters(logs, transactions) do
+  def fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_number) do
     zrc2_logs =
       Enum.filter(
         logs,
@@ -183,13 +195,30 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         end
       end)
 
+    if token_transfers != [] do
+      Logger.info(
+        "Found #{Enum.count(token_transfers)} ZRC-2 token transfer(s) with known adapter address in the block #{block_number}.",
+        fetcher: @fetcher_name
+      )
+    end
+
+    if zrc2_token_transfers != [] do
+      Logger.info(
+        "Found #{Enum.count(zrc2_token_transfers)} ZRC-2 token transfer(s) with unknown adapter address in the block #{block_number}.",
+        fetcher: @fetcher_name
+      )
+    end
+
     addresses =
       Addresses.extract_addresses(%{
         token_transfers: token_transfers,
         zrc2_token_transfers: zrc2_token_transfers
       })
 
-    tokens = Enum.map(token_transfers, &%{contract_address_hash: &1.token_contract_address_hash, type: &1.token_type})
+    tokens =
+      token_transfers
+      |> Enum.map(&%{contract_address_hash: &1.token_contract_address_hash, type: &1.token_type})
+      |> Enum.uniq()
 
     {:ok, _} =
       Chain.import(%{
@@ -235,9 +264,18 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         if erc20_transfer_event_found do
           acc
         else
+          # if the `Transfer` log is not found, this is ERC-20 adapter contract address
           [%{adapter_address_hash: to_address_hash, zrc2_address_hash: log.address_hash} | acc]
         end
       end)
+      |> Enum.uniq()
+
+    if zrc2_token_adapters != [] do
+      Logger.info(
+        "Found #{Enum.count(zrc2_token_adapters)} new ERC-20 adapter(s) for ZRC-2 token(s) in the block #{block_number}.",
+        fetcher: @fetcher_name
+      )
+    end
 
     {:ok, _} =
       Chain.import(%{
