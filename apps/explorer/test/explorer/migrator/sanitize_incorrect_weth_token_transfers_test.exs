@@ -190,7 +190,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
       SanitizeIncorrectWETHTokenTransfers.start_link([])
-      wait_for_migration_status_updated("wait_for_enabling_weth_filtering")
+      wait_for_migration_status_updated("completed")
 
       # Only token transfer corresponding to transfer log should remain. Deposit related token transfer is removed.
 
@@ -211,7 +211,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
       SanitizeIncorrectWETHTokenTransfers.start_link([])
-      wait_for_migration_status_updated("wait_for_enabling_weth_filtering")
+      wait_for_migration_status_updated("completed")
 
       # Only token transfer corresponding to transfer log should remain. Withdrawal related token transfer is removed.
 
@@ -232,7 +232,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
       SanitizeIncorrectWETHTokenTransfers.start_link([])
-      wait_for_migration_status_updated("wait_for_enabling_weth_filtering")
+      wait_for_migration_status_updated("completed")
 
       token_address_hash = token_address.hash
       deposit_log_index = deposit_log.index
@@ -253,7 +253,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
       SanitizeIncorrectWETHTokenTransfers.start_link([])
-      wait_for_migration_status_updated("wait_for_enabling_weth_filtering")
+      wait_for_migration_status_updated("completed")
 
       token_address_hash = token_address.hash
       transfer_log_index = transfer_log.index
@@ -272,10 +272,10 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
     test "Deletes not whitelisted deposits/withdrawals", %{burn_address: burn_address} do
       %{contract_address: not_whitelisted_token_address} = insert(:token, type: "ERC-20")
 
-      %{log: deposit_log, token_transfer: _deposit_token_transfer} =
+      %{log: _deposit_log, token_transfer: _deposit_token_transfer} =
         insert_original_log_and_token_transfer(:deposit, not_whitelisted_token_address, burn_address)
 
-      %{log: withdrawal_log, token_transfer: _withdrawal_token_transfer} =
+      %{log: _withdrawal_log, token_transfer: _withdrawal_token_transfer} =
         insert_original_log_and_token_transfer(:withdrawal, not_whitelisted_token_address, burn_address)
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil

@@ -40,10 +40,10 @@ defmodule Explorer.Migrator.FillingMigration do
 
     The migration process will:
     1. Start and check if already completed
-    2. Execute pre-migration tasks via `before_start/0`
+    2. Execute pre-migration tasks via `before_start/1`
     3. Process entities in batches using parallel tasks
     4. Checkpoint progress after each batch in the database
-    5. Execute post-migration tasks via `on_finish/0`
+    5. Execute post-migration tasks via `on_finish/1`
     6. Update completion status in both database and in-memory cache
   """
 
@@ -134,25 +134,39 @@ defmodule Explorer.Migrator.FillingMigration do
 
     The callback runs just before the migration is marked as completed in the database.
     Implementing modules can override this callback to perform any final cleanup or
-    post-migration tasks. The default implementation returns `:ignore`.
+    post-migration tasks.
+
+    Returns the state that would be stored as final migration state in the database.
+    The default implementation returns the provided state.
+
+    ## Parameters
+    - `state`: The state of the migration process after all migration batches have been processed.
 
     ## Returns
-    - `:ignore` by default
+    - Updated state map (or unchanged state if finalization did not trigger a state
+      change)
   """
-  @callback on_finish :: any()
+  @callback on_finish(map()) :: any()
 
   @doc """
     This callback executes custom logic when the migration process initializes.
 
     The callback runs after the migration is marked as "started" but before the first
     batch processing begins. Implementing modules can override this callback to perform
-    any necessary setup or pre-migration tasks. The default implementation returns
-    `:ignore`.
+    any necessary setup or pre-migration tasks.
+
+    The callback accepts the migration state stored in the database before and can update
+    it as required. The default implementation returns the provided state.
+    Updated state would be stored in the database before the batch processing begins.
+
+    ## Parameters
+    - `state`: The previously stored state of the migration process.
 
     ## Returns
-    - `:ignore` by default
+    - Updated state map (or unchanged state if initialization did not trigger a state
+      change)
   """
-  @callback before_start :: any()
+  @callback before_start(map()) :: any()
 
   @optional_callbacks unprocessed_data_query: 0, unprocessed_data_query: 1
 
@@ -195,7 +209,7 @@ defmodule Explorer.Migrator.FillingMigration do
       #
       # If the migration is already completed, updates the in-memory cache and stops normally.
       # Otherwise, marks the migration as started, executes pre-migration tasks via
-      # before_start/0, and schedules the first batch with no delay. The migration process
+      # before_start/1, and schedules the first batch with no delay. The migration process
       # continues with the state that was saved during the previous run - this allows
       # resuming long-running migrations from where they were interrupted.
       #
@@ -215,9 +229,13 @@ defmodule Explorer.Migrator.FillingMigration do
 
           migration_status ->
             MigrationStatus.set_status(migration_name(), "started")
-            before_start()
+
+            stored_state = (migration_status && migration_status.meta) || %{}
+            initialized_state = before_start(stored_state)
+            MigrationStatus.update_meta(migration_name(), initialized_state)
+
             schedule_batch_migration(0)
-            {:noreply, (migration_status && migration_status.meta) || %{}}
+            {:noreply, initialized_state}
         end
       end
 
@@ -247,10 +265,11 @@ defmodule Explorer.Migrator.FillingMigration do
       def handle_info(:migrate_batch, state) do
         case last_unprocessed_identifiers(state) do
           {[], new_state} ->
-            on_finish()
+            finalized_state = on_finish(new_state)
+            MigrationStatus.update_meta(migration_name(), finalized_state)
             update_cache()
             MigrationStatus.set_status(migration_name(), "completed")
-            {:stop, :normal, new_state}
+            {:stop, :normal, finalized_state}
 
           {identifiers, new_state} ->
             identifiers
@@ -297,15 +316,15 @@ defmodule Explorer.Migrator.FillingMigration do
         Application.get_env(:explorer, __MODULE__)[:concurrency] || default
       end
 
-      def on_finish do
-        :ignore
+      def on_finish(state) do
+        state
       end
 
-      def before_start do
-        :ignore
+      def before_start(state) do
+        state
       end
 
-      defoverridable on_finish: 0, before_start: 0
+      defoverridable on_finish: 1, before_start: 1
     end
   end
 end
