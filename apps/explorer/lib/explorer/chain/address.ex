@@ -178,17 +178,25 @@ defmodule Explorer.Chain.Address do
   """
   @type hash :: Hash.t()
 
-  @json_excluded_fields ~w(
-    __meta__
-    smart_contract
-    token
-    contract_creation_internal_transaction
-    contract_creation_transaction
-    names
-  )a ++ if(@chain_type == :celo, do: ~w(celo_account)a, else: [])
+  @derive {Poison.Encoder,
+           except: [
+             :__meta__,
+             :smart_contract,
+             :token,
+             :contract_creation_internal_transaction,
+             :contract_creation_transaction,
+             :names
+           ]}
 
-  @derive {Poison.Encoder, except: @json_excluded_fields}
-  @derive {Jason.Encoder, except: @json_excluded_fields}
+  @derive {Jason.Encoder,
+           except: [
+             :__meta__,
+             :smart_contract,
+             :token,
+             :contract_creation_internal_transaction,
+             :contract_creation_transaction,
+             :names
+           ]}
 
   @typedoc """
    * `fetched_coin_balance` - The last fetched balance from Nethermind
