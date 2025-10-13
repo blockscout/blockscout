@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.InternalTransaction.DeleteQueue do
   @moduledoc """
-  Stores numbers with timestamps for blocks, whose internal transactions should be deleted and refetched
+  Stores numbers for blocks, whose internal transactions should be deleted and refetched
   """
 
   use Explorer.Schema
@@ -8,7 +8,7 @@ defmodule Explorer.Chain.InternalTransaction.DeleteQueue do
   alias Explorer.Repo
 
   @primary_key false
-  typed_schema "internal_transaction_delete_queue" do
+  typed_schema "internal_transactions_delete_queue" do
     field(:block_number, :integer, primary_key: true)
 
     timestamps()
@@ -27,13 +27,13 @@ defmodule Explorer.Chain.InternalTransaction.DeleteQueue do
   """
   @spec stream_data(
           initial :: accumulator,
-          reducer :: (entry :: map(), accumulator -> accumulator),
+          reducer :: (entry :: integer(), accumulator -> accumulator),
           threshold :: non_neg_integer()
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_data(initial, reducer, threshold \\ 600_000) when is_function(reducer, 2) do
     __MODULE__
-    |> where([dq], dq.inserted_at < ago(^threshold, "millisecond"))
+    |> where([dq], dq.updated_at < ago(^threshold, "millisecond"))
     |> order_by([dq], desc: :block_number)
     |> select([dq], dq.block_number)
     |> Repo.stream_reduce(initial, reducer)

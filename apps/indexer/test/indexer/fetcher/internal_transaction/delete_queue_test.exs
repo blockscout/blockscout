@@ -22,12 +22,12 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueueTest do
       |> with_block()
 
     %{block_number: fresh_block_number} =
-      insert(:internal_transaction_delete_queue, block_number: transaction_1.block_number, inserted_at: Timex.now())
+      insert(:internal_transaction_delete_queue, block_number: transaction_1.block_number, updated_at: Timex.now())
 
     %{block_number: expired_block_number} =
       insert(:internal_transaction_delete_queue,
         block_number: transaction_2.block_number,
-        inserted_at: Timex.shift(Timex.now(), minutes: -20)
+        updated_at: Timex.shift(Timex.now(), minutes: -20)
       )
 
     insert(:internal_transaction,
