@@ -22,7 +22,9 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
   def migration_name, do: @migration_name
 
   @impl FillingMigration
-  def unprocessed_data_query(_state) do
+  def unprocessed_data_query(%{"number_of_pages" => number_of_pages, "next_page" => next_page} = _state) do
+    {range_start, range_end} = batch_pages_range(number_of_pages, next_page)
+
     view_candidates =
       from(
         vc in materialized_view_name(),
@@ -31,7 +33,14 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
           block_hash: field(vc, :block_hash),
           log_index: field(vc, :log_index)
         },
-        where: fragment(~s|?."ctid" BETWEEN '(?,0)' AND '(?,65535)'|, vc, 0, 0)
+        # couldn't find an easier way to specify custom ctid inside the fragment
+        where:
+          fragment(
+            ~s|?."ctid" BETWEEN format('(%s,0)', ?::bigint)::tid AND format('(%s,65535)', ?::bigint)::tid|,
+            vc,
+            ^range_start,
+            ^range_end
+          )
       )
 
     deposit_and_withdrawal_token_transfers =
@@ -86,7 +95,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
   end
 
   @impl FillingMigration
-  def last_unprocessed_identifiers(state) do
+  def last_unprocessed_identifiers(%{"number_of_pages" => number_of_pages, "next_page" => next_page} = state) do
     limit = batch_size() * concurrency()
 
     ids =
@@ -95,7 +104,29 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
       |> limit(^limit)
       |> Repo.all(timeout: :infinity)
 
-    {ids, state}
+    {_range_start, current_range_end} = batch_pages_range(number_of_pages, next_page)
+    new_next_page = current_range_end + 1
+    new_state = Map.put(state, "next_page", new_next_page)
+
+    case ids do
+      [] when new_next_page < number_of_pages ->
+        # No unrpocessed rows inside the current range of pages,
+        # but there are still some pages to process
+        MigrationStatus.update_meta(migration_name(), new_state)
+        last_unprocessed_identifiers(new_state)
+
+      [] ->
+        # No unprocessed pages left and the migration is completed.
+        # We return the new state as we want to store the total number of processed pages
+        # as migration metadata after it is completed
+        {[], new_state}
+
+      ids ->
+        # Some rows were extracted from the current range, but there can be more
+        # not returned due to the `limit` statement. On the next iteration we will try
+        # to check the current range once again to find such rows.
+        {ids, state}
+    end
   end
 
   @impl FillingMigration
@@ -178,7 +209,10 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
           WHERE sl1."first_topic" = ANY (ARRAY[
             '#{escaped_deposit_signature}'::bytea, '#{escaped_withdrawal_signature}'::bytea
           ])
-          -- it is important that ordering corresonds to the 
+          -- it is important that ordering corresonds to the `token_transfers_pkey` index
+          -- as we further will iterate the view rows in the same order they are stored on the disk
+          -- and join them with the index values. Having view and index in the same order allows for
+          -- much faster iterations.
           ORDER BY st0."transaction_hash", st0."block_hash", st0."log_index";
       """
     )
@@ -201,134 +235,17 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
     "#{@migration_name}_view"
   end
 
-  # @impl true
-  # def handle_continue(:ok, state) do
-  #   case MigrationStatus.fetch(@migration_name) do
-  #     %{status: "completed"} ->
-  #       {:stop, :normal, state}
+  defp batch_pages_range(number_of_pages, next_page) do
+    range_start = next_page
+    # When using sql `BETWEEN .. AND ..` statement it includes both ends of the given range.
+    # So we have to subtract 1 in order for the number of pages to be exactly `batch_pages_size`.
+    range_end = min(next_page + batch_pages_size() - 1, number_of_pages - 1)
+    {range_start, range_end}
+  end
 
-  #     %{status: "wait_for_enabling_weth_filtering"} ->
-  #       if weth_token_transfers_filtering_enabled() do
-  #         schedule_batch_migration(0)
-  #         MigrationStatus.set_status(@migration_name, "started")
-  #         {:noreply, Map.put(state, "step", "delete_not_whitelisted_weth_transfers")}
-  #       else
-  #         {:stop, :normal, state}
-  #       end
+  defp batch_pages_size do
+    default = 100
 
-  #     status ->
-  #       state = (status && status.meta) || %{"step" => "delete_duplicates"}
-
-  #       if is_nil(status) do
-  #         MigrationStatus.set_status(@migration_name, "started")
-  #         MigrationStatus.update_meta(@migration_name, state)
-  #       end
-
-  #       schedule_batch_migration(0)
-  #       {:noreply, state}
-  #   end
-  # end
-
-  # @impl true
-  # def handle_info(:migrate_batch, %{"step" => step} = state) do
-  #   if step == "delete_not_whitelisted_weth_transfers" and !weth_token_transfers_filtering_enabled() do
-  #     MigrationStatus.set_status(@migration_name, "wait_for_enabling_weth_filtering")
-  #     {:stop, :normal, state}
-  #   else
-  #     process_batch(state)
-  #   end
-  # end
-
-  # defp process_batch(%{"step" => step} = state) do
-  #   case last_unprocessed_identifiers(step) do
-  #     [] ->
-  #       case step do
-  #         "delete_duplicates" ->
-  #           Logger.info(
-  #             "SanitizeIncorrectWETHTokenTransfers deletion of duplicates finished, continuing with deletion of not whitelisted weth transfers"
-  #           )
-
-  #           schedule_batch_migration()
-
-  #           new_state = %{"step" => "delete_not_whitelisted_weth_transfers"}
-  #           MigrationStatus.update_meta(@migration_name, new_state)
-
-  #           {:noreply, new_state}
-
-  #         "delete_not_whitelisted_weth_transfers" ->
-  #           Logger.info(
-  #             "SanitizeIncorrectWETHTokenTransfers deletion of not whitelisted weth transfers finished. Sanitizing is completed."
-  #           )
-
-  #           MigrationStatus.set_status(@migration_name, "completed")
-  #           MigrationStatus.set_meta(@migration_name, nil)
-
-  #           {:stop, :normal, state}
-  #       end
-
-  #     identifiers ->
-  #       identifiers
-  #       |> Enum.chunk_every(batch_size())
-  #       |> Enum.map(&run_task/1)
-  #       |> Task.await_many(:infinity)
-
-  #       schedule_batch_migration()
-
-  #       {:noreply, state}
-  #   end
-  # end
-
-  # defp last_unprocessed_identifiers(step) do
-  #   limit = batch_size() * concurrency()
-
-  #   step
-  #   |> unprocessed_identifiers()
-  #   |> limit(^limit)
-  #   |> Repo.all(timeout: :infinity)
-  # end
-
-  # defp unprocessed_identifiers("delete_duplicates") do
-  #   weth_transfers =
-  #     token_transfers_with_logs_query()
-  #     |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
-
-  #   not_weth_transfers =
-  #     token_transfers_with_logs_query()
-  #     |> where(^Log.first_topic_is_not_deposit_or_withdrawal_signature())
-
-  #   from(
-  #     weth_tt in subquery(weth_transfers),
-  #     inner_join: tt in subquery(not_weth_transfers),
-  #     on: weth_tt.block_hash == tt.block_hash and weth_tt.transaction_hash == tt.transaction_hash,
-  #     where:
-  #       weth_tt.log_index != tt.log_index and weth_tt.token_contract_address_hash == tt.token_contract_address_hash and
-  #         weth_tt.to_address_hash == tt.to_address_hash and weth_tt.from_address_hash == tt.from_address_hash and
-  #         weth_tt.amount == tt.amount,
-  #     select: {weth_tt.transaction_hash, weth_tt.block_hash, weth_tt.log_index}
-  #   )
-  # end
-
-  # defp unprocessed_identifiers("delete_not_whitelisted_weth_transfers") do
-  #   token_transfers_with_logs_query()
-  #   |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
-  #   |> where([tt], tt.token_contract_address_hash not in ^whitelisted_weth_contracts())
-  #   |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
-  # end
-
-  # defp token_transfers_with_logs_query do
-  #   from(
-  #     tt in TokenTransfer,
-  #     left_join: l in Log,
-  #     as: :log,
-  #     on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index
-  #   )
-  # end
-
-  # defp whitelisted_weth_contracts do
-  #   Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:whitelisted_weth_contracts]
-  # end
-
-  # defp weth_token_transfers_filtering_enabled do
-  #   Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:weth_token_transfers_filtering_enabled]
-  # end
+    Application.get_env(:explorer, __MODULE__)[:batch_pages_size] || default
+  end
 end

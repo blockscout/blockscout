@@ -264,6 +264,76 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
                %{token_contract_address_hash: ^token_address_hash, log_index: ^duplicated_transfer_log_index}
              ] = Repo.all(TokenTransfer, order_by: [asc: :block_number, asc: :log_index])
     end
+
+    test "Does iterate through pages", %{token_address: token_address, burn_address: burn_address} do
+      # Each page can contain at most 81 rows for the builded view
+      expected_values =
+        Enum.map(1..82, fn _index ->
+          %{log: withdrawal_log, token_transfer: withdrawal_token_transfer} =
+            insert_original_log_and_token_transfer(:withdrawal, token_address, burn_address)
+
+          %{log: transfer_log, token_transfer: _transfer_token_transfer} =
+            insert_duplicated_log_and_token_transfer(:transfer, withdrawal_log, withdrawal_token_transfer)
+
+          %{:token_contract_address_hash => token_address.hash, :log_index => transfer_log.index}
+        end)
+
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
+      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      wait_for_migration_status_updated("completed")
+
+      actual_values =
+        from(tt in TokenTransfer,
+          select: %{
+            token_contract_address_hash: tt.token_contract_address_hash,
+            log_index: tt.log_index
+          },
+          order_by: [asc: tt.block_number, asc: tt.log_index]
+        )
+        |> Repo.all()
+
+      assert expected_values == actual_values
+
+      final_state = MigrationStatus.fetch("sanitize_incorrect_weth_transfers").meta
+      assert final_state["number_of_pages"] == 2
+      assert final_state["next_page"] == 2
+    end
+
+    test "Does skip the pages without valid rows", %{token_address: token_address, burn_address: burn_address} do
+      expected_withdrawals =
+        Enum.map(1..82, fn _index ->
+          %{log: withdrawal_log, token_transfer: _withdrawal_token_transfer} =
+            insert_original_log_and_token_transfer(:withdrawal, token_address, burn_address)
+
+          %{:token_contract_address_hash => token_address.hash, :log_index => withdrawal_log.index}
+        end)
+
+      %{log: withdrawal_log, token_transfer: withdrawal_token_transfer} =
+        insert_original_log_and_token_transfer(:withdrawal, token_address, burn_address)
+
+      %{log: transfer_log, token_transfer: _transfer_token_transfer} =
+        insert_duplicated_log_and_token_transfer(:transfer, withdrawal_log, withdrawal_token_transfer)
+
+      expected_transfers = [%{:token_contract_address_hash => token_address.hash, :log_index => transfer_log.index}]
+
+      expected_values = expected_withdrawals ++ expected_transfers
+
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
+      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      wait_for_migration_status_updated("completed")
+
+      actual_values =
+        from(tt in TokenTransfer,
+          select: %{
+            token_contract_address_hash: tt.token_contract_address_hash,
+            log_index: tt.log_index
+          },
+          order_by: [asc: tt.block_number, asc: tt.log_index]
+        )
+        |> Repo.all()
+
+      assert expected_values == actual_values
+    end
   end
 
   describe "SanitizeIncorrectWETHTokenTransfers deletes not whitelisted transfers" do
@@ -421,6 +491,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
     Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
       batch_size: 1,
+      batch_pages_size: 1,
       concurrency: 1,
       timeout: 0
     )

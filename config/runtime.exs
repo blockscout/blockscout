@@ -740,6 +740,7 @@ config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
 
 config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_BATCH_SIZE", 100),
+  batch_pages_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_BATCH_PAGES_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_CONCURRENCY", 1),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_TIMEOUT", "0s")
 
