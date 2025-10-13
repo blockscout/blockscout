@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.TestApiSchemaAssertions do
 
   defp maybe_assert_schema(%Plug.Conn{method: "GET", request_path: request_path} = _conn, status_code, json)
        when is_integer(status_code) and is_binary(request_path) do
-    if String.starts_with?(request_path, "/api/") do
+    if String.starts_with?(request_path, "/api/v2") do
       spec = BlockScoutWeb.ApiSpec.spec()
 
       with {:path_item, {:ok, %PathItem{} = path_item}} <- {:path_item, find_path_item(spec, request_path)},
