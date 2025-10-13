@@ -74,10 +74,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         bridge_type: %Schema{
           type: :string,
           enum: ["omni", "amb"],
-          description: "Indicates if the token is native or bridged",
+          description: "Type of bridge used for this bridged token",
           nullable: true
         },
-        foreign_address: %Schema{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{40})$", nullable: true},
+        foreign_address: %Schema{type: :string, pattern: General.address_hash_pattern(), nullable: true},
         origin_chain_id: General.IntegerStringNullable
       },
       required: [

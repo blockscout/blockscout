@@ -96,7 +96,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
           items: General.Tag
         },
         watchlist_names: %Schema{
-          description: "Watch list name associated with the address",
+          description: "Watchlist name associated with the address",
           type: :array,
           items: General.WatchlistName
         },

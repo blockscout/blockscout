@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   operation :export_token_holders,
     summary: "Export token holders as CSV",
     description: "Exports the holders of a specific token as a CSV file.",
-    parameters: [address_hash_param() | base_params()],
+    parameters: base_params() ++ [address_hash_param(), address_id_param()],
     responses: [
       ok: {"CSV file of token holders.", "application/csv", nil},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -77,8 +77,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   defp items_csv(
          conn,
          %{
-           # todo: eliminate this parameter in favour address_hash_param
-           address_id: address_hash_string,
+           address_hash_param: address_hash_string,
            from_period: from_period,
            to_period: to_period
          } = params,
@@ -132,6 +131,20 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     ],
     tags: ["addresses"]
 
+  @doc """
+  Handles CSV export of token transfers for a given address.
+
+  ## Parameters
+
+    - `conn`: The Plug connection.
+    - `params`: A map of request parameters.
+
+  ## Returns
+
+    - The updated Plug connection with the CSV response.
+
+  Delegates the CSV generation to `AddressTokenTransfersCsvExporter`.
+  """
   @spec token_transfers_csv(Conn.t(), map()) :: Conn.t()
   def token_transfers_csv(conn, params) do
     items_csv(conn, params, AddressTokenTransfersCsvExporter)
@@ -157,6 +170,20 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     ],
     tags: ["addresses"]
 
+  @doc """
+  Exports transactions related to a specific address in CSV format.
+
+  ## Parameters
+
+    - `conn`: The Plug connection.
+    - `params`: A map containing request parameters.
+
+  ## Returns
+
+    - The updated Plug connection with the CSV response.
+
+  This endpoint delegates CSV generation to `AddressTransactionsCsvExporter`.
+  """
   @spec transactions_csv(Conn.t(), map()) :: Conn.t()
   def transactions_csv(conn, params) do
     items_csv(conn, params, AddressTransactionsCsvExporter)
@@ -182,6 +209,20 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     ],
     tags: ["addresses"]
 
+  @doc """
+  Exports internal transactions as a CSV file.
+
+  ## Parameters
+
+    - `conn`: The Plug connection.
+    - `params`: A map of request parameters.
+
+  ## Returns
+
+    - The updated Plug connection with the CSV response.
+
+  This function delegates the CSV export logic to `AddressInternalTransactionsCsvExporter`.
+  """
   @spec internal_transactions_csv(Conn.t(), map()) :: Conn.t()
   def internal_transactions_csv(conn, params) do
     items_csv(conn, params, AddressInternalTransactionsCsvExporter)
@@ -207,6 +248,21 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     ],
     tags: ["addresses"]
 
+  @doc """
+  Exports logs as a CSV file.
+
+  This controller action receives a connection and parameters, then delegates
+  the CSV export functionality to the `AddressLogsCsvExporter` module.
+
+  ## Parameters
+
+    - `conn`: The Plug connection.
+    - `params`: A map of request parameters.
+
+  ## Returns
+
+    - The updated Plug connection with the CSV response.
+  """
   @spec logs_csv(Conn.t(), map()) :: Conn.t()
   def logs_csv(conn, params) do
     items_csv(conn, params, AddressLogsCsvExporter)
@@ -232,6 +288,21 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     ],
     tags: ["addresses"]
 
+  @doc """
+  Handles the CSV export of Celo election rewards.
+
+  Receives a connection and parameters, and delegates the CSV generation
+  to the `AddressCeloElectionRewardsCsvExporter` module.
+
+  ## Parameters
+
+    - `conn`: The Plug connection.
+    - `params`: A map of request parameters.
+
+  ## Returns
+
+    - The updated Plug connection with the CSV response.
+  """
   @spec celo_election_rewards_csv(Conn.t(), map()) :: Conn.t()
   def celo_election_rewards_csv(conn, params) do
     items_csv(conn, params, AddressCeloElectionRewardsCsvExporter)
