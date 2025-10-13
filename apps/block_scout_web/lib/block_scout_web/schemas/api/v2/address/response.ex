@@ -63,7 +63,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
         }
       }
     },
-    required: [:account]
+    required: [:account],
+    additionalProperties: false
   }
 
   @doc """

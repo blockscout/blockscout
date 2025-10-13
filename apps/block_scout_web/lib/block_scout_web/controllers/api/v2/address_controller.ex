@@ -92,7 +92,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   case @chain_type do
     :celo ->
       @chain_type_address_necessity_by_association %{
-        :celo_account => :optional
+        [
+          celo_account: [
+            :vote_signer_address,
+            :validator_signer_address,
+            :attestation_signer_address
+          ]
+        ] => :optional
       }
 
     _ ->
