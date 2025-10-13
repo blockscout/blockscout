@@ -67,6 +67,18 @@ defmodule Explorer.Chain.Address.Schema do
                             ]
                           end
 
+                        :celo ->
+                          quote do
+                            [
+                              has_one(
+                                :celo_account,
+                                Explorer.Chain.Celo.Account,
+                                foreign_key: :address_hash,
+                                references: :hash
+                              )
+                            ]
+                          end
+
                         _ ->
                           []
                       end)
