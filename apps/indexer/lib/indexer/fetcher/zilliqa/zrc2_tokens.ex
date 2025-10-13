@@ -15,7 +15,10 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   alias Explorer.Chain.{Block, Data, Hash, Log, SmartContract, TokenTransfer, Transaction}
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Zilliqa.Zrc2.TokenAdapter
-  alias Indexer.Transform.Addresses
+  alias Explorer.Chain.Zilliqa.Zrc2.TokenTransfer, as: Zrc2TokenTransfer
+  alias Indexer.Block.Fetcher, as: BlockFetcher
+  alias Indexer.TokenBalances
+  alias Indexer.Transform.{Addresses, AddressTokenBalances}
 
   @fetcher_name :zilliqa_zrc2_tokens
   @counter_type "zilliqa_zrc2_tokens_fetcher_last_block_number"
@@ -74,10 +77,14 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     if block_number_to_analyze > 0 do
       cond do
         is_initial_block ->
-          Logger.info("Handling blocks #{block_number_to_analyze}..#{div(block_number_to_analyze, @logging_max_block_range) * @logging_max_block_range + 1}...")
+          Logger.info(
+            "Handling blocks #{block_number_to_analyze}..#{div(block_number_to_analyze, @logging_max_block_range) * @logging_max_block_range + 1}..."
+          )
 
         rem(block_number_to_analyze, @logging_max_block_range) == 0 ->
-          Logger.info("Handling blocks #{block_number_to_analyze}..#{block_number_to_analyze - @logging_max_block_range + 1}...")
+          Logger.info(
+            "Handling blocks #{block_number_to_analyze}..#{block_number_to_analyze - @logging_max_block_range + 1}..."
+          )
 
         true ->
           :ok
@@ -87,7 +94,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       transactions = read_transfer_transactions(logs)
 
       fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_number_to_analyze)
-      # todo: move_zrc2_token_transfers_to_token_transfers()
+      move_zrc2_token_transfers_to_token_transfers()
 
       LastFetchedCounter.upsert(%{
         counter_type: @counter_type,
@@ -97,7 +104,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       # little pause to unload cpu
       Process.send_after(self(), :continue, 10)
     else
-      # move_zrc2_token_transfers_to_token_transfers()
+      move_zrc2_token_transfers_to_token_transfers()
       Process.send_after(self(), :continue, :timer.seconds(10))
     end
 
@@ -183,16 +190,17 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
         if is_nil(adapter_address_hash) do
           # the adapter address is unknown yet, so place the token transfer to the `zrc2_token_transfers` table
-          {[Map.put(token_transfer, :zrc2_address_hash, log.address_hash) | zrc2_token_transfers_acc],
+          {[Map.put(token_transfer, :zrc2_address_hash, Hash.to_string(log.address_hash)) | zrc2_token_transfers_acc],
            token_transfers_acc}
         else
           # the adapter address is already known, so place the token transfer directly to the `token_transfers` table
           {zrc2_token_transfers_acc,
            [
              token_transfer
-             |> Map.put(:token_contract_address_hash, adapter_address_hash)
+             |> Map.put(:token_contract_address_hash, Hash.to_string(adapter_address_hash))
              |> Map.put(:token_type, "ZRC-2")
              |> Map.put(:block_consensus, true)
+             |> Map.put(:token_ids, nil)
              | token_transfers_acc
            ]}
         end
@@ -218,14 +226,14 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         zrc2_token_transfers: zrc2_token_transfers
       })
 
-    tokens =
-      token_transfers
-      |> Enum.map(&%{contract_address_hash: &1.token_contract_address_hash, type: &1.token_type})
-      |> Enum.uniq()
+    {tokens, address_token_balances, address_current_token_balances} =
+      prepare_tokens_and_balances(token_transfers)
 
     {:ok, _} =
       Chain.import(%{
         addresses: %{params: addresses},
+        address_token_balances: %{params: address_token_balances},
+        address_current_token_balances: %{params: address_current_token_balances},
         tokens: %{params: tokens},
         token_transfers: %{params: token_transfers},
         zrc2_token_transfers: %{params: zrc2_token_transfers},
@@ -268,7 +276,13 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
           acc
         else
           # if the `Transfer` log is not found, this is ERC-20 adapter contract address
-          [%{adapter_address_hash: to_address_hash, zrc2_address_hash: log.address_hash} | acc]
+          [
+            %{
+              adapter_address_hash: Hash.to_string(to_address_hash),
+              zrc2_address_hash: Hash.to_string(log.address_hash)
+            }
+            | acc
+          ]
         end
       end)
       |> Enum.uniq()
@@ -286,6 +300,85 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         zrc2_token_adapters: %{params: zrc2_token_adapters},
         timeout: :infinity
       })
+  end
+
+  @spec move_zrc2_token_transfers_to_token_transfers() :: no_return()
+  defp move_zrc2_token_transfers_to_token_transfers do
+    query =
+      from(
+        ztt in Zrc2TokenTransfer,
+        inner_join: a in TokenAdapter,
+        on: a.zrc2_address_hash == ztt.zrc2_address_hash,
+        select: %{
+          transaction_hash: ztt.transaction_hash,
+          log_index: ztt.log_index,
+          from_address_hash: ztt.from_address_hash,
+          to_address_hash: ztt.to_address_hash,
+          amount: ztt.amount,
+          adapter_address_hash: a.adapter_address_hash,
+          block_number: ztt.block_number,
+          block_hash: ztt.block_hash
+        }
+      )
+
+    token_transfers =
+      query
+      |> Repo.all(timeout: :infinity)
+      |> Enum.map(fn token_transfer ->
+        token_transfer
+        |> Map.put(:from_address_hash, Hash.to_string(token_transfer.from_address_hash))
+        |> Map.put(:to_address_hash, Hash.to_string(token_transfer.to_address_hash))
+        |> Map.put(:token_contract_address_hash, Hash.to_string(token_transfer.adapter_address_hash))
+        |> Map.put(:token_type, "ZRC-2")
+        |> Map.put(:block_consensus, true)
+        |> Map.put(:token_ids, nil)
+        |> Map.delete(:adapter_address_hash)
+      end)
+
+    {tokens, address_token_balances, address_current_token_balances} =
+      prepare_tokens_and_balances(token_transfers)
+
+    Logger.info("Moving #{Enum.count(token_transfers)} ZRC-2 token transfer(s) to the token_transfers table...")
+
+    {:ok, _} =
+      Chain.import(%{
+        address_token_balances: %{params: address_token_balances},
+        address_current_token_balances: %{params: address_current_token_balances},
+        tokens: %{params: tokens},
+        token_transfers: %{params: token_transfers},
+        timeout: :infinity
+      })
+
+    Enum.each(token_transfers, fn tt ->
+      Repo.delete_all(
+        from(
+          ztt in Zrc2TokenTransfer,
+          where:
+            ztt.transaction_hash == ^tt.transaction_hash and ztt.log_index == ^tt.log_index and
+              ztt.block_hash == ^tt.block_hash
+        )
+      )
+    end)
+  end
+
+  @spec prepare_tokens_and_balances([map()]) :: {list(), MapSet.t(), list()}
+  defp prepare_tokens_and_balances(token_transfers) do
+    tokens =
+      token_transfers
+      |> Enum.map(&%{contract_address_hash: &1.token_contract_address_hash, type: &1.token_type})
+      |> Enum.uniq()
+
+    address_token_balances =
+      AddressTokenBalances.params_set(%{
+        token_transfers_params: BlockFetcher.token_transfers_merge_token(token_transfers, tokens)
+      })
+
+    address_current_token_balances =
+      address_token_balances
+      |> MapSet.to_list()
+      |> TokenBalances.to_address_current_token_balances()
+
+    {tokens, address_token_balances, address_current_token_balances}
   end
 
   @spec zrc2_log_adapter_address_hash(
