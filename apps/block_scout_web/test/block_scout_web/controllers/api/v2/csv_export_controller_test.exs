@@ -32,7 +32,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
       conn =
         conn
         |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -43,7 +42,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         Phoenix.ConnTest.build_conn()
         |> put_req_header("user-agent", "test-agent")
         |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -85,7 +83,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn =
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -97,7 +94,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         |> put_req_header("recaptcha-v2-response", "123")
         |> put_req_header("user-agent", "test-agent")
         |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -128,7 +124,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn =
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -140,7 +135,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         Phoenix.ConnTest.build_conn()
         |> put_req_header("user-agent", "test-agent")
         |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -186,7 +180,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn =
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -199,7 +192,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         |> put_req_header("recaptcha-v2-response", "123")
         |> put_req_header("user-agent", "test-agent")
         |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -249,7 +241,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn =
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/transactions/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -262,7 +253,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         |> put_req_header("recaptcha-v2-response", "123")
         |> put_req_header("user-agent", "test-agent")
         |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/transactions/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -349,7 +339,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn =
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/internal-transactions/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -362,7 +351,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         |> put_req_header("recaptcha-v2-response", "123")
         |> put_req_header("user-agent", "test-agent")
         |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/internal-transactions/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -443,7 +431,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn =
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/logs/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -456,7 +443,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         |> put_req_header("recaptcha-v2-response", "123")
         |> put_req_header("user-agent", "test-agent")
         |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/logs/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "from_period" => from_period,
           "to_period" => to_period
         })
@@ -488,7 +474,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn =
         get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/logs/csv", %{
-          "address_id" => Address.checksum(address.hash),
           "filter_type" => "null",
           "filter_value" => "null",
           "from_period" => from_period,

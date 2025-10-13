@@ -18,6 +18,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
       },
       owner: %Schema{allOf: [Address], nullable: true},
       token: %Schema{allOf: [Token], nullable: true},
+      token_type: %Schema{allOf: [BlockScoutWeb.Schemas.API.V2.Token.Type], nullable: true},
+      value: General.IntegerStringNullable,
       external_app_url: General.URLNullable,
       animation_url: General.URLNullable,
       image_url: General.URLNullable,

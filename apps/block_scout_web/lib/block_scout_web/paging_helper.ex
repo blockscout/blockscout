@@ -105,6 +105,17 @@ defmodule BlockScoutWeb.PagingHelper do
     ]
   end
 
+  def chain_ids_filter_options(%{chain_ids: chain_id}) do
+    [
+      chain_ids:
+        chain_id
+        |> String.split(",")
+        |> Enum.uniq()
+        |> Enum.map(&Helper.parse_integer/1)
+        |> Enum.filter(&Enum.member?(@allowed_chain_id, &1))
+    ]
+  end
+
   def chain_ids_filter_options(_), do: [chain_id: []]
 
   def type_filter_options(%{"type" => type}) do
@@ -212,11 +223,14 @@ defmodule BlockScoutWeb.PagingHelper do
     |> Map.drop([
       :address_hash_param,
       :block_hash_or_number_param,
+      :token_id_param,
+      :token_id,
       :type,
       :apikey,
       "apikey",
       "block_hash_or_number",
       "block_hash_or_number_param",
+      "token_id_param",
       "transaction_hash_param",
       "address_hash_param",
       "type",
@@ -261,6 +275,10 @@ defmodule BlockScoutWeb.PagingHelper do
 
   @spec tokens_sorting(%{required(String.t()) => String.t()}) :: [{:sorting, SortingHelper.sorting_params()}]
   def tokens_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_tokens_sorting(sort_field, order)]
+  end
+
+  def tokens_sorting(%{sort: sort_field, order: order}) do
     [sorting: do_tokens_sorting(sort_field, order)]
   end
 
