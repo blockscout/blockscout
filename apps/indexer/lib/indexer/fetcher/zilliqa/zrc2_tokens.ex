@@ -25,6 +25,8 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   @zrc2_minted_event "0x845020906442ad0651b44a75d9767153912bfa586416784cf8ead41b37b1dbf5"
   @zrc2_burnt_event "0x92b328e20a23b6dc6c50345c8a05b555446cbde2e9e1e2ee91dab47bd5204d07"
 
+  @logging_max_block_range 100
+
   def child_spec(start_link_arguments) do
     spec = %{
       id: __MODULE__,
@@ -72,10 +74,10 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     if block_number_to_analyze > 0 do
       cond do
         is_initial_block ->
-          Logger.info("Handling blocks #{block_number_to_analyze}..#{div(block_number_to_analyze, 100) * 100 + 1}...")
+          Logger.info("Handling blocks #{block_number_to_analyze}..#{div(block_number_to_analyze, @logging_max_block_range) * @logging_max_block_range + 1}...")
 
-        rem(block_number_to_analyze, 100) == 0 ->
-          Logger.info("Handling blocks #{block_number_to_analyze}..#{block_number_to_analyze - 100 + 1}...")
+        rem(block_number_to_analyze, @logging_max_block_range) == 0 ->
+          Logger.info("Handling blocks #{block_number_to_analyze}..#{block_number_to_analyze - @logging_max_block_range + 1}...")
 
         true ->
           :ok
@@ -92,7 +94,8 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         value: block_number_to_analyze - 1
       })
 
-      Process.send(self(), :continue, [])
+      # little pause to unload cpu
+      Process.send_after(self(), :continue, 10)
     else
       # move_zrc2_token_transfers_to_token_transfers()
       Process.send_after(self(), :continue, :timer.seconds(10))
