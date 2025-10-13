@@ -128,9 +128,14 @@ defmodule Indexer.Fetcher.Celo.Legacy.Account do
       })
 
     import_params = %{
-      addresses: %{params: addresses},
-      celo_accounts: %{params: accounts},
-      timeout: :infinity
+      addresses: %{
+        params: addresses,
+        timeout: :infinity
+      },
+      celo_accounts: %{
+        params: accounts,
+        timeout: :infinity
+      }
     }
 
     case Chain.import(import_params) do

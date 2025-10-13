@@ -89,14 +89,32 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     api?: true
   ]
 
+  case @chain_type do
+    :celo ->
+      @chain_type_address_necessity_by_association %{
+        [
+          celo_account: [
+            :vote_signer_address,
+            :validator_signer_address,
+            :attestation_signer_address
+          ]
+        ] => :optional
+      }
+
+    _ ->
+      @chain_type_address_necessity_by_association %{}
+  end
+
   @address_options [
-    necessity_by_association: %{
-      :names => :optional,
-      :scam_badge => :optional,
-      :signed_authorization => :optional,
-      :smart_contract => :optional,
-      [token: reputation_association()] => :optional
-    },
+    necessity_by_association:
+      %{
+        :names => :optional,
+        :scam_badge => :optional,
+        :signed_authorization => :optional,
+        :smart_contract => :optional,
+        [token: reputation_association()] => :optional
+      }
+      |> Map.merge(@chain_type_address_necessity_by_association),
     api?: true
   ]
 
@@ -238,6 +256,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @spec counters(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def counters(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
+      # TODO: check if @address_options is needed here
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, address} ->
           {validation_count} = Counters.address_counters(address, @api_true)

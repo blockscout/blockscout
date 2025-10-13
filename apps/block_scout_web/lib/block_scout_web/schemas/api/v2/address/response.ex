@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
   @moduledoc false
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.Helper
+  alias BlockScoutWeb.Schemas.{API.V2.Address, Helper}
   alias OpenApiSpex.Schema
 
   @filecoin_robust_address_schema %Schema{
@@ -18,6 +18,52 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
       is_scilla_contract: %Schema{type: :boolean, nullable: false}
     },
     required: [:is_scilla_contract],
+    additionalProperties: false
+  }
+
+  @celo_schema %Schema{
+    type: :object,
+    properties: %{
+      account: %Schema{
+        type: :object,
+        nullable: true,
+        properties: %{
+          type: %Schema{
+            type: :string,
+            enum: [:regular, :validator, :group],
+            nullable: false
+          },
+          name: %Schema{type: :string, nullable: true},
+          metadata_url: %Schema{type: :string, nullable: true},
+          nonvoting_locked_celo: %Schema{type: :string, nullable: false},
+          locked_celo: %Schema{type: :string, nullable: false},
+          vote_signer_address: %Schema{allOf: [Address], nullable: true},
+          validator_signer_address: %Schema{allOf: [Address], nullable: true},
+          attestation_signer_address: %Schema{allOf: [Address], nullable: true}
+        },
+        required: [
+          :type,
+          :name,
+          :metadata_url,
+          :nonvoting_locked_celo,
+          :locked_celo,
+          :vote_signer_address,
+          :validator_signer_address,
+          :attestation_signer_address
+        ],
+        example: %{
+          type: "validator",
+          name: "Celo Validator",
+          metadata_url: "https://example.com/metadata",
+          nonvoting_locked_celo: "1000000000000000000",
+          locked_celo: "2000000000000000000",
+          vote_signer_address: nil,
+          validator_signer_address: nil,
+          attestation_signer_address: nil
+        }
+      }
+    },
+    required: [:account],
     additionalProperties: false
   }
 
@@ -45,6 +91,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
         |> Helper.extend_schema(
           properties: %{zilliqa: @zilliqa_schema},
           required: [:zilliqa]
+        )
+
+      :celo ->
+        schema
+        |> Helper.extend_schema(
+          properties: %{celo: @celo_schema},
+          required: [:celo]
         )
 
       _ ->
