@@ -10,6 +10,8 @@ defmodule Indexer.Block.FetcherTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Celo.Legacy.Events
+  alias Explorer.Chain.Celo.PendingAccountOperation
   alias Explorer.Chain.{Address, Log, Transaction, Wei}
   alias Indexer.Block.Fetcher
   alias Indexer.BufferedTask
@@ -840,6 +842,7 @@ defmodule Indexer.Block.FetcherTest do
         block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
       } do
         block_number = @first_full_block_number
+        accounts_contract_address = "0x000000000000000000000000000000000000ce10"
 
         if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
           case Keyword.fetch!(json_rpc_named_arguments, :variant) do
@@ -849,6 +852,23 @@ defmodule Indexer.Block.FetcherTest do
               to_address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
               transaction_hash = "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
               gas_token_contract_address_hash = "0x471ece3750da237f93b8e339c536989b8978a438"
+
+              account_event_topic = hd(Events.account_events())
+              pending_address = to_address_hash
+              pending_suffix = String.slice(pending_address, 2, 40)
+              pending_topic = "0x000000000000000000000000" <> pending_suffix
+
+              account_event_log = %{
+                "address" => accounts_contract_address,
+                "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+                "blockNumber" => "0x25",
+                "data" => "0x",
+                "logIndex" => "0x1",
+                "topics" => [account_event_topic, pending_topic],
+                "transactionHash" => transaction_hash,
+                "transactionIndex" => "0x0",
+                "transactionLogIndex" => "0x1"
+              }
 
               transaction = %{
                 "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
@@ -952,7 +972,8 @@ defmodule Indexer.Block.FetcherTest do
                            "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
                            "transactionIndex" => "0x0",
                            "transactionLogIndex" => "0x0"
-                         }
+                         },
+                         account_event_log
                        ],
                        "logsBloom" =>
                          "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000200000000000000000000020000000000000000200000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
@@ -969,7 +990,7 @@ defmodule Indexer.Block.FetcherTest do
               end)
               # async requests need to be grouped in one expect because the order is non-deterministic while multiple expect
               # calls on the same name/arity are used in order
-              |> expect(:json_rpc, 5, fn json, _options ->
+              |> expect(:json_rpc, 7, fn json, _options ->
                 case json do
                   [
                     %{
@@ -1021,6 +1042,12 @@ defmodule Indexer.Block.FetcherTest do
 
                   [%{id: id, method: "eth_getBalance", params: [^from_address_hash, ^block_quantity]}] ->
                     {:ok, [%{id: id, jsonrpc: "2.0", result: "0xd0d4a965ab52d8cd740000"}]}
+
+                  [%{id: id, method: "eth_getBalance", params: [^accounts_contract_address, ^block_quantity]}] ->
+                    {:ok, [%{id: id, jsonrpc: "2.0", result: "0xd0d4a965ab52d8cd740000"}]}
+
+                  [%{id: id, method: "eth_getBalance", params: [_, ^block_quantity]}] ->
+                    {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
 
                   [%{id: id, method: "trace_replayBlockTransactions", params: [^block_quantity, ["trace"]]}] ->
                     {:ok,
@@ -1093,14 +1120,34 @@ defmodule Indexer.Block.FetcherTest do
           end
         end
 
+        account_supervisor_configuration =
+          Application.get_env(:indexer, Indexer.Fetcher.Celo.Legacy.Account.Supervisor)
+
+        Application.put_env(:indexer, Indexer.Fetcher.Celo.Legacy.Account.Supervisor, disabled?: true)
+
+        on_exit(fn ->
+          if account_supervisor_configuration do
+            Application.put_env(
+              :indexer,
+              Indexer.Fetcher.Celo.Legacy.Account.Supervisor,
+              account_supervisor_configuration
+            )
+          else
+            Application.delete_env(:indexer, Indexer.Fetcher.Celo.Legacy.Account.Supervisor)
+          end
+        end)
+
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Nethermind ->
             gateway_fee_value = Decimal.new(0)
+
+            {:ok, accounts_contract_address} = Explorer.Chain.Hash.Address.cast(accounts_contract_address)
 
             assert {:ok,
                     %{
                       inserted: %{
                         addresses: [
+                          %Address{hash: ^accounts_contract_address},
                           %Address{
                             hash:
                               %Explorer.Chain.Hash{
@@ -1139,6 +1186,15 @@ defmodule Indexer.Block.FetcherTest do
                                 <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35,
                                   77, 57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
                             }
+                          },
+                          %Log{
+                            index: 1,
+                            transaction_hash: %Explorer.Chain.Hash{
+                              byte_count: 32,
+                              bytes:
+                                <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35,
+                                  77, 57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                            }
                           }
                         ],
                         transactions: [
@@ -1160,6 +1216,16 @@ defmodule Indexer.Block.FetcherTest do
                             gas_fee_recipient_address_hash: nil,
                             gateway_fee: %Explorer.Chain.Wei{value: ^gateway_fee_value}
                           }
+                        ],
+                        celo_pending_account_operations: [
+                          %PendingAccountOperation{
+                            address_hash: %Explorer.Chain.Hash{
+                              byte_count: 20,
+                              bytes:
+                                <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179,
+                                  223, 65, 91>>
+                            }
+                          }
                         ]
                       },
                       errors: []
@@ -1175,9 +1241,10 @@ defmodule Indexer.Block.FetcherTest do
             wait_for_tasks(CoinBalanceCatchup)
 
             assert Repo.aggregate(Chain.Block, :count, :hash) == 1
-            assert Repo.aggregate(Address, :count, :hash) == 2
-            assert Repo.aggregate(Log, :count) == 1
+            assert Repo.aggregate(Address, :count, :hash) == 3
+            assert Repo.aggregate(Log, :count) == 2
             assert Repo.aggregate(Transaction, :count, :hash) == 1
+            assert Repo.aggregate(PendingAccountOperation, :count, :address_hash) == 1
 
             first_address = Repo.get!(Address, first_address_hash)
 

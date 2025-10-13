@@ -71,6 +71,8 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
 
   @runners_by_chain_identity %{
     {:optimism, :celo} => [
+      Runner.Celo.PendingAccountOperations,
+      Runner.Celo.Accounts,
       Runner.Celo.ValidatorGroupVotes,
       Runner.Celo.Epochs,
       Runner.Celo.ElectionRewards,

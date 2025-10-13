@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Address.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.Addresses
   """
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   alias Explorer.Chain.{
     Address,
@@ -25,8 +25,8 @@ defmodule Explorer.Chain.Address.Schema do
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
-  @chain_type_fields (case @chain_type do
-                        :filecoin ->
+  @chain_type_fields (case @chain_identity do
+                        {:filecoin, nil} ->
                           alias Explorer.Chain.Filecoin.{IDAddress, NativeAddress}
 
                           quote do
@@ -60,10 +60,22 @@ defmodule Explorer.Chain.Address.Schema do
                             ]
                           end
 
-                        :zksync ->
+                        {:zksync, nil} ->
                           quote do
                             [
                               field(:contract_code_refetched, :boolean)
+                            ]
+                          end
+
+                        {:optimism, :celo} ->
+                          quote do
+                            [
+                              has_one(
+                                :celo_account,
+                                Explorer.Chain.Celo.Account,
+                                foreign_key: :address_hash,
+                                references: :hash
+                              )
                             ]
                           end
 

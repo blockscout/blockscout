@@ -3,6 +3,10 @@ defmodule Indexer.Block.Fetcher do
   Fetches and indexes block ranges.
   """
 
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
+
   use Spandex.Decorators
 
   require Logger
@@ -11,15 +15,17 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.Chain
-  alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-  alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
-  alias Explorer.Chain.Filecoin.PendingAddressOperation, as: FilecoinPendingAddressOperation
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei}
+  alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
+  alias Explorer.Chain.Cache.Blocks, as: BlocksCache
+  alias Explorer.Chain.Celo.Legacy.Accounts, as: CeloAccountsTransform
+  alias Explorer.Chain.Filecoin.PendingAddressOperation, as: FilecoinPendingAddressOperation
   alias Indexer.Block.Fetcher.Receipts
   alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Celo.EpochBlockOperations, as: CeloEpochBlockOperations
   alias Indexer.Fetcher.Celo.EpochLogs, as: CeloEpochLogs
+  alias Indexer.Fetcher.Celo.Legacy.Account, as: CeloAccount
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.Filecoin.AddressInfo, as: FilecoinAddressInfo
@@ -174,6 +180,7 @@ defmodule Indexer.Block.Fetcher do
          token_transfers = token_transfers ++ celo_native_token_transfers,
          celo_l1_epochs = CeloL1Epochs.parse(blocks),
          celo_l2_epochs = CeloL2Epochs.parse(logs),
+         celo_pending_account_operations = parse_celo_pending_account_operations(logs),
          tokens = Enum.uniq(tokens ++ celo_tokens),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
@@ -209,7 +216,8 @@ defmodule Indexer.Block.Fetcher do
              transactions: transactions_with_receipts,
              transaction_actions: transaction_actions,
              withdrawals: withdrawals_params,
-             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations
+             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
+             celo_pending_account_operations: celo_pending_account_operations
            }),
          coin_balances_params_set =
            %{
@@ -257,6 +265,7 @@ defmodule Indexer.Block.Fetcher do
              shibarium_bridge_operations: shibarium_bridge_operations,
              celo_gas_tokens: celo_gas_tokens,
              celo_epochs: celo_l1_epochs ++ celo_l2_epochs,
+             celo_pending_account_operations: celo_pending_account_operations,
              arbitrum_messages: arbitrum_xlevel_messages,
              stability_validators: stability_validators
            }
@@ -291,8 +300,11 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp import_options(basic_import_options, chain_specific_import_options) do
-    chain_identity = Application.get_env(:explorer, :chain_identity)
-    do_import_options(chain_identity, basic_import_options, chain_specific_import_options)
+    do_import_options(
+      chain_identity(),
+      basic_import_options,
+      chain_specific_import_options
+    )
   end
 
   defp do_import_options({:ethereum, nil}, basic_import_options, %{
@@ -333,7 +345,8 @@ defmodule Indexer.Block.Fetcher do
          basic_import_options,
          %{
            celo_gas_tokens: celo_gas_tokens,
-           celo_epochs: celo_epochs
+           celo_epochs: celo_epochs,
+           celo_pending_account_operations: celo_pending_account_operations
          } = chain_specific_import_options
        ) do
     tokens =
@@ -349,6 +362,7 @@ defmodule Indexer.Block.Fetcher do
       )
 
     import_options
+    |> Map.put_new(:celo_pending_account_operations, %{params: celo_pending_account_operations})
     |> Map.put_new(:celo_epochs, %{params: celo_epochs})
     |> Map.put(
       :tokens,
@@ -560,6 +574,13 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_celo_epoch_block_operations(_, _), do: :ok
+
+  @spec async_import_celo_accounts(map(), boolean()) :: :ok
+  def async_import_celo_accounts(%{celo_pending_account_operations: celo_pending_account_operations}, realtime?) do
+    CeloAccount.async_fetch(celo_pending_account_operations, realtime?)
+  end
+
+  def async_import_celo_accounts(_, _), do: :ok
 
   def async_import_filecoin_addresses_info(%{addresses: addresses}, realtime?) do
     addresses
@@ -840,5 +861,18 @@ defmodule Indexer.Block.Fetcher do
       end
     end)
     |> List.flatten()
+  end
+
+  defp parse_celo_pending_account_operations(logs) do
+    if chain_identity() == {:optimism, :celo} do
+      logs
+      |> CeloAccountsTransform.parse()
+      |> Map.take([:accounts, :attestations_fulfilled, :attestations_requested])
+      |> Map.values()
+      |> Enum.concat()
+      |> Enum.uniq_by(& &1.address_hash)
+    else
+      []
+    end
   end
 end
