@@ -18,7 +18,6 @@ defmodule Explorer.Chain.InternalTransaction do
 
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
   alias Explorer.Chain.DenormalizationHelper
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
@@ -73,7 +72,7 @@ defmodule Explorer.Chain.InternalTransaction do
     # todo: consider using enum
     field(:type, Type, null: false)
     field(:value, Wei, null: false)
-    field(:block_number, :integer)
+    field(:block_number, :integer, primary_key: true)
     field(:transaction_index, :integer, primary_key: true, null: false)
     field(:block_index, :integer)
 
@@ -113,7 +112,6 @@ defmodule Explorer.Chain.InternalTransaction do
 
     belongs_to(:block, Block,
       foreign_key: :block_hash,
-      primary_key: true,
       references: :hash,
       type: Hash.Full,
       null: false
@@ -376,19 +374,18 @@ defmodule Explorer.Chain.InternalTransaction do
 
   """
   def changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
-    base_attributes = ~w(block_hash transaction_index index type)a
+    base_attributes = ~w(transaction_index index type)a
 
     all_attributes =
       if InternalTransactionHelper.primary_key_updated?() do
-        base_attributes
+        [:block_number | base_attributes]
       else
-        [:block_index | base_attributes]
+        [:block_hash, :block_index | base_attributes]
       end
 
     internal_transaction
     |> cast(attrs, all_attributes)
     |> validate_required(all_attributes)
-    |> foreign_key_constraint(:block_hash)
     |> type_changeset(attrs)
   end
 
@@ -400,7 +397,7 @@ defmodule Explorer.Chain.InternalTransaction do
   on its own or use empty types to know that a block has no internal transactions.
   """
   def blockless_changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
-    changeset = cast(internal_transaction, attrs, ~w(type block_number block_hash transaction_index index)a)
+    changeset = cast(internal_transaction, attrs, ~w(type block_number transaction_index index)a)
 
     if validate_required(changeset, ~w(type)a).valid? do
       type_changeset(changeset, attrs)
@@ -592,7 +589,7 @@ defmodule Explorer.Chain.InternalTransaction do
         where(
           query,
           [it],
-          fragment("(SELECT 1 FROM pending_block_operations WHERE block_hash = ? LIMIT 1) IS NULL", it.block_hash)
+          fragment("(SELECT 1 FROM pending_block_operations WHERE block_number = ? LIMIT 1) IS NULL", it.block_number)
         )
 
       "transactions" ->
@@ -661,20 +658,20 @@ defmodule Explorer.Chain.InternalTransaction do
     |> Chain.select_repo(options).all()
   end
 
-  @spec block_to_internal_transactions(Hash.Full.t(), [
+  @spec block_to_internal_transactions(non_neg_integer(), [
           Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
         ]) ::
           [
             __MODULE__.t()
           ]
-  def block_to_internal_transactions(hash, options \\ []) when is_list(options) do
+  def block_to_internal_transactions(block_number, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     type_filter = Keyword.get(options, :type)
     call_type_filter = Keyword.get(options, :call_type)
 
     __MODULE__
-    |> where([internal_transaction], internal_transaction.block_hash == ^hash)
+    |> where([internal_transaction], internal_transaction.block_number == ^block_number)
     |> Chain.join_associations(necessity_by_association)
     |> where_is_different_from_parent_transaction()
     |> where_nonpending_operation()
@@ -955,8 +952,7 @@ defmodule Explorer.Chain.InternalTransaction do
     from(
       child in query,
       inner_join: transaction in assoc(child, :transaction),
-      where: transaction.hash == ^hash,
-      where: child.block_hash == transaction.block_hash
+      where: transaction.hash == ^hash
     )
   end
 
@@ -1008,7 +1004,6 @@ defmodule Explorer.Chain.InternalTransaction do
         |> maybe_filter_origin_transaction(exclude_zero_index_internal_transaction)
         |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
         |> where_internal_transactions_by_transaction_hash(Keyword.get(options, :transaction_hash))
-        |> where_consensus_transactions()
         |> order_by([internal_transaction],
           desc: internal_transaction.block_number,
           desc: internal_transaction.transaction_index,
@@ -1045,22 +1040,6 @@ defmodule Explorer.Chain.InternalTransaction do
       %{"transaction_index" => transaction_index, "index" => index}
     else
       %{"block_index" => block_index}
-    end
-  end
-
-  defp where_consensus_transactions(query) do
-    if DenormalizationHelper.transactions_denormalization_finished?() do
-      query
-      |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
-      # todo: this additional check causes performance issues at /api/v2/internal-transactions endpoint
-      # In the future we plan to extract reorg data into separate tables, so the main tables will no longer contain
-      # reorged data, and this check will no longer be necessary..
-      # |> where([internal_transaction, transaction], transaction.block_hash == internal_transaction.block_hash)
-      |> where([_internal_transaction, transaction], transaction.block_consensus == true)
-    else
-      query
-      |> join(:inner, [internal_transaction], block in assoc(internal_transaction, :block))
-      |> where([_internal_transaction, block], block.consensus == true)
     end
   end
 

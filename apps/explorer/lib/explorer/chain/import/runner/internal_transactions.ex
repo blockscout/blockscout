@@ -243,7 +243,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
     conflict_target =
       if InternalTransactionHelper.primary_key_updated?() do
-        [:block_hash, :transaction_index, :index]
+        [:block_number, :transaction_index, :index]
       else
         [:block_hash, :block_index]
       end
@@ -269,7 +269,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         internal_transaction in InternalTransaction,
         update: [
           set: [
-            block_number: fragment("EXCLUDED.block_number"),
             call_type: fragment("EXCLUDED.call_type"),
             created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
             created_contract_code: fragment("EXCLUDED.created_contract_code"),
@@ -287,7 +286,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
             value: fragment("EXCLUDED.value"),
             inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", internal_transaction.inserted_at),
             updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", internal_transaction.updated_at)
-            # Don't update `block_hash` as it is used for the conflict target
+            # Don't update `block_number` as it is used for the conflict target
             # Don't update `transaction_index` as it is used for the conflict target
             # Don't update `index` as it is used for the conflict target
           ]
@@ -518,16 +517,15 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   defp compose_entry(entries, blocks_map, block_number) do
     if Map.has_key?(blocks_map, block_number) do
-      block_hash = Map.fetch!(blocks_map, block_number)
-
       if InternalTransactionHelper.primary_key_updated?() do
         Enum.map(entries, fn entry ->
           entry
-          |> Map.put(:block_hash, block_hash)
           |> sanitize_error()
           |> shift_created_contract_address_hash()
         end)
       else
+        block_hash = Map.fetch!(blocks_map, block_number)
+
         entries
         |> Enum.sort_by(
           &{(Map.has_key?(&1, :transaction_index) && &1.transaction_index) || &1.transaction_hash, &1.index}
@@ -633,7 +631,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         end)
         |> Enum.map(fn trace ->
           %{
-            block_hash: Map.get(trace, :block_hash),
             block_number: Map.get(trace, :block_number),
             gas_used: Map.get(trace, :gas_used),
             transaction_hash: Map.get(trace, :transaction_hash),
@@ -642,7 +639,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
             status: if(is_nil(Map.get(trace, :error)), do: :ok, else: :error)
           }
         end)
-        |> Enum.filter(fn transaction_hash -> transaction_hash != nil end)
 
       transaction_hashes =
         valid_internal_transactions
@@ -850,7 +846,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       default_set
       |> put_status_in_update_set(first_trace, transaction_from_db)
       |> put_error_in_update_set(first_trace, transaction_from_db, transaction_receipt_from_node)
-      |> Keyword.put_new(:block_hash, first_trace.block_hash)
       |> Keyword.put_new(:block_number, first_trace.block_number)
       |> Keyword.put_new(:index, transaction_receipt_from_node && transaction_receipt_from_node.transaction_index)
       |> Keyword.put_new(

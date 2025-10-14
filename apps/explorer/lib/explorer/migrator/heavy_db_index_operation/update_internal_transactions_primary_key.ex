@@ -1,6 +1,6 @@
 defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey do
   @moduledoc """
-  Update primary key on `internal_transactions` table from (`block_hash`, `block_index`) to (`block_hash`, `transaction_index`, `index`).
+  Update primary key on `internal_transactions` table from (`block_hash`, `block_index`) to (`block_number`, `transaction_index`, `index`).
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
@@ -9,7 +9,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex
   alias Explorer.Repo
 
   @table_name :internal_transactions
@@ -28,7 +28,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
-      CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex.migration_name()
+      CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex.migration_name()
     ]
 
   @impl HeavyDbIndexOperation
@@ -39,7 +39,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
         with {:ok, _} <- Repo.query(drop_pk_constraint_query_string()),
              {:ok, _} <- Repo.query(rename_index_query_string()),
              {:ok, _} <- Repo.query(add_new_pk_query_string()),
-             {:ok, _} <- Repo.query(drop_block_index_not_null_query_string()) do
+             {:ok, _} <- Repo.query(drop_block_index_not_null_query_string()),
+             {:ok, _} <- Repo.query(drop_block_hash_not_null_query_string()) do
           :ok
         else
           {:error, error} ->
@@ -118,6 +119,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
       Repo.transaction(fn ->
         with {:ok, _} <- Repo.query(drop_pk_constraint_query_string()),
              {:ok, _} <- Repo.query(set_block_index_not_null_query_string()),
+             {:ok, _} <- Repo.query(set_block_hash_not_null_query_string()),
              {:ok, _} <- Repo.query(add_old_pk_query_string()) do
           :ok
         else
@@ -151,7 +153,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
   end
 
   defp rename_index_query_string do
-    "ALTER INDEX #{CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex.index_name()} RENAME TO #{@index_name};"
+    "ALTER INDEX #{CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex.index_name()} RENAME TO #{@index_name};"
   end
 
   defp add_new_pk_query_string do
@@ -168,5 +170,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
 
   defp set_block_index_not_null_query_string do
     "ALTER TABLE #{@table_name} ALTER COLUMN block_index SET NOT NULL;"
+  end
+
+  defp drop_block_hash_not_null_query_string do
+    "ALTER TABLE #{@table_name} ALTER COLUMN block_hash DROP NOT NULL;"
+  end
+
+  defp set_block_hash_not_null_query_string do
+    "ALTER TABLE #{@table_name} ALTER COLUMN block_hash SET NOT NULL;"
   end
 end
