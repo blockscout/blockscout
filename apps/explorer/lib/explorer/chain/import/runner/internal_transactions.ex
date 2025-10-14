@@ -456,6 +456,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         entry
         |> Map.put(:block_hash, block_hash)
         |> Map.put(:block_index, index)
+        |> sanitize_error()
       end)
     else
       []
@@ -493,6 +494,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     else
       {:ok, internal_transactions}
     end
+  end
+
+  defp sanitize_error(entry) do
+    error = Map.get(entry, :error)
+
+    sanitized_error =
+      if is_binary(error) and not String.printable?(error) do
+        error
+        |> inspect(binaries: :as_strings)
+        |> String.trim("\"")
+      else
+        error
+      end
+
+    Map.put(entry, :error, sanitized_error)
   end
 
   def defer_internal_transactions_primary_key(repo) do
