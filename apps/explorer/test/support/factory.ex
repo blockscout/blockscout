@@ -38,6 +38,7 @@ defmodule Explorer.Factory do
     Data,
     Hash,
     InternalTransaction,
+    InternalTransaction.DeleteQueue,
     Log,
     MultichainSearchDb,
     PendingBlockOperation,
@@ -1476,6 +1477,12 @@ defmodule Explorer.Factory do
   def scam_badge_to_address_factory do
     %ScamBadgeToAddress{
       address_hash: insert(:address).hash
+    }
+  end
+
+  def internal_transaction_delete_queue_factory do
+    %DeleteQueue{
+      block_number: block_number()
     }
   end
 
