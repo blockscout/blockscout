@@ -240,25 +240,55 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         timeout: :infinity
       })
 
+    fetch_zrc2_token_adapters(logs, transactions, block_number, adapter_address_hash_by_zrc2_address_hash)
+  end
+
+  @spec fetch_zrc2_token_adapters(
+    [
+      %{
+        :first_topic => Hash.t(),
+        :data => Data.t(),
+        :address_hash => Hash.t(),
+        :transaction_hash => Hash.t(),
+        :index => non_neg_integer(),
+        :block_number => non_neg_integer(),
+        :block_hash => Hash.t(),
+        optional(:adapter_address_hash) => Hash.t() | nil
+      }
+    ],
+    [
+      %{
+        :hash => Hash.t(),
+        :input => Data.t(),
+        :to_address_hash => Hash.t()
+      }
+    ],
+    non_neg_integer(),
+    %{Hash.t() => Hash.t()}
+  ) :: no_return()
+  defp fetch_zrc2_token_adapters(logs, transactions, block_number, adapter_address_hash_by_zrc2_address_hash) do
     transaction_by_hash =
       transactions
       |> Enum.map(&{&1.hash, &1})
       |> Enum.into(%{})
 
     zrc2_token_adapters =
-      zrc2_logs
-      |> Enum.filter(&(Hash.to_string(&1.first_topic) == @zrc2_transfer_success_event))
-      |> Enum.filter(&is_nil(zrc2_log_adapter_address_hash(&1, adapter_address_hash_by_zrc2_address_hash)))
+      logs
       |> Enum.filter(fn log ->
-        transaction_input = transaction_by_hash[log.transaction_hash].input.bytes
+        with true <- Hash.to_string(log.first_topic) == @zrc2_transfer_success_event,
+             true <- is_nil(zrc2_log_adapter_address_hash(log, adapter_address_hash_by_zrc2_address_hash)) do
+          transaction_input = transaction_by_hash[log.transaction_hash].input.bytes
 
-        method_id =
-          if byte_size(transaction_input) >= 4 do
-            <<method_id::binary-size(4), _::binary>> = transaction_input
-            "0x" <> Base.encode16(method_id, case: :lower)
-          end
+          method_id =
+            if byte_size(transaction_input) >= 4 do
+              <<method_id::binary-size(4), _::binary>> = transaction_input
+              "0x" <> Base.encode16(method_id, case: :lower)
+            end
 
-        method_id == TokenTransfer.transfer_function_signature()
+          method_id == TokenTransfer.transfer_function_signature()
+        else
+          _ -> false
+        end
       end)
       |> Enum.reduce([], fn log, acc ->
         transaction_hash = log.transaction_hash
@@ -302,7 +332,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       })
   end
 
-  @spec move_zrc2_token_transfers_to_token_transfers() :: no_return()
+  @spec move_zrc2_token_transfers_to_token_transfers() :: :ok
   defp move_zrc2_token_transfers_to_token_transfers do
     query =
       from(
@@ -338,7 +368,9 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     {tokens, address_token_balances, address_current_token_balances} =
       prepare_tokens_and_balances(token_transfers)
 
-    Logger.info("Moving #{Enum.count(token_transfers)} ZRC-2 token transfer(s) to the token_transfers table...")
+    if token_transfers != [] do
+      Logger.info("Moving #{Enum.count(token_transfers)} ZRC-2 token transfer(s) to the token_transfers table...")
+    end
 
     {:ok, _} =
       Chain.import(%{
@@ -361,7 +393,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     end)
   end
 
-  @spec prepare_tokens_and_balances([map()]) :: {list(), MapSet.t(), list()}
+  @spec prepare_tokens_and_balances([map()]) :: {list(), list(), list()}
   defp prepare_tokens_and_balances(token_transfers) do
     tokens =
       token_transfers
@@ -369,13 +401,12 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       |> Enum.uniq()
 
     address_token_balances =
-      AddressTokenBalances.params_set(%{
-        token_transfers_params: BlockFetcher.token_transfers_merge_token(token_transfers, tokens)
-      })
+      %{token_transfers_params: BlockFetcher.token_transfers_merge_token(token_transfers, tokens)}
+      |> AddressTokenBalances.params_set()
+      |> MapSet.to_list()
 
     address_current_token_balances =
       address_token_balances
-      |> MapSet.to_list()
       |> TokenBalances.to_address_current_token_balances()
 
     {tokens, address_token_balances, address_current_token_balances}
