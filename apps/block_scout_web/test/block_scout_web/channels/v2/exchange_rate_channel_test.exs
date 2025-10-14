@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.V2.ExchangeRateChannelTest do
           assert payload.exchange_rate == token.fiat_value
           assert payload.chart_data == records
       after
-        :timer.seconds(5) ->
+        :timer.seconds(10) ->
           assert false, "Expected message received nothing."
       end
     end

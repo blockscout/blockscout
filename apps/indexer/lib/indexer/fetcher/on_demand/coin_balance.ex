@@ -13,9 +13,10 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
 
   require Logger
 
+  alias EthereumJSONRPC.FetchedBalances
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.Chain.Address.{CoinBalance, CoinBalanceDaily}
+  alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Utility.RateLimiter
@@ -107,7 +108,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
       |> Enum.uniq()
 
     case fetch_balances(all_balances_params, json_rpc_named_arguments) do
-      {:ok, %{params_list: params_list}} ->
+      {:ok, %FetchedBalances{params_list: params_list}} ->
         params_map = Map.new(params_list, fn params -> {{params.block_number, params.address_hash}, params} end)
 
         entries_by_type[:fetch_and_update]
@@ -157,62 +158,32 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
     {:stale, 0}
   end
 
-  defp do_trigger_fetch(address, latest_block_number, stale_balance_window) do
-    latest_by_day = CoinBalanceDaily.latest_by_day_query(address.hash)
+  defp do_trigger_fetch(address, latest_block_number, stale_balance_window)
+       when address.fetched_coin_balance_block_number < stale_balance_window do
+    BufferedTask.buffer(__MODULE__, [{:fetch_and_update, latest_block_number, to_string(address.hash)}], false)
 
-    latest = CoinBalance.latest_coin_balance_query(address.hash, stale_balance_window)
+    {:stale, latest_block_number}
+  end
 
-    do_trigger_balance_fetch_query(address, latest_block_number, stale_balance_window, latest, latest_by_day)
+  defp do_trigger_fetch(address, _latest_block_number, stale_balance_window)
+       when address.fetched_coin_balance_block_number >= stale_balance_window do
+    latest_balances_query = CoinBalance.latest_coin_balance_query(address.hash, stale_balance_window)
+
+    case Repo.replica().one(latest_balances_query) do
+      %CoinBalance{value_fetched_at: nil, block_number: block_number} ->
+        BufferedTask.buffer(__MODULE__, [{:fetch_and_import, block_number, to_string(address.hash)}], false)
+
+        {:pending, block_number}
+
+      _ ->
+        :current
+    end
   end
 
   defp do_trigger_historic_fetch(address_hash, block_number) do
     BufferedTask.buffer(__MODULE__, [{:fetch_and_import, block_number, to_string(address_hash)}], false)
 
     {:stale, 0}
-  end
-
-  defp do_trigger_balance_fetch_query(
-         address,
-         latest_block_number,
-         stale_balance_window,
-         query_balances,
-         query_balances_daily
-       ) do
-    if address.fetched_coin_balance_block_number < stale_balance_window do
-      do_trigger_balance_daily_fetch_query(address, latest_block_number, query_balances_daily)
-      BufferedTask.buffer(__MODULE__, [{:fetch_and_update, latest_block_number, to_string(address.hash)}], false)
-
-      {:stale, latest_block_number}
-    else
-      case Repo.replica().one(query_balances) do
-        nil ->
-          # There is no recent coin balance to fetch, so we check to see how old the
-          # balance is on the address. If it is too old, we check again, just to be safe.
-          do_trigger_balance_daily_fetch_query(address, latest_block_number, query_balances_daily)
-
-          :current
-
-        %CoinBalance{value_fetched_at: nil, block_number: block_number} ->
-          BufferedTask.buffer(__MODULE__, [{:fetch_and_import, block_number, to_string(address.hash)}], false)
-
-          {:pending, block_number}
-
-        %CoinBalance{} ->
-          do_trigger_balance_daily_fetch_query(address, latest_block_number, query_balances_daily)
-
-          :current
-      end
-    end
-  end
-
-  defp do_trigger_balance_daily_fetch_query(address, latest_block_number, query) do
-    if Repo.replica().one(query) == nil do
-      BufferedTask.buffer(
-        __MODULE__,
-        [{:fetch_and_import_daily_balances, latest_block_number, to_string(address.hash)}],
-        false
-      )
-    end
   end
 
   defp fetch_balances(params, json_rpc_named_arguments) do

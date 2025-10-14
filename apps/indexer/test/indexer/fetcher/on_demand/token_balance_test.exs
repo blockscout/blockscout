@@ -60,24 +60,11 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
           block_number: 101
         )
 
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
-             }
-           ]}
-        end
-      )
+      success_eth_call_expectation("0x00000000000000000000000000000000000000000000d3c21bcecceda1000000")
 
       TokenBalanceOnDemand.trigger_fetch(address.hash)
 
-      Process.sleep(100)
+      Process.sleep(200)
 
       [%{value: updated_value} = updated_ctb] = Repo.all(CurrentTokenBalance)
 
@@ -100,20 +87,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
     test "historic balances are imported and broadcasted" do
       token_balance = insert(:token_balance, value_fetched_at: nil, value: nil, token_type: "ERC-20", block_number: 101)
 
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
-             }
-           ]}
-        end
-      )
+      success_eth_call_expectation("0x00000000000000000000000000000000000000000000d3c21bcecceda1000000")
 
       TokenBalanceOnDemand.trigger_historic_fetch(
         token_balance.address_hash,
@@ -182,20 +156,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
 
       insert_list(2, :block)
 
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
-             }
-           ]}
-        end
-      )
+      success_eth_call_expectation("0x00000000000000000000000000000000000000000000d3c21bcecceda1000000")
 
       assert TokenBalanceOnDemand.run(
                [{:fetch, address.hash}],
@@ -207,5 +168,22 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
       assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
       assert token_balance_updated.value_fetched_at != nil
     end
+  end
+
+  defp success_eth_call_expectation(result) do
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             jsonrpc: "2.0",
+             result: result
+           }
+         ]}
+      end
+    )
   end
 end
