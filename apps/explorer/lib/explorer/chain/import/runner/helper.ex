@@ -26,7 +26,7 @@ defmodule Explorer.Chain.Import.Runner.Helper do
   """
   @spec chain_identity_dependent_import(
           Ecto.Multi.t(),
-          chain_identity :: atom(),
+          chain_identity :: atom() | tuple(),
           (Ecto.Multi.t() -> Ecto.Multi.t())
         ) :: Ecto.Multi.t()
   def chain_identity_dependent_import(multi, chain_identity, multi_run) do
