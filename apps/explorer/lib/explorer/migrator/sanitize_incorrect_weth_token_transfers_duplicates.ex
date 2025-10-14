@@ -1,8 +1,8 @@
-defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
+defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates do
   @moduledoc """
-    This migrator will delete all incorrect WETH token transfers. As incorrect we consider:
-      - WETH withdrawals and WETH deposits emitted by tokens which are not in `WHITELISTED_WETH_CONTRACTS` env
-      - WETH withdrawal or WETH deposit which has sibling token transfer within the same block and transaction, with the same amount, same from and to addresses, same token contract addresses. (We consider such pairs as duplicates)
+    This migrator WETH withdrawal or WETH deposit which has sibling token transfer within the same block and transaction,
+    with the same amount, same from and to addresses, same token contract addresses.
+    (We consider such pairs as duplicates)
   """
 
   use Explorer.Migrator.FillingMigration
@@ -16,7 +16,9 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
   alias Ecto.Adapters.SQL
   alias Explorer.Repo
 
-  @migration_name "sanitize_incorrect_weth_transfers"
+  @prvious_migration_name "sanitize_incorrect_weth_transfers"
+
+  @migration_name "sanitize_incorrect_weth_transfers_duplicates"
 
   @impl FillingMigration
   def migration_name, do: @migration_name
@@ -229,6 +231,19 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
     |> Map.put("materialized_view_created", true)
     |> Map.put("number_of_pages", number_of_pages)
     |> Map.put("next_page", 0)
+  end
+
+  @impl FillingMigration
+  def ready_to_start() do
+    previous_migration_status = MigrationStatus.fetch(@prvious_migration_name)
+
+    case previous_migration_status do
+      %{status: "completed"} ->
+        {:completed}
+
+      _ ->
+        {:ok}
+    end
   end
 
   defp materialized_view_name do

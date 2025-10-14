@@ -168,6 +168,26 @@ defmodule Explorer.Migrator.FillingMigration do
   """
   @callback before_start(map()) :: any()
 
+  @doc """
+    This callback may be used to check if all preconditions required for migration
+    have been satisfied before the migrations starts.
+
+    This callback runs before the migration is marked as "started". Implementing modules
+    can override this callback to pause the migration or mark it as "completed" without
+    running the migration logic.
+
+    Possible return values are `{:ok}` to continue with migration logic, `{:pause, reason}`
+    to pause the migration till the next start, `{:completed}` to mark the migration
+    as "completed" and stop.
+
+    ## Returns
+    - `{:ok}` by default
+    - `{:pause, reason}`
+    - `{:completed}`
+
+  """
+  @callback ready_to_start :: any()
+
   @optional_callbacks unprocessed_data_query: 0, unprocessed_data_query: 1
 
   defmacro __using__(opts) do
@@ -228,14 +248,28 @@ defmodule Explorer.Migrator.FillingMigration do
             {:stop, :normal, state}
 
           migration_status ->
-            MigrationStatus.set_status(migration_name(), "started")
+            migration_state = (migration_status && migration_status.meta) || %{}
 
-            stored_state = (migration_status && migration_status.meta) || %{}
-            initialized_state = before_start(stored_state)
-            MigrationStatus.update_meta(migration_name(), initialized_state)
+            case ready_to_start() do
+              {:ok} ->
+                MigrationStatus.set_status(migration_name(), "started")
+                initialized_state = before_start(migration_state)
+                MigrationStatus.update_meta(migration_name(), initialized_state)
 
-            schedule_batch_migration(0)
-            {:noreply, initialized_state}
+                schedule_batch_migration(0)
+                {:noreply, initialized_state}
+
+              {:pause, reason} ->
+                MigrationStatus.set_status(migration_name(), "paused")
+                paused_state = Map.put(migration_state, "_pause.reason", reason)
+                MigrationStatus.update_meta(migration_name(), paused_state)
+                {:stop, :normal, paused_state}
+
+              {:completed} ->
+                MigrationStatus.set_status(migration_name(), "completed")
+                update_cache()
+                {:stop, :normal, state}
+            end
         end
       end
 
@@ -324,7 +358,11 @@ defmodule Explorer.Migrator.FillingMigration do
         state
       end
 
-      defoverridable on_finish: 1, before_start: 1
+      def ready_to_start() do
+        {:ok}
+      end
+
+      defoverridable on_finish: 1, before_start: 1, ready_to_start: 0
     end
   end
 end

@@ -2,7 +2,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.TokenTransfer
-  alias Explorer.Migrator.{SanitizeIncorrectWETHTokenTransfers, MigrationStatus}
+  alias Explorer.Migrator.{SanitizeIncorrectWETHTokenTransfersDuplicates, MigrationStatus}
   alias Explorer.Repo
 
   setup [
@@ -139,12 +139,12 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         amount: tt_deposit.amount
       )
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
 
-      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
       Process.sleep(100)
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == "completed"
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == "completed"
 
       token_address_hash = token_address.hash
       whitelisted_token_address_hash = whitelisted_token_address.hash
@@ -180,7 +180,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
     end
   end
 
-  describe "SanitizeIncorrectWETHTokenTransfers deletes duplicated values" do
+  describe "SanitizeIncorrectWETHTokenTransfersDuplicates" do
     test "Deletes duplicated WETH deposits", %{token_address: token_address, burn_address: burn_address} do
       %{log: deposit_log, token_transfer: deposit_token_transfer} =
         insert_original_log_and_token_transfer(:deposit, token_address, burn_address)
@@ -188,8 +188,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
       %{log: transfer_log, token_transfer: _transfer_token_transfer} =
         insert_duplicated_log_and_token_transfer(:transfer, deposit_log, deposit_token_transfer)
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
-      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
+      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
       wait_for_migration_status_updated("completed")
 
       # Only token transfer corresponding to transfer log should remain. Deposit related token transfer is removed.
@@ -209,8 +209,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
       %{log: transfer_log, token_transfer: _transfer_token_transfer} =
         insert_duplicated_log_and_token_transfer(:transfer, withdrawal_log, withdrawal_token_transfer)
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
-      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
+      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
       wait_for_migration_status_updated("completed")
 
       # Only token transfer corresponding to transfer log should remain. Withdrawal related token transfer is removed.
@@ -230,8 +230,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
       %{log: withdrawal_log, token_transfer: _withdrawal_token_transfer} =
         insert_original_log_and_token_transfer(:withdrawal, token_address, burn_address)
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
-      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
+      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
       wait_for_migration_status_updated("completed")
 
       token_address_hash = token_address.hash
@@ -251,8 +251,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
       %{log: duplicated_transfer_log, token_transfer: _duplicated_transfer_token_transfer} =
         insert_duplicated_log_and_token_transfer(:transfer, transfer_log, transfer_token_transfer)
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
-      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
+      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
       wait_for_migration_status_updated("completed")
 
       token_address_hash = token_address.hash
@@ -278,8 +278,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
           %{:token_contract_address_hash => token_address.hash, :log_index => transfer_log.index}
         end)
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
-      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
+      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
       wait_for_migration_status_updated("completed")
 
       actual_values =
@@ -294,7 +294,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert expected_values == actual_values
 
-      final_state = MigrationStatus.fetch("sanitize_incorrect_weth_transfers").meta
+      final_state = MigrationStatus.fetch("sanitize_incorrect_weth_transfers_duplicates").meta
       assert final_state["number_of_pages"] == 2
       assert final_state["next_page"] == 2
     end
@@ -318,8 +318,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       expected_values = expected_withdrawals ++ expected_transfers
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
-      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
+      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
       wait_for_migration_status_updated("completed")
 
       actual_values =
@@ -333,6 +333,33 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         |> Repo.all()
 
       assert expected_values == actual_values
+    end
+
+    # We had a `sanitize_incorrect_weth_transfers` migration before which combined duplicates and not-whitelisted
+    # deposit/withdrawals removal. If that migration has been successfully completed then no need to try to remove the duplicates again.
+    test "Does nothing if 'sanitize_incorrect_weth_transfers' migration has been already completed", %{
+      token_address: token_address,
+      burn_address: burn_address
+    } do
+      # We expect that artificial duplicate not to be deleted, as the migration process should do nothing
+      %{log: withdrawal_log, token_transfer: withdrawal_token_transfer} =
+        insert_original_log_and_token_transfer(:withdrawal, token_address, burn_address)
+
+      %{log: transfer_log, token_transfer: _transfer_token_transfer} =
+        insert_duplicated_log_and_token_transfer(:transfer, withdrawal_log, withdrawal_token_transfer)
+
+      MigrationStatus.set_status("sanitize_incorrect_weth_transfers", "completed")
+      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
+      wait_for_migration_status_updated("completed")
+
+      token_address_hash = token_address.hash
+      withdrawal_log_index = withdrawal_log.index
+      transfer_log_index = transfer_log.index
+
+      assert [
+               %{token_contract_address_hash: ^token_address_hash, log_index: ^withdrawal_log_index},
+               %{token_contract_address_hash: ^token_address_hash, log_index: ^transfer_log_index}
+             ] = Repo.all(TokenTransfer, order_by: [asc: :block_number, asc: :log_index])
     end
   end
 
@@ -348,8 +375,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
       %{log: _withdrawal_log, token_transfer: _withdrawal_token_transfer} =
         insert_original_log_and_token_transfer(:withdrawal, not_whitelisted_token_address, burn_address)
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
-      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
+      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
       wait_for_migration_status_updated("completed")
 
       assert [] = Repo.all(TokenTransfer, order_by: [asc: :block_number, asc: :log_index])
@@ -365,8 +392,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
       %{log: withdrawal_log, token_transfer: _withdrawal_token_transfer} =
         insert_original_log_and_token_transfer(:withdrawal, whitelisted_token_address, burn_address)
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
-      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
+      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
       wait_for_migration_status_updated("completed")
 
       token_address_hash = whitelisted_token_address.hash
@@ -384,7 +411,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
     wait_for_results(fn ->
       Repo.one!(
         from(ms in MigrationStatus,
-          where: ms.migration_name == ^"sanitize_incorrect_weth_transfers" and ms.status == ^expected
+          where: ms.migration_name == ^"sanitize_incorrect_weth_transfers_duplicates" and ms.status == ^expected
         )
       )
     end)
@@ -487,9 +514,9 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
   end
 
   defp setup_explorer_migrator_sanitize_incorrect_weth_token_transfers_env(_context) do
-    env = Application.get_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers)
+    env = Application.get_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates)
 
-    Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
+    Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates,
       batch_size: 1,
       batch_pages_size: 1,
       concurrency: 1,
@@ -497,7 +524,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
     )
 
     on_exit(fn ->
-      Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, env)
+      Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates, env)
     end)
   end
 
