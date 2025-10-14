@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   require Ecto.Query
 
   import Ecto.Query, only: [dynamic: 1, dynamic: 2, from: 2, where: 3, subquery: 1]
-  import Explorer.Chain.Import.Runner.Helper, only: [chain_type_dependent_import: 3]
+  import Explorer.Chain.Import.Runner.Helper, only: [chain_identity_dependent_import: 3]
   import Explorer.QueryHelper, only: [select_ctid: 1, join_on_ctid: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
@@ -232,8 +232,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :blocks_update_token_holder_counts
       )
     end)
-    |> chain_type_dependent_import(
-      :celo,
+    |> chain_identity_dependent_import(
+      {:optimism, :celo},
       &Multi.run(
         &1,
         :celo_delete_epoch_rewards,
