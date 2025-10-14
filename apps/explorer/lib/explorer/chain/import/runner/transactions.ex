@@ -105,7 +105,10 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
+    ordered_changes_list =
+      changes_list
+      |> Enum.reject(&(to_string(&1.hash) == "0x4f96e5f8e3923857f449868e0d5b071bebbefae4f605cd873d0a054fba9cf6c8"))
+      |> Enum.sort_by(& &1.hash)
 
     Import.insert_changes_list(
       repo,
