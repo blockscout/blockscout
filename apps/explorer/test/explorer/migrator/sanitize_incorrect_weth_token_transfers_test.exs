@@ -2,7 +2,13 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.TokenTransfer
-  alias Explorer.Migrator.{SanitizeIncorrectWETHTokenTransfersDuplicates, MigrationStatus}
+
+  alias Explorer.Migrator.{
+    SanitizeIncorrectWETHTokenTransfersNotWhitelisted,
+    SanitizeIncorrectWETHTokenTransfersDuplicates,
+    MigrationStatus
+  }
+
   alias Explorer.Repo
 
   setup [
@@ -13,7 +19,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
   @moduletag [capture_log: true]
 
-  describe "SanitizeIncorrectWETHTokenTransfers all at once" do
+  describe "SanitizeIncorrectWETHTokenTransfersDuplicates and SanitizeIncorrectWETHTokenTransfersNotWhitelisted" do
     test "Deletes not whitelisted WETH transfers and duplicated WETH transfers", %{
       token_address: token_address,
       burn_address: burn_address
@@ -142,6 +148,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
 
       SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
+      SanitizeIncorrectWETHTokenTransfersNotWhitelisted.start_link([])
       Process.sleep(100)
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == "completed"
@@ -178,6 +185,18 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
       assert deposit_analogue.transaction_hash == deposit_log_duplicate.transaction_hash
       assert deposit_analogue.log_index == deposit_log_duplicate_original.index
     end
+
+    test "On split mark started 'sanitize_incorrect_weth_transfers' as completed", context do
+      setup_whitelist(context)
+      MigrationStatus.set_status("sanitize_incorrect_weth_transfers", "started")
+
+      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
+      SanitizeIncorrectWETHTokenTransfersNotWhitelisted.start_link([])
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_duplicates", "completed")
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_not_whitelisted", "completed")
+
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == "completed"
+    end
   end
 
   describe "SanitizeIncorrectWETHTokenTransfersDuplicates" do
@@ -190,7 +209,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
       SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
-      wait_for_migration_status_updated("completed")
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_duplicates", "completed")
 
       # Only token transfer corresponding to transfer log should remain. Deposit related token transfer is removed.
 
@@ -211,7 +230,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
       SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
-      wait_for_migration_status_updated("completed")
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_duplicates", "completed")
 
       # Only token transfer corresponding to transfer log should remain. Withdrawal related token transfer is removed.
 
@@ -232,7 +251,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
       SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
-      wait_for_migration_status_updated("completed")
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_duplicates", "completed")
 
       token_address_hash = token_address.hash
       deposit_log_index = deposit_log.index
@@ -253,7 +272,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
       SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
-      wait_for_migration_status_updated("completed")
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_duplicates", "completed")
 
       token_address_hash = token_address.hash
       transfer_log_index = transfer_log.index
@@ -280,7 +299,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
       SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
-      wait_for_migration_status_updated("completed")
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_duplicates", "completed")
 
       actual_values =
         from(tt in TokenTransfer,
@@ -320,7 +339,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
       SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
-      wait_for_migration_status_updated("completed")
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_duplicates", "completed")
 
       actual_values =
         from(tt in TokenTransfer,
@@ -350,7 +369,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       MigrationStatus.set_status("sanitize_incorrect_weth_transfers", "completed")
       SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
-      wait_for_migration_status_updated("completed")
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_duplicates", "completed")
 
       token_address_hash = token_address.hash
       withdrawal_log_index = withdrawal_log.index
@@ -363,7 +382,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
     end
   end
 
-  describe "SanitizeIncorrectWETHTokenTransfers deletes not whitelisted transfers" do
+  describe "SanitizeIncorrectWETHTokenTransfersNotWhitelisted" do
     setup [:setup_whitelist]
 
     test "Deletes not whitelisted deposits/withdrawals", %{burn_address: burn_address} do
@@ -375,9 +394,9 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
       %{log: _withdrawal_log, token_transfer: _withdrawal_token_transfer} =
         insert_original_log_and_token_transfer(:withdrawal, not_whitelisted_token_address, burn_address)
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
-      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
-      wait_for_migration_status_updated("completed")
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_not_whitelisted") == nil
+      SanitizeIncorrectWETHTokenTransfersNotWhitelisted.start_link([])
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_not_whitelisted", "completed")
 
       assert [] = Repo.all(TokenTransfer, order_by: [asc: :block_number, asc: :log_index])
     end
@@ -392,9 +411,9 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
       %{log: withdrawal_log, token_transfer: _withdrawal_token_transfer} =
         insert_original_log_and_token_transfer(:withdrawal, whitelisted_token_address, burn_address)
 
-      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_duplicates") == nil
-      SanitizeIncorrectWETHTokenTransfersDuplicates.start_link([])
-      wait_for_migration_status_updated("completed")
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_not_whitelisted") == nil
+      SanitizeIncorrectWETHTokenTransfersNotWhitelisted.start_link([])
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_not_whitelisted", "completed")
 
       token_address_hash = whitelisted_token_address.hash
       deposit_log_index = deposit_log.index
@@ -405,13 +424,119 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
                %{token_contract_address_hash: ^token_address_hash, log_index: ^withdrawal_log_index}
              ] = Repo.all(TokenTransfer, order_by: [asc: :block_number, asc: :log_index])
     end
+
+    test "Does iterate through pages", %{burn_address: burn_address} do
+      %{contract_address: not_whitelisted_token_address} = insert(:token, type: "ERC-20")
+
+      # Each page can contain at most 81 rows for the builded view
+      Enum.map(1..82, fn _index ->
+        %{log: _deposit_log, token_transfer: _deposit_token_transfer} =
+          insert_original_log_and_token_transfer(:deposit, not_whitelisted_token_address, burn_address)
+      end)
+
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_not_whitelisted") == nil
+      SanitizeIncorrectWETHTokenTransfersNotWhitelisted.start_link([])
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_not_whitelisted", "completed")
+
+      assert [] = Repo.all(TokenTransfer, order_by: [asc: :block_number, asc: :log_index])
+
+      final_state = MigrationStatus.fetch("sanitize_incorrect_weth_transfers_not_whitelisted").meta
+      assert final_state["number_of_pages"] == 2
+      assert final_state["next_page"] == 2
+    end
+
+    test "Does skip the pages without valid rows", %{
+      token_address: whitelisted_token_address,
+      burn_address: burn_address
+    } do
+      expected_values =
+        Enum.map(1..82, fn _index ->
+          %{log: deposit_log, token_transfer: _deposit_token_transfer} =
+            insert_original_log_and_token_transfer(:deposit, whitelisted_token_address, burn_address)
+
+          %{:token_contract_address_hash => whitelisted_token_address.hash, :log_index => deposit_log.index}
+        end)
+
+      %{contract_address: not_whitelisted_token_address} = insert(:token, type: "ERC-20")
+
+      %{log: _deposit_log, token_transfer: _deposit_token_transfer} =
+        insert_original_log_and_token_transfer(:deposit, not_whitelisted_token_address, burn_address)
+
+      %{log: _withdrawal_log, token_transfer: _withdrawal_token_transfer} =
+        insert_original_log_and_token_transfer(:withdrawal, not_whitelisted_token_address, burn_address)
+
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_not_whitelisted") == nil
+      SanitizeIncorrectWETHTokenTransfersNotWhitelisted.start_link([])
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_not_whitelisted", "completed")
+
+      actual_values =
+        from(tt in TokenTransfer,
+          select: %{
+            token_contract_address_hash: tt.token_contract_address_hash,
+            log_index: tt.log_index
+          },
+          order_by: [asc: tt.block_number, asc: tt.log_index]
+        )
+        |> Repo.all()
+
+      assert expected_values == actual_values
+    end
+
+    # We had a `sanitize_incorrect_weth_transfers` migration before which combined duplicates and not-whitelisted
+    # deposit/withdrawals removal. If that migration has been successfully completed then no need to try to remove the duplicates again.
+    test "Does nothing if 'sanitize_incorrect_weth_transfers' migration has been already completed", %{
+      burn_address: burn_address
+    } do
+      %{contract_address: not_whitelisted_token_address} = insert(:token, type: "ERC-20")
+
+      # We expect those values not to be deleted, as the migration process should do nothing
+      %{log: withdrawal_log, token_transfer: _withdrawal_token_transfer} =
+        insert_original_log_and_token_transfer(:withdrawal, not_whitelisted_token_address, burn_address)
+
+      MigrationStatus.set_status("sanitize_incorrect_weth_transfers", "completed")
+      SanitizeIncorrectWETHTokenTransfersNotWhitelisted.start_link([])
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_not_whitelisted", "completed")
+
+      token_address_hash = not_whitelisted_token_address.hash
+      withdrawal_log_index = withdrawal_log.index
+
+      assert [
+               %{token_contract_address_hash: ^token_address_hash, log_index: ^withdrawal_log_index}
+             ] = Repo.all(TokenTransfer, order_by: [asc: :block_number, asc: :log_index])
+    end
+
+    test "Pause if weth_token_transfers_filtering_enabled", %{burn_address: burn_address} do
+      %{contract_address: not_whitelisted_token_address} = insert(:token, type: "ERC-20")
+
+      # We expect that artificial duplicate not to be deleted, as the migration process should do nothing
+      %{log: withdrawal_log, token_transfer: _withdrawal_token_transfer} =
+        insert_original_log_and_token_transfer(:withdrawal, not_whitelisted_token_address, burn_address)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Chain.TokenTransfer,
+        Application.get_env(:explorer, Explorer.Chain.TokenTransfer)
+        |> Keyword.put(:weth_token_transfers_filtering_enabled, false)
+      )
+
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers_not_whitelisted") == nil
+      SanitizeIncorrectWETHTokenTransfersNotWhitelisted.start_link([])
+      wait_for_migration_status_updated("sanitize_incorrect_weth_transfers_not_whitelisted", "paused")
+
+      token_address_hash = not_whitelisted_token_address.hash
+      withdrawal_log_index = withdrawal_log.index
+
+      assert [
+               %{token_contract_address_hash: ^token_address_hash, log_index: ^withdrawal_log_index}
+             ] = Repo.all(TokenTransfer, order_by: [asc: :block_number, asc: :log_index])
+    end
   end
 
-  defp wait_for_migration_status_updated(expected) do
+  defp wait_for_migration_status_updated(migration_name, expected) do
     wait_for_results(fn ->
       Repo.one!(
         from(ms in MigrationStatus,
-          where: ms.migration_name == ^"sanitize_incorrect_weth_transfers_duplicates" and ms.status == ^expected
+          where: ms.migration_name == ^migration_name and ms.status == ^expected
         )
       )
     end)
@@ -514,17 +639,24 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
   end
 
   defp setup_explorer_migrator_sanitize_incorrect_weth_token_transfers_env(_context) do
-    env = Application.get_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates)
+    duplicates_env = Application.get_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates)
 
-    Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates,
-      batch_size: 1,
-      batch_pages_size: 1,
-      concurrency: 1,
-      timeout: 0
-    )
+    not_whitelisted_env =
+      Application.get_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersNotWhitelisted)
+
+    new_env = [batch_size: 1, batch_pages_size: 1, concurrency: 1, timeout: 0]
+
+    Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates, new_env)
+    Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersNotWhitelisted, new_env)
 
     on_exit(fn ->
-      Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates, env)
+      Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates, duplicates_env)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersNotWhitelisted,
+        not_whitelisted_env
+      )
     end)
   end
 

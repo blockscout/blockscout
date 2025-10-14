@@ -39,7 +39,7 @@ defmodule Explorer.Migrator.FillingMigration do
     ```
 
     The migration process will:
-    1. Start and check if already completed
+    1. Start and check if already completed and is ready to start
     2. Execute pre-migration tasks via `before_start/1`
     3. Process entities in batches using parallel tasks
     4. Checkpoint progress after each batch in the database

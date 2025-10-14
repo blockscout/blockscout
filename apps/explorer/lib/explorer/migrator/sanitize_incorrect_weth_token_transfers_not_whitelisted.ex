@@ -1,8 +1,6 @@
-defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates do
+defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersNotWhitelisted do
   @moduledoc """
-    This migrator sanitizes WETH withdrawal or WETH deposit which has sibling token transfer
-    within the same block and transaction, with the same amount, same from and to addresses,
-    same token contract addresses (We consider such pairs as duplicates)
+    This migrator sanitizes WETH withdrawals and WETH deposits emitted by tokens which are not in `WHITELISTED_WETH_CONTRACTS` env
   """
 
   use Explorer.Migrator.FillingMigration
@@ -12,18 +10,19 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates do
   import Explorer.QueryHelper, only: [select_ctid: 1, join_on_ctid: 2]
 
   alias Explorer.Migrator.FillingMigration
-  alias Explorer.Chain.{TokenTransfer, Log}
+  alias Explorer.Chain.{TokenTransfer}
   alias Ecto.Adapters.SQL
   alias Explorer.Repo
 
   @prvious_migration_name "sanitize_incorrect_weth_transfers"
 
-  @migration_name "sanitize_incorrect_weth_transfers_duplicates"
+  @migration_name "sanitize_incorrect_weth_transfers_not_whitelisted"
 
   @impl FillingMigration
   def migration_name, do: @migration_name
 
   @impl FillingMigration
+  @spec unprocessed_data_query(map()) :: Ecto.Query.t()
   def unprocessed_data_query(%{"number_of_pages" => number_of_pages, "next_page" => next_page} = _state) do
     {range_start, range_end} = batch_pages_range(number_of_pages, next_page)
 
@@ -45,55 +44,19 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates do
           )
       )
 
-    deposit_and_withdrawal_token_transfers =
-      from(tt in TokenTransfer,
-        join: vc in subquery(view_candidates),
-        on:
-          tt.transaction_hash == vc.transaction_hash and
-            tt.block_hash == vc.block_hash and
-            tt.log_index == vc.log_index,
-        select: %{
-          transaction_hash: tt.transaction_hash,
-          block_hash: tt.block_hash,
-          log_index: tt.log_index,
-          token_contract_address_hash: tt.token_contract_address_hash,
-          to_address_hash: tt.to_address_hash,
-          from_address_hash: tt.from_address_hash,
-          amount: tt.amount
-        }
-      )
-
-    duplicated_deposits_and_withdrawals =
-      from(tt in TokenTransfer,
-        as: :tt,
-        join: dw in subquery(deposit_and_withdrawal_token_transfers),
-        on:
-          tt.transaction_hash == dw.transaction_hash and
-            tt.block_hash == dw.block_hash and
-            tt.log_index != dw.log_index,
-        where:
-          tt.token_contract_address_hash == dw.token_contract_address_hash and
-            tt.from_address_hash == dw.from_address_hash and
-            tt.to_address_hash == dw.to_address_hash and
-            tt.amount == dw.amount,
-        where:
-          exists(
-            from(log in Log,
-              select: 1,
-              where:
-                parent_as(:tt).transaction_hash == log.transaction_hash and
-                  parent_as(:tt).block_hash == log.block_hash and
-                  parent_as(:tt).log_index == log.index and
-                  log.first_topic not in [
-                    ^TokenTransfer.weth_deposit_signature(),
-                    ^TokenTransfer.weth_withdrawal_signature()
-                  ]
-            )
-          ),
-        select: %{transaction_hash: dw.transaction_hash, block_hash: dw.block_hash, log_index: dw.log_index}
-      )
-
-    duplicated_deposits_and_withdrawals
+    from(tt in TokenTransfer,
+      join: vc in subquery(view_candidates),
+      on:
+        tt.transaction_hash == vc.transaction_hash and
+          tt.block_hash == vc.block_hash and
+          tt.log_index == vc.log_index,
+      select: %{
+        transaction_hash: tt.transaction_hash,
+        block_hash: tt.block_hash,
+        log_index: tt.log_index
+      },
+      where: tt.token_contract_address_hash not in ^whitelisted_weth_contracts()
+    )
   end
 
   @impl FillingMigration
@@ -247,10 +210,11 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates do
         {:completed}
 
       _ ->
-        new_previous_migration_state = Map.put(previous_migration_state, "completed.by_split", true)
-        MigrationStatus.update_meta(@prvious_migration_name, new_previous_migration_state)
-        MigrationStatus.set_status(@prvious_migration_name, "completed")
-        {:ok}
+        if weth_token_transfers_filtering_enabled() do
+          {:ok}
+        else
+          {:pause, "wait_for_enabling_weth_filtering"}
+        end
     end
   end
 
@@ -270,5 +234,13 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates do
     default = 100
 
     Application.get_env(:explorer, __MODULE__)[:batch_pages_size] || default
+  end
+
+  defp whitelisted_weth_contracts do
+    Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:whitelisted_weth_contracts]
+  end
+
+  defp weth_token_transfers_filtering_enabled do
+    Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:weth_token_transfers_filtering_enabled]
   end
 end
