@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: 9.1.1
-      DOCKER_CHAIN_NAME: celo
+      DOCKER_CHAIN_NAME: optimism-celo
       API_GRAPHQL_MAX_COMPLEXITY: 10400
     steps:
       - uses: actions/checkout@v5
