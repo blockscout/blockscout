@@ -67,14 +67,25 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       Logger.warning("There are no known consensus blocks in the database, so #{__MODULE__} won't start.")
       {:stop, :normal, state}
     else
+      first_block_number = Application.get_env(:indexer, :first_block)
       Process.send(self(), :continue, [])
-      {:noreply, %{block_number_to_analyze: block_number_to_analyze, is_initial_block: true}}
+
+      {:noreply,
+       %{
+         block_number_to_analyze: block_number_to_analyze,
+         is_initial_block: true,
+         first_block_number: first_block_number
+       }}
     end
   end
 
   @impl GenServer
-  def handle_info(:continue, %{block_number_to_analyze: block_number_to_analyze, is_initial_block: is_initial_block}) do
-    if block_number_to_analyze > 0 do
+  def handle_info(:continue, %{
+        block_number_to_analyze: block_number_to_analyze,
+        is_initial_block: is_initial_block,
+        first_block_number: first_block_number
+      }) do
+    if block_number_to_analyze > 0 and block_number_to_analyze >= first_block_number do
       cond do
         is_initial_block ->
           Logger.info(
@@ -108,7 +119,12 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       Process.send_after(self(), :continue, :timer.seconds(10))
     end
 
-    {:noreply, %{block_number_to_analyze: max(block_number_to_analyze - 1, 0), is_initial_block: false}}
+    {:noreply,
+     %{
+       block_number_to_analyze: max(block_number_to_analyze - 1, 0),
+       is_initial_block: false,
+       first_block_number: first_block_number
+     }}
   end
 
   @impl GenServer
@@ -161,48 +177,55 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     {zrc2_token_transfers, token_transfers} =
       zrc2_logs
       |> Enum.reduce({[], []}, fn log, {zrc2_token_transfers_acc, token_transfers_acc} ->
-        first_topic = Hash.to_string(log.first_topic)
         params = zrc2_event_params(log.data)
 
-        {from_address_hash, to_address_hash, amount} =
-          cond do
-            first_topic in [@zrc2_transfer_success_event, @zrc2_transfer_from_success_event] ->
-              {params.sender, params.recipient, Decimal.new(params.amount)}
-
-            first_topic == @zrc2_minted_event ->
-              {SmartContract.burn_address_hash_string(), params.recipient, Decimal.new(params.amount)}
-
-            first_topic == @zrc2_burnt_event ->
-              {params.burn_account, SmartContract.burn_address_hash_string(), Decimal.new(params.amount)}
-          end
-
-        adapter_address_hash = zrc2_log_adapter_address_hash(log, adapter_address_hash_by_zrc2_address_hash)
-
-        token_transfer = %{
-          transaction_hash: log.transaction_hash,
-          log_index: log.index,
-          from_address_hash: from_address_hash,
-          to_address_hash: to_address_hash,
-          amount: amount,
-          block_number: log.block_number,
-          block_hash: log.block_hash
-        }
-
-        if is_nil(adapter_address_hash) do
-          # the adapter address is unknown yet, so place the token transfer to the `zrc2_token_transfers` table
-          {[Map.put(token_transfer, :zrc2_address_hash, Hash.to_string(log.address_hash)) | zrc2_token_transfers_acc],
-           token_transfers_acc}
+        if Map.has_key?(params, :token_id) do
+          # this is unsupported ZRC-1 event, so skip it
+          {zrc2_token_transfers_acc, token_transfers_acc}
         else
-          # the adapter address is already known, so place the token transfer directly to the `token_transfers` table
-          {zrc2_token_transfers_acc,
-           [
-             token_transfer
-             |> Map.put(:token_contract_address_hash, Hash.to_string(adapter_address_hash))
-             |> Map.put(:token_type, "ZRC-2")
-             |> Map.put(:block_consensus, true)
-             |> Map.put(:token_ids, nil)
-             | token_transfers_acc
-           ]}
+          first_topic = Hash.to_string(log.first_topic)
+
+          {from_address_hash, to_address_hash, amount} =
+            cond do
+              first_topic in [@zrc2_transfer_success_event, @zrc2_transfer_from_success_event] ->
+                {params.sender, params.recipient, Decimal.new(params.amount)}
+
+              first_topic == @zrc2_minted_event ->
+                {SmartContract.burn_address_hash_string(), params.recipient, Decimal.new(params.amount)}
+
+              first_topic == @zrc2_burnt_event ->
+                {params.burn_account, SmartContract.burn_address_hash_string(), Decimal.new(params.amount)}
+            end
+
+          adapter_address_hash = zrc2_log_adapter_address_hash(log, adapter_address_hash_by_zrc2_address_hash)
+
+          token_transfer = %{
+            transaction_hash: log.transaction_hash,
+            log_index: log.index,
+            from_address_hash: from_address_hash,
+            to_address_hash: to_address_hash,
+            amount: amount,
+            block_number: log.block_number,
+            block_hash: log.block_hash
+          }
+
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if is_nil(adapter_address_hash) do
+            # the adapter address is unknown yet, so place the token transfer to the `zrc2_token_transfers` table
+            {[Map.put(token_transfer, :zrc2_address_hash, Hash.to_string(log.address_hash)) | zrc2_token_transfers_acc],
+             token_transfers_acc}
+          else
+            # the adapter address is already known, so place the token transfer directly to the `token_transfers` table
+            {zrc2_token_transfers_acc,
+             [
+               token_transfer
+               |> Map.put(:token_contract_address_hash, Hash.to_string(adapter_address_hash))
+               |> Map.put(:token_type, "ZRC-2")
+               |> Map.put(:block_consensus, true)
+               |> Map.put(:token_ids, nil)
+               | token_transfers_acc
+             ]}
+          end
         end
       end)
 
@@ -244,28 +267,28 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   end
 
   @spec fetch_zrc2_token_adapters(
-    [
-      %{
-        :first_topic => Hash.t(),
-        :data => Data.t(),
-        :address_hash => Hash.t(),
-        :transaction_hash => Hash.t(),
-        :index => non_neg_integer(),
-        :block_number => non_neg_integer(),
-        :block_hash => Hash.t(),
-        optional(:adapter_address_hash) => Hash.t() | nil
-      }
-    ],
-    [
-      %{
-        :hash => Hash.t(),
-        :input => Data.t(),
-        :to_address_hash => Hash.t()
-      }
-    ],
-    non_neg_integer(),
-    %{Hash.t() => Hash.t()}
-  ) :: no_return()
+          [
+            %{
+              :first_topic => Hash.t(),
+              :data => Data.t(),
+              :address_hash => Hash.t(),
+              :transaction_hash => Hash.t(),
+              :index => non_neg_integer(),
+              :block_number => non_neg_integer(),
+              :block_hash => Hash.t(),
+              optional(:adapter_address_hash) => Hash.t() | nil
+            }
+          ],
+          [
+            %{
+              :hash => Hash.t(),
+              :input => Data.t(),
+              :to_address_hash => Hash.t()
+            }
+          ],
+          non_neg_integer(),
+          %{Hash.t() => Hash.t()}
+        ) :: no_return()
   defp fetch_zrc2_token_adapters(logs, transactions, block_number, adapter_address_hash_by_zrc2_address_hash) do
     transaction_by_hash =
       transactions
@@ -276,6 +299,8 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       logs
       |> Enum.filter(fn log ->
         with true <- Hash.to_string(log.first_topic) == @zrc2_transfer_success_event,
+             # ZRC-1 is not supported
+             false <- Map.has_key?(zrc2_event_params(log.data), :token_id),
              true <- is_nil(zrc2_log_adapter_address_hash(log, adapter_address_hash_by_zrc2_address_hash)) do
           transaction_input = transaction_by_hash[log.transaction_hash].input.bytes
 
@@ -497,7 +522,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     Repo.aggregate(Block.consensus_blocks_query(), :max, :number)
   end
 
-  @spec zrc2_event_params(Data.t()) :: [map()]
+  @spec zrc2_event_params(Data.t()) :: map()
   defp zrc2_event_params(log_data) do
     log_data
     |> decode_data([:string])
