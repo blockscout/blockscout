@@ -2,14 +2,14 @@ defmodule Explorer.Repo.Celo.Migrations.AddLogIndexToValidatorGroupVotes do
   use Ecto.Migration
 
   def up do
-    alter table(:celo_validator_group_votes) do
-      add(:log_index, :integer, null: false, default: 0)
-    end
-
     execute("""
     ALTER TABLE celo_validator_group_votes
     DROP CONSTRAINT celo_validator_group_votes_pkey
     """)
+
+    alter table(:celo_validator_group_votes) do
+      add(:log_index, :integer, null: false, default: 0)
+    end
 
     execute("""
     ALTER TABLE celo_validator_group_votes
@@ -24,14 +24,14 @@ defmodule Explorer.Repo.Celo.Migrations.AddLogIndexToValidatorGroupVotes do
   end
 
   def down do
-    alter table(:celo_validator_group_votes) do
-      remove(:log_index)
-    end
-
     execute("""
     ALTER TABLE celo_validator_group_votes
     DROP CONSTRAINT celo_validator_group_votes_pkey
     """)
+
+    alter table(:celo_validator_group_votes) do
+      remove(:log_index)
+    end
 
     execute("""
     ALTER TABLE celo_validator_group_votes
