@@ -31,6 +31,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
+  alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
@@ -207,6 +208,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :address_referencing,
         :blocks,
         :derive_address_current_token_balances
+      )
+    end)
+    |> Multi.run(:save_internal_transactions_for_delete, fn repo, %{lose_consensus: non_consensus_blocks} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> save_internal_transactions_for_delete(repo, non_consensus_blocks, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :save_internal_transactions_for_delete
       )
     end)
     |> Multi.run(:update_token_instances_owner, fn repo, %{derive_transaction_forks: transactions} ->
@@ -842,6 +851,27 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       Enum.map(result, &Map.take(&1, [:address_hash, :token_contract_address_hash, :token_id, :block_number, :value]))
 
     {:ok, derived_address_current_token_balances}
+  end
+
+  defp save_internal_transactions_for_delete(_, [], _), do: {:ok, []}
+
+  defp save_internal_transactions_for_delete(repo, non_consensus_blocks, %{timeout: timeout, timestamps: timestamps}) do
+    insert_params =
+      Enum.map(non_consensus_blocks, fn {number, _hash} ->
+        Map.put(timestamps, :block_number, number)
+      end)
+
+    {_total, result} =
+      repo.insert_all(
+        InternalTransactionDeleteQueue,
+        insert_params,
+        conflict_target: [:block_number],
+        on_conflict: {:replace, [:updated_at]},
+        returning: [:block_number],
+        timeout: timeout
+      )
+
+    {:ok, Enum.map(result, & &1.block_number)}
   end
 
   defp update_token_instances_owner(_, [], _), do: {:ok, []}

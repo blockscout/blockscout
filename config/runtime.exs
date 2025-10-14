@@ -1230,6 +1230,11 @@ config :indexer, Indexer.Fetcher.MultichainSearchDb.CountersExportQueue,
 config :indexer, Indexer.Fetcher.SignedAuthorizationStatus,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_SIGNED_AUTHORIZATION_STATUS_BATCH_SIZE", 10)
 
+config :indexer, Indexer.Fetcher.InternalTransaction.DeleteQueue,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTION_DELETE_QUEUE_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTION_DELETE_QUEUE_CONCURRENCY", 1),
+  threshold: ConfigHelper.parse_time_env_var("INDEXER_INTERNAL_TRANSACTION_DELETE_QUEUE_THRESHOLD", "10m")
+
 config :indexer, Indexer.Fetcher.Optimism.TransactionBatch.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 config :indexer, Indexer.Fetcher.Optimism.DisputeGame.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
