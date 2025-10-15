@@ -11,6 +11,12 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   import Ecto.Query
   import Explorer.Helper, only: [decode_data: 2]
 
+  import Indexer.Block.Fetcher,
+    only: [
+      async_import_token_balances: 2,
+      async_import_tokens: 2
+    ]
+
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Data, Hash, Log, SmartContract, TokenTransfer, Transaction}
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
@@ -104,7 +110,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       logs = read_block_logs(block_number_to_analyze)
       transactions = read_transfer_transactions(logs)
 
-      fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_number_to_analyze)
+      fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_number_to_analyze, false)
       move_zrc2_token_transfers_to_token_transfers()
 
       LastFetchedCounter.upsert(%{
@@ -153,9 +159,10 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
               :to_address_hash => Hash.t()
             }
           ],
-          non_neg_integer()
+          non_neg_integer(),
+          boolean()
         ) :: no_return()
-  def fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_number) do
+  def fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_number, realtime?) do
     zrc2_logs =
       Enum.filter(
         logs,
@@ -177,15 +184,11 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     {zrc2_token_transfers, token_transfers} =
       zrc2_logs
       |> Enum.reduce({[], []}, fn log, {zrc2_token_transfers_acc, token_transfers_acc} ->
+        first_topic = Hash.to_string(log.first_topic)
         params = zrc2_event_params(log.data)
 
-        if Map.has_key?(params, :token_id) do
-          # this is unsupported ZRC-1 event, so skip it
-          {zrc2_token_transfers_acc, token_transfers_acc}
-        else
-          first_topic = Hash.to_string(log.first_topic)
-
-          {from_address_hash, to_address_hash, amount} =
+        {from_address_hash, to_address_hash, amount} =
+          try do
             cond do
               first_topic in [@zrc2_transfer_success_event, @zrc2_transfer_from_success_event] ->
                 {params.sender, params.recipient, Decimal.new(params.amount)}
@@ -196,7 +199,15 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
               first_topic == @zrc2_burnt_event ->
                 {params.burn_account, SmartContract.burn_address_hash_string(), Decimal.new(params.amount)}
             end
+          rescue
+            _ ->
+              {nil, nil, nil}
+          end
 
+        if Enum.all?([from_address_hash, to_address_hash, amount], &is_nil(&1)) do
+          # the event is not supported as has incorrect parameters (doesn't relate to ZRC-2)
+          {zrc2_token_transfers_acc, token_transfers_acc}
+        else
           adapter_address_hash = zrc2_log_adapter_address_hash(log, adapter_address_hash_by_zrc2_address_hash)
 
           token_transfer = %{
@@ -252,7 +263,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     {tokens, address_token_balances, address_current_token_balances} =
       prepare_tokens_and_balances(token_transfers)
 
-    {:ok, _} =
+    {:ok, imported} =
       Chain.import(%{
         addresses: %{params: addresses},
         address_token_balances: %{params: address_token_balances},
@@ -262,6 +273,14 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         zrc2_token_transfers: %{params: zrc2_token_transfers},
         timeout: :infinity
       })
+
+    if imported.tokens != [] do
+      async_import_tokens(imported, realtime?)
+    end
+
+    if imported.address_token_balances != [] do
+      async_import_token_balances(imported, realtime?)
+    end
 
     fetch_zrc2_token_adapters(logs, transactions, block_number, adapter_address_hash_by_zrc2_address_hash)
   end
@@ -299,8 +318,9 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       logs
       |> Enum.filter(fn log ->
         with true <- Hash.to_string(log.first_topic) == @zrc2_transfer_success_event,
-             # ZRC-1 is not supported
-             false <- Map.has_key?(zrc2_event_params(log.data), :token_id),
+             # only ZRC-2 is supported
+             params = zrc2_event_params(log.data),
+             true <- Map.has_key?(params, :sender) && Map.has_key?(params, :recipient) && Map.has_key?(params, :amount),
              true <- is_nil(zrc2_log_adapter_address_hash(log, adapter_address_hash_by_zrc2_address_hash)) do
           transaction_input = transaction_by_hash[log.transaction_hash].input.bytes
 
@@ -347,14 +367,14 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         "Found #{Enum.count(zrc2_token_adapters)} new ERC-20 adapter(s) for ZRC-2 token(s) in the block #{block_number}.",
         fetcher: @fetcher_name
       )
-    end
 
-    {:ok, _} =
-      Chain.import(%{
-        addresses: %{params: Addresses.extract_addresses(%{zrc2_token_adapters: zrc2_token_adapters})},
-        zrc2_token_adapters: %{params: zrc2_token_adapters},
-        timeout: :infinity
-      })
+      {:ok, _} =
+        Chain.import(%{
+          addresses: %{params: Addresses.extract_addresses(%{zrc2_token_adapters: zrc2_token_adapters})},
+          zrc2_token_adapters: %{params: zrc2_token_adapters},
+          timeout: :infinity
+        })
+    end
   end
 
   @spec move_zrc2_token_transfers_to_token_transfers() :: :ok
@@ -390,21 +410,29 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         |> Map.delete(:adapter_address_hash)
       end)
 
-    {tokens, address_token_balances, address_current_token_balances} =
-      prepare_tokens_and_balances(token_transfers)
-
     if token_transfers != [] do
-      Logger.info("Moving #{Enum.count(token_transfers)} ZRC-2 token transfer(s) to the token_transfers table...")
-    end
+      {tokens, address_token_balances, address_current_token_balances} =
+        prepare_tokens_and_balances(token_transfers)
 
-    {:ok, _} =
-      Chain.import(%{
-        address_token_balances: %{params: address_token_balances},
-        address_current_token_balances: %{params: address_current_token_balances},
-        tokens: %{params: tokens},
-        token_transfers: %{params: token_transfers},
-        timeout: :infinity
-      })
+      Logger.info("Moving #{Enum.count(token_transfers)} ZRC-2 token transfer(s) to the token_transfers table...")
+
+      {:ok, imported} =
+        Chain.import(%{
+          address_token_balances: %{params: address_token_balances},
+          address_current_token_balances: %{params: address_current_token_balances},
+          tokens: %{params: tokens},
+          token_transfers: %{params: token_transfers},
+          timeout: :infinity
+        })
+
+      if imported.tokens != [] do
+        async_import_tokens(imported, false)
+      end
+
+      if imported.address_token_balances != [] do
+        async_import_token_balances(imported, false)
+      end
+    end
 
     Enum.each(token_transfers, fn tt ->
       Repo.delete_all(
