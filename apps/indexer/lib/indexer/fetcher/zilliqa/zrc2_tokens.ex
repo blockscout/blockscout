@@ -26,15 +26,13 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   alias Indexer.TokenBalances
   alias Indexer.Transform.{Addresses, AddressTokenBalances}
 
-  @fetcher_name :zilliqa_zrc2_tokens
   @counter_type "zilliqa_zrc2_tokens_fetcher_last_block_number"
+  @logging_max_block_range 100
 
   @zrc2_transfer_success_event "0xa5901fdb53ef45260c18811f35461e0eda2b6133d807dabbfb65314dd4fc2fac"
   @zrc2_transfer_from_success_event "0x96acecb2152edcc0681aa27d354d55d64192e86489ff8d5d903d63ef266755a1"
   @zrc2_minted_event "0x845020906442ad0651b44a75d9767153912bfa586416784cf8ead41b37b1dbf5"
   @zrc2_burnt_event "0x92b328e20a23b6dc6c50345c8a05b555446cbde2e9e1e2ee91dab47bd5204d07"
-
-  @logging_max_block_range 100
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -53,12 +51,13 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
   @impl GenServer
   def init(_args) do
-    {:ok, %{}, {:continue, nil}}
+    :ignore
+    #{:ok, %{}, {:continue, nil}}
   end
 
   @impl GenServer
   def handle_continue(_, state) do
-    Logger.metadata(fetcher: @fetcher_name)
+    Logger.metadata(fetcher: __MODULE__)
 
     # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
     :timer.sleep(2000)
@@ -110,7 +109,9 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       logs = read_block_logs(block_number_to_analyze)
       transactions = read_transfer_transactions(logs)
 
-      fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_number_to_analyze, false)
+      block_numbers_to_analyze = Range.new(block_number_to_analyze, block_number_to_analyze)
+
+      fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_numbers_to_analyze, __MODULE__)
       move_zrc2_token_transfers_to_token_transfers()
 
       LastFetchedCounter.upsert(%{
@@ -159,10 +160,12 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
               :to_address_hash => Hash.t()
             }
           ],
-          non_neg_integer(),
-          boolean()
+          Range.t(),
+          module()
         ) :: no_return()
-  def fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_number, realtime?) do
+  def fetch_zrc2_token_transfers_and_adapters([], _transactions, _block_numbers, _calling_module), do: nil
+
+  def fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_numbers, calling_module) do
     zrc2_logs =
       Enum.filter(
         logs,
@@ -242,15 +245,15 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
     if token_transfers != [] do
       Logger.info(
-        "Found #{Enum.count(token_transfers)} ZRC-2 token transfer(s) with known adapter address in the block #{block_number}.",
-        fetcher: @fetcher_name
+        "Found #{Enum.count(token_transfers)} ZRC-2 token transfer(s) with known adapter address in the block(s) #{block_range_printable(block_numbers)}.",
+        fetcher: calling_module
       )
     end
 
     if zrc2_token_transfers != [] do
       Logger.info(
-        "Found #{Enum.count(zrc2_token_transfers)} ZRC-2 token transfer(s) with unknown adapter address in the block #{block_number}.",
-        fetcher: @fetcher_name
+        "Found #{Enum.count(zrc2_token_transfers)} ZRC-2 token transfer(s) with unknown adapter address in the block(s) #{block_range_printable(block_numbers)}.",
+        fetcher: calling_module
       )
     end
 
@@ -274,15 +277,10 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         timeout: :infinity
       })
 
-    if imported.tokens != [] do
-      async_import_tokens(imported, realtime?)
-    end
+    async_import_tokens(imported, calling_module == Indexer.Block.Realtime.Fetcher)
+    async_import_token_balances(imported, calling_module == Indexer.Block.Realtime.Fetcher)
 
-    if imported.address_token_balances != [] do
-      async_import_token_balances(imported, realtime?)
-    end
-
-    fetch_zrc2_token_adapters(logs, transactions, block_number, adapter_address_hash_by_zrc2_address_hash)
+    fetch_zrc2_token_adapters(logs, transactions, block_numbers, adapter_address_hash_by_zrc2_address_hash, calling_module)
   end
 
   @spec fetch_zrc2_token_adapters(
@@ -305,10 +303,11 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
               :to_address_hash => Hash.t()
             }
           ],
-          non_neg_integer(),
-          %{Hash.t() => Hash.t()}
+          Range.t(),
+          %{Hash.t() => Hash.t()},
+          module()
         ) :: no_return()
-  defp fetch_zrc2_token_adapters(logs, transactions, block_number, adapter_address_hash_by_zrc2_address_hash) do
+  defp fetch_zrc2_token_adapters(logs, transactions, block_numbers, adapter_address_hash_by_zrc2_address_hash, calling_module) do
     transaction_by_hash =
       transactions
       |> Enum.map(&{&1.hash, &1})
@@ -364,8 +363,8 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
     if zrc2_token_adapters != [] do
       Logger.info(
-        "Found #{Enum.count(zrc2_token_adapters)} new ERC-20 adapter(s) for ZRC-2 token(s) in the block #{block_number}.",
-        fetcher: @fetcher_name
+        "Found #{Enum.count(zrc2_token_adapters)} new ERC-20 adapter(s) for ZRC-2 token(s) in the block(s) #{block_range_printable(block_numbers)}.",
+        fetcher: calling_module
       )
 
       {:ok, _} =
@@ -425,13 +424,8 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
           timeout: :infinity
         })
 
-      if imported.tokens != [] do
-        async_import_tokens(imported, false)
-      end
-
-      if imported.address_token_balances != [] do
-        async_import_token_balances(imported, false)
-      end
+      async_import_tokens(imported, false)
+      async_import_token_balances(imported, false)
     end
 
     Enum.each(token_transfers, fn tt ->
@@ -559,5 +553,16 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     |> Map.get("params", nil)
     |> Enum.map(fn param -> {String.to_atom(param["vname"]), param["value"]} end)
     |> Enum.into(%{})
+  end
+
+  @spec block_range_printable(Range.t()) :: String.t()
+  defp block_range_printable(range) do
+    first..last//_step = range
+
+    if Range.size(range) == 1 do
+      to_string(first)
+    else
+      "#{first}..#{last}"
+    end
   end
 end
