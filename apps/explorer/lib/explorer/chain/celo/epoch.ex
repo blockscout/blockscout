@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Celo.Epoch do
 
   use Explorer.Schema
 
-  import Ecto.Query, only: [from: 2, where: 2, dynamic: 2]
+  import Ecto.Query, only: [from: 2, where: 2]
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
     only: [proxy_implementations_association: 0]
