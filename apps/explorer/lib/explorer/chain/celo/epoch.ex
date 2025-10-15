@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Celo.Epoch do
 
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
-  alias Explorer.{Chain, Repo, SortingHelper}
+  alias Explorer.{Chain, QueryHelper, Repo, SortingHelper}
 
   alias Explorer.Chain.{
     Block,
@@ -159,6 +159,8 @@ defmodule Explorer.Chain.Celo.Epoch do
           end_processing_block_hash: block_hash,
           distribution: %EpochReward{} = distribution
         } ->
+          block_hash = to_string(block_hash)
+
           [
             {block_hash, distribution.reserve_bolster_transfer_log_index},
             {block_hash, distribution.community_transfer_log_index},
@@ -170,32 +172,20 @@ defmodule Explorer.Chain.Celo.Epoch do
           []
       end)
 
-    token_transfers_map = fetch_token_transfers_batch(block_hash_log_index_pairs, options)
-
-    # Map token transfers back to epochs
-    Enum.map(epochs, fn epoch ->
-      populate_epoch_token_transfers(epoch, token_transfers_map)
-    end)
-  end
-
-  defp fetch_token_transfers_batch(block_hash_log_index_pairs, options) do
-    conditions =
-      Enum.reduce(block_hash_log_index_pairs, false, fn {block_hash, log_index}, acc ->
-        condition = dynamic([tt], tt.block_hash == ^block_hash and tt.log_index == ^log_index)
-        dynamic([tt], ^acc or ^condition)
-      end)
-
-    query =
+    token_transfers_query =
       from(
         tt in TokenTransfer.only_consensus_transfers_query(),
-        where: ^conditions,
+        where: ^QueryHelper.tuple_in([:block_hash, :log_index], block_hash_log_index_pairs),
         select: {{tt.block_hash, tt.log_index}, tt},
         preload: [token: ^reputation_association()]
       )
 
-    query
-    |> Chain.select_repo(options).all()
-    |> Map.new()
+    token_transfers_map =
+      token_transfers_query
+      |> Chain.select_repo(options).all()
+      |> Map.new()
+
+    Enum.map(epochs, &populate_epoch_token_transfers(&1, token_transfers_map))
   end
 
   # Populate a single epoch with its token transfers from the fetched map
