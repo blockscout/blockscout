@@ -508,7 +508,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
           EmptyString,
           %Schema{
             type: :string,
-            pattern: ~r"^(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*$"
+            pattern: ~r"^(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2))*$"
           }
         ]
       },
@@ -519,6 +519,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       * ERC-721 - Non-fungible tokens
       * ERC-1155 - Multi-token standard
       * ERC-404 - Hybrid fungible/non-fungible tokens
+      * ZRC-2 - Fungible tokens on Zilliqa
 
       Example: `ERC-20,ERC-721` to show both fungible and NFT transfers
       """,

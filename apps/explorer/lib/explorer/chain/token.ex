@@ -67,6 +67,7 @@ defmodule Explorer.Chain.Token do
   * ERC-721
   * ERC-1155
   * ERC-404
+  * ZRC-2 (for Zilliqa chain type)
 
   ## Token Specifications
 
@@ -75,6 +76,7 @@ defmodule Explorer.Chain.Token do
   * [ERC-777](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-777.md)
   * [ERC-1155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md)
   * [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
+  * [ZRC-2](https://github.com/Zilliqa/ZRC/blob/main/zrcs/zrc-2.md)
   """
 
   use Explorer.Schema
