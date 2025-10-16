@@ -1616,7 +1616,7 @@ config :indexer, Indexer.Fetcher.Zilliqa.ScillaSmartContracts.Supervisor,
 
 config :libcluster,
   topologies: [
-    test: [
+    k8sDNS: [
       strategy: Cluster.Strategy.Kubernetes.DNS,
       config: [
         service: System.get_env("K8S_SERVICE"),

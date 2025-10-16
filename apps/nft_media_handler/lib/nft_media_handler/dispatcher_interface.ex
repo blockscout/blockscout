@@ -6,6 +6,8 @@ defmodule NFTMediaHandler.DispatcherInterface do
   require Logger
   use GenServer
 
+  alias Explorer.Helper
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -28,12 +30,7 @@ defmodule NFTMediaHandler.DispatcherInterface do
       case unused_nodes do
         [] ->
           Node.list()
-          |> Enum.filter(fn node ->
-            (node |> :rpc.call(Application, :get_env, [:explorer, :mode]) |> process_rpc_response(node)) in [
-              :all,
-              :indexer
-            ]
-          end)
+          |> Enum.filter(&Helper.indexer_node?/1)
           |> case do
             [] ->
               raise "No indexer nodes discovered"
@@ -65,7 +62,9 @@ defmodule NFTMediaHandler.DispatcherInterface do
 
     if Application.get_env(:nft_media_handler, :remote?) do
       node = GenServer.call(__MODULE__, :take_node_to_call)
-      {urls, folder} = node |> :rpc.call(Indexer.NFTMediaHandler.Queue, function, args) |> process_rpc_response(node)
+
+      {urls, folder} =
+        node |> :rpc.call(Indexer.NFTMediaHandler.Queue, function, args) |> Helper.process_rpc_response(node, {[], nil})
 
       {urls, node, folder}
     else
@@ -89,11 +88,4 @@ defmodule NFTMediaHandler.DispatcherInterface do
   defp remote_call(args, function, _node, false) do
     apply(Indexer.NFTMediaHandler.Queue, function, args)
   end
-
-  defp process_rpc_response({:badrpc, _reason} = error, node) do
-    Logger.error("Received an error from #{node}: #{inspect(error)}")
-    {[], nil}
-  end
-
-  defp process_rpc_response(response, _node), do: response
 end
