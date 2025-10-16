@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
   def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id_string, "type" => "JSON"} = params) do
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(hash),
-         false <- Chain.erc_20_token?(token),
+         false <- Chain.erc_20_token?(token) or Chain.zrc_2_token?(token),
          {token_id, ""} <- Integer.parse(token_id_string),
          token_transfers <-
            Chain.fetch_token_transfers_from_token_hash_and_token_id(hash, token_id, paging_options(params)) do
@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
 
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(hash, options),
-         false <- Chain.erc_20_token?(token),
+         false <- Chain.erc_20_token?(token) or Chain.zrc_2_token?(token),
          {token_id, ""} <- Integer.parse(token_id_string) do
       case Instance.nft_instance_by_token_id_and_token_address(token_id, hash) do
         {:ok, token_instance} -> Helper.render(conn, token_instance, hash, token_id, token)

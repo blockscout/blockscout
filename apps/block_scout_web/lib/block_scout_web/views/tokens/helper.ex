@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.Tokens.Helper do
   @doc """
   Returns the token transfers' amount according to the token's type and decimals.
 
-  When the token's type is ERC-20, then we are going to format the amount according to the token's
+  When the token's type is ERC-20 or ZRC-2, then we are going to format the amount according to the token's
   decimals considering 0 when the decimals is nil. Case the amount is nil, this function will
   return the symbol `--`.
 
@@ -54,6 +54,33 @@ defmodule BlockScoutWeb.Tokens.Helper do
   end
 
   defp do_token_transfer_amount(%Token{decimals: decimals}, "ERC-20", amount, _amounts, _token_ids) do
+    {:ok, CurrencyHelper.format_according_to_decimals(amount, decimals)}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount(%Token{type: "ZRC-2"}, nil, nil, nil, _token_ids) do
+    {:ok, "--"}
+  end
+
+  defp do_token_transfer_amount(_token, "ZRC-2", nil, nil, _token_ids) do
+    {:ok, "--"}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount(%Token{type: "ZRC-2", decimals: nil}, nil, amount, _amounts, _token_ids) do
+    {:ok, CurrencyHelper.format_according_to_decimals(amount, Decimal.new(0))}
+  end
+
+  defp do_token_transfer_amount(%Token{decimals: nil}, "ZRC-2", amount, _amounts, _token_ids) do
+    {:ok, CurrencyHelper.format_according_to_decimals(amount, Decimal.new(0))}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount(%Token{type: "ZRC-2", decimals: decimals}, nil, amount, _amounts, _token_ids) do
+    {:ok, CurrencyHelper.format_according_to_decimals(amount, decimals)}
+  end
+
+  defp do_token_transfer_amount(%Token{decimals: decimals}, "ZRC-2", amount, _amounts, _token_ids) do
     {:ok, CurrencyHelper.format_according_to_decimals(amount, decimals)}
   end
 
@@ -126,6 +153,36 @@ defmodule BlockScoutWeb.Tokens.Helper do
   defp do_token_transfer_amount_for_api(
          %Token{decimals: decimals},
          "ERC-20",
+         amount,
+         _amounts,
+         _token_ids
+       ) do
+    {:ok, amount, decimals}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount_for_api(%Token{type: "ZRC-2"}, nil, nil, nil, _token_ids) do
+    {:ok, nil}
+  end
+
+  defp do_token_transfer_amount_for_api(_token, "ZRC-2", nil, nil, _token_ids) do
+    {:ok, nil}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount_for_api(
+         %Token{type: "ZRC-2", decimals: decimals},
+         nil,
+         amount,
+         _amounts,
+         _token_ids
+       ) do
+    {:ok, amount, decimals}
+  end
+
+  defp do_token_transfer_amount_for_api(
+         %Token{decimals: decimals},
+         "ZRC-2",
          amount,
          _amounts,
          _token_ids
