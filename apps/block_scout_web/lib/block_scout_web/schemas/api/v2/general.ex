@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @address_hash_pattern ~r"^0x([A-Fa-f0-9]{40})$"
   @full_hash_pattern ~r"^0x([A-Fa-f0-9]{64})$"
   @hex_string_pattern ~r"^0x([A-Fa-f0-9]*)$"
-  @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*\]?$/i
+  @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2))*\]?$/i
   # Matches ISO-like datetime strings where separators between time fields can be ':' or percent-encoded '%3A'.
   # Accepts examples like:
   #  - "2025-10-12T09"
@@ -480,6 +480,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       * ERC-721 - Non-fungible tokens
       * ERC-1155 - Multi-token standard
       * ERC-404 - Hybrid fungible/non-fungible tokens
+      * ZRC-2 - Fungible tokens on Zilliqa
 
       Example: `ERC-20,ERC-721` to show both fungible and NFT transfers
       """,

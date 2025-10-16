@@ -3201,7 +3201,7 @@ defmodule Explorer.Chain do
   def data, do: DataloaderEcto.new(Repo)
 
   @spec transaction_token_transfer_type(Transaction.t()) ::
-          :erc20 | :erc721 | :erc1155 | :erc404 | :token_transfer | nil
+          :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2 | :token_transfer | nil
   def transaction_token_transfer_type(
         %Transaction{
           status: :ok,
@@ -3262,7 +3262,7 @@ defmodule Explorer.Chain do
 
         find_erc1155_token_transfer(transaction.token_transfers, {from_address, to_address})
 
-      # check for ERC-20 or for old ERC-721, ERC-1155, ERC-404 token versions
+      # check for ERC-20, ZRC-2 or for old ERC-721, ERC-1155, ERC-404 token versions
       {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
         types = [:address, {:uint, 256}]
 
@@ -3307,6 +3307,7 @@ defmodule Explorer.Chain do
         %Token{type: "ERC-721"} -> :erc721
         %Token{type: "ERC-1155"} -> :erc1155
         %Token{type: "ERC-404"} -> :erc404
+        %Token{type: "ZRC-2"} -> :zrc2
         _ -> nil
       end
     else
@@ -3372,6 +3373,14 @@ defmodule Explorer.Chain do
   defp erc_20_token_type?(type) do
     case type do
       "ERC-20" -> true
+      _ -> false
+    end
+  end
+
+  @spec zrc_2_token?(Token.t()) :: bool
+  def zrc_2_token?(token) do
+    case Map.get(token, :type) do
+      "ZRC-2" -> true
       _ -> false
     end
   end
