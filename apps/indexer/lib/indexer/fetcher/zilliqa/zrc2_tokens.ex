@@ -51,8 +51,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
   @impl GenServer
   def init(_args) do
-    :ignore
-    #{:ok, %{}, {:continue, nil}}
+    {:ok, %{}, {:continue, nil}}
   end
 
   @impl GenServer
@@ -72,7 +71,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       Logger.warning("There are no known consensus blocks in the database, so #{__MODULE__} won't start.")
       {:stop, :normal, state}
     else
-      first_block_number = Application.get_env(:indexer, :first_block)
+      first_block_number = max(Application.get_env(:indexer, :first_block), first_known_block_number())
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -280,7 +279,13 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     async_import_tokens(imported, calling_module == Indexer.Block.Realtime.Fetcher)
     async_import_token_balances(imported, calling_module == Indexer.Block.Realtime.Fetcher)
 
-    fetch_zrc2_token_adapters(logs, transactions, block_numbers, adapter_address_hash_by_zrc2_address_hash, calling_module)
+    fetch_zrc2_token_adapters(
+      logs,
+      transactions,
+      block_numbers,
+      adapter_address_hash_by_zrc2_address_hash,
+      calling_module
+    )
   end
 
   @spec fetch_zrc2_token_adapters(
@@ -307,7 +312,13 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
           %{Hash.t() => Hash.t()},
           module()
         ) :: no_return()
-  defp fetch_zrc2_token_adapters(logs, transactions, block_numbers, adapter_address_hash_by_zrc2_address_hash, calling_module) do
+  defp fetch_zrc2_token_adapters(
+         logs,
+         transactions,
+         block_numbers,
+         adapter_address_hash_by_zrc2_address_hash,
+         calling_module
+       ) do
     transaction_by_hash =
       transactions
       |> Enum.map(&{&1.hash, &1})
@@ -539,9 +550,24 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     )
   end
 
+  @spec first_known_block_number() :: non_neg_integer() | nil
+  defp first_known_block_number do
+    Repo.aggregate(get_known_block_number_query(), :min, :block_number)
+  end
+
   @spec last_known_block_number() :: non_neg_integer() | nil
   defp last_known_block_number do
-    Repo.aggregate(Block.consensus_blocks_query(), :max, :number)
+    Repo.aggregate(get_known_block_number_query(), :max, :block_number)
+  end
+
+  @spec get_known_block_number_query() :: Ecto.Query.t()
+  defp get_known_block_number_query do
+    from(
+      log in Log,
+      inner_join: block in Block,
+      on: block.hash == log.block_hash and block.consensus == true,
+      select: log
+    )
   end
 
   @spec zrc2_event_params(Data.t()) :: map()

@@ -33,6 +33,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
+  alias Explorer.Chain.Zilliqa.Zrc2.TokenTransfer, as: Zrc2TokenTransfer
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
@@ -596,6 +597,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       [set: [block_consensus: false, updated_at: updated_at]],
       timeout: timeout
     )
+
+    if Application.get_env(:explorer, :chain_type) == :zilliqa do
+      repo.delete_all(
+        from(
+          zrc2_token_transfer in Zrc2TokenTransfer,
+          join: s in subquery(acquire_query),
+          on: zrc2_token_transfer.block_number == s.number,
+          where: zrc2_token_transfer.block_hash not in ^hashes
+        ),
+        timeout: timeout
+      )
+    end
 
     removed_consensus_block_numbers
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
