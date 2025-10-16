@@ -2,27 +2,81 @@ name: Sync Fork
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
-  workflow_dispatch: # on button click
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-fork
+  cancel-in-progress: true
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+
       - name: Configure Git
         run: |
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "actions@github.com"
+          git config --global user.name  "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-      - name: Merge upstream
+      - name: Add upstream
         run: |
-          git remote add upstream https://github.com/blockscout/blockscout.git
-          git fetch upstream master
-          git checkout master
-          git merge upstream/master
-          git push origin master
+          git remote | grep -q "^upstream$" || \
+            git remote add upstream git@github.com:blockscout/blockscout.git
+          git fetch --prune --tags upstream main
+
+      - name: Ensure local tracking branch
+        run: |
+          # Make sure we're on the branch we want to sync
+          git switch -C main origin/main || git switch main
+
+      - id: fast_forward
+        name: Try fast-forward update
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Is fast-forward possible?
+          if git merge-base --is-ancestor main upstream/main; then
+            echo "ff_needed=false" >> "$GITHUB_OUTPUT"
+            echo "No update needed."
+            exit 0
+          fi
+          if git merge-base --is-ancestor upstream/main main; then
+            # upstream is ahead; fast-forward our branch
+            git merge --ff-only upstream/main
+            echo "ff_needed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          else
+            # Diverged; cannot fast-forward
+            echo "ff_possible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+      - name: Push fast-forward
+        if: steps.fast_forward.outputs.ff_needed == 'true'
+        run: |
+          git push origin HEAD:main
+
+      # If we diverged, open a PR so a human can manually resolve conflicts
+      - name: Create PR to resolve divergence
+        if: steps.fast_forward.outputs.ff_possible == 'false'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "Sync: merge upstream/main into main"
+          delete-branch: true
+          title: "Sync fork: upstream/main → main"
+          body: |
+            This PR was opened because a fast-forward was not possible.
+            Please resolve conflicts and merge.
+          branch: 'create-pull-request/sync-upstream'
+          base: main
+          signoff: true
