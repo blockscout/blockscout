@@ -808,6 +808,7 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_CONCURRENCY", 1)
 
 config :explorer, Explorer.Migrator.CeloAccounts, enabled: ConfigHelper.chain_type() == :celo
+config :explorer, Explorer.Migrator.CeloAggregatedElectionRewards, enabled: ConfigHelper.chain_type() == :celo
 
 config :explorer, Explorer.Migrator.CeloL2Epochs,
   enabled:

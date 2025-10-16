@@ -61,7 +61,8 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.Celo.ValidatorGroupVotes,
       Runner.Celo.Epochs,
       Runner.Celo.ElectionRewards,
-      Runner.Celo.EpochRewards
+      Runner.Celo.EpochRewards,
+      Runner.Celo.AggregatedElectionRewards
     ],
     zilliqa: [
       Runner.Zilliqa.AggregateQuorumCertificates,
