@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
+  alias Plug.Conn
 
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
@@ -694,7 +695,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   operation :trigger_nft_collection_metadata_refetch,
     summary: "Trigger metadata refetch for a token's NFT collection",
     description: "Triggers a metadata refetch for a token's NFT collection (by token address). Requires API key.",
-    parameters: base_params() ++ [address_hash_param(), admin_api_key_param()],
+    parameters: base_params() ++ [address_hash_param(), admin_api_key_param(), admin_api_key_param_query()],
     responses: [
       ok:
         {"NFT collection metadata refetch triggered.", "application/json",
@@ -713,10 +714,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
            {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
          {:api_key, ^api_key} <-
-           {:api_key,
-            conn.req_headers
-            |> List.keyfind("x-api-key", 0)
-            |> (&if(is_tuple(&1), do: elem(&1, 1), else: nil)).()},
+           {:api_key, get_api_key(conn)},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
@@ -726,6 +724,16 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> json(%{message: "OK"})
+    end
+  end
+
+  defp get_api_key(conn) do
+    case Conn.get_req_header(conn, "x-api-key") do
+      [api_key] ->
+        api_key
+
+      _ ->
+        Map.get(conn.query_params, "api_key")
     end
   end
 
