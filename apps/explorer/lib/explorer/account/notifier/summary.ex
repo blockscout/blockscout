@@ -157,6 +157,20 @@ defmodule Explorer.Account.Notifier.Summary do
           name: token_name(transfer),
           type: transfer.token.type
         }
+
+      "ZRC-2" ->
+        %Summary{
+          transaction_hash: transaction.hash,
+          method: method(transfer),
+          from_address_hash: transfer.from_address_hash,
+          to_address_hash: transfer.to_address_hash,
+          block_number: transfer.block_number,
+          amount: amount(transfer),
+          subject: transfer.token.type,
+          transaction_fee: fee(transaction),
+          name: token_name(transfer),
+          type: transfer.token.type
+        }
     end
   end
 

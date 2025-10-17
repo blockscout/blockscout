@@ -2,6 +2,8 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
   alias Explorer.ThirdPartyIntegrations.Auth0
   use BlockScoutWeb, :controller
 
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   import BlockScoutWeb.Chain,
@@ -102,32 +104,22 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
   def create_watchlist(conn, %{
         "address_hash" => address_hash,
         "name" => name,
-        "notification_settings" => %{
-          "native" => %{
-            "incoming" => watch_coin_input,
-            "outcoming" => watch_coin_output
-          },
-          "ERC-20" => %{
-            "incoming" => watch_erc_20_input,
-            "outcoming" => watch_erc_20_output
-          },
-          "ERC-721" => %{
-            "incoming" => watch_erc_721_input,
-            "outcoming" => watch_erc_721_output
-          },
-          # "ERC-1155" => %{
-          #   "incoming" => watch_erc_1155_input,
-          #   "outcoming" => watch_erc_1155_output
-          # },
-          "ERC-404" => %{
-            "incoming" => watch_erc_404_input,
-            "outcoming" => watch_erc_404_output
-          }
-        },
+        "notification_settings" => notification_settings,
         "notification_methods" => %{
           "email" => notify_email
         }
       }) do
+    watch_coin_input = notification_settings["native"]["incoming"]
+    watch_coin_output = notification_settings["native"]["outcoming"]
+    watch_erc_20_input = notification_settings["ERC-20"]["incoming"]
+    watch_erc_20_output = notification_settings["ERC-20"]["outcoming"]
+    watch_erc_721_input = notification_settings["ERC-721"]["incoming"]
+    watch_erc_721_output = notification_settings["ERC-721"]["outcoming"]
+    # watch_erc_1155_input = notification_settings["ERC-1155"]["incoming"]
+    # watch_erc_1155_output = notification_settings["ERC-1155"]["outcoming"]
+    watch_erc_404_input = notification_settings["ERC-404"]["incoming"]
+    watch_erc_404_output = notification_settings["ERC-404"]["outcoming"]
+
     watchlist_params = %{
       name: name,
       watch_coin_input: watch_coin_input,
@@ -144,12 +136,23 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
       address_hash: address_hash
     }
 
+    watchlist_params_extended =
+      if chain_type() == :zilliqa do
+        zrc2_notification_settings = Map.get(notification_settings, "ZRC-2", %{"incoming" => true, "outcoming" => true})
+
+        watchlist_params
+        |> Map.put(:watch_zrc_2_input, zrc2_notification_settings["incoming"])
+        |> Map.put(:watch_zrc_2_output, zrc2_notification_settings["outcoming"])
+      else
+        watchlist_params
+      end
+
     with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
          {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)},
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          {:ok, watchlist_address} <-
-           WatchlistAddress.create(Map.put(watchlist_params, :watchlist_id, watchlist.id)) do
+           WatchlistAddress.create(Map.put(watchlist_params_extended, :watchlist_id, watchlist.id)) do
       conn
       |> put_status(200)
       |> render(:watchlist_address, %{
@@ -163,32 +166,22 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
         "id" => watchlist_address_id,
         "address_hash" => address_hash,
         "name" => name,
-        "notification_settings" => %{
-          "native" => %{
-            "incoming" => watch_coin_input,
-            "outcoming" => watch_coin_output
-          },
-          "ERC-20" => %{
-            "incoming" => watch_erc_20_input,
-            "outcoming" => watch_erc_20_output
-          },
-          "ERC-721" => %{
-            "incoming" => watch_erc_721_input,
-            "outcoming" => watch_erc_721_output
-          },
-          # "ERC-1155" => %{
-          #   "incoming" => watch_erc_1155_input,
-          #   "outcoming" => watch_erc_1155_output
-          # },
-          "ERC-404" => %{
-            "incoming" => watch_erc_404_input,
-            "outcoming" => watch_erc_404_output
-          }
-        },
+        "notification_settings" => notification_settings,
         "notification_methods" => %{
           "email" => notify_email
         }
       }) do
+    watch_coin_input = notification_settings["native"]["incoming"]
+    watch_coin_output = notification_settings["native"]["outcoming"]
+    watch_erc_20_input = notification_settings["ERC-20"]["incoming"]
+    watch_erc_20_output = notification_settings["ERC-20"]["outcoming"]
+    watch_erc_721_input = notification_settings["ERC-721"]["incoming"]
+    watch_erc_721_output = notification_settings["ERC-721"]["outcoming"]
+    # watch_erc_1155_input = notification_settings["ERC-1155"]["incoming"]
+    # watch_erc_1155_output = notification_settings["ERC-1155"]["outcoming"]
+    watch_erc_404_input = notification_settings["ERC-404"]["incoming"]
+    watch_erc_404_output = notification_settings["ERC-404"]["outcoming"]
+
     watchlist_params = %{
       id: watchlist_address_id,
       name: name,
@@ -206,12 +199,23 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
       address_hash: address_hash
     }
 
+    zrc2_notification_settings = Map.get(notification_settings, "ZRC-2")
+
+    watchlist_params_extended =
+      if chain_type() == :zilliqa and not is_nil(zrc2_notification_settings) do
+        watchlist_params
+        |> Map.put(:watch_zrc_2_input, zrc2_notification_settings["incoming"])
+        |> Map.put(:watch_zrc_2_output, zrc2_notification_settings["outcoming"])
+      else
+        watchlist_params
+      end
+
     with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
          {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)},
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          {:ok, watchlist_address} <-
-           WatchlistAddress.update(Map.put(watchlist_params, :watchlist_id, watchlist.id)) do
+           WatchlistAddress.update(Map.put(watchlist_params_extended, :watchlist_id, watchlist.id)) do
       conn
       |> put_status(200)
       |> render(:watchlist_address, %{
