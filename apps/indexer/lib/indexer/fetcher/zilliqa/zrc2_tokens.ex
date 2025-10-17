@@ -93,12 +93,12 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       cond do
         is_initial_block ->
           Logger.info(
-            "Handling blocks #{block_number_to_analyze}..#{div(block_number_to_analyze, @logging_max_block_range) * @logging_max_block_range + 1}..."
+            "Handling blocks #{block_number_to_analyze}..#{max(div(block_number_to_analyze, @logging_max_block_range) * @logging_max_block_range + 1, first_block_number)}..."
           )
 
         rem(block_number_to_analyze, @logging_max_block_range) == 0 ->
           Logger.info(
-            "Handling blocks #{block_number_to_analyze}..#{block_number_to_analyze - @logging_max_block_range + 1}..."
+            "Handling blocks #{block_number_to_analyze}..#{max(block_number_to_analyze - @logging_max_block_range + 1, first_block_number)}..."
           )
 
         true ->
@@ -121,6 +121,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       # little pause to unload cpu
       Process.send_after(self(), :continue, 10)
     else
+      Logger.info("Checking zrc2_token_transfers table...")
       move_zrc2_token_transfers_to_token_transfers()
       Process.send_after(self(), :continue, :timer.seconds(10))
     end
