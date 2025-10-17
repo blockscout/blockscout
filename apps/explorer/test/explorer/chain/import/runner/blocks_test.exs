@@ -532,7 +532,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       insert_block(block, options)
       insert_block(block2, options)
 
-      Process.sleep(100)
+      Process.sleep(200)
 
       assert %{from_number: ^block_number, to_number: ^block_number} = Repo.one(MissingBlockRange)
     end
