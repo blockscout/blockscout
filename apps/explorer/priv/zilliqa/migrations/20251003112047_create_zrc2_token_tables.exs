@@ -30,5 +30,10 @@ defmodule Explorer.Repo.Zilliqa.Migrations.CreateZRC2TokenTables do
 
     create(index(:zrc2_token_transfers, :zrc2_address_hash))
     create(index(:zrc2_token_transfers, [:block_number, :block_hash]))
+
+    alter table(:account_watchlist_addresses) do
+      add(:watch_zrc_2_input, :boolean, default: true)
+      add(:watch_zrc_2_output, :boolean, default: true)
+    end
   end
 end
