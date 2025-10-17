@@ -111,6 +111,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Type do
 
   OpenApiSpex.schema(%{
     type: :string,
-    enum: (if chain_type() == :zilliqa, do: ["ERC-20", "ERC-721", "ERC-1155", "ERC-404", "ZRC-2"], else: ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"])
+    enum:
+      if(chain_type() == :zilliqa,
+        do: ["ERC-20", "ERC-721", "ERC-1155", "ERC-404", "ZRC-2"],
+        else: ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+      )
   })
 end
