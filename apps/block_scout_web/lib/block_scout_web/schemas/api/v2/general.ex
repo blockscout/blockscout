@@ -487,10 +487,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @spec admin_api_key_param() :: Parameter.t()
   def admin_api_key_param do
     %Parameter{
-      name: :x_api_key,
+      name: :"x-api-key",
       in: :header,
       schema: %Schema{type: :string},
-      required: true,
+      required: false,
       description: "API key required for sensitive endpoints"
     }
   end

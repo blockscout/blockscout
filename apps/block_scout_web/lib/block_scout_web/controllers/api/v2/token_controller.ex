@@ -694,7 +694,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   operation :trigger_nft_collection_metadata_refetch,
     summary: "Trigger metadata refetch for a token's NFT collection",
     description: "Triggers a metadata refetch for a token's NFT collection (by token address). Requires API key.",
-    parameters: [address_hash_param() | base_params()],
+    parameters: base_params() ++ [address_hash_param(), admin_api_key_param()],
     responses: [
       ok:
         {"NFT collection metadata refetch triggered.", "application/json",
