@@ -16,6 +16,7 @@
 
 ### 🐛 Bug Fixes
 
+- dump block_hash to binary when querying celo epoch distributions ([#13410](https://github.com/blockscout/blockscout/pull/13410))
 - Fix flaky indexer, web tests, refactoring ([#13392](https://github.com/blockscout/blockscout/issues/13392))
 - Advanced filters: ERC-20 value in CSV ([#13326](https://github.com/blockscout/blockscout/issues/13326))
 - Ignore old reorgs in beacon deposits fetcher ([#13372](https://github.com/blockscout/blockscout/issues/13372))
