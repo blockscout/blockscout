@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.AddressContractView do
 
   alias ABI.FunctionSelector
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, Data, InternalTransaction, InternalTransactionArchive, Transaction}
   alias Explorer.Chain.SmartContract
   alias Explorer.Chain.SmartContract.Proxy.EIP1167
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
@@ -132,8 +132,25 @@ defmodule BlockScoutWeb.AddressContractView do
   end
 
   def contract_creation_code(%Address{
+        contract_archival_creation_internal_transaction: %InternalTransactionArchive{
+          error: error,
+          init: init
+        }
+      })
+      when not is_nil(error) do
+    {:failed, init}
+  end
+
+  def contract_creation_code(%Address{
         contract_code: %Data{bytes: <<>>},
         contract_creation_internal_transaction: %InternalTransaction{init: init}
+      }) do
+    {:selfdestructed, init}
+  end
+
+  def contract_creation_code(%Address{
+        contract_code: %Data{bytes: <<>>},
+        contract_archival_creation_internal_transaction: %InternalTransactionArchive{init: init}
       }) do
     {:selfdestructed, init}
   end
@@ -148,6 +165,10 @@ defmodule BlockScoutWeb.AddressContractView do
 
   def creation_code(%Address{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
     address.contract_creation_internal_transaction.init
+  end
+
+  def creation_code(%Address{contract_archival_creation_internal_transaction: %InternalTransactionArchive{}} = address) do
+    address.contract_archival_creation_internal_transaction.init
   end
 
   def creation_code(%Address{contract_creation_transaction: nil}) do

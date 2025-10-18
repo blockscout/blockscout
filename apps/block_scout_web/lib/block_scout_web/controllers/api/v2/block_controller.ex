@@ -469,7 +469,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> Keyword.merge(internal_transaction_type_options(params))
         |> Keyword.merge(internal_transaction_call_type_options(params))
 
-      internal_transactions_plus_one = InternalTransaction.block_to_internal_transactions(block.hash, full_options)
+      internal_transactions_plus_one = InternalTransaction.block_to_internal_transactions(block, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 

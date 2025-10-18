@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.RPC.Helper
   alias Explorer.{Chain, Etherscan}
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.{Address, Hash, Wei}
   alias Explorer.Etherscan.{Addresses, Blocks}
   alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
@@ -544,8 +544,21 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
-  defp list_internal_transactions(transaction_or_address_hash_param_or_no_param, options) do
-    case Etherscan.list_internal_transactions(transaction_or_address_hash_param_or_no_param, options) do
+  @spec list_internal_transactions(
+          Hash.Address.t() | Hash.Full.t() | :all,
+          map()
+        ) :: {:ok, [map()]} | {:error, :not_found}
+  defp list_internal_transactions(%Hash{byte_count: 32, bytes: _bytes} = transaction_hash_param, options) do
+    with {:ok, transaction} <- Chain.hash_to_transaction(transaction_hash_param, options) do
+      case Etherscan.list_internal_transactions(transaction, options) do
+        [] -> {:error, :not_found}
+        internal_transactions -> {:ok, internal_transactions}
+      end
+    end
+  end
+
+  defp list_internal_transactions(address_hash_param_or_no_param, options) do
+    case Etherscan.list_internal_transactions(address_hash_param_or_no_param, options) do
       [] -> {:error, :not_found}
       internal_transactions -> {:ok, internal_transactions}
     end

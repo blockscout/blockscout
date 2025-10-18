@@ -16,6 +16,7 @@ defmodule Explorer.Chain.Transaction.Schema do
     Data,
     Hash,
     InternalTransaction,
+    InternalTransactionArchive,
     Log,
     PendingTransactionOperation,
     SignedAuthorization,
@@ -256,6 +257,12 @@ defmodule Explorer.Chain.Transaction.Schema do
         )
 
         has_many(:internal_transactions, InternalTransaction, foreign_key: :transaction_hash, references: :hash)
+
+        has_many(:archive_internal_transactions, InternalTransactionArchive,
+          foreign_key: :transaction_hash,
+          references: :hash
+        )
+
         has_many(:logs, Log, foreign_key: :transaction_hash, references: :hash)
 
         has_many(:token_transfers, TokenTransfer, foreign_key: :transaction_hash, references: :hash)
