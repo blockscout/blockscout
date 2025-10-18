@@ -321,7 +321,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert no_refetch_block_response["is_pending_update"] == false
     end
 
-    if @chain_type == :celo do
+    if @chain_identity == {:optimism, :celo} do
       test "get block with Celo base fee information when chain type is celo", %{conn: conn} do
         # Store original configuration
         original_celo_config = Application.get_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts)
