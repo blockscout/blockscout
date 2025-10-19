@@ -505,7 +505,7 @@ config :explorer, Explorer.Market.Fetcher.Token,
     !disable_exchange_rates? &&
       ConfigHelper.parse_bool_env_var(
         "MARKET_TOKENS_FETCHER_ENABLED",
-        ConfigHelper.safe_get_env("DISABLE_TOKEN_EXCHANGE_RATE", "true")
+        if(ConfigHelper.safe_get_env("DISABLE_TOKEN_EXCHANGE_RATE", "false") == "true", do: "false", else: "true")
       ),
   interval:
     ConfigHelper.parse_time_env_var(
