@@ -500,7 +500,7 @@ config :explorer, Explorer.Market.Fetcher.Coin,
   enable_consolidation: true,
   cache_period: ConfigHelper.parse_time_env_var("MARKET_COIN_CACHE_PERIOD", "10m")
 
-disable_token_exchange_rates? =  ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_EXCHANGE_RATE")
+disable_token_exchange_rates? = ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_EXCHANGE_RATE")
 market_tokens_fetcher_enabled? = ConfigHelper.parse_bool_env_var("MARKET_TOKENS_FETCHER_ENABLED", "true")
 
 config :explorer, Explorer.Market.Fetcher.Token,
