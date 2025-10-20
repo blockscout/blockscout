@@ -48,21 +48,26 @@ defmodule Explorer.Chain.Celo.AggregatedElectionReward do
   Retrieves aggregated election rewards by epoch number.
 
   ## Parameters
-  - `epoch_number` (`integer()`): The epoch number to aggregate election
-    rewards for.
+  - `epoch_number` (`integer()`): The epoch number to aggregate election rewards
+    for.
   - `options` (`Keyword.t()`): Optional parameters for fetching data.
 
   ## Returns
-  - `%{atom() => Wei.t() | nil}`: A map of aggregated election rewards by type.
+  - A map of aggregated election rewards by type.
 
   ## Examples
 
       iex> epoch_number = 1
-      iex> Explorer.Chain.Celo.Reader.epoch_number_to_rewards_aggregated_by_type(epoch_number)
-      %{voter_reward: %{total: %Decimal{}, count: 2}, ...}
+      iex> Explorer.Chain.Celo.AggregatedElectionReward.epoch_number_to_rewards_aggregated_by_type(epoch_number)
+      %{
+        voter: %{total: %Explorer.Chain.Wei{value: #Decimal<2500>}, count: 2, token: %Explorer.Chain.Token{}},
+        validator: %{total: %Explorer.Chain.Wei{value: #Decimal<0>}, count: 0, token: %Explorer.Chain.Token{}},
+        group: %{total: %Explorer.Chain.Wei{value: #Decimal<0>}, count: 0, token: %Explorer.Chain.Token{}},
+        delegated_payment: %{total: %Explorer.Chain.Wei{value: #Decimal<0>}, count: 0, token: %Explorer.Chain.Token{}}
+      }
   """
   @spec epoch_number_to_rewards_aggregated_by_type(integer(), Keyword.t()) ::
-          %{atom() => %{total: Decimal.t(), count: integer(), token: map() | nil}}
+          %{atom() => %{total: Wei.t(), count: integer(), token: Token.t() | nil}}
   def epoch_number_to_rewards_aggregated_by_type(epoch_number, options \\ []) do
     reward_type_to_aggregated_rewards =
       __MODULE__
@@ -71,9 +76,10 @@ defmodule Explorer.Chain.Celo.AggregatedElectionReward do
       |> Map.new(&{&1.type, %{total: &1.sum, count: &1.count}})
 
     reward_type_to_token = election_reward_tokens_by_type()
+    zero = %Wei{value: Decimal.new(0)}
 
     ElectionReward.types()
-    |> Map.new(&{&1, %{total: Decimal.new(0), count: 0}})
+    |> Map.new(&{&1, %{total: zero, count: 0}})
     |> Map.merge(reward_type_to_aggregated_rewards)
     |> Map.new(fn {type, aggregated_reward} ->
       token = reward_type_to_token[type]

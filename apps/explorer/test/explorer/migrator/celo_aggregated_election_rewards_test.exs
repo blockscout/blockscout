@@ -24,7 +24,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
 
         # Run migration
         assert MigrationStatus.get_status("celo_aggregated_election_rewards") == nil
-        {:ok, _} = CeloAggregatedElectionRewards.start_link([])
+        start_supervised!(CeloAggregatedElectionRewards)
 
         # Wait for migration to complete
         Process.sleep(500)
@@ -66,7 +66,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         )
 
         # Run migration
-        {:ok, _} = CeloAggregatedElectionRewards.start_link([])
+        start_supervised!(CeloAggregatedElectionRewards)
         Process.sleep(500)
 
         # Verify only finalized epoch was processed
@@ -148,8 +148,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         assert MigrationStatus.get_status("celo_aggregated_election_rewards") == nil
 
         # Run migration
-        {:ok, _} = CeloAggregatedElectionRewards.start_link([])
-
+        start_supervised!(CeloAggregatedElectionRewards)
         # Wait for migration to complete
         Process.sleep(500)
 
@@ -204,7 +203,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         )
 
         # Run migration
-        {:ok, _} = CeloAggregatedElectionRewards.start_link([])
+        start_supervised!(CeloAggregatedElectionRewards)
         Process.sleep(500)
 
         # Verify only reward types with data are saved (no zero values)
@@ -287,7 +286,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         )
 
         # Run migration
-        {:ok, _} = CeloAggregatedElectionRewards.start_link([])
+        start_supervised!(CeloAggregatedElectionRewards)
         Process.sleep(1000)
 
         # Verify all epochs were processed
@@ -341,7 +340,8 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         )
 
         # Run migration first time
-        {:ok, _pid} = CeloAggregatedElectionRewards.start_link([])
+        start_supervised!(CeloAggregatedElectionRewards)
+
         Process.sleep(500)
 
         # Verify data was created (only 1 type has data, so only 1 aggregate)
@@ -355,7 +355,8 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         MigrationStatus.set_status("celo_aggregated_election_rewards", nil)
 
         # Run migration second time
-        {:ok, _pid} = CeloAggregatedElectionRewards.start_link([])
+        start_supervised!(CeloAggregatedElectionRewards)
+
         Process.sleep(500)
 
         # Verify data was not duplicated
@@ -397,7 +398,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         end
 
         # Run migration
-        {:ok, _} = CeloAggregatedElectionRewards.start_link([])
+        start_supervised!(CeloAggregatedElectionRewards)
         Process.sleep(1000)
 
         # Verify all epochs were processed
@@ -419,7 +420,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         epoch = insert(:celo_epoch, number: 999, end_processing_block_hash: insert(:block).hash)
 
         # Run migration
-        {:ok, _} = CeloAggregatedElectionRewards.start_link([])
+        start_supervised!(CeloAggregatedElectionRewards)
         Process.sleep(500)
 
         # Verify no aggregates were created (no zero-value entries)
