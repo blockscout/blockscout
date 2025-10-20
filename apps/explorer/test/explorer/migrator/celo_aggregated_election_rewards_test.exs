@@ -36,7 +36,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         assert Repo.aggregate(AggregatedElectionReward, :count) == 0
       end
 
-      test "skips epochs without end_processing_block_hash (unfinalzed epochs)" do
+      test "skips epochs without end_processing_block_hash (unfinalized epochs)" do
         # Create finalized epoch
         finalized_epoch = insert(:celo_epoch, number: 100, end_processing_block_hash: insert(:block).hash)
 
