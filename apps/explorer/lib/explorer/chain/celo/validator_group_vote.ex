@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Celo.ValidatorGroupVote do
   alias Explorer.Chain.{Address, Block, Hash, Transaction}
 
   @types_enum ~w(activated revoked)a
-  @required_attrs ~w(account_address_hash group_address_hash type transaction_hash block_hash block_number)a
+  @required_attrs ~w(account_address_hash group_address_hash type transaction_hash block_hash block_number log_index)a
 
   @typedoc """
   * `account_address_hash` - the address of the account that made the vote.
@@ -42,6 +42,7 @@ defmodule Explorer.Chain.Celo.ValidatorGroupVote do
     )
 
     field(:block_number, :integer, null: false)
+    field(:log_index, :integer, primary_key: true, null: false)
 
     belongs_to(:block, Block,
       foreign_key: :block_hash,

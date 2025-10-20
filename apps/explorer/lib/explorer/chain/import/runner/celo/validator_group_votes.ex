@@ -65,6 +65,7 @@ defmodule Explorer.Chain.Import.Runner.Celo.ValidatorGroupVotes do
         changes_list,
         &{
           &1.transaction_hash,
+          &1.log_index,
           &1.account_address_hash,
           &1.group_address_hash
         }
@@ -80,6 +81,7 @@ defmodule Explorer.Chain.Import.Runner.Celo.ValidatorGroupVotes do
         timestamps: timestamps,
         conflict_target: [
           :transaction_hash,
+          :log_index,
           :account_address_hash,
           :group_address_hash
         ],

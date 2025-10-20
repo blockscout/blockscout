@@ -3917,21 +3917,48 @@ defmodule Explorer.Chain do
 
     [total_token_transfers_task, total_token_holders_task]
     |> Task.yield_many(timeout)
-    |> Enum.map(fn {_task, res} ->
+    |> Enum.map(fn {task, res} ->
       case res do
         {:ok, result} ->
           result
 
         {:exit, reason} ->
           Logger.warning("Query fetching token counters terminated: #{inspect(reason)}")
-          0
+
+          fallback_cached_value_based_on_async_task_pid(
+            task.pid,
+            total_token_transfers_task.pid,
+            total_token_holders_task.pid,
+            address_hash
+          )
 
         nil ->
           Logger.warning("Query fetching token counters timed out.")
-          0
+
+          fallback_cached_value_based_on_async_task_pid(
+            task.pid,
+            total_token_transfers_task.pid,
+            total_token_holders_task.pid,
+            address_hash
+          )
       end
     end)
     |> List.to_tuple()
+  end
+
+  defp fallback_cached_value_based_on_async_task_pid(
+         task_pid,
+         total_token_transfers_task_pid,
+         total_token_holders_task_pid,
+         address_hash
+       ) do
+    case task_pid do
+      ^total_token_transfers_task_pid ->
+        TokenTransfersCount.fetch_count_from_cache(address_hash)
+
+      ^total_token_holders_task_pid ->
+        TokenHoldersCount.fetch_count_from_cache(address_hash)
+    end
   end
 
   @spec flat_1155_batch_token_transfers([TokenTransfer.t()], Decimal.t() | nil) :: [TokenTransfer.t()]
