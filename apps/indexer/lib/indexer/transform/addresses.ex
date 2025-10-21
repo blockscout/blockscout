@@ -193,6 +193,7 @@ defmodule Indexer.Transform.Addresses do
     ],
     celo_pending_account_operations: [
       [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
         %{from: :address_hash, to: :hash}
       ]
     ]
