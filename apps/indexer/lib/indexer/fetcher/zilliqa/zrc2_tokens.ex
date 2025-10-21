@@ -34,6 +34,8 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   @zrc2_minted_event "0x845020906442ad0651b44a75d9767153912bfa586416784cf8ead41b37b1dbf5"
   @zrc2_burnt_event "0x92b328e20a23b6dc6c50345c8a05b555446cbde2e9e1e2ee91dab47bd5204d07"
 
+  @check_zrc2_token_transfers_interval :timer.seconds(10)
+
   def child_spec(start_link_arguments) do
     spec = %{
       id: __MODULE__,
@@ -55,7 +57,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   end
 
   @impl GenServer
-  def handle_continue(_, state) do
+  def handle_continue(_, _state) do
     Logger.metadata(fetcher: __MODULE__)
 
     # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
@@ -68,10 +70,22 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       end
 
     if is_nil(block_number_to_analyze) do
-      Logger.warning("There are no known consensus blocks in the database, so #{__MODULE__} won't start.")
-      {:stop, :normal, state}
+      Logger.info(
+        "There are no known consensus blocks in the database, so #{__MODULE__} will only periodically check zrc2_token_transfers table."
+      )
+
+      LastFetchedCounter.upsert(%{counter_type: @counter_type, value: 0})
+      Process.send_after(self(), :continue, @check_zrc2_token_transfers_interval)
+
+      {:noreply, %{block_number_to_analyze: 0, is_initial_block: true, first_block_number: 0}}
     else
-      first_block_number = max(Application.get_env(:indexer, :first_block), first_known_block_number())
+      first_block_number =
+        if block_number_to_analyze > 0 do
+          max(Application.get_env(:indexer, :first_block), first_known_block_number())
+        else
+          0
+        end
+
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -113,17 +127,14 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_numbers_to_analyze, __MODULE__)
       move_zrc2_token_transfers_to_token_transfers()
 
-      LastFetchedCounter.upsert(%{
-        counter_type: @counter_type,
-        value: block_number_to_analyze - 1
-      })
+      LastFetchedCounter.upsert(%{counter_type: @counter_type, value: block_number_to_analyze - 1})
 
       # little pause to unload cpu
       Process.send_after(self(), :continue, 10)
     else
       Logger.info("Checking zrc2_token_transfers table...")
       move_zrc2_token_transfers_to_token_transfers()
-      Process.send_after(self(), :continue, :timer.seconds(10))
+      Process.send_after(self(), :continue, @check_zrc2_token_transfers_interval)
     end
 
     {:noreply,
