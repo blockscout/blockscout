@@ -264,6 +264,7 @@ defmodule Indexer.Helper do
     end)
   end
 
+  # todo: refactor: reuse existing code from EthereumJSONRPC app
   @doc """
     Retrieves event logs from Ethereum-like blockchains within a specified block
     range for a given address and set of topics using JSON-RPC.
