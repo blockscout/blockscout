@@ -7,8 +7,8 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenAdapter do
   """
   use Explorer.Schema
 
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.Repo
 
   @required_attrs ~w(zrc2_address_hash adapter_address_hash)a
 
@@ -61,5 +61,16 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenAdapter do
     query
     |> Repo.all(timeout: :infinity)
     |> Enum.into(%{})
+  end
+
+  @spec adapter_address_hash_to_zrc2_address_hash(Hash.t(), [Chain.api?()]) :: Hash.t() | nil
+  def adapter_address_hash_to_zrc2_address_hash(adapter_address_hash, options \\ []) do
+    query =
+      from(a in __MODULE__,
+        select: a.zrc2_address_hash,
+        where: a.adapter_address_hash == ^adapter_address_hash
+      )
+
+    Chain.select_repo(options).one(query)
   end
 end
