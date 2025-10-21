@@ -902,10 +902,7 @@ defmodule Explorer.Chain.AdvancedFilter do
         cross_lateral_join:
           token_transfer in subquery(
             query
-            |> where(
-              as(:transaction).has_token_transfers == true and
-                fragment("substring(? FOR 4)", as(:transaction).input) == parent_as(:method_ids).method_id
-            )
+            |> where(fragment("substring(? FOR 4)", as(:transaction).input) == parent_as(:method_ids).method_id)
             |> exclude(:order_by)
             |> order_by(
               desc: as(:transaction).block_number,
