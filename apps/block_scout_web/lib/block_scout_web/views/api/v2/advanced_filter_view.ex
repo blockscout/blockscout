@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
   alias Explorer.Chain.{Address, Data, MethodIdentifier, Transaction}
   alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView, TransactionView}
   alias Explorer.Chain.{Address, AdvancedFilter, Data, Transaction}
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
 
@@ -65,6 +64,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       "TokenDecimals",
       "TokenSymbol",
       "TokenValue",
+      "TokenID",
       "BlockNumber",
       "Fee",
       "CurrentPrice",
@@ -100,6 +100,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
          _closing_price,
          method_id
        ) do
+    token_transfer_total = TokenTransferView.prepare_token_transfer_total(advanced_filter.token_transfer)
+
     [
       to_string(advanced_filter.hash),
       advanced_filter.type,
@@ -110,11 +112,13 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       Address.checksum(advanced_filter.created_contract_address_hash),
       decimal_to_string(advanced_filter.value, :normal),
       Address.checksum(advanced_filter.token_transfer.token.contract_address_hash),
-      decimal_to_string(advanced_filter.token_transfer.token.decimals, :normal),
+      decimal_to_string(token_transfer_total["decimals"], :normal),
       advanced_filter.token_transfer.token.symbol,
-      advanced_filter.token_transfer.amount
-      |> Decimal.div(advanced_filter.token_transfer.token.decimals)
-      |> decimal_to_string(:xsd),
+      token_transfer_total["decimals"] &&
+        token_transfer_total["value"]
+        |> Decimal.div(Integer.pow(10, Decimal.to_integer(token_transfer_total["decimals"])))
+        |> decimal_to_string(:xsd),
+      token_transfer_total["token_id"],
       advanced_filter.block_number,
       decimal_to_string(advanced_filter.fee, :normal),
       nil,
@@ -143,9 +147,10 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       nil,
       nil,
       nil,
+      nil,
       advanced_filter.block_number,
       decimal_to_string(advanced_filter.fee, :normal),
-      decimal_to_string(exchange_rate.usd_value, :xsd),
+      decimal_to_string(exchange_rate.fiat_value, :xsd),
       decimal_to_string(opening_price, :xsd),
       decimal_to_string(closing_price, :xsd)
     ]
