@@ -118,7 +118,9 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   """
   @spec list_methods(Plug.Conn.t(), map()) :: {:method, nil | Explorer.Chain.ContractMethod.t()} | Plug.Conn.t()
   def list_methods(conn, %{"q" => query}) do
-    case {@methods_id_to_name_map[String.downcase(query)], @methods_name_to_id_map[String.downcase(query)]} do
+    query = String.downcase(query)
+
+    case {@methods_id_to_name_map[query], @methods_name_to_id_map[query]} do
       {name, _} when is_binary(name) ->
         render(conn, :methods, methods: [%{method_id: query, name: name}])
 
@@ -128,8 +130,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       _ ->
         contract_method_method_id_tuple =
           case Data.cast(query) do
-            {:ok, %Data{bytes: <<_::bytes-size(4)>> = binary_method_id}} ->
-              {ContractMethod.find_contract_method_by_selector_id(binary_method_id, @api_true), binary_method_id}
+            {:ok, %Data{bytes: <<_::bytes-size(4)>> = binary_method_id} = data_method_id} ->
+              {ContractMethod.find_contract_method_by_selector_id(binary_method_id, @api_true), data_method_id}
 
             _ ->
               {ContractMethod.find_contract_method_by_name(query, @api_true), nil}
@@ -139,7 +141,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
           {%ContractMethod{abi: %{"name" => name}, identifier: identifier}, _} ->
             render(conn, :methods, methods: [%{method_id: identifier, name: name}])
 
-          {_, identifier} when is_binary(identifier) ->
+          {_, identifier} when not is_nil(identifier) ->
             render(conn, :methods, methods: [%{method_id: identifier, name: ""}])
 
           _ ->

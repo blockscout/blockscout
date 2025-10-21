@@ -213,15 +213,15 @@ defmodule Explorer.Chain.AdvancedFilter do
       type =
         cond do
           advanced_filter.created_from in ~w(transaction internal_transaction)a and
-              Decimal.gt?(advanced_filter.value, 0) ->
-            "coin_transfer"
-
-          advanced_filter.created_from in ~w(transaction internal_transaction)a and
               is_nil(advanced_filter.to_address_hash) ->
             "contract_creation"
 
-          advanced_filter.created_from in ~w(transaction internal_transaction)a ->
+          advanced_filter.created_from in ~w(transaction internal_transaction)a and
+              not is_nil(advanced_filter.to_address.contract_code) ->
             "contract_interaction"
+
+          advanced_filter.created_from in ~w(transaction internal_transaction)a ->
+            "coin_transfer"
 
           true ->
             advanced_filter.token_transfer.token_type
@@ -582,14 +582,15 @@ defmodule Explorer.Chain.AdvancedFilter do
       |> limit_query(paging_options)
       |> query_function.(false)
       |> limit_query(paging_options)
-      |> preload([:transaction, [token: ^Reputation.reputation_association()]])
       |> select_merge([unnested_token_transfer: unnested_token_transfer], %{
         token_ids: [unnested_token_transfer.token_id],
         amounts: [unnested_token_transfer.amount]
       })
 
     fn repo, repo_options ->
-      filtered_and_paginated_query |> repo.all(repo_options) |> repo.preload([:transaction, :token])
+      filtered_and_paginated_query
+      |> repo.all(repo_options)
+      |> repo.preload([:transaction, [token: Reputation.reputation_association()]])
     end
   end
 
