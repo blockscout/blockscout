@@ -104,7 +104,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
           on: join_on_ctid(it, locked_it)
         )
 
-      Repo.delete_all(delete_query)
+      Repo.delete_all(delete_query, timeout: :infinity)
     end)
   end
 
