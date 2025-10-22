@@ -16,6 +16,7 @@
 
 ### 🐛 Bug Fixes
 
+- Set timeout: :infinity for DeleteZeroValueInternalTransactions ([#13434](https://github.com/blockscout/blockscout/pull/13434))
 - Fix DeleteZeroValueInternalTransactions state keys ([#13431](https://github.com/blockscout/blockscout/pull/13431))
 - dump block_hash to binary when querying celo epoch distributions ([#13410](https://github.com/blockscout/blockscout/pull/13410))
 - Fix flaky indexer, web tests, refactoring ([#13392](https://github.com/blockscout/blockscout/issues/13392))
