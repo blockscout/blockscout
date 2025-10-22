@@ -37,7 +37,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
       case MigrationStatus.fetch(@migration_name) do
         nil ->
           border_number = get_border_number()
-          state = %{min_block_number: border_number, max_block_number: border_number}
+          state = %{"min_block_number" => border_number, "max_block_number" => border_number}
           MigrationStatus.set_status(@migration_name, "started")
           MigrationStatus.update_meta(@migration_name, state)
           state
@@ -53,27 +53,27 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   end
 
   @impl true
-  def handle_info(:update_future, %{max_block_number: max_number} = state) do
+  def handle_info(:update_future, %{"max_block_number" => max_number} = state) do
     border_number = get_border_number()
     clear_internal_transactions(max_number, border_number)
-    new_state = %{state | max_block_number: border_number + 1}
+    new_state = %{state | "max_block_number" => border_number + 1}
     MigrationStatus.update_meta(@migration_name, new_state)
     schedule_future_check()
     {:noreply, new_state}
   end
 
   @impl true
-  def handle_info(:update_past, %{min_block_number: -1} = state) do
-    new_state = Map.delete(state, :min_block_number)
+  def handle_info(:update_past, %{"min_block_number" => -1} = state) do
+    new_state = Map.delete(state, "min_block_number")
     MigrationStatus.set_status(@migration_name, "completed")
     MigrationStatus.update_meta(@migration_name, new_state)
     {:noreply, new_state}
   end
 
-  def handle_info(:update_past, %{min_block_number: min_number} = state) do
+  def handle_info(:update_past, %{"min_block_number" => min_number} = state) do
     from_number = max(min_number - batch_size(), 0)
     clear_internal_transactions(from_number, min_number)
-    new_state = %{state | min_block_number: from_number - 1}
+    new_state = %{state | "min_block_number" => from_number - 1}
     MigrationStatus.update_meta(@migration_name, new_state)
     schedule_past_check()
     {:noreply, new_state}
