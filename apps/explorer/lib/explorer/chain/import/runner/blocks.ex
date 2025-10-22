@@ -526,10 +526,25 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     |> Enum.map(& &1.number)
   end
 
-  defp lose_consensus(repo, changes_list, %{
-         timeout: timeout,
-         timestamps: %{updated_at: updated_at}
-       }) do
+  # Handles block consensus loss.
+  #
+  # ## Parameters
+  # - `repo`: The `t:Explorer.Repo.t/0` or db replica instance.
+  # - `changes_list`: List of block changes to process.
+  # - `_opts`: The options containing timeout and `updated_at` timestamp for db operations.
+  #
+  # ## Returns
+  # - `{:ok, removed_consensus_blocks}` tuple with the list of `{block_number, block_hash}`
+  #   tuples for the blocks that lost consensus.
+  # - `{:error, %{exception: postgrex_error}}` in case of database error.
+  defp lose_consensus(
+         repo,
+         changes_list,
+         %{
+           timeout: timeout,
+           timestamps: %{updated_at: updated_at}
+         } = _opts
+       ) do
     hashes = Enum.map(changes_list, & &1.hash)
     consensus_block_numbers = consensus_block_numbers(changes_list)
 
