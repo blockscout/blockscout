@@ -16,6 +16,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix DeleteZeroValueInternalTransactions state keys ([#13431](https://github.com/blockscout/blockscout/pull/13431))
 - dump block_hash to binary when querying celo epoch distributions ([#13410](https://github.com/blockscout/blockscout/pull/13410))
 - Fix flaky indexer, web tests, refactoring ([#13392](https://github.com/blockscout/blockscout/issues/13392))
 - Advanced filters: ERC-20 value in CSV ([#13326](https://github.com/blockscout/blockscout/issues/13326))
@@ -40,6 +41,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- advanced filters improvements([#11909](https://github.com/blockscout/blockscout/pull/11909))
 - Allow api_key in the query string for api/v2/tokens/:address_hash/instances/refetch-metadata endpoint ([#13412](https://github.com/blockscout/blockscout/pull/13412))
 - Add migration to delete zero-value calls ([#13305](https://github.com/blockscout/blockscout/issues/13305))
 - *(ReindexDuplicatedInternalTransactions)* Optimize migration performance ([#13363](https://github.com/blockscout/blockscout/issues/13363))
