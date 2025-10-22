@@ -55,8 +55,9 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   @impl true
   def handle_info(:update_future, %{"max_block_number" => max_number} = state) do
     border_number = get_border_number()
-    clear_internal_transactions(max_number, border_number)
-    new_state = %{state | "max_block_number" => border_number + 1}
+    to_number = min(max_number + batch_size(), border_number)
+    clear_internal_transactions(max_number, to_number)
+    new_state = %{state | "max_block_number" => to_number + 1}
     MigrationStatus.update_meta(@migration_name, new_state)
     schedule_future_check()
     {:noreply, new_state}
