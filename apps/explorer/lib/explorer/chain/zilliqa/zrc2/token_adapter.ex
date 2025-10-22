@@ -48,6 +48,16 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenAdapter do
     |> unique_constraint(:adapter_address_hash)
   end
 
+  @doc """
+  Builds `%{zrc2_address_hash => adapter_address_hash}` map for the given ZRC-2 address hashes.
+  If adapter address is not found for some ZRC-2 address, the corresponding key will be absent in the map.
+
+  ## Parameters
+  - `zrc2_address_hashes`: The list of ZRC-2 address hashes.
+
+  ## Returns
+  - `%{zrc2_address_hash => adapter_address_hash}` map. The map can be empty.
+  """
   @spec adapter_address_hash_by_zrc2_address_hash([Hash.t()]) :: %{Hash.t() => Hash.t()}
   def adapter_address_hash_by_zrc2_address_hash([]), do: %{}
 
@@ -63,6 +73,17 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenAdapter do
     |> Enum.into(%{})
   end
 
+  @doc """
+  Returns ZRC-2 address hash for the given adapter address hash.
+
+  ## Parameters
+  - `adapter_address_hash`: The adapter address hash.
+  - `options`: A keyword list of options that may include whether to use a replica database.
+
+  ## Returns
+  - ZRC-2 address hash for the adapter address hash.
+  - `nil` if the ZRC-2 address hash is not found.
+  """
   @spec adapter_address_hash_to_zrc2_address_hash(Hash.t(), [Chain.api?()]) :: Hash.t() | nil
   def adapter_address_hash_to_zrc2_address_hash(adapter_address_hash, options \\ []) do
     query =
