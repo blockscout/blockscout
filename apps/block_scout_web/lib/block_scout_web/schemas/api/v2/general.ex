@@ -204,6 +204,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for a transaction hash in the query.
+  """
+  @spec query_transaction_hash_param() :: Parameter.t()
+  def query_transaction_hash_param do
+    %Parameter{
+      name: :transaction_hash,
+      in: :query,
+      schema: FullHash,
+      required: false
+    }
+  end
+
+  @doc """
   Returns a parameter definition for a block hash or number in the path.
   """
   @spec block_hash_or_number_param() :: Parameter.t()
