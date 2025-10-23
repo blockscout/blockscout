@@ -57,6 +57,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
     end
   end
 
+  # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
   def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id_string}) do
     options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
 
