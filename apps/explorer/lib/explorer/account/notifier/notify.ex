@@ -149,8 +149,8 @@ defmodule Explorer.Account.Notifier.Notify do
       {"ERC-1155", :outgoing} -> address.watch_erc_1155_output
       {"ERC-404", :incoming} -> address.watch_erc_404_input
       {"ERC-404", :outgoing} -> address.watch_erc_404_output
-      {"ZRC-2", :incoming} -> address.watch_zrc_2_input
-      {"ZRC-2", :outgoing} -> address.watch_zrc_2_output
+      {"ZRC-2", :incoming} -> Map.get(address, :watch_zrc_2_input)
+      {"ZRC-2", :outgoing} -> Map.get(address, :watch_zrc_2_output)
     end
   end
 
