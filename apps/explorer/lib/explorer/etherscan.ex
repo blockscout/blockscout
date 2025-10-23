@@ -538,6 +538,23 @@ defmodule Explorer.Etherscan do
     "ERC-20" |> base_token_transfers_query(address_hash, contract_address_hash, options) |> Repo.replica().all()
   end
 
+  # Retrieves token transfers filtered by ZRC-2 type with optional address and contract filtering.
+  #
+  # This function queries token transfers based on the ZRC-2 token standard
+  # and applies optional filtering by address and contract address.
+  #
+  # ## Parameters
+  # - `address_hash`: Optional address hash to filter transfers involving this
+  #   address as sender or recipient (filters by `from_address_hash` or `to_address_hash`).
+  # - `contract_address_hash`: Optional contract address hash to filter transfers
+  #   for a specific token contract.
+  # - `options`: Map of query options that gets merged with default options
+  #   including pagination (`page_number`, `page_size`), ordering
+  #   (`order_by_direction`), and block range filtering (`startblock`, `endblock`).
+  #
+  # ## Returns
+  # - A list of `TokenTransfer` structs matching the specified criteria.
+  @spec list_zrc2_token_transfers(Hash.Address.t() | nil, Hash.Address.t() | nil, map()) :: [TokenTransfer.t()]
   defp list_zrc2_token_transfers(address_hash, contract_address_hash, options) do
     "ZRC-2" |> base_token_transfers_query(address_hash, contract_address_hash, options) |> Repo.replica().all()
   end
