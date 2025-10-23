@@ -229,7 +229,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @spec batch_number_param() :: Parameter.t()
   def batch_number_param do
     %Parameter{
-      name: :batch_number,
+      name: :batch_number_param,
       in: :path,
       schema: %Schema{type: :integer, minimum: 0},
       required: true,
