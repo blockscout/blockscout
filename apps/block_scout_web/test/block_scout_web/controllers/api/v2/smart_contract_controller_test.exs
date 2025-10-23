@@ -770,7 +770,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
-        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+        {:ok, _pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         bypass = Bypass.open()
 
         Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)

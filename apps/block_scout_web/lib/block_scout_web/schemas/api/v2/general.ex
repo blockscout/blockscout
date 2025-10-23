@@ -296,6 +296,33 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a reusable OpenApiSpex.RequestBody for audit report submission.
+  """
+  @spec audit_report_request_body() :: OpenApiSpex.RequestBody.t()
+  def audit_report_request_body do
+    %OpenApiSpex.RequestBody{
+      content: %{
+        "application/json" => %OpenApiSpex.MediaType{
+          schema: %OpenApiSpex.Schema{
+            type: :object,
+            properties: %{
+              submitter_name: %Schema{type: :string, nullable: true},
+              submitter_email: %Schema{type: :string, nullable: true},
+              is_project_owner: %Schema{type: :boolean, nullable: true},
+              project_name: %Schema{type: :string, nullable: true},
+              project_url: %Schema{type: :string, nullable: true},
+              audit_company_name: %Schema{type: :string, nullable: true},
+              audit_report_url: %Schema{type: :string, nullable: true},
+              audit_publish_date: %Schema{type: :string, format: :date, nullable: true},
+              comment: %Schema{type: :string, nullable: true}
+            }
+          }
+        }
+      }
+    }
+  end
+
+  @doc """
   Returns a parameter definition for a batch number in the path.
   """
   @spec batch_number_param() :: Parameter.t()
@@ -858,6 +885,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "ID for paging",
       name: :id
+    },
+    "smart_contract_id" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer},
+      required: false,
+      description: "Smart contract ID for paging",
+      name: :smart_contract_id
     },
     "fetched_coin_balance" => %Parameter{
       in: :query,

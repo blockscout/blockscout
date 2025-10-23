@@ -385,7 +385,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         end
 
         scope "/solidityscan" do
-          get("/smart-contracts/:address_hash/report", V2.SmartContractController, :solidityscan_report)
+          get("/smart-contracts/:address_hash/report", V2.Proxy.SolidityScanController, :solidityscan_report)
         end
       end
 
