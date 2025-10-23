@@ -16,6 +16,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix broken txn batch blocks API endpoint ([#13438](https://github.com/blockscout/blockscout/pull/13438))
 - Set timeout: :infinity for DeleteZeroValueInternalTransactions ([#13434](https://github.com/blockscout/blockscout/pull/13434))
 - Fix DeleteZeroValueInternalTransactions state keys ([#13431](https://github.com/blockscout/blockscout/pull/13431))
 - dump block_hash to binary when querying celo epoch distributions ([#13410](https://github.com/blockscout/blockscout/pull/13410))
@@ -36,13 +37,15 @@
 
 ### ⚡ Performance
 
+- Remove BENS, metadata preloads from the main page API endpoints ([#13442](https://github.com/blockscout/blockscout/pull/13442))
 - Batch preload token transfers in `/api/v2/celo/epochs` ([#13398](https://github.com/blockscout/blockscout/issues/13398))
 - Optimize token balance synchronous import steps ([#13217](https://github.com/blockscout/blockscout/issues/13217))
 - Optimize `EmptyBlocksSanitizer` queries ([#13132](https://github.com/blockscout/blockscout/issues/13132))
 
 ### ⚙️ Miscellaneous Tasks
 
-- advanced filters improvements([#11909](https://github.com/blockscout/blockscout/pull/11909))
+- Improve DeleteZeroValueInternalTransactions future updating ([#13437](https://github.com/blockscout/blockscout/pull/13437))
+- advanced filters improvements ([#11909](https://github.com/blockscout/blockscout/pull/11909))
 - Allow api_key in the query string for api/v2/tokens/:address_hash/instances/refetch-metadata endpoint ([#13412](https://github.com/blockscout/blockscout/pull/13412))
 - Add migration to delete zero-value calls ([#13305](https://github.com/blockscout/blockscout/issues/13305))
 - *(ReindexDuplicatedInternalTransactions)* Optimize migration performance ([#13363](https://github.com/blockscout/blockscout/issues/13363))
