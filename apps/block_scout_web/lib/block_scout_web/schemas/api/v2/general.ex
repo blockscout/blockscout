@@ -222,6 +222,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for a transaction hash in the query.
+  """
+  @spec query_transaction_hash_param() :: Parameter.t()
+  def query_transaction_hash_param do
+    %Parameter{
+      name: :transaction_hash,
+      in: :query,
+      schema: FullHash,
+      required: false
+    }
+  end
+
+  @doc """
   Returns a parameter definition for a block hash or number in the path.
   """
   @spec block_hash_or_number_param() :: Parameter.t()
@@ -297,6 +310,33 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :boolean},
       required: false,
       description: "If true, returns only the request body in the summary endpoint"
+    }
+  end
+
+  @doc """
+  Returns a reusable OpenApiSpex.RequestBody for audit report submission.
+  """
+  @spec audit_report_request_body() :: OpenApiSpex.RequestBody.t()
+  def audit_report_request_body do
+    %OpenApiSpex.RequestBody{
+      content: %{
+        "application/json" => %OpenApiSpex.MediaType{
+          schema: %OpenApiSpex.Schema{
+            type: :object,
+            properties: %{
+              submitter_name: %Schema{type: :string, nullable: true},
+              submitter_email: %Schema{type: :string, nullable: true},
+              is_project_owner: %Schema{type: :boolean, nullable: true},
+              project_name: %Schema{type: :string, nullable: true},
+              project_url: %Schema{type: :string, nullable: true},
+              audit_company_name: %Schema{type: :string, nullable: true},
+              audit_report_url: %Schema{type: :string, nullable: true},
+              audit_publish_date: %Schema{type: :string, format: :date, nullable: true},
+              comment: %Schema{type: :string, nullable: true}
+            }
+          }
+        }
+      }
     }
   end
 
@@ -855,6 +895,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "ID for paging",
       name: :id
+    },
+    "smart_contract_id" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer},
+      required: false,
+      description: "Smart contract ID for paging",
+      name: :smart_contract_id
     },
     "fetched_coin_balance" => %Parameter{
       in: :query,

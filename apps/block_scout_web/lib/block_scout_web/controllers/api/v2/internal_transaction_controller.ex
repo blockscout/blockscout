@@ -1,5 +1,7 @@
 defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
+
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.InternalTransaction
   alias Explorer.{Chain, Helper, PagingOptions}
@@ -17,6 +19,31 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
 
   @api_true [api?: true]
 
+  tags(["internal_transactions"])
+
+  operation :internal_transactions,
+    summary: "List internal transactions",
+    description: "Retrieves internal transactions with optional filtering and pagination.",
+    parameters:
+      base_params() ++
+        [query_transaction_hash_param(), limit_param()] ++
+        define_paging_params(["index", "block_number", "transaction_index", "items_count"]),
+    responses: [
+      ok:
+        {"Internal transactions", "application/json",
+         paginated_response(
+           items: BlockScoutWeb.Schemas.API.V2.InternalTransaction,
+           next_page_params_example: %{
+             "index" => 50,
+             "transaction_index" => 68,
+             "block_number" => 22_133_247,
+             "items_count" => 50
+           },
+           title_prefix: "InternalTransactions"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/internal-transactions` endpoint.
   """
@@ -27,7 +54,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
          transaction_hash = transaction_hash_from_params(params),
          false <- transaction_hash == :invalid do
       paging_options = paging_options(params)
-      options = options(paging_options, %{transaction_hash: transaction_hash, limit: params["limit"]})
+      options = options(paging_options, %{transaction_hash: transaction_hash, limit: params[:limit]})
 
       result =
         options
@@ -66,14 +93,14 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
     |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
                                                                       page_size: page_size
                                                                     } = paging_options ->
-      maybe_parsed_limit = Helper.parse_integer(params["limit"])
+      maybe_parsed_limit = Helper.parse_integer(params[:limit])
       %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
     end)
     |> Keyword.merge(@api_true)
   end
 
   defp transaction_hash_from_params(params) do
-    with transaction_hash_string when not is_nil(transaction_hash_string) <- params["transaction_hash"],
+    with transaction_hash_string when not is_nil(transaction_hash_string) <- params[:transaction_hash],
          {:ok, transaction_hash} <- Chain.string_to_full_hash(transaction_hash_string) do
       transaction_hash
     else

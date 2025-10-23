@@ -900,7 +900,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%Transaction{block_number: nil, inserted_at: inserted_at, hash: hash}) do
-    %{"inserted_at" => DateTime.to_iso8601(inserted_at), "hash" => hash}
+    %{inserted_at: DateTime.to_iso8601(inserted_at), hash: hash}
   end
 
   defp paging_params(%Transaction{block_number: block_number, index: index}) do
@@ -943,9 +943,9 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%SmartContract{} = smart_contract) do
     %{
-      "smart_contract_id" => smart_contract.id,
-      "transactions_count" => smart_contract.address.transactions_count,
-      "coin_balance" =>
+      smart_contract_id: smart_contract.id,
+      transactions_count: smart_contract.address.transactions_count,
+      coin_balance:
         smart_contract.address.fetched_coin_balance && Wei.to(smart_contract.address.fetched_coin_balance, :wei)
     }
   end
