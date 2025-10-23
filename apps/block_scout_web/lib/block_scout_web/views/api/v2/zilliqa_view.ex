@@ -70,8 +70,12 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
     @spec extend_token_json_response(map(), Address.t()) :: map()
     def extend_token_json_response(%{"type" => "ZRC-2"} = out_json, %Address{} = adapter_address) do
       Map.put(out_json, :zilliqa, %{
-        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-        zrc2_address_hash: Explorer.Chain.Zilliqa.Zrc2.TokenAdapter.adapter_address_hash_to_zrc2_address_hash(adapter_address.hash, @api_true)
+        # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
+        zrc2_address_hash:
+          Explorer.Chain.Zilliqa.Zrc2.TokenAdapter.adapter_address_hash_to_zrc2_address_hash(
+            adapter_address.hash,
+            @api_true
+          )
       })
     end
 
