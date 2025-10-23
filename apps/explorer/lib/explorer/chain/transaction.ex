@@ -198,6 +198,18 @@ defmodule Explorer.Chain.Transaction.Schema do
                             2
                           )
 
+                        :zilliqa ->
+                          alias Explorer.Chain.Zilliqa.Zrc2.TokenTransfer, as: Zrc2TokenTransfer
+
+                          quote do
+                            [
+                              has_many(:zrc2_token_transfer, Zrc2TokenTransfer,
+                                foreign_key: :transaction_hash,
+                                references: :hash
+                              )
+                            ]
+                          end
+
                         _ ->
                           []
                       end)
