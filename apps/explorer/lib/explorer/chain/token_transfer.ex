@@ -163,6 +163,9 @@ defmodule Explorer.Chain.TokenTransfer do
   @erc404_erc20_transfer_event "0xe59fdd36d0d223c0c7d996db7ad796880f45e1936cb0bb7ac102e7082e031487"
   @erc404_erc721_transfer_event "0xe5f815dc84b8cecdfd4beedfc3f91ab5be7af100eca4e8fb11552b867995394f"
 
+  # event NativeCoinTransferred(address indexed from, address indexed to, uint256 amount)
+  @arc_native_coin_transferred_event "0x62f084c00a442dcf51cdbb51beed2839bf42a268da8474b0e98f38edb7db5a22"
+
   @transfer_function_signature "0xa9059cbb"
 
   @typedoc """
@@ -229,6 +232,8 @@ defmodule Explorer.Chain.TokenTransfer do
   def erc404_erc20_transfer_event, do: @erc404_erc20_transfer_event
 
   def erc404_erc721_transfer_event, do: @erc404_erc721_transfer_event
+
+  def arc_native_coin_transferred_event, do: @arc_native_coin_transferred_event
 
   @doc """
   ERC 20's transfer(address,uint256) function signature

@@ -2,7 +2,11 @@ defmodule Indexer.Transform.AddressCoinBalances do
   @moduledoc """
   Extracts `Explorer.Chain.Address.CoinBalance` params from other schema's params.
   """
+
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  import Explorer.Helper, only: [truncate_address_hash: 1]
 
   alias Explorer.Chain.TokenTransfer
 
@@ -28,22 +32,49 @@ defmodule Indexer.Transform.AddressCoinBalances do
 
   defp reducer({:logs_params, logs_params}, acc) when is_list(logs_params) do
     # a log MUST have address_hash and block_number
-    logs_params
-    |> Enum.reject(
-      &(&1.first_topic == TokenTransfer.constant() or
-          &1.first_topic == TokenTransfer.erc1155_single_transfer_signature() or
-          &1.first_topic == TokenTransfer.erc1155_batch_transfer_signature())
-    )
-    |> Enum.into(acc, fn
-      %{address_hash: address_hash, block_number: block_number}
-      when is_binary(address_hash) and is_integer(block_number) ->
+    filtered_logs =
+      logs_params
+      |> Enum.reject(
+        &(&1.first_topic == TokenTransfer.constant() or
+            &1.first_topic == TokenTransfer.erc1155_single_transfer_signature() or
+            &1.first_topic == TokenTransfer.erc1155_batch_transfer_signature())
+      )
+      |> Enum.into(acc, fn
         %{address_hash: address_hash, block_number: block_number}
+        when is_binary(address_hash) and is_integer(block_number) ->
+          %{address_hash: address_hash, block_number: block_number}
 
-      %{type: "pending"} ->
-        nil
-    end)
-    |> Enum.reject(fn val -> is_nil(val) end)
-    |> MapSet.new()
+        %{type: "pending"} ->
+          nil
+      end)
+      |> Enum.reject(fn val -> is_nil(val) end)
+
+    # for :arc chain type we also need to parse the `NativeCoinTransferred` event
+    filtered_arc_logs =
+      if chain_type() == :arc do
+        arc_chain_params = Application.get_env(:indexer, :arc)
+
+        logs_params
+        |> Enum.reduce([], fn log, log_acc ->
+          if log.first_topic == TokenTransfer.arc_native_coin_transferred_event() and
+               log.address_hash == arc_chain_params[:arc_native_token_system_address] do
+            from_address_hash = truncate_address_hash(log.second_topic)
+            to_address_hash = truncate_address_hash(log.third_topic)
+
+            log_acc ++
+              [
+                %{address_hash: from_address_hash, block_number: log.block_number},
+                %{address_hash: to_address_hash, block_number: log.block_number}
+              ]
+          else
+            log_acc
+          end
+        end)
+      else
+        []
+      end
+
+    MapSet.new(filtered_logs ++ filtered_arc_logs)
   end
 
   defp reducer({:transactions_params, transactions_params}, initial) when is_list(transactions_params) do

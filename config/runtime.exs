@@ -964,6 +964,13 @@ config :indexer, :ipfs,
     ConfigHelper.parse_catalog_value("IPFS_GATEWAY_URL_PARAM_LOCATION", ["query", "header"], true),
   public_gateway_url: System.get_env("IPFS_PUBLIC_GATEWAY_URL", "https://ipfs.io/ipfs")
 
+config :indexer, :arc,
+  arc_native_token_decimals: ConfigHelper.parse_integer_env_var("INDEXER_ARC_NATIVE_TOKEN_DECIMALS", 6),
+  arc_native_token_address:
+    System.get_env("INDEXER_ARC_NATIVE_TOKEN_ADDRESS", "0x3600000000000000000000000000000000000000"),
+  arc_native_token_system_address:
+    System.get_env("INDEXER_ARC_NATIVE_TOKEN_SYSTEM_ADDRESS", "0x1800000000000000000000000000000000000000")
+
 config :indexer, Indexer.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 
 config :indexer, Indexer.Fetcher.TransactionAction.Supervisor,

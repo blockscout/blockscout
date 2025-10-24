@@ -5,6 +5,8 @@ defmodule Indexer.Transform.TokenTransfers do
 
   require Logger
 
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.Helper, only: [decode_data: 2, truncate_address_hash: 1]
 
@@ -18,9 +20,16 @@ defmodule Indexer.Transform.TokenTransfers do
   def parse(logs, skip_additional_fetchers? \\ false) do
     initial_acc = %{tokens: [], token_transfers: []}
 
+    allowed_erc20_erc721_token_transfer_events =
+      if chain_type() == :arc do
+        [unquote(TokenTransfer.constant()), unquote(TokenTransfer.arc_native_coin_transferred_event())]
+      else
+        [unquote(TokenTransfer.constant())]
+      end
+
     erc20_and_erc721_token_transfers =
       logs
-      |> Enum.filter(&(&1.first_topic == unquote(TokenTransfer.constant())))
+      |> Enum.filter(&(&1.first_topic in allowed_erc20_erc721_token_transfer_events))
       |> Enum.reduce(initial_acc, &do_parse/2)
 
     weth_transfers =
@@ -211,30 +220,51 @@ defmodule Indexer.Transform.TokenTransfers do
   # ERC-20 token transfer
   defp parse_params(%{second_topic: second_topic, third_topic: third_topic, fourth_topic: nil} = log)
        when not is_nil(second_topic) and not is_nil(third_topic) do
-    [amount] = decode_data(log.data, [{:uint, 256}])
+    arc_chain_params = Application.get_env(:indexer, :arc)
 
-    from_address_hash = truncate_address_hash(log.second_topic)
-    to_address_hash = truncate_address_hash(log.third_topic)
+    # for :arc chain type we need to ignore ERC-20 Transfer events from the native token as there are NativeCoinTransferred events instead
+    if log.first_topic != TokenTransfer.constant() or log.address_hash != arc_chain_params[:arc_native_token_address] or
+         chain_type() != :arc do
+      [amount] = decode_data(log.data, [{:uint, 256}])
+      amount = Decimal.new(amount || 0)
 
-    token_transfer = %{
-      amount: Decimal.new(amount || 0),
-      block_number: log.block_number,
-      block_hash: log.block_hash,
-      log_index: log.index,
-      from_address_hash: from_address_hash,
-      to_address_hash: to_address_hash,
-      token_contract_address_hash: log.address_hash,
-      transaction_hash: log.transaction_hash,
-      token_ids: nil,
-      token_type: "ERC-20"
-    }
+      from_address_hash = truncate_address_hash(log.second_topic)
+      to_address_hash = truncate_address_hash(log.third_topic)
 
-    token = %{
-      contract_address_hash: log.address_hash,
-      type: "ERC-20"
-    }
+      {token_contract_address_hash, amount} =
+        if log.first_topic == TokenTransfer.arc_native_coin_transferred_event() and
+             log.address_hash == arc_chain_params[:arc_native_token_system_address] and chain_type() == :arc do
+          # there are 18 decimals for the native token, so we need to adjust the amount with the token decimals
+          normalized_amount =
+            amount
+            |> Decimal.mult(Integer.pow(10, arc_chain_params[:arc_native_token_decimals]))
+            |> Decimal.div_int(Integer.pow(10, 18))
 
-    {token, token_transfer}
+          {arc_chain_params[:arc_native_token_address], normalized_amount}
+        else
+          {log.address_hash, amount}
+        end
+
+      token_transfer = %{
+        amount: amount,
+        block_number: log.block_number,
+        block_hash: log.block_hash,
+        log_index: log.index,
+        from_address_hash: from_address_hash,
+        to_address_hash: to_address_hash,
+        token_contract_address_hash: token_contract_address_hash,
+        transaction_hash: log.transaction_hash,
+        token_ids: nil,
+        token_type: "ERC-20"
+      }
+
+      token = %{
+        contract_address_hash: token_contract_address_hash,
+        type: "ERC-20"
+      }
+
+      {token, token_transfer}
+    end
   end
 
   # ERC-20 token transfer for WETH
