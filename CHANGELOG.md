@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- distributed elixir runtime ([#13080](https://github.com/blockscout/blockscout/pull/13080))
 - Delete internal transactions on reorgs ([#13121](https://github.com/blockscout/blockscout/issues/13121))
 - Implement websocket endpoints support in the Universal Proxy config ([#13167](https://github.com/blockscout/blockscout/issues/13167))
 - Celo accounts api ([#12982](https://github.com/blockscout/blockscout/issues/12982))
