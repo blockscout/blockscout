@@ -53,10 +53,10 @@ jobs:
               "default",
               "arbitrum",
               "blackfort",
-              "celo",
               "ethereum",
               "filecoin",
               "optimism",
+              "optimism-celo",
               "polygon_zkevm",
               "rsk",
               "scroll",
@@ -73,7 +73,7 @@ jobs:
               "default",
               "ethereum",
               "optimism",
-              "celo"
+              "optimism-celo"
             ];
 
             const labels = ${{ github.event_name == 'pull_request' && toJson(github.event.pull_request.labels.*.name) || '[]' }};

@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
@@ -9,8 +12,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.{Repo, TestHelper}
-
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Logger
 
@@ -1731,7 +1732,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  if Application.compile_env(:explorer, :chain_type) == :celo do
+  if @chain_identity == {:optimism, :celo} do
     describe "celo gas token" do
       test "when gas is paid with token and token is present in db", %{conn: conn} do
         token = insert(:token)

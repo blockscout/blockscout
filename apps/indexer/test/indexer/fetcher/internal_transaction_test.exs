@@ -2,6 +2,9 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
 
+  use Utils.CompileTimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   import ExUnit.CaptureLog
   import Mox
 
@@ -628,7 +631,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   # Due to token-duality feature in Celo network (native coin transfers are
   # treated as token transfers), we need to fetch updated token balances after
   # parsing the internal transactions
-  if Application.compile_env(:explorer, :chain_type) == :celo do
+  if @chain_identity == {:optimism, :celo} do
     defp start_token_balance_fetcher(json_rpc_named_arguments) do
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     end

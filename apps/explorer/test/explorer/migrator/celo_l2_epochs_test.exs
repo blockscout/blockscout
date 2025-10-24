@@ -2,9 +2,9 @@ defmodule Explorer.Migrator.CeloL2EpochsTest do
   use Explorer.DataCase, async: false
 
   use Utils.CompileTimeEnvHelper,
-    chain_type: [:explorer, :chain_type]
+    chain_identity: [:explorer, :chain_identity]
 
-  if @chain_type == :celo do
+  if @chain_identity == {:optimism, :celo} do
     alias Explorer.Migrator.{CeloL2Epochs, MigrationStatus}
     alias Explorer.Chain.Celo.Epoch
     alias Explorer.Repo
