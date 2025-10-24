@@ -37,7 +37,7 @@
 
 ### ⚡ Performance
 
-- Remove BENS, metadata preloads from the main page API endpoints ([#13442](https://github.com/blockscout/blockscout/pull/13442))
+- Remove BENS preload from the main page API endpoints ([#13442](https://github.com/blockscout/blockscout/pull/13442), [#13449](https://github.com/blockscout/blockscout/pull/13449))
 - Batch preload token transfers in `/api/v2/celo/epochs` ([#13398](https://github.com/blockscout/blockscout/issues/13398))
 - Optimize token balance synchronous import steps ([#13217](https://github.com/blockscout/blockscout/issues/13217))
 - Optimize `EmptyBlocksSanitizer` queries ([#13132](https://github.com/blockscout/blockscout/issues/13132))
