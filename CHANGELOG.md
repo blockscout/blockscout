@@ -17,6 +17,7 @@
 
 ### 🐛 Bug Fixes
 
+- celo accounts transformer ([#13423](https://github.com/blockscout/blockscout/pull/13423))
 - Fix broken txn batch blocks API endpoint ([#13438](https://github.com/blockscout/blockscout/pull/13438))
 - Set timeout: :infinity for DeleteZeroValueInternalTransactions ([#13434](https://github.com/blockscout/blockscout/pull/13434))
 - Fix DeleteZeroValueInternalTransactions state keys ([#13431](https://github.com/blockscout/blockscout/pull/13431))
