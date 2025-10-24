@@ -1,0 +1,63 @@
+name: Citrea Backend DEV CI/CD
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+env:
+  DOCKER_TAGS: dfxswiss/citrea-backend:beta
+  AZURE_RESOURCE_GROUP: rg-dfx-api-dev
+  AZURE_VM_NAME: vm-dfx-node-dev
+
+jobs:
+  build-and-deploy:
+    name: Build, test and deploy to DEV
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          file: docker/Dockerfile
+          context: .
+          push: true
+          tags: ${{ env.DOCKER_TAGS }}
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.DFX_DEV_CREDENTIALS }}
+        
+      - name: Update Azure VM docker container
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "Update docker container..."
+
+            CONTENT=$(base64 -w0 ./.env.vm_citrea_testnet_dev)
+
+            az vm run-command invoke \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --name ${{ env.AZURE_VM_NAME }} \
+              --command-id RunShellScript \
+              --scripts "echo $CONTENT | base64 -d > /home/dfx/update/docker-compose-blockscout-citrea-testnet.backend.env && /home/dfx/update-blockscout.sh backend"
+
+      - name: Logout from Azure
+        run: |
+          az logout
+        if: always()
