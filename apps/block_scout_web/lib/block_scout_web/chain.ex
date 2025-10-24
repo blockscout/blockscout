@@ -226,17 +226,55 @@ defmodule BlockScoutWeb.Chain do
           "holders_count" => holders_count_string,
           "name" => name_string,
           "contract_address_hash" => contract_address_hash_string,
-          "is_name_null" => is_name_null_string
+          "is_name_null" => is_name_null
         } = params
       )
       when is_binary(market_cap_string) and is_binary(holders_count_string) and is_binary(name_string) and
-             is_binary(contract_address_hash_string) and is_binary(is_name_null_string) do
+             is_binary(contract_address_hash_string) do
     market_cap_decimal = decimal_parse(market_cap_string)
 
     fiat_value_decimal = decimal_parse(params["fiat_value"])
 
     holders_count = parse_integer(holders_count_string)
-    token_name = if is_name_null_string == "true", do: nil, else: name_string
+    token_name = if is_name_null, do: nil, else: name_string
+
+    case Hash.Address.cast(contract_address_hash_string) do
+      {:ok, contract_address_hash} ->
+        [
+          paging_options: %{
+            @default_paging_options
+            | key: %{
+                fiat_value: fiat_value_decimal,
+                circulating_market_cap: market_cap_decimal,
+                holder_count: holders_count,
+                name: token_name,
+                contract_address_hash: contract_address_hash
+              }
+          }
+        ]
+
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(
+        %{
+          market_cap: market_cap_string,
+          holders_count: holders_count_string,
+          name: name_string,
+          contract_address_hash: contract_address_hash_string,
+          is_name_null: is_name_null
+        } = params
+      )
+      when is_binary(market_cap_string) and is_binary(holders_count_string) and is_binary(name_string) and
+             is_binary(contract_address_hash_string) do
+    market_cap_decimal = decimal_parse(market_cap_string)
+
+    fiat_value_decimal = decimal_parse(params[:fiat_value])
+
+    holders_count = parse_integer(holders_count_string)
+    token_name = if is_name_null, do: nil, else: name_string
 
     case Hash.Address.cast(contract_address_hash_string) do
       {:ok, contract_address_hash} ->
@@ -482,6 +520,10 @@ defmodule BlockScoutWeb.Chain do
     do: [paging_options: %{@default_paging_options | key: {name, type, inserted_at}}]
 
   def paging_options(%{"value" => value, "address_hash" => address_hash}) do
+    [paging_options: %{@default_paging_options | key: {value, address_hash}}]
+  end
+
+  def paging_options(%{value: value, address_hash: address_hash}) do
     [paging_options: %{@default_paging_options | key: {value, address_hash}}]
   end
 
@@ -954,12 +996,17 @@ defmodule BlockScoutWeb.Chain do
   def unique_tokens_paging_options(%{"unique_token" => token_id}),
     do: [paging_options: %{default_paging_options() | key: {token_id}}]
 
+  def unique_tokens_paging_options(%{unique_token: token_id}),
+    do: [paging_options: %{default_paging_options() | key: {token_id}}]
+
   def unique_tokens_paging_options(_params), do: [paging_options: default_paging_options()]
 
   def unique_tokens_next_page([], _list, _params), do: nil
 
   def unique_tokens_next_page(_, list, params) do
-    Map.merge(params, paging_params(List.last(list)))
+    params
+    |> Map.merge(paging_params(List.last(list)))
+    |> delete_parameters_from_next_page_params()
   end
 
   def token_transfers_next_page_params([], _list, _params), do: nil

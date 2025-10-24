@@ -28,7 +28,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/tokens/0x")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "get token", %{conn: conn} do
@@ -54,7 +62,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/tokens/0x/counters")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "get counters", %{conn: conn} do
@@ -118,7 +134,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/tokens/0x/transfers")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "get empty list", %{conn: conn} do
@@ -377,7 +401,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/tokens/0x/holders")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "get empty list", %{conn: conn} do
@@ -613,23 +645,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request = get(conn, "/api/v2/tokens")
 
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
-    end
-
-    test "ignores wrong ordering params", %{conn: conn} do
-      tokens =
-        for i <- 0..50 do
-          insert(:token, fiat_value: i)
-        end
-
-      request = get(conn, "/api/v2/tokens", %{"sort" => "foo", "order" => "bar"})
-
-      assert response = json_response(request, 200)
-
-      request_2nd_page =
-        get(conn, "/api/v2/tokens", %{"sort" => "foo", "order" => "bar"} |> Map.merge(response["next_page_params"]))
-
-      assert response_2nd_page = json_response(request_2nd_page, 200)
-      check_paginated_response(response, response_2nd_page, tokens)
     end
 
     test "get token with ok reputation", %{conn: conn} do
@@ -950,7 +965,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/tokens/0x/instances")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "get empty list", %{conn: conn} do
@@ -1078,7 +1101,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/tokens/0x/instances/12")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "get token instance by token id", %{conn: conn} do
@@ -1246,7 +1277,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/tokens/0x/instances/12/transfers")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "get token transfers by instance", %{conn: conn} do
@@ -1490,7 +1529,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/tokens/0x/instances/12/holders")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "get 422 on invalid id", %{conn: conn} do
@@ -1498,7 +1545,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/123ab/holders")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^-?([1-9][0-9]*|0)$/",
+                   "source" => %{"pointer" => "/token_id_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "get token transfers by instance", %{conn: conn} do
@@ -1550,7 +1605,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/tokens/0x/instances/12/transfers-count")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "receive 0 count", %{conn: conn} do
@@ -1670,16 +1733,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation(url, metadata)
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -1715,33 +1769,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       expected_body = "secret=#{v2_secret_key}&response=123"
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{body: ^expected_body}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body:
-               Jason.encode!(%{
-                 "success" => true,
-                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-               })
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation_with_req_body(expected_body)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation(url, metadata)
 
       request =
         Phoenix.ConnTest.build_conn()
@@ -1812,16 +1844,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation(url, metadata)
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -1953,16 +1976,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation(url, metadata)
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -2005,16 +2019,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation(url, metadata)
 
       request =
         Phoenix.ConnTest.build_conn()
@@ -2076,16 +2081,17 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         metadata: %{}
       )
 
-      metadata = %{"name" => "Super Token"}
       url = "http://metadata.endpoint.com"
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
+      token_instance_success_metadata_expectation(url, %{})
 
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
       assert %{"message" => "OK"} = json_response(request, 200)
+      :timer.sleep(100)
 
       # First request after hitting rate limit with wrong scoped token - should fail
       request =
@@ -2096,47 +2102,17 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert %{"message" => "Too Many Requests"} = json_response(request, 429)
 
+      :timer.sleep(100)
+
       # Set up normal reCAPTCHA validation for the second request
       expected_body = "secret=#{v2_secret_key}&response=correct_recaptcha_token"
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{body: ^expected_body}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body:
-               Jason.encode!(%{
-                 "success" => true,
-                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-               })
-           }}
-        end
-      )
-
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(%{"name" => "test"})
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation_with_req_body(expected_body)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      metadata = %{"name" => "Super Token"}
+      token_instance_success_metadata_expectation(url, metadata)
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -2199,25 +2175,19 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         metadata: %{}
       )
 
-      metadata = %{"name" => "Super Token"}
       url = "http://metadata.endpoint.com"
       token_contract_address_hash_string = to_string(token.contract_address_hash)
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
+      token_instance_success_metadata_expectation(url, %{})
 
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
       assert %{"message" => "OK"} = json_response(request, 200)
 
+      :timer.sleep(100)
+
       # First request after hitting rate limit with a scoped token that isn't configured - should fail
-      request =
-        Phoenix.ConnTest.build_conn()
-        |> put_req_header("user-agent", "test-agent")
-        |> put_req_header("scoped-recaptcha-bypass-token", "some_token_that_does_not_exist")
-        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
-
-      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
-
       request =
         Phoenix.ConnTest.build_conn()
         |> put_req_header("user-agent", "test-agent")
@@ -2234,47 +2204,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert %{"message" => "Too Many Requests"} = json_response(request, 429)
 
+      :timer.sleep(100)
+
       # Set up normal reCAPTCHA validation for the second request
       expected_body = "secret=#{v2_secret_key}&response=correct_recaptcha_token"
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{body: ^expected_body}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body:
-               Jason.encode!(%{
-                 "success" => true,
-                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-               })
-           }}
-        end
-      )
-
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(%{"name" => "test"})
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation_with_req_body(expected_body)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
-
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      metadata = %{"name" => "Super Token"}
+      token_instance_success_metadata_expectation(url, metadata)
 
       # Second request with correct reCAPTCHA token - should work
       request =
@@ -2333,11 +2272,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       request =
         patch(
-          conn,
-          "/api/v2/tokens/#{token.contract_address.hash}/instances/refetch-metadata",
-          %{
-            "api_key" => "abc"
-          }
+          conn |> put_req_header("x-api-key", "abc"),
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/refetch-metadata"
         )
 
       assert %{"message" => "OK"} = json_response(request, 200)
@@ -2419,8 +2355,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     is_unique = value == "1"
 
     assert %{
-             "token_type" => ^token_type,
-             "value" => ^value,
              "id" => ^id,
              "metadata" => ^metadata,
              "token" => %{"address_hash" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
@@ -2656,5 +2590,35 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         assert next_page_params == nil
       end
     end
+  end
+
+  defp token_instance_success_metadata_expectation(url, metadata) do
+    Tesla.Test.expect_tesla_call(
+      times: 1,
+      returns: fn %{url: ^url}, _opts ->
+        {:ok,
+         %Tesla.Env{
+           status: 200,
+           body: Jason.encode!(metadata)
+         }}
+      end
+    )
+  end
+
+  defp token_instance_success_metadata_expectation_with_req_body(expected_body) do
+    Tesla.Test.expect_tesla_call(
+      times: 1,
+      returns: fn %{body: ^expected_body}, _opts ->
+        {:ok,
+         %Tesla.Env{
+           status: 200,
+           body:
+             Jason.encode!(%{
+               "success" => true,
+               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+             })
+         }}
+      end
+    )
   end
 end

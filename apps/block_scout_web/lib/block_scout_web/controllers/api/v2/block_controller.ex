@@ -37,6 +37,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     WithdrawalView
   }
 
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
   alias Explorer.Chain.Beacon.Deposit
@@ -44,7 +45,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias Explorer.Chain.InternalTransaction
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
-  alias Schemas.ErrorResponses.NotFoundResponse
   alias Timex.Duration
 
   case @chain_type do
@@ -144,7 +144,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   tags(["blocks"])
 
-  operation(:block,
+  operation :block,
     summary: "Retrieve detailed information about a specific block",
     description:
       "Retrieves detailed information for a specific block, including transactions, internal transactions, and metadata.",
@@ -154,7 +154,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
-  )
 
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number_param` endpoint.
@@ -185,7 +184,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
-  operation(:blocks,
+  operation :blocks,
     summary: "List blocks with optional filtering and sorting",
     description: "Retrieves a paginated list of blocks with optional filtering by block type and sorting options.",
     parameters:
@@ -204,7 +203,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            title_prefix: "Blocks"
          )}
     ]
-  )
 
   @doc """
   Function to handle GET requests to `/api/v2/blocks` endpoint.
@@ -231,7 +229,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     })
   end
 
-  operation(:arbitrum_batch,
+  operation :arbitrum_batch,
     summary: "List L2 blocks in an Arbitrum batch",
     description: "Retrieves L2 blocks that are bound to a specific Arbitrum batch number.",
     parameters:
@@ -251,7 +249,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
-  )
 
   @doc """
     Function to handle GET requests to `/api/v2/blocks/arbitrum-batch/:batch_number_param` endpoint.
@@ -280,7 +277,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     })
   end
 
-  operation(:optimism_batch,
+  operation :optimism_batch,
     summary: "List L2 blocks in an Optimism batch",
     description: "Retrieves L2 blocks that are bound to a specific Optimism batch number.",
     parameters:
@@ -300,7 +297,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
-  )
 
   @doc """
     Function to handle GET requests to `/api/v2/blocks/optimism-batch/:batch_number_param` endpoint.
@@ -330,7 +326,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     })
   end
 
-  operation(:scroll_batch,
+  operation :scroll_batch,
     summary: "List L2 blocks in a Scroll batch",
     description: "Retrieves L2 blocks that are bound to a specific Scroll batch number.",
     parameters:
@@ -350,7 +346,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
-  )
 
   @doc """
     Function to handle GET requests to `/api/v2/blocks/scroll-batch/:batch_number_param` endpoint.
@@ -380,7 +375,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     })
   end
 
-  operation(:transactions,
+  operation :transactions,
     summary: "List transactions in a specific block",
     description: "Retrieves transactions included in a specific block with optional filtering and sorting.",
     parameters:
@@ -402,7 +397,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
-  )
 
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number_param/transactions` endpoint.
@@ -437,7 +431,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
-  operation(:internal_transactions,
+  operation :internal_transactions,
     summary: "List internal transactions in a specific block",
     description:
       "Retrieves internal transactions included in a specific block with optional filtering by type and call type.",
@@ -459,7 +453,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
-  )
 
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number_param/internal-transactions` endpoint.
@@ -504,7 +497,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
-  operation(:withdrawals,
+  operation :withdrawals,
     summary: "List withdrawals in a specific block",
     description: "Retrieves validator withdrawals included in a specific block.",
     parameters:
@@ -525,7 +518,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
-  )
 
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number_param/withdrawals` endpoint.
@@ -560,7 +552,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
-  operation(:block_countdown,
+  operation :block_countdown,
     summary: "Get countdown information for a target block number",
     description:
       "Calculates the estimated time remaining until a specified block number is reached based on current block and average block time.",
@@ -570,7 +562,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
-  )
 
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_number_param/countdown` endpoint.
@@ -610,7 +601,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     end
   end
 
-  operation(:beacon_deposits,
+  operation :beacon_deposits,
     summary: "List beacon deposits in a specific block",
     description: "Retrieves beacon deposits included in a specific block with pagination support.",
     parameters:
@@ -631,7 +622,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
-  )
 
   @doc """
   Handles `api/v2/blocks/:block_hash_or_number_param/beacon/deposits` endpoint.

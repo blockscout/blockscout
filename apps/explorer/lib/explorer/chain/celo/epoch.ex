@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Celo.Epoch do
 
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
-  alias Explorer.{Chain, Repo, SortingHelper}
+  alias Explorer.{Chain, Hash, QueryHelper, Repo, SortingHelper}
 
   alias Explorer.Chain.{
     Block,
@@ -148,8 +148,84 @@ defmodule Explorer.Chain.Celo.Epoch do
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
-    |> Enum.map(&with_loaded_distribution_token_transfers(&1, options))
+    |> load_all_distribution_token_transfers(options)
   end
+
+  defp load_all_distribution_token_transfers(epochs, options) do
+    block_hash_log_index_pairs =
+      epochs
+      |> Enum.flat_map(fn
+        %__MODULE__{
+          end_processing_block_hash: block_hash,
+          distribution: %EpochReward{} = distribution
+        } ->
+          {:ok, binary} = Hash.Full.dump(block_hash)
+
+          [
+            {binary, distribution.reserve_bolster_transfer_log_index},
+            {binary, distribution.community_transfer_log_index},
+            {binary, distribution.carbon_offsetting_transfer_log_index}
+          ]
+          |> Enum.reject(fn {_, log_index} -> is_nil(log_index) end)
+
+        _ ->
+          []
+      end)
+
+    token_transfers_query =
+      from(
+        tt in TokenTransfer.only_consensus_transfers_query(),
+        where: ^QueryHelper.tuple_in([:block_hash, :log_index], block_hash_log_index_pairs),
+        select: {{tt.block_hash, tt.log_index}, tt},
+        preload: [token: ^reputation_association()]
+      )
+
+    token_transfers_map =
+      token_transfers_query
+      |> Chain.select_repo(options).all()
+      |> Map.new()
+
+    Enum.map(epochs, &populate_epoch_token_transfers(&1, token_transfers_map))
+  end
+
+  # Populate a single epoch with its token transfers from the fetched map
+  defp populate_epoch_token_transfers(
+         %__MODULE__{
+           end_processing_block_hash: block_hash,
+           distribution: %EpochReward{} = distribution
+         } = epoch,
+         token_transfers_map
+       ) do
+    updated_distribution =
+      %EpochReward{
+        distribution
+        | reserve_bolster_transfer:
+            token_transfers_map[
+              {
+                block_hash,
+                distribution.reserve_bolster_transfer_log_index
+              }
+            ],
+          community_transfer:
+            token_transfers_map[
+              {
+                block_hash,
+                distribution.community_transfer_log_index
+              }
+            ],
+          carbon_offsetting_transfer:
+            token_transfers_map[
+              {
+                block_hash,
+                distribution.carbon_offsetting_transfer_log_index
+              }
+            ]
+      }
+
+    %__MODULE__{epoch | distribution: updated_distribution}
+  end
+
+  defp populate_epoch_token_transfers(epoch, _token_transfers_map), do: epoch
 
   @doc """
   Returns a query to find an epoch by its number.

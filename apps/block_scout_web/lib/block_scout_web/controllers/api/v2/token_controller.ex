@@ -1,15 +1,18 @@
 defmodule BlockScoutWeb.API.V2.TokenController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
+  use OpenApiSpex.ControllerSpecs
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
-  alias Explorer.{Chain, Helper, PagingOptions}
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
+  alias Explorer.{Chain, Helper, PagingOptions}
   alias Explorer.Migrator.BackfillMetadataURL
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
+  alias Plug.Conn
 
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
@@ -37,11 +40,29 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags(["tokens"])
+
   @api_true [api?: true]
 
   @token_options [api?: true, necessity_by_association: %{reputation_association() => :optional}]
 
-  def token(conn, %{"address_hash_param" => address_hash_string} = params) do
+  operation :token,
+    summary: "Retrieve detailed information about a specific token",
+    description: "Retrieves detailed information for a specific token, including metadata and statistics.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok: {"Detailed information about the specified token.", "application/json", Schemas.Token.Response},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:token_address_param` endpoint.
+  """
+  @spec token(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def token(conn, %{address_hash_param: address_hash_string} = params) do
     ip = AccessHelper.conn_to_ip_string(conn)
 
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
@@ -77,17 +98,68 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  def counters(conn, %{"address_hash_param" => address_hash_string} = params) do
+  operation :counters,
+    summary: "Get activity count stats for a specific token",
+    description: "Retrieves count statistics for a token, including transfers, holders, and other metrics.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok: {"Count statistics for the specified token", "application/json", Schemas.Token.Counters},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:token_address_param/counters` endpoint.
+  """
+  @spec counters(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def counters(conn, %{address_hash_param: address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, true} <- {:not_found, Token.by_contract_address_hash_exists?(address_hash, @api_true)} do
-      {transfers_count, holders_count} = Chain.fetch_token_counters(address_hash, 30_000)
+      {transfers_count, holders_count} = Chain.fetch_token_counters(address_hash, 5_000)
 
       json(conn, %{transfers_count: to_string(transfers_count), token_holders_count: to_string(holders_count)})
     end
   end
 
-  def transfers(conn, %{"address_hash_param" => address_hash_string} = params) do
+  operation :transfers,
+    summary: "List token transfers for a specific token",
+    description: "Retrieves token transfers for a specific token, with optional filtering and pagination.",
+    parameters:
+      base_params() ++
+        [address_hash_param()] ++
+        define_paging_params([
+          "index",
+          "block_number",
+          "batch_log_index",
+          "batch_block_hash",
+          "batch_transaction_hash",
+          "index_in_batch"
+        ]),
+    responses: [
+      ok:
+        {"List of token transfers.", "application/json",
+         paginated_response(
+           items: Schemas.TokenTransfer,
+           next_page_params_example: %{
+             "index" => 259,
+             "block_number" => 23_484_141,
+             "batch_log_index" => 3,
+             "batch_block_hash" => "0x789",
+             "batch_transaction_hash" => "0xabc",
+             "index_in_batch" => 2
+           },
+           title_prefix: "TokenTransfers"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:token_address_param/transfers` endpoint.
+  """
+  @spec transfers(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def transfers(conn, %{address_hash_param: address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, true} <- {:not_found, Token.by_contract_address_hash_exists?(address_hash, @api_true)} do
@@ -116,7 +188,34 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  def holders(conn, %{"address_hash_param" => address_hash_string} = params) do
+  operation :holders,
+    summary: "List holders for a specific token instance",
+    description: "Retrieves holders for a specific token instance, with optional filtering and pagination.",
+    parameters:
+      base_params() ++
+        [address_hash_param()] ++
+        define_paging_params(["address_hash_2", "value", "items_count"]),
+    responses: [
+      ok:
+        {"List of token holders.", "application/json",
+         paginated_response(
+           items: Schemas.Token.Holder,
+           next_page_params_example: %{
+             "address_hash_2" => "0x48bb9b14483e43c7726df702b271d410e7460656",
+             "value" => 200_000_000_000_000,
+             "items_count" => 50
+           },
+           title_prefix: "TokenHolders"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:token_address_param/holders` endpoint.
+  """
+  @spec holders(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def holders(conn, %{address_hash_param: address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, true} <- {:not_found, Token.by_contract_address_hash_exists?(address_hash, @api_true)} do
@@ -136,9 +235,35 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
+  operation :instances,
+    summary: "List all instances of a specific token",
+    description: "Retrieves all instances of a specific token, including holders and balances.",
+    parameters:
+      base_params() ++
+        [address_hash_param(), holder_address_hash_param()] ++
+        define_paging_params(["unique_token"]),
+    responses: [
+      ok:
+        {"List of token instances.", "application/json",
+         paginated_response(
+           items: Schemas.TokenInstance,
+           next_page_params_example: %{
+             "unique_token" => 782_098
+           },
+           title_prefix: "TokenInstances"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:token_address_param/instances` endpoint.
+  """
+  @spec instances(Plug.Conn.t(), map()) :: Plug.Conn.t()
+
   def instances(
         conn,
-        %{"address_hash_param" => address_hash_string, "holder_address_hash" => holder_address_hash_string} = params
+        %{address_hash_param: address_hash_string, holder_address_hash: holder_address_hash_string} = params
       ) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
@@ -163,7 +288,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       {token_instances, next_page} = split_list_by_page(results_plus_one)
 
       next_page_params =
-        next_page |> unique_tokens_next_page(token_instances, params)
+        next_page
+        |> unique_tokens_next_page(token_instances, params)
 
       conn
       |> put_status(200)
@@ -180,7 +306,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  def instances(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def instances(conn, %{address_hash_param: address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @token_options)} do
@@ -206,7 +332,26 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  def instance(conn, %{"address_hash_param" => address_hash_string, "token_id" => token_id_string} = params) do
+  operation :instance,
+    summary: "Get details for a specific token instance",
+    description: "Retrieves details for a specific token instance by token address and token ID.",
+    parameters:
+      base_params() ++
+        [
+          address_hash_param(),
+          token_id_param()
+        ],
+    responses: [
+      ok: {"Details for the token instance.", "application/json", Schemas.TokenInstance},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:token_address_param/instances/:token_id_param` endpoint.
+  """
+  @spec instance(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def instance(conn, %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @token_options)},
@@ -239,21 +384,32 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  defp maybe_run_fill_metadata_url_task(token_instance, token) do
-    if not is_nil(token_instance.metadata) && is_nil(token_instance.skip_metadata_url) do
-      Task.async(fn ->
-        BackfillMetadataURL.update_batch([
-          {token_instance.token_contract_address_hash, token_instance.token_id, token.type}
-        ])
-      end)
-    else
-      nil
-    end
-  end
+  operation :transfers_by_instance,
+    summary: "List token transfers for a specific token instance",
+    description: "Retrieves token transfers for a specific token instance (by token address and token ID).",
+    parameters:
+      base_params() ++
+        [address_hash_param(), token_id_param()] ++
+        define_paging_params(["index", "block_number", "token_id"]),
+    responses: [
+      ok:
+        {"List of token transfers for the instance.", "application/json",
+         paginated_response(
+           items: Schemas.TokenTransfer,
+           next_page_params_example: %{
+             "index" => 920,
+             "block_number" => 23_489_243,
+             "token_id" => "4"
+           },
+           title_prefix: "TokenInstanceTransfers"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
 
   def transfers_by_instance(
         conn,
-        %{"address_hash_param" => address_hash_string, "token_id" => token_id_string} = params
+        %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params
       ) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
@@ -284,7 +440,31 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  def holders_by_instance(conn, %{"address_hash_param" => address_hash_string, "token_id" => token_id_string} = params) do
+  operation :holders_by_instance,
+    summary: "List holders for a specific token instance",
+    description: "Retrieves holders for a specific token instance (by token address and token ID).",
+    parameters:
+      base_params() ++
+        [address_hash_param(), token_id_param()] ++
+        define_paging_params(["address_hash_2", "items_count", "token_id", "value"]),
+    responses: [
+      ok:
+        {"List of token holders for the instance.", "application/json",
+         paginated_response(
+           items: Schemas.Token.Holder,
+           next_page_params_example: %{
+             "address_hash_2" => "0x1d2c163fbda9486c3a384b6fa5e34c96fe948e9a",
+             "items_count" => 50,
+             "token_id" => "0",
+             "value" => 4_217_417_051_704_137_590_935
+           },
+           title_prefix: "TokenInstanceHolders"
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
+  def holders_by_instance(conn, %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
@@ -314,9 +494,26 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
+  operation :transfers_count_by_instance,
+    summary: "Get transfer count for a specific token instance",
+    description: "Retrieves the number of transfers for a specific token instance (by token address and token ID).",
+    parameters:
+      base_params() ++
+        [
+          address_hash_param(),
+          token_id_param()
+        ],
+    responses: [
+      ok:
+        {"Transfer count for the instance.", "application/json",
+         %OpenApiSpex.Schema{type: :object, properties: %{transfers_count: %Schema{type: :integer}}}},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
   def transfers_count_by_instance(
         conn,
-        %{"address_hash_param" => address_hash_string, "token_id" => token_id_string} = params
+        %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params
       ) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
@@ -331,8 +528,47 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
+  operation :tokens_list,
+    summary: "List tokens with optional filtering and sorting",
+    description: "Retrieves a paginated list of tokens with optional filtering and sorting.",
+    parameters:
+      base_params() ++
+        [
+          token_type_param(),
+          q_param(),
+          sort_param(["fiat_value", "holders_count", "circulating_market_cap"]),
+          order_param()
+        ] ++
+        define_paging_params([
+          "contract_address_hash",
+          "fiat_value",
+          "holders_count",
+          "is_name_null",
+          "market_cap",
+          "name",
+          "items_count"
+        ]),
+    responses: [
+      ok:
+        {"List of tokens.", "application/json",
+         paginated_response(
+           items: Schemas.Token,
+           next_page_params_example: %{
+             "contract_address_hash" => "0xbe9895146f7af43049ca1c1ae358b0541ea49704",
+             "fiat_value" => "4724.32",
+             "holders_count" => 59_731,
+             "is_name_null" => false,
+             "market_cap" => "570958125.135513",
+             "name" => "Wrapped Staked ETH",
+             "items_count" => 50
+           },
+           title_prefix: "Tokens"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   def tokens_list(conn, params) do
-    filter = params["q"]
+    filter = params[:q]
 
     options =
       params
@@ -340,7 +576,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
                                                                         page_size: page_size
                                                                       } = paging_options ->
-        maybe_parsed_limit = Helper.parse_integer(params["limit"])
+        maybe_parsed_limit = Helper.parse_integer(params[:limit])
         %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
       end)
       |> Keyword.merge(token_transfers_types_options(params))
@@ -357,8 +593,42 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     |> render(:tokens, %{tokens: tokens, next_page_params: next_page_params})
   end
 
+  operation :bridged_tokens_list,
+    summary: "List bridged tokens with optional filtering and sorting",
+    description: "Retrieves a paginated list of bridged tokens with optional filtering and sorting.",
+    parameters:
+      base_params() ++
+        [chain_ids_param(), q_param()] ++
+        define_paging_params([
+          "contract_address_hash",
+          "fiat_value",
+          "holders_count",
+          "is_name_null",
+          "market_cap",
+          "name",
+          "items_count"
+        ]),
+    responses: [
+      ok:
+        {"List of bridged tokens.", "application/json",
+         paginated_response(
+           items: Schemas.Token,
+           next_page_params_example: %{
+             "contract_address_hash" => "0xbe9895146f7af43049ca1c1ae358b0541ea49704",
+             "fiat_value" => "4724.32",
+             "holders_count" => 59_731,
+             "is_name_null" => false,
+             "market_cap" => "570958125.135513",
+             "name" => "Wrapped Staked ETH",
+             "items_count" => 50
+           },
+           title_prefix: "BridgedTokens"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   def bridged_tokens_list(conn, params) do
-    filter = params["q"]
+    filter = params[:q]
 
     options =
       params
@@ -376,12 +646,30 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     |> render(:bridged_tokens, %{tokens: tokens, next_page_params: next_page_params})
   end
 
+  operation :refetch_metadata,
+    summary: "Trigger metadata refetch for a specific token instance",
+    description: "Triggers a metadata refetch for a specific token instance (by token address and token ID).",
+    parameters:
+      base_params() ++
+        [
+          address_hash_param(),
+          token_id_param(),
+          recaptcha_response_param()
+        ],
+    responses: [
+      ok:
+        {"Metadata refetch triggered.", "application/json",
+         %OpenApiSpex.Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
   def refetch_metadata(
         conn,
         params
       ) do
-    address_hash_string = params["address_hash_param"]
-    token_id_string = params["token_id"]
+    address_hash_string = params[:address_hash_param]
+    token_id_string = params[:token_id_param]
 
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
@@ -404,16 +692,29 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
+  operation :trigger_nft_collection_metadata_refetch,
+    summary: "Trigger metadata refetch for a token's NFT collection",
+    description: "Triggers a metadata refetch for a token's NFT collection (by token address). Requires API key.",
+    parameters: base_params() ++ [address_hash_param(), admin_api_key_param(), admin_api_key_param_query()],
+    responses: [
+      ok:
+        {"NFT collection metadata refetch triggered.", "application/json",
+         %OpenApiSpex.Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
   def trigger_nft_collection_metadata_refetch(
         conn,
         params
       ) do
-    address_hash_string = params["address_hash_param"]
+    address_hash_string = params[:address_hash_param]
     ip = AccessHelper.conn_to_ip_string(conn)
 
     with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
            {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
-         {:api_key, ^api_key} <- {:api_key, params["api_key"]},
+         {:api_key, ^api_key} <-
+           {:api_key, get_api_key(conn)},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
@@ -423,6 +724,28 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> json(%{message: "OK"})
+    end
+  end
+
+  defp get_api_key(conn) do
+    case Conn.get_req_header(conn, "x-api-key") do
+      [api_key] ->
+        api_key
+
+      _ ->
+        Map.get(conn.query_params, "api_key")
+    end
+  end
+
+  defp maybe_run_fill_metadata_url_task(token_instance, token) do
+    if not is_nil(token_instance.metadata) && is_nil(token_instance.skip_metadata_url) do
+      Task.async(fn ->
+        BackfillMetadataURL.update_batch([
+          {token_instance.token_contract_address_hash, token_instance.token_id, token.type}
+        ])
+      end)
+    else
+      nil
     end
   end
 

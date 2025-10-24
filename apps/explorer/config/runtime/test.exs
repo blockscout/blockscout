@@ -75,6 +75,7 @@ for migrator <- [
       Explorer.Migrator.MergeAdjacentMissingBlockRanges,
       Explorer.Migrator.UnescapeQuotesInTokens,
       Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
+      Explorer.Migrator.DeleteZeroValueInternalTransactions,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,

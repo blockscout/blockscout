@@ -13,6 +13,7 @@ defmodule Indexer.Block.FetcherTest do
   alias Explorer.Chain.Celo.Legacy.Events
   alias Explorer.Chain.Celo.PendingAccountOperation
   alias Explorer.Chain.{Address, Log, Transaction, Wei}
+  alias Explorer.TestHelper
   alias Indexer.Block.Fetcher
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
@@ -101,7 +102,7 @@ defmodule Indexer.Block.FetcherTest do
     #     block_quantity = integer_to_quantity(block_number)
     #     miner_hash = "0x0000000000000000000000000000000000000000"
 
-    #     res = eth_block_number_fake_response(block_quantity)
+    #     res = TestHelper.eth_block_number_fake_response(block_quantity)
 
     #     case Keyword.fetch!(json_rpc_named_arguments, :variant) do
     #       EthereumJSONRPC.Nethermind ->
@@ -755,9 +756,6 @@ defmodule Indexer.Block.FetcherTest do
                  }
 
                %{id: id, method: "trace_block"} ->
-                 block_quantity = integer_to_quantity(block_number)
-                 _res = eth_block_number_fake_response(block_quantity)
-
                  %{
                    id: id,
                    result: [
@@ -1290,42 +1288,6 @@ defmodule Indexer.Block.FetcherTest do
       counts = BufferedTask.debug_count(buffered_task)
       counts.buffer == 0 and counts.tasks == 0
     end)
-  end
-
-  defp eth_block_number_fake_response(block_quantity) do
-    %{
-      id: 0,
-      jsonrpc: "2.0",
-      result: %{
-        "author" => "0x0000000000000000000000000000000000000000",
-        "difficulty" => "0x20000",
-        "extraData" => "0x",
-        "gasLimit" => "0x663be0",
-        "gasUsed" => "0x0",
-        "hash" => "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
-        "logsBloom" =>
-          "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        "miner" => "0x0000000000000000000000000000000000000000",
-        "number" => block_quantity,
-        "parentHash" => "0x0000000000000000000000000000000000000000000000000000000000000000",
-        "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-        "sealFields" => [
-          "0x80",
-          "0xb8410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-        ],
-        "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-        "signature" =>
-          "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        "size" => "0x215",
-        "stateRoot" => "0xfad4af258fd11939fae0c6c6eec9d340b1caac0b0196fd9a1bc3f489c5bf00b3",
-        "step" => "0",
-        "timestamp" => "0x0",
-        "totalDifficulty" => "0x20000",
-        "transactions" => [],
-        "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-        "uncles" => []
-      }
-    }
   end
 
   def maybe_set_celo_core_contracts_env do

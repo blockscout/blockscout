@@ -25,6 +25,7 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.ApiSpec)
   end
 
   pipeline :api_v2_no_forgery_protect do
@@ -41,12 +42,13 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     plug(:accepts, ["json"])
     plug(CheckApiV2)
     plug(:fetch_session)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.ApiSpec)
   end
 
   scope "/", as: :api_v2 do
     pipe_through(:api_v2_no_forgery_protect)
 
-    patch("/:address_hash_param/instances/:token_id/refetch-metadata", V2.TokenController, :refetch_metadata)
+    patch("/:address_hash_param/instances/:token_id_param/refetch-metadata", V2.TokenController, :refetch_metadata)
 
     patch(
       "/:address_hash_param/instances/refetch-metadata",
@@ -69,9 +71,14 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     get("/:address_hash_param/holders", V2.TokenController, :holders)
     get("/:address_hash_param/holders/csv", V2.CsvExportController, :export_token_holders)
     get("/:address_hash_param/instances", V2.TokenController, :instances)
-    get("/:address_hash_param/instances/:token_id", V2.TokenController, :instance)
-    get("/:address_hash_param/instances/:token_id/transfers", V2.TokenController, :transfers_by_instance)
-    get("/:address_hash_param/instances/:token_id/holders", V2.TokenController, :holders_by_instance)
-    get("/:address_hash_param/instances/:token_id/transfers-count", V2.TokenController, :transfers_count_by_instance)
+    get("/:address_hash_param/instances/:token_id_param", V2.TokenController, :instance)
+    get("/:address_hash_param/instances/:token_id_param/transfers", V2.TokenController, :transfers_by_instance)
+    get("/:address_hash_param/instances/:token_id_param/holders", V2.TokenController, :holders_by_instance)
+
+    get(
+      "/:address_hash_param/instances/:token_id_param/transfers-count",
+      V2.TokenController,
+      :transfers_count_by_instance
+    )
   end
 end

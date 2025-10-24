@@ -211,7 +211,8 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
       type: type,
       block_number: log.block_number,
       block_hash: log.block_hash,
-      transaction_hash: log.transaction_hash
+      transaction_hash: log.transaction_hash,
+      log_index: log.index
     }
   end
 end

@@ -6,10 +6,36 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.Schemas.API.V2.Celo.ElectionReward.Type, as: CeloElectionRewardType
+
+  alias BlockScoutWeb.Schemas.API.V2.General.{
+    AddressHash,
+    AddressHashNullable,
+    EmptyString,
+    FloatString,
+    FullHash,
+    HexString,
+    IntegerString,
+    IntegerStringNullable,
+    NullString
+  }
+
   alias BlockScoutWeb.Schemas.API.V2.Token.Type, as: TokenType
-  alias BlockScoutWeb.Schemas.Helper
   alias Explorer.Chain.InternalTransaction.CallType
   alias OpenApiSpex.{Parameter, Schema}
+  @integer_pattern ~r"^-?([1-9][0-9]*|0)$"
+  @float_pattern ~r"^([1-9][0-9]*|0)(\.[0-9]+)?$"
+  @address_hash_pattern ~r"^0x([A-Fa-f0-9]{40})$"
+  @full_hash_pattern ~r"^0x([A-Fa-f0-9]{64})$"
+  @hex_string_pattern ~r"^0x([A-Fa-f0-9]*)$"
+  @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*\]?$/i
+  # Matches ISO-like datetime strings where separators between time fields can be ':' or percent-encoded '%3A'.
+  # Accepts examples like:
+  #  - "2025-10-12T09"
+  #  - "2025-10-12T09:51"
+  #  - "2025-10-12T09:51:00.000Z"
+  #  - "2025-10-12T09%3A51%3A00.000Z"
+  #  - With timezone offsets: "2025-10-12T09:51:00+02:00" or encoded as "%2B02%3A00"
+  @iso_date_or_datetime_pattern ~r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])(?:T(?:[01]\d|2[0-3])(?:(?::|%3A)[0-5]\d(?:(?::|%3A)[0-5]\d(?:\.\d{1,9})?)?)?(?:Z|(?:\+|%2B|-)(?:[01]\d|2[0-3])(?:(?::|%3A)[0-5]\d)?)?)?$"i
 
   @base_transaction_types [
     "coin_transfer",
@@ -27,264 +53,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       @allowed_transaction_types @base_transaction_types
   end
 
-  defmodule AddressHash do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{40})$", nullable: false})
-  end
-
-  defmodule AddressHashNullable do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{40})$", nullable: true})
-  end
-
-  defmodule FullHash do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{64})$", nullable: false})
-  end
-
-  defmodule FullHashNullable do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{64})$", nullable: true})
-  end
-
-  defmodule HexString do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^0x([A-Fa-f0-9]*)$", nullable: false})
-  end
-
-  defmodule HexStringNullable do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^0x([A-Fa-f0-9]*)$", nullable: true})
-  end
-
-  defmodule ProxyType do
-    @moduledoc false
-    alias Ecto.Enum
-    alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-
-    OpenApiSpex.schema(%{
-      type: :string,
-      enum: Enum.values(Implementation, :proxy_type),
-      nullable: true
-    })
-  end
-
-  defmodule Implementation.ChainTypeCustomizations do
-    @moduledoc false
-    alias OpenApiSpex.Schema
-
-    @doc """
-     Applies chain-specific field customizations to the given schema based on the configured chain type.
-
-     ## Parameters
-     - `schema`: The base schema map to be customized
-
-     ## Returns
-     - The schema map with chain-specific properties added based on the current chain type configuration
-    """
-    @spec chain_type_fields(map()) :: map()
-    def chain_type_fields(schema) do
-      case Application.get_env(:explorer, :chain_type) do
-        :filecoin ->
-          schema
-          |> Helper.extend_schema(
-            properties: %{
-              filecoin_robust_address: %Schema{
-                type: :string,
-                example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-                nullable: true
-              }
-            },
-            required: [:filecoin_robust_address]
-          )
-
-        _ ->
-          schema
-      end
-    end
-  end
-
-  defmodule Implementation do
-    @moduledoc false
-    require OpenApiSpex
-
-    alias Implementation.ChainTypeCustomizations
-
-    OpenApiSpex.schema(
-      %{
-        description: "Proxy smart contract implementation",
-        type: :object,
-        properties: %{
-          address_hash: AddressHash,
-          name: %Schema{type: :string, nullable: true}
-        },
-        required: [:address_hash, :name],
-        additionalProperties: false
-      }
-      |> ChainTypeCustomizations.chain_type_fields()
-    )
-  end
-
-  defmodule Tag do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      description: "Address tag struct",
-      type: :object,
-      properties: %{
-        address_hash: AddressHash,
-        display_name: %Schema{type: :string, nullable: false},
-        label: %Schema{type: :string, nullable: false}
-      },
-      required: [:address_hash, :display_name, :label],
-      additionalProperties: false
-    })
-  end
-
-  defmodule WatchlistName do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      description: "Watch list name struct",
-      type: :object,
-      properties: %{
-        display_name: %Schema{type: :string, nullable: false},
-        label: %Schema{type: :string, nullable: false}
-      },
-      required: [:display_name, :label],
-      additionalProperties: false
-    })
-  end
-
-  defmodule FloatString do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^([1-9][0-9]*|0)(\.[0-9]+)?$"})
-  end
-
-  defmodule FloatStringNullable do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^([1-9][0-9]*|0)(\.[0-9]+)?$", nullable: true})
-  end
-
-  defmodule IntegerStringNullable do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^-?([1-9][0-9]*|0)$", nullable: true})
-  end
-
-  defmodule IntegerString do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^-?([1-9][0-9]*|0)$", nullable: false})
-  end
-
-  defmodule URLNullable do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      type: :string,
-      format: :uri,
-      example: "https://example.com",
-      nullable: true
-    })
-  end
-
-  defmodule Timestamp do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      type: :string,
-      format: :"date-time",
-      nullable: false
-    })
-  end
-
-  defmodule TimestampNullable do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      type: :string,
-      format: :"date-time",
-      nullable: true
-    })
-  end
-
-  defmodule DecodedInput do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      type: :object,
-      properties: %{
-        method_id: %Schema{type: :string, nullable: true},
-        method_call: %Schema{type: :string, nullable: true},
-        parameters: %Schema{
-          type: :array,
-          items: %Schema{
-            type: :object,
-            properties: %{
-              name: %Schema{type: :string, nullable: false},
-              type: %Schema{type: :string, nullable: false},
-              value: %Schema{
-                anyOf: [%Schema{type: :object}, %Schema{type: :array}, %Schema{type: :string}],
-                nullable: false
-              }
-            },
-            nullable: false,
-            additionalProperties: false
-          }
-        }
-      },
-      required: [:method_id, :method_call, :parameters],
-      nullable: false,
-      additionalProperties: false
-    })
-  end
-
-  defmodule MethodNameNullable do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      type: :string,
-      nullable: true,
-      example: "transfer",
-      description: "Method name or hex method id"
-    })
-  end
-
-  defmodule DecodedLogInput do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      type: :object,
-      properties: %{
-        method_id: %Schema{type: :string, nullable: true},
-        method_call: %Schema{type: :string, nullable: true},
-        parameters: %Schema{
-          type: :array,
-          items: %Schema{
-            type: :object,
-            properties: %{
-              name: %Schema{type: :string, nullable: false},
-              type: %Schema{type: :string, nullable: false},
-              indexed: %Schema{type: :boolean, nullable: false},
-              value: %Schema{
-                anyOf: [%Schema{type: :object}, %Schema{type: :array}, %Schema{type: :string}],
-                nullable: false
-              }
-            },
-            required: [:name, :type, :indexed, :value],
-            nullable: false,
-            additionalProperties: false
-          },
-          nullable: false
-        }
-      },
-      required: [:method_id, :method_call, :parameters],
-      nullable: false,
-      additionalProperties: false
-    })
-  end
-
-  defmodule EmptyString do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, minLength: 0, maxLength: 0})
-  end
-
-  defmodule NullString do
-    @moduledoc false
-    OpenApiSpex.schema(%{type: :string, pattern: ~r"^null$"})
-  end
-
   @doc """
   Returns a parameter definition for an address hash in the path.
   """
@@ -295,6 +63,117 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       in: :path,
       schema: AddressHash,
       required: true
+    }
+  end
+
+  # todo: It should be removed when the frontend stops sending the address_id parameter with the request
+  @doc """
+  Returns a parameter definition for an address hash in the path.
+  """
+  @spec address_id_param() :: Parameter.t()
+  def address_id_param do
+    %Parameter{
+      name: :address_id,
+      in: :query,
+      schema: AddressHash,
+      required: false
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for the start of the time period.
+  """
+  @spec from_period_param() :: Parameter.t()
+  def from_period_param do
+    %Parameter{
+      name: :from_period,
+      in: :query,
+      schema: %Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern},
+      required: true,
+      description: "Start of the time period (ISO 8601 format) in CSV export"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for the end of the time period.
+  """
+  @spec to_period_param() :: Parameter.t()
+  def to_period_param do
+    %Parameter{
+      name: :to_period,
+      in: :query,
+      schema: %Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern},
+      required: true,
+      description: "End of the time period (ISO 8601 format) In CSV export"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for chain IDs in the query.
+  """
+  @spec chain_ids_param() :: Parameter.t()
+  def chain_ids_param do
+    %Parameter{
+      name: :chain_ids,
+      in: :query,
+      schema: %Schema{type: :string, nullable: true},
+      required: false,
+      description: "Chain IDs filter in Bridged tokens"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a search query in the query.
+  """
+  @spec q_param() :: Parameter.t()
+  def q_param do
+    %Parameter{
+      name: :q,
+      in: :query,
+      schema: %Schema{type: :string, nullable: true},
+      required: false,
+      description: "Search query filter"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a filter type in the query.
+  """
+  @spec filter_type_param() :: Parameter.t()
+  def filter_type_param do
+    %Parameter{
+      name: :filter_type,
+      in: :query,
+      schema: %Schema{anyOf: [%Schema{type: :string, enum: ["address"], nullable: true}, NullString]},
+      required: false,
+      description: "Filter type in CSV export"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a filter value in the query.
+  """
+  @spec filter_value_param() :: Parameter.t()
+  def filter_value_param do
+    %Parameter{
+      name: :filter_value,
+      in: :query,
+      schema: %Schema{anyOf: [%Schema{type: :string, enum: ["to", "from"], nullable: true}, NullString]},
+      required: false,
+      description: "Filter value in CSV export"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a holder address hash in the query.
+  """
+  @spec holder_address_hash_param() :: Parameter.t()
+  def holder_address_hash_param do
+    %Parameter{
+      name: :holder_address_hash,
+      in: :query,
+      schema: AddressHash,
+      required: false
     }
   end
 
@@ -350,7 +229,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @spec batch_number_param() :: Parameter.t()
   def batch_number_param do
     %Parameter{
-      name: :batch_number,
+      name: :batch_number_param,
       in: :path,
       schema: %Schema{type: :integer, minimum: 0},
       required: true,
@@ -469,6 +348,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       * block_number - Sort by block number
       * value - Sort by transaction value
       * fee - Sort by transaction fee
+      * balance - Sort by account balance
+      * transactions_count - Sort by number of transactions on address
+      * fiat_value - Sort by fiat value of the token transfer
+      * holders_count - Sort by number of token holders
+      * circulating_market_cap - Sort by circulating market cap of the token
       Should be used together with `order` parameter.
       """
     }
@@ -508,7 +392,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
           EmptyString,
           %Schema{
             type: :string,
-            pattern: ~r"^(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*$"
+            pattern: @token_type_pattern
           }
         ]
       },
@@ -538,7 +422,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
           EmptyString,
           %Schema{
             type: :string,
-            pattern: ~r"^(ERC-721|ERC-1155|ERC-404)(,(ERC-721|ERC-1155|ERC-404))*$"
+            pattern: @token_type_pattern
           }
         ]
       },
@@ -584,6 +468,62 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for a token ID in the path.
+  """
+  @spec token_id_param() :: Parameter.t()
+  def token_id_param do
+    %Parameter{
+      name: :token_id_param,
+      in: :path,
+      schema: IntegerStringNullable,
+      required: true,
+      description: "Token ID for ERC-721/1155/404 tokens"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for API key for sensitive endpoints in the query string.
+  """
+  @spec admin_api_key_param_query() :: Parameter.t()
+  def admin_api_key_param_query do
+    %Parameter{
+      name: :api_key,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "API key required for sensitive endpoints"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for API key header for sensitive endpoints.
+  """
+  @spec admin_api_key_param() :: Parameter.t()
+  def admin_api_key_param do
+    %Parameter{
+      name: :"x-api-key",
+      in: :header,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "API key required for sensitive endpoints"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for reCAPTCHA response token.
+  """
+  @spec recaptcha_response_param() :: Parameter.t()
+  def recaptcha_response_param do
+    %Parameter{
+      name: :recaptcha_response,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "reCAPTCHA response token"
+    }
+  end
+
+  @doc """
   Returns a parameter definition for API key used in rate limiting.
   """
   @spec api_key_param() :: Parameter.t()
@@ -592,7 +532,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       in: :query,
       schema: %Schema{type: :string},
       required: false,
-      description: "API key for rate limiting",
+      description: "API key for rate limiting or for sensitive endpoints",
       name: :apikey
     }
   end
@@ -720,12 +660,41 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       description: "Address hash for paging",
       name: :hash
     },
+    # todo: consider refactoring to eliminate _2 suffix
+    "address_hash_2" => %Parameter{
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "Address hash for paging",
+      name: :address_hash
+    },
+    "address_hash_param" => %Parameter{
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "Address hash for paging",
+      name: :hash
+    },
+    "contract_address_hash" => %Parameter{
+      in: :query,
+      schema: AddressHashNullable,
+      required: false,
+      description: "Contract address hash for paging",
+      name: :contract_address_hash
+    },
     "value" => %Parameter{
       in: :query,
       schema: IntegerString,
       required: false,
       description: "Transaction value for paging",
       name: :value
+    },
+    "fiat_value" => %Parameter{
+      in: :query,
+      schema: %Schema{anyOf: [FloatString, EmptyString, NullString]},
+      required: false,
+      description: "Fiat value for paging",
+      name: :fiat_value
     },
     "fee" => %Parameter{
       in: :query,
@@ -740,6 +709,34 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Number of items returned per page",
       name: :items_count
+    },
+    "holders_count" => %Parameter{
+      in: :query,
+      schema: %Schema{anyOf: [IntegerString, EmptyString, NullString]},
+      required: false,
+      description: "Number of holders returned per page",
+      name: :holders_count
+    },
+    "is_name_null" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :boolean},
+      required: false,
+      description: "Is name null for paging",
+      name: :is_name_null
+    },
+    "market_cap" => %Parameter{
+      in: :query,
+      schema: %Schema{anyOf: [FloatString, EmptyString, NullString]},
+      required: false,
+      description: "Market cap for paging",
+      name: :market_cap
+    },
+    "name" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Name for paging",
+      name: :name
     },
     "batch_log_index" => %Parameter{
       in: :query,
@@ -818,6 +815,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       description: "Token ID for paging",
       name: :token_id
     },
+    # todo: eliminate in favour token_id
+    "unique_token" => %Parameter{
+      in: :query,
+      schema: IntegerStringNullable,
+      required: false,
+      description: "Token ID for paging",
+      name: :unique_token
+    },
     "token_type" => %Parameter{
       in: :query,
       schema: TokenType,
@@ -870,4 +875,34 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   """
   @spec allowed_transaction_types() :: [String.t()]
   def allowed_transaction_types, do: @allowed_transaction_types
+
+  @doc """
+  Returns the integer pattern.
+  """
+  @spec integer_pattern() :: Regex.t()
+  def integer_pattern, do: @integer_pattern
+
+  @doc """
+  Returns the float pattern.
+  """
+  @spec float_pattern() :: Regex.t()
+  def float_pattern, do: @float_pattern
+
+  @doc """
+  Returns the regex pattern for validating address hashes.
+  """
+  @spec address_hash_pattern() :: Regex.t()
+  def address_hash_pattern, do: @address_hash_pattern
+
+  @doc """
+  Returns the regex pattern for validating full hashes.
+  """
+  @spec full_hash_pattern() :: Regex.t()
+  def full_hash_pattern, do: @full_hash_pattern
+
+  @doc """
+  Returns the regex pattern for validating hex strings.
+  """
+  @spec hex_string_pattern() :: Regex.t()
+  def hex_string_pattern, do: @hex_string_pattern
 end
