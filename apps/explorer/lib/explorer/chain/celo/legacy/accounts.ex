@@ -90,10 +90,10 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
   end
 
   defp do_parse(log, accounts, get_topic) do
-    account_address = parse_params(log, get_topic)
-    entry = %{address_hash: account_address, block_number: log.block_number}
+    account_address_hash = parse_params(log, get_topic)
+    entry = %{address_hash: account_address_hash, block_number: log.block_number}
 
-    if Enum.any?(accounts, &(&1.address_hash == account_address)) do
+    if Enum.any?(accounts, &(&1.address_hash == account_address_hash)) do
       accounts
     else
       [entry | accounts]
