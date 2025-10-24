@@ -56,6 +56,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
 
         logs_params
         |> Enum.reduce([], fn log, log_acc ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           if log.first_topic == TokenTransfer.arc_native_coin_transferred_event() and
                log.address_hash == arc_chain_params[:arc_native_token_system_address] do
             from_address_hash = truncate_address_hash(log.second_topic)

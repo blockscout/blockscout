@@ -225,8 +225,8 @@ defmodule Indexer.Transform.TokenTransfers do
     # for :arc chain type we need to ignore ERC-20 Transfer events from the native token as there are NativeCoinTransferred events instead
     if log.first_topic != TokenTransfer.constant() or log.address_hash != arc_chain_params[:arc_native_token_address] or
          chain_type() != :arc do
-      [amount] = decode_data(log.data, [{:uint, 256}])
-      amount = Decimal.new(amount || 0)
+      [decoded_amount] = decode_data(log.data, [{:uint, 256}])
+      decimal_amount = Decimal.new(decoded_amount || 0)
 
       from_address_hash = truncate_address_hash(log.second_topic)
       to_address_hash = truncate_address_hash(log.third_topic)
@@ -236,13 +236,13 @@ defmodule Indexer.Transform.TokenTransfers do
              log.address_hash == arc_chain_params[:arc_native_token_system_address] and chain_type() == :arc do
           # there are 18 decimals for the native token, so we need to adjust the amount with the token decimals
           normalized_amount =
-            amount
+            decimal_amount
             |> Decimal.mult(Integer.pow(10, arc_chain_params[:arc_native_token_decimals]))
             |> Decimal.div_int(Integer.pow(10, 18))
 
           {arc_chain_params[:arc_native_token_address], normalized_amount}
         else
-          {log.address_hash, amount}
+          {log.address_hash, decimal_amount}
         end
 
       token_transfer = %{
