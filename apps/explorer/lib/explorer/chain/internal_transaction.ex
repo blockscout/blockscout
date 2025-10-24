@@ -649,7 +649,6 @@ defmodule Explorer.Chain.InternalTransaction do
     __MODULE__
     |> for_parent_transaction(hash)
     |> Chain.join_associations(necessity_by_association)
-    |> where_transaction_has_multiple_internal_transactions()
     |> where_is_different_from_parent_transaction()
     |> where_nonpending_block()
     |> page_internal_transaction(paging_options)
@@ -934,34 +933,6 @@ defmodule Explorer.Chain.InternalTransaction do
   defp filter_by_call_type(query, call_types) do
     query
     |> where([internal_transaction], internal_transaction.call_type in ^call_types)
-  end
-
-  @doc """
-  Ensures the following conditions are true:
-
-    * excludes internal transactions of type call with no siblings in the
-      transaction
-    * includes internal transactions of type create, reward, or selfdestruct
-      even when they are alone in the parent transaction
-
-  """
-  @spec where_transaction_has_multiple_internal_transactions(Ecto.Query.t()) :: Ecto.Query.t()
-  def where_transaction_has_multiple_internal_transactions(query) do
-    where(
-      query,
-      [internal_transaction, transaction],
-      internal_transaction.type != ^:call or
-        fragment(
-          """
-          EXISTS (SELECT sibling.*
-          FROM internal_transactions AS sibling
-          WHERE sibling.transaction_hash = ? AND sibling.index != ?
-          )
-          """,
-          transaction.hash,
-          internal_transaction.index
-        )
-    )
   end
 
   @doc """
