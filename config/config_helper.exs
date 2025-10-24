@@ -380,7 +380,6 @@ defmodule ConfigHelper do
     "default" => :default,
     "arbitrum" => :arbitrum,
     "blackfort" => :blackfort,
-    "celo" => :celo,
     "ethereum" => :ethereum,
     "filecoin" => :filecoin,
     "optimism" => :optimism,
@@ -398,7 +397,10 @@ defmodule ConfigHelper do
   }
 
   @spec chain_type() :: atom()
-  def chain_type, do: chain_identity() |> elem(0)
+  def chain_type do
+    {type, _} = chain_identity()
+    type
+  end
 
   @spec chain_identity() :: {atom(), atom() | nil}
   def chain_identity do
