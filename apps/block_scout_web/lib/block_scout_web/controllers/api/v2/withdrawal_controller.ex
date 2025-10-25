@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.WithdrawalController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
@@ -8,6 +9,28 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias Explorer.Chain
+
+  tags(["withdrawals"])
+
+  operation :withdrawals_list,
+    summary: "List withdrawals",
+    description: "Retrieves withdrawals with optional filtering and pagination.",
+    parameters:
+      base_params() ++
+        define_paging_params(["index", "items_count"]),
+    responses: [
+      ok:
+        {"Withdrawals", "application/json",
+         paginated_response(
+           items: BlockScoutWeb.Schemas.API.V2.Withdrawal,
+           next_page_params_example: %{
+             "index" => 50,
+             "items_count" => 50
+           },
+           title_prefix: "Withdrawals"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   def withdrawals_list(conn, params) do
     full_options =
@@ -32,6 +55,15 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
       next_page_params: next_page_params
     })
   end
+
+  operation :withdrawals_counters,
+    summary: "Withdrawals counters",
+    description: "Returns total withdrawals count and sum from cache.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Withdrawals counters", "application/json", BlockScoutWeb.Schemas.API.V2.Withdrawal.Counter},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   def withdrawals_counters(conn, _params) do
     conn
