@@ -69,6 +69,9 @@ defmodule Explorer.Chain.Beacon.Deposit do
   @spec statuses :: [atom()]
   def statuses, do: @statuses_enum
 
+  @spec event_signature :: String.t()
+  def event_signature, do: @deposit_event_signature
+
   @sorting [desc: :index]
 
   @doc """
