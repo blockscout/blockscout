@@ -206,7 +206,7 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Block.{EmissionReward, Reward}
   alias Explorer.{Helper, Repo}
-  alias Explorer.Utility.MissingRangesManipulator
+  alias Explorer.Utility.MissingBlockRange
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
 
@@ -603,7 +603,9 @@ defmodule Explorer.Chain.Block do
         set: [refetch_needed: true, updated_at: Timex.now()]
       )
 
-    MissingRangesManipulator.add_ranges_by_block_numbers(updated_numbers)
+    MissingBlockRange.add_ranges_by_block_numbers(updated_numbers)
+
+    :ok
   end
 
   def set_refetch_needed(block_number), do: set_refetch_needed([block_number])
