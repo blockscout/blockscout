@@ -63,7 +63,6 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
     logs
     |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
     |> Enum.reduce([], fn log, accounts -> do_parse(log, accounts, get_topic) end)
-    |> Enum.map(fn address -> %{address_hash: address} end)
   end
 
   defp get_withdrawal_events(logs, topics) do
@@ -91,12 +90,13 @@ defmodule Explorer.Chain.Celo.Legacy.Accounts do
   end
 
   defp do_parse(log, accounts, get_topic) do
-    account_address = parse_params(log, get_topic)
+    account_address_hash = parse_params(log, get_topic)
+    entry = %{address_hash: account_address_hash, block_number: log.block_number}
 
-    if Enum.member?(accounts, account_address) do
+    if Enum.any?(accounts, &(&1.address_hash == account_address_hash)) do
       accounts
     else
-      [account_address | accounts]
+      [entry | accounts]
     end
   rescue
     _ in [FunctionClauseError, MatchError] ->
