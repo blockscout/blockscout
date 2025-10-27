@@ -184,7 +184,7 @@ defmodule Explorer.Chain.Transaction.Schema do
 
                           quote do
                             [
-                              has_many(:zrc2_token_transfer, Zrc2TokenTransfer,
+                              has_many(:zrc2_token_transfers, Zrc2TokenTransfer,
                                 foreign_key: :transaction_hash,
                                 references: :hash
                               )

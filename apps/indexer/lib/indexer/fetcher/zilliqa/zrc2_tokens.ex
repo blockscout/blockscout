@@ -247,16 +247,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   def fetch_zrc2_token_transfers_and_adapters([], _transactions, _block_numbers, _calling_module), do: nil
 
   def fetch_zrc2_token_transfers_and_adapters(logs, transactions, block_numbers, calling_module) do
-    zrc2_logs =
-      Enum.filter(
-        logs,
-        &(Hash.to_string(&1.first_topic) in [
-            @zrc2_transfer_success_event,
-            @zrc2_transfer_from_success_event,
-            @zrc2_minted_event,
-            @zrc2_burnt_event
-          ])
-      )
+    zrc2_logs = filter_zrc2_logs(logs)
 
     adapter_address_hash_by_zrc2_address_hash =
       zrc2_logs
@@ -370,6 +361,27 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     )
   end
 
+  # Filters the given logs to get ZRC-2 logs.
+  #
+  # ## Parameters
+  # - `logs`: The unfiltered list of logs.
+  #
+  # ## Returns
+  # - The filtered list of logs.
+  @spec filter_zrc2_logs(list()) :: list()
+  defp filter_zrc2_logs(logs) do
+    logs
+    |> Enum.filter(
+      &(!is_nil(&1.first_topic) and
+          Hash.to_string(&1.first_topic) in [
+            @zrc2_transfer_success_event,
+            @zrc2_transfer_from_success_event,
+            @zrc2_minted_event,
+            @zrc2_burnt_event
+          ])
+    )
+  end
+
   # Fetches ZRC-2 token adapter contract addresses for ZRC-2 tokens
   # by the given list of logs and transactions from a certain block range.
   #
@@ -427,7 +439,8 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     zrc2_token_adapters =
       logs
       |> Enum.filter(fn log ->
-        with true <- Hash.to_string(log.first_topic) == @zrc2_transfer_success_event,
+        with false <- is_nil(log.first_topic),
+             true <- Hash.to_string(log.first_topic) == @zrc2_transfer_success_event,
              # only ZRC-2 is supported
              params = zrc2_event_params(log.data),
              true <- Map.has_key?(params, :sender) && Map.has_key?(params, :recipient) && Map.has_key?(params, :amount),
@@ -454,7 +467,8 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
           logs
           |> Enum.filter(&(&1.transaction_hash == transaction_hash))
           |> Enum.any?(
-            &(Hash.to_string(&1.first_topic) == TokenTransfer.constant() and &1.address_hash == to_address_hash)
+            &(!is_nil(&1.first_topic) and Hash.to_string(&1.first_topic) == TokenTransfer.constant() and
+                &1.address_hash == to_address_hash)
           )
 
         if erc20_transfer_event_found do
