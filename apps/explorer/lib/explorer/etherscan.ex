@@ -137,7 +137,6 @@ defmodule Explorer.Etherscan do
       end
 
     query
-    |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
     |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_nonpending_block()
     |> InternalTransaction.include_zero_value(options.include_zero_value)

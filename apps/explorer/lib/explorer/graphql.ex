@@ -70,7 +70,7 @@ defmodule Explorer.GraphQL do
 
     query
     |> InternalTransaction.where_nonpending_block()
-    |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_is_different_from_parent_transaction()
   end
 
   @doc """
