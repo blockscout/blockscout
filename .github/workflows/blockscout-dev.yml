@@ -55,7 +55,7 @@ jobs:
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --name ${{ env.AZURE_VM_NAME }} \
               --command-id RunShellScript \
-              --scripts "echo $CONTENT | base64 -d > /home/dfx/update/docker-compose-blockscout-citrea-testnet.backend.env && /home/dfx/update-blockscout.sh backend"
+              --scripts "echo $CONTENT | base64 -d > /home/dfx/docker-compose-blockscout-citrea-testnet.backend.env && /home/dfx/update-blockscout.sh backend"
 
       - name: Logout from Azure
         run: |
