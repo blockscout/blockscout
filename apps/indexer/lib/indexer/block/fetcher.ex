@@ -293,7 +293,7 @@ defmodule Indexer.Block.Fetcher do
 
       async_match_arbitrum_messages_to_l2(arbitrum_transactions_for_further_handling)
 
-      if Application.get_env(:explorer, :chain_type) == :zilliqa do
+      if chain_type() == :zilliqa do
         inserted_logs = Map.get(inserted, :logs, [])
         inserted_transactions = Map.get(inserted, :transactions, [])
         Zrc2Tokens.fetch_zrc2_token_transfers_and_adapters(inserted_logs, inserted_transactions, range, callback_module)

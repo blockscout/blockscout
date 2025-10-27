@@ -118,7 +118,7 @@ defmodule Explorer.Chain.Block.Schema do
                                 references: :hash
                               )
 
-                              has_many(:zrc2_token_transfer, Zrc2TokenTransfer,
+                              has_many(:zrc2_token_transfers, Zrc2TokenTransfer,
                                 foreign_key: :block_hash,
                                 references: :hash
                               )
