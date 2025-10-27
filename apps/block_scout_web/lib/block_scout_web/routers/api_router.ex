@@ -291,6 +291,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     scope "/stats" do
       get("/", V2.StatsController, :stats)
+      get("/hot-contracts", V2.StatsController, :hot_contracts)
 
       scope "/charts" do
         get("/transactions", V2.StatsController, :transactions_chart)
