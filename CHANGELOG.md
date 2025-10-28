@@ -48,6 +48,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- add `CACHE_AVERAGE_BLOCK_TIME_WINDOW` ([#13470](https://github.com/blockscout/blockscout/pull/13470))
 - Improve DeleteZeroValueInternalTransactions future updating ([#13437](https://github.com/blockscout/blockscout/pull/13437))
 - advanced filters improvements ([#11909](https://github.com/blockscout/blockscout/pull/11909))
 - Allow api_key in the query string for api/v2/tokens/:address_hash/instances/refetch-metadata endpoint ([#13412](https://github.com/blockscout/blockscout/pull/13412))
@@ -87,6 +88,8 @@
 | `INDEXER_CELO_ACCOUNTS_CONCURRENCY`                  | Sets the maximum number of concurrent requests for fetching Celo accounts.                                                                                                                                                                                | Version: v9.2.0+ <br />Default: `1`<br />Applications: Indexer            |
 | `INDEXER_CELO_ACCOUNTS_BATCH_SIZE`                   | Specifies the number of account addresses processed per batch during fetching.                                                                                                                                                                            | Version: v9.2.0+ <br />Default: `100`<br />Applications: Indexer          |
 | `K8S_SERVICE`                                           | Kubernetes service name for Elixir nodes clusterization, more info on how to configure it can be found here https://hexdocs.pm/libcluster/Cluster.Strategy.Kubernetes.DNS.html. Implemented in [#13080](https://github.com/blockscout/blockscout/pull/13080).                                                                                                                                                                                      | Version: v9.2.0\+ <br />Default: (empty) <br />Applications: API, Indexer                                                                                                                                                                                                                                                                         |
+| `CACHE_AVERAGE_BLOCK_TIME_WINDOW`                     | The number of blocks to be taken into account in the calculations. Introduced in [#13470](https://github.com/blockscout/blockscout/pull/13470).                                                                                                                                                                                                               | Version: v9.2.0\+ <br />Default: `100` <br />Applications: API, Indexer   |
+
 ### Deprecated ENV variables
 
 | Variable                                              | Description                                                                                                                                                                                                                                                                                                                                        | Default                                                                                       | Version  | Deprecated in Version |
