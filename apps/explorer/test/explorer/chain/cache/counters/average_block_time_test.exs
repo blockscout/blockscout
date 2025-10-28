@@ -185,11 +185,18 @@ defmodule Explorer.Chain.Cache.Counters.AverageBlockTimeTest do
     end
 
     test "handles sub-second blocks" do
+      old_envs = Application.get_env(:explorer, AverageBlockTime)
+      Application.put_env(:explorer, AverageBlockTime, Keyword.merge(old_envs, num_of_blocks: 101))
+
+      on_exit(fn ->
+        Application.put_env(:explorer, AverageBlockTime, old_envs)
+      end)
+
       block_number = 99_999_999
 
       first_timestamp = Timex.now()
 
-      Enum.each(1..200//2, fn i ->
+      Enum.each(1..206//2, fn i ->
         insert(:block,
           number: block_number + i,
           consensus: true,
@@ -207,7 +214,7 @@ defmodule Explorer.Chain.Cache.Counters.AverageBlockTimeTest do
 
       avg_time = Timex.Duration.to_milliseconds(AverageBlockTime.average_block_time())
 
-      assert avg_time > 490 and avg_time < 510
+      assert avg_time == 500
     end
   end
 end

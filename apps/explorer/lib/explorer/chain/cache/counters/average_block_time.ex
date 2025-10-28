@@ -11,7 +11,6 @@ defmodule Explorer.Chain.Cache.Counters.AverageBlockTime do
   alias Explorer.Repo
   alias Timex.Duration
 
-  @num_of_blocks 100
   @offset 100
 
   @doc """
@@ -73,10 +72,13 @@ defmodule Explorer.Chain.Cache.Counters.AverageBlockTime do
     first_block_from_config =
       RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
+    num_of_blocks =
+      Application.get_env(:explorer, __MODULE__)[:num_of_blocks]
+
     base_query =
       from(block in Block,
         where: block.number > ^first_block_from_config,
-        limit: ^@num_of_blocks,
+        limit: ^num_of_blocks,
         offset: ^@offset,
         order_by: [desc: block.number],
         select: {block.number, block.timestamp}
