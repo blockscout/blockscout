@@ -17,6 +17,7 @@
 
 ### 🐛 Bug Fixes
 
+- Incorrect average block time for sub-second blocks ([#13469](https://github.com/blockscout/blockscout/issues/13469))
 - Remove transaction_has_multiple_internal_transactions filter ([#13453](https://github.com/blockscout/blockscout/pull/13453))
 - celo accounts transformer ([#13423](https://github.com/blockscout/blockscout/pull/13423))
 - Fix broken txn batch blocks API endpoint ([#13438](https://github.com/blockscout/blockscout/pull/13438))
