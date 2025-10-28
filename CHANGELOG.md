@@ -48,7 +48,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- add `CACHE_AVERAGE_BLOCK_WINDOW` ([#13470](https://github.com/blockscout/blockscout/pull/13470))
+- add `CACHE_AVERAGE_BLOCK_TIME_WINDOW` ([#13470](https://github.com/blockscout/blockscout/pull/13470))
 - Improve DeleteZeroValueInternalTransactions future updating ([#13437](https://github.com/blockscout/blockscout/pull/13437))
 - advanced filters improvements ([#11909](https://github.com/blockscout/blockscout/pull/11909))
 - Allow api_key in the query string for api/v2/tokens/:address_hash/instances/refetch-metadata endpoint ([#13412](https://github.com/blockscout/blockscout/pull/13412))
