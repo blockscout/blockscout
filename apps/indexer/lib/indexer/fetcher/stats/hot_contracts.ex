@@ -1,4 +1,7 @@
 defmodule Indexer.Fetcher.Stats.HotContracts do
+  @moduledoc """
+  This module defines the HotContracts fetcher for indexing hot contracts.
+  """
   use Indexer.Fetcher, restart: :permanent
 
   use GenServer
@@ -54,7 +57,7 @@ defmodule Indexer.Fetcher.Stats.HotContracts do
 
     today = Date.utc_today()
 
-    Enum.map(1..@max_days_ago, fn days_ago ->
+    Enum.each(1..@max_days_ago, fn days_ago ->
       date = Date.add(today, -days_ago)
 
       if date not in indexed_dates do

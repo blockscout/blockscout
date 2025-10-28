@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
   import BlockScoutWeb.PagingHelper, only: [hot_contracts_sorting: 1, delete_items_count_from_next_page_params: 1]
   import BlockScoutWeb.Chain, only: [hot_contracts_paging_options: 1, split_list_by_page: 1, next_page_params: 4]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.Chain.MarketHistoryChartController
@@ -213,7 +214,14 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       |> Keyword.merge(hot_contracts_sorting(params))
       |> Keyword.merge(@api_true)
 
-    {hot_contracts, next_page} = scale |> HotContracts.paginated(options) |> split_list_by_page()
+    {hot_contracts, next_page} =
+      scale
+      |> HotContracts.paginated(options)
+      |> case do
+        {:error, :not_found} -> []
+        hot_contracts -> hot_contracts
+      end
+      |> split_list_by_page()
 
     next_page_params =
       next_page
@@ -222,7 +230,10 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
     conn
     |> put_status(200)
-    |> render(:hot_contracts, %{hot_contracts: hot_contracts, next_page_params: next_page_params})
+    |> render(:hot_contracts, %{
+      hot_contracts: hot_contracts |> maybe_preload_metadata(),
+      next_page_params: next_page_params
+    })
   end
 
   defp backward_compatibility(response, conn) do

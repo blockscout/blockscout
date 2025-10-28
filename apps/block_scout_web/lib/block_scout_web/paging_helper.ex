@@ -463,14 +463,42 @@ defmodule BlockScoutWeb.PagingHelper do
   def hot_contracts_sorting(_), do: []
 
   defp do_hot_contracts_sorting("transactions_count", "asc"),
-    do: [{:dynamic, :transactions_count, :asc_nulls_first, HotContracts.transactions_count_dynamic()}]
+    do: %{
+      aggregated_on_hot_contracts: [
+        {:dynamic, :transactions_count, :asc_nulls_first, HotContracts.transactions_count_dynamic()}
+      ],
+      aggregated_on_transactions: [
+        {:dynamic, :transactions_count, :asc_nulls_first, HotContracts.transactions_count_on_transactions_dynamic()}
+      ]
+    }
 
   defp do_hot_contracts_sorting("transactions_count", "desc"),
-    do: [{:dynamic, :transactions_count, :desc_nulls_last, HotContracts.transactions_count_dynamic()}]
+    do: %{
+      aggregated_on_hot_contracts: [
+        {:dynamic, :transactions_count, :desc_nulls_last, HotContracts.transactions_count_dynamic()}
+      ],
+      aggregated_on_transactions: [
+        {:dynamic, :transactions_count, :desc_nulls_last, HotContracts.transactions_count_on_transactions_dynamic()}
+      ]
+    }
 
   defp do_hot_contracts_sorting("total_gas_used", "asc"),
-    do: [{:dynamic, :total_gas_used, :asc_nulls_first, HotContracts.total_gas_used_dynamic()}]
+    do: %{
+      aggregated_on_hot_contracts: [
+        {:dynamic, :total_gas_used, :asc_nulls_first, HotContracts.total_gas_used_dynamic()}
+      ],
+      aggregated_on_transactions: [
+        {:dynamic, :total_gas_used, :asc_nulls_first, HotContracts.total_gas_used_on_transactions_dynamic()}
+      ]
+    }
 
   defp do_hot_contracts_sorting("total_gas_used", "desc"),
-    do: [{:dynamic, :total_gas_used, :desc_nulls_last, HotContracts.total_gas_used_dynamic()}]
+    do: %{
+      aggregated_on_hot_contracts: [
+        {:dynamic, :total_gas_used, :desc_nulls_last, HotContracts.total_gas_used_dynamic()}
+      ],
+      aggregated_on_transactions: [
+        {:dynamic, :total_gas_used, :desc_nulls_last, HotContracts.total_gas_used_on_transactions_dynamic()}
+      ]
+    }
 end

@@ -1,8 +1,11 @@
 defmodule Explorer.Stats.HotContracts do
+  @moduledoc """
+  This module defines the HotContracts schema and functions for aggregating and paginating hot contracts.
+  """
   use Explorer.Schema
 
   alias Explorer.{Chain, PagingOptions, SortingHelper}
-  alias Explorer.Chain.{Address, Block, Transaction, Hash}
+  alias Explorer.Chain.{Address, Block, Hash, Transaction}
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
@@ -42,7 +45,10 @@ defmodule Explorer.Stats.HotContracts do
          {:ok, to_block} <-
            BlockReaderGeneral.timestamp_to_block_number(to_date, :before, options[:api?] || false, true) do
       {:ok,
-      from_block |> aggregate_hot_contracts_for_block_interval_query(to_block) |> Chain.select_repo(options).all() |> Enum.map(&Map.put(&1, :date, date))}
+       from_block
+       |> aggregate_hot_contracts_for_block_interval_query(to_block)
+       |> Chain.select_repo(options).all()
+       |> Enum.map(&Map.put(&1, :date, date))}
     else
       error -> {:error, error}
     end
@@ -91,13 +97,13 @@ defmodule Explorer.Stats.HotContracts do
 
   def last_n_seconds_paginated(n, options \\ []) do
     default_sorting = [
-      {:dynamic, :transactions_count, :desc_nulls_last, transactions_count_dynamic()},
-      {:dynamic, :total_gas_used, :desc_nulls_last, total_gas_used_dynamic()},
-      {:dynamic, :contract_address_hash, :asc, contract_address_hash_dynamic()}
+      {:dynamic, :transactions_count, :desc_nulls_last, transactions_count_on_transactions_dynamic()},
+      {:dynamic, :total_gas_used, :desc_nulls_last, total_gas_used_on_transactions_dynamic()},
+      {:dynamic, :contract_address_hash, :asc, contract_address_hash_on_transactions_dynamic()}
     ]
 
     paging_options = Keyword.get(options, :paging_options, PagingOptions.default_paging_options())
-    sorting_options = Keyword.get(options, :sorting, [])
+    sorting_options = Keyword.get(options, :sorting, %{})[:aggregated_on_transactions] || []
 
     preloads =
       Keyword.get(options, :preloads,
@@ -108,16 +114,17 @@ defmodule Explorer.Stats.HotContracts do
     from_timestamp = DateTime.add(now, -n, :second)
 
     with {:ok, from_block} <-
-      BlockReaderGeneral.timestamp_to_block_number(from_timestamp, :after, options[:api?] || false, true),
-    {:ok, to_block} <-
-      BlockReaderGeneral.timestamp_to_block_number(now, :before, options[:api?] || false, true) do
-        from_block |> aggregate_hot_contracts_for_block_interval_query(to_block)
-        |> SortingHelper.apply_sorting(sorting_options, default_sorting)
-        |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
-         |> Chain.select_repo(options).all() |> Enum.map(&struct(__MODULE__, &1)) |> Chain.select_repo(options).preload(preloads)
-      else
-        error -> {:error, error}
-      end
+           BlockReaderGeneral.timestamp_to_block_number(from_timestamp, :after, options[:api?] || false, true),
+         {:ok, to_block} <-
+           BlockReaderGeneral.timestamp_to_block_number(now, :before, options[:api?] || false, true) do
+      from_block
+      |> aggregate_hot_contracts_for_block_interval_query(to_block)
+      |> SortingHelper.apply_sorting(sorting_options, default_sorting)
+      |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
+      |> Chain.select_repo(options).all()
+      |> Enum.map(&struct(__MODULE__, &1))
+      |> Chain.select_repo(options).preload(preloads)
+    end
   end
 
   def last_n_days_paginated(n, options \\ []) do
@@ -128,7 +135,7 @@ defmodule Explorer.Stats.HotContracts do
     ]
 
     paging_options = Keyword.get(options, :paging_options, PagingOptions.default_paging_options())
-    sorting_options = Keyword.get(options, :sorting, [])
+    sorting_options = Keyword.get(options, :sorting, %{})[:aggregated_on_hot_contracts] || []
 
     preloads =
       Keyword.get(options, :preloads,
@@ -140,8 +147,8 @@ defmodule Explorer.Stats.HotContracts do
     |> group_by([hot_contracts_daily], hot_contracts_daily.contract_address_hash)
     |> select([hot_contracts_daily], %{
       contract_address_hash: hot_contracts_daily.contract_address_hash,
-      transactions_count: selected_as(sum(hot_contracts_daily.transactions_count), :transactions_count),
-      total_gas_used: selected_as(sum(hot_contracts_daily.total_gas_used), :total_gas_used)
+      transactions_count: sum(hot_contracts_daily.transactions_count),
+      total_gas_used: sum(hot_contracts_daily.total_gas_used)
     })
     |> SortingHelper.apply_sorting(sorting_options, default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
@@ -151,14 +158,22 @@ defmodule Explorer.Stats.HotContracts do
   end
 
   def transactions_count_dynamic do
-    dynamic([hcd], selected_as(:transactions_count))
+    dynamic([hot_contracts_daily], sum(hot_contracts_daily.transactions_count))
   end
 
   def total_gas_used_dynamic do
-    dynamic([hcd], selected_as(:total_gas_used))
+    dynamic([hot_contracts_daily], sum(hot_contracts_daily.total_gas_used))
   end
 
-  def contract_address_hash_dynamic do
-    dynamic([hcd], selected_as(:contract_address_hash))
+  def transactions_count_on_transactions_dynamic do
+    dynamic([transaction], count())
+  end
+
+  def total_gas_used_on_transactions_dynamic do
+    dynamic([transaction], sum(transaction.gas_used))
+  end
+
+  def contract_address_hash_on_transactions_dynamic do
+    dynamic([to_address: address], address.hash)
   end
 end
