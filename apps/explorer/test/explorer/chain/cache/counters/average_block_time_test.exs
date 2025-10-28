@@ -183,5 +183,31 @@ defmodule Explorer.Chain.Cache.Counters.AverageBlockTimeTest do
 
       assert Timex.Duration.to_milliseconds(AverageBlockTime.average_block_time()) == 3000
     end
+
+    test "handles sub-second blocks" do
+      block_number = 99_999_999
+
+      first_timestamp = Timex.now()
+
+      Enum.each(1..200//2, fn i ->
+        insert(:block,
+          number: block_number + i,
+          consensus: true,
+          timestamp: Timex.shift(first_timestamp, seconds: div(i + 1, 2))
+        )
+
+        insert(:block,
+          number: block_number + i + 1,
+          consensus: true,
+          timestamp: Timex.shift(first_timestamp, seconds: div(i + 1, 2))
+        )
+      end)
+
+      AverageBlockTime.refresh()
+
+      avg_time = Timex.Duration.to_milliseconds(AverageBlockTime.average_block_time())
+
+      assert avg_time > 490 and avg_time < 510
+    end
   end
 end

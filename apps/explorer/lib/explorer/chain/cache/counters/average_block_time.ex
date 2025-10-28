@@ -96,7 +96,14 @@ defmodule Explorer.Chain.Cache.Counters.AverageBlockTime do
 
     timestamps =
       raw_timestamps
-      |> Enum.sort_by(fn {_, timestamp} -> timestamp end, &Timex.after?/2)
+      |> Enum.sort(fn
+        {number_a, timestamp_a}, {number_b, timestamp_b} ->
+          case Timex.compare(timestamp_a, timestamp_b) do
+            1 -> true
+            -1 -> false
+            0 -> number_a > number_b
+          end
+      end)
       |> Enum.map(fn {number, timestamp} ->
         {number, DateTime.to_unix(timestamp, :millisecond)}
       end)
