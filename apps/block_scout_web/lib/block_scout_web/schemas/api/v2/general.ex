@@ -137,6 +137,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for a limit result items in the response.
+  """
+  @spec limit_param() :: Parameter.t()
+  def limit_param do
+    %Parameter{
+      name: :limit,
+      in: :query,
+      schema: %Schema{type: :string, nullable: true},
+      required: false,
+      description: "Limit result items in the response"
+    }
+  end
+
+  @doc """
   Returns a parameter definition for a filter type in the query.
   """
   @spec filter_type_param() :: Parameter.t()
