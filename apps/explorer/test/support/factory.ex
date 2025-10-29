@@ -1,6 +1,7 @@
 defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Ecto.Query
 
@@ -147,27 +148,36 @@ defmodule Explorer.Factory do
   end
 
   def watchlist_address_factory do
+    notification_settings = %{
+      "native" => %{
+        "incoming" => random_bool(),
+        "outcoming" => random_bool()
+      },
+      "ERC-20" => %{
+        "incoming" => random_bool(),
+        "outcoming" => random_bool()
+      },
+      "ERC-721" => %{
+        "incoming" => random_bool(),
+        "outcoming" => random_bool()
+      },
+      "ERC-404" => %{
+        "incoming" => random_bool(),
+        "outcoming" => random_bool()
+      }
+    }
+
+    notification_settings_extended =
+      if chain_type() == :zilliqa do
+        Map.put(notification_settings, "ZRC-2", %{"incoming" => random_bool(), "outcoming" => random_bool()})
+      else
+        notification_settings
+      end
+
     %{
       "address_hash" => to_string(build(:address).hash),
       "name" => sequence("test"),
-      "notification_settings" => %{
-        "native" => %{
-          "incoming" => random_bool(),
-          "outcoming" => random_bool()
-        },
-        "ERC-20" => %{
-          "incoming" => random_bool(),
-          "outcoming" => random_bool()
-        },
-        "ERC-721" => %{
-          "incoming" => random_bool(),
-          "outcoming" => random_bool()
-        },
-        "ERC-404" => %{
-          "incoming" => random_bool(),
-          "outcoming" => random_bool()
-        }
-      },
+      "notification_settings" => notification_settings_extended,
       "notification_methods" => %{
         "email" => random_bool()
       }
