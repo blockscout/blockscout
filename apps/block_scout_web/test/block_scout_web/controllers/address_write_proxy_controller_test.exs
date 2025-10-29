@@ -38,7 +38,8 @@ defmodule BlockScoutWeb.AddressWriteProxyControllerTest do
         transaction: transaction,
         transaction_index: transaction.index,
         created_contract_address: contract_address,
-        block_hash: transaction.block_hash
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number
       )
 
       insert(:smart_contract, address_hash: contract_address.hash, contract_code_md5: "123")
@@ -65,7 +66,8 @@ defmodule BlockScoutWeb.AddressWriteProxyControllerTest do
         transaction: transaction,
         transaction_index: transaction.index,
         created_contract_address: contract_address,
-        block_hash: transaction.block_hash
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number
       )
 
       conn =

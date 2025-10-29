@@ -65,7 +65,8 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.NodeTest do
           transaction: transaction,
           transaction_index: transaction.index,
           index: 0,
-          block_hash: transaction.block_hash
+          block_hash: transaction.block_hash,
+          block_number: transaction.block_number
         )
 
       query = """
@@ -109,7 +110,8 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.NodeTest do
           transaction: transaction,
           transaction_index: transaction.index,
           index: 0,
-          block_hash: transaction.block_hash
+          block_hash: transaction.block_hash,
+          block_number: transaction.block_number
         )
 
       query = """

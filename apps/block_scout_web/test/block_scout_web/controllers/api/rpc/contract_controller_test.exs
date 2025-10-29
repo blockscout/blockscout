@@ -1120,6 +1120,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           transaction: transaction,
           index: 1,
           block_hash: transaction.block_hash,
+          block_number: transaction.block_number,
           transaction_index: transaction.index
         )
 
@@ -1175,6 +1176,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         index: 0,
         created_contract_address: contract_address,
         block_hash: transaction.block_hash,
+        block_number: transaction.block_number,
         transaction_index: transaction.index
       )
 

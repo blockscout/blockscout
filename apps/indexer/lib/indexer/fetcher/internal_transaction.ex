@@ -27,8 +27,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
-  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
   alias Indexer.Transform.{AddressCoinBalances, Addresses, AddressTokenBalances}
+  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
 
   @behaviour BufferedTask
 

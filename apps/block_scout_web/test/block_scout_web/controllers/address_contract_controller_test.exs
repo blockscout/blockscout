@@ -52,7 +52,8 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
         transaction: transaction,
         transaction_index: transaction.index,
         created_contract_address: address,
-        block_hash: transaction.block_hash
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number
       )
 
       EthereumJSONRPC.Mox

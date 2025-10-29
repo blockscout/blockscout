@@ -96,7 +96,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           transaction: transaction,
           from_address: address,
           created_contract_address: contract,
-          block_hash: transaction.block_hash
+          block_hash: transaction.block_hash,
+          block_number: transaction.block_number
         )
 
       address_hash = AddressView.trimmed_hash(address.hash)
@@ -122,7 +123,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         to_address: contract,
         created_contract_address: contract,
         type: :call,
-        block_hash: transaction.block_hash
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number
       )
 
       internal_transaction =
@@ -133,7 +135,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           transaction: transaction,
           from_address: contract,
           created_contract_address: another_contract,
-          block_hash: transaction.block_hash
+          block_hash: transaction.block_hash,
+          block_number: transaction.block_number
         )
 
       contract_hash = AddressView.trimmed_hash(contract.hash)

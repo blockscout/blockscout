@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
   alias Ecto.Multi
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, PendingBlockOperation}
+  alias Explorer.Chain.{Block, PendingBlockOperation, PendingTransactionOperation}
   alias Explorer.Chain.Import.Runner.Blocks
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.{InternalTransaction, PendingTransaction, TokenBalance}
@@ -202,7 +202,8 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       block = insert(:block)
       transaction = insert(:transaction) |> with_block(block)
       block_hash = block.hash
-      insert(:pending_block_operation, block_hash: block_hash, block_number: block.number)
+      block_number = block.number
+      insert(:pending_block_operation, block_hash: block_hash, block_number: block_number)
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
@@ -301,7 +302,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       assert nil == Repo.get(PendingBlockOperation, block_hash)
 
-      assert Repo.exists?(from(i in Chain.InternalTransaction, where: i.block_hash == ^block_hash))
+      assert Repo.exists?(from(i in Chain.InternalTransaction, where: i.block_number == ^block_number))
     end
 
     test "handles failure by retrying only unique numbers", %{

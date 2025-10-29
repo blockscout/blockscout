@@ -517,7 +517,8 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
           transaction_hash: transaction.hash,
           transaction_index: transaction.index,
           index: 0,
-          block_hash: transaction.block_hash
+          block_hash: transaction.block_hash,
+          block_number: transaction.block_number
         )
 
         params = %{
@@ -575,7 +576,8 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
           transaction_hash: transaction_success.hash,
           transaction_index: transaction_success.index,
           index: 0,
-          block_hash: transaction_success.block_hash
+          block_hash: transaction_success.block_hash,
+          block_number: transaction_success.block_number
         )
 
         :internal_transaction
@@ -588,7 +590,8 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
           transaction_hash: transaction_failure.hash,
           transaction_index: transaction_failure.index,
           index: 0,
-          block_hash: transaction_failure.block_hash
+          block_hash: transaction_failure.block_hash,
+          block_number: transaction_failure.block_number
         )
 
         params = %{
