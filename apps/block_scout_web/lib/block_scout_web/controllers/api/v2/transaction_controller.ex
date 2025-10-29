@@ -265,21 +265,19 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   operation :polygon_zkevm_batch,
     summary: "List L2 transactions in a Polygon ZkEVM batch",
     description: "Retrieves L2 transactions bound to a specific Polygon ZkEVM batch number.",
-    parameters:
-      base_params() ++
-        [batch_number_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
+    parameters: [batch_number_param() | base_params()],
     responses: [
       ok:
         {"Polygon ZkEVM batch transactions", "application/json",
-         paginated_response(
-           items: Schemas.Transaction.Response,
-           next_page_params_example: %{
-             "block_number" => 65_361_291,
-             "index" => 1,
-             "items_count" => 50
+         %Schema{
+           title: "PolygonZkEVMBatchTransactions",
+           type: :object,
+           properties: %{
+             items: %Schema{type: :array, items: Schemas.Transaction.Response}
            },
-           title_prefix: "PolygonZkEVMBatchTransactions"
-         )},
+           nullable: false,
+           additionalProperties: false
+         }},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -1004,20 +1002,19 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   operation :blobs,
     summary: "List blobs for a transaction",
     description: "Retrieves blobs for a specific transaction (Ethereum only).",
-    parameters:
-      [transaction_hash_param() | base_params()] ++ define_paging_params(["block_number", "index", "items_count"]),
+    parameters: [transaction_hash_param() | base_params()],
     responses: [
       ok:
         {"Blobs for transaction", "application/json",
-         paginated_response(
-           items: BlockScoutWeb.Schemas.API.V2.Blob.Response,
-           next_page_params_example: %{
-             "block_number" => 23_618_885,
-             "index" => 35,
-             "items_count" => 50
+         %Schema{
+           title: "TransactionBlobs",
+           type: :object,
+           properties: %{
+             items: %Schema{type: :array, items: BlockScoutWeb.Schemas.API.V2.Blob.Response}
            },
-           title_prefix: "TransactionBlobs"
-         )},
+           nullable: false,
+           additionalProperties: false
+         }},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
     ]

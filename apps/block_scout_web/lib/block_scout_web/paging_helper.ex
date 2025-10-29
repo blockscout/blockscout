@@ -256,6 +256,7 @@ defmodule BlockScoutWeb.PagingHelper do
       :batch_number_param,
       :block_hash_or_number_param,
       :transaction_hash_param,
+      :batch_number_param,
       :token_id_param,
       :token_id,
       :type,
