@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
   use BlockScoutWeb.ConnCase
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Account.{
     Identity,
@@ -1090,12 +1091,22 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
       }
     }
 
+    notification_settings_extended =
+      if chain_type() == :zilliqa do
+        Map.put(notification_settings, "ZRC-2", %{
+          "incoming" => watchlist.watch_zrc_2_input,
+          "outcoming" => watchlist.watch_zrc_2_output
+        })
+      else
+        notification_settings
+      end
+
     assert json["address_hash"] == to_string(watchlist.address_hash)
     assert json["name"] == watchlist.name
     assert json["id"] == watchlist.id
     assert json["address"]["hash"] == Address.checksum(watchlist.address_hash)
     assert json["notification_methods"]["email"] == watchlist.notify_email
-    assert json["notification_settings"] == notification_settings
+    assert json["notification_settings"] == notification_settings_extended
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, list) do
