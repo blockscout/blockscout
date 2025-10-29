@@ -11,6 +11,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
   import Ecto.Query
 
   alias ABI.Event
+  alias Ecto.Changeset
+  alias EthereumJSONRPC.Block, as: EthereumJSONRPCBlock
   alias Explorer.Chain.Beacon.Deposit
   alias Explorer.Chain.{Block, Data, Hash, Wei}
   alias Explorer.Repo
@@ -262,8 +264,12 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
          [] <- find_missing_ranges(last_processed_deposit_index, merged_deposits) do
       {:ok, merged_deposits}
     else
-      [_ | _] -> {:error, :missing_ranges_after_node_fetch}
-      err -> err
+      [_ | _] = missing_ranges ->
+        Logger.error("Still missing deposit ranges after fetching from the node: #{inspect(missing_ranges)}")
+        {:error, :missing_ranges_after_node_fetch}
+
+      err ->
+        err
     end
   end
 
@@ -287,24 +293,42 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
 
     with {:ok, logs} <-
            Helper.get_logs(
-             from_deposit_block_number,
-             to_deposit_block_number,
+             max(0, from_deposit_block_number),
+             max(0, to_deposit_block_number),
              to_string(deposit_contract_address_hash),
              [Deposit.event_signature()],
              json_rpc_named_arguments
            ) do
-      node_logs_to_deposits(logs)
+      node_logs_to_deposits(logs, json_rpc_named_arguments)
     end
   end
 
-  defp node_logs_to_deposits(logs) do
-    blocks =
+  defp node_logs_to_deposits(logs, json_rpc_named_arguments) do
+    blocks_from_db =
       logs
       |> Enum.map(fn l -> l["blockHash"] end)
       |> Enum.uniq()
       |> Block.by_hashes_query()
       |> Repo.all()
       |> Map.new(fn b -> {b.hash, b} end)
+
+    logs_with_missing_blocks =
+      logs
+      |> Enum.reject(fn l ->
+        {:ok, l_block_hash} = Hash.Full.cast(l["blockHash"])
+        Map.has_key?(blocks_from_db, l_block_hash)
+      end)
+
+    blocks_from_node =
+      logs_with_missing_blocks
+      |> Helper.get_blocks_by_events(json_rpc_named_arguments, 3)
+      |> Map.new(fn b ->
+        b = b |> EthereumJSONRPCBlock.to_elixir() |> EthereumJSONRPCBlock.elixir_to_params()
+        b = %Block{} |> Changeset.cast(b, ~w(hash number timestamp)a) |> Changeset.apply_changes()
+        {b.hash, b}
+      end)
+
+    blocks = Map.merge(blocks_from_db, blocks_from_node)
 
     logs
     |> Enum.reduce_while({:ok, []}, fn l, {:ok, acc} ->
@@ -456,10 +480,10 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
     }
   end
 
-  defp find_missing_ranges(last_processed_deposit_index, deposits) do
+  def find_missing_ranges(last_processed_deposit_index, deposits) do
     result =
       Enum.reduce(deposits, %{index: last_processed_deposit_index, gaps: []}, fn
-        %{index: i}, %{index: prev, gaps: gaps} when i == prev + 1 ->
+        %{index: i}, %{index: prev, gaps: gaps} when i - prev <= 1 ->
           %{index: i, gaps: gaps}
 
         %{index: i}, %{index: prev, gaps: gaps} ->
