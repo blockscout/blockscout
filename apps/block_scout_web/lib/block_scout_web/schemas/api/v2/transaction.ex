@@ -184,7 +184,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
               items: @optimism_withdrawal_schema,
               nullable: false
             },
-            op_interop: %Schema{
+            op_interop_messages: %Schema{
               type: :object,
               nullable: false,
               properties: %{
@@ -503,7 +503,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         :authorization_list,
         :is_pending_update
       ],
-      additionalProperties: true
+      additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()
   )

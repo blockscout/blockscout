@@ -574,6 +574,13 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def paging_options(%{items_count: items_count_string, state_changes: _}) when is_binary(items_count_string) do
+    case Integer.parse(items_count_string) do
+      {count, ""} -> [paging_options: %{@default_paging_options | key: {count}}]
+      _ -> @default_paging_options
+    end
+  end
+
   def paging_options(%{"l1_block_number" => block_number, "transaction_hash" => transaction_hash}) do
     with {block_number, ""} <- Integer.parse(block_number),
          {:ok, transaction_hash} <- string_to_full_hash(transaction_hash) do
