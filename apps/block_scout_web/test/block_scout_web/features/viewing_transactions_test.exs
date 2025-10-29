@@ -55,7 +55,8 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
         index: 0,
         transaction: transaction,
         transaction_index: transaction.index,
-        block_hash: transaction.block_hash
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number
       )
 
     {:ok,
@@ -109,6 +110,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
         transaction: transaction,
         index: 0,
         block_hash: transaction.block_hash,
+        block_number: transaction.block_number,
         transaction_index: transaction.index
       )
       |> with_contract_creation(contract_address)

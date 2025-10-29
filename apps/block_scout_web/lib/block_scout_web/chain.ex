@@ -1387,7 +1387,7 @@ defmodule BlockScoutWeb.Chain do
   @spec block_to_internal_transactions(Block.t(), Keyword.t()) :: [InternalTransaction.t()]
   def block_to_internal_transactions(block, options \\ []) do
     if InternalTransaction.present_in_db?(block.number) do
-      InternalTransaction.block_to_internal_transactions(block.hash, options)
+      InternalTransaction.block_to_internal_transactions(block.number, options)
     else
       InternalTransactionOnDemand.fetch_by_block(block, options)
     end

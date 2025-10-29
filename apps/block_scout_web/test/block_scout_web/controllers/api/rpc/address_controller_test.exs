@@ -2286,7 +2286,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         value: 1,
         type: :reward,
         error: "some error",
-        block_hash: transaction.block_hash
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number
       ]
 
       insert(:internal_transaction_create, internal_transaction_details)
@@ -2321,6 +2322,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           transaction_index: transaction.index,
           index: index,
           block_hash: transaction.block_hash,
+          block_number: transaction.block_number,
           value: 1
         )
       end

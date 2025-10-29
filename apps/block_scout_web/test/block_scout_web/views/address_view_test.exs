@@ -20,7 +20,8 @@ defmodule BlockScoutWeb.AddressViewTest do
           transaction_index: transaction.index,
           to_address: nil,
           created_contract_address_hash: nil,
-          block_hash: transaction.block_hash
+          block_hash: transaction.block_hash,
+          block_number: transaction.block_number
         )
 
       assert "Contract Address Pending" == AddressView.address_partial_selector(internal_transaction, :to, nil)

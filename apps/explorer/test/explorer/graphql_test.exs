@@ -99,7 +99,8 @@ defmodule Explorer.GraphQLTest do
           transaction: transaction,
           transaction_index: transaction.index,
           index: 0,
-          block_hash: transaction.block_hash
+          block_hash: transaction.block_hash,
+          block_number: transaction.block_number
         )
 
       clauses = %{transaction_hash: transaction.hash, index: internal_transaction.index}
@@ -131,14 +132,16 @@ defmodule Explorer.GraphQLTest do
           transaction: transaction1,
           transaction_index: transaction1.index,
           index: 0,
-          block_hash: transaction1.block_hash
+          block_hash: transaction1.block_hash,
+          block_number: transaction1.block_number
         )
 
       insert(:internal_transaction_create,
         transaction: transaction2,
         transaction_index: transaction2.index,
         index: 0,
-        block_hash: transaction2.block_hash
+        block_hash: transaction2.block_hash,
+        block_number: transaction2.block_number
       )
 
       [found_internal_transaction] =
@@ -159,7 +162,8 @@ defmodule Explorer.GraphQLTest do
           transaction: transaction1,
           transaction_index: transaction1.index,
           index: index,
-          block_hash: transaction1.block_hash
+          block_hash: transaction1.block_hash,
+          block_number: transaction1.block_number
         )
       end
 
@@ -167,7 +171,8 @@ defmodule Explorer.GraphQLTest do
         transaction: transaction2,
         transaction_index: transaction2.index,
         index: 0,
-        block_hash: transaction2.block_hash
+        block_hash: transaction2.block_hash,
+        block_number: transaction2.block_number
       )
 
       found_internal_transactions =
@@ -189,21 +194,24 @@ defmodule Explorer.GraphQLTest do
         transaction: transaction,
         transaction_index: transaction.index,
         index: 2,
-        block_hash: transaction.block_hash
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number
       )
 
       insert(:internal_transaction_create,
         transaction: transaction,
         transaction_index: transaction.index,
         index: 0,
-        block_hash: transaction.block_hash
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number
       )
 
       insert(:internal_transaction_create,
         transaction: transaction,
         transaction_index: transaction.index,
         index: 1,
-        block_hash: transaction.block_hash
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number
       )
 
       found_internal_transactions =
