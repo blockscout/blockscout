@@ -629,7 +629,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
-  Returns a parameter definition for scale for hot contracts in days.
+  Returns a parameter definition for scale for hot contracts.
   """
   @spec hot_contracts_scale_param() :: Parameter.t()
   def hot_contracts_scale_param do
@@ -637,7 +637,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       in: :query,
       schema: %Schema{type: :string, enum: ["5m", "1h", "3h", "1d", "7d", "30d"], nullable: false},
       required: true,
-      description: "Scale for hot contracts in days",
+      description:
+        "Time scale for hot contracts aggregation (5m=5 minutes, 1h=1 hour, 3h=3 hours, 1d=1 day, 7d=7 days, 30d=30 days)",
       name: :scale
     }
   end

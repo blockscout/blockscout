@@ -39,7 +39,7 @@ defmodule Indexer.Fetcher.Stats.HotContracts do
       Logger.info("Hot contracts fetched for #{date}")
     else
       {:error, error} ->
-        Process.send_after(self(), {:fetch_for_date, date}, @retry_interval)
+        Process.send_after(self(), {:fetch_for_date, date, new_day?}, @retry_interval)
         Logger.error("Error fetching hot contracts for #{date}: #{inspect(error)}")
     end
 

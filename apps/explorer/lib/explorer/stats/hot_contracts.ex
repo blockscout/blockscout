@@ -76,7 +76,7 @@ defmodule Explorer.Stats.HotContracts do
     |> Chain.select_repo(options).all()
   end
 
-  @spec delete_older_than(Date.t(), keyword()) :: :ok
+  @spec delete_older_than(Date.t(), keyword()) :: {non_neg_integer(), nil}
   def delete_older_than(date, options \\ []) do
     __MODULE__
     |> where([hot_contracts_daily], hot_contracts_daily.date < ^date)

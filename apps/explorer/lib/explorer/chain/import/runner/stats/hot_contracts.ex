@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Runner.Stats.HotContracts do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Withdrawal.t/0`.
+  Bulk imports `t:Explorer.Stats.HotContracts.t/0` rows (hot_contracts_daily).
   """
 
   require Ecto.Query
@@ -64,17 +64,16 @@ defmodule Explorer.Chain.Import.Runner.Stats.HotContracts do
     # Enforce HotContracts ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.date, &1.contract_address_hash})
 
-    {:ok, _} =
-      Import.insert_changes_list(
-        repo,
-        ordered_changes_list,
-        conflict_target: [:date, :contract_address_hash],
-        on_conflict: on_conflict,
-        for: HotContracts,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
+    Import.insert_changes_list(
+      repo,
+      ordered_changes_list,
+      conflict_target: [:date, :contract_address_hash],
+      on_conflict: on_conflict,
+      for: HotContracts,
+      returning: true,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp default_on_conflict do
