@@ -5,7 +5,9 @@ defmodule Explorer.Chain.Address.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.Addresses
   """
-  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   alias Explorer.Chain.{
     Address,
@@ -25,8 +27,8 @@ defmodule Explorer.Chain.Address.Schema do
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
-  @chain_type_fields (case @chain_identity do
-                        {:filecoin, nil} ->
+  @chain_type_fields (case @chain_type do
+                        :filecoin ->
                           alias Explorer.Chain.Filecoin.{IDAddress, NativeAddress}
 
                           quote do
@@ -60,28 +62,33 @@ defmodule Explorer.Chain.Address.Schema do
                             ]
                           end
 
-                        {:zksync, nil} ->
+                        :zksync ->
                           quote do
                             [
                               field(:contract_code_refetched, :boolean)
                             ]
                           end
 
-                        {:optimism, :celo} ->
-                          quote do
-                            [
-                              has_one(
-                                :celo_account,
-                                Explorer.Chain.Celo.Account,
-                                foreign_key: :address_hash,
-                                references: :hash
-                              )
-                            ]
-                          end
-
                         _ ->
                           []
                       end)
+
+  @chain_identity_fields (case @chain_identity do
+                            {:optimism, :celo} ->
+                              quote do
+                                [
+                                  has_one(
+                                    :celo_account,
+                                    Explorer.Chain.Celo.Account,
+                                    foreign_key: :address_hash,
+                                    references: :hash
+                                  )
+                                ]
+                              end
+
+                            _ ->
+                              []
+                          end)
 
   defmacro generate do
     quote do
@@ -132,6 +139,7 @@ defmodule Explorer.Chain.Address.Schema do
         timestamps()
 
         unquote_splicing(@chain_type_fields)
+        unquote_splicing(@chain_identity_fields)
       end
     end
   end

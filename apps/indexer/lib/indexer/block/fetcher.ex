@@ -301,13 +301,13 @@ defmodule Indexer.Block.Fetcher do
 
   defp import_options(basic_import_options, chain_specific_import_options) do
     do_import_options(
-      chain_identity(),
+      chain_type(),
       basic_import_options,
       chain_specific_import_options
     )
   end
 
-  defp do_import_options({:ethereum, nil}, basic_import_options, %{
+  defp do_import_options(:ethereum, basic_import_options, %{
          transactions_with_receipts: transactions_with_receipts
        }) do
     basic_import_options
@@ -316,31 +316,67 @@ defmodule Indexer.Block.Fetcher do
     })
   end
 
-  defp do_import_options({:optimism, nil}, basic_import_options, %{optimism_withdrawals: optimism_withdrawals}) do
-    basic_import_options
-    |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
+  defp do_import_options(
+         :optimism,
+         basic_import_options,
+         %{optimism_withdrawals: optimism_withdrawals} = chain_specific_import_options
+       ) do
+    import_options =
+      basic_import_options
+      |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
+
+    do_chain_identity_import_options(
+      chain_identity(),
+      import_options,
+      chain_specific_import_options
+    )
   end
 
-  defp do_import_options({:polygon_zkevm, nil}, basic_import_options, %{
+  defp do_import_options(:polygon_zkevm, basic_import_options, %{
          polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations
        }) do
     basic_import_options
     |> Map.put_new(:polygon_zkevm_bridge_operations, %{params: polygon_zkevm_bridge_operations})
   end
 
-  defp do_import_options({:scroll, nil}, basic_import_options, %{scroll_l1_fee_params: scroll_l1_fee_params}) do
+  defp do_import_options(:scroll, basic_import_options, %{scroll_l1_fee_params: scroll_l1_fee_params}) do
     basic_import_options
     |> Map.put_new(:scroll_l1_fee_params, %{params: scroll_l1_fee_params})
   end
 
-  defp do_import_options({:shibarium, nil}, basic_import_options, %{
+  defp do_import_options(:shibarium, basic_import_options, %{
          shibarium_bridge_operations: shibarium_bridge_operations
        }) do
     basic_import_options
     |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
   end
 
-  defp do_import_options(
+  defp do_import_options(:arbitrum, basic_import_options, %{arbitrum_messages: arbitrum_xlevel_messages}) do
+    basic_import_options
+    |> Map.put_new(:arbitrum_messages, %{params: arbitrum_xlevel_messages})
+  end
+
+  defp do_import_options(:zilliqa, basic_import_options, %{
+         zilliqa_quorum_certificates: zilliqa_quorum_certificates,
+         zilliqa_aggregate_quorum_certificates: zilliqa_aggregate_quorum_certificates,
+         zilliqa_nested_quorum_certificates: zilliqa_nested_quorum_certificates
+       }) do
+    basic_import_options
+    |> Map.put_new(:zilliqa_quorum_certificates, %{params: zilliqa_quorum_certificates})
+    |> Map.put_new(:zilliqa_aggregate_quorum_certificates, %{params: zilliqa_aggregate_quorum_certificates})
+    |> Map.put_new(:zilliqa_nested_quorum_certificates, %{params: zilliqa_nested_quorum_certificates})
+  end
+
+  defp do_import_options(:stability, basic_import_options, %{stability_validators: stability_validators}) do
+    basic_import_options
+    |> Map.put_new(:stability_validators, %{params: stability_validators})
+  end
+
+  defp do_import_options(_chain_identity, basic_import_options, _chain_specific_import_options) do
+    basic_import_options
+  end
+
+  defp do_chain_identity_import_options(
          {:optimism, :celo},
          basic_import_options,
          %{
@@ -370,28 +406,7 @@ defmodule Indexer.Block.Fetcher do
     )
   end
 
-  defp do_import_options({:arbitrum, nil}, basic_import_options, %{arbitrum_messages: arbitrum_xlevel_messages}) do
-    basic_import_options
-    |> Map.put_new(:arbitrum_messages, %{params: arbitrum_xlevel_messages})
-  end
-
-  defp do_import_options({:zilliqa, nil}, basic_import_options, %{
-         zilliqa_quorum_certificates: zilliqa_quorum_certificates,
-         zilliqa_aggregate_quorum_certificates: zilliqa_aggregate_quorum_certificates,
-         zilliqa_nested_quorum_certificates: zilliqa_nested_quorum_certificates
-       }) do
-    basic_import_options
-    |> Map.put_new(:zilliqa_quorum_certificates, %{params: zilliqa_quorum_certificates})
-    |> Map.put_new(:zilliqa_aggregate_quorum_certificates, %{params: zilliqa_aggregate_quorum_certificates})
-    |> Map.put_new(:zilliqa_nested_quorum_certificates, %{params: zilliqa_nested_quorum_certificates})
-  end
-
-  defp do_import_options({:stability, nil}, basic_import_options, %{stability_validators: stability_validators}) do
-    basic_import_options
-    |> Map.put_new(:stability_validators, %{params: stability_validators})
-  end
-
-  defp do_import_options(_chain_identity, basic_import_options, _chain_specific_import_options) do
+  defp do_chain_identity_import_options(_, basic_import_options, _chain_specific_import_options) do
     basic_import_options
   end
 
