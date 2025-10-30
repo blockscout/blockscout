@@ -261,6 +261,7 @@ defmodule BlockScoutWeb.PagingHelper do
       :token_id,
       :type,
       :apikey,
+      :state_changes,
       "apikey",
       "block_hash_or_number",
       "block_hash_or_number_param",

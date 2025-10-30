@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
-      next_page_params: 4,
+      next_page_params: 5,
       token_transfers_next_page_params: 3,
       paging_options: 1,
       split_list_by_page: 1,
@@ -413,6 +413,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               transactions,
               params,
+              false,
               &Transaction.address_transactions_next_page_params/1
             )
 
@@ -945,6 +946,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               tokens,
               params,
+              false,
               &paging_params_with_fiat_value/1
             )
 
@@ -1243,6 +1245,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               nfts,
               params,
+              false,
               &Instance.nft_list_next_page_params/1
             )
 
@@ -1319,6 +1322,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               collections,
               params,
+              false,
               &Instance.nft_collections_next_page_params/1
             )
 
@@ -1391,6 +1395,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           next_page,
           rewards,
           filtered_params,
+          false,
           &%{
             epoch_number: &1.epoch_number,
             amount: &1.amount,
@@ -1514,6 +1519,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> next_page_params(
           deposits,
           params,
+          false,
           DepositController.paging_function()
         )
 

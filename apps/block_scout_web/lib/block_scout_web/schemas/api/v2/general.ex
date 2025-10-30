@@ -943,13 +943,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       in: :query,
       schema: %Schema{type: :integer, minimum: 1},
       required: false,
-      description: "Total number of items returned per current page and previous pages",
+      description: "Cumulative number of items to skip for keyset-based pagination of state changes",
       name: :items_count
     },
     # todo: remove in the future as this param is unused in the pagination of state changes
     "state_changes" => %Parameter{
       in: :query,
-      schema: %Schema{type: :integer, nullable: true},
+      schema: %Schema{type: :string, nullable: true},
       required: false,
       description: "State changes for paging",
       name: :state_changes
@@ -966,6 +966,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     end)
   end
 
+  @doc """
+  Returns a list of pagination parameters for `/api/v2/transactions/:transaction_hash_param/state-changes` API endpoint
+  """
   @spec define_state_changes_paging_params([String.t()]) :: [Parameter.t()]
   def define_state_changes_paging_params(fields) do
     Enum.map(fields, fn field ->
