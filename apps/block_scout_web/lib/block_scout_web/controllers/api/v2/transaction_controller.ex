@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     only: [
       next_page_params: 3,
       next_page_params: 4,
+      next_page_params: 5,
       put_key_value_to_paging_options: 3,
       token_transfers_next_page_params: 3,
       paging_options: 1,
@@ -873,7 +874,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       next_page_params =
         next_page
-        |> next_page_params(state_changes, params)
+        |> next_page_params(state_changes, params, true)
 
       conn
       |> put_status(200)
@@ -1153,6 +1154,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         |> next_page_params(
           deposits,
           params,
+          false,
           DepositController.paging_function()
         )
 

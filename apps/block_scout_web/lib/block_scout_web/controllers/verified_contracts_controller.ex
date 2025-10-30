@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [next_page_params: 4, split_list_by_page: 1, fetch_page_number: 1]
+    only: [next_page_params: 5, split_list_by_page: 1, fetch_page_number: 1]
 
   import BlockScoutWeb.PagingHelper, only: [current_filter: 1, search_query: 1]
 
@@ -46,6 +46,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
              next_page,
              verified_contracts,
              params,
+             false,
              &%{id: &1.id}
            ) do
         nil -> nil

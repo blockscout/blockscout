@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
-      next_page_params: 4,
+      next_page_params: 5,
       paging_options: 1,
       param_to_block_number: 1,
       put_key_value_to_paging_options: 3,
@@ -478,6 +478,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> next_page_params(
           internal_transactions,
           params,
+          false,
           &InternalTransaction.internal_transaction_to_block_paging_options/1
         )
 
@@ -671,6 +672,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> next_page_params(
           deposits,
           params,
+          false,
           DepositController.paging_function()
         )
 

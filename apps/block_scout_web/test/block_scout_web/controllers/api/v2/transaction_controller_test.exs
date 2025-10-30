@@ -1393,6 +1393,18 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
              } = json_response(request, 422)
     end
 
+    test "accepts pagination params", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      request =
+        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes?items_count=50&state_changes=null")
+
+      assert %{} = json_response(request, 200)
+    end
+
     test "return existing transaction", %{conn: conn} do
       block_before = insert(:block)
 

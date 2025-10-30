@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 4,
+      next_page_params: 5,
       paging_options: 1,
       split_list_by_page: 1
     ]
@@ -56,6 +56,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
         next_page,
         batches,
         params,
+        false,
         fn %TransactionBatch{number: number} -> %{"number" => number} end
       )
 
