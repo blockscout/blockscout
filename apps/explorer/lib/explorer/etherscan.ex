@@ -242,6 +242,7 @@ defmodule Explorer.Etherscan do
   defp internal_transactions_query(options, consensus_blocks) do
     from(
       it in InternalTransaction,
+      as: :internal_transaction,
       inner_join: block in subquery(consensus_blocks),
       on: it.block_number == block.number,
       order_by: [
