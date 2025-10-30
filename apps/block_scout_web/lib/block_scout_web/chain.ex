@@ -56,6 +56,7 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.PagingOptions
+  alias Plug.Conn
 
   @page_size page_size()
   @default_paging_options default_paging_options()
@@ -1097,8 +1098,19 @@ defmodule BlockScoutWeb.Chain do
   Provided params keyword with the new field `show_scam_tokens?`.
   """
   @spec fetch_scam_token_toggle(Keyword.t(), Plug.Conn.t()) :: Keyword.t()
-  def fetch_scam_token_toggle(params, conn),
-    do: Keyword.put(params, :show_scam_tokens?, conn.cookies["show_scam_tokens"] |> parse_boolean())
+  def fetch_scam_token_toggle(params, conn) do
+    Keyword.put(
+      params,
+      :show_scam_tokens?,
+      conn
+      |> Conn.get_req_header("show-scam-tokens")
+      |> case do
+        [show_scam_tokens?] -> show_scam_tokens?
+        _ -> conn.cookies["show_scam_tokens"]
+      end
+      |> parse_boolean()
+    )
+  end
 
   defp map_to_string_keys(map) do
     map
