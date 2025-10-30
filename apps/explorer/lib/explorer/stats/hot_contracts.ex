@@ -5,6 +5,7 @@ defmodule Explorer.Stats.HotContracts do
   use Explorer.Schema
 
   alias Explorer.{Chain, PagingOptions, SortingHelper}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Address, Block, Hash, Transaction}
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
@@ -119,6 +120,7 @@ defmodule Explorer.Stats.HotContracts do
            BlockReaderGeneral.timestamp_to_block_number(now, :before, options[:api?] || false, true) do
       from_block
       |> aggregate_hot_contracts_for_block_interval_query(to_block)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:to_address_hash, options)
       |> SortingHelper.apply_sorting(sorting_options, default_sorting)
       |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
       |> Chain.select_repo(options).all()
@@ -144,6 +146,7 @@ defmodule Explorer.Stats.HotContracts do
 
     __MODULE__
     |> where([hot_contracts_daily], hot_contracts_daily.date >= ^Date.add(Date.utc_today(), -n))
+    |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
     |> group_by([hot_contracts_daily], hot_contracts_daily.contract_address_hash)
     |> select([hot_contracts_daily], %{
       contract_address_hash: hot_contracts_daily.contract_address_hash,

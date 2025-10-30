@@ -8,7 +8,10 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.PagingHelper, only: [hot_contracts_sorting: 1, delete_items_count_from_next_page_params: 1]
-  import BlockScoutWeb.Chain, only: [hot_contracts_paging_options: 1, split_list_by_page: 1, next_page_params: 4]
+
+  import BlockScoutWeb.Chain,
+    only: [hot_contracts_paging_options: 1, split_list_by_page: 1, next_page_params: 4, fetch_scam_token_toggle: 2]
+
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias BlockScoutWeb.API.V2.Helper
@@ -213,6 +216,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       |> hot_contracts_paging_options()
       |> Keyword.merge(hot_contracts_sorting(params))
       |> Keyword.merge(@api_true)
+      |> fetch_scam_token_toggle(conn)
 
     {hot_contracts, next_page} =
       scale
