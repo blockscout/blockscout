@@ -933,6 +933,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Deposit index for paging",
       name: :index
+    }
+  }
+
+  @state_changes_paging_params %{
+    # "items_count" is used for pagination for the list of transactions's state changes and it can be higher than 50.
+    # Thus, we extracted it to a separate map.
+    "items_count" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 1},
+      required: false,
+      description: "Total number of items returned per current page and previous pages",
+      name: :items_count
     },
     # todo: remove in the future as this param is unused in the pagination of state changes
     "state_changes" => %Parameter{
@@ -951,6 +963,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   def define_paging_params(fields) do
     Enum.map(fields, fn field ->
       Map.get(@paging_params, field) || raise "Unknown paging param: #{field}"
+    end)
+  end
+
+  @spec define_state_changes_paging_params([String.t()]) :: [Parameter.t()]
+  def define_state_changes_paging_params(fields) do
+    Enum.map(fields, fn field ->
+      Map.get(@state_changes_paging_params, field) || raise "Unknown paging param: #{field}"
     end)
   end
 

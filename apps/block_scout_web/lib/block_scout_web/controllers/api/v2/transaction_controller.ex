@@ -835,7 +835,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   operation :state_changes,
     summary: "List state changes for a transaction",
     description: "Retrieves state changes for a specific transaction.",
-    parameters: [transaction_hash_param() | base_params()] ++ define_paging_params(["state_changes", "items_count"]),
+    parameters:
+      [transaction_hash_param() | base_params()] ++ define_state_changes_paging_params(["state_changes", "items_count"]),
     responses: [
       ok: {
         "State changes for transaction",
