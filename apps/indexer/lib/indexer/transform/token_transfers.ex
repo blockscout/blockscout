@@ -26,7 +26,12 @@ defmodule Indexer.Transform.TokenTransfers do
 
     allowed_erc20_erc721_token_transfer_events =
       if chain_type() == :arc do
-        [TokenTransfer.constant(), TokenTransfer.arc_native_coin_transferred_event()]
+        [
+          TokenTransfer.constant(),
+          TokenTransfer.arc_native_coin_transferred_event(),
+          TokenTransfer.arc_native_coin_minted_event(),
+          TokenTransfer.arc_native_coin_burned_event()
+        ]
       else
         [TokenTransfer.constant()]
       end
