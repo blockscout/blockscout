@@ -97,14 +97,8 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
 
   @spec prepare_watchlist_address(WatchlistAddress.t(), Chain.Address.t(), map()) :: map
   defp prepare_watchlist_address(watchlist, address, exchange_rate) do
-    %{
-      "id" => watchlist.id,
-      "address" => Helper.address_with_info(nil, address, watchlist.address_hash, false),
-      "address_hash" => watchlist.address_hash,
-      "name" => watchlist.name,
-      "address_balance" => if(address && address.fetched_coin_balance, do: address.fetched_coin_balance.value),
-      "exchange_rate" => exchange_rate.fiat_value,
-      "notification_settings" => %{
+    notification_settings =
+      %{
         "native" => %{
           "incoming" => watchlist.watch_coin_input,
           "outcoming" => watchlist.watch_coin_output
@@ -125,7 +119,26 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
           "incoming" => watchlist.watch_erc_404_input,
           "outcoming" => watchlist.watch_erc_404_output
         }
-      },
+      }
+
+    notification_settings_extended =
+      if not is_nil(Map.get(watchlist, :watch_zrc_2_input)) and not is_nil(Map.get(watchlist, :watch_zrc_2_output)) do
+        Map.put(notification_settings, "ZRC-2", %{
+          "incoming" => watchlist.watch_zrc_2_input,
+          "outcoming" => watchlist.watch_zrc_2_output
+        })
+      else
+        notification_settings
+      end
+
+    %{
+      "id" => watchlist.id,
+      "address" => Helper.address_with_info(nil, address, watchlist.address_hash, false),
+      "address_hash" => watchlist.address_hash,
+      "name" => watchlist.name,
+      "address_balance" => if(address && address.fetched_coin_balance, do: address.fetched_coin_balance.value),
+      "exchange_rate" => exchange_rate.fiat_value,
+      "notification_settings" => notification_settings_extended,
       "notification_methods" => %{
         "email" => watchlist.notify_email
       },
