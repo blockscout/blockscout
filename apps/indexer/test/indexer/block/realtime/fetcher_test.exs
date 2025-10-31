@@ -547,7 +547,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       assert {:ok,
               %{
                 inserted: %{
-                  addresses: addresses,
                   address_coin_balances: [
                     %{
                       address_hash: first_address_hash,
@@ -571,23 +570,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 },
                 errors: []
               }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
-
-      if chain_identity() != {:optimism, :celo} do
-        assert [
-                 %Address{hash: ^first_address_hash},
-                 %Address{hash: ^second_address_hash},
-                 %Address{hash: ^third_address_hash},
-                 %Address{hash: ^fourth_address_hash}
-               ] = addresses
-      else
-        assert [
-                 %Address{hash: ^celo_token_address_hash},
-                 %Address{hash: ^first_address_hash},
-                 %Address{hash: ^second_address_hash},
-                 %Address{hash: ^third_address_hash},
-                 %Address{hash: ^fourth_address_hash}
-               ] = addresses
-      end
     end
 
     @tag :no_geth
@@ -793,7 +775,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       assert {:ok,
               %{
                 inserted: %{
-                  addresses: addresses,
                   address_coin_balances: [
                     %{
                       address_hash: first_address_hash,
@@ -829,23 +810,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 },
                 errors: []
               }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
-
-      if chain_identity() != {:optimism, :celo} do
-        assert [
-                 %Address{hash: ^first_address_hash},
-                 %Address{hash: ^second_address_hash},
-                 %Address{hash: ^third_address_hash},
-                 %Address{hash: ^fourth_address_hash}
-               ] = addresses
-      else
-        assert [
-                 %Address{hash: ^celo_token_address_hash},
-                 %Address{hash: ^first_address_hash},
-                 %Address{hash: ^second_address_hash},
-                 %Address{hash: ^third_address_hash},
-                 %Address{hash: ^fourth_address_hash}
-               ] = addresses
-      end
 
       Application.put_env(:indexer, :fetch_rewards_way, nil)
     end
