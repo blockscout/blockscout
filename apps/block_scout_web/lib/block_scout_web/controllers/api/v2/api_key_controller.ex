@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V2.APIKeyController do
   use Utils.CompileTimeEnvHelper, api_v2_temp_token_key: [:block_scout_web, :api_v2_temp_token_key]
 
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
+  alias Plug.Crypto
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -16,13 +17,29 @@ defmodule BlockScoutWeb.API.V2.APIKeyController do
     ttl = div(Application.get_env(:block_scout_web, :api_rate_limit)[:api_v2_token_ttl], 1000)
 
     with {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)} do
-      conn
-      |> put_resp_cookie(@api_v2_temp_token_key, %{ip: AccessHelper.conn_to_ip_string(conn)},
-        max_age: ttl,
-        sign: true,
-        same_site: "Lax",
-        domain: Application.get_env(:block_scout_web, :cookie_domain)
-      )
+      params["in_header"]
+      |> case do
+        "true" ->
+          put_resp_header(
+            conn,
+            @api_v2_temp_token_key,
+            Crypto.sign(
+              conn.secret_key_base,
+              @api_v2_temp_token_key <> "-header",
+              %{ip: AccessHelper.conn_to_ip_string(conn)},
+              keys: Plug.Keys,
+              max_age: ttl
+            )
+          )
+
+        _ ->
+          put_resp_cookie(conn, @api_v2_temp_token_key, %{ip: AccessHelper.conn_to_ip_string(conn)},
+            max_age: ttl,
+            sign: true,
+            same_site: "Lax",
+            domain: Application.get_env(:block_scout_web, :cookie_domain)
+          )
+      end
       |> json(%{
         message: "OK"
       })
