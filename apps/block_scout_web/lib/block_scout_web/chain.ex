@@ -981,7 +981,7 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%StateChange{}) do
     # todo: remove in the future as this param is unused in the pagination of state changes
-    %{"state_changes" => nil}
+    %{state_changes: nil}
   end
 
   # clause for Polygon Edge Deposits and Withdrawals
