@@ -546,7 +546,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       assert {:ok,
               %{
                 inserted: %{
-                  addresses: addresses,
                   address_coin_balances: [
                     %{
                       address_hash: first_address_hash,
@@ -794,7 +793,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       assert {:ok,
               %{
                 inserted: %{
-                  addresses: addresses,
                   address_coin_balances: [
                     %{
                       address_hash: first_address_hash,
