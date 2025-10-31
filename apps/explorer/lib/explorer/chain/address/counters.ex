@@ -224,7 +224,7 @@ defmodule Explorer.Chain.Address.Counters do
   defp address_hash_to_internal_transactions_limited_count_query(address_hash) do
     query_to_address_hash_wrapped =
       InternalTransaction
-      |> InternalTransaction.where_nonpending_block()
+      |> InternalTransaction.where_nonpending_operation()
       |> InternalTransaction.where_address_fields_match(address_hash, :to_address_hash)
       |> InternalTransaction.where_is_different_from_parent_transaction()
       |> limit(@counters_limit)
@@ -232,7 +232,7 @@ defmodule Explorer.Chain.Address.Counters do
 
     query_from_address_hash_wrapped =
       InternalTransaction
-      |> InternalTransaction.where_nonpending_block()
+      |> InternalTransaction.where_nonpending_operation()
       |> InternalTransaction.where_address_fields_match(address_hash, :from_address_hash)
       |> InternalTransaction.where_is_different_from_parent_transaction()
       |> limit(@counters_limit)
@@ -240,7 +240,7 @@ defmodule Explorer.Chain.Address.Counters do
 
     query_created_contract_address_hash_wrapped =
       InternalTransaction
-      |> InternalTransaction.where_nonpending_block()
+      |> InternalTransaction.where_nonpending_operation()
       |> InternalTransaction.where_address_fields_match(address_hash, :created_contract_address_hash)
       |> InternalTransaction.where_is_different_from_parent_transaction()
       |> limit(@counters_limit)

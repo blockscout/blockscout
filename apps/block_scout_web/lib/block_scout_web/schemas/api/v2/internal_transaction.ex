@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.InternalTransaction do
       block_index: %Schema{
         type: :integer,
         description: "The index of this internal transaction inside the block.",
-        nullable: false
+        nullable: true
       }
     },
     required: [

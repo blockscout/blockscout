@@ -433,7 +433,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [block_hash_or_number_param(), internal_transaction_type_param(), internal_transaction_call_type_param()] ++
-        define_paging_params(["block_index", "items_count"]),
+        define_paging_params(["transaction_index", "index", "block_index", "items_count"]),
     responses: [
       ok:
         {"Internal transactions in the specified block.", "application/json",
@@ -469,7 +469,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> Keyword.merge(internal_transaction_type_options(params))
         |> Keyword.merge(internal_transaction_call_type_options(params))
 
-      internal_transactions_plus_one = InternalTransaction.block_to_internal_transactions(block.hash, full_options)
+      internal_transactions_plus_one = InternalTransaction.block_to_internal_transactions(block.number, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 

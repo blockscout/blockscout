@@ -138,7 +138,7 @@ defmodule Explorer.Etherscan do
 
     query
     |> InternalTransaction.where_is_different_from_parent_transaction()
-    |> InternalTransaction.where_nonpending_block()
+    |> InternalTransaction.where_nonpending_operation()
     |> InternalTransaction.include_zero_value(options.include_zero_value)
     |> Repo.replica().all()
   end
@@ -159,7 +159,7 @@ defmodule Explorer.Etherscan do
       |> InternalTransaction.include_zero_value(options.include_zero_value)
       |> where_start_block_match_internal_transaction(options)
       |> where_end_block_match_internal_transaction(options)
-      |> InternalTransaction.where_nonpending_block()
+      |> InternalTransaction.where_nonpending_operation()
       |> Chain.wrapped_union_subquery()
     end)
     |> Enum.reduce(fn query, acc ->

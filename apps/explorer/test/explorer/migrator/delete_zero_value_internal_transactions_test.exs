@@ -19,6 +19,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
         transaction: transaction,
         block_hash: transaction.block_hash,
         block_number: transaction.block_number,
+        transaction_index: transaction.index,
         block_index: i,
         type: :call,
         value: 0
@@ -36,6 +37,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
         transaction: transaction,
         block_hash: transaction.block_hash,
         block_number: transaction.block_number,
+        transaction_index: transaction.index,
         block_index: i,
         type: :call,
         value: 1
@@ -53,6 +55,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
         transaction: transaction,
         block_hash: transaction.block_hash,
         block_number: transaction.block_number,
+        transaction_index: transaction.index,
         block_index: i,
         value: 0
       )
@@ -69,6 +72,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
         transaction: transaction,
         block_hash: transaction.block_hash,
         block_number: transaction.block_number,
+        transaction_index: transaction.index,
         block_index: i,
         type: :call,
         value: 0

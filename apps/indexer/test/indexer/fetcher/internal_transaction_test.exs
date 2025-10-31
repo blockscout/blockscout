@@ -199,7 +199,8 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       block = insert(:block)
       transaction = insert(:transaction) |> with_block(block)
       block_hash = block.hash
-      insert(:pending_block_operation, block_hash: block_hash, block_number: block.number)
+      block_number = block.number
+      insert(:pending_block_operation, block_hash: block_hash, block_number: block_number)
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
@@ -298,7 +299,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       assert nil == Repo.get(PendingBlockOperation, block_hash)
 
-      assert Repo.exists?(from(i in Chain.InternalTransaction, where: i.block_hash == ^block_hash))
+      assert Repo.exists?(from(i in Chain.InternalTransaction, where: i.block_number == ^block_number))
     end
 
     test "handles failure by retrying only unique numbers", %{
@@ -532,10 +533,10 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
         |> Enum.concat([{:transport_options, [http_options: []]}])
 
       block = insert(:block, number: 1)
-      _transaction = :transaction |> insert() |> with_block(block)
+      transaction = :transaction |> insert() |> with_block(block)
       block_number = block.number
       block_hash = block.hash
-      insert(:pending_block_operation, block_hash: block_hash, block_number: block_number)
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
 
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
@@ -608,11 +609,15 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      assert %{block_hash: block_hash} = Repo.get(PendingBlockOperation, block_hash)
+      assert %{} = Repo.get(PendingTransactionOperation, transaction.hash)
 
-      assert :ok == InternalTransaction.run([block_number], json_rpc_named_arguments)
+      assert :ok ==
+               InternalTransaction.run(
+                 [%{block_number: transaction.block_number, hash: transaction.hash, index: transaction.index}],
+                 json_rpc_named_arguments
+               )
 
-      assert nil == Repo.get(PendingBlockOperation, block_hash)
+      assert nil == Repo.get(PendingTransactionOperation, transaction.hash)
 
       internal_transactions = Repo.all(from(i in Chain.InternalTransaction, where: i.block_hash == ^block_hash))
 

@@ -177,7 +177,7 @@ defmodule Explorer.Chain.Block.Schema do
         has_many(:transactions, Transaction, references: :hash)
         has_many(:transaction_forks, Transaction.Fork, foreign_key: :uncle_hash, references: :hash)
 
-        has_many(:internal_transactions, InternalTransaction, foreign_key: :block_hash, references: :hash)
+        has_many(:internal_transactions, InternalTransaction, foreign_key: :block_number, references: :number)
 
         has_many(:rewards, Reward, foreign_key: :block_hash, references: :hash)
 
