@@ -22,7 +22,7 @@
 - Incorrect average block time for sub-second blocks ([#13469](https://github.com/blockscout/blockscout/issues/13469))
 - Remove transaction_has_multiple_internal_transactions filter ([#13453](https://github.com/blockscout/blockscout/pull/13453))
 - celo accounts transformer ([#13423](https://github.com/blockscout/blockscout/pull/13423))
-- Fix broken txn batch blocks API endpoint ([#13438](https://github.com/blockscout/blockscout/pull/13438), [#13482](https://github.com/blockscout/blockscout/pull/13482))
+- Fix broken txn batch blocks API endpoint ([#13438](https://github.com/blockscout/blockscout/pull/13438), [#13483](https://github.com/blockscout/blockscout/pull/13483))
 - Set timeout: :infinity for DeleteZeroValueInternalTransactions ([#13434](https://github.com/blockscout/blockscout/pull/13434))
 - Fix DeleteZeroValueInternalTransactions state keys ([#13431](https://github.com/blockscout/blockscout/pull/13431))
 - dump block_hash to binary when querying celo epoch distributions ([#13410](https://github.com/blockscout/blockscout/pull/13410))

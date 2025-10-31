@@ -222,6 +222,7 @@ defmodule BlockScoutWeb.PagingHelper do
     params
     |> Map.drop([
       :address_hash_param,
+      :batch_number_param,
       :block_hash_or_number_param,
       :token_id_param,
       :token_id,
@@ -242,9 +243,8 @@ defmodule BlockScoutWeb.PagingHelper do
       "state_filter",
       "l2_block_range_start",
       "l2_block_range_end",
-      # remove in favour batch_number_param in the future when all batch - related API endpoints are covered with OpenAPI spec.
-      "batch_number",
-      "batch_number_param"
+      # remove in favour :batch_number_param in the future when all batch - related API endpoints are covered with OpenAPI spec.
+      "batch_number"
     ])
   end
 
