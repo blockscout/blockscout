@@ -4,7 +4,9 @@ defmodule Indexer.Transform.AddressCoinBalances do
   """
 
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
-  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    arc_native_token_system_address: [:indexer, [:arc, :arc_native_token_system_address]]
 
   import Explorer.Helper, only: [truncate_address_hash: 1]
 
@@ -49,28 +51,10 @@ defmodule Indexer.Transform.AddressCoinBalances do
       end)
       |> Enum.reject(fn val -> is_nil(val) end)
 
-    # for :arc chain type we also need to parse the `NativeCoinTransferred` event
+    # for :arc chain type we also need to parse the `NativeCoinTransferred`, `NativeCoinMinted`, `NativeCoinBurned` events
     filtered_arc_logs =
       if chain_type() == :arc do
-        arc_chain_params = Application.get_env(:indexer, :arc)
-
-        logs_params
-        |> Enum.reduce([], fn log, log_acc ->
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          if log.first_topic == TokenTransfer.arc_native_coin_transferred_event() and
-               log.address_hash == arc_chain_params[:arc_native_token_system_address] do
-            from_address_hash = truncate_address_hash(log.second_topic)
-            to_address_hash = truncate_address_hash(log.third_topic)
-
-            log_acc ++
-              [
-                %{address_hash: from_address_hash, block_number: log.block_number},
-                %{address_hash: to_address_hash, block_number: log.block_number}
-              ]
-          else
-            log_acc
-          end
-        end)
+        handle_arc_transfer_logs(logs_params)
       else
         []
       end
@@ -90,6 +74,56 @@ defmodule Indexer.Transform.AddressCoinBalances do
     Enum.into(withdrawals, acc, fn %{address_hash: address_hash, block_number: block_number}
                                    when is_binary(address_hash) and is_integer(block_number) ->
       %{address_hash: address_hash, block_number: block_number}
+    end)
+  end
+
+  # Handles Arc chain type logs.
+  #
+  # ## Parameters
+  # - `logs_params`: The given list of logs.
+  #
+  # ## Returns
+  # - The list of `address_hash, block_number` pairs.
+  @spec handle_arc_transfer_logs([
+          %{
+            :first_topic => String.t(),
+            :second_topic => String.t(),
+            :third_topic => String.t() | nil,
+            :address_hash => String.t(),
+            :block_number => non_neg_integer()
+          }
+        ]) :: [%{:address_hash => String.t(), :block_number => non_neg_integer()}]
+  defp handle_arc_transfer_logs(logs_params) do
+    arc_native_coin_transferred_event = TokenTransfer.arc_native_coin_transferred_event()
+    arc_native_coin_minted_event = TokenTransfer.arc_native_coin_minted_event()
+    arc_native_coin_burned_event = TokenTransfer.arc_native_coin_burned_event()
+    arc_native_token_system_address = arc_native_token_system_address()
+
+    logs_params
+    |> Enum.flat_map(fn
+      %{
+        first_topic: ^arc_native_coin_transferred_event,
+        address_hash: ^arc_native_token_system_address
+      } = log ->
+        [
+          %{address_hash: truncate_address_hash(log.second_topic), block_number: log.block_number},
+          %{address_hash: truncate_address_hash(log.third_topic), block_number: log.block_number}
+        ]
+
+      %{
+        first_topic: ^arc_native_coin_minted_event,
+        address_hash: ^arc_native_token_system_address
+      } = log ->
+        [%{address_hash: truncate_address_hash(log.second_topic), block_number: log.block_number}]
+
+      %{
+        first_topic: ^arc_native_coin_burned_event,
+        address_hash: ^arc_native_token_system_address
+      } = log ->
+        [%{address_hash: truncate_address_hash(log.second_topic), block_number: log.block_number}]
+
+      _ ->
+        []
     end)
   end
 
