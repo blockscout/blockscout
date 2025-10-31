@@ -88,7 +88,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :from_period,
       in: :query,
-      schema: %Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern},
+      schema: %Schema{
+        anyOf: [%Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern}, NullString]
+      },
       required: true,
       description: "Start of the time period (ISO 8601 format) in CSV export"
     }
@@ -102,7 +104,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :to_period,
       in: :query,
-      schema: %Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern},
+      schema: %Schema{
+        anyOf: [%Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern}, NullString]
+      },
       required: true,
       description: "End of the time period (ISO 8601 format) In CSV export"
     }
