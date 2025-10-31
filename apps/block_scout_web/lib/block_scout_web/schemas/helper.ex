@@ -23,6 +23,11 @@ defmodule BlockScoutWeb.Schemas.Helper do
         do: Map.put(updated_schema_with_title, :description, Keyword.get(options, :description)),
         else: updated_schema_with_title
 
-    updated_schema_with_description
+    updated_schema_with_nullable =
+      if Keyword.has_key?(options, :nullable),
+        do: Map.put(updated_schema_with_description, :nullable, Keyword.get(options, :nullable)),
+        else: updated_schema_with_description
+
+    updated_schema_with_nullable
   end
 end
