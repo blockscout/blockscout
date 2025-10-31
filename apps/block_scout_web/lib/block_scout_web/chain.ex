@@ -1053,6 +1053,17 @@ defmodule BlockScoutWeb.Chain do
 
   def token_transfers_next_page_params([], _list, _params), do: nil
 
+  @batch_transfer_fields_to_delete_from_next_page_params [
+    "batch_log_index",
+    "batch_block_hash",
+    "batch_transaction_hash",
+    "index_in_batch",
+    :batch_log_index,
+    :batch_block_hash,
+    :batch_transaction_hash,
+    :index_in_batch
+  ]
+
   def token_transfers_next_page_params(next_page, list, params) do
     next_token_transfer = List.first(next_page)
     current_token_transfer = List.last(list)
@@ -1069,7 +1080,7 @@ defmodule BlockScoutWeb.Chain do
 
       params
       |> delete_parameters_from_next_page_params()
-      |> Map.drop(["batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch" | string_keys])
+      |> Map.drop(@batch_transfer_fields_to_delete_from_next_page_params ++ string_keys)
       |> Map.merge(new_params)
       |> Map.merge(%{
         batch_log_index: current_token_transfer.log_index,
@@ -1084,7 +1095,7 @@ defmodule BlockScoutWeb.Chain do
 
       params
       |> delete_parameters_from_next_page_params()
-      |> Map.drop(["batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch" | string_keys])
+      |> Map.drop(@batch_transfer_fields_to_delete_from_next_page_params ++ string_keys)
       |> Map.merge(new_params)
     end
   end
