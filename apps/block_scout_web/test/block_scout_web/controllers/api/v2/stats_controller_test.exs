@@ -77,12 +77,12 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       :ok
     end
 
-    defp insert_hot_contracts_daily(count, scam \\ 0) do
+    defp insert_hot_contracts_daily(count, date \\ Date.utc_today(), scam \\ 0) do
       addresses = Enum.map(1..count, fn _ -> insert(:address) end)
 
       Enum.each(addresses, fn addr ->
         %HotContracts{
-          date: Date.utc_today(),
+          date: date,
           contract_address_hash: addr.hash,
           transactions_count: 1,
           total_gas_used: Decimal.new(21_000)
@@ -103,6 +103,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       from_ts = DateTime.add(now, -seconds_ago, :second)
 
       # Ensure strict boundary blocks exist
+      some_block_in_beginning = insert(:block, timestamp: DateTime.add(from_ts, -1, :second))
       _from_block = insert(:block, timestamp: DateTime.add(from_ts, 1, :second))
       to_block = insert(:block, timestamp: DateTime.add(now, -1, :second))
 
@@ -112,6 +113,9 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
         insert(:transaction, to_address: addr)
         |> with_block(to_block, gas_used: 21_000)
       end)
+
+      insert(:transaction, to_address: insert(:contract_address))
+      |> with_block(some_block_in_beginning, gas_used: 21_000)
 
       addresses
       |> Enum.take(-scam)
@@ -141,28 +145,40 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     test "7d pagination", %{conn: conn} do
       insert_hot_contracts_daily(55)
 
+      insert_hot_contracts_daily(55, Date.add(Date.utc_today(), -8))
+
       request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "7d"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
 
       assert length(items) == 50
       assert is_map(next_page_params)
+
+      request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "7d"}))
+      assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
+      assert length(items) == 5
     end
 
     test "30d pagination", %{conn: conn} do
       insert_hot_contracts_daily(55)
+
+      insert_hot_contracts_daily(55, Date.add(Date.utc_today(), -31))
 
       request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "30d"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
 
       assert length(items) == 50
       assert is_map(next_page_params)
+
+      request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "30d"}))
+      assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
+      assert length(items) == 5
     end
 
     # Daily scales scam toggle
     test "1d scam toggle respects cookie and hide config", %{conn: conn} do
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)
 
-      [normal | [scam | _]] = insert_hot_contracts_daily(2, 1)
+      [normal | [scam | _]] = insert_hot_contracts_daily(2, Date.utc_today(), 1)
 
       # Without cookie -> hide scam
       request1 = get(conn, "/api/v2/stats/hot-contracts", %{scale: "1d"})
@@ -185,12 +201,17 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
 
     # Seconds scales pagination (seed once covers all three)
     test "5m pagination", %{conn: conn} do
-      insert_transactions_in_last_seconds(55, 300)
+      addresses = insert_transactions_in_last_seconds(55, 300)
+      Enum.map(addresses, fn addr -> to_string(addr.hash) end) |> dbg(limit: :infinity, printable_limit: :infinity)
 
       request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "5m"})
-      assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
+      assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200) |> dbg()
       assert length(items) == 50
       assert is_map(next_page_params)
+
+      request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "5m"}))
+      assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
+      assert length(items) == 5
     end
 
     test "1h pagination", %{conn: conn} do
@@ -200,6 +221,10 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
       assert length(items) == 50
       assert is_map(next_page_params)
+
+      request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "1h"}))
+      assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
+      assert length(items) == 5
     end
 
     test "3h pagination", %{conn: conn} do
@@ -209,6 +234,10 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
       assert length(items) == 50
       assert is_map(next_page_params)
+
+      request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "3h"}))
+      assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
+      assert length(items) == 5
     end
 
     # Seconds scales scam toggle
