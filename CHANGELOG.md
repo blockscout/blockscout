@@ -17,6 +17,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix token holders CSV export ([#13485](https://github.com/blockscout/blockscout/pull/13485))
 - ERC-1155 value in advanced filters csv ([#13474](https://github.com/blockscout/blockscout/pull/13474))
 - Fix /api/v2/tokens endpoints: allow back limit param ([#13473](https://github.com/blockscout/blockscout/pull/13473))
 - Incorrect average block time for sub-second blocks ([#13469](https://github.com/blockscout/blockscout/issues/13469))
