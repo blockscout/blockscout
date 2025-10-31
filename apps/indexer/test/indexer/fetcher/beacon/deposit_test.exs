@@ -1,4 +1,5 @@
 defmodule Indexer.Fetcher.Beacon.DepositTest do
+  use EthereumJSONRPC.Case
   use Explorer.DataCase, async: false
 
   import ExUnit.CaptureLog, only: [capture_log: 1]
@@ -188,7 +189,9 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
     """
 
     describe "init/1" do
-      test "fetches config and initializes state without deposits in the database" do
+      test "fetches config and initializes state without deposits in the database", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
         Tesla.Test.expect_tesla_call(
           times: 1,
           returns: fn %{url: "http://localhost:5052/eth/v1/config/spec"}, _opts ->
@@ -196,7 +199,7 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
           end
         )
 
-        DepositSupervisor.Case.start_supervised!()
+        DepositSupervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
         {_, pid, _, _} =
           Supervisor.which_children(DepositSupervisor) |> Enum.find(fn {name, _, _, _} -> name == DepositFetcher end)
@@ -213,7 +216,9 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
                }
       end
 
-      test "fetches config and initializes state with deposits in the database" do
+      test "fetches config and initializes state with deposits in the database", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
         Tesla.Test.expect_tesla_call(
           times: 1,
           returns: fn %{url: "http://localhost:5052/eth/v1/config/spec"}, _opts ->
@@ -223,7 +228,7 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
 
         deposit = insert(:beacon_deposit)
 
-        DepositSupervisor.Case.start_supervised!()
+        DepositSupervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
         {_, pid, _, _} =
           Supervisor.which_children(DepositSupervisor) |> Enum.find(fn {name, _, _, _} -> name == DepositFetcher end)
