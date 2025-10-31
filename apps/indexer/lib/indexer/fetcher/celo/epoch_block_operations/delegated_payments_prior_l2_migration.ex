@@ -159,7 +159,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPaymentsPriorL2Migr
       &%{
         contract_address: accounts_contract_address,
         method_id: @get_payment_delegation_method_id,
-        args: [&1],
+        args: [to_string(&1)],
         block_number: block_number
       }
     )

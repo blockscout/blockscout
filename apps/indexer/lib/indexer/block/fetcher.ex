@@ -3,7 +3,9 @@ defmodule Indexer.Block.Fetcher do
   Fetches and indexes block ranges.
   """
 
-  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   use Spandex.Decorators
 
@@ -298,20 +300,36 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp import_options(basic_import_options, chain_specific_import_options) do
-    chain_type = Application.get_env(:explorer, :chain_type)
-    do_import_options(chain_type, basic_import_options, chain_specific_import_options)
+    do_import_options(
+      chain_type(),
+      basic_import_options,
+      chain_specific_import_options
+    )
   end
 
-  defp do_import_options(:ethereum, basic_import_options, %{transactions_with_receipts: transactions_with_receipts}) do
+  defp do_import_options(:ethereum, basic_import_options, %{
+         transactions_with_receipts: transactions_with_receipts
+       }) do
     basic_import_options
     |> Map.put_new(:beacon_blob_transactions, %{
       params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
     })
   end
 
-  defp do_import_options(:optimism, basic_import_options, %{optimism_withdrawals: optimism_withdrawals}) do
-    basic_import_options
-    |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
+  defp do_import_options(
+         :optimism,
+         basic_import_options,
+         %{optimism_withdrawals: optimism_withdrawals} = chain_specific_import_options
+       ) do
+    import_options =
+      basic_import_options
+      |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
+
+    do_chain_identity_import_options(
+      chain_identity(),
+      import_options,
+      chain_specific_import_options
+    )
   end
 
   defp do_import_options(:polygon_zkevm, basic_import_options, %{
@@ -326,28 +344,11 @@ defmodule Indexer.Block.Fetcher do
     |> Map.put_new(:scroll_l1_fee_params, %{params: scroll_l1_fee_params})
   end
 
-  defp do_import_options(:shibarium, basic_import_options, %{shibarium_bridge_operations: shibarium_bridge_operations}) do
+  defp do_import_options(:shibarium, basic_import_options, %{
+         shibarium_bridge_operations: shibarium_bridge_operations
+       }) do
     basic_import_options
     |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
-  end
-
-  defp do_import_options(:celo, basic_import_options, %{
-         celo_gas_tokens: celo_gas_tokens,
-         celo_epochs: celo_epochs,
-         celo_pending_account_operations: celo_pending_account_operations
-       }) do
-    tokens =
-      basic_import_options
-      |> Map.get(:tokens, %{})
-      |> Map.get(:params, [])
-
-    basic_import_options
-    |> Map.put_new(:celo_pending_account_operations, %{params: celo_pending_account_operations})
-    |> Map.put_new(:celo_epochs, %{params: celo_epochs})
-    |> Map.put(
-      :tokens,
-      %{params: (tokens ++ celo_gas_tokens) |> Enum.uniq()}
-    )
   end
 
   defp do_import_options(:arbitrum, basic_import_options, %{arbitrum_messages: arbitrum_xlevel_messages}) do
@@ -371,7 +372,41 @@ defmodule Indexer.Block.Fetcher do
     |> Map.put_new(:stability_validators, %{params: stability_validators})
   end
 
-  defp do_import_options(_chain_type, basic_import_options, _chain_specific_import_options) do
+  defp do_import_options(_chain_identity, basic_import_options, _chain_specific_import_options) do
+    basic_import_options
+  end
+
+  defp do_chain_identity_import_options(
+         {:optimism, :celo},
+         basic_import_options,
+         %{
+           celo_gas_tokens: celo_gas_tokens,
+           celo_epochs: celo_epochs,
+           celo_pending_account_operations: celo_pending_account_operations
+         } = chain_specific_import_options
+       ) do
+    tokens =
+      basic_import_options
+      |> Map.get(:tokens, %{})
+      |> Map.get(:params, [])
+
+    import_options =
+      do_import_options(
+        {:optimism, nil},
+        basic_import_options,
+        chain_specific_import_options
+      )
+
+    import_options
+    |> Map.put_new(:celo_pending_account_operations, %{params: celo_pending_account_operations})
+    |> Map.put_new(:celo_epochs, %{params: celo_epochs})
+    |> Map.put(
+      :tokens,
+      %{params: (tokens ++ celo_gas_tokens) |> Enum.uniq()}
+    )
+  end
+
+  defp do_chain_identity_import_options(_, basic_import_options, _chain_specific_import_options) do
     basic_import_options
   end
 
@@ -844,7 +879,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp parse_celo_pending_account_operations(logs) do
-    if chain_type() == :celo do
+    if chain_identity() == {:optimism, :celo} do
       logs
       |> CeloAccountsTransform.parse()
       |> Map.take([:accounts, :attestations_fulfilled, :attestations_requested])

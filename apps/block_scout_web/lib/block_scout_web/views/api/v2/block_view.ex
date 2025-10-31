@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.API.V2.BlockView do
   use BlockScoutWeb, :view
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   alias BlockScoutWeb.BlockView
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
@@ -74,6 +77,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "is_pending_update" => block.refetch_needed
     }
     |> chain_type_fields(block, single_block?)
+    |> chain_identity_fields(block, single_block?)
   end
 
   def prepare_rewards(rewards, block, single_block?) do
@@ -162,12 +166,6 @@ defmodule BlockScoutWeb.API.V2.BlockView do
         BlockScoutWeb.API.V2.EthereumView.extend_block_json_response(result, block, single_block?)
       end
 
-    :celo ->
-      defp chain_type_fields(result, block, single_block?) do
-        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-        BlockScoutWeb.API.V2.CeloView.extend_block_json_response(result, block, single_block?)
-      end
-
     :zilliqa ->
       defp chain_type_fields(result, block, single_block?) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
@@ -178,5 +176,16 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       defp chain_type_fields(result, _block, _single_block?) do
         result
       end
+  end
+
+  case @chain_identity do
+    {:optimism, :celo} ->
+      defp chain_identity_fields(result, block, single_block?) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.CeloView.extend_block_json_response(result, block, single_block?)
+      end
+
+    _ ->
+      defp chain_identity_fields(result, _block, _single_block?), do: result
   end
 end

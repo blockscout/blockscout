@@ -2,7 +2,9 @@ defmodule BlockScoutWeb.Notifier do
   @moduledoc """
   Responds to events by sending appropriate channel updates to front-end.
   """
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   require Logger
 
@@ -63,8 +65,8 @@ defmodule BlockScoutWeb.Notifier do
       nil
   end
 
-  case @chain_type do
-    :celo ->
+  case @chain_identity do
+    {:optimism, :celo} ->
       @chain_type_transaction_associations [
         gas_token: Reputation.reputation_association()
       ]
