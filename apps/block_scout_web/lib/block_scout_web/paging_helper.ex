@@ -242,7 +242,9 @@ defmodule BlockScoutWeb.PagingHelper do
       "state_filter",
       "l2_block_range_start",
       "l2_block_range_end",
-      "batch_number"
+      # remove in favour batch_number_param in the future when all batch - related API endpoints are covered with OpenAPI spec.
+      "batch_number",
+      "batch_number_param"
     ])
   end
 
