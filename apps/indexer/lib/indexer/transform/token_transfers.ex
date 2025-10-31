@@ -545,7 +545,11 @@ defmodule Indexer.Transform.TokenTransfers do
   #
   # ## Returns
   # - `true` if this is the NativeCoinTransferred event from the native token system address on Arc chain, `false` otherwise.
-  @spec arc_native_coin_transferred_event?(%{:first_topic => String.t(), :address_hash => String.t(), optional(any()) => any()}) :: boolean()
+  @spec arc_native_coin_transferred_event?(%{
+          :first_topic => String.t(),
+          :address_hash => String.t(),
+          optional(any()) => any()
+        }) :: boolean()
   defp arc_native_coin_transferred_event?(log) do
     log.first_topic == TokenTransfer.arc_native_coin_transferred_event() and
       log.address_hash == arc_native_token_system_address() and chain_type() == :arc
@@ -558,7 +562,11 @@ defmodule Indexer.Transform.TokenTransfers do
   #
   # ## Returns
   # - `true` if this is the Transfer event from the native token contract on Arc chain, `false` otherwise.
-  @spec arc_native_token_transfer_event?(%{:first_topic => String.t(), :address_hash => String.t(), optional(any()) => any()}) :: boolean()
+  @spec arc_native_token_transfer_event?(%{
+          :first_topic => String.t(),
+          :address_hash => String.t(),
+          optional(any()) => any()
+        }) :: boolean()
   defp arc_native_token_transfer_event?(log) do
     log.first_topic == TokenTransfer.constant() and log.address_hash == arc_native_token_address() and
       chain_type() == :arc
