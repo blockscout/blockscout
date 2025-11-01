@@ -279,14 +279,14 @@ defmodule Indexer.Transform.TokenTransfers do
         log.first_topic == TokenTransfer.weth_deposit_signature() ->
           {burn_address_hash_string(), truncate_address_hash(log.second_topic), log.address_hash, decimal_amount}
 
-        log.first_topic == TokenTransfer.arc_native_coin_minted_event() and chain_type() == :arc ->
+        arc_native_coin_minted_event?(log) ->
           # there are 18 decimals for the native token, so we need to adjust the amount with the token decimals
           normalized_amount = amount_18_decimals_to_n_decimals(decimal_amount, arc_native_token_decimals())
 
           {burn_address_hash_string(), truncate_address_hash(log.second_topic), arc_native_token_address(),
            normalized_amount}
 
-        log.first_topic == TokenTransfer.arc_native_coin_burned_event() and chain_type() == :arc ->
+        arc_native_coin_burned_event?(log) ->
           # there are 18 decimals for the native token, so we need to adjust the amount with the token decimals
           normalized_amount = amount_18_decimals_to_n_decimals(decimal_amount, arc_native_token_decimals())
 
@@ -557,6 +557,40 @@ defmodule Indexer.Transform.TokenTransfers do
         }) :: boolean()
   defp arc_native_coin_transferred_event?(log) do
     log.first_topic == TokenTransfer.arc_native_coin_transferred_event() and
+      log.address_hash == arc_native_token_system_address() and chain_type() == :arc
+  end
+
+  # Determines if the given log is the NativeCoinMinted event emitted by the native token system address on Arc chain.
+  #
+  # ## Parameters
+  # - `log`: The log to check.
+  #
+  # ## Returns
+  # - `true` if this is the NativeCoinMinted event from the native token system address on Arc chain, `false` otherwise.
+  @spec arc_native_coin_minted_event?(%{
+          :first_topic => String.t(),
+          :address_hash => String.t(),
+          optional(any()) => any()
+        }) :: boolean()
+  defp arc_native_coin_minted_event?(log) do
+    log.first_topic == TokenTransfer.arc_native_coin_minted_event() and
+      log.address_hash == arc_native_token_system_address() and chain_type() == :arc
+  end
+
+  # Determines if the given log is the NativeCoinBurned event emitted by the native token system address on Arc chain.
+  #
+  # ## Parameters
+  # - `log`: The log to check.
+  #
+  # ## Returns
+  # - `true` if this is the NativeCoinBurned event from the native token system address on Arc chain, `false` otherwise.
+  @spec arc_native_coin_burned_event?(%{
+          :first_topic => String.t(),
+          :address_hash => String.t(),
+          optional(any()) => any()
+        }) :: boolean()
+  defp arc_native_coin_burned_event?(log) do
+    log.first_topic == TokenTransfer.arc_native_coin_burned_event() and
       log.address_hash == arc_native_token_system_address() and chain_type() == :arc
   end
 
