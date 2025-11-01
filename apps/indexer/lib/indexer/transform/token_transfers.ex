@@ -311,7 +311,7 @@ defmodule Indexer.Transform.TokenTransfers do
     }
 
     token = %{
-      contract_address_hash: log.address_hash,
+      contract_address_hash: token_contract_address_hash,
       type: "ERC-20"
     }
 
