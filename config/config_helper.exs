@@ -350,6 +350,7 @@ defmodule ConfigHelper do
   @supported_chain_types [
     "default",
     "arbitrum",
+    "arc",
     "blackfort",
     "celo",
     "ethereum",
