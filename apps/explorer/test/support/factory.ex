@@ -59,6 +59,9 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ZilliqaStaker
 
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
+  alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
+
   alias Explorer.Migrator.MigrationStatus
 
   alias Explorer.SmartContract.Helper
@@ -1396,6 +1399,27 @@ defmodule Explorer.Factory do
   end
 
   def random_bool, do: Enum.random([true, false])
+
+  def celo_epoch_factory do
+    %CeloEpoch{
+      number: sequence("celo_epoch_number", & &1),
+      fetched?: false,
+      start_block_number: nil,
+      end_block_number: nil,
+      start_processing_block_hash: nil,
+      end_processing_block_hash: nil
+    }
+  end
+
+  def celo_election_reward_factory do
+    %CeloElectionReward{
+      amount: Enum.random(1..100_000),
+      type: Enum.random([:voter, :validator, :group, :delegated_payment]),
+      epoch_number: sequence("celo_election_reward_epoch_number", & &1),
+      account_address_hash: insert(:address).hash,
+      associated_account_address_hash: insert(:address).hash
+    }
+  end
 
   def validator_stability_factory do
     address = insert(:address)

@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   alias Indexer.Transform.Addresses
 
   alias Explorer.Chain.Import.Runner.Celo.{
+    AggregatedElectionRewards,
     ElectionRewards,
     EpochRewards,
     Epochs
@@ -118,6 +119,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
 
   defp fetch(epoch, json_rpc_named_arguments) do
     election_rewards_params = fetch_election_rewards_params(epoch, json_rpc_named_arguments)
+    aggregated_election_rewards_params = aggregate_election_rewards(election_rewards_params)
     epoch_params = fetch_epoch_params(epoch)
     {:ok, distributions_params} = Distributions.fetch(epoch)
 
@@ -148,12 +150,14 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
         [
           Epochs,
           ElectionRewards,
-          EpochRewards
+          EpochRewards,
+          AggregatedElectionRewards
         ],
         %{
           celo_epoch_rewards: %{params: [distributions_params]},
           celo_election_rewards: %{params: election_rewards_params},
-          celo_epochs: %{params: epochs_params}
+          celo_epochs: %{params: epochs_params},
+          celo_aggregated_election_rewards: %{params: aggregated_election_rewards_params}
         }
       )
 
@@ -182,6 +186,24 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
         Logger.error("Failed importing epoch rewards for epoch #{epoch.number} on #{operation}: #{inspect(reason)}")
         {:error, reason}
     end
+  end
+
+  defp aggregate_election_rewards(election_rewards_params) do
+    election_rewards_params
+    |> Enum.group_by(&{&1.epoch_number, &1.type})
+    |> Enum.map(fn {{epoch_number, type}, rewards} ->
+      %{
+        epoch_number: epoch_number,
+        type: type,
+        count: length(rewards),
+        sum:
+          rewards
+          |> Enum.reduce(
+            Decimal.new(0),
+            fn r, acc -> Decimal.add(acc, r.amount) end
+          )
+      }
+    end)
   end
 
   defp fetch_election_rewards_params(epoch, json_rpc_named_arguments) do
