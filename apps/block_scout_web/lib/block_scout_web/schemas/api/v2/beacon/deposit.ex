@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Beacon.Deposit do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.{Address, Beacon.Deposit.Status, General}
+  alias BlockScoutWeb.Schemas.API.V2.{Address, AddressNullable, Beacon.Deposit.Status, General}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Beacon.Deposit do
       block_timestamp: General.Timestamp,
       pubkey: %Schema{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{96})$", nullable: false},
       withdrawal_credentials: %Schema{type: :string, pattern: General.full_hash_pattern(), nullable: false},
-      withdrawal_address: %Schema{allOf: [Address], nullable: true},
+      withdrawal_address: AddressNullable,
       amount: General.IntegerString,
       signature: %Schema{type: :string, pattern: ~r"^0x([A-Fa-f0-9]{192})$", nullable: false},
       status: Status,

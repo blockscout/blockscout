@@ -503,7 +503,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         :authorization_list,
         :is_pending_update
       ],
-      additionalProperties: false
+      additionalProperties: true
     }
     |> ChainTypeCustomizations.chain_type_fields()
   )
