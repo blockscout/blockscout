@@ -89,4 +89,9 @@ COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/config/a
 
 RUN mkdir dets && mkdir temp && chown -R ${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app
 
+# Expose default web port and add a basic healthcheck so orchestrators can verify the app is responsive.
+EXPOSE 4000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:4000/ || exit 1
+
 USER ${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP}
