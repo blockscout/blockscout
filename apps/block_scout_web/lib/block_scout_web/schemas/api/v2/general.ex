@@ -678,20 +678,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       description: "Address hash for paging",
       name: :hash
     },
-    # todo: consider refactoring to eliminate _2 suffix
-    "address_hash_2" => %Parameter{
-      in: :query,
-      schema: AddressHash,
-      required: false,
-      description: "Address hash for paging",
-      name: :address_hash
-    },
     "address_hash_param" => %Parameter{
       in: :query,
       schema: AddressHash,
       required: false,
       description: "Address hash for paging",
-      name: :hash
+      name: :address_hash
     },
     "contract_address_hash" => %Parameter{
       in: :query,

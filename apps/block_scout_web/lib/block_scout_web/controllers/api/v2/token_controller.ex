@@ -189,20 +189,20 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :holders,
-    summary: "List holders for a specific token instance",
-    description: "Retrieves holders for a specific token instance, with optional filtering and pagination.",
+    summary: "List holders for a specific token",
+    description: "Retrieves holders for a specific token, with optional filtering and pagination.",
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["address_hash_2", "value", "items_count"]),
+        define_paging_params(["address_hash_param", "value", "items_count"]),
     responses: [
       ok:
         {"List of token holders.", "application/json",
          paginated_response(
            items: Schemas.Token.Holder,
            next_page_params_example: %{
-             "address_hash_2" => "0x48bb9b14483e43c7726df702b271d410e7460656",
-             "value" => 200_000_000_000_000,
+             "address_hash" => "0x48bb9b14483e43c7726df702b271d410e7460656",
+             "value" => "200000000000000",
              "items_count" => 50
            },
            title_prefix: "TokenHolders"
@@ -446,17 +446,17 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     parameters:
       base_params() ++
         [address_hash_param(), token_id_param()] ++
-        define_paging_params(["address_hash_2", "items_count", "token_id", "value"]),
+        define_paging_params(["address_hash_param", "items_count", "token_id", "value"]),
     responses: [
       ok:
         {"List of token holders for the instance.", "application/json",
          paginated_response(
            items: Schemas.Token.Holder,
            next_page_params_example: %{
-             "address_hash_2" => "0x1d2c163fbda9486c3a384b6fa5e34c96fe948e9a",
+             "address_hash" => "0x1d2c163fbda9486c3a384b6fa5e34c96fe948e9a",
              "items_count" => 50,
              "token_id" => "0",
-             "value" => 4_217_417_051_704_137_590_935
+             "value" => "4217417051704137590935"
            },
            title_prefix: "TokenInstanceHolders"
          )},
