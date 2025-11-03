@@ -1076,6 +1076,7 @@ defmodule BlockScoutWeb.Chain do
         |> last_token_transfer_before_current(current_token_transfer)
         |> (&if(is_nil(&1), do: %{}, else: paging_params(&1))).()
 
+      # todo: consider removing it, when all controllers will get OpenAPI specs
       string_keys = map_to_string_keys(new_params)
 
       params
@@ -1091,6 +1092,7 @@ defmodule BlockScoutWeb.Chain do
     else
       new_params = paging_params(List.last(list))
 
+      # todo: consider removing it, when all controllers will get OpenAPI specs
       string_keys = map_to_string_keys(new_params)
 
       params
