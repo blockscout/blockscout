@@ -2,8 +2,8 @@ defmodule BlockScoutWeb.RateLimit do
   @moduledoc """
   Rate limiting
   """
-  alias BlockScoutWeb.RateLimit.Hammer
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
+  alias BlockScoutWeb.RateLimit.Hammer
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Plug.Conn
 

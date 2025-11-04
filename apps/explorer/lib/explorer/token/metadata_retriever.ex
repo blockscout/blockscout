@@ -5,9 +5,9 @@ defmodule Explorer.Token.MetadataRetriever do
 
   require Logger
 
-  alias Explorer.{HttpClient, MetadataURIValidator}
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.{HttpClient, MetadataURIValidator}
   alias Explorer.SmartContract.Reader
 
   @no_uri_error "no uri"

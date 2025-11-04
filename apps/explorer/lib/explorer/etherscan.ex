@@ -7,11 +7,11 @@ defmodule Explorer.Etherscan do
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
-  alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, InternalTransaction, TokenTransfer, Transaction}
+  alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.Transaction.History.TransactionStats
+  alias Explorer.Etherscan.Logs
 
   @default_options %{
     order_by_direction: :desc,

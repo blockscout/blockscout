@@ -5,8 +5,8 @@ defmodule Explorer.Chain.Import do
 
   alias Ecto.Changeset
   alias Explorer.Account.Notify
-  alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.{Block, Import}
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Stage
   alias Explorer.Repo
 

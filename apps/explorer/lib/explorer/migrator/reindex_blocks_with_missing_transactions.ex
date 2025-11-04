@@ -10,10 +10,10 @@ defmodule Explorer.Migrator.ReindexBlocksWithMissingTransactions do
 
   import Ecto.Query
 
-  alias Explorer.Repo
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Migrator.{FillingMigration, MigrationStatus}
+  alias Explorer.Repo
 
   @migration_name "reindex_blocks_with_missing_transactions"
 

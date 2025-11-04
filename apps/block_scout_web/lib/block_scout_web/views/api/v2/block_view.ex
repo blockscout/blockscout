@@ -2,8 +2,8 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   use BlockScoutWeb, :view
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  alias BlockScoutWeb.BlockView
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
+  alias BlockScoutWeb.BlockView
   alias Explorer.Chain.Block
 
   def render("message.json", assigns) do

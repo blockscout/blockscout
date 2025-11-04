@@ -22,8 +22,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
   alias Explorer.Chain.Arbitrum
   alias Explorer.Chain.Events.Publisher
 
-  alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
   alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia, Eigenda}
+  alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement

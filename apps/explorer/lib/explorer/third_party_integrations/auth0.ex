@@ -4,8 +4,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   """
   require Logger
 
-  alias Explorer.Account.Identity
   alias Explorer.{Account, Helper, HttpClient}
+  alias Explorer.Account.Identity
   alias Explorer.ThirdPartyIntegrations.Auth0.Internal
   alias Ueberauth.Auth
   alias Ueberauth.Strategy.Auth0.OAuth

@@ -4,8 +4,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.InternalTransaction do
   """
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias BlockScoutWeb.Schemas.API.V2.{Address, General}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     type: :object,

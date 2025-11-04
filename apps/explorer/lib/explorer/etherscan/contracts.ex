@@ -11,10 +11,10 @@ defmodule Explorer.Etherscan.Contracts do
       where: 3
     ]
 
-  alias Explorer.Repo
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Repo
 
   @doc """
     Returns address with preloaded SmartContract and proxy info if it exists

@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   use BlockScoutWeb, :controller
+  alias Explorer.{Chain, Helper, PagingOptions}
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.InternalTransaction
-  alias Explorer.{Chain, Helper, PagingOptions}
 
   import BlockScoutWeb.Chain,
     only: [

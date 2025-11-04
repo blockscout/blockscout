@@ -150,12 +150,12 @@ defmodule Explorer.Chain.Address do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
-  alias Explorer.Chain.Cache.Accounts
-  alias Explorer.Chain.SmartContract.Proxy.EIP7702
-  alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, SmartContract, Transaction}
-  alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
-  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
+  alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, SmartContract, Transaction}
+  alias Explorer.Chain.Cache.Accounts
+  alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
+  alias Explorer.Chain.SmartContract.Proxy.EIP7702
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
