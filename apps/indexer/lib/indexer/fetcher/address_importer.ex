@@ -51,6 +51,7 @@ defmodule Indexer.Fetcher.AddressImporter do
   end
 
   def handle_info(:update, addresses_map) do
+    Logger.info("AddressImporter importing #{Enum.count(addresses_map)} addresses")
     result_state = do_update(addresses_map)
     schedule_next_update()
     {:noreply, result_state}
@@ -81,8 +82,12 @@ defmodule Indexer.Fetcher.AddressImporter do
     case Chain.import(%{addresses: %{params: addresses_params}, timeout: :infinity}) do
       {:ok, imported} ->
         address_hash_to_block_number =
-          Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
-            {String.downcase(hash), block_number}
+          Enum.reduce(addresses_params, %{}, fn
+            %{fetched_coin_balance_block_number: block_number, hash: hash}, acc ->
+              Map.put(acc, String.downcase(hash), block_number)
+
+            _, acc ->
+              acc
           end)
 
         Fetcher.async_import_coin_balances(imported, %{
@@ -90,6 +95,7 @@ defmodule Indexer.Fetcher.AddressImporter do
         })
 
         Fetcher.async_import_filecoin_addresses_info(imported, false)
+        Logger.info("AddressImporter imported #{Enum.count(addresses_map)} addresses")
 
         %{}
 

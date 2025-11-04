@@ -513,7 +513,7 @@ defmodule Indexer.Block.Fetcher do
     options_with_broadcast =
       case callback_module do
         Indexer.Block.Catchup.Fetcher ->
-          AddressImporter.add(import_options[:addresses])
+          AddressImporter.add(options[:addresses][:params])
 
           import_options
           |> Map.merge(%{broadcast: broadcast})
