@@ -108,7 +108,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
 
   defp count_internal_transactions(%Block{internal_transactions: internal_transactions})
        when is_list(internal_transactions),
-       do: Enum.count(internal_transactions)
+       do: Enum.count(internal_transactions, &(&1.type != :call or &1.index > 0))
 
   defp count_internal_transactions(_), do: nil
 

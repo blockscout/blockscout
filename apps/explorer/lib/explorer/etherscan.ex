@@ -137,7 +137,6 @@ defmodule Explorer.Etherscan do
       end
 
     query
-    |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
     |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_nonpending_block()
     |> InternalTransaction.include_zero_value(options.include_zero_value)
@@ -242,6 +241,7 @@ defmodule Explorer.Etherscan do
   defp internal_transactions_query(options, consensus_blocks) do
     from(
       it in InternalTransaction,
+      as: :internal_transaction,
       inner_join: block in subquery(consensus_blocks),
       on: it.block_number == block.number,
       order_by: [

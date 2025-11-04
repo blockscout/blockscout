@@ -268,7 +268,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/transactions/:tx_hash/external-transactions` endpoint.
+    Function to handle GET requests to `/api/v2/transactions/:transaction_hash_param/external-transactions` endpoint.
     It renders the list of external transactions that are somehow linked (eg. preceded or initiated by) to the selected one.
     The most common use case is for side-chains and rollups. Currently implemented only for Neon chain but could also be extended for
     similar cases.
