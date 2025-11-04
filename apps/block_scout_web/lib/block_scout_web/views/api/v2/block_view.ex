@@ -80,26 +80,22 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     |> chain_identity_fields(block, single_block?)
   end
 
-  def prepare_rewards(rewards, block, single_block?) do
+  defp prepare_rewards(rewards, block, single_block?) do
     Enum.map(rewards, &prepare_reward(&1, block, single_block?))
   end
 
-  def prepare_reward(reward, block, single_block?) do
+  defp prepare_reward(reward, block, single_block?) do
     %{
       "reward" => reward.reward,
       "type" => if(single_block?, do: BlockView.block_reward_text(reward, block.miner.hash), else: reward.address_type)
     }
   end
 
-  def prepare_uncles(uncles_relations) when is_list(uncles_relations) do
-    Enum.map(uncles_relations, &prepare_uncle/1)
+  defp prepare_uncles(uncles_relations) when is_list(uncles_relations) do
+    Enum.map(uncles_relations, &%{"hash" => &1.uncle_hash})
   end
 
-  def prepare_uncles(_), do: []
-
-  def prepare_uncle(uncle_relation) do
-    %{"hash" => uncle_relation.uncle_hash}
-  end
+  defp prepare_uncles(_), do: []
 
   def burnt_fees_percentage(_, %Decimal{coef: 0}), do: nil
 

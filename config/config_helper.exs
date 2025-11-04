@@ -396,12 +396,72 @@ defmodule ConfigHelper do
     "optimism-celo" => {:optimism, :celo}
   }
 
+  @doc """
+  Returns the primary chain type.
+
+  This function extracts the base chain type from the chain identity (see
+  chain_identity/1), which is used to determine the core feature set and
+  indexing behavior. For example, both `:optimism` and `{:optimism, :celo}`
+  identities will return `:optimism` as the chain type, allowing them to share
+  the same Optimism-specific logic.
+
+  ## Examples
+
+      iex> System.put_env("CHAIN_TYPE", "optimism")
+      iex> chain_type()
+      :optimism
+
+      iex> System.put_env("CHAIN_TYPE", "optimism-celo")
+      iex> chain_type()
+      :optimism
+
+  ## Returns
+
+    * `atom()` - The primary chain type identifier
+  """
   @spec chain_type() :: atom()
   def chain_type do
     {type, _} = chain_identity()
     type
   end
 
+  @doc """
+  Returns the full chain identity as a tuple of base type and optional variant.
+
+  Chain identity is a concept that allows networks to inherit a base chain's
+  feature set while adding variant-specific customizations. The identity is
+  returned as a two-element tuple `{base_type, variant}` where:
+
+  - `base_type` - The primary chain type (e.g., `:optimism`, `:arbitrum`)
+  - `variant` - An optional sub-type for specialized networks (e.g., `:celo`)
+
+  This enables Celo to run on the OP Stack with the identity `{:optimism,
+  :celo}`, inheriting all Optimism features (deposits, withdrawals, batches,
+  etc.) while allowing Celo-specific endpoints, caches, and schema fields to be
+  gated on the full identity tuple.
+
+  The identity is configured via the `CHAIN_TYPE` environment variable and must
+  match one of the supported values in `@supported_chain_identities`.
+
+  ## Examples
+
+      iex> System.put_env("CHAIN_TYPE", "optimism")
+      iex> chain_identity()
+      {:optimism, nil}
+
+      iex> System.put_env("CHAIN_TYPE", "optimism-celo")
+      iex> chain_identity()
+      {:optimism, :celo}
+
+      iex> System.put_env("CHAIN_TYPE", "ethereum")
+      iex> chain_identity()
+      {:ethereum, nil}
+
+  ## Returns
+
+    * `{atom(), atom() | nil}` - A tuple containing the base chain type and
+      optional variant
+  """
   @spec chain_identity() :: {atom(), atom() | nil}
   def chain_identity do
     "CHAIN_TYPE"

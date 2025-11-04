@@ -19,8 +19,8 @@ defmodule Explorer.Chain.Log.Schema do
   # However, on Celo, logs may exist where `transaction_hash` equals block_hash.
   # In these instances, we set `transaction_hash` to `nil`. This action, though,
   # violates the primary key constraint. To resolve this issue, we've excluded
-  # `transaction_hash` from the composite primary key when dealing with `:celo`
-  # chain type.
+  # `transaction_hash` from the composite primary key when dealing with
+  # `:optimism-celo` chain type.
   @transaction_field (case @chain_identity do
                         {:optimism, :celo} ->
                           quote do

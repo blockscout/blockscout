@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   use BlockScoutWeb, :controller
 
   use Utils.CompileTimeEnvHelper,
-    chain_type: [:explorer, :chain_type],
     chain_identity: [:explorer, :chain_identity]
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
