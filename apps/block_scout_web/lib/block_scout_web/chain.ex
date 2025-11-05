@@ -808,12 +808,12 @@ defmodule BlockScoutWeb.Chain do
          fiat_value: fiat_value
        }) do
     %{
-      "market_cap" => circulating_market_cap,
-      "holders_count" => holders_count,
-      "contract_address_hash" => contract_address_hash,
-      "name" => token_name,
-      "is_name_null" => is_nil(token_name),
-      "fiat_value" => fiat_value
+      market_cap: circulating_market_cap,
+      holders_count: holders_count,
+      contract_address_hash: contract_address_hash,
+      name: token_name,
+      is_name_null: is_nil(token_name),
+      fiat_value: fiat_value
     }
   end
 
