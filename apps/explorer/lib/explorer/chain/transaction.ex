@@ -306,6 +306,9 @@ defmodule Explorer.Chain.Transaction do
     chain_type: [:explorer, :chain_type],
     decode_not_a_contract_calls: [:explorer, :decode_not_a_contract_calls]
 
+  use Utils.RuntimeEnvHelper,
+    op_jovian_timestamp: [:indexer, [Indexer.Fetcher.Optimism.EIP1559ConfigUpdate, :jovian_timestamp_l2]]
+
   require Logger
   require Explorer.Chain.Transaction.Schema
 
@@ -2076,6 +2079,8 @@ defmodule Explorer.Chain.Transaction do
   @doc """
     The operator fee is calculated for OP chains starting from the Isthmus upgrade
     as described in https://specs.optimism.io/protocol/isthmus/exec-engine.html#operator-fee
+    The formula changed in Jovian upgrade as follows:
+    https://specs.optimism.io/protocol/jovian/exec-engine.html#fee-formula-update
 
     If the `operatorFeeScalar` or `operatorFeeConstant` is `nil`, it's treated as zero.
 
@@ -2095,11 +2100,21 @@ defmodule Explorer.Chain.Transaction do
     gas_used = gas_used || gas
     operator_fee_scalar = Map.get(transaction, :operator_fee_scalar) || Decimal.new(0)
     operator_fee_constant = Map.get(transaction, :operator_fee_constant) || Decimal.new(0)
+    block_timestamp = Map.get(transaction, :block_timestamp) || op_jovian_timestamp() || DateTime.from_unix!(0)
 
-    gas_used
-    |> Decimal.mult(operator_fee_scalar)
-    |> Decimal.div_int(1_000_000)
-    |> Decimal.add(operator_fee_constant)
+    if DateTime.to_unix(block_timestamp) >= op_jovian_timestamp() do
+      # use the formula for Jovian
+      gas_used
+      |> Decimal.mult(operator_fee_scalar)
+      |> Decimal.mult(100)
+      |> Decimal.add(operator_fee_constant)
+    else
+      # use the formula for Isthmus
+      gas_used
+      |> Decimal.mult(operator_fee_scalar)
+      |> Decimal.div_int(1_000_000)
+      |> Decimal.add(operator_fee_constant)
+    end
   end
 
   @doc """
