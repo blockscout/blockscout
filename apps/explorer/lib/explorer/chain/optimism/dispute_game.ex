@@ -15,6 +15,7 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
 
   @chain_id_bob_mainnet 60_808
   @chain_id_bob_sepolia 808_813
+  @chain_id_megaeth_testnet_v2 6343
 
   @typedoc """
     * `index` - A unique index of the dispute game.
@@ -106,7 +107,7 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
       end
 
     first_bits =
-      if current_chain_id in [@chain_id_bob_mainnet, @chain_id_bob_sepolia] do
+      if current_chain_id in [@chain_id_bob_mainnet, @chain_id_bob_sepolia, @chain_id_megaeth_testnet_v2] do
         64
       else
         256
