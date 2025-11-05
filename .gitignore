@@ -1,79 +1,73 @@
-# App artifacts
+# ---------------------------------------------------
+# Elixir / Phoenix / Blockscout Project Ignore Rules
+# ---------------------------------------------------
+
+# Build artifacts
 /_build
-/apps/*/cover
-/apps/*/logs
-/cover
-/db
 /deps
 /doc
-/*.ez
+/db
+/cover
 /logs
+/*.ez
+/apps/*/cover
+/apps/*/logs
+/apps/*/priv/static/
+apps/**/node_modules
 
-# mix dialyzer artifacts
+# Dialyzer
 /priv/plts
 
-# Generated on crash by the VM
+# Crash dumps
 erl_crash.dump
 dump.rdb
 
-# Generated on crash by NPM
+# Node / NPM debug logs
 npm-debug.log
 
-# Static artifacts
-/apps/**/node_modules
-
-# Since we are building assets from assets/,
-# we ignore priv/static. You may want to comment
-# this depending on your deployment strategy.
-/apps/*/priv/static/
-
-# Files matching config/*.secret.exs pattern contain sensitive
-# data and you should not commit them into version control.
-#
-# Alternatively, you may comment the line below and commit the
-# secrets files as long as you replace their contents by environment
-# variables.
-/apps/*/config/*.secret.exs
-
 # Wallaby screenshots
-screenshots/
+/screenshots/
 
-# Sobelow
+# Sobelow reports
 .sobelow
 
-# osx
+# macOS files
 .DS_Store
-dump.rdb
 
-# mix phx.gen.cert self-signed certs for dev
-/apps/block_scout_web/priv/cert
+# Mix Phoenix self-signed certs (for dev)
+apps/block_scout_web/priv/cert
 
+# Docker data directories
 /docker-compose/services/blockscout-db-data
 /docker-compose/services/stats-db-data
 /docker-compose/services/redis-data
 /docker-compose/services/logs
 /docker-compose/tmp
 
+# IDE & Editor files
 .idea/
 *.iml
-
-.vscode
+.vscode/
 .cursorignore
 .cursorrules
 .elixir_ls
 
-**.dec**
-
-*.env.example
+# Environment & Secrets
+*.env
 *.env.local
+*.env.example
 *.env.staging
 .devcontainer/.blockscout_config*
+/apps/*/config/*.secret.exs
 
-# dets tables
+# Temporary / Generated data
 queue_storage
 tasks_in_progress
 /dets
-
 /temp
 
+# OpenAPI spec file (generated)
 openapi.yaml
+
+# Ignore binary / encrypted / debug files
+**.dec**
