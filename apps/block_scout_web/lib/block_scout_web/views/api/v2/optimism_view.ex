@@ -153,7 +153,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l1_block_timestamp" => deposit.l1_block_timestamp,
             "l1_transaction_hash" => deposit.l1_transaction_hash,
             "l1_transaction_origin" => deposit.l1_transaction_origin,
-            "l2_transaction_gas_limit" => deposit.l2_transaction.gas
+            "l2_transaction_gas_limit" => deposit.l2_transaction_gas_limit
           }
         end),
       next_page_params: next_page_params
