@@ -811,6 +811,9 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
 
 config :explorer, Explorer.Migrator.CeloAccounts, enabled: ConfigHelper.chain_identity() == {:optimism, :celo}
 
+config :explorer, Explorer.Migrator.CeloAggregatedElectionRewards,
+  enabled: ConfigHelper.chain_identity() == {:optimism, :celo}
+
 config :explorer, Explorer.Migrator.CeloL2Epochs,
   enabled:
     ConfigHelper.chain_identity() == {:optimism, :celo} &&

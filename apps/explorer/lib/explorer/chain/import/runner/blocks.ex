@@ -37,6 +37,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
 
+  alias Explorer.Chain.Celo.AggregatedElectionReward, as: CeloAggregatedElectionReward
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
   alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
   alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
@@ -1228,8 +1229,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         on: reward.epoch_number == epoch.number
       )
 
+    aggregated_election_rewards_query =
+      from(reward in CeloAggregatedElectionReward,
+        join: epoch in subquery(ordered_query),
+        on: reward.epoch_number == epoch.number
+      )
+
     repo.delete_all(epoch_rewards_query, timeout: timeout)
     repo.delete_all(election_rewards_query, timeout: timeout)
+    repo.delete_all(aggregated_election_rewards_query, timeout: timeout)
 
     {_count, updated_epochs} =
       repo.update_all(
