@@ -11,8 +11,6 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
-  tags(["main_page"])
-
   case @chain_type do
     :celo ->
       @chain_type_transaction_necessity_by_association %{
@@ -38,6 +36,10 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   ]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
+
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags(["main_page"])
 
   operation :blocks,
     summary: "Last 4 blocks on the main page",

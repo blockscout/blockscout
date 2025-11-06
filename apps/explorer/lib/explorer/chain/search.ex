@@ -1106,7 +1106,7 @@ defmodule Explorer.Chain.Search do
 
     base_params =
       Map.merge(
-        %{"next_page_params_type" => "search", "q" => query},
+        %{next_page_params_type: "search", q: query},
         prev_options
       )
 
@@ -1263,7 +1263,7 @@ defmodule Explorer.Chain.Search do
   A keyword list with paging options, where key is the map with the parsed paging options.
   """
   @spec parse_paging_options(map()) :: [paging_options: PagingOptions.t()]
-  def parse_paging_options(%{"next_page_params_type" => "search"} = paging_params) do
+  def parse_paging_options(%{next_page_params_type: "search"} = paging_params) do
     key =
       Enum.reduce(@paginated_types, %{}, fn type, acc ->
         if Map.has_key?(paging_params, type) do

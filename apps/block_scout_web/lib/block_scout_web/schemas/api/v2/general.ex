@@ -1011,6 +1011,23 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   }
 
+  @search_paging_params %{
+    "q" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Search query for paging",
+      name: :q
+    },
+    "next_page_params_type" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Next page params type for paging",
+      name: :next_page_params_type
+    }
+  }
+
   @doc """
   Returns a list of paging parameters based on the provided field names.
   """
@@ -1028,6 +1045,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   def define_state_changes_paging_params(fields) do
     Enum.map(fields, fn field ->
       Map.get(@state_changes_paging_params, field) || raise "Unknown paging param: #{field}"
+    end)
+  end
+
+  @doc """
+  Returns a list of pagination parameters for `/api/v2/search` API endpoint
+  """
+  @spec define_search_paging_params([String.t()]) :: [Parameter.t()]
+  def define_search_paging_params(fields) do
+    Enum.map(fields, fn field ->
+      Map.get(@search_paging_params, field) || raise "Unknown paging param: #{field}"
     end)
   end
 

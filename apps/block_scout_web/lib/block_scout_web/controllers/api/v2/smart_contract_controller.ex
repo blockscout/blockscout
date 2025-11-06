@@ -40,6 +40,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   @api_true [api?: true]
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
   tags(["smart_contracts"])
 
   operation :smart_contract,
@@ -54,7 +56,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     GET /api/v2/smart-contracts/:address_hash
   """
   @spec smart_contract(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def smart_contract(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def smart_contract(conn, %{address_hash_param: address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          _ <- PublishHelper.sourcify_check(address_hash_string),
@@ -212,7 +214,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
           | {:not_found, nil | Explorer.Chain.SmartContract.t()}
           | {:restricted_access, true}
           | Plug.Conn.t()
-  def audit_reports_list(conn, %{"address_hash_param" => address_hash_string} = params) do
+  def audit_reports_list(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string) do
       reports = AuditReport.get_audit_reports_by_smart_contract_address_hash(address_hash, @api_true)
 
@@ -248,7 +250,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
           | {:recaptcha, any()}
           | {:restricted_access, true}
           | Plug.Conn.t()
-  def audit_report_submission(conn, %{"address_hash" => address_hash_string} = params) do
+  def audit_report_submission(conn, %{address_hash: address_hash_string} = params) do
     with {:disabled, true} <- {:disabled, Application.get_env(:explorer, :air_table_audit_reports)[:enabled]},
          {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
          audit_report_params <- %{
