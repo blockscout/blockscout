@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   import Indexer.Block.Fetcher,
     only: [
-      async_import_coin_balances: 2,
+      async_import_coin_balances: 1,
       async_import_token_balances: 2,
       token_transfers_merge_token: 2
     ]
@@ -358,11 +358,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
         internal_transactions: internal_transactions_params_marked
       })
 
-    address_hash_to_block_number =
-      Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
-        {String.downcase(hash), block_number}
-      end)
-
     address_coin_balances_params_set =
       AddressCoinBalances.params_set(%{internal_transactions_params: internal_transactions_params_marked})
 
@@ -415,9 +410,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         Accounts.drop(imported[:addresses])
         Blocks.drop_nonconsensus(imported[:remove_consensus_of_missing_transactions_blocks])
 
-        async_import_coin_balances(imported, %{
-          address_hash_to_fetched_balance_block_number: address_hash_to_block_number
-        })
+        async_import_coin_balances(imported)
 
         async_import_celo_token_balances(celo_token_transfers_params)
 
