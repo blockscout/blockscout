@@ -43,7 +43,6 @@ defmodule Indexer.Fetcher.AddressImporter do
       Map.merge(state, params_map, fn _hash, old_address, new_address ->
         old_address
         |> process_contract_code(new_address)
-        |> process_fetched_coin_balance_block_number(new_address)
         |> process_nonce(new_address)
       end)
 
@@ -81,19 +80,6 @@ defmodule Indexer.Fetcher.AddressImporter do
 
     case Chain.import(%{addresses: %{params: addresses_params}, timeout: :infinity}) do
       {:ok, imported} ->
-        address_hash_to_block_number =
-          Enum.reduce(addresses_params, %{}, fn
-            %{fetched_coin_balance_block_number: block_number, hash: hash}, acc ->
-              Map.put(acc, String.downcase(hash), block_number)
-
-            _, acc ->
-              acc
-          end)
-
-        Fetcher.async_import_coin_balances(imported, %{
-          address_hash_to_fetched_balance_block_number: address_hash_to_block_number
-        })
-
         Fetcher.async_import_filecoin_addresses_info(imported, false)
         Logger.info("AddressImporter imported #{Enum.count(addresses_map)} addresses")
 
@@ -110,17 +96,6 @@ defmodule Indexer.Fetcher.AddressImporter do
   end
 
   defp process_contract_code(old_address, _new_address), do: old_address
-
-  defp process_fetched_coin_balance_block_number(old_address, new_address) do
-    old_block_number = old_address[:fetched_coin_balance_block_number]
-    new_block_number = new_address[:fetched_coin_balance_block_number]
-
-    if not is_nil(new_block_number) and (is_nil(old_block_number) or new_block_number >= old_block_number) do
-      Map.put(old_address, :fetched_coin_balance_block_number, new_block_number)
-    else
-      old_address
-    end
-  end
 
   defp process_nonce(old_address, new_address) do
     old_nonce = old_address[:nonce]
