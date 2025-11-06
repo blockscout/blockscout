@@ -900,7 +900,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       in: :query,
       schema: %Schema{type: :integer},
       required: false,
-      description: "Smart contract ID for paging",
+      description: "Smart-contract ID for paging",
       name: :smart_contract_id
     },
     "fetched_coin_balance" => %Parameter{

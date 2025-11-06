@@ -31,6 +31,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.Schemas.API.V2.General
+  alias BlockScoutWeb.Schemas.API.V2.General.FullHash
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.AuditReport
@@ -39,7 +40,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   @api_true [api?: true]
 
-  tags(["smart-contracts"])
+  tags(["smart_contracts"])
 
   operation :smart_contract,
     summary: "Smart contract",
@@ -79,56 +80,31 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
             in: :query,
             description: "Address hash used as pagination key",
             required: false,
-            schema: %OpenApiSpex.Schema{type: :string}
+            schema: FullHash
           },
           %OpenApiSpex.Parameter{
             name: "transactions_count",
             in: :query,
             description: "Transactions count used as pagination key",
             required: false,
-            schema: %OpenApiSpex.Schema{type: :integer}
+            schema: %Schema{anyOf: [%Schema{type: :integer}, Schemas.General.EmptyString, Schemas.General.NullString]}
           },
           %OpenApiSpex.Parameter{
             name: "coin_balance",
             in: :query,
             description: "Coin balance used as pagination key",
             required: false,
-            schema: %OpenApiSpex.Schema{type: :integer}
+            schema: %Schema{anyOf: [%Schema{type: :integer}, Schemas.General.EmptyString, Schemas.General.NullString]}
           },
-          %OpenApiSpex.Parameter{
-            name: "smart_contract_id",
-            in: :query,
-            description: "Smart contract id used as pagination key",
-            required: false,
-            schema: %OpenApiSpex.Schema{type: :integer}
-          },
-          %OpenApiSpex.Parameter{
-            name: "sort",
-            in: :query,
-            description: "Sort field (e.g. balance, transactions_count)",
-            required: false,
-            schema: %OpenApiSpex.Schema{type: :string}
-          },
-          %OpenApiSpex.Parameter{
-            name: "order",
-            in: :query,
-            description: "Sort order (asc or desc)",
-            required: false,
-            schema: %OpenApiSpex.Schema{type: :string}
-          },
-          %OpenApiSpex.Parameter{
-            name: "q",
-            in: :query,
-            description: "Search query",
-            required: false,
-            schema: %OpenApiSpex.Schema{type: :string}
-          },
+          sort_param(["balance", "transactions_count"]),
+          order_param(),
+          q_param(),
           %OpenApiSpex.Parameter{
             name: "filter",
             in: :query,
             description: "Filter to apply",
             required: false,
-            schema: %OpenApiSpex.Schema{type: :string}
+            schema: %OpenApiSpex.Schema{type: :string, enum: ["solidity", "vyper", "yul", "geas"]}
           }
         ] ++ define_paging_params(["smart_contract_id", "items_count"]),
     responses: [
@@ -277,15 +253,15 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
          audit_report_params <- %{
            address_hash: address_hash,
-           submitter_name: params["submitter_name"],
-           submitter_email: params["submitter_email"],
-           is_project_owner: params["is_project_owner"],
-           project_name: params["project_name"],
-           project_url: params["project_url"],
-           audit_company_name: params["audit_company_name"],
-           audit_report_url: params["audit_report_url"],
-           audit_publish_date: params["audit_publish_date"],
-           comment: params["comment"]
+           submitter_name: params[:submitter_name],
+           submitter_email: params[:submitter_email],
+           is_project_owner: params[:is_project_owner],
+           project_name: params[:project_name],
+           project_url: params[:project_url],
+           audit_company_name: params[:audit_company_name],
+           audit_report_url: params[:audit_report_url],
+           audit_publish_date: params[:audit_publish_date],
+           comment: params[:comment]
          },
          {:ok, _} <- AuditReport.create(audit_report_params) do
       conn
@@ -400,7 +376,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   #     iex> smart_contract_addresses_paging_params(address)
   #     %{"hash" => "0x123...", "transactions_count" => 100, "coin_balance" => 1000}
   @spec smart_contract_addresses_paging_params(Explorer.Chain.Address.t()) :: %{
-          required(String.t()) => any()
+          required(atom()) => any()
         }
   defp smart_contract_addresses_paging_params(%Explorer.Chain.Address{
          hash: address_hash,
@@ -408,9 +384,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          fetched_coin_balance: coin_balance
        }) do
     %{
-      "hash" => address_hash,
-      "transactions_count" => transactions_count,
-      "coin_balance" => coin_balance
+      hash: address_hash,
+      transactions_count: transactions_count,
+      coin_balance: coin_balance
     }
   end
 

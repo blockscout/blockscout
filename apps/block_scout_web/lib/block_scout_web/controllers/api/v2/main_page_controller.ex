@@ -47,11 +47,8 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
       ok:
         {"Blocks List on the main page.", "application/json",
          %Schema{
-           title: "Blocks",
            type: :array,
-           properties: %{
-             items: BlockScoutWeb.Schemas.API.V2.Block.Response
-           },
+           items: BlockScoutWeb.Schemas.API.V2.Block.Response,
            nullable: false,
            additionalProperties: false
          }}
@@ -85,11 +82,8 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
       ok:
         {"Transactions list on the main page.", "application/json",
          %Schema{
-           title: "Transactions",
            type: :array,
-           properties: %{
-             items: BlockScoutWeb.Schemas.API.V2.Transaction.Response
-           },
+           items: BlockScoutWeb.Schemas.API.V2.Transaction.Response,
            nullable: false,
            additionalProperties: false
          }},
@@ -117,11 +111,8 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
       ok:
         {"List of watchlist transactions", "application/json",
          %Schema{
-           title: "Watchlist Transactions",
            type: :array,
-           properties: %{
-             items: BlockScoutWeb.Schemas.API.V2.Transaction.Response
-           },
+           items: BlockScoutWeb.Schemas.API.V2.Transaction.Response,
            nullable: false,
            additionalProperties: false
          }},
