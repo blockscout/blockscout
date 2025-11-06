@@ -13,7 +13,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_block_rewards: 2,
       async_import_celo_epoch_block_operations: 2,
       async_import_celo_accounts: 2,
-      async_import_coin_balances: 2,
+      async_import_coin_balances: 1,
       async_import_created_contract_codes: 2,
       async_import_filecoin_addresses_info: 2,
       async_import_internal_transactions: 2,
@@ -138,7 +138,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     realtime? = false
 
     async_import_block_rewards(block_reward_errors, realtime?)
-    async_import_coin_balances(imported, options)
+    async_import_coin_balances(imported)
     async_import_created_contract_codes(imported, realtime?)
     async_import_internal_transactions(imported, realtime?)
     async_import_tokens(imported, realtime?)

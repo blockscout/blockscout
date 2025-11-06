@@ -507,27 +507,15 @@ defmodule Indexer.Block.Fetcher do
         options
       )
       when is_map(options) do
-    {address_hash_to_fetched_balance_block_number, import_options} =
+    {_address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
 
+    AddressImporter.add(import_options[:addresses][:params])
+
     options_with_broadcast =
-      case callback_module do
-        Indexer.Block.Catchup.Fetcher ->
-          AddressImporter.add(options[:addresses][:params])
-
-          import_options
-          |> Map.merge(%{broadcast: broadcast})
-          |> Map.delete(:addresses)
-
-        _ ->
-          Map.merge(
-            import_options,
-            %{
-              address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
-              broadcast: broadcast
-            }
-          )
-      end
+      import_options
+      |> Map.merge(%{broadcast: broadcast})
+      |> Map.delete(:addresses)
 
     {import_time, result} = :timer.tc(fn -> callback_module.import(state, options_with_broadcast) end)
 
@@ -567,18 +555,11 @@ defmodule Indexer.Block.Fetcher do
     |> BlockReward.async_fetch(realtime?)
   end
 
-  def async_import_coin_balances(%{addresses: addresses}, %{
-        address_hash_to_fetched_balance_block_number: address_hash_to_block_number
-      }) do
-    addresses
-    |> Enum.map(fn %Address{hash: address_hash} ->
-      block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
-      %{address_hash: address_hash, block_number: block_number}
-    end)
-    |> CoinBalanceCatchup.async_fetch_balances()
+  def async_import_coin_balances(%{address_coin_balances: balances}) do
+    CoinBalanceCatchup.async_fetch_balances(balances)
   end
 
-  def async_import_coin_balances(_, _), do: :ok
+  def async_import_coin_balances(_), do: :ok
 
   def async_import_realtime_coin_balances(%{address_coin_balances: balances}) do
     CoinBalanceRealtime.async_fetch_balances(balances)
