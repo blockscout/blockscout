@@ -268,7 +268,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/indexing-status", V2.MainPageController, :indexing_status)
 
       if @chain_type == :optimism do
-        get("/optimism-deposits", V2.MainPageController, :optimism_deposits)
+        get("/optimism-deposits", V2.OptimismController, :main_page_deposits)
       end
 
       if @chain_type == :polygon_zkevm do

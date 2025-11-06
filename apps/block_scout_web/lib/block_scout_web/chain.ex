@@ -556,6 +556,9 @@ defmodule BlockScoutWeb.Chain do
   def paging_options(%{"token_name" => name, "token_type" => type, "token_inserted_at" => inserted_at}),
     do: [paging_options: %{@default_paging_options | key: {name, type, inserted_at}}]
 
+  def paging_options(%{token_name: name, token_type: type, token_inserted_at: inserted_at}),
+    do: [paging_options: %{@default_paging_options | key: {name, type, inserted_at}}]
+
   def paging_options(%{"value" => value, "address_hash" => address_hash}) do
     [paging_options: %{@default_paging_options | key: {value, address_hash}}]
   end
@@ -602,6 +605,10 @@ defmodule BlockScoutWeb.Chain do
       _ ->
         [paging_options: @default_paging_options]
     end
+  end
+
+  def paging_options(%{value: value, id: id}) do
+    [paging_options: %{@default_paging_options | key: {nil, value, id}}]
   end
 
   def paging_options(%{"items_count" => items_count_string, "state_changes" => _}) when is_binary(items_count_string) do
@@ -926,7 +933,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%SmartContract{address: %NotLoaded{}} = smart_contract) do
-    %{"smart_contract_id" => smart_contract.id}
+    %{smart_contract_id: smart_contract.id}
   end
 
   defp paging_params(%OptimismDeposit{l1_block_number: l1_block_number, l2_transaction_hash: l2_transaction_hash}) do
