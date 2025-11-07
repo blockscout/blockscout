@@ -447,6 +447,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     |> add_optional_transaction_field(transaction, :l1_fee_scalar)
     |> add_optional_transaction_field(transaction, :l1_gas_price)
     |> add_optional_transaction_field(transaction, :l1_gas_used)
+    |> add_optional_transaction_field(transaction, :da_footprint_gas_scalar)
     |> add_optimism_fields(transaction)
   end
 

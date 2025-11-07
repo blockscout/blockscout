@@ -51,6 +51,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                               field(:l1_block_number, :integer)
                               field(:operator_fee_scalar, :decimal)
                               field(:operator_fee_constant, :decimal)
+                              field(:da_footprint_gas_scalar, :decimal)
                             end,
                             2
                           )
@@ -346,7 +347,7 @@ defmodule Explorer.Chain.Transaction do
 
   @chain_type_optional_attrs (case @chain_type do
                                 :optimism ->
-                                  ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_transaction_origin l1_block_number operator_fee_scalar operator_fee_constant)a
+                                  ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_transaction_origin l1_block_number operator_fee_scalar operator_fee_constant da_footprint_gas_scalar)a
 
                                 :scroll ->
                                   ~w(l1_fee queue_index)a
@@ -529,6 +530,7 @@ defmodule Explorer.Chain.Transaction do
    * `wrapped_hash` - hash from the `wrapped` field (used by Suave)
    * `operator_fee_scalar` - operatorFeeScalar is a uint32 scalar set by a chain operator (used by some OP chains)
    * `operator_fee_constant` - operatorFeeConstant is a uint64 constant set by a chain operator (used by some OP chains)
+   * `da_footprint_gas_scalar` - daFootprintGasScalar is a uint16 scalar used to calculate daFootprint introduced in Jovian OP upgrade
   """
   Explorer.Chain.Transaction.Schema.generate()
 
