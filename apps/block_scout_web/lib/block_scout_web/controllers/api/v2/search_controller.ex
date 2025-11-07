@@ -23,7 +23,6 @@ defmodule BlockScoutWeb.API.V2.SearchController do
       [q_param() | base_params()] ++
         define_search_paging_params([
           "next_page_params_type",
-          "q",
           "label",
           "token",
           "contract",
