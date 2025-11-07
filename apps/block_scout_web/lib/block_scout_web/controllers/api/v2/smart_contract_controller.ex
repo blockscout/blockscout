@@ -31,7 +31,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.Schemas.API.V2.General
-  alias BlockScoutWeb.Schemas.API.V2.General.FullHash
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.AuditReport
@@ -53,7 +52,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     ]
 
   @doc """
-    GET /api/v2/smart-contracts/:address_hash
+    GET /api/v2/smart-contracts/:address_hash_param
   """
   @spec smart_contract(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def smart_contract(conn, %{address_hash_param: address_hash_string} = params) do
@@ -77,38 +76,24 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     parameters:
       base_params() ++
         [
-          %OpenApiSpex.Parameter{
-            name: "hash",
-            in: :query,
-            description: "Address hash used as pagination key",
-            required: false,
-            schema: FullHash
-          },
-          %OpenApiSpex.Parameter{
-            name: "transactions_count",
-            in: :query,
-            description: "Transactions count used as pagination key",
-            required: false,
-            schema: %Schema{anyOf: [%Schema{type: :integer}, Schemas.General.EmptyString, Schemas.General.NullString]}
-          },
-          %OpenApiSpex.Parameter{
-            name: "coin_balance",
-            in: :query,
-            description: "Coin balance used as pagination key",
-            required: false,
-            schema: %Schema{anyOf: [%Schema{type: :integer}, Schemas.General.EmptyString, Schemas.General.NullString]}
-          },
           sort_param(["balance", "transactions_count"]),
           order_param(),
           q_param(),
           %OpenApiSpex.Parameter{
-            name: "filter",
+            name: :filter,
             in: :query,
-            description: "Filter to apply",
+            schema: BlockScoutWeb.Schemas.API.V2.SmartContract.Language,
             required: false,
-            schema: %OpenApiSpex.Schema{type: :string, enum: ["solidity", "vyper", "yul", "geas"]}
+            description: "Filter to apply"
           }
-        ] ++ define_paging_params(["smart_contract_id", "items_count"]),
+        ] ++
+        define_paging_params([
+          "smart_contract_id",
+          "coin_balance",
+          "address_hash_param_2",
+          "transactions_count",
+          "items_count"
+        ]),
     responses: [
       ok:
         {"Smart contracts", "application/json",
@@ -318,30 +303,30 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   sorting. Otherwise, returns default paging options.
 
   ## Examples
-      iex> smart_contract_addresses_paging_options(%{"hash" => "0x123...", "transactions_count" => "100", "coin_balance" => "1000"})
+      iex> smart_contract_addresses_paging_options(%{hash: "0x123...", transactions_count: "100", coin_balance: "1000"})
       [paging_options: %{key: %{hash: ..., transactions_count: 100, fetched_coin_balance: 1000}}]
 
-      iex> smart_contract_addresses_paging_options(%{"smart_contract_id" => "42"})
+      iex> smart_contract_addresses_paging_options(%{smart_contract_id: "42"})
       [paging_options: %{key: %{id: 42}}]
 
       iex> smart_contract_addresses_paging_options(%{})
       [paging_options: %{}]
   """
-  @spec smart_contract_addresses_paging_options(%{required(String.t()) => String.t()}) ::
+  @spec smart_contract_addresses_paging_options(%{required(atom()) => String.t()}) ::
           [paging_options: map()]
   def smart_contract_addresses_paging_options(params) do
     options = do_smart_contract_addresses_paging_options(params)
     [paging_options: default_paging_options() |> Map.merge(options)]
   end
 
-  @spec do_smart_contract_addresses_paging_options(%{required(String.t()) => String.t()}) :: map()
-  defp do_smart_contract_addresses_paging_options(%{"hash" => hash_string} = params) do
+  @spec do_smart_contract_addresses_paging_options(%{required(atom()) => String.t()}) :: map()
+  defp do_smart_contract_addresses_paging_options(%{hash: hash_string} = params) do
     hash_string
     |> Chain.string_to_address_hash()
     |> case do
       {:ok, address_hash} ->
-        transactions_count = parse_integer(params["transactions_count"])
-        coin_balance = parse_integer(params["coin_balance"])
+        transactions_count = parse_integer(params[:transactions_count])
+        coin_balance = parse_integer(params[:coin_balance])
 
         %{
           key: %{
@@ -356,7 +341,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     end
   end
 
-  defp do_smart_contract_addresses_paging_options(%{"smart_contract_id" => smart_contract_id}) do
+  defp do_smart_contract_addresses_paging_options(%{smart_contract_id: smart_contract_id})
+       when is_integer(smart_contract_id) do
+    %{key: %{id: smart_contract_id}}
+  end
+
+  # todo: remove this function clause when all controllers are covered with OpenAPI spec
+  defp do_smart_contract_addresses_paging_options(%{smart_contract_id: smart_contract_id}) do
     smart_contract_id
     |> safe_parse_non_negative_integer()
     |> case do
@@ -376,7 +367,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   # ## Examples
   #     iex> address = %Explorer.Chain.Address{hash: "0x123...", transactions_count: 100, fetched_coin_balance: 1000}
   #     iex> smart_contract_addresses_paging_params(address)
-  #     %{"hash" => "0x123...", "transactions_count" => 100, "coin_balance" => 1000}
+  #     %{hash: "0x123...", transactions_count: 100, coin_balance: 1000}
   @spec smart_contract_addresses_paging_params(Explorer.Chain.Address.t()) :: %{
           required(atom()) => any()
         }
@@ -392,10 +383,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     }
   end
 
-  @spec smart_contract_addresses_sorting(%{required(String.t()) => String.t()}) :: [
+  @spec smart_contract_addresses_sorting(%{required(atom()) => String.t()}) :: [
           {:sorting, list()}
         ]
-  defp smart_contract_addresses_sorting(%{"sort" => sort_field, "order" => order}) do
+  defp smart_contract_addresses_sorting(%{sort: sort_field, order: order}) do
     {sort_field, order}
     |> case do
       {"balance", "asc"} -> {:ok, [{:asc_nulls_first, :fetched_coin_balance}]}

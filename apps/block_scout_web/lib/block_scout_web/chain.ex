@@ -204,6 +204,31 @@ defmodule BlockScoutWeb.Chain do
   """
   @spec paging_options(any) ::
           [{:paging_options, Explorer.PagingOptions.t()}, ...] | Explorer.PagingOptions.t()
+  # todo: function clause for the old UI, to be removed later
+  def paging_options(%{
+        "hash" => hash_string,
+        "fetched_coin_balance" => fetched_coin_balance_string,
+        "transactions_count" => transactions_count_string
+      })
+      when is_binary(hash_string) do
+    case string_to_address_hash(hash_string) do
+      {:ok, address_hash} ->
+        [
+          paging_options: %{
+            @default_paging_options
+            | key: %{
+                fetched_coin_balance: decimal_parse(fetched_coin_balance_string),
+                hash: address_hash,
+                transactions_count: parse_integer(transactions_count_string)
+              }
+          }
+        ]
+
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
   def paging_options(%{
         hash: hash_string,
         fetched_coin_balance: fetched_coin_balance_string,

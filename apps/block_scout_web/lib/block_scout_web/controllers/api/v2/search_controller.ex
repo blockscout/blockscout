@@ -19,7 +19,22 @@ defmodule BlockScoutWeb.API.V2.SearchController do
   operation :search,
     summary: "Search across blocks, transactions and addresses",
     description: "Performs a joint search for blocks, transactions, addresses and other resources.",
-    parameters: [q_param() | base_params()] ++ define_search_paging_params(["next_page_params_type", "q"]),
+    parameters:
+      [q_param() | base_params()] ++
+        define_search_paging_params([
+          "next_page_params_type",
+          "q",
+          "label",
+          "token",
+          "contract",
+          "tac_operation",
+          "metadata_tag",
+          "block",
+          "blob",
+          "user_operation",
+          "address",
+          "ens_domain"
+        ]),
     responses: [
       ok: {"Search results", "application/json", Schemas.Search.Results},
       unprocessable_entity: JsonErrorResponse.response()

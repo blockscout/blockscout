@@ -1474,7 +1474,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     ]
 
   @doc """
-  Handles `api/v2/addresses/:address_hash/beacon/deposits` endpoint.
+  Handles `api/v2/addresses/:address_hash_param/beacon/deposits` endpoint.
   Fetches beacon deposits for a given address with pagination support.
 
   This endpoint retrieves all beacon deposits originating from the specified
