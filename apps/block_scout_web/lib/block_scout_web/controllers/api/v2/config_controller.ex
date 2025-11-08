@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  alias Explorer.Chain.SmartContract
   alias OpenApiSpex.Schema
 
   plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
@@ -80,5 +81,34 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     conn
     |> put_status(200)
     |> json(%{l2_migration_block: config[:l2_migration_block]})
+  end
+
+  operation :languages_list,
+    summary: "Smart contract languages list",
+    description: "Returns list of smart contract languages supported by the database schema.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"Smart contract languages", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{
+             languages: %OpenApiSpex.Schema{
+               type: :array,
+               items: BlockScoutWeb.Schemas.API.V2.SmartContract.Language
+             }
+           }
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+    Function to handle GET requests to `/api/v2/config/smart-contracts/languages` endpoint.
+  """
+  @spec languages_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def languages_list(conn, _params) do
+    conn
+    |> put_status(200)
+    |> json(%{languages: SmartContract.language_strings()})
   end
 end

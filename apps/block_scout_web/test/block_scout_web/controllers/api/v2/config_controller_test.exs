@@ -32,4 +32,34 @@ defmodule BlockScoutWeb.API.V2.ConfigControllerTest do
       assert %{"update_period_hours" => 7} = json_response(request, 200)
     end
   end
+
+  describe "/config/smart-contracts/languages" do
+    @base_languages ["solidity", "vyper", "yul", "geas"]
+
+    case Application.compile_env(:explorer, :chain_type) do
+      :arbitrum ->
+        test "gets smart-contract languages", %{conn: conn} do
+          request = get(conn, "/api/v2/config/smart-contracts/languages")
+          response = json_response(request, 200)
+
+          assert response == %{"languages" => @base_languages ++ ["stylus_rust"]}
+        end
+
+      :zilliqa ->
+        test "gets smart-contract languages", %{conn: conn} do
+          request = get(conn, "/api/v2/config/smart-contracts/languages")
+          response = json_response(request, 200)
+
+          assert response == %{"languages" => @base_languages ++ ["scilla"]}
+        end
+
+      _ ->
+        test "gets smart-contract languages", %{conn: conn} do
+          request = get(conn, "/api/v2/config/smart-contracts/languages")
+          response = json_response(request, 200)
+
+          assert response == %{"languages" => @base_languages}
+        end
+    end
+  end
 end

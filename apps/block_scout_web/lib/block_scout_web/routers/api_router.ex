@@ -140,6 +140,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/backend-version", V2.ConfigController, :backend_version)
       get("/csv-export", V2.ConfigController, :csv_export)
       get("/public-metrics", V2.ConfigController, :public_metrics)
+      get("/smart-contracts/languages", V2.ConfigController, :languages_list)
 
       if @chain_type == :celo do
         get("/celo", V2.ConfigController, :celo)
