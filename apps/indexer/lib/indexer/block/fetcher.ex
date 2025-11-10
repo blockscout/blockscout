@@ -46,6 +46,7 @@ defmodule Indexer.Block.Fetcher do
     ReplacedTransaction,
     SignedAuthorizationStatus,
     Token,
+    TokenInstanceImporter,
     UncleBlock
   }
 
@@ -246,7 +247,7 @@ defmodule Indexer.Block.Fetcher do
            AddressTokenBalances.params_set(%{token_transfers_params: token_transfers_with_token}),
          transaction_actions =
            Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
-         token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers}),
+         TokenInstanceImporter.add(token_transfers),
          stability_validators = StabilityValidators.parse(blocks),
          basic_import_options = %{
            addresses: %{params: addresses},
@@ -263,7 +264,6 @@ defmodule Indexer.Block.Fetcher do
            tokens: %{params: tokens},
            transactions: %{params: transactions_with_receipts},
            withdrawals: %{params: withdrawals_params},
-           token_instances: %{params: token_instances},
            signed_authorizations: %{params: SignedAuthorizations.parse(transactions_with_receipts)}
          },
          chain_type_import_options =
