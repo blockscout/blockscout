@@ -66,6 +66,18 @@ defmodule Explorer.Prometheus.Instrumenter do
     registry: :public
   ]
 
+  # metrics of indexing monitor
+  @gauge [name: :missing_blocks, help: "Number of blocks missing in the chain"]
+  @gauge [name: :missing_internal_transactions, help: "Number of blocks with not yet fetched internal transactions"]
+  @gauge [name: :missing_current_token_balances, help: "Number of missing current token balances"]
+  @gauge [name: :missing_archival_token_balances, help: "Number of missing token balances in history"]
+  @gauge [name: :unfetched_token_instances, help: "Number of unfetched token instances"]
+  @gauge [name: :failed_token_instances_metadata, help: "Number of failed token instances metadata"]
+  @gauge [name: :token_instances_not_uploaded_to_cdn, help: "Token instances not uploaded to CDN"]
+  @gauge [name: :multichain_search_db_main_export_queue_count, help: "Size of the main multichain export queue"]
+  @gauge [name: :multichain_search_db_export_balances_queue_count, help: "Size of the balances export queue"]
+  @gauge [name: :multichain_search_db_export_token_info_queue_count, help: "Size of the token info export queue"]
+
   # metrics of NFT media handler
 
   @histogram [
@@ -182,6 +194,43 @@ defmodule Explorer.Prometheus.Instrumenter do
   def simplified_active_addresses_number(number) do
     Gauge.set([name: :active_addresses_number, registry: :public], number)
   end
+
+  @spec missing_blocks(integer()) :: :ok
+  def missing_blocks(value), do: Gauge.set([name: :missing_blocks], value)
+
+  @spec missing_internal_transactions(integer()) :: :ok
+  def missing_internal_transactions(value), do: Gauge.set([name: :missing_internal_transactions], value)
+
+  @spec missing_current_token_balances(integer()) :: :ok
+  def missing_current_token_balances(value),
+    do: Gauge.set([name: :missing_current_token_balances], value)
+
+  @spec missing_archival_token_balances(integer()) :: :ok
+  def missing_archival_token_balances(value), do: Gauge.set([name: :missing_archival_token_balances], value)
+
+  @spec unfetched_token_instances(integer()) :: :ok
+  def unfetched_token_instances(value),
+    do: Gauge.set([name: :unfetched_token_instances], value)
+
+  @spec failed_token_instances_metadata(integer()) :: :ok
+  def failed_token_instances_metadata(value),
+    do: Gauge.set([name: :failed_token_instances_metadata], value)
+
+  @spec token_instances_not_uploaded_to_cdn(integer()) :: :ok
+  def token_instances_not_uploaded_to_cdn(value),
+    do: Gauge.set([name: :token_instances_not_uploaded_to_cdn], value)
+
+  @spec multichain_search_db_main_export_queue_count(integer()) :: :ok
+  def multichain_search_db_main_export_queue_count(value),
+    do: Gauge.set([name: :multichain_search_db_main_export_queue_count], value)
+
+  @spec multichain_search_db_export_balances_queue_count(integer()) :: :ok
+  def multichain_search_db_export_balances_queue_count(value),
+    do: Gauge.set([name: :multichain_search_db_export_balances_queue_count], value)
+
+  @spec multichain_search_db_export_token_info_queue_count(integer()) :: :ok
+  def multichain_search_db_export_token_info_queue_count(value),
+    do: Gauge.set([name: :multichain_search_db_export_token_info_queue_count], value)
 
   @doc """
   Defines the metric for time taken for media resizing and uploading (in seconds).
