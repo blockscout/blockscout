@@ -856,9 +856,24 @@ config :explorer, Explorer.Chain.TokenTransfer,
   whitelisted_weth_contracts: ConfigHelper.parse_list_env_var("WHITELISTED_WETH_CONTRACTS", ""),
   weth_token_transfers_filtering_enabled: ConfigHelper.parse_bool_env_var("WETH_TOKEN_TRANSFERS_FILTERING_ENABLED")
 
-config :explorer, Explorer.Chain.Metrics,
+config :explorer, Explorer.Chain.Metrics.PublicMetrics,
   enabled: ConfigHelper.parse_bool_env_var("PUBLIC_METRICS_ENABLED", "false"),
   update_period_hours: ConfigHelper.parse_integer_env_var("PUBLIC_METRICS_UPDATE_PERIOD_HOURS", 24)
+
+config :explorer, Explorer.Chain.Metrics.IndexerMetrics,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED", "true"),
+  specific_metrics_enabled?: %{
+    token_instances_not_uploaded_to_cdn_count:
+      ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED_TOKEN_INSTANCES_NOT_UPLOADED_TO_CDN_COUNT", "false"),
+    failed_token_instances_metadata_count:
+      ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED_FAILED_TOKEN_INSTANCES_METADATA_COUNT", "true"),
+    unfetched_token_instances_count:
+      ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED_UNFETCHED_TOKEN_INSTANCES_COUNT", "true"),
+    missing_current_token_balances_count:
+      ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED_MISSING_CURRENT_TOKEN_BALANCES_COUNT", "true"),
+    missing_archival_token_balances_count:
+      ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED_MISSING_ARCHIVAL_TOKEN_BALANCES_COUNT", "true")
+  }
 
 config :explorer, Explorer.Chain.Filecoin.NativeAddress,
   network_prefix: ConfigHelper.parse_catalog_value("FILECOIN_NETWORK_PREFIX", ["f", "t"], true, "f")

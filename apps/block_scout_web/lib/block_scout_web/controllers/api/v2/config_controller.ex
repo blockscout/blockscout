@@ -18,7 +18,8 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
   end
 
   def public_metrics(conn, _params) do
-    public_metrics_update_period_hours = Application.get_env(:explorer, Explorer.Chain.Metrics)[:update_period_hours]
+    public_metrics_update_period_hours =
+      Application.get_env(:explorer, Explorer.Chain.Metrics.PublicMetrics)[:update_period_hours]
 
     conn
     |> put_status(200)

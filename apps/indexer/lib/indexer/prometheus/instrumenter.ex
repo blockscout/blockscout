@@ -34,8 +34,6 @@ defmodule Indexer.Prometheus.Instrumenter do
     help: "Block fetch batch request processing time"
   ]
 
-  @gauge [name: :missing_block_count, help: "Number of missing blocks in the database"]
-
   @gauge [name: :delay_from_last_node_block, help: "Delay from the last block on the node in seconds"]
 
   @counter [name: :import_errors_count, help: "Number of database import errors"]
