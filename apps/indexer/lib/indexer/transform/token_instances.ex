@@ -3,8 +3,8 @@ defmodule Indexer.Transform.TokenInstances do
     Module extracts token instances from token transfers
   """
 
-  def params_set(%{} = import_options) do
-    Enum.reduce(import_options, %{}, &reducer/2)
+  def params_set(%{} = import_options, initial \\ %{}) do
+    Enum.reduce(import_options, initial, &reducer/2)
   end
 
   defp reducer({:token_transfers_params, token_transfers_params}, initial) when is_list(token_transfers_params) do
