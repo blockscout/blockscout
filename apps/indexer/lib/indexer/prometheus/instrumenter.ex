@@ -6,6 +6,8 @@ defmodule Indexer.Prometheus.Instrumenter do
   use Prometheus.Metric
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
+  alias EthereumJSONRPC.Utility.RangesHelper
+
   @rollups [:arbitrum, :zksync, :optimism, :polygon_zkevm, :scroll]
 
   @histogram [
@@ -44,39 +46,87 @@ defmodule Indexer.Prometheus.Instrumenter do
 
   @gauge [name: :latest_block_timestamp, help: "Latest block timestamp"]
 
-  def block_full_process(time, fetcher) do
+  if @chain_type in @rollups do
+    @spec setup() :: :ok
+    def setup do
+      min_blockchain_block_number =
+        RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
+
+      set_latest_block_number(min_blockchain_block_number)
+      set_latest_block_timestamp(0)
+      set_latest_batch_number(0)
+      set_latest_batch_timestamp(0)
+      :ok
+    end
+  else
+    @spec setup() :: :ok
+    def setup do
+      min_blockchain_block_number =
+        RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
+
+      set_latest_block_number(min_blockchain_block_number)
+      set_latest_block_timestamp(0)
+      :ok
+    end
+  end
+
+  @doc """
+  Defines the metric for the full processing time of a block (in microseconds).
+  """
+  @spec set_block_full_process(time :: integer(), fetcher :: atom()) :: :ok
+  def set_block_full_process(time, fetcher) do
     Histogram.observe([name: :block_full_processing_duration_microseconds, labels: [fetcher]], time)
   end
 
-  def block_import(time, fetcher) do
+  @doc """
+  Defines the metric for the import time of a block (in microseconds).
+  """
+  @spec set_block_import(time :: float(), fetcher :: atom()) :: :ok
+  def set_block_import(time, fetcher) do
     Histogram.observe([name: :block_import_duration_microseconds, labels: [fetcher]], time)
   end
 
-  def block_batch_fetch(time, fetcher) do
+  @doc """
+  Defines the metric for the block batch fetch request time (in microseconds).
+  """
+  @spec set_block_batch_fetch(time :: integer(), fetcher :: atom()) :: :ok
+  def set_block_batch_fetch(time, fetcher) do
     Histogram.observe([name: :block_batch_fetch_request_duration_microseconds, labels: [fetcher]], time)
   end
 
-  def missing_blocks(missing_block_count) do
-    Gauge.set([name: :missing_block_count], missing_block_count)
-  end
-
-  def node_delay(delay) do
+  @doc """
+  Defines the metric for JSON-RPC node response delay (in seconds) during block import.
+  """
+  @spec set_json_rpc_node_delay(delay :: integer()) :: :ok
+  def set_json_rpc_node_delay(delay) do
     Gauge.set([name: :delay_from_last_node_block], delay)
   end
 
-  def import_errors(error_count \\ 1) do
+  @doc """
+  Defines the metric for the number of import errors encountered during block processing.
+  """
+  @spec set_import_errors_count(error_count :: integer()) :: :ok
+  def set_import_errors_count(error_count \\ 1) do
     Counter.inc([name: :import_errors_count], error_count)
   end
+
+  @doc """
+  Defines the metric for memory consumed by a specific fetcher (in MB).
+  """
+  @spec set_memory_consumed(fetcher :: nil | atom() | String.t(), memory :: float()) :: :ok
+  def set_memory_consumed(nil, _memory), do: :ok
 
   def set_memory_consumed(fetcher, memory) do
     Gauge.set([name: :memory_consumed, labels: [fetcher]], memory)
   end
 
-  defp latest_block_number(number) do
+  @spec set_latest_block_number(number :: integer()) :: :ok
+  defp set_latest_block_number(number) do
     Gauge.set([name: :latest_block_number], number)
   end
 
-  defp latest_block_timestamp(timestamp) do
+  @spec set_latest_block_timestamp(timestamp :: integer()) :: :ok
+  defp set_latest_block_timestamp(timestamp) do
     Gauge.set([name: :latest_block_timestamp], timestamp)
   end
 
@@ -90,8 +140,8 @@ defmodule Indexer.Prometheus.Instrumenter do
   """
   @spec set_latest_block(number :: integer, timestamp :: DateTime.t()) :: :ok
   def set_latest_block(number, timestamp) do
-    latest_block_number(number)
-    latest_block_timestamp(DateTime.to_unix(timestamp))
+    set_latest_block_number(number)
+    set_latest_block_timestamp(DateTime.to_unix(timestamp))
   end
 
   if @chain_type in @rollups do
@@ -99,11 +149,11 @@ defmodule Indexer.Prometheus.Instrumenter do
 
     @gauge [name: :latest_batch_timestamp, help: "L2 latest batch timestamp"]
 
-    defp latest_batch_number(number) do
+    defp set_latest_batch_number(number) do
       Gauge.set([name: :latest_batch_number], number)
     end
 
-    defp latest_batch_timestamp(timestamp) do
+    defp set_latest_batch_timestamp(timestamp) do
       Gauge.set([name: :latest_batch_timestamp], timestamp)
     end
 
@@ -117,8 +167,8 @@ defmodule Indexer.Prometheus.Instrumenter do
     """
     @spec set_latest_batch(number :: integer, timestamp :: DateTime.t()) :: :ok
     def set_latest_batch(number, timestamp) do
-      latest_batch_number(number)
-      latest_batch_timestamp(DateTime.to_unix(timestamp))
+      set_latest_batch_number(number)
+      set_latest_batch_timestamp(DateTime.to_unix(timestamp))
     end
   else
     @doc """

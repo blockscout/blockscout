@@ -134,6 +134,8 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
         block_number -> block_number
       end
 
+    IO.inspect(min_block_number, label: "Min block number from ranges")
+
     min_block_number
   end
 

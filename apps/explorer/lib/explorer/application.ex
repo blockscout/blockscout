@@ -36,12 +36,14 @@ defmodule Explorer.Application do
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.MicroserviceInterfaces.MultichainSearch
+  alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo.PrometheusLogger
   alias Explorer.Utility.Hammer
 
   @impl Application
   def start(_type, _args) do
     PrometheusLogger.setup()
+    Instrumenter.setup()
 
     :telemetry.attach(
       "prometheus-ecto",
