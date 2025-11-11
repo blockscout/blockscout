@@ -7,8 +7,8 @@ defmodule BlockScoutWeb.ChainTest do
   describe "next_page_params/4" do
     # https://github.com/blockscout/blockscout/issues/12984
     test "does not return duplicated keys" do
-      assert Chain.next_page_params([nil], [%{id: 123}], %{"id" => 178}, fn x -> x end) == %{
-               "items_count" => 1,
+      assert Chain.next_page_params([nil], [%{id: 123}], %{"id" => 178}, false, fn x -> x end) == %{
+               items_count: 1,
                id: 123
              }
     end

@@ -132,12 +132,12 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @spec next_page_params(any, list(), map(), (any -> map())) :: nil | map
-  def next_page_params(next_page, list, params, paging_function \\ &paging_params/1)
+  @spec next_page_params(any, list(), map(), bool(), (any -> map())) :: nil | map
+  def next_page_params(next_page, list, params, increment_items_count? \\ false, paging_function \\ &paging_params/1)
 
-  def next_page_params([], _list, _params, _), do: nil
+  def next_page_params([], _list, _params, _increment_items_count?, _), do: nil
 
-  def next_page_params(_, list, params, paging_function) do
+  def next_page_params(_, list, params, increment_items_count?, paging_function) do
     paging_params = paging_function.(List.last(list))
 
     string_keys = map_to_string_keys(paging_params)
@@ -148,17 +148,54 @@ defmodule BlockScoutWeb.Chain do
       |> Map.drop(string_keys)
       |> Map.merge(paging_params)
 
-    current_items_count_string = Map.get(next_page_params, "items_count")
+    items_count = next_items_count(next_page_params, list, increment_items_count?)
 
-    items_count =
-      if is_binary(current_items_count_string) do
-        {current_items_count, _} = Integer.parse(current_items_count_string)
-        current_items_count + Enum.count(list)
-      else
-        Enum.count(list)
+    cond do
+      Map.has_key?(next_page_params, "items_count") ->
+        Map.put(next_page_params, "items_count", items_count)
+
+      Map.has_key?(next_page_params, :items_count) ->
+        Map.put(next_page_params, :items_count, items_count)
+
+      true ->
+        Map.put(next_page_params, :items_count, items_count)
+    end
+  end
+
+  defp get_items_count_from_next_page_params(next_page_params) do
+    cond do
+      Map.has_key?(next_page_params, "items_count") ->
+        Map.get(next_page_params, "items_count")
+
+      Map.has_key?(next_page_params, :items_count) ->
+        Map.get(next_page_params, :items_count)
+
+      true ->
+        nil
+    end
+  end
+
+  defp next_items_count(_next_page_params, list, false) do
+    Enum.count(list)
+  end
+
+  defp next_items_count(next_page_params, list, true) do
+    current_items_count_object = get_items_count_from_next_page_params(next_page_params)
+
+    current_items_count =
+      cond do
+        is_binary(current_items_count_object) ->
+          {current_items_count, _} = Integer.parse(current_items_count_object)
+          current_items_count
+
+        is_integer(current_items_count_object) ->
+          current_items_count_object
+
+        true ->
+          0
       end
 
-    Map.put(next_page_params, "items_count", items_count)
+    current_items_count + Enum.count(list)
   end
 
   @doc """
@@ -574,6 +611,10 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def paging_options(%{items_count: items_count, state_changes: _}) when is_integer(items_count) do
+    [paging_options: %{@default_paging_options | key: {items_count}}]
+  end
+
   def paging_options(%{"l1_block_number" => block_number, "transaction_hash" => transaction_hash}) do
     with {block_number, ""} <- Integer.parse(block_number),
          {:ok, transaction_hash} <- string_to_full_hash(transaction_hash) do
@@ -939,7 +980,8 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%StateChange{}) do
-    %{"state_changes" => nil}
+    # todo: remove in the future as this param is unused in the pagination of state changes
+    %{state_changes: nil}
   end
 
   # clause for Polygon Edge Deposits and Withdrawals
@@ -1011,6 +1053,17 @@ defmodule BlockScoutWeb.Chain do
 
   def token_transfers_next_page_params([], _list, _params), do: nil
 
+  @batch_transfer_fields_to_delete_from_next_page_params [
+    "batch_log_index",
+    "batch_block_hash",
+    "batch_transaction_hash",
+    "index_in_batch",
+    :batch_log_index,
+    :batch_block_hash,
+    :batch_transaction_hash,
+    :index_in_batch
+  ]
+
   def token_transfers_next_page_params(next_page, list, params) do
     next_token_transfer = List.first(next_page)
     current_token_transfer = List.last(list)
@@ -1023,11 +1076,12 @@ defmodule BlockScoutWeb.Chain do
         |> last_token_transfer_before_current(current_token_transfer)
         |> (&if(is_nil(&1), do: %{}, else: paging_params(&1))).()
 
+      # todo: consider removing it, when all controllers will get OpenAPI specs
       string_keys = map_to_string_keys(new_params)
 
       params
       |> delete_parameters_from_next_page_params()
-      |> Map.drop(["batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch" | string_keys])
+      |> Map.drop(@batch_transfer_fields_to_delete_from_next_page_params ++ string_keys)
       |> Map.merge(new_params)
       |> Map.merge(%{
         batch_log_index: current_token_transfer.log_index,
@@ -1038,11 +1092,12 @@ defmodule BlockScoutWeb.Chain do
     else
       new_params = paging_params(List.last(list))
 
+      # todo: consider removing it, when all controllers will get OpenAPI specs
       string_keys = map_to_string_keys(new_params)
 
       params
       |> delete_parameters_from_next_page_params()
-      |> Map.drop(["batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch" | string_keys])
+      |> Map.drop(@batch_transfer_fields_to_delete_from_next_page_params ++ string_keys)
       |> Map.merge(new_params)
     end
   end
