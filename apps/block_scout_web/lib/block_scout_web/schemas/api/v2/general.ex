@@ -88,7 +88,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :from_period,
       in: :query,
-      schema: %Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern},
+      schema: %Schema{
+        anyOf: [%Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern}, NullString]
+      },
       required: true,
       description: "Start of the time period (ISO 8601 format) in CSV export"
     }
@@ -102,7 +104,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :to_period,
       in: :query,
-      schema: %Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern},
+      schema: %Schema{
+        anyOf: [%Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern}, NullString]
+      },
       required: true,
       description: "End of the time period (ISO 8601 format) In CSV export"
     }
@@ -133,6 +137,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :string, nullable: true},
       required: false,
       description: "Search query filter"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a limit result items in the response.
+  """
+  @spec limit_param() :: Parameter.t()
+  def limit_param do
+    %Parameter{
+      name: :limit,
+      in: :query,
+      schema: %Schema{type: :string, nullable: true},
+      required: false,
+      description: "Limit result items in the response"
     }
   end
 
@@ -660,20 +678,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       description: "Address hash for paging",
       name: :hash
     },
-    # todo: consider refactoring to eliminate _2 suffix
-    "address_hash_2" => %Parameter{
-      in: :query,
-      schema: AddressHash,
-      required: false,
-      description: "Address hash for paging",
-      name: :address_hash
-    },
     "address_hash_param" => %Parameter{
       in: :query,
       schema: AddressHash,
       required: false,
       description: "Address hash for paging",
-      name: :hash
+      name: :address_hash
     },
     "contract_address_hash" => %Parameter{
       in: :query,

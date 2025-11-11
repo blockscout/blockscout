@@ -3137,12 +3137,19 @@ defmodule Explorer.Chain do
     result =
       balances_by_day
       |> Enum.filter(fn day -> day.value end)
-      |> (&if(api?, do: &1, else: Enum.map(&1, fn day -> Map.update!(day, :date, fn x -> to_string(x) end) end))).()
-      |> (&if(api?, do: &1, else: Enum.map(&1, fn day -> Map.update!(day, :value, fn x -> Wei.to(x, :ether) end) end))).()
+      |> (&if(api?,
+            do: &1,
+            else:
+              Enum.map(&1, fn day ->
+                day
+                |> Map.update!(:date, fn x -> to_string(x) end)
+                |> Map.update!(:value, fn x -> Wei.to(x, :ether) end)
+              end)
+          )).()
 
     today = Date.to_string(NaiveDateTime.utc_now())
 
-    if not Enum.empty?(result) && !Enum.any?(result, fn map -> map[:date] == today end) do
+    if not Enum.empty?(result) && !Enum.any?(result, fn map -> to_string(map[:date]) == today end) do
       List.flatten([result | [%{date: today, value: List.last(result)[:value]}]])
     else
       result

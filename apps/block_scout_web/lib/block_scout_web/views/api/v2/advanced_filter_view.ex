@@ -114,10 +114,16 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       Address.checksum(advanced_filter.token_transfer.token.contract_address_hash),
       decimal_to_string(token_transfer_total["decimals"], :normal),
       advanced_filter.token_transfer.token.symbol,
-      token_transfer_total["decimals"] &&
-        token_transfer_total["value"]
-        |> Decimal.div(Integer.pow(10, Decimal.to_integer(token_transfer_total["decimals"])))
-        |> decimal_to_string(:xsd),
+      case token_transfer_total["decimals"] do
+        nil ->
+          decimal_to_string(token_transfer_total["value"], :xsd)
+
+        decimals ->
+          token_transfer_total["value"] &&
+            token_transfer_total["value"]
+            |> Decimal.div(Integer.pow(10, Decimal.to_integer(decimals)))
+            |> decimal_to_string(:xsd)
+      end,
       token_transfer_total["token_id"],
       advanced_filter.block_number,
       decimal_to_string(advanced_filter.fee, :normal),

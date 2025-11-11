@@ -29,7 +29,16 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   operation :export_token_holders,
     summary: "Export token holders as CSV",
     description: "Exports the holders of a specific token as a CSV file.",
-    parameters: base_params() ++ [address_hash_param(), address_id_param()],
+    parameters:
+      base_params() ++
+        [
+          address_hash_param(),
+          address_id_param(),
+          from_period_param(),
+          to_period_param(),
+          filter_type_param(),
+          filter_value_param()
+        ],
     responses: [
       ok: {"CSV file of token holders.", "application/csv", nil},
       unprocessable_entity: JsonErrorResponse.response(),

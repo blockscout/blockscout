@@ -647,6 +647,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
+    test "accepts limit", %{conn: conn} do
+      request = get(conn, "/api/v2/tokens?limit=5")
+
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
     test "get token with ok reputation", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)

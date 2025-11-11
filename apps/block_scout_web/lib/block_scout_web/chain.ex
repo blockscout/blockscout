@@ -808,12 +808,12 @@ defmodule BlockScoutWeb.Chain do
          fiat_value: fiat_value
        }) do
     %{
-      "market_cap" => circulating_market_cap,
-      "holders_count" => holders_count,
-      "contract_address_hash" => contract_address_hash,
-      "name" => token_name,
-      "is_name_null" => is_nil(token_name),
-      "fiat_value" => fiat_value
+      market_cap: circulating_market_cap,
+      holders_count: holders_count,
+      contract_address_hash: contract_address_hash,
+      name: token_name,
+      is_name_null: is_nil(token_name),
+      fiat_value: fiat_value
     }
   end
 
@@ -877,7 +877,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%CurrentTokenBalance{address_hash: address_hash, value: value}) do
-    %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
+    %{address_hash: to_string(address_hash), value: to_string(Decimal.to_integer(value))}
   end
 
   defp paging_params(%CoinBalance{block_number: block_number}) do

@@ -1,5 +1,24 @@
 # Changelog
 
+## 9.2.2
+
+### 🐛 Bug Fixes
+
+- Fix next page params for tokens list API endpoint ([#13520](https://github.com/blockscout/blockscout/issues/13520))
+
+## 9.2.1
+
+### 🐛 Bug Fixes
+
+- Fix REST API token holders pagination ([#13500](https://github.com/blockscout/blockscout/issues/13500))
+- Add missing query binding to txlistinternal query ([#13479](https://github.com/blockscout/blockscout/issues/13479))
+- API v2 errors logging to the proper log file ([#13133](https://github.com/blockscout/blockscout/issues/13133))
+
+### ⚙️ Miscellaneous Tasks
+
+- Silence multiple cspell complaints ([#13424](https://github.com/blockscout/blockscout/issues/13424))
+
+
 ## 9.2.0
 
 ### 🚀 Features
@@ -17,10 +36,13 @@
 
 ### 🐛 Bug Fixes
 
+- Fix token holders CSV export ([#13485](https://github.com/blockscout/blockscout/pull/13485))
+- ERC-1155 value in advanced filters csv ([#13474](https://github.com/blockscout/blockscout/pull/13474))
+- Fix /api/v2/tokens endpoints: allow back limit param ([#13473](https://github.com/blockscout/blockscout/pull/13473))
 - Incorrect average block time for sub-second blocks ([#13469](https://github.com/blockscout/blockscout/issues/13469))
 - Remove transaction_has_multiple_internal_transactions filter ([#13453](https://github.com/blockscout/blockscout/pull/13453))
 - celo accounts transformer ([#13423](https://github.com/blockscout/blockscout/pull/13423))
-- Fix broken txn batch blocks API endpoint ([#13438](https://github.com/blockscout/blockscout/pull/13438))
+- Fix broken txn batch blocks API endpoint ([#13438](https://github.com/blockscout/blockscout/pull/13438), [#13483](https://github.com/blockscout/blockscout/pull/13483))
 - Set timeout: :infinity for DeleteZeroValueInternalTransactions ([#13434](https://github.com/blockscout/blockscout/pull/13434))
 - Fix DeleteZeroValueInternalTransactions state keys ([#13431](https://github.com/blockscout/blockscout/pull/13431))
 - dump block_hash to binary when querying celo epoch distributions ([#13410](https://github.com/blockscout/blockscout/pull/13410))
