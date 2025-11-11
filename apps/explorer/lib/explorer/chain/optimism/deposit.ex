@@ -85,7 +85,7 @@ defmodule Explorer.Chain.Optimism.Deposit do
           from(
             d in __MODULE__,
             inner_join: t in Transaction,
-            on: t.hash == d.l2_transaction_hash and t.status == 1,
+            on: t.hash == d.l2_transaction_hash and t.status == :ok,
             select: %{
               l1_block_number: d.l1_block_number,
               l1_block_timestamp: d.l1_block_timestamp,
