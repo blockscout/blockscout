@@ -20,9 +20,17 @@ defmodule BlockScoutWeb.API.RPC.CeloView do
       "endProcessingBlockHash" => epoch.end_processing_block && to_string(epoch.end_processing_block.hash),
       "endProcessingBlockNumber" => epoch.end_processing_block && to_string(epoch.end_processing_block.number),
       "carbonOffsettingTargetEpochRewards" =>
-        distribution.carbon_offsetting_transfer && distribution.carbon_offsetting_transfer.amount,
-      "communityTargetEpochRewards" => distribution.community_transfer && distribution.community_transfer.amount,
-      "reserveBolster" => distribution.reserve_bolster_transfer && distribution.reserve_bolster_transfer.amount,
+        distribution &&
+          distribution.carbon_offsetting_transfer &&
+          distribution.carbon_offsetting_transfer.amount,
+      "communityTargetEpochRewards" =>
+        distribution &&
+          distribution.community_transfer &&
+          distribution.community_transfer.amount,
+      "reserveBolster" =>
+        distribution &&
+          distribution.reserve_bolster_transfer &&
+          distribution.reserve_bolster_transfer.amount,
       "voterTargetEpochRewards" => aggregated_rewards.voter && aggregated_rewards.voter.total,
       "validatorTargetEpochRewards" => aggregated_rewards.validator && aggregated_rewards.validator.total
     }
