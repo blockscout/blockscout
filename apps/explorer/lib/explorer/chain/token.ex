@@ -67,6 +67,7 @@ defmodule Explorer.Chain.Token do
   * ERC-721
   * ERC-1155
   * ERC-404
+  * ERC-7984
 
   ## Token Specifications
 
@@ -75,6 +76,7 @@ defmodule Explorer.Chain.Token do
   * [ERC-777](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-777.md)
   * [ERC-1155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md)
   * [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
+  * [ERC-7984](https://github.com/ethereum/ERCs/blob/39197cde3e32d8fc7fde74c7d0ce5e67ad4de409/ERCS/erc-7984.md)
   """
 
   use Explorer.Schema

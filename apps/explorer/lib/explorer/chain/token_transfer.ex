@@ -160,6 +160,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @erc1155_batch_transfer_signature "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb"
   @erc404_erc20_transfer_event "0xe59fdd36d0d223c0c7d996db7ad796880f45e1936cb0bb7ac102e7082e031487"
   @erc404_erc721_transfer_event "0xe5f815dc84b8cecdfd4beedfc3f91ab5be7af100eca4e8fb11552b867995394f"
+  @erc7984_transfer_event "0x67500e8d0ed826d2194f514dd0d8124f35648ab6e3fb5e6ed867134cffe661e9"
 
   @transfer_function_signature "0xa9059cbb"
 
@@ -227,6 +228,8 @@ defmodule Explorer.Chain.TokenTransfer do
   def erc404_erc20_transfer_event, do: @erc404_erc20_transfer_event
 
   def erc404_erc721_transfer_event, do: @erc404_erc721_transfer_event
+
+  def erc7984_transfer_event, do: @erc7984_transfer_event
 
   @doc """
   ERC 20's transfer(address,uint256) function signature

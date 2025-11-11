@@ -162,7 +162,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       ctb in __MODULE__,
       where: ctb.token_contract_address_hash == ^token_contract_address_hash,
       where: ctb.address_hash != ^@burn_address_hash,
-      where: ctb.value > 0
+      where: ctb.value > 0 or ctb.token_type == "ERC-7984"
     )
   end
 
@@ -198,7 +198,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     from(
       ctb in __MODULE__,
       where: ctb.address_hash == ^address_hash,
-      where: ctb.value > 0,
+      where: ctb.value > 0 or ctb.token_type == "ERC-7984",
       left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: [token: t],
@@ -216,7 +216,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     from(
       ctb in __MODULE__,
       where: ctb.address_hash == ^address_hash,
-      where: ctb.value > 0,
+      where: ctb.value > 0 or ctb.token_type == "ERC-7984",
       left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: [token: t],
@@ -303,14 +303,14 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   @doc """
   Builds an `t:Ecto.Query.t/0` to fetch addresses that hold the token.
 
-  Token holders cannot be the burn address (#{@burn_address_hash}) and must have a non-zero value.
+  Token holders cannot be the burn address (#{@burn_address_hash}) and must have a non-zero value or be an ERC-7984 token.
   """
   def token_holders_query(token_contract_address_hash) do
     from(
       tb in __MODULE__,
       where: tb.token_contract_address_hash == ^token_contract_address_hash,
       where: tb.address_hash != ^@burn_address_hash,
-      where: tb.value > 0
+      where: tb.value > 0 or tb.token_type == "ERC-7984"
     )
   end
 

@@ -113,7 +113,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Type do
       "ERC-20",
       "ERC-721",
       "ERC-1155",
-      "ERC-404"
+      "ERC-404",
+      "ERC-7984"
     ]
   })
 end

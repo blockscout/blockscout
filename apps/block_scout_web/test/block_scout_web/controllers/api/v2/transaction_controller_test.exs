@@ -1082,7 +1082,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       # -- ------ --
 
       # two filters simultaneously
-      filter = %{"type" => "ERC-1155,ERC-20"}
+      filter = %{"type" => "ERC-1155,ERC-20,ERC-7984"}
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/token-transfers", filter)
       assert response = json_response(request, 200)
 
@@ -1095,6 +1095,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
+      # Note: filter now includes ERC-7984, but we didn't create any ERC-7984 transfers in this test
+      # So the pagination behavior remains the same as before
       assert Enum.count(response["items"]) == 50
       assert response["next_page_params"] != nil
       compare_item(Enum.at(erc_1155_tt, 50), Enum.at(response["items"], 0))

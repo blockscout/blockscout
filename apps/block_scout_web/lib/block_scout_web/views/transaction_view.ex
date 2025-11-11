@@ -224,6 +224,7 @@ defmodule BlockScoutWeb.TransactionView do
       :erc721 -> gettext("ERC-721 ")
       :erc1155 -> gettext("ERC-1155 ")
       :erc404 -> gettext("ERC-404 ")
+      :erc7984 -> gettext("ERC-7984 ")
       _ -> ""
     end
   end

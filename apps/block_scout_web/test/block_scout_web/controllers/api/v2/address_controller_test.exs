@@ -1822,8 +1822,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       check_paginated_response(response, response_2nd_page, erc_1155_tt)
       # -- ------ --
 
-      # two filters simultaneously
-      filter = %{"type" => "ERC-1155,ERC-20"}
+      # two filters simultaneously (includes ERC-7984 but no ERC-7984 transfers created in this test)
+      filter = %{"type" => "ERC-1155,ERC-20,ERC-7984"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
       assert response = json_response(request, 200)
 

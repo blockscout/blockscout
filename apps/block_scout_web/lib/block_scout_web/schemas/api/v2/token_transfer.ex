@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
     Total,
     TotalERC1155,
     TotalERC721,
+    TotalERC7984,
     TransactionHashCustomization
   }
 
@@ -43,6 +44,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
         anyOf: [
           TotalERC721,
           TotalERC1155,
+          TotalERC7984,
           Total
         ],
         nullable: true
@@ -113,6 +115,23 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TotalERC1155 do
 end
 
 defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.Total do
+  @moduledoc false
+  require OpenApiSpex
+
+  alias BlockScoutWeb.Schemas.API.V2.General
+
+  OpenApiSpex.schema(%{
+    type: :object,
+    properties: %{
+      value: General.IntegerStringNullable,
+      decimals: General.IntegerStringNullable
+    },
+    required: [:value, :decimals],
+    additionalProperties: false
+  })
+end
+
+defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TotalERC7984 do
   @moduledoc false
   require OpenApiSpex
 
