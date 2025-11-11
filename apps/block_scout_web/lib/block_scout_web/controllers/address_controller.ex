@@ -16,9 +16,9 @@ defmodule BlockScoutWeb.AddressController do
   }
 
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.{Address, Wei}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Cache.Counters.AddressesCount
-  alias Explorer.Chain.{Address, Wei}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Phoenix.View

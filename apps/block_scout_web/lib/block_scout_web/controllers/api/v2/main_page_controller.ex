@@ -2,8 +2,8 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  alias Explorer.{Chain, PagingOptions}
   alias BlockScoutWeb.API.V2.{BlockView, OptimismView, TransactionView}
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.Deposit
 

@@ -6,8 +6,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
-  alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Explorer.{Chain, Helper, PagingOptions}
+  alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Explorer.Migrator.BackfillMetadataURL
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand

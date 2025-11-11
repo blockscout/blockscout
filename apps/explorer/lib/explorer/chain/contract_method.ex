@@ -8,8 +8,8 @@ defmodule Explorer.Chain.ContractMethod do
   import Ecto.Query, only: [from: 2]
   use Explorer.Schema
 
-  alias Explorer.Chain.{Data, Hash, MethodIdentifier, SmartContract}
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Data, Hash, MethodIdentifier, SmartContract}
 
   typed_schema "contract_methods" do
     field(:identifier, MethodIdentifier)

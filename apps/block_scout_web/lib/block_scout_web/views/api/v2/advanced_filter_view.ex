@@ -1,10 +1,8 @@
 defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView}
-  alias Explorer.Chain.{Address, Data, MethodIdentifier, Transaction}
   alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView, TransactionView}
-  alias Explorer.Chain.{Address, AdvancedFilter, Data, Transaction}
+  alias Explorer.Chain.{Address, AdvancedFilter, Data, MethodIdentifier, Transaction}
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
 

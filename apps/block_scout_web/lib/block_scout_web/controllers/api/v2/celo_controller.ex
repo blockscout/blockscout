@@ -11,8 +11,8 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
-  alias Explorer.Chain.Hash
   alias Explorer.Chain.Celo.{ElectionReward, Epoch}
+  alias Explorer.Chain.Hash
   alias Explorer.PagingOptions
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)

@@ -8,8 +8,8 @@ defmodule Explorer.Chain.AdvancedFilter do
   import Ecto.Query
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.{Chain, Helper, PagingOptions}
+  alias Explorer.Helper, as: ExplorerHelper
 
   alias Explorer.Chain.{
     Address,

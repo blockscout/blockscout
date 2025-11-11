@@ -7,9 +7,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.VerificationStatus do
 
   import Ecto.Changeset
 
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Hash
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.{Chain, Repo}
 
   @typep status :: integer() | atom()
 

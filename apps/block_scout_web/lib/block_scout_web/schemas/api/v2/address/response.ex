@@ -112,8 +112,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+  alias BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations
   alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 

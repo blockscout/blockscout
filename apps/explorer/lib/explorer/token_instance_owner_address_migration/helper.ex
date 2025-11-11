@@ -8,8 +8,8 @@ defmodule Explorer.TokenInstanceOwnerAddressMigration.Helper do
     ]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.{SmartContract, TokenTransfer}
+  alias Explorer.Chain.Token.Instance
 
   require Logger
 

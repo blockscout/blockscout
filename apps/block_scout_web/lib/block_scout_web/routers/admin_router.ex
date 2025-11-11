@@ -5,8 +5,8 @@ defmodule BlockScoutWeb.Routers.AdminRouter do
 
   use BlockScoutWeb, :router
 
-  alias BlockScoutWeb.Plug.FetchUserFromSession
   alias BlockScoutWeb.Plug.Admin.{CheckOwnerRegistered, RequireAdminRole}
+  alias BlockScoutWeb.Plug.FetchUserFromSession
 
   pipeline :browser do
     plug(

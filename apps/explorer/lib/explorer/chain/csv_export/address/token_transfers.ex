@@ -11,10 +11,10 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
       where: 3
     ]
 
-  alias Explorer.{PagingOptions, Repo}
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.CsvExport.Helper
   alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.{PagingOptions, Repo}
 
   @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
           Enumerable.t()

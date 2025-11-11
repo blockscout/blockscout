@@ -10,8 +10,8 @@ defmodule Explorer.Migrator.CeloAccounts do
   import Ecto.Query
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Celo.Legacy.{Accounts, Events}
   alias Explorer.Chain.Celo.{Account, PendingAccountOperation}
+  alias Explorer.Chain.Celo.Legacy.{Accounts, Events}
   alias Explorer.Chain.Log
   alias Explorer.Migrator.FillingMigration
 
