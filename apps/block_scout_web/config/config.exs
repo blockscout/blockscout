@@ -53,30 +53,6 @@ config :ex_cldr,
   default_locale: "en",
   default_backend: BlockScoutWeb.Cldr
 
-config :logger, :block_scout_web,
-  # keep synced with `config/config.exs`
-  format: "$dateT$time $metadata[$level] $message\n",
-  metadata:
-    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-       block_number step count error_count shrunk import_id transaction_id)a,
-  metadata_filter: [application: :block_scout_web]
-
-config :logger, :api,
-  # keep synced with `config/config.exs`
-  format: "$dateT$time $metadata[$level] $message\n",
-  metadata:
-    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-       block_number step count error_count shrunk import_id transaction_id)a,
-  metadata_filter: [application: :api]
-
-config :logger, :api_v2,
-  # keep synced with `config/config.exs`
-  format: "$dateT$time $metadata[$level] $message\n",
-  metadata:
-    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-       block_number step count error_count shrunk import_id transaction_id)a,
-  metadata_filter: [application: :api_v2]
-
 config :prometheus, BlockScoutWeb.Prometheus.PublicExporter,
   path: "/public-metrics",
   format: :auto,

@@ -13,9 +13,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
 
 config :block_scout_web, BlockScoutWeb.Tracer, disabled?: false
 
-config :logger, :block_scout_web,
-  level: :warn,
-  path: Path.absname("logs/test/block_scout_web.log")
+config :logger, :block_scout_web, path: Path.absname("logs/test/block_scout_web.log")
 
 # Configure wallaby
 config :wallaby, screenshot_on_failure: true, driver: Wallaby.Chrome, js_errors: false

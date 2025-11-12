@@ -19,6 +19,4 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Tracer, disabled?: false
 
 config :tesla, adapter: Explorer.Mock.TeslaAdapter
 
-config :logger, :ethereum_jsonrpc,
-  level: :warn,
-  path: Path.absname("logs/test/ethereum_jsonrpc.log")
+config :logger, :ethereum_jsonrpc, path: Path.absname("logs/test/ethereum_jsonrpc.log")
