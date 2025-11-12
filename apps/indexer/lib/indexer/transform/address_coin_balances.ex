@@ -2,7 +2,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
   @moduledoc """
   Extracts `Explorer.Chain.Address.CoinBalance` params from other schema's params.
   """
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   alias Explorer.Chain.TokenTransfer
 
@@ -120,7 +120,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
     |> (&transactions_params_chain_type_fields_reducer(transaction_params, &1)).()
   end
 
-  if @chain_type == :celo do
+  if @chain_identity == {:optimism, :celo} do
     import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
     @burn_address_hash_string burn_address_hash_string()

@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.API.V2.TransactionController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  use Utils.CompileTimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -65,13 +68,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   tags(["transactions"])
 
-  case @chain_type do
-    :ethereum ->
+  case @chain_identity do
+    {:ethereum, nil} ->
       @chain_type_transaction_necessity_by_association %{
         :beacon_blob_transaction => :optional
       }
 
-    :celo ->
+    {:optimism, :celo} ->
       @chain_type_transaction_necessity_by_association %{
         [gas_token: reputation_association()] => :optional
       }

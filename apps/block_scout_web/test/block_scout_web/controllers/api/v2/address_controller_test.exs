@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
   use EthereumJSONRPC.Case, async: false
   use BlockScoutWeb.ChannelCase
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   alias ABI.{TypeDecoder, TypeEncoder}
   alias Explorer.{Chain, Repo, TestHelper}
@@ -2167,7 +2167,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       check_paginated_response(response, response_2nd_page, token_transfers_1 ++ token_transfers_2)
     end
 
-    if @chain_type == :celo do
+    if @chain_identity == {:optimism, :celo} do
       test "get token balance when a token transfer has no transaction", %{conn: conn} do
         address = insert(:address)
         block = insert(:block)

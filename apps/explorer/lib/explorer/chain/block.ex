@@ -5,7 +5,9 @@ defmodule Explorer.Chain.Block.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.Blocks
   """
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   alias Explorer.Chain.{
     Address,
@@ -75,22 +77,6 @@ defmodule Explorer.Chain.Block.Schema do
                             2
                           )
 
-                        :celo ->
-                          elem(
-                            quote do
-                              has_one(:celo_initiated_epoch, CeloEpoch,
-                                foreign_key: :start_processing_block_hash,
-                                references: :hash
-                              )
-
-                              has_one(:celo_terminated_epoch, CeloEpoch,
-                                foreign_key: :end_processing_block_hash,
-                                references: :hash
-                              )
-                            end,
-                            2
-                          )
-
                         :arbitrum ->
                           elem(
                             quote do
@@ -137,6 +123,27 @@ defmodule Explorer.Chain.Block.Schema do
                         _ ->
                           []
                       end)
+
+  @chain_identity_fields (case @chain_identity do
+                            {:optimism, :celo} ->
+                              elem(
+                                quote do
+                                  has_one(:celo_initiated_epoch, CeloEpoch,
+                                    foreign_key: :start_processing_block_hash,
+                                    references: :hash
+                                  )
+
+                                  has_one(:celo_terminated_epoch, CeloEpoch,
+                                    foreign_key: :end_processing_block_hash,
+                                    references: :hash
+                                  )
+                                end,
+                                2
+                              )
+
+                            _ ->
+                              []
+                          end)
 
   defmacro generate do
     quote do
@@ -186,6 +193,7 @@ defmodule Explorer.Chain.Block.Schema do
         has_one(:pending_operations, PendingBlockOperation, foreign_key: :block_hash, references: :hash)
 
         unquote_splicing(@chain_type_fields)
+        unquote_splicing(@chain_identity_fields)
       end
     end
   end

@@ -12,13 +12,13 @@ defmodule Indexer.Transform.Celo.L1Epochs do
   """
 
   use Utils.RuntimeEnvHelper,
-    chain_type: [:explorer, :chain_type]
+    chain_identity: [:explorer, :chain_identity]
 
   alias Explorer.Chain.Celo.Helper
 
   @spec parse([EthereumJSONRPC.Block.params()]) :: [map()]
   def parse(blocks) do
-    if chain_type() == :celo do
+    if chain_identity() == {:optimism, :celo} do
       do_parse(blocks)
     else
       []
