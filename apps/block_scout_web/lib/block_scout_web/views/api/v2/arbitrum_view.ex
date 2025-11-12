@@ -3,9 +3,9 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
 
   alias BlockScoutWeb.API.V2.ApiView
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
-  alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction}
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: SettlementReader
+  alias Explorer.Chain.{Block, Hash, Transaction, Wei}
 
   @doc """
     Function to render error\\text responses for GET requests

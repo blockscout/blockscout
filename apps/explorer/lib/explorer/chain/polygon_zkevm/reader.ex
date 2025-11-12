@@ -12,8 +12,8 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
 
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.PolygonZkevm.{BatchTransaction, Bridge, BridgeL1Token, LifecycleTransaction, TransactionBatch}
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Chain.PolygonZkevm.{BatchTransaction, Bridge, BridgeL1Token, LifecycleTransaction, TransactionBatch}
   alias Explorer.Prometheus.Instrumenter
   alias Indexer.Helper
 

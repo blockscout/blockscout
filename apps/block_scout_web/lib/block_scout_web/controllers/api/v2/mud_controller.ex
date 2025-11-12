@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 4,
+      next_page_params: 5,
       split_list_by_page: 1
     ]
 
@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
       |> Enum.into(%{}, &{&1.hash, &1})
 
     next_page_params =
-      next_page_params(next_page, worlds, conn.query_params, fn item ->
+      next_page_params(next_page, worlds, conn.query_params, false, fn item ->
         %{"world" => item}
       end)
 
@@ -86,7 +86,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
         |> split_list_by_page()
 
       next_page_params =
-        next_page_params(next_page, tables, conn.query_params, fn item ->
+        next_page_params(next_page, tables, conn.query_params, false, fn item ->
           %{"table_id" => item |> elem(0)}
         end)
 
@@ -159,7 +159,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
       blocks = Mud.preload_records_timestamps(records, @api_true)
 
       next_page_params =
-        next_page_params(next_page, records, conn.query_params, fn item ->
+        next_page_params(next_page, records, conn.query_params, false, fn item ->
           keys = [item.key_bytes, item.key0, item.key1] |> Enum.filter(&(!is_nil(&1)))
           ["key_bytes", "key0", "key1"] |> Enum.zip(keys) |> Enum.into(%{})
         end)

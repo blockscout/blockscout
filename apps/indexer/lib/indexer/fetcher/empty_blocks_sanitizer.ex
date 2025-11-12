@@ -14,9 +14,9 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
-  alias Explorer.Repo
   alias Explorer.Chain.{Block, Hash, PendingOperationsHelper, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Repo
 
   @update_timeout 60_000
 

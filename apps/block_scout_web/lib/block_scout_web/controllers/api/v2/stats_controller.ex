@@ -8,8 +8,8 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.Chain.MarketHistoryChartController
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Cache.GasPriceOracle
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime, BlocksCount, GasUsageSum, TransactionsCount}
+  alias Explorer.Chain.Cache.GasPriceOracle
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Plug.Conn

@@ -6,8 +6,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   alias BlockScoutWeb.API.V2.{Helper, InternalTransactionView, TokenTransferView, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, HttpClient}
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
+  alias Explorer.Helper, as: ExplorerHelper
 
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 

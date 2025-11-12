@@ -21,8 +21,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.Messages do
   import Ecto.Query, only: [from: 2, limit: 2, where: 3]
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Arbitrum.Message
   alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.Arbitrum.Message
 
   @api_true [api?: true]
 

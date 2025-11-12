@@ -32,9 +32,9 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   import Ecto.Query, only: [from: 2, where: 3, group_by: 3, select: 3]
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
-  alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, Address.Reputation, Celo.Epoch, Hash, Token, Wei}
+  alias Explorer.Chain.Cache.CeloCoreContracts
 
   @type type :: :voter | :validator | :group | :delegated_payment
   @types_enum ~w(voter validator group delegated_payment)a

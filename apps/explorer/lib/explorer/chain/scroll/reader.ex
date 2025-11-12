@@ -14,9 +14,9 @@ defmodule Explorer.Chain.Scroll.Reader do
 
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Scroll.{Batch, BatchBundle, Bridge, L1FeeParam}
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.Scroll.{Batch, BatchBundle, Bridge, L1FeeParam}
   alias Explorer.Prometheus.Instrumenter
 
   @doc """

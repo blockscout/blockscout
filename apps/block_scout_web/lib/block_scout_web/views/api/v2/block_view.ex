@@ -5,8 +5,8 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     chain_type: [:explorer, :chain_type],
     chain_identity: [:explorer, :chain_identity]
 
-  alias BlockScoutWeb.BlockView
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
+  alias BlockScoutWeb.BlockView
   alias Explorer.Chain.Block
 
   def render("message.json", assigns) do

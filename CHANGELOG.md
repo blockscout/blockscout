@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.2.2
+
+### 🐛 Bug Fixes
+
+- Fix next page params for tokens list API endpoint ([#13520](https://github.com/blockscout/blockscout/issues/13520))
+
 ## 9.2.1
 
 ### 🐛 Bug Fixes

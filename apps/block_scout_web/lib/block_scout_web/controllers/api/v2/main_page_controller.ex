@@ -4,8 +4,8 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   use Utils.CompileTimeEnvHelper,
     chain_identity: [:explorer, :chain_identity]
 
-  alias Explorer.{Chain, PagingOptions}
   alias BlockScoutWeb.API.V2.{BlockView, OptimismView, TransactionView}
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.Deposit
 

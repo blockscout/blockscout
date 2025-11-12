@@ -4,9 +4,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   """
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
-  alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Block, Hash, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Range
+  alias Explorer.Chain.Cache.ChainId
 
   alias Explorer.Chain.MultichainSearchDb.{
     BalancesExportQueue,

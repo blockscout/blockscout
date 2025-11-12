@@ -12,9 +12,9 @@ defmodule Explorer.Chain.Address.TokenBalance do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Address, Block, Hash, Token}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.{Address, Block, Hash, Token}
 
   @typedoc """
    *  `address` - The `t:Explorer.Chain.Address.t/0` that is the balance's owner.

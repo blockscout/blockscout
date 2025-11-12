@@ -737,11 +737,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
           "nonce" => message.nonce,
           "status" => message.status,
           "sender_address_hash" => message.sender_address_hash,
-          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `sender_address_hash` property
-          "sender" => message.sender_address_hash,
           "target_address_hash" => message.target_address_hash,
-          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `target_address_hash` property
-          "target" => message.target_address_hash,
           "payload" => message.payload
         },
         chain_info
