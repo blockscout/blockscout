@@ -232,7 +232,7 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-    Returns list of languages (as strings) supported by the database schema.
+  Returns list of languages (as strings) supported by the database schema.
   """
   @spec language_strings() :: [String.t()]
   def language_strings do
@@ -240,7 +240,7 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-    Returns list of languages as map(string to atom) supported by the database schema.
+  Returns list of languages as map(string to atom) supported by the database schema.
   """
   @spec language_string_to_atom() :: %{String.t() => atom()}
   def language_string_to_atom do
@@ -248,7 +248,7 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-    Returns burn address hash
+  Returns burn address hash
   """
   @spec burn_address_hash_string() :: EthereumJSONRPC.address()
   def burn_address_hash_string do
@@ -256,7 +256,7 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-    Returns dead address hash
+  Returns dead address hash
   """
   @spec dead_address_hash_string() :: EthereumJSONRPC.address()
   def dead_address_hash_string do

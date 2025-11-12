@@ -23,8 +23,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ChainTypeCustomizations do
             package_name: %Schema{type: :string, nullable: true},
             github_repository_metadata: %Schema{type: :object, nullable: true}
           },
-          required: [],
-          additionalProperties: false
+          required: []
         )
 
       :zksync ->
@@ -33,8 +32,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ChainTypeCustomizations do
           properties: %{
             zk_compiler_version: %Schema{type: :string, nullable: true}
           },
-          required: [],
-          additionalProperties: false
+          required: []
         )
 
       _ ->
