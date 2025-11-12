@@ -2102,9 +2102,14 @@ defmodule Explorer.Chain.Transaction do
     gas_used = gas_used || gas
     operator_fee_scalar = Map.get(transaction, :operator_fee_scalar) || Decimal.new(0)
     operator_fee_constant = Map.get(transaction, :operator_fee_constant) || Decimal.new(0)
-    block_timestamp = Map.get(transaction, :block_timestamp) || op_jovian_timestamp() || DateTime.from_unix!(0)
 
-    if DateTime.to_unix(block_timestamp) >= op_jovian_timestamp() do
+    jovian_timestamp = op_jovian_timestamp()
+
+    block_timestamp =
+      Map.get(transaction, :block_timestamp) || (jovian_timestamp && DateTime.from_unix!(jovian_timestamp)) ||
+        DateTime.from_unix!(0)
+
+    if DateTime.to_unix(block_timestamp) >= jovian_timestamp do
       # use the formula for Jovian
       gas_used
       |> Decimal.mult(operator_fee_scalar)
