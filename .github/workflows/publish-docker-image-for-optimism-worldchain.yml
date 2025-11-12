@@ -1,4 +1,4 @@
-name: Optimism Publish Docker image
+name: Optimism Worldchain Publish Docker image
 
 on:
   workflow_dispatch:
