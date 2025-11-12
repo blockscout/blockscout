@@ -2,7 +2,7 @@ defmodule Explorer.Chain.TokenTransferTest do
   use Explorer.DataCase
 
   use Utils.CompileTimeEnvHelper,
-    chain_type: [:explorer, :chain_type]
+    chain_identity: [:explorer, :chain_identity]
 
   import Explorer.Factory
 
@@ -354,7 +354,7 @@ defmodule Explorer.Chain.TokenTransferTest do
     end
   end
 
-  if @chain_type == :celo do
+  if @chain_identity == {:optimism, :celo} do
     test "returns block numbers for Celo epoch blocks with nil transaction_hash" do
       log =
         insert(:token_transfer_log,

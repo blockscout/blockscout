@@ -3,6 +3,10 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
   Imports any chain type specific tables.
   """
 
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
+
   alias Explorer.Chain.Import.{Runner, Stage}
 
   @behaviour Stage
@@ -55,14 +59,6 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.Scroll.BridgeOperations,
       Runner.Scroll.L1FeeParams
     ],
-    celo: [
-      Runner.Celo.PendingAccountOperations,
-      Runner.Celo.Accounts,
-      Runner.Celo.ValidatorGroupVotes,
-      Runner.Celo.Epochs,
-      Runner.Celo.ElectionRewards,
-      Runner.Celo.EpochRewards
-    ],
     zilliqa: [
       Runner.Zilliqa.AggregateQuorumCertificates,
       Runner.Zilliqa.NestedQuorumCertificates,
@@ -73,17 +69,37 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
     ]
   }
 
+  @runners_by_chain_identity %{
+    {:optimism, :celo} => [
+      Runner.Celo.PendingAccountOperations,
+      Runner.Celo.Accounts,
+      Runner.Celo.ValidatorGroupVotes,
+      Runner.Celo.Epochs,
+      Runner.Celo.ElectionRewards,
+      Runner.Celo.EpochRewards
+    ]
+  }
+
   @impl Stage
   def runners do
-    chain_type = Application.get_env(:explorer, :chain_type)
-    Map.get(@runners_by_chain_type, chain_type, [])
+    chain_type_runners = Map.get(@runners_by_chain_type, chain_type(), [])
+    chain_identity_runners = Map.get(@runners_by_chain_identity, chain_identity(), [])
+    chain_type_runners ++ chain_identity_runners
   end
 
   @impl Stage
   def all_runners do
-    @runners_by_chain_type
-    |> Map.values()
-    |> Enum.concat()
+    chain_type_runners =
+      @runners_by_chain_type
+      |> Map.values()
+      |> Enum.concat()
+
+    chain_identity_runners =
+      @runners_by_chain_identity
+      |> Map.values()
+      |> Enum.concat()
+
+    chain_type_runners ++ chain_identity_runners
   end
 
   @impl Stage

@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
   use Utils.CompileTimeEnvHelper,
     chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity],
     graphql_enabled: [:block_scout_web, [Api.GraphQL, :enabled]],
     graphql_max_complexity: [:block_scout_web, [Api.GraphQL, :max_complexity]],
     graphql_token_limit: [:block_scout_web, [Api.GraphQL, :token_limit]],
@@ -141,7 +142,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/csv-export", V2.ConfigController, :csv_export)
       get("/public-metrics", V2.ConfigController, :public_metrics)
 
-      if @chain_type == :celo do
+      if @chain_identity == {:optimism, :celo} do
         get("/celo", V2.ConfigController, :celo)
       end
     end
@@ -251,7 +252,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:address_hash_param/nft", V2.AddressController, :nft_list)
       get("/:address_hash_param/nft/collections", V2.AddressController, :nft_collections)
 
-      if @chain_type == :celo do
+      if @chain_identity == {:optimism, :celo} do
         get("/:address_hash_param/celo/election-rewards", V2.AddressController, :celo_election_rewards)
         get("/:address_hash_param/celo/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
       end
@@ -322,7 +323,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
-    if @chain_type == :celo do
+    if @chain_identity == {:optimism, :celo} do
       scope "/celo/epochs" do
         get("/", V2.CeloController, :epochs)
         get("/:number", V2.CeloController, :epoch)
@@ -573,7 +574,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
           "transaction" => {RPC.TransactionController, []}
         }
         |> then(fn options ->
-          if @chain_type == :celo do
+          if @chain_identity == {:optimism, :celo} do
             Map.put(options, "epoch", {BlockScoutWeb.API.RPC.CeloController, []})
           else
             options

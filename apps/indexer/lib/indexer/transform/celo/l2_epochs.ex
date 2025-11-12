@@ -12,7 +12,7 @@ defmodule Indexer.Transform.Celo.L2Epochs do
   """
 
   use Utils.RuntimeEnvHelper,
-    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity],
     epoch_manager_contract_address: [
       :explorer,
       [:celo, :epoch_manager_contract_address]
@@ -28,7 +28,7 @@ defmodule Indexer.Transform.Celo.L2Epochs do
 
   @spec parse([map()]) :: [map()]
   def parse(logs) do
-    if chain_type() == :celo do
+    if chain_identity() == {:optimism, :celo} do
       do_parse(logs)
     else
       []
