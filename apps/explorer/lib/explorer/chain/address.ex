@@ -447,7 +447,7 @@ defmodule Explorer.Chain.Address do
     do: address
 
   def maybe_preload_smart_contract_associations(%Address{contract_code: _} = address, associations, options),
-    do: Chain.select_repo(options).preload(address, associations)
+    do: Chain.select_repo(options).preload(address, associations, in_parallel: false)
 
   @doc """
   Counts all the addresses where the `fetched_coin_balance` is > 0.
