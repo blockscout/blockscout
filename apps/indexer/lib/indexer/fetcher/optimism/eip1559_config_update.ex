@@ -645,6 +645,12 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   #
   # First, the function tries to get the block from database. If the block is not indexed, it's got from RPC.
   #
+  # ## Parameters
+  # - `block_number`: The block number we need to get hash for.
+  # - `json_rpc_named_arguments`: Configuration for JSON RPC connection.
+  #
+  # ## Returns
+  # - The block hash in form of 0x-prefixed string. Returns 0x00..00 if the hash cannot be determined.
   @spec block_hash_by_number(non_neg_integer(), EthereumJSONRPC.json_rpc_named_arguments()) :: String.t()
   defp block_hash_by_number(block_number, json_rpc_named_arguments) do
     hash_from_db =

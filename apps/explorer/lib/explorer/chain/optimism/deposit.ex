@@ -104,6 +104,28 @@ defmodule Explorer.Chain.Optimism.Deposit do
     end
   end
 
+  @doc """
+    Returns total number of displayed deposits.
+
+    ## Parameters
+    - `options`: A keyword list of options:
+      - `:api?` - Whether the function is being called from an API context.
+
+    ## Returns
+    - A total number of deposits.
+  """
+  @spec count(list()) :: non_neg_integer()
+  def count(options \\ []) do
+    query =
+      from(
+        d in __MODULE__,
+        inner_join: t in Transaction,
+        on: t.hash == d.l2_transaction_hash and t.status == :ok
+      )
+
+    select_repo(options).aggregate(query, :count)
+  end
+
   defp page_deposits(query, %PagingOptions{key: nil}), do: query
 
   defp page_deposits(query, %PagingOptions{key: {block_number, l2_transaction_hash}}) do
