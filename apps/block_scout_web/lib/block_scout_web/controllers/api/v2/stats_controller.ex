@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.StatsController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   use Utils.CompileTimeEnvHelper,
     chain_type: [:explorer, :chain_type],
