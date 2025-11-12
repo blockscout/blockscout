@@ -937,8 +937,9 @@ defmodule Explorer.Chain.Address do
   @spec contract_creation_transaction_associations() :: [keyword()]
   def contract_creation_transaction_associations do
     [
-      contract_creation_transaction_association(),
-      contract_creation_internal_transaction_association()
+      # ,
+      contract_creation_transaction_association()
+      # contract_creation_internal_transaction_association()
     ]
   end
 
