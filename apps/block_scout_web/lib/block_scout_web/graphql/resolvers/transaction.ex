@@ -2,8 +2,8 @@ defmodule BlockScoutWeb.GraphQL.Resolvers.Transaction do
   @moduledoc false
 
   alias Absinthe.Relay.Connection
-  alias Explorer.{GraphQL, Repo}
   alias Explorer.Chain.{Address, TokenTransfer}
+  alias Explorer.{GraphQL, Repo}
 
   def get_by(_, %{hash: hash}, _),
     do: GraphQL.get_transaction_by_hash(hash)

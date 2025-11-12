@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Celo.Epoch do
 
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
-  alias Explorer.{Chain, QueryHelper, Repo, SortingHelper}
+  alias Explorer.{Chain, Hash, QueryHelper, Repo, SortingHelper}
 
   alias Explorer.Chain.{
     Block,
@@ -159,12 +159,12 @@ defmodule Explorer.Chain.Celo.Epoch do
           end_processing_block_hash: block_hash,
           distribution: %EpochReward{} = distribution
         } ->
-          block_hash = to_string(block_hash)
+          {:ok, binary} = Hash.Full.dump(block_hash)
 
           [
-            {block_hash, distribution.reserve_bolster_transfer_log_index},
-            {block_hash, distribution.community_transfer_log_index},
-            {block_hash, distribution.carbon_offsetting_transfer_log_index}
+            {binary, distribution.reserve_bolster_transfer_log_index},
+            {binary, distribution.community_transfer_log_index},
+            {binary, distribution.carbon_offsetting_transfer_log_index}
           ]
           |> Enum.reject(fn {_, log_index} -> is_nil(log_index) end)
 

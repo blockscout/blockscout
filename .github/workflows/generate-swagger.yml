@@ -17,7 +17,7 @@ on:
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
-  RELEASE_VERSION: 9.1.1
+  RELEASE_VERSION: 9.2.2
 
 jobs:
   matrix-builder:
@@ -35,10 +35,10 @@ jobs:
               "default",
               "arbitrum",
               "blackfort",
-              "celo",
               "ethereum",
               "filecoin",
               "optimism",
+              "optimism-celo",
               "polygon_zkevm",
               "rsk",
               "scroll",

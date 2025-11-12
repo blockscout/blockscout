@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Celo.AggregatedElectionReward do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Token, Wei}
+
   alias Explorer.Chain.Celo.{ElectionReward, Epoch}
 
   @required_attrs ~w(epoch_number type sum count)a

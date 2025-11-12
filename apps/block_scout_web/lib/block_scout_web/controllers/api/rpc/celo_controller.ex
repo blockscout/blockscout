@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.CeloController do
   use BlockScoutWeb, :controller
-  alias Explorer.Helper
+
   alias Explorer.Chain.Celo.{AggregatedElectionReward, Epoch}
+  alias Explorer.Helper
 
   @max_safe_epoch_number 32_768
 

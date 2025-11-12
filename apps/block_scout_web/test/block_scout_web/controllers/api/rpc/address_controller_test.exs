@@ -4,12 +4,11 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   import Mox
 
   alias BlockScoutWeb.API.RPC.AddressController
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo, TestHelper}
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.{Events.Subscriber, Transaction, Wei, Repo}
+  alias Explorer.Chain.{Events.Subscriber, Transaction, Wei}
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
-  alias Explorer.Repo
 
   setup :set_mox_global
   setup :verify_on_exit!
@@ -44,6 +43,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     setup do
       Subscriber.to(:addresses, :on_demand)
       Subscriber.to(:address_coin_balances, :on_demand)
+      Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
 
       %{params: %{"module" => "account", "action" => "listaccounts"}}
     end
@@ -134,78 +135,41 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
     test "with a stale balance", %{conn: conn, params: params} do
       now = Timex.now()
+      latest_block_number = 302
 
       mining_address =
         insert(:address,
           fetched_coin_balance: 0,
-          fetched_coin_balance_block_number: 103,
+          fetched_coin_balance_block_number: latest_block_number,
           inserted_at: Timex.shift(now, minutes: -10)
         )
 
       mining_address_hash = to_string(mining_address.hash)
-      # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
-      # back we'd need to go to get 24 hours in the past)
-      Enum.each(0..101, fn i ->
-        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(103 - i) * 25), miner: mining_address)
+
+      Enum.each(0..301, fn i ->
+        insert(:block,
+          number: i,
+          timestamp: Timex.shift(now, minutes: -25 * 60 - (latest_block_number - i)),
+          miner: mining_address
+        )
       end)
 
-      insert(:block, number: 102, timestamp: Timex.shift(now, hours: -25), miner: mining_address)
+      insert(:block, number: latest_block_number, timestamp: Timex.shift(now, hours: -25), miner: mining_address)
       AverageBlockTime.refresh()
 
       address =
         insert(:address,
           fetched_coin_balance: 100,
-          fetched_coin_balance_block_number: 101,
+          # more than 1 hour ago, so should be stale
+          fetched_coin_balance_block_number: 240,
           inserted_at: Timex.shift(now, minutes: -5)
         )
 
       address_hash = to_string(address.hash)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                     %{
-                                                       id: id,
-                                                       method: "eth_getBalance",
-                                                       params: [^address_hash, "0x66"]
-                                                     }
-                                                   ],
-                                                   _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
-      end)
+      latest_block_number_hex = "0x" <> Integer.to_string(latest_block_number, 16)
 
-      res = eth_block_number_fake_response("0x66")
-
-      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                     %{
-                                                       id: 0,
-                                                       method: "eth_getBlockByNumber",
-                                                       params: ["0x66", true]
-                                                     }
-                                                   ],
-                                                   _ ->
-        {:ok, [res]}
-      end)
-
-      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                     %{
-                                                       id: id,
-                                                       method: "eth_getBalance",
-                                                       params: [^mining_address_hash, "0x66"]
-                                                     }
-                                                   ],
-                                                   _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
-      end)
-
-      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                     %{
-                                                       id: 0,
-                                                       method: "eth_getBlockByNumber",
-                                                       params: ["0x66", true]
-                                                     }
-                                                   ],
-                                                   _ ->
-        {:ok, [res]}
-      end)
+      TestHelper.eth_get_balance_expectation(address_hash, latest_block_number_hex, "0x02")
 
       response =
         conn
@@ -238,7 +202,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       assert received_address.hash == address.hash
       assert received_address.fetched_coin_balance == expected_wei
-      assert received_address.fetched_coin_balance_block_number == 102
+      assert received_address.fetched_coin_balance_block_number == latest_block_number
     end
   end
 
@@ -5013,39 +4977,16 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     |> ExJsonSchema.Schema.resolve()
   end
 
-  defp eth_block_number_fake_response(block_quantity) do
-    %{
-      id: 0,
-      jsonrpc: "2.0",
-      result: %{
-        "author" => "0x0000000000000000000000000000000000000000",
-        "difficulty" => "0x20000",
-        "extraData" => "0x",
-        "gasLimit" => "0x663be0",
-        "gasUsed" => "0x0",
-        "hash" => "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
-        "logsBloom" =>
-          "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        "miner" => "0x0000000000000000000000000000000000000000",
-        "number" => block_quantity,
-        "parentHash" => "0x0000000000000000000000000000000000000000000000000000000000000000",
-        "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-        "sealFields" => [
-          "0x80",
-          "0xb8410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-        ],
-        "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-        "signature" =>
-          "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        "size" => "0x215",
-        "stateRoot" => "0xfad4af258fd11939fae0c6c6eec9d340b1caac0b0196fd9a1bc3f489c5bf00b3",
-        "step" => "0",
-        "timestamp" => "0x0",
-        "totalDifficulty" => "0x20000",
-        "transactions" => [],
-        "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-        "uncles" => []
-      }
-    }
+  defp eth_get_block_by_number_expectation(latest_block_number_hex, res) do
+    expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
+                                                   %{
+                                                     id: 0,
+                                                     method: "eth_getBlockByNumber",
+                                                     params: [^latest_block_number_hex, true]
+                                                   }
+                                                 ],
+                                                 _ ->
+      {:ok, [res]}
+    end)
   end
 end

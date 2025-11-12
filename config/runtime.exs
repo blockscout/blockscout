@@ -275,6 +275,7 @@ config :explorer,
   mode: app_mode,
   ecto_repos: ConfigHelper.repos(),
   chain_type: ConfigHelper.chain_type(),
+  chain_identity: ConfigHelper.chain_identity(),
   coin: coin,
   coin_name: System.get_env("COIN_NAME") || "ETH",
   allowed_solidity_evm_versions:
@@ -384,7 +385,8 @@ config :explorer, Explorer.Chain.Cache.Counters.TokenTransfersCount,
 config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime,
   enabled: true,
   period: :timer.minutes(10),
-  cache_period: ConfigHelper.parse_time_env_var("CACHE_AVERAGE_BLOCK_PERIOD", "30m")
+  cache_period: ConfigHelper.parse_time_env_var("CACHE_AVERAGE_BLOCK_PERIOD", "30m"),
+  num_of_blocks: ConfigHelper.parse_integer_env_var("CACHE_AVERAGE_BLOCK_TIME_WINDOW", 100)
 
 config :explorer, Explorer.Market.MarketHistoryCache,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_MARKET_HISTORY_PERIOD", "6h")
@@ -807,16 +809,18 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_CONCURRENCY", 1)
 
-config :explorer, Explorer.Migrator.CeloAccounts, enabled: ConfigHelper.chain_type() == :celo
-config :explorer, Explorer.Migrator.CeloAggregatedElectionRewards, enabled: ConfigHelper.chain_type() == :celo
+config :explorer, Explorer.Migrator.CeloAccounts, enabled: ConfigHelper.chain_identity() == {:optimism, :celo}
+
+config :explorer, Explorer.Migrator.CeloAggregatedElectionRewards,
+  enabled: ConfigHelper.chain_identity() == {:optimism, :celo}
 
 config :explorer, Explorer.Migrator.CeloL2Epochs,
   enabled:
-    ConfigHelper.chain_type() == :celo &&
+    ConfigHelper.chain_identity() == {:optimism, :celo} &&
       !is_nil(celo_l2_migration_block) &&
       !is_nil(celo_epoch_manager_contract_address)
 
-config :explorer, Explorer.Chain.Cache.CeloEpochs, enabled: ConfigHelper.chain_type() == :celo
+config :explorer, Explorer.Chain.Cache.CeloEpochs, enabled: ConfigHelper.chain_identity() == {:optimism, :celo}
 
 config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
@@ -1509,11 +1513,11 @@ config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes,
 
 config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor,
   enabled:
-    ConfigHelper.chain_type() == :celo and
+    ConfigHelper.chain_identity() == {:optimism, :celo} and
       not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CELO_VALIDATOR_GROUP_VOTES_FETCHER")
 
 celo_epoch_fetchers_enabled? =
-  ConfigHelper.chain_type() == :celo and
+  ConfigHelper.chain_identity() == {:optimism, :celo} and
     not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CELO_EPOCH_FETCHER")
 
 config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,
@@ -1525,8 +1529,8 @@ config :indexer, Indexer.Fetcher.Celo.Legacy.Account,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_CELO_ACCOUNTS_BATCH_SIZE", 100)
 
 config :indexer, Indexer.Fetcher.Celo.Legacy.Account.Supervisor,
-  enabled: ConfigHelper.chain_type() == :celo,
-  disabled?: not (ConfigHelper.chain_type() == :celo)
+  enabled: ConfigHelper.chain_identity() == {:optimism, :celo},
+  disabled?: not (ConfigHelper.chain_identity() == {:optimism, :celo})
 
 config :indexer, Indexer.Fetcher.Filecoin.BeryxAPI,
   base_url: ConfigHelper.safe_get_env("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3/mainnet"),
@@ -1592,14 +1596,13 @@ config :ex_aws, :s3,
 nmh_enabled? = ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_ENABLED")
 nmh_remote? = ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_REMOTE_DISPATCHER_NODE_MODE_ENABLED")
 nmh_worker? = ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_IS_WORKER")
-nodes_map = ConfigHelper.parse_json_with_atom_keys_env_var("NFT_MEDIA_HANDLER_NODES_MAP")
 
 config :nft_media_handler,
   enabled?: nmh_enabled?,
   tmp_dir: "./temp",
   remote?: nmh_remote?,
   worker?: nmh_worker?,
-  nodes_map: nodes_map,
+  r2_folder: System.get_env("NFT_MEDIA_HANDLER_BUCKET_FOLDER"),
   standalone_media_worker?: nmh_enabled? && nmh_remote? && nmh_worker?,
   worker_concurrency: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_WORKER_CONCURRENCY", 10),
   worker_batch_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_WORKER_BATCH_SIZE", 10),
@@ -1615,6 +1618,17 @@ config :nft_media_handler, Indexer.NFTMediaHandler.Backfiller,
 
 config :indexer, Indexer.Fetcher.Zilliqa.ScillaSmartContracts.Supervisor,
   disabled?: ConfigHelper.chain_type() != :zilliqa
+
+config :libcluster,
+  topologies: [
+    k8sDNS: [
+      strategy: Cluster.Strategy.Kubernetes.DNS,
+      config: [
+        service: System.get_env("K8S_SERVICE"),
+        application_name: "blockscout"
+      ]
+    ]
+  ]
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

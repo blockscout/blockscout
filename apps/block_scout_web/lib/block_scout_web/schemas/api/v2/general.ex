@@ -88,7 +88,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :from_period,
       in: :query,
-      schema: %Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern},
+      schema: %Schema{
+        anyOf: [%Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern}, NullString]
+      },
       required: true,
       description: "Start of the time period (ISO 8601 format) in CSV export"
     }
@@ -102,7 +104,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :to_period,
       in: :query,
-      schema: %Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern},
+      schema: %Schema{
+        anyOf: [%Schema{type: :string, nullable: false, pattern: @iso_date_or_datetime_pattern}, NullString]
+      },
       required: true,
       description: "End of the time period (ISO 8601 format) In CSV export"
     }
@@ -133,6 +137,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :string, nullable: true},
       required: false,
       description: "Search query filter"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a limit result items in the response.
+  """
+  @spec limit_param() :: Parameter.t()
+  def limit_param do
+    %Parameter{
+      name: :limit,
+      in: :query,
+      schema: %Schema{type: :string, nullable: true},
+      required: false,
+      description: "Limit result items in the response"
     }
   end
 
@@ -174,6 +192,32 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       in: :query,
       schema: AddressHash,
       required: false
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for an execution_node hash in the path.
+  """
+  @spec execution_node_hash_param() :: Parameter.t()
+  def execution_node_hash_param do
+    %Parameter{
+      name: :execution_node_hash_param,
+      in: :path,
+      schema: AddressHash,
+      required: true
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a transaction hash in the path.
+  """
+  @spec transaction_hash_param() :: Parameter.t()
+  def transaction_hash_param do
+    %Parameter{
+      name: :transaction_hash_param,
+      in: :path,
+      schema: FullHash,
+      required: true
     }
   end
 
@@ -224,12 +268,45 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for filtering transactions by type (validated or pending).
+  """
+  @spec transaction_filter_param() :: Parameter.t()
+  def transaction_filter_param do
+    %Parameter{
+      name: :filter,
+      in: :query,
+      schema: %Schema{type: :string, enum: ["validated", "pending"]},
+      required: false,
+      description: """
+      Filter by transaction type:
+      * validated - Only show validated transactions
+      * pending - Only show pending transactions
+      If omitted, default value "validated" is used.
+      """
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a request body used in the summary endpoint.
+  """
+  @spec just_request_body_param() :: Parameter.t()
+  def just_request_body_param do
+    %Parameter{
+      name: :just_request_body,
+      in: :query,
+      schema: %Schema{type: :boolean},
+      required: false,
+      description: "If true, returns only the request body in the summary endpoint"
+    }
+  end
+
+  @doc """
   Returns a parameter definition for a batch number in the path.
   """
   @spec batch_number_param() :: Parameter.t()
   def batch_number_param do
     %Parameter{
-      name: :batch_number,
+      name: :batch_number_param,
       in: :path,
       schema: %Schema{type: :integer, minimum: 0},
       required: true,
@@ -482,15 +559,29 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
-  Returns a parameter definition for API key used in rate limiting.
+  Returns a parameter definition for API key for sensitive endpoints in the query string.
+  """
+  @spec admin_api_key_param_query() :: Parameter.t()
+  def admin_api_key_param_query do
+    %Parameter{
+      name: :api_key,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "API key required for sensitive endpoints"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for API key header for sensitive endpoints.
   """
   @spec admin_api_key_param() :: Parameter.t()
   def admin_api_key_param do
     %Parameter{
-      name: :x_api_key,
+      name: :"x-api-key",
       in: :header,
       schema: %Schema{type: :string},
-      required: true,
+      required: false,
       description: "API key required for sensitive endpoints"
     }
   end
@@ -518,7 +609,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       in: :query,
       schema: %Schema{type: :string},
       required: false,
-      description: "API key for rate limiting",
+      description: "API key for rate limiting or for sensitive endpoints",
       name: :apikey
     }
   end
@@ -646,20 +737,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       description: "Address hash for paging",
       name: :hash
     },
-    # todo: consider refactoring to eliminate _2 suffix
-    "address_hash_2" => %Parameter{
-      in: :query,
-      schema: AddressHash,
-      required: false,
-      description: "Address hash for paging",
-      name: :address_hash
-    },
     "address_hash_param" => %Parameter{
       in: :query,
       schema: AddressHash,
       required: false,
       description: "Address hash for paging",
-      name: :hash
+      name: :address_hash
     },
     "contract_address_hash" => %Parameter{
       in: :query,
@@ -837,12 +920,39 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       description: "Type for paging",
       name: :type
     },
+    "filter" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Filter for paging",
+      name: :filter
+    },
     "deposit_index" => %Parameter{
       in: :query,
       schema: %Schema{type: :integer, minimum: 0, maximum: 9_223_372_036_854_775_807},
       required: false,
       description: "Deposit index for paging",
       name: :index
+    }
+  }
+
+  @state_changes_paging_params %{
+    # "items_count" is used for pagination for the list of transactions's state changes and it can be higher than 50.
+    # Thus, we extracted it to a separate map.
+    "items_count" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 1},
+      required: false,
+      description: "Cumulative number of items to skip for keyset-based pagination of state changes",
+      name: :items_count
+    },
+    # todo: remove in the future as this param is unused in the pagination of state changes
+    "state_changes" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :string, nullable: true},
+      required: false,
+      description: "State changes for paging",
+      name: :state_changes
     }
   }
 
@@ -853,6 +963,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   def define_paging_params(fields) do
     Enum.map(fields, fn field ->
       Map.get(@paging_params, field) || raise "Unknown paging param: #{field}"
+    end)
+  end
+
+  @doc """
+  Returns a list of pagination parameters for `/api/v2/transactions/:transaction_hash_param/state-changes` API endpoint
+  """
+  @spec define_state_changes_paging_params([String.t()]) :: [Parameter.t()]
+  def define_state_changes_paging_params(fields) do
+    Enum.map(fields, fn field ->
+      Map.get(@state_changes_paging_params, field) || raise "Unknown paging param: #{field}"
     end)
   end
 

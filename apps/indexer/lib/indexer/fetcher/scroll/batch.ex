@@ -24,10 +24,10 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Ecto.Multi
   alias EthereumJSONRPC.Logs
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.Range, as: BlockRange
   alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Chain.Scroll.{Batch, BatchBundle, Reader}
-  alias Explorer.{Chain, Repo}
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Fetcher.Scroll.Helper, as: ScrollHelper
   alias Indexer.Helper

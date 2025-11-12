@@ -31,10 +31,10 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.Settlement do
     L1Batch
   }
 
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Arbitrum.Reader.Common
   alias Explorer.Chain.Block, as: FullBlock
   alias Explorer.Chain.Cache.BackgroundMigrations, as: MigrationStatuses
-  alias Explorer.{Chain, PagingOptions}
 
   @api_true [api?: true]
 

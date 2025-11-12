@@ -31,9 +31,9 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   import Explorer.PagingOptions, only: [default_paging_options: 0]
   import Ecto.Query, only: [from: 2, where: 3]
 
-  alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, Address.Reputation, Celo.Epoch, Hash, Token, Wei}
+  alias Explorer.Chain.Cache.CeloCoreContracts
 
   @type type :: :voter | :validator | :group | :delegated_payment
   @types_enum ~w(voter validator group delegated_payment)a

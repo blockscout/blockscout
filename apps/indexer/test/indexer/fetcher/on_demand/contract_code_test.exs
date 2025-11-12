@@ -41,18 +41,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
 
       contract_code = "0x6080"
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_getCode",
-                                  params: [^string_address_hash, "latest"]
-                                }
-                              ],
-                              _ ->
-        {:ok, [%{id: id, result: contract_code}]}
-      end)
+      eth_get_code_expectation(string_address_hash, contract_code)
 
       assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
@@ -88,18 +77,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       address_hash = address.hash
       string_address_hash = to_string(address.hash)
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_getCode",
-                                  params: [^string_address_hash, "latest"]
-                                }
-                              ],
-                              _ ->
-        {:ok, [%{id: id, result: "0x"}]}
-      end)
+      eth_get_code_expectation(string_address_hash, "0x")
 
       assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
@@ -123,22 +101,11 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       address_hash = address.hash
       string_address_hash = to_string(address.hash)
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_getCode",
-                                  params: [^string_address_hash, "latest"]
-                                }
-                              ],
-                              _ ->
-        {:ok, [%{id: id, result: "0x"}]}
-      end)
+      eth_get_code_expectation(string_address_hash, "0x")
 
       assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
-      :timer.sleep(100)
+      :timer.sleep(200)
 
       address = assert(Repo.get(Address, address_hash))
       assert is_nil(address.contract_code)
@@ -155,7 +122,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
 
       assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
-      :timer.sleep(50)
+      :timer.sleep(200)
 
       address = assert(Repo.get(Address, address_hash))
       assert is_nil(address.contract_code)
@@ -167,22 +134,11 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       # trying 3d time after update threshold reached: update is expected.
       :timer.sleep(1000)
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_getCode",
-                                  params: [^string_address_hash, "latest"]
-                                }
-                              ],
-                              _ ->
-        {:ok, [%{id: id, result: contract_code}]}
-      end)
+      eth_get_code_expectation(string_address_hash, contract_code)
 
       assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
-      :timer.sleep(50)
+      :timer.sleep(200)
 
       address = assert(Repo.get(Address, address_hash))
       refute is_nil(address.contract_code)
@@ -219,25 +175,14 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
 
       test_cases
       |> Enum.map(fn {code, attempts_number} ->
-        EthereumJSONRPC.Mox
-        |> expect(:json_rpc, fn [
-                                  %{
-                                    id: id,
-                                    jsonrpc: "2.0",
-                                    method: "eth_getCode",
-                                    params: [^string_address_hash, "latest"]
-                                  }
-                                ],
-                                _ ->
-          {:ok, [%{id: id, result: code}]}
-        end)
+        eth_get_code_expectation(string_address_hash, code)
 
         code = code |> Data.cast() |> elem(1)
 
         address = assert(Repo.get(Address, address_hash))
         assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
-        :timer.sleep(100)
+        :timer.sleep(300)
 
         address = assert(Repo.get(Address, address_hash))
 
@@ -319,18 +264,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
 
       contract_code_hex = "0x6080"
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_getCode",
-                                  params: [^string_address_hash, "latest"]
-                                }
-                              ],
-                              _ ->
-        {:ok, [%{id: id, result: contract_code_hex}]}
-      end)
+      eth_get_code_expectation(string_address_hash, contract_code_hex)
 
       code = Data.cast(contract_code_hex) |> elem(1)
 
@@ -351,18 +285,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       address_hash = address.hash
       string_address_hash = to_string(address.hash)
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_getCode",
-                                  params: [^string_address_hash, "latest"]
-                                }
-                              ],
-                              _ ->
-        {:ok, [%{id: id, result: "0x"}]}
-      end)
+      eth_get_code_expectation(string_address_hash, "0x")
 
       assert :error = ContractCodeOnDemand.get_or_fetch_bytecode(address_hash)
 
@@ -377,5 +300,20 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       {:ok, random_hash} = Hash.Address.cast(<<1::160>>)
       assert :error = ContractCodeOnDemand.get_or_fetch_bytecode(random_hash)
     end
+  end
+
+  defp eth_get_code_expectation(string_address_hash, contract_code) do
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn [
+                              %{
+                                id: id,
+                                jsonrpc: "2.0",
+                                method: "eth_getCode",
+                                params: [^string_address_hash, "latest"]
+                              }
+                            ],
+                            _ ->
+      {:ok, [%{id: id, result: contract_code}]}
+    end)
   end
 end

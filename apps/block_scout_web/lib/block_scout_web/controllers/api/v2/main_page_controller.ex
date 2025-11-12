@@ -1,19 +1,20 @@
 defmodule BlockScoutWeb.API.V2.MainPageController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  alias Explorer.{Chain, PagingOptions}
+  use Utils.CompileTimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   alias BlockScoutWeb.API.V2.{BlockView, OptimismView, TransactionView}
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.Deposit
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
-  case @chain_type do
-    :celo ->
+  case @chain_identity do
+    {:optimism, :celo} ->
       @chain_type_transaction_necessity_by_association %{
         [gas_token: reputation_association()] => :optional
       }
@@ -51,7 +52,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     conn
     |> put_status(200)
     |> put_view(BlockView)
-    |> render(:blocks, %{blocks: blocks |> maybe_preload_ens() |> maybe_preload_metadata()})
+    |> render(:blocks, %{blocks: blocks |> maybe_preload_metadata()})
   end
 
   def optimism_deposits(conn, _params) do
@@ -73,7 +74,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     conn
     |> put_status(200)
     |> put_view(TransactionView)
-    |> render(:transactions, %{transactions: recent_transactions |> maybe_preload_ens() |> maybe_preload_metadata()})
+    |> render(:transactions, %{transactions: recent_transactions |> maybe_preload_metadata()})
   end
 
   def watchlist_transactions(conn, _params) do
@@ -84,7 +85,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:transactions_watchlist, %{
-        transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+        transactions: transactions |> maybe_preload_metadata(),
         watchlist_names: watchlist_names
       })
     end

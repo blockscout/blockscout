@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   require Ecto.Query
 
   import Ecto.Query, only: [dynamic: 1, dynamic: 2, from: 2, where: 3, subquery: 1]
-  import Explorer.Chain.Import.Runner.Helper, only: [chain_type_dependent_import: 3]
+  import Explorer.Chain.Import.Runner.Helper, only: [chain_identity_dependent_import: 3]
   import Explorer.QueryHelper, only: [select_ctid: 1, join_on_ctid: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
@@ -28,6 +28,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   }
 
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
@@ -242,8 +243,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :blocks_update_token_holder_counts
       )
     end)
-    |> chain_type_dependent_import(
-      :celo,
+    |> chain_identity_dependent_import(
+      {:optimism, :celo},
       &Multi.run(
         &1,
         :celo_delete_epoch_rewards,
@@ -561,8 +562,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       removed_consensus_blocks
       |> Enum.map(fn {number, _hash} -> number end)
 
-    if not Enum.empty?(removed_consensus_block_numbers) do
-      GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, removed_consensus_block_numbers |> Enum.min()})
+    maximum_block_number = BlockNumber.get_max()
+
+    minimum_recent_block_number =
+      removed_consensus_block_numbers
+      |> Enum.filter(fn n -> n >= maximum_block_number - 64 end)
+      |> Enum.min(fn -> nil end)
+
+    if minimum_recent_block_number do
+      GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, minimum_recent_block_number})
     end
 
     repo.update_all(
@@ -858,9 +866,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   defp save_internal_transactions_for_delete(repo, non_consensus_blocks, %{timeout: timeout, timestamps: timestamps}) do
     insert_params =
-      Enum.map(non_consensus_blocks, fn {number, _hash} ->
+      non_consensus_blocks
+      |> Enum.map(fn {number, _hash} ->
         Map.put(timestamps, :block_number, number)
       end)
+      |> Enum.uniq()
 
     {_total, result} =
       repo.insert_all(

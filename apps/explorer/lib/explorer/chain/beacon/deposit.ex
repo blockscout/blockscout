@@ -5,8 +5,8 @@ defmodule Explorer.Chain.Beacon.Deposit do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Block, Data, Hash, Log, Transaction, Wei}
   alias Explorer.{Chain, Repo, SortingHelper}
+  alias Explorer.Chain.{Address, Block, Data, Hash, Log, Transaction, Wei}
 
   @deposit_event_signature "0x649BBC62D0E31342AFEA4E5CD82D4049E7E1EE912FC0889AA790803BE39038C5"
 

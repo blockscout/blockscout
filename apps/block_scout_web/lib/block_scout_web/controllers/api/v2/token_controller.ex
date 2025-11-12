@@ -6,12 +6,13 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
-  alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Explorer.{Chain, Helper, PagingOptions}
+  alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Explorer.Migrator.BackfillMetadataURL
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
+  alias Plug.Conn
 
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
@@ -188,20 +189,20 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :holders,
-    summary: "List holders for a specific token instance",
-    description: "Retrieves holders for a specific token instance, with optional filtering and pagination.",
+    summary: "List holders for a specific token",
+    description: "Retrieves holders for a specific token, with optional filtering and pagination.",
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["address_hash_2", "value", "items_count"]),
+        define_paging_params(["address_hash_param", "value", "items_count"]),
     responses: [
       ok:
         {"List of token holders.", "application/json",
          paginated_response(
            items: Schemas.Token.Holder,
            next_page_params_example: %{
-             "address_hash_2" => "0x48bb9b14483e43c7726df702b271d410e7460656",
-             "value" => 200_000_000_000_000,
+             "address_hash" => "0x48bb9b14483e43c7726df702b271d410e7460656",
+             "value" => "200000000000000",
              "items_count" => 50
            },
            title_prefix: "TokenHolders"
@@ -445,17 +446,17 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     parameters:
       base_params() ++
         [address_hash_param(), token_id_param()] ++
-        define_paging_params(["address_hash_2", "items_count", "token_id", "value"]),
+        define_paging_params(["address_hash_param", "items_count", "token_id", "value"]),
     responses: [
       ok:
         {"List of token holders for the instance.", "application/json",
          paginated_response(
            items: Schemas.Token.Holder,
            next_page_params_example: %{
-             "address_hash_2" => "0x1d2c163fbda9486c3a384b6fa5e34c96fe948e9a",
+             "address_hash" => "0x1d2c163fbda9486c3a384b6fa5e34c96fe948e9a",
              "items_count" => 50,
              "token_id" => "0",
-             "value" => 4_217_417_051_704_137_590_935
+             "value" => "4217417051704137590935"
            },
            title_prefix: "TokenInstanceHolders"
          )},
@@ -535,6 +536,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         [
           token_type_param(),
           q_param(),
+          limit_param(),
           sort_param(["fiat_value", "holders_count", "circulating_market_cap"]),
           order_param()
         ] ++
@@ -694,7 +696,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   operation :trigger_nft_collection_metadata_refetch,
     summary: "Trigger metadata refetch for a token's NFT collection",
     description: "Triggers a metadata refetch for a token's NFT collection (by token address). Requires API key.",
-    parameters: [address_hash_param() | base_params()],
+    parameters: base_params() ++ [address_hash_param(), admin_api_key_param(), admin_api_key_param_query()],
     responses: [
       ok:
         {"NFT collection metadata refetch triggered.", "application/json",
@@ -713,10 +715,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
            {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
          {:api_key, ^api_key} <-
-           {:api_key,
-            conn.req_headers
-            |> List.keyfind("x-api-key", 0)
-            |> (&if(is_tuple(&1), do: elem(&1, 1), else: nil)).()},
+           {:api_key, get_api_key(conn)},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
@@ -726,6 +725,16 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> json(%{message: "OK"})
+    end
+  end
+
+  defp get_api_key(conn) do
+    case Conn.get_req_header(conn, "x-api-key") do
+      [api_key] ->
+        api_key
+
+      _ ->
+        Map.get(conn.query_params, "api_key")
     end
   end
 

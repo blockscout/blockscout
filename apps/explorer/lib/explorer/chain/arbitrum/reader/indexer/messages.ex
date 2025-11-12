@@ -18,9 +18,9 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
     Message
   }
 
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block, as: FullBlock
   alias Explorer.Chain.{Hash, Log, Transaction}
-  alias Explorer.{Chain, Repo}
 
   # https://github.com/OffchainLabs/go-ethereum/blob/dff302de66598c36b964b971f72d35a95148e650/core/types/transaction.go#L44C2-L50
   @message_to_l2_eth_deposit 100

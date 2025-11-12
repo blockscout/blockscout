@@ -10,10 +10,10 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView, TransactionView}
   alias Explorer.Chain
-  alias Explorer.Chain.Cache.{CeloCoreContracts, CeloEpochs}
-  alias Explorer.Chain.Celo.Helper, as: CeloHelper
-  alias Explorer.Chain.Celo.{Account, Epoch, EpochReward}
   alias Explorer.Chain.{Address, Address.Reputation, Block, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.Cache.{CeloCoreContracts, CeloEpochs}
+  alias Explorer.Chain.Celo.{Account, Epoch, EpochReward}
+  alias Explorer.Chain.Celo.Helper, as: CeloHelper
 
   @address_params [
     necessity_by_association: %{

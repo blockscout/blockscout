@@ -5,9 +5,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   import Explorer.SmartContract.Reader, only: [zip_tuple_values_with_types: 2]
 
   alias ABI.FunctionSelector
+  alias BlockScoutWeb.{AddressContractView, SmartContractView}
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias BlockScoutWeb.API.V2.TransactionView
-  alias BlockScoutWeb.{AddressContractView, SmartContractView}
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}

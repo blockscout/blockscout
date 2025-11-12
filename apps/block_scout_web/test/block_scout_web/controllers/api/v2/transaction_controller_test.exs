@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
@@ -9,8 +12,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.{Repo, TestHelper}
-
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Logger
 
@@ -338,7 +339,15 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     test "return 422 on invalid transaction hash", %{conn: conn} do
       request = get(conn, "/api/v2/transactions/0x")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/transaction_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "return existing transaction", %{conn: conn} do
@@ -545,7 +554,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
         request = get(conn, "/api/v2/transactions/#{transaction.hash}")
 
-        assert %{"op_interop" => %{"payload" => "0x30787849009c24f10a91a327a9f2ed94ebc49ee9"}} =
+        assert %{"op_interop_messages" => [%{"payload" => "0x30787849009c24f10a91a327a9f2ed94ebc49ee9"}]} =
                  json_response(request, 200)
       end
     end
@@ -562,7 +571,15 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     test "return 422 on invalid transaction hash", %{conn: conn} do
       request = get(conn, "/api/v2/transactions/0x/internal-transactions")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/transaction_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "return empty list", %{conn: conn} do
@@ -683,7 +700,15 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     test "return 422 on invalid transaction hash", %{conn: conn} do
       request = get(conn, "/api/v2/transactions/0x/logs")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/transaction_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "return empty list", %{conn: conn} do
@@ -907,7 +932,15 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     test "return 422 on invalid transaction hash", %{conn: conn} do
       request = get(conn, "/api/v2/transactions/0x/token-transfers")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/transaction_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "return empty list", %{conn: conn} do
@@ -1350,7 +1383,27 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     test "return 422 on invalid transaction hash", %{conn: conn} do
       request = get(conn, "/api/v2/transactions/0x/state-changes")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/transaction_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
+    end
+
+    test "accepts pagination params", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      request =
+        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes?items_count=50&state_changes=null")
+
+      assert %{} = json_response(request, 200)
     end
 
     test "return existing transaction", %{conn: conn} do
@@ -1731,7 +1784,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  if Application.compile_env(:explorer, :chain_type) == :celo do
+  if @chain_identity == {:optimism, :celo} do
     describe "celo gas token" do
       test "when gas is paid with token and token is present in db", %{conn: conn} do
         token = insert(:token)
@@ -1918,17 +1971,22 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         |> with_block(status: :ok)
 
       raw_trace = %{
+        "action" => %{
+          "callType" => "call",
+          "from" => "0xa931c862e662134b85e4dc4baf5c70cc9ba74db4",
+          "to" => "0x1469b17ebf82fedf56f04109e5207bdc4554288c",
+          "gas" => "0x8600",
+          "input" => "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
+          "value" => "0x174876e800"
+        },
+        "result" => %{
+          "gasUsed" => "0x7d37",
+          "output" => "0x"
+        },
+        "subtraces" => 0,
         "traceAddress" => [],
-        "type" => "call",
-        "callType" => "call",
-        "from" => "0xa931c862e662134b85e4dc4baf5c70cc9ba74db4",
-        "to" => "0x1469b17ebf82fedf56f04109e5207bdc4554288c",
-        "gas" => "0x8600",
-        "gasUsed" => "0x7d37",
-        "input" => "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
-        "output" => "0x",
-        "value" => "0x174876e800",
-        "transactionHash" => to_string(transaction.hash)
+        "transactionHash" => to_string(transaction.hash),
+        "type" => "call"
       }
 
       expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ -> {:ok, [raw_trace]} end)
@@ -2267,12 +2325,17 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         service_url: "http://localhost:4000"
       )
 
+      original_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      Application.put_env(:block_scout_web, :chain_id, 1)
+
       on_exit(fn ->
         Application.put_env(
           :block_scout_web,
           BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
           original_config
         )
+
+        Application.put_env(:block_scout_web, :chain_id, original_chain_id)
       end)
     end
 
@@ -2286,7 +2349,15 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     test "return 422 on invalid transaction hash", %{conn: conn} do
       request = get(conn, "/api/v2/transactions/0x/summary?just_request_body=true")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/transaction_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "return 403 when transaction interpretation service is disabled", %{conn: conn} do
@@ -2998,7 +3069,14 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       test "returns 422 for invalid transaction hash", %{conn: conn} do
         request = get(conn, "/api/v2/transactions/invalid_hash/external-transactions")
         assert response = json_response(request, 422)
-        assert response["message"] == "Invalid parameter(s)"
+
+        assert response["errors"] == [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/transaction_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
       end
     end
   end

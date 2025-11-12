@@ -2,6 +2,7 @@ defmodule Explorer.TestHelper do
   @moduledoc false
 
   import Mox
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias ABI.TypeEncoder
   alias Explorer.Chain.Hash
@@ -309,5 +310,67 @@ defmodule Explorer.TestHelper do
   def topic(topic_hex_string) do
     {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
     topic
+  end
+
+  defp eth_block_number_fake_response(block_quantity, miner \\ "0x0000000000000000000000000000000000000000", id \\ 0) do
+    %{
+      id: id,
+      jsonrpc: "2.0",
+      result: %{
+        "author" => miner,
+        "difficulty" => "0x20000",
+        "extraData" => "0x",
+        "gasLimit" => "0x663be0",
+        "gasUsed" => "0x0",
+        "hash" => "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
+        "logsBloom" =>
+          "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "miner" => miner,
+        "number" => block_quantity,
+        "parentHash" => "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+        "sealFields" => [
+          "0x80",
+          "0xb8410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        ],
+        "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        "signature" =>
+          "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "size" => "0x215",
+        "stateRoot" => "0xfad4af258fd11939fae0c6c6eec9d340b1caac0b0196fd9a1bc3f489c5bf00b3",
+        "step" => "0",
+        "timestamp" => "0x0",
+        "totalDifficulty" => "0x20000",
+        "transactions" => [],
+        "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+        "uncles" => []
+      }
+    }
+  end
+
+  def eth_get_block_by_number_expectation(block_number) do
+    block_quantity = integer_to_quantity(block_number)
+    res = eth_block_number_fake_response(block_quantity)
+
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn [
+                              %{id: 0, jsonrpc: "2.0", method: "eth_getBlockByNumber", params: [^block_quantity, true]}
+                            ],
+                            _opts ->
+      {:ok, [res]}
+    end)
+  end
+
+  def eth_get_balance_expectation(address_hash, latest_block_number_hex, balance) do
+    expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
+                                                   %{
+                                                     id: id,
+                                                     method: "eth_getBalance",
+                                                     params: [^address_hash, ^latest_block_number_hex]
+                                                   }
+                                                 ],
+                                                 _options ->
+      {:ok, [%{id: id, jsonrpc: "2.0", result: balance}]}
+    end)
   end
 end

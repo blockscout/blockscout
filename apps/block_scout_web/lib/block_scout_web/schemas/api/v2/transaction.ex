@@ -6,6 +6,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
+
   @zksync_schema %Schema{
     type: :object,
     nullable: false,
@@ -149,7 +153,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   @spec chain_type_fields(map()) :: map()
   # credo:disable-for-next-line
   def chain_type_fields(schema) do
-    case Application.get_env(:explorer, :chain_type) do
+    chain_type()
+    |> case do
       :polygon_zkevm ->
         schema
         |> Helper.extend_schema(
@@ -184,7 +189,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
               items: @optimism_withdrawal_schema,
               nullable: false
             },
-            op_interop: %Schema{
+            op_interop_messages: %Schema{
               type: :object,
               nullable: false,
               properties: %{
@@ -270,21 +275,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
           }
         )
 
-      :celo ->
-        schema
-        |> Helper.extend_schema(
-          properties: %{
-            celo: %Schema{
-              type: :object,
-              nullable: false,
-              properties: %{gas_token: %Schema{allOf: [Token], nullable: true}},
-              required: [:gas_token],
-              additionalProperties: false
-            }
-          },
-          required: [:celo]
-        )
-
       :zilliqa ->
         schema
         |> Helper.extend_schema(
@@ -300,6 +290,29 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
             }
           },
           required: [:zilliqa]
+        )
+
+      _ ->
+        schema
+    end
+    |> chain_identity_fields()
+  end
+
+  defp chain_identity_fields(schema) do
+    case chain_identity() do
+      {:optimism, :celo} ->
+        schema
+        |> Helper.extend_schema(
+          properties: %{
+            celo: %Schema{
+              type: :object,
+              nullable: false,
+              properties: %{gas_token: %Schema{allOf: [Token], nullable: true}},
+              required: [:gas_token],
+              additionalProperties: false
+            }
+          },
+          required: [:celo]
         )
 
       _ ->

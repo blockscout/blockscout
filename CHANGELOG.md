@@ -1,5 +1,116 @@
 # Changelog
 
+## 9.2.2
+
+### 🐛 Bug Fixes
+
+- Fix next page params for tokens list API endpoint ([#13520](https://github.com/blockscout/blockscout/issues/13520))
+
+## 9.2.1
+
+### 🐛 Bug Fixes
+
+- Fix REST API token holders pagination ([#13500](https://github.com/blockscout/blockscout/issues/13500))
+- Add missing query binding to txlistinternal query ([#13479](https://github.com/blockscout/blockscout/issues/13479))
+- API v2 errors logging to the proper log file ([#13133](https://github.com/blockscout/blockscout/issues/13133))
+
+### ⚙️ Miscellaneous Tasks
+
+- Silence multiple cspell complaints ([#13424](https://github.com/blockscout/blockscout/issues/13424))
+
+
+## 9.2.0
+
+### 🚀 Features
+
+- distributed elixir runtime ([#13080](https://github.com/blockscout/blockscout/pull/13080))
+- Delete internal transactions on reorgs ([#13121](https://github.com/blockscout/blockscout/issues/13121))
+- Implement websocket endpoints support in the Universal Proxy config ([#13167](https://github.com/blockscout/blockscout/issues/13167))
+- Celo accounts api ([#12982](https://github.com/blockscout/blockscout/issues/12982))
+- Celo accounts indexing ([#12893](https://github.com/blockscout/blockscout/issues/12893))
+- OP operator fee indexing ([#13139](https://github.com/blockscout/blockscout/issues/13139))
+- Fields for OP Withdrawal Claim button ([#13272](https://github.com/blockscout/blockscout/issues/13272))
+- OP Alt-DA support for batch indexer ([#13179](https://github.com/blockscout/blockscout/issues/13179))
+- Add ci:core label ([#13249](https://github.com/blockscout/blockscout/issues/13249))
+- Initial support of indexing EigenDA-grounded Arbitrum batches ([#12915](https://github.com/blockscout/blockscout/issues/12915))
+
+### 🐛 Bug Fixes
+
+- Fix token holders CSV export ([#13485](https://github.com/blockscout/blockscout/pull/13485))
+- ERC-1155 value in advanced filters csv ([#13474](https://github.com/blockscout/blockscout/pull/13474))
+- Fix /api/v2/tokens endpoints: allow back limit param ([#13473](https://github.com/blockscout/blockscout/pull/13473))
+- Incorrect average block time for sub-second blocks ([#13469](https://github.com/blockscout/blockscout/issues/13469))
+- Remove transaction_has_multiple_internal_transactions filter ([#13453](https://github.com/blockscout/blockscout/pull/13453))
+- celo accounts transformer ([#13423](https://github.com/blockscout/blockscout/pull/13423))
+- Fix broken txn batch blocks API endpoint ([#13438](https://github.com/blockscout/blockscout/pull/13438), [#13483](https://github.com/blockscout/blockscout/pull/13483))
+- Set timeout: :infinity for DeleteZeroValueInternalTransactions ([#13434](https://github.com/blockscout/blockscout/pull/13434))
+- Fix DeleteZeroValueInternalTransactions state keys ([#13431](https://github.com/blockscout/blockscout/pull/13431))
+- dump block_hash to binary when querying celo epoch distributions ([#13410](https://github.com/blockscout/blockscout/pull/13410))
+- Fix flaky indexer, web tests, refactoring ([#13392](https://github.com/blockscout/blockscout/issues/13392))
+- Advanced filters: ERC-20 value in CSV ([#13326](https://github.com/blockscout/blockscout/issues/13326))
+- Ignore old reorgs in beacon deposits fetcher ([#13372](https://github.com/blockscout/blockscout/issues/13372))
+- Update FUNDING.json ([#13399](https://github.com/blockscout/blockscout/issues/13399))
+- Add `log_index` field to celo validator group votes table ([#13391](https://github.com/blockscout/blockscout/issues/13391))
+- Add fallback to cached token counters in corresponding async tasks ([#13348](https://github.com/blockscout/blockscout/issues/13348))
+- Sanitize internal transaction error before insertion ([#13362](https://github.com/blockscout/blockscout/issues/13362))
+- Set skip metadata only on contract errors ([#12858](https://github.com/blockscout/blockscout/issues/12858))
+- Check if CoinBalance Realtime fetcher is disabled ([#13223](https://github.com/blockscout/blockscout/issues/13223))
+- Improve timeout exception definition ([#13286](https://github.com/blockscout/blockscout/issues/13286))
+- Enforce legacy query usage when sort by id ([#13323](https://github.com/blockscout/blockscout/issues/13323))
+- Fix web tests after hiding compile-time chain types routes ([#13324](https://github.com/blockscout/blockscout/issues/13324))
+- Hide compile-time chain type API routes in other chain type swaggers ([#13309](https://github.com/blockscout/blockscout/issues/13309))
+- Fix SanitizeDuplicatedLogIndexLogs migration completion check ([#13308](https://github.com/blockscout/blockscout/issues/13308))
+
+### ⚡ Performance
+
+- Remove BENS preload from the main page API endpoints ([#13442](https://github.com/blockscout/blockscout/pull/13442), [#13449](https://github.com/blockscout/blockscout/pull/13449))
+- Batch preload token transfers in `/api/v2/celo/epochs` ([#13398](https://github.com/blockscout/blockscout/issues/13398))
+- Optimize token balance synchronous import steps ([#13217](https://github.com/blockscout/blockscout/issues/13217))
+- Optimize `EmptyBlocksSanitizer` queries ([#13132](https://github.com/blockscout/blockscout/issues/13132))
+
+### ⚙️ Miscellaneous Tasks
+
+- add `CACHE_AVERAGE_BLOCK_TIME_WINDOW` ([#13470](https://github.com/blockscout/blockscout/pull/13470))
+- Improve DeleteZeroValueInternalTransactions future updating ([#13437](https://github.com/blockscout/blockscout/pull/13437))
+- advanced filters improvements ([#11909](https://github.com/blockscout/blockscout/pull/11909))
+- Allow api_key in the query string for api/v2/tokens/:address_hash/instances/refetch-metadata endpoint ([#13412](https://github.com/blockscout/blockscout/pull/13412))
+- *(ReindexDuplicatedInternalTransactions)* Optimize migration performance ([#13363](https://github.com/blockscout/blockscout/issues/13363))
+- OpenAPI spec for the REST API endpoints in  token and CSV export controllers ([#13311](https://github.com/blockscout/blockscout/issues/13311))
+- Edited the broken Discord badge ([#13115](https://github.com/blockscout/blockscout/issues/13115))
+- OpenAPI spec for the REST API block controller ([#13274](https://github.com/blockscout/blockscout/issues/13274))
+- Add PR title conventional commit check workflow ([#13238](https://github.com/blockscout/blockscout/issues/13238))
+- Add label for running tests with enabled bridged tokens ([#13263](https://github.com/blockscout/blockscout/issues/13263))
+- Phoenix update ([#13147](https://github.com/blockscout/blockscout/issues/13147))
+
+### New ENV variables
+
+| Variable              | Description                                                                                                                                                      | Parameters                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `INDEXER_EMPTY_BLOCKS_SANITIZER_HEAD_OFFSET`                  | Minimal age for block to be processed by empty block sanitizer. Implemented in [#13132](https://github.com/blockscout/blockscout/pull/13132)                                                                                                                                                                                                                                                                                                                                                                                     | Version: v9.2.0\+ <br />Default: `1000` <br />Applications: Indexer                                      |
+| `INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_BATCH_SIZE`        | Batch size for internal transactions delete queue handler. Implemented in [#13121](https://github.com/blockscout/blockscout/pull/13121).                                                                                                                                                                                                                                                                                                                                                                                         | Version: v9.2.0\+ <br />Default: `100` <br />Applications: Indexer                                        |
+| `INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_CONCURRENCY`       | Concurrency for internal transactions delete queue handler. Implemented in [#13121](https://github.com/blockscout/blockscout/pull/13121).                                                                                                                                                                                                                                                                                                                                                                                        | Version: v9.2.0\+ <br />Default: `1` <br />Applications: Indexer                                         |
+| `INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_THRESHOLD`         | Threshold for internal transactions delete queue handler. Implemented in [#13121](https://github.com/blockscout/blockscout/pull/13121).                                                                                                                                                                                                                                                                                                                                                                                          | Version: v9.2.0\+ <br />Default: `10m` <br />Applications: Indexer                                         |
+| `INDEXER_OPTIMISM_L1_BATCH_ALT_DA_SERVER_URL`        | Defines a URL to Alt-DA server to retrieve L1 data from that. Example for Redstone: `https://da.redstonechain.com/get`. Implemented in [#13179](https://github.com/blockscout/blockscout/pull/13179).                                                                                                                                                                                                                                                                                                                                                                         | Version: v9.2.0+ <br />Default: (empty) <br />Applications: Indexer                                       |
+| `INDEXER_OPTIMISM_L2_ISTHMUS_TIMESTAMP`              | Isthmus upgrade L2 block timestamp. Needed for operator fee determining. If set to `0`, the Isthmus is assumed to be active from genesis block. Implemented in [#13139](https://github.com/blockscout/blockscout/pull/13139).                                                                                                                                                                                                                                                                                                                                                 | Version: v9.2.0+ <br />Default: (empty) <br />Applications: API, Indexer                                  |
+| `INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_BATCH_SIZE`     | Batch size for OP operator fee fetcher. Defines max number of transactions handled per batch. Implemented in [#13139](https://github.com/blockscout/blockscout/pull/13139).                                                                                                                                                                                                                                                                                                                                                                                                   | Version: v9.2.0\+ <br />Default: `100`<br />Applications: Indexer                                          |
+| `INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_CONCURRENCY`    | Concurrency for OP operator fee fetcher. Implemented in [#13139](https://github.com/blockscout/blockscout/pull/13139).                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Version: v9.2.0\+ <br />Default: `3`<br />Applications: Indexer                                            |
+| `INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_ENQUEUE_BUSY_WAITING_TIMEOUT` | Timeout before new attempt to append item to OP operator fee fetcher queue if it's full. [Time format](backend-env-variables.md#time-format). Implemented in [#13139](https://github.com/blockscout/blockscout/pull/13139).                                                                                                                                                                                                                                                                                                                                     | Version: v9.2.0\+ <br />Default: `1s`<br />Applications: Indexer                                           |
+| `INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_MAX_QUEUE_SIZE` | Maximum size of OP operator fee fetcher queue. Implemented in [#13139](https://github.com/blockscout/blockscout/pull/13139).                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Version: v9.2.0\+ <br />Default: `1000`<br />Applications: Indexer                                         |
+| `INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_INIT_QUERY_LIMIT` | Limit of the init query for processing the OP operator fee fetcher queue. Implemented in [#13139](https://github.com/blockscout/blockscout/pull/13139).                                                                                                                                                                                                                                                                                                                                                                                                                     | Version: v9.2.0\+ <br />Default: `1000`<br />Applications: Indexer                                         |
+| `CELO_LOCKED_GOLD_CONTRACT`                          | The address of the `LockedGold` core contract. Implemented in [#12893](https://github.com/blockscout/blockscout/pull/12893).                                                                                                                              | Version: v9.2.0+ <br />Default: (empty)<br />Applications: Indexer        |
+| `CELO_ACCOUNTS_CONTRACT`                             | The address of the `Accounts` core contract. Implemented in [#12893](https://github.com/blockscout/blockscout/pull/12893).                                                                                                                                | Version: v9.2.0+ <br />Default: (empty)<br />Applications: Indexer        |
+| `INDEXER_CELO_ACCOUNTS_CONCURRENCY`                  | Sets the maximum number of concurrent requests for fetching Celo accounts.                                                                                                                                                                                | Version: v9.2.0+ <br />Default: `1`<br />Applications: Indexer            |
+| `INDEXER_CELO_ACCOUNTS_BATCH_SIZE`                   | Specifies the number of account addresses processed per batch during fetching.                                                                                                                                                                            | Version: v9.2.0+ <br />Default: `100`<br />Applications: Indexer          |
+| `K8S_SERVICE`                                           | Kubernetes service name for Elixir nodes clusterization, more info on how to configure it can be found here https://hexdocs.pm/libcluster/Cluster.Strategy.Kubernetes.DNS.html. Implemented in [#13080](https://github.com/blockscout/blockscout/pull/13080).                                                                                                                                                                                      | Version: v9.2.0\+ <br />Default: (empty) <br />Applications: API, Indexer                                                                                                                                                                                                                                                                         |
+| `CACHE_AVERAGE_BLOCK_TIME_WINDOW`                     | The number of blocks to be taken into account in the calculations. Introduced in [#13470](https://github.com/blockscout/blockscout/pull/13470).                                                                                                                                                                                                               | Version: v9.2.0\+ <br />Default: `100` <br />Applications: API, Indexer   |
+
+### Deprecated ENV variables
+
+| Variable                                              | Description                                                                                                                                                                                                                                                                                                                                        | Default                                                                                       | Version  | Deprecated in Version |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------- | --------------------- |
+| `NFT_MEDIA_HANDLER_NODES_MAP` | String in json map format, where key is erlang node and value is folder in R2/S3 bucket, example: `"{\"producer@172.18.0.4\": \"/folder_1\"}"`. If nft_media_handler runs in one pod with indexer, map should contain `self` key | | v6.10.0+ | v9.2.0+ |
+
+
 ## 9.1.1
 
 ### 🚀 Features

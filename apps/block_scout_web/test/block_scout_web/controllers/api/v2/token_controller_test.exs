@@ -647,6 +647,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
+    test "accepts limit", %{conn: conn} do
+      request = get(conn, "/api/v2/tokens?limit=5")
+
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
     test "get token with ok reputation", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)
@@ -1733,16 +1739,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation(url, metadata)
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -1778,33 +1775,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       expected_body = "secret=#{v2_secret_key}&response=123"
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{body: ^expected_body}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body:
-               Jason.encode!(%{
-                 "success" => true,
-                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-               })
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation_with_req_body(expected_body)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation(url, metadata)
 
       request =
         Phoenix.ConnTest.build_conn()
@@ -1875,16 +1850,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation(url, metadata)
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -2016,16 +1982,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation(url, metadata)
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -2068,16 +2025,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation(url, metadata)
 
       request =
         Phoenix.ConnTest.build_conn()
@@ -2139,16 +2087,17 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         metadata: %{}
       )
 
-      metadata = %{"name" => "Super Token"}
       url = "http://metadata.endpoint.com"
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
+      token_instance_success_metadata_expectation(url, %{})
 
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
       assert %{"message" => "OK"} = json_response(request, 200)
+      :timer.sleep(100)
 
       # First request after hitting rate limit with wrong scoped token - should fail
       request =
@@ -2159,47 +2108,17 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert %{"message" => "Too Many Requests"} = json_response(request, 429)
 
+      :timer.sleep(100)
+
       # Set up normal reCAPTCHA validation for the second request
       expected_body = "secret=#{v2_secret_key}&response=correct_recaptcha_token"
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{body: ^expected_body}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body:
-               Jason.encode!(%{
-                 "success" => true,
-                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-               })
-           }}
-        end
-      )
-
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(%{"name" => "test"})
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation_with_req_body(expected_body)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      metadata = %{"name" => "Super Token"}
+      token_instance_success_metadata_expectation(url, metadata)
 
       topic = "token_instances:#{token_contract_address_hash_string}"
 
@@ -2262,25 +2181,19 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         metadata: %{}
       )
 
-      metadata = %{"name" => "Super Token"}
       url = "http://metadata.endpoint.com"
       token_contract_address_hash_string = to_string(token.contract_address_hash)
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
+      token_instance_success_metadata_expectation(url, %{})
 
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
       assert %{"message" => "OK"} = json_response(request, 200)
 
+      :timer.sleep(100)
+
       # First request after hitting rate limit with a scoped token that isn't configured - should fail
-      request =
-        Phoenix.ConnTest.build_conn()
-        |> put_req_header("user-agent", "test-agent")
-        |> put_req_header("scoped-recaptcha-bypass-token", "some_token_that_does_not_exist")
-        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
-
-      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
-
       request =
         Phoenix.ConnTest.build_conn()
         |> put_req_header("user-agent", "test-agent")
@@ -2297,47 +2210,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert %{"message" => "Too Many Requests"} = json_response(request, 429)
 
+      :timer.sleep(100)
+
       # Set up normal reCAPTCHA validation for the second request
       expected_body = "secret=#{v2_secret_key}&response=correct_recaptcha_token"
 
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{body: ^expected_body}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body:
-               Jason.encode!(%{
-                 "success" => true,
-                 "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-               })
-           }}
-        end
-      )
-
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(%{"name" => "test"})
-           }}
-        end
-      )
+      token_instance_success_metadata_expectation_with_req_body(expected_body)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
-
-      Tesla.Test.expect_tesla_call(
-        times: 1,
-        returns: fn %{url: ^url}, _opts ->
-          {:ok,
-           %Tesla.Env{
-             status: 200,
-             body: Jason.encode!(metadata)
-           }}
-        end
-      )
+      metadata = %{"name" => "Super Token"}
+      token_instance_success_metadata_expectation(url, metadata)
 
       # Second request with correct reCAPTCHA token - should work
       request =
@@ -2714,5 +2596,35 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         assert next_page_params == nil
       end
     end
+  end
+
+  defp token_instance_success_metadata_expectation(url, metadata) do
+    Tesla.Test.expect_tesla_call(
+      times: 1,
+      returns: fn %{url: ^url}, _opts ->
+        {:ok,
+         %Tesla.Env{
+           status: 200,
+           body: Jason.encode!(metadata)
+         }}
+      end
+    )
+  end
+
+  defp token_instance_success_metadata_expectation_with_req_body(expected_body) do
+    Tesla.Test.expect_tesla_call(
+      times: 1,
+      returns: fn %{body: ^expected_body}, _opts ->
+        {:ok,
+         %Tesla.Env{
+           status: 200,
+           body:
+             Jason.encode!(%{
+               "success" => true,
+               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+             })
+         }}
+      end
+    )
   end
 end

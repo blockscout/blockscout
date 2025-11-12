@@ -3,6 +3,9 @@ defmodule Explorer.Chain.Import.Runner.Logs do
   Bulk imports `t:Explorer.Chain.Log.t/0`.
   """
 
+  use Utils.RuntimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
@@ -65,16 +68,19 @@ defmodule Explorer.Chain.Import.Runner.Logs do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Log ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list =
-      case Application.get_env(:explorer, :chain_type) do
-        :celo -> Enum.sort_by(changes_list, &{&1.block_hash, &1.index})
-        _ -> Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.index})
-      end
+    {ordered_changes_list, conflict_target} =
+      case chain_identity() do
+        {:optimism, :celo} ->
+          {
+            Enum.sort_by(changes_list, &{&1.block_hash, &1.index}),
+            [:index, :block_hash]
+          }
 
-    conflict_target =
-      case Application.get_env(:explorer, :chain_type) do
-        :celo -> [:index, :block_hash]
-        _ -> [:transaction_hash, :index, :block_hash]
+        _ ->
+          {
+            Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.index}),
+            [:transaction_hash, :index, :block_hash]
+          }
       end
 
     {:ok, _} =
@@ -91,8 +97,8 @@ defmodule Explorer.Chain.Import.Runner.Logs do
   end
 
   defp default_on_conflict do
-    case Application.get_env(:explorer, :chain_type) do
-      :celo ->
+    case chain_identity() do
+      {:optimism, :celo} ->
         from(
           log in Log,
           update: [

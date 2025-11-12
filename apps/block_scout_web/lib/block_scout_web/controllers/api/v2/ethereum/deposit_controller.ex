@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  import BlockScoutWeb.Chain, only: [next_page_params: 4, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [next_page_params: 5, split_list_by_page: 1]
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
 
     next_page_params =
       next_page
-      |> next_page_params(deposits, params, paging_function())
+      |> next_page_params(deposits, params, false, paging_function())
 
     conn
     |> put_status(200)

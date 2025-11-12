@@ -7,7 +7,7 @@ defmodule BlockScout.Mixfile do
     [
       # app: :block_scout,
       # aliases: aliases(config_env()),
-      version: "9.1.1",
+      version: "9.2.2",
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
@@ -99,7 +99,7 @@ defmodule BlockScout.Mixfile do
       {:tesla, "~> 1.15.3"},
       {:mint, "~> 1.7.1"},
       # Documentation
-      {:ex_doc, "~> 0.38.1", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.39.1", only: :dev, runtime: false},
       {:number, "~> 1.0.3"}
     ]
   end

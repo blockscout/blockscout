@@ -1,6 +1,8 @@
 defmodule Explorer.Chain.Import.Runner.BlocksTest do
   use Explorer.DataCase
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  use Utils.CompileTimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
 
   import Ecto.Query, only: [from: 2, select: 2, where: 2]
 
@@ -10,6 +12,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
   alias Explorer.Chain.{Address, Block, Transaction, PendingBlockOperation}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.{Chain, Repo}
   alias Explorer.Utility.MissingBlockRange
 
@@ -531,7 +534,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       insert_block(block, options)
       insert_block(block2, options)
 
-      Process.sleep(100)
+      Process.sleep(200)
 
       assert %{from_number: ^block_number, to_number: ^block_number} = Repo.one(MissingBlockRange)
     end
@@ -745,7 +748,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
               }} = Multi.new() |> Blocks.run(changes_list, options) |> Repo.transaction()
     end
 
-    if @chain_type == :celo do
+    if @chain_identity == {:optimism, :celo} do
       test "removes celo epoch rewards and sets fetched? = false when starting block loses consensus", %{
         consensus_block: %{miner_hash: miner_hash} = parent_block,
         options: options
@@ -908,6 +911,64 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       }
 
       assert {:ok, [{0, _}, {1, _}]} = Blocks.process_blocks_consensus([new_block1_changes], Repo, opts)
+    end
+
+    test "does not trigger beacon deposit reorg handling on old blocks" do
+      Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: true)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: false)
+      end)
+
+      BlockNumber.set_max(100)
+
+      Process.register(self(), Indexer.Fetcher.Beacon.Deposit)
+
+      insert(:block, consensus: true, number: 0)
+      insert(:block, consensus: true, number: 1)
+      insert(:block, consensus: false, number: 2)
+
+      new_block0 = params_for(:block, miner_hash: insert(:address).hash, number: 0)
+      new_block1 = params_for(:block, miner_hash: insert(:address).hash, parent_hash: new_block0.hash, number: 1)
+
+      %Ecto.Changeset{valid?: true, changes: new_block1_changes} = Block.changeset(%Block{}, new_block1)
+
+      opts = %{
+        timeout: 60_000,
+        timestamps: %{updated_at: DateTime.utc_now()}
+      }
+
+      Blocks.process_blocks_consensus([new_block1_changes], Repo, opts)
+      refute_received {:"$gen_cast", {:lost_consensus, _}}
+    end
+
+    test "triggers beacon deposit reorg handling on fresh blocks" do
+      Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: true)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: false)
+      end)
+
+      BlockNumber.set_max(50)
+
+      Process.register(self(), Indexer.Fetcher.Beacon.Deposit)
+
+      insert(:block, consensus: true, number: 0)
+      insert(:block, consensus: true, number: 1)
+      insert(:block, consensus: false, number: 2)
+
+      new_block0 = params_for(:block, miner_hash: insert(:address).hash, number: 0)
+      new_block1 = params_for(:block, miner_hash: insert(:address).hash, parent_hash: new_block0.hash, number: 1)
+
+      %Ecto.Changeset{valid?: true, changes: new_block1_changes} = Block.changeset(%Block{}, new_block1)
+
+      opts = %{
+        timeout: 60_000,
+        timestamps: %{updated_at: DateTime.utc_now()}
+      }
+
+      Blocks.process_blocks_consensus([new_block1_changes], Repo, opts)
+      assert_received {:"$gen_cast", {:lost_consensus, _}}
     end
   end
 
