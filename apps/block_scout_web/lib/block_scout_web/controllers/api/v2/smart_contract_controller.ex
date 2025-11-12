@@ -235,7 +235,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
           | {:recaptcha, any()}
           | {:restricted_access, true}
           | Plug.Conn.t()
-  def audit_report_submission(conn, %{address_hash: address_hash_string} = params) do
+  def audit_report_submission(conn, %{address_hash_param: address_hash_string} = params) do
     with {:disabled, true} <- {:disabled, Application.get_env(:explorer, :air_table_audit_reports)[:enabled]},
          {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
          audit_report_params <- %{
