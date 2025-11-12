@@ -24,7 +24,7 @@ defmodule ConfigHelper do
         {:suave, nil} => [Explorer.Repo.Suave],
         {:zilliqa, nil} => [Explorer.Repo.Zilliqa],
         {:zksync, nil} => [Explorer.Repo.ZkSync],
-        {:neon, nil} => [Explorer.Repo.Neo],
+        {:neon, nil} => [Explorer.Repo.Neon],
         {:optimism, :celo} => [
           Explorer.Repo.Optimism,
           Explorer.Repo.Celo
