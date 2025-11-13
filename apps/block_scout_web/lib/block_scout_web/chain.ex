@@ -56,6 +56,7 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.PagingOptions
+  alias Plug.Conn
 
   @page_size page_size()
   @default_paging_options default_paging_options()
@@ -1085,20 +1086,36 @@ defmodule BlockScoutWeb.Chain do
   end
 
   @doc """
-  Fetches the scam token toggle from conn.cookies["show_scam_tokens"]. And put it to the params keyword.
+  Determines the scam token toggle value and adds it to the params keyword list.
+
+  The function checks for the scam token toggle in the following order:
+  1. Looks for the `"show-scam-tokens"` request header
+  2. Falls back to the `"show_scam_tokens"` cookie if the header is not present
+  3. Parses the retrieved value as a boolean (defaults to `false` if the value
+     is neither `"true"`, `"false"`, `true`, nor `false`)
 
   ## Parameters
-
-    - params: Initial params to append scam token toggle info.
-    - conn: The connection.
+  - `params`: Initial params keyword list to append scam token toggle info.
+  - `conn`: The connection struct.
 
   ## Returns
-
-  Provided params keyword with the new field `show_scam_tokens?`.
+  The provided params keyword list with the added `show_scam_tokens?` field
+  set to a boolean value.
   """
   @spec fetch_scam_token_toggle(Keyword.t(), Plug.Conn.t()) :: Keyword.t()
-  def fetch_scam_token_toggle(params, conn),
-    do: Keyword.put(params, :show_scam_tokens?, conn.cookies["show_scam_tokens"] |> parse_boolean())
+  def fetch_scam_token_toggle(params, conn) do
+    Keyword.put(
+      params,
+      :show_scam_tokens?,
+      conn
+      |> Conn.get_req_header("show-scam-tokens")
+      |> case do
+        [show_scam_tokens?] -> show_scam_tokens?
+        _ -> conn.cookies["show_scam_tokens"]
+      end
+      |> parse_boolean()
+    )
+  end
 
   defp map_to_string_keys(map) do
     map

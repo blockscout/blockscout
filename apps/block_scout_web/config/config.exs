@@ -17,7 +17,8 @@ config :block_scout_web,
   # 604800 seconds, 1 week
   session_cookie_ttl: 60 * 60 * 24 * 7,
   invalid_session_key: "invalid_session",
-  api_v2_temp_token_key: "api_v2_temp_token",
+  api_v2_temp_token_cookie_key: "api_v2_temp_token",
+  api_v2_temp_token_header_key: "api-v2-temp-token",
   http_client: Explorer.HttpClient.Tesla
 
 config :block_scout_web,
