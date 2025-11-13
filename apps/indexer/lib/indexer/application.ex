@@ -16,9 +16,11 @@ defmodule Indexer.Application do
   alias Indexer.Fetcher.TokenInstance.Refetch, as: TokenInstanceRefetch
 
   alias Indexer.Memory
+  alias Indexer.Prometheus.Instrumenter
 
   @impl Application
   def start(_type, _args) do
+    Instrumenter.setup()
     memory_monitor_name = Memory.Monitor
 
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)

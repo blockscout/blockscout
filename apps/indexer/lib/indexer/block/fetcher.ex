@@ -282,7 +282,7 @@ defmodule Indexer.Block.Fetcher do
               timeout: :infinity
             })} do
       inserted = Map.merge(inserted, inserted_transaction_actions)
-      Prometheus.Instrumenter.block_batch_fetch(fetch_time, callback_module)
+      Prometheus.Instrumenter.set_block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
       update_transactions_cache(inserted[:transactions])
@@ -472,7 +472,7 @@ defmodule Indexer.Block.Fetcher do
     no_blocks_to_import = length(options_with_broadcast.blocks.params)
 
     if no_blocks_to_import != 0 do
-      Prometheus.Instrumenter.block_import(import_time / no_blocks_to_import, callback_module)
+      Prometheus.Instrumenter.set_block_import(import_time / no_blocks_to_import, callback_module)
     end
 
     result

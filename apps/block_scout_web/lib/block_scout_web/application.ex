@@ -59,7 +59,8 @@ defmodule BlockScoutWeb.Application do
       }
 
       alias BlockScoutWeb.Utility.EventHandlersMetrics
-      alias Explorer.Chain.Metrics, as: ChainMetrics
+      alias Explorer.Chain.Metrics.IndexerMetrics
+      alias Explorer.Chain.Metrics.PublicMetrics, as: PublicChainMetrics
 
       PhoenixInstrumenter.setup()
       Exporter.setup()
@@ -84,7 +85,8 @@ defmodule BlockScoutWeb.Application do
           {BlocksIndexedCounter, name: BlocksIndexedCounter},
           {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
           {EventHandlersMetrics, []},
-          {ChainMetrics, []},
+          {PublicChainMetrics, []},
+          {IndexerMetrics, []},
           Hammer.child_for_supervisor()
         ],
         [

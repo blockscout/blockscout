@@ -430,7 +430,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {fetch_duration, result} =
       :timer.tc(fn -> fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) end)
 
-    Prometheus.Instrumenter.block_full_process(fetch_duration, __MODULE__)
+    Prometheus.Instrumenter.set_block_full_process(fetch_duration, __MODULE__)
 
     case result do
       {:ok, %{inserted: inserted, errors: []}} ->
@@ -448,7 +448,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         end)
 
       {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
-        Prometheus.Instrumenter.import_errors()
+        Prometheus.Instrumenter.set_import_errors_count()
 
         params = %{
           changesets: changesets,
@@ -473,7 +473,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         end
 
       {:error, {:import = step, reason}} ->
-        Prometheus.Instrumenter.import_errors()
+        Prometheus.Instrumenter.set_import_errors_count()
         Logger.error(fn -> inspect(reason) end, step: step)
 
       {:error, {step, reason}} ->
@@ -504,7 +504,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp log_import_timings(%{blocks: [%{number: number, timestamp: timestamp}]}, fetch_duration, time_before) do
     node_delay = Timex.diff(time_before, timestamp, :seconds)
-    Prometheus.Instrumenter.node_delay(node_delay)
+    Prometheus.Instrumenter.set_json_rpc_node_delay(node_delay)
 
     Logger.debug("Block #{number} fetching duration: #{fetch_duration / 1_000_000}s. Node delay: #{node_delay}s.",
       fetcher: :block_import_timings
