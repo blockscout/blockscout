@@ -1172,26 +1172,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   }
 
-  @state_changes_paging_params %{
-    # "items_count" is used for pagination for the list of transactions's state changes and it can be higher than 50.
-    # Thus, we extracted it to a separate map.
-    "items_count" => %Parameter{
-      in: :query,
-      schema: %Schema{type: :integer, minimum: 1},
-      required: false,
-      description: "Cumulative number of items to skip for keyset-based pagination of state changes",
-      name: :items_count
-    },
-    # todo: remove in the future as this param is unused in the pagination of state changes
-    "state_changes" => %Parameter{
-      in: :query,
-      schema: %Schema{type: :string, nullable: true},
-      required: false,
-      description: "State changes for paging",
-      name: :state_changes
-    }
-  }
-
   @doc """
   Returns a list of paging parameters based on the provided field names.
   """

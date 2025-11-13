@@ -44,31 +44,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     description: "Returns current indexing progress, chain stats and market data used on the UI.",
     parameters: base_params(),
     responses: [
-      ok:
-        {"Stats", "application/json",
-         %Schema{
-           type: :object,
-           properties: %{
-             total_blocks: Schemas.General.IntegerString,
-             total_addresses: Schemas.General.IntegerString,
-             total_transactions: Schemas.General.IntegerString,
-             average_block_time: %Schema{type: :number, format: :float},
-             coin_image: %Schema{type: :string, nullable: true},
-             coin_price: %Schema{type: :number, nullable: true},
-             coin_price_change_percentage: %Schema{type: :number, nullable: true},
-             secondary_coin_price: %Schema{type: :number, nullable: true},
-             total_gas_used: Schemas.General.IntegerString,
-             transactions_today: Schemas.General.IntegerString,
-             gas_used_today: %Schema{anyOf: [Schemas.General.IntegerString, %Schema{type: :integer}]},
-             gas_prices: %Schema{type: :object, nullable: true},
-             gas_prices_update_in: %Schema{type: :integer, nullable: true},
-             gas_price_updated_at: %Schema{type: :string, nullable: true},
-             static_gas_price: %Schema{type: :number, nullable: true},
-             market_cap: %Schema{type: :number, nullable: true},
-             tvl: %Schema{type: :number, nullable: true},
-             network_utilization_percentage: %Schema{type: :number, nullable: true}
-           }
-         }},
+      ok: {"Stats", "application/json", BlockScoutWeb.Schemas.API.V2.Stats.Response},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 

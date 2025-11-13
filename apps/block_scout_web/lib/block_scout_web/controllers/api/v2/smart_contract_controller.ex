@@ -185,8 +185,17 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
         {"Audit reports", "application/json",
          %Schema{
            description: "List of smart-contract's audit reports",
-           type: :array,
-           items: BlockScoutWeb.Schemas.API.V2.SmartContract.AuditReport
+           type: :object,
+           properties: %{
+             items: %Schema{
+               type: :array,
+               items: BlockScoutWeb.Schemas.API.V2.SmartContract.AuditReport,
+               nullable: false
+             },
+             next_page_params: %Schema{type: :object, nullable: true}
+           },
+           required: [:items, :next_page_params],
+           additionalProperties: false
          }},
       unprocessable_entity: JsonErrorResponse.response()
     ]
