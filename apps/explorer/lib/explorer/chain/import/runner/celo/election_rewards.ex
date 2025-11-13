@@ -64,8 +64,8 @@ defmodule Explorer.Chain.Import.Runner.Celo.ElectionRewards do
       Enum.sort_by(
         changes_list,
         &{
-          &1.epoch_number,
           &1.type,
+          &1.epoch_number,
           &1.account_address_hash,
           &1.associated_account_address_hash
         }
@@ -80,8 +80,8 @@ defmodule Explorer.Chain.Import.Runner.Celo.ElectionRewards do
         timeout: timeout,
         timestamps: timestamps,
         conflict_target: [
-          :epoch_number,
           :type,
+          :epoch_number,
           :account_address_hash,
           :associated_account_address_hash
         ],

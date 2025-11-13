@@ -61,7 +61,7 @@ defmodule Explorer.Chain.Import.Runner.Celo.AggregatedElectionRewards do
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = _options) when is_list(changes_list) do
     # Enforce Celo.AggregatedElectionReward ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.epoch_number, &1.type})
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.type, &1.epoch_number})
 
     {:ok, inserted} =
       Import.insert_changes_list(
@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Import.Runner.Celo.AggregatedElectionRewards do
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: [:epoch_number, :type],
+        conflict_target: [:type, :epoch_number],
         on_conflict: :replace_all
       )
 
