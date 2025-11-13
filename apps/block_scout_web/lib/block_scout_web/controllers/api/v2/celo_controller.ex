@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
-  alias Explorer.Chain.Celo.{ElectionReward, Epoch}
+  alias Explorer.Chain.Celo.{AggregatedElectionReward, ElectionReward, Epoch}
   alias Explorer.Chain.Hash
   alias Explorer.PagingOptions
 
@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
     with {:ok, number} <- parse_epoch_number(number_string),
          {:ok, epoch} <- Epoch.from_number(number, options) do
-      aggregated_rewards = ElectionReward.epoch_number_to_rewards_aggregated_by_type(epoch.number, api?: true)
+      aggregated_rewards = AggregatedElectionReward.epoch_number_to_rewards_aggregated_by_type(epoch.number, api?: true)
 
       conn
       |> render(:celo_epoch, %{
