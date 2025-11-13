@@ -435,7 +435,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         # Verify migration completed (no epochs with rewards to process)
         assert MigrationStatus.get_status("celo_aggregated_election_rewards") == "completed"
 
-        # Verify unprocessed_data_query doesn't return the rewardless epoch
+        # Verify unprocessed_data_query doesn't return the epoch without rewards
         unprocessed_epochs =
           CeloAggregatedElectionRewards.unprocessed_data_query()
           |> select([e], e.number)
