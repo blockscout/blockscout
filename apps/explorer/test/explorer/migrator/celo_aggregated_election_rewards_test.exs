@@ -186,7 +186,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         assert MigrationStatus.get_status("celo_aggregated_election_rewards") == "completed"
       end
 
-      test "only saves reward types with data (no zero values)" do
+      test "only saves reward types with data (no zero values for types with actual rewards)" do
         epoch = insert(:celo_epoch, number: 50, end_processing_block_hash: insert(:block).hash)
 
         # Create addresses
@@ -206,7 +206,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         start_supervised!(CeloAggregatedElectionRewards)
         Process.sleep(500)
 
-        # Verify only reward types with data are saved (no zero values)
+        # Verify only reward types with data are saved (no zero values for other types)
         aggregated_rewards =
           from(aer in AggregatedElectionReward,
             where: aer.epoch_number == ^epoch.number,
@@ -223,7 +223,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         assert voter_reward.count == 1
         assert Decimal.to_integer(voter_reward.sum.value) == 5000
 
-        # Verify other types are NOT saved (no zero-value entries)
+        # Verify other types are NOT saved (no zero-value entries for types with actual data)
         for type <- [:validator, :group, :delegated_payment] do
           reward = Enum.find(aggregated_rewards, &(&1.type == type))
           assert reward == nil
@@ -415,7 +415,7 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         assert Enum.at(aggregated_rewards, 2).epoch_number == 33
       end
 
-      test "handles epoch with no election rewards" do
+      test "skips epoch with no election rewards" do
         # Create epoch with no rewards
         epoch = insert(:celo_epoch, number: 999, end_processing_block_hash: insert(:block).hash)
 
@@ -423,16 +423,99 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         start_supervised!(CeloAggregatedElectionRewards)
         Process.sleep(500)
 
-        # Verify no aggregates were created (no zero-value entries)
+        # Verify no aggregates were created (epoch was skipped)
         aggregated_rewards =
           from(aer in AggregatedElectionReward,
-            where: aer.epoch_number == ^epoch.number,
-            order_by: [asc: aer.type]
+            where: aer.epoch_number == ^epoch.number
           )
           |> Repo.all()
 
-        # No rewards means no aggregated entries
         assert length(aggregated_rewards) == 0
+
+        # Verify migration completed (no epochs with rewards to process)
+        assert MigrationStatus.get_status("celo_aggregated_election_rewards") == "completed"
+
+        # Verify unprocessed_data_query doesn't return the rewardless epoch
+        unprocessed_epochs =
+          CeloAggregatedElectionRewards.unprocessed_data_query()
+          |> select([e], e.number)
+          |> Repo.all()
+
+        refute epoch.number in unprocessed_epochs
+      end
+
+      test "completes migration even when all epochs have no rewards" do
+        # Create multiple finalized epochs with no rewards
+        _epoch1 = insert(:celo_epoch, number: 100, end_processing_block_hash: insert(:block).hash)
+        _epoch2 = insert(:celo_epoch, number: 101, end_processing_block_hash: insert(:block).hash)
+        _epoch3 = insert(:celo_epoch, number: 102, end_processing_block_hash: insert(:block).hash)
+
+        # Run migration
+        start_supervised!(CeloAggregatedElectionRewards)
+        Process.sleep(1000)
+
+        # Verify no aggregates were created (all epochs skipped)
+        aggregated_rewards = Repo.all(AggregatedElectionReward)
+        assert length(aggregated_rewards) == 0
+
+        # Most importantly: verify migration completed and doesn't spin forever
+        assert MigrationStatus.get_status("celo_aggregated_election_rewards") == "completed"
+
+        # Verify unprocessed_data_query returns nothing (epochs with no rewards are skipped)
+        unprocessed_count =
+          CeloAggregatedElectionRewards.unprocessed_data_query()
+          |> Repo.aggregate(:count)
+
+        assert unprocessed_count == 0
+      end
+
+      test "processes only epochs with rewards and skips epochs without rewards" do
+        # Create a mix of epochs with and without rewards
+        epoch_with_rewards = insert(:celo_epoch, number: 200, end_processing_block_hash: insert(:block).hash)
+        _epoch_without_rewards1 = insert(:celo_epoch, number: 201, end_processing_block_hash: insert(:block).hash)
+        epoch_with_rewards2 = insert(:celo_epoch, number: 202, end_processing_block_hash: insert(:block).hash)
+        _epoch_without_rewards2 = insert(:celo_epoch, number: 203, end_processing_block_hash: insert(:block).hash)
+
+        # Create addresses
+        account = insert(:address)
+        associated = insert(:address)
+
+        # Add rewards only for specific epochs
+        insert(:celo_election_reward,
+          epoch_number: epoch_with_rewards.number,
+          type: :voter,
+          amount: 1000,
+          account_address_hash: account.hash,
+          associated_account_address_hash: associated.hash
+        )
+
+        insert(:celo_election_reward,
+          epoch_number: epoch_with_rewards2.number,
+          type: :validator,
+          amount: 2000,
+          account_address_hash: account.hash,
+          associated_account_address_hash: associated.hash
+        )
+
+        # Run migration
+        start_supervised!(CeloAggregatedElectionRewards)
+        Process.sleep(1000)
+
+        # Verify only epochs with rewards were processed
+        aggregated_rewards = Repo.all(AggregatedElectionReward)
+        assert length(aggregated_rewards) == 2
+
+        epoch_numbers = Enum.map(aggregated_rewards, & &1.epoch_number) |> Enum.sort()
+        assert epoch_numbers == [200, 202]
+
+        # Verify epochs without rewards were not processed
+        for epoch_num <- [201, 203] do
+          rewards = Repo.all(from(aer in AggregatedElectionReward, where: aer.epoch_number == ^epoch_num))
+          assert length(rewards) == 0
+        end
+
+        # Verify migration completed
+        assert MigrationStatus.get_status("celo_aggregated_election_rewards") == "completed"
       end
     end
   end

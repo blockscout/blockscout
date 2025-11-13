@@ -7,8 +7,8 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewards do
   and reward type, creating pre-computed aggregates that significantly improve
   query performance for epoch reward statistics.
 
-  The migration processes epochs in batches and is designed to be resumable in
-  case of interruption.
+  Only epochs with at least one election reward are processed. Epochs with zero
+  rewards are skipped.
   """
 
   use Explorer.Migrator.FillingMigration
@@ -40,15 +40,25 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewards do
   @impl FillingMigration
   def unprocessed_data_query do
     # Get all epochs that have been finalized (have end_processing_block_hash)
-    # but don't yet have aggregated election rewards
+    # but don't yet have aggregated election rewards.
+    # Only process epochs that have at least one election reward to avoid
+    # reprocessing epochs with no rewards indefinitely.
     aggregated_epoch_numbers =
       from(aer in AggregatedElectionReward,
         select: aer.epoch_number,
         distinct: true
       )
 
+    epochs_with_rewards =
+      from(er in ElectionReward,
+        select: er.epoch_number,
+        distinct: true
+      )
+
     from(
       e in Epoch,
+      join: r in subquery(epochs_with_rewards),
+      on: r.epoch_number == e.number,
       where: not is_nil(e.end_processing_block_hash),
       where: e.number not in subquery(aggregated_epoch_numbers),
       order_by: [asc: e.number]
