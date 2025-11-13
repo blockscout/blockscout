@@ -480,7 +480,7 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
     }
   end
 
-  def find_missing_ranges(last_processed_deposit_index, deposits) do
+  defp find_missing_ranges(last_processed_deposit_index, deposits) do
     result =
       Enum.reduce(deposits, %{index: last_processed_deposit_index, gaps: []}, fn
         %{index: i}, %{index: prev, gaps: gaps} when i - prev <= 1 ->
