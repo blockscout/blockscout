@@ -31,6 +31,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.Filecoin.AddressInfo, as: FilecoinAddressInfo
   alias Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens, as: PolygonZkevmBridgeL1Tokens
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
+  alias Indexer.Fetcher.Zilliqa.Zrc2Tokens
 
   alias Indexer.{Prometheus, TokenBalances, Tracer}
 
@@ -292,6 +293,12 @@ defmodule Indexer.Block.Fetcher do
 
       async_match_arbitrum_messages_to_l2(arbitrum_transactions_for_further_handling)
 
+      if chain_type() == :zilliqa do
+        inserted_logs = Map.get(inserted, :logs, [])
+        inserted_transactions = Map.get(inserted, :transactions, [])
+        Zrc2Tokens.fetch_zrc2_token_transfers_and_adapters(inserted_logs, inserted_transactions, range, callback_module)
+      end
+
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
@@ -538,6 +545,20 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_internal_transactions(_, _), do: :ok
 
+  @doc """
+  Triggers async import of tokens just inserted into the database by the realtime or catchup indexer.
+
+  ## Parameters
+  - `%{tokens: tokens}`: A map returned by the `Chain.import` function containing the list of inserted tokens.
+  - `realtime?`: A boolean flag indicating whether to insert the tokens to the beginning (true)
+                 or to the end (false) of the import queue.
+
+  ## Returns
+  - :ok
+  """
+  @spec async_import_tokens(%{:tokens => list(), optional(any()) => any()}, boolean()) :: :ok
+  def async_import_tokens(%{tokens: []}, _realtime?), do: :ok
+
   def async_import_tokens(%{tokens: tokens}, realtime?) do
     tokens
     |> Enum.map(& &1.contract_address_hash)
@@ -545,6 +566,22 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_tokens(_, _), do: :ok
+
+  @doc """
+  Triggers async import of token balances just inserted into the database by the realtime or catchup indexer
+  or internal transactions fetcher.
+
+  ## Parameters
+  - `%{address_token_balances: token_balances}`: A map returned by the `Chain.import` function containing
+                                                 the list of inserted token balances.
+  - `realtime?`: A boolean flag indicating whether to insert the items to the beginning (true)
+                 or to the end (false) of the import queue.
+
+  ## Returns
+  - :ok
+  """
+  @spec async_import_token_balances(%{:address_token_balances => list(), optional(any()) => any()}, boolean()) :: :ok
+  def async_import_token_balances(%{address_token_balances: []}, _realtime?), do: :ok
 
   def async_import_token_balances(%{address_token_balances: token_balances}, realtime?) do
     TokenBalance.async_fetch(token_balances, realtime?)
