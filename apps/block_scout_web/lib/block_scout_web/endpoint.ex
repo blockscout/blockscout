@@ -6,7 +6,8 @@ defmodule BlockScoutWeb.Endpoint do
     disable_api?: [:block_scout_web, :disable_api?],
     sql_sandbox: [:block_scout_web, :sql_sandbox],
     cookie_domain: [:block_scout_web, :cookie_domain],
-    session_cookie_ttl: [:block_scout_web, :session_cookie_ttl]
+    session_cookie_ttl: [:block_scout_web, :session_cookie_ttl],
+    api_v2_temp_token_header_key: [:block_scout_web, :api_v2_temp_token_header_key]
 
   alias Explorer.ThirdPartyIntegrations.UniversalProxy
 
@@ -88,8 +89,17 @@ defmodule BlockScoutWeb.Endpoint do
           "recaptcha-v2-response",
           "recaptcha-v3-response",
           "recaptcha-bypass-token",
-          "scoped-recaptcha-bypass-token"
-        ] ++ CORSPlug.defaults()[:headers]
+          "scoped-recaptcha-bypass-token",
+          "show-scam-tokens",
+          @api_v2_temp_token_header_key
+        ] ++ CORSPlug.defaults()[:headers],
+      expose: [
+        "bypass-429-option",
+        "x-ratelimit-reset",
+        "x-ratelimit-limit",
+        "x-ratelimit-remaining",
+        @api_v2_temp_token_header_key
+      ]
     )
 
     plug(BlockScoutWeb.Router)
