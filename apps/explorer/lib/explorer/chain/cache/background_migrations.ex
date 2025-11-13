@@ -55,7 +55,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_transactions_to_address_hash_with_pending_index_finished,
     key: :heavy_indexes_create_logs_deposits_withdrawals_index_finished,
     key: :heavy_indexes_create_addresses_transactions_count_desc_partial_index_finished,
-    key: :heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished
+    key: :heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished,
+    key: :heavy_indexes_update_internal_transactions_primary_key_finished
 
   @dialyzer :no_match
 
@@ -95,7 +96,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
     DropTransactionsCreatedContractAddressHashWithPendingIndex,
     DropTransactionsFromAddressHashWithPendingIndex,
-    DropTransactionsToAddressHashWithPendingIndex
+    DropTransactionsToAddressHashWithPendingIndex,
+    UpdateInternalTransactionsPrimaryKey
   }
 
   defp handle_fallback(:transactions_denormalization_finished) do
@@ -330,6 +332,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex,
       &set_heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_update_internal_transactions_primary_key_finished) do
+    set_and_return_migration_status(
+      UpdateInternalTransactionsPrimaryKey,
+      &set_heavy_indexes_update_internal_transactions_primary_key_finished/1
     )
   end
 

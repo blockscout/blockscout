@@ -11,6 +11,8 @@ ExUnit.start()
 
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 
+Explorer.TestHelper.run_necessary_background_migrations()
+
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonEdge, :auto)

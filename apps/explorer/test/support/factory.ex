@@ -794,7 +794,6 @@ defmodule Explorer.Factory do
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       # caller MUST supply `block_hash` (usually the same as the transaction's)
-      # caller MUST supply `block_index`
       type: :call,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
@@ -818,7 +817,6 @@ defmodule Explorer.Factory do
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       # caller MUST supply `block_hash` (usually the same as the transaction's)
-      # caller MUST supply `block_index`
       type: :create,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }

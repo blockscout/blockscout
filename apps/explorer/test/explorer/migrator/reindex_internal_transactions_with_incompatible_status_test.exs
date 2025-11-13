@@ -22,9 +22,9 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatusTes
           insert(:internal_transaction,
             index: 10,
             transaction: transaction,
+            transaction_index: transaction.index,
             block: block,
             block_number: block.number,
-            block_index: i,
             error: nil
           )
 
@@ -38,9 +38,9 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatusTes
         insert(:internal_transaction,
           index: 10,
           transaction: transaction,
+          transaction_index: transaction.index,
           block: block,
           block_number: block.number,
-          block_index: i,
           error: "error",
           output: nil
         )
@@ -53,9 +53,9 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatusTes
         insert(:internal_transaction,
           index: 10,
           transaction: transaction,
+          transaction_index: transaction.index,
           block: block,
           block_number: block.number,
-          block_index: i,
           error: nil
         )
       end)

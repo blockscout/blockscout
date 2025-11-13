@@ -139,53 +139,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert :ok == Repo.get(Transaction, transaction2.hash).status
     end
 
-    test "for block with simple coin transfer and method calls, method calls internal transactions have correct block_index" do
-      a_block = insert(:block, number: 1000)
-      transaction0 = insert(:transaction) |> with_block(a_block, status: :ok)
-      transaction1 = insert(:transaction) |> with_block(a_block, status: :ok)
-      transaction2 = insert(:transaction) |> with_block(a_block, status: :ok)
-      insert(:pending_block_operation, block_hash: a_block.hash, block_number: a_block.number)
-
-      assert :ok == transaction0.status
-      assert :ok == transaction1.status
-      assert :ok == transaction2.status
-
-      index = 0
-
-      internal_transaction_changes_0 = make_internal_transaction_changes(transaction0, index, nil)
-      internal_transaction_changes_0_1 = make_internal_transaction_changes(transaction0, 1, nil)
-
-      internal_transaction_changes_1 =
-        make_internal_transaction_changes_for_simple_coin_transfers(transaction1, index, nil)
-
-      internal_transaction_changes_2 = make_internal_transaction_changes(transaction2, index, nil)
-      internal_transaction_changes_2_1 = make_internal_transaction_changes(transaction2, 1, nil)
-
-      assert {:ok, _} =
-               run_internal_transactions([
-                 internal_transaction_changes_0,
-                 internal_transaction_changes_0_1,
-                 internal_transaction_changes_1,
-                 internal_transaction_changes_2,
-                 internal_transaction_changes_2_1
-               ])
-
-      # transaction with index 0 is ignored in Nethermind JSON RPC Variant and not ignored in case of Geth
-
-      # assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction0.hash, where: i.index == 0)
-      #        |> Repo.one()
-      #        |> is_nil()
-
-      assert 1 == Repo.get_by!(InternalTransaction, transaction_hash: transaction0.hash, index: 1).block_index
-      # assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction1.hash) |> Repo.one() |> is_nil()
-
-      # assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction2.hash, where: i.index == 0)
-      #        |> Repo.one()
-      #        |> is_nil()
-
-      assert 4 == Repo.get_by!(InternalTransaction, transaction_hash: transaction2.hash, index: 1).block_index
-    end
-
     # test "simple coin transfer has no internal transaction inserted for Nethermind" do
     #   transaction = insert(:transaction) |> with_block(status: :ok)
     #   insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
@@ -441,6 +394,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       index: index,
       trace_address: [],
       transaction_hash: transaction.hash,
+      transaction_index: transaction.index,
       type: :call,
       value: Wei.from(Decimal.new(1), :wei),
       error: error,
@@ -470,6 +424,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       index: index,
       trace_address: [],
       transaction_hash: transaction.hash,
+      transaction_index: transaction.index,
       type: :call,
       value: Wei.from(Decimal.new(1), :wei),
       error: error,

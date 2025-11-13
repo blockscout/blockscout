@@ -23,11 +23,11 @@ defmodule Explorer.Chain.InternalTransactionTest do
           to_address_hash: "0x6295ee1b4f6dd65047762f924ecd367c17eabf8f",
           trace_address: [0, 1],
           transaction_hash: transaction.hash,
+          transaction_index: 0,
           type: "call",
           value: 100,
           block_number: 35,
-          block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-          block_index: 0
+          block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd"
         })
 
       assert changeset.valid?
@@ -75,8 +75,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
           error: "execution stopped",
           value: 0,
           block_number: 35,
-          block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-          block_index: 0
+          block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd"
         })
 
       assert changeset.valid?
@@ -104,7 +103,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 0,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -113,7 +111,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           transaction: transaction,
           index: 1,
           block_hash: transaction.block_hash,
-          block_index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index
         )
@@ -145,7 +142,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
         index: 0,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -185,7 +181,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
         index: 0,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -206,7 +201,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           transaction: transaction,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -228,7 +222,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           type: :reward,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -251,7 +244,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           type: :selfdestruct,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -272,7 +264,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 0,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -282,7 +273,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 1,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 1,
           transaction_index: transaction.index
         )
 
@@ -292,7 +282,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 2,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 2,
           transaction_index: transaction.index
         )
 
@@ -317,7 +306,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 0,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -327,7 +315,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 1,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 1,
           transaction_index: transaction.index
         )
 
@@ -337,7 +324,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 2,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 2,
           transaction_index: transaction.index
         )
 
@@ -385,7 +371,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 0,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -394,7 +379,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           transaction: transaction,
           index: 1,
           block_hash: transaction.block_hash,
-          block_index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index
         )
@@ -426,7 +410,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
         index: 0,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -466,7 +449,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
         index: 0,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -487,7 +469,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           transaction: transaction,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -509,7 +490,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           type: :reward,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -532,7 +512,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           type: :selfdestruct,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -553,7 +532,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 0,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -563,7 +541,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 1,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 1,
           transaction_index: transaction.index
         )
 
@@ -587,7 +564,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 0,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -597,7 +573,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 1,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 1,
           transaction_index: transaction.index
         )
 
@@ -607,7 +582,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 2,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 2,
           transaction_index: transaction.index
         )
 
@@ -652,7 +626,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           to_address: address,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 1,
           transaction_index: transaction.index
         )
 
@@ -663,7 +636,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           to_address: address,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: 2,
           transaction_index: transaction.index
         )
 
@@ -691,7 +663,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
         index: 0,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -701,7 +672,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
         index: 1,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 1,
         transaction_index: transaction.index
       )
 
@@ -750,7 +720,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 1,
           block_number: pending_transaction.block_number,
           block_hash: pending_transaction.block_hash,
-          block_index: 1,
           transaction_index: pending_transaction.index
         )
 
@@ -762,7 +731,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 2,
           block_number: pending_transaction.block_number,
           block_hash: pending_transaction.block_hash,
-          block_index: 2,
           transaction_index: pending_transaction.index
         )
 
@@ -781,7 +749,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 1,
           block_number: first_a_transaction.block_number,
           block_hash: a_block.hash,
-          block_index: 1,
           transaction_index: first_a_transaction.index
         )
 
@@ -793,7 +760,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 2,
           block_number: first_a_transaction.block_number,
           block_hash: a_block.hash,
-          block_index: 2,
           transaction_index: first_a_transaction.index
         )
 
@@ -810,7 +776,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 1,
           block_number: second_a_transaction.block_number,
           block_hash: a_block.hash,
-          block_index: 4,
           transaction_index: second_a_transaction.index
         )
 
@@ -822,7 +787,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 2,
           block_number: second_a_transaction.block_number,
           block_hash: a_block.hash,
-          block_index: 5,
           transaction_index: second_a_transaction.index
         )
 
@@ -841,7 +805,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 1,
           block_number: first_b_transaction.block_number,
           block_hash: b_block.hash,
-          block_index: 1,
           transaction_index: first_b_transaction.index
         )
 
@@ -853,7 +816,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 2,
           block_number: first_b_transaction.block_number,
           block_hash: b_block.hash,
-          block_index: 2,
           transaction_index: first_b_transaction.index
         )
 
@@ -879,26 +841,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
 
       pending_transaction = insert(:transaction)
 
-      old_block = insert(:block, consensus: false)
-
-      insert(
-        :internal_transaction,
-        transaction: pending_transaction,
-        to_address: address,
-        block_hash: old_block.hash,
-        block_index: 1,
-        index: 1
-      )
-
-      insert(
-        :internal_transaction,
-        transaction: pending_transaction,
-        to_address: address,
-        block_hash: old_block.hash,
-        block_index: 2,
-        index: 2
-      )
-
       a_block = insert(:block, number: 2000)
 
       first_a_transaction =
@@ -914,7 +856,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 1,
           block_number: first_a_transaction.block_number,
           block_hash: a_block.hash,
-          block_index: 1,
           transaction_index: first_a_transaction.index
         )
 
@@ -926,7 +867,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 2,
           block_number: first_a_transaction.block_number,
           block_hash: a_block.hash,
-          block_index: 2,
           transaction_index: first_a_transaction.index
         )
 
@@ -943,7 +883,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 1,
           block_number: second_a_transaction.block_number,
           block_hash: a_block.hash,
-          block_index: 4,
           transaction_index: second_a_transaction.index
         )
 
@@ -955,7 +894,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 2,
           block_number: second_a_transaction.block_number,
           block_hash: a_block.hash,
-          block_index: 5,
           transaction_index: second_a_transaction.index
         )
 
@@ -974,7 +912,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 1,
           block_number: first_b_transaction.block_number,
           block_hash: b_block.hash,
-          block_index: 1,
           transaction_index: first_b_transaction.index
         )
 
@@ -986,7 +923,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           index: 2,
           block_number: first_b_transaction.block_number,
           block_hash: b_block.hash,
-          block_index: 2,
           transaction_index: first_b_transaction.index
         )
 
@@ -1055,7 +991,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
         transaction: transaction,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -1077,7 +1012,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
           from_address: address,
           transaction: transaction,
           block_hash: transaction.block_hash,
-          block_index: 0,
           block_number: transaction.block_number,
           transaction_index: transaction.index
         )
@@ -1089,55 +1023,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
   end
 
   describe "fetch/1" do
-    test "with consensus transactions only" do
-      block_non_consensus = insert(:block, number: 2000, consensus: false)
-      block_consensus = insert(:block, number: 3000)
-
-      transaction_1 =
-        :transaction
-        |> insert(
-          block_hash: block_non_consensus.hash,
-          block_number: block_non_consensus.number,
-          block_consensus: false,
-          cumulative_gas_used: 100_500,
-          gas_used: 100_500,
-          index: 1
-        )
-
-      transaction_2 =
-        :transaction
-        |> insert()
-        |> with_block(block_consensus)
-
-      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
-        insert(:internal_transaction,
-          index: 1,
-          transaction: transaction_1,
-          block_number: transaction_1.block_number,
-          block_hash: transaction_1.block_hash,
-          block_index: 1,
-          transaction_index: transaction_1.index
-        )
-
-      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
-        insert(:internal_transaction,
-          index: 2,
-          transaction: transaction_2,
-          block_number: transaction_2.block_number,
-          block_hash: transaction_2.block_hash,
-          block_index: 2,
-          transaction_index: transaction_2.index
-        )
-
-      result =
-        []
-        |> InternalTransaction.fetch()
-        |> Enum.map(&{&1.transaction_hash, &1.index})
-
-      refute Enum.member?(result, {first_transaction_hash, first_index})
-      assert Enum.member?(result, {second_transaction_hash, second_index})
-    end
-
     # todo: This test is temporarily disabled because this check is removed for the sake of performance:
     # |> where([internal_transaction, transaction], transaction.block_hash == internal_transaction.block_hash)
     # Return the test back when reorg data will be moved out from the main tables.
