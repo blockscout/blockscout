@@ -502,13 +502,11 @@ config :explorer, Explorer.Market.Fetcher.Coin,
   enable_consolidation: true,
   cache_period: ConfigHelper.parse_time_env_var("MARKET_COIN_CACHE_PERIOD", "10m")
 
+disable_token_exchange_rates? = ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_EXCHANGE_RATE")
+market_tokens_fetcher_enabled? = ConfigHelper.parse_bool_env_var("MARKET_TOKENS_FETCHER_ENABLED", "true")
+
 config :explorer, Explorer.Market.Fetcher.Token,
-  enabled:
-    !disable_exchange_rates? &&
-      ConfigHelper.parse_bool_env_var(
-        "MARKET_TOKENS_FETCHER_ENABLED",
-        ConfigHelper.safe_get_env("DISABLE_TOKEN_EXCHANGE_RATE", "true")
-      ),
+  enabled: !disable_exchange_rates? && !disable_token_exchange_rates? && market_tokens_fetcher_enabled?,
   interval:
     ConfigHelper.parse_time_env_var(
       "MARKET_TOKENS_INTERVAL",
@@ -580,10 +578,6 @@ config :explorer, Explorer.Chain.Cache.TransactionsApiV2,
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
 config :explorer, Explorer.Chain.Cache.Accounts,
-  ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
-  global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
-
-config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
