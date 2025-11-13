@@ -1,9 +1,16 @@
 defmodule BlockScoutWeb.API.V2.StatsController do
+  use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
+
   use Utils.CompileTimeEnvHelper,
     chain_type: [:explorer, :chain_type],
     chain_identity: [:explorer, :chain_identity]
 
-  use Phoenix.Controller, namespace: BlockScoutWeb
+  alias OpenApiSpex.Schema
+
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags(["stats"])
 
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.Chain.MarketHistoryChartController
@@ -17,6 +24,19 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
   @api_true [api?: true]
 
+  operation :stats,
+    summary: "Get indexing and chain stats",
+    description: "Returns current indexing progress, chain stats and market data used on the UI.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Stats", "application/json", BlockScoutWeb.Schemas.API.V2.Stats.Response},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+  Returns current indexing progress, chain stats and market data used on the UI.
+  """
+  @spec stats(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def stats(conn, _params) do
     market_cap_type =
       case Application.get_env(:explorer, :supply) do
@@ -98,6 +118,21 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       else: gas_used |> Decimal.div(gas_limit) |> Decimal.mult(100) |> Decimal.to_float()
   end
 
+  operation :transactions_chart,
+    summary: "Transactions chart data",
+    description: "Returns transaction counts by date for charting.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"Transactions chart data", "application/json",
+         %Schema{type: :object, properties: %{chart_data: %Schema{type: :array, items: %Schema{type: :object}}}}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+  Returns transaction counts by date chart.
+  """
+  @spec transactions_chart(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transactions_chart(conn, _params) do
     [{:history_size, history_size}] =
       Application.get_env(:block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController, [{:history_size, 30}])
@@ -119,6 +154,27 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     })
   end
 
+  operation :market_chart,
+    summary: "Market history chart data",
+    description: "Returns market history (price, market cap, tvl) for charting.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"Market chart data", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             chart_data: %Schema{type: :array, items: %Schema{type: :object}},
+             available_supply: %Schema{type: :number}
+           }
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+  Returns market history (price, market cap, tvl) for charting.
+  """
+  @spec market_chart(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def market_chart(conn, _params) do
     exchange_rate = Market.get_coin_exchange_rate()
 
@@ -152,6 +208,21 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     })
   end
 
+  operation :secondary_coin_market_chart,
+    summary: "Secondary coin market history chart data",
+    description: "Returns market history for the secondary coin used for charting.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"Secondary coin market chart data", "application/json",
+         %Schema{type: :object, properties: %{chart_data: %Schema{type: :array, items: %Schema{type: :object}}}}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+  Returns market history for the secondary coin used for charting.
+  """
+  @spec secondary_coin_market_chart(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def secondary_coin_market_chart(conn, _params) do
     recent_market_history = Market.fetch_recent_history(true)
 

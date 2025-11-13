@@ -25,6 +25,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.ApiSpec)
   end
 
   pipeline :api_v2_no_forgery_protect do
@@ -41,6 +42,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
     plug(:accepts, ["json"])
     plug(CheckApiV2)
     plug(:fetch_session)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.ApiSpec)
   end
 
   scope "/", as: :api_v2 do
@@ -48,8 +50,8 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
 
     get("/", V2.SmartContractController, :smart_contracts_list)
     get("/counters", V2.SmartContractController, :smart_contracts_counters)
-    get("/:address_hash", V2.SmartContractController, :smart_contract)
-    get("/:address_hash/audit-reports", V2.SmartContractController, :audit_reports_list)
+    get("/:address_hash_param", V2.SmartContractController, :smart_contract)
+    get("/:address_hash_param/audit-reports", V2.SmartContractController, :audit_reports_list)
 
     get("/verification/config", V2.VerificationController, :config)
   end
@@ -57,7 +59,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
   scope "/", as: :api_v2 do
     pipe_through(:api_v2_no_forgery_protect)
 
-    post("/:address_hash/audit-reports", V2.SmartContractController, :audit_report_submission)
+    post("/:address_hash_param/audit-reports", V2.SmartContractController, :audit_report_submission)
   end
 
   scope "/:address_hash/verification/via", as: :api_v2 do
