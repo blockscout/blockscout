@@ -53,6 +53,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                               field(:l1_block_number, :integer)
                               field(:operator_fee_scalar, :decimal)
                               field(:operator_fee_constant, :decimal)
+                              field(:da_footprint_gas_scalar, :decimal)
                             end,
                             2
                           )
@@ -315,6 +316,9 @@ defmodule Explorer.Chain.Transaction do
     chain_identity: [:explorer, :chain_identity],
     decode_not_a_contract_calls: [:explorer, :decode_not_a_contract_calls]
 
+  use Utils.RuntimeEnvHelper,
+    op_jovian_timestamp: [:indexer, [Indexer.Fetcher.Optimism.EIP1559ConfigUpdate, :jovian_timestamp_l2]]
+
   require Logger
   require Explorer.Chain.Transaction.Schema
 
@@ -352,7 +356,7 @@ defmodule Explorer.Chain.Transaction do
 
   @chain_type_optional_attrs (case @chain_type do
                                 :optimism ->
-                                  ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_transaction_origin l1_block_number operator_fee_scalar operator_fee_constant)a
+                                  ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_transaction_origin l1_block_number operator_fee_scalar operator_fee_constant da_footprint_gas_scalar)a
 
                                 :scroll ->
                                   ~w(l1_fee queue_index)a
@@ -540,6 +544,7 @@ defmodule Explorer.Chain.Transaction do
    * `wrapped_hash` - hash from the `wrapped` field (used by Suave)
    * `operator_fee_scalar` - operatorFeeScalar is a uint32 scalar set by a chain operator (used by some OP chains)
    * `operator_fee_constant` - operatorFeeConstant is a uint64 constant set by a chain operator (used by some OP chains)
+   * `da_footprint_gas_scalar` - daFootprintGasScalar is a uint16 scalar used to calculate daFootprint introduced in Jovian OP upgrade
   """
   Explorer.Chain.Transaction.Schema.generate()
 
@@ -2091,6 +2096,8 @@ defmodule Explorer.Chain.Transaction do
   @doc """
     The operator fee is calculated for OP chains starting from the Isthmus upgrade
     as described in https://specs.optimism.io/protocol/isthmus/exec-engine.html#operator-fee
+    The formula changed in Jovian upgrade as follows:
+    https://specs.optimism.io/protocol/jovian/exec-engine.html#fee-formula-update
 
     If the `operatorFeeScalar` or `operatorFeeConstant` is `nil`, it's treated as zero.
 
@@ -2111,10 +2118,25 @@ defmodule Explorer.Chain.Transaction do
     operator_fee_scalar = Map.get(transaction, :operator_fee_scalar) || Decimal.new(0)
     operator_fee_constant = Map.get(transaction, :operator_fee_constant) || Decimal.new(0)
 
-    gas_used
-    |> Decimal.mult(operator_fee_scalar)
-    |> Decimal.div_int(1_000_000)
-    |> Decimal.add(operator_fee_constant)
+    jovian_timestamp = op_jovian_timestamp()
+
+    block_timestamp =
+      Map.get(transaction, :block_timestamp) || (jovian_timestamp && DateTime.from_unix!(jovian_timestamp)) ||
+        DateTime.from_unix!(0)
+
+    if DateTime.to_unix(block_timestamp) >= jovian_timestamp do
+      # use the formula for Jovian
+      gas_used
+      |> Decimal.mult(operator_fee_scalar)
+      |> Decimal.mult(100)
+      |> Decimal.add(operator_fee_constant)
+    else
+      # use the formula for Isthmus
+      gas_used
+      |> Decimal.mult(operator_fee_scalar)
+      |> Decimal.div_int(1_000_000)
+      |> Decimal.add(operator_fee_constant)
+    end
   end
 
   @doc """

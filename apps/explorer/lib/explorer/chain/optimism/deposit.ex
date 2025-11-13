@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Optimism.Deposit do
 
   use Explorer.Schema
 
-  import Explorer.Chain, only: [default_paging_options: 0, join_association: 3, select_repo: 1]
+  import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
 
   alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.PagingOptions
@@ -82,16 +82,48 @@ defmodule Explorer.Chain.Optimism.Deposit do
 
       _ ->
         base_query =
-          from(d in __MODULE__,
+          from(
+            d in __MODULE__,
+            inner_join: t in Transaction,
+            on: t.hash == d.l2_transaction_hash and t.status == :ok,
+            select: %{
+              l1_block_number: d.l1_block_number,
+              l1_block_timestamp: d.l1_block_timestamp,
+              l1_transaction_hash: d.l1_transaction_hash,
+              l1_transaction_origin: d.l1_transaction_origin,
+              l2_transaction_hash: d.l2_transaction_hash,
+              l2_transaction_gas_limit: t.gas
+            },
             order_by: [desc: d.l1_block_number, desc: d.l2_transaction_hash]
           )
 
         base_query
-        |> join_association(:l2_transaction, :required)
         |> page_deposits(paging_options)
         |> limit(^paging_options.page_size)
         |> select_repo(options).all(timeout: :infinity)
     end
+  end
+
+  @doc """
+    Returns total number of displayed deposits.
+
+    ## Parameters
+    - `options`: A keyword list of options:
+      - `:api?` - Whether the function is being called from an API context.
+
+    ## Returns
+    - A total number of deposits.
+  """
+  @spec count(list()) :: non_neg_integer()
+  def count(options \\ []) do
+    query =
+      from(
+        d in __MODULE__,
+        inner_join: t in Transaction,
+        on: t.hash == d.l2_transaction_hash and t.status == :ok
+      )
+
+    select_repo(options).aggregate(query, :count)
   end
 
   defp page_deposits(query, %PagingOptions{key: nil}), do: query

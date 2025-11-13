@@ -263,7 +263,11 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   """
   @spec deposits_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits_count(conn, _params) do
-    items_count(conn, Deposit)
+    count = Deposit.count(@api_true)
+
+    conn
+    |> put_status(200)
+    |> render(:optimism_items_count, %{count: count})
   end
 
   @doc """

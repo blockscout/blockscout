@@ -479,7 +479,8 @@ defmodule Explorer.Chain.Block do
          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
          config = Explorer.Chain.Optimism.EIP1559ConfigUpdate.actual_config_for_block(block_number),
          false <- is_nil(config) do
-      config
+      {denominator, multiplier, _min_base_fee} = config
+      {denominator, multiplier}
     else
       _ ->
         {Application.get_env(:explorer, :base_fee_max_change_denominator),

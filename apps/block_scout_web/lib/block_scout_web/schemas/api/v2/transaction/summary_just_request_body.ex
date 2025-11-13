@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.SummaryJustRequestBody do
   OpenAPI schema for the transaction summary just request body response.
   """
   require OpenApiSpex
+
   alias BlockScoutWeb.Schemas.API.V2.{Address, InternalTransaction, Log, TokenTransfer}
   alias OpenApiSpex.Schema
 
