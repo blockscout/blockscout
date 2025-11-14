@@ -104,7 +104,7 @@ defmodule Indexer.Fetcher.PendingTransaction do
         {:DOWN, ref, :process, pid, reason},
         %__MODULE__{task: %Task{pid: pid, ref: ref}} = state
       ) do
-    Logger.error(fn -> "pending transaction fetcher task exited due to #{inspect(reason)}.  Rescheduling." end)
+    Logger.error(fn -> "pending transaction fetcher task exited due to #{inspect(reason)}. Rescheduling." end)
 
     {:noreply, schedule_fetch(state)}
   end

@@ -102,7 +102,7 @@ defmodule Indexer.Block.Fetcher do
             ) :: Import.all_result()
 
   # These are all the *default* values for options.
-  # DO NOT use them directly in the code.  Get options from `state`.
+  # DO NOT use them directly in the code. Get options from `state`.
 
   @receipts_batch_size 250
   @receipts_concurrency 10
@@ -128,11 +128,11 @@ defmodule Indexer.Block.Fetcher do
 
   The follow options can be overridden:
 
-    * `:receipts_batch_size` - The number of receipts to request in one call to the JSONRPC.  Defaults to
-      `#{@receipts_batch_size}`.  Receipt requests also include the logs for when the transaction was collated into the
-      block.  *These logs are not paginated.*
+    * `:receipts_batch_size` - The number of receipts to request in one call to the JSONRPC. Defaults to
+      `#{@receipts_batch_size}`. Receipt requests also include the logs for when the transaction was collated into the
+      block. *These logs are not paginated.*
     * `:receipts_concurrency` - The number of concurrent requests of `:receipts_batch_size` to allow against the JSONRPC
-      **for each block range**.  Defaults to `#{@receipts_concurrency}`.  *Each transaction only has one receipt.*
+      **for each block range**. Defaults to `#{@receipts_concurrency}`. *Each transaction only has one receipt.*
 
   """
   def new(named_arguments) when is_map(named_arguments) do
