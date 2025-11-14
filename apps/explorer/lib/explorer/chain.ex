@@ -3985,7 +3985,7 @@ defmodule Explorer.Chain do
     |> Enum.reverse()
   end
 
-  defp flat_1155_batch_token_transfer(tt, amounts, token_ids, token_id_to_filter) do
+  defp flat_1155_batch_token_transfer(%TokenTransfer{} = tt, amounts, token_ids, token_id_to_filter) do
     amounts
     |> Enum.zip(token_ids)
     |> Enum.with_index()
@@ -4009,7 +4009,7 @@ defmodule Explorer.Chain do
     transfer
   end
 
-  defp group_batch_reducer(transfer, acc) do
+  defp group_batch_reducer(transfer, %TokenTransfer{} = acc) do
     %TokenTransfer{acc | amount: Decimal.add(acc.amount, transfer.amount)}
   end
 

@@ -92,7 +92,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       params
       |> extract_filters()
       |> Keyword.merge(paging_options(params))
-      |> Keyword.update(:paging_options, %PagingOptions{page_size: CsvHelper.limit()}, fn paging_options ->
+      |> Keyword.update(:paging_options, %PagingOptions{page_size: CsvHelper.limit()}, fn %PagingOptions{} =
+                                                                                            paging_options ->
         %PagingOptions{paging_options | page_size: CsvHelper.limit()}
       end)
       |> Keyword.put(:timeout, :timer.minutes(5))

@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
         next_page |> next_page_params(watchlist_addresses, params)
 
       watchlist_addresses_prepared =
-        Enum.map(watchlist_addresses, fn wa ->
+        Enum.map(watchlist_addresses, fn %WatchlistAddress{} = wa ->
           balances =
             Chain.fetch_paginated_last_token_balances(wa.address_hash,
               paging_options: %PagingOptions{page_size: @token_balances_amount + 1}

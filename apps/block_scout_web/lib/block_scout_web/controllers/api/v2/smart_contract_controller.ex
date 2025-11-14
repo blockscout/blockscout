@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          _ <- PublishHelper.sourcify_check(address_hash_string),
-         {:not_found, {:ok, address}} <-
+         {:not_found, {:ok, %Address{} = address}} <-
            {:not_found, Chain.find_contract_address(address_hash, smart_contract_address_options())} do
       implementations = SmartContractHelper.pre_fetch_implementations(address)
 

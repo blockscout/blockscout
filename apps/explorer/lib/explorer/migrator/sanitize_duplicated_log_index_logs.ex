@@ -71,7 +71,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
 
     {ids, logs, ids_to_new_index} =
       logs_to_update
-      |> Enum.reduce({[], [], %{}}, fn {log, new_index}, {ids, logs, ids_to_new_index} ->
+      |> Enum.reduce({[], [], %{}}, fn {%Log{} = log, new_index}, {ids, logs, ids_to_new_index} ->
         id = {log.transaction_hash, log.block_hash, log.index}
 
         {[id | ids],
@@ -106,7 +106,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
       Repo.insert_all(Log, logs, timeout: :infinity)
 
       token_transfers
-      |> Enum.map(fn token_transfer ->
+      |> Enum.map(fn %TokenTransfer{} = token_transfer ->
         id = token_transfer_to_index(token_transfer)
 
         %TokenTransfer{token_transfer | log_index: ids_to_new_index[id]}
@@ -148,7 +148,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
         ^QueryHelper.tuple_in([:owner_updated_at_block, :owner_updated_at_log_index], nft_instances_params)
       )
       |> Repo.all(timeout: :infinity)
-      |> Enum.map(fn nft ->
+      |> Enum.map(fn %Instance{} = nft ->
         %Instance{
           nft
           | owner_updated_at_log_index: nft_updates_map[{nft.owner_updated_at_block, nft.owner_updated_at_log_index}]

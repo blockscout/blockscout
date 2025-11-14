@@ -60,7 +60,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   end
 
   defp fetch_and_broadcast_metadata(
-         %{token_id: token_id, token_contract_address_hash: token_contract_address_hash} = token_instance
+         %TokenInstance{token_id: token_id, token_contract_address_hash: token_contract_address_hash} = token_instance
        ) do
     case Helper.batch_prepare_instances_insert_params([
            %{contract_address_hash: token_contract_address_hash, token_id: token_id}

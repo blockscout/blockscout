@@ -80,7 +80,11 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
     {block_hash_bytes, nonce, from_address_hash_bytes}
   end
 
-  defp pending_entry(%{hash: %Hash{bytes: hash}, nonce: nonce, from_address_hash: %Hash{bytes: from_address_hash_bytes}}) do
+  defp pending_entry(%{
+         hash: %Hash{bytes: hash},
+         nonce: nonce,
+         from_address_hash: %Hash{bytes: from_address_hash_bytes}
+       }) do
     {:pending, nonce, from_address_hash_bytes, hash}
   end
 

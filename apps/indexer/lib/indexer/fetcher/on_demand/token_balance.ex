@@ -209,7 +209,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
             address_current_token_balances: %{
               address_hash: to_string(address_hash),
               address_current_token_balances:
-                Enum.map(ctbs, fn ctb ->
+                Enum.map(ctbs, fn %CurrentTokenBalance{} = ctb ->
                   %CurrentTokenBalance{ctb | token: tokens[ctb.token_contract_address_hash.bytes]}
                 end)
             }

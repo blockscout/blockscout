@@ -43,7 +43,7 @@
           <h3 class="address-detail-hash-title mb-4 <%= if Address.smart_contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
           <!-- Verify in other explorers -->
           <!--
-          <%# <%= render "_verify_other_explorers.html", hash: @address.hash, type: "address" %> %>
+          <%= render "_verify_other_explorers.html", hash: @address.hash, type: "address" %>
           -->
           <% address_name = primary_name(@address) %>
           <%= cond do %>

@@ -3,9 +3,9 @@ defmodule BlockScoutWeb.ErrorHelper do
   Conveniences for translating and building error messages.
   """
 
+  alias Ecto.Changeset
   use PhoenixHTMLHelpers
 
-  alias Ecto.Changeset
   alias Phoenix.HTML.Form
   alias Plug.Conn
 

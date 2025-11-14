@@ -6,7 +6,7 @@
       to: block_transaction_path(@conn, :index, @conn.params["block_hash_or_number"])
     )
   %>
-  
+
   <%= if Chain.check_if_withdrawals_in_block(@block.hash) do %>
     <%=
       link(

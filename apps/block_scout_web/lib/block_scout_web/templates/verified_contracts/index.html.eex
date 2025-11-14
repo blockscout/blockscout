@@ -42,7 +42,7 @@
           ) %>
         </div>
       </div>
-      
+
       <div class="search-input-container mb-3">
         <input data-search-field="" class="form-control search-input" type="text" name="search" value="<%= @conn.params["search"] %>" placeholder="<%= gettext "Contract name or address" %>" id="search-text-input">
       </div>
