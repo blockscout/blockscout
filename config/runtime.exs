@@ -839,8 +839,8 @@ config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),
   storage_period_days:
     ConfigHelper.parse_integer_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_STORAGE_PERIOD_DAYS", 30),
-  future_check_interval:
-    ConfigHelper.parse_time_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_FUTURE_CHECK_INTERVAL", "1m")
+  check_interval:
+    ConfigHelper.parse_time_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_CHECK_INTERVAL", "1m")
 
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
