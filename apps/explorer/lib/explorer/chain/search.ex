@@ -87,7 +87,7 @@ defmodule Explorer.Chain.Search do
   end
 
   if @chain_type == :filecoin do
-    defp search_result({:filecoin, filecoin_address}, _paging_options, _query_string, _options) do
+    defp search_result({:filecoin, filecoin_address}, _paging_options, _query_string, options) do
       {filecoin_address
        |> address_by_filecoin_id_or_robust()
        |> select_repo(options).all(), nil}
