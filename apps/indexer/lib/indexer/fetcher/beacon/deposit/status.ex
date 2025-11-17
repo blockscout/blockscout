@@ -10,9 +10,11 @@ defmodule Indexer.Fetcher.Beacon.Deposit.Status do
 
   import Ecto.Query
 
+  alias Ecto.Multi
   alias Explorer.Chain.Beacon.Deposit
-  alias Explorer.Chain.{Data, Wei}
-  alias Explorer.{QueryHelper, Repo}
+  alias Explorer.Chain.Beacon.Deposit.Pending, as: PendingDeposit
+  alias Explorer.Chain.Wei
+  alias Explorer.Repo
   alias Indexer.Fetcher.Beacon.{Blob, Client}
 
   def start_link(arguments, gen_server_options \\ []) do
@@ -54,46 +56,61 @@ defmodule Indexer.Fetcher.Beacon.Deposit.Status do
   end
 
   defp mark_completed_deposits(pending_deposits) do
-    ids =
+    {changes_list, max_block_timestamp} =
       pending_deposits
-      |> Enum.map(fn deposit ->
-        {:ok, pubkey} = Data.cast(deposit["pubkey"])
-        {:ok, withdrawal_credentials} = Data.cast(deposit["withdrawal_credentials"])
-        {amount, ""} = Integer.parse(deposit["amount"])
-        {:ok, signature} = Data.cast(deposit["signature"])
+      |> Enum.reduce({[], DateTime.from_unix!(0)}, fn deposit, {acc, max_block_timestamp} ->
         {slot, ""} = Integer.parse(deposit["slot"])
+        block_timestamp = slot |> slot_to_timestamp() |> DateTime.from_unix!()
+        {amount, ""} = Integer.parse(deposit["amount"])
 
-        {pubkey.bytes, withdrawal_credentials.bytes, amount |> Decimal.new() |> Wei.from(:gwei) |> Wei.to(:wei),
-         signature.bytes, slot |> slot_to_timestamp() |> DateTime.from_unix!()}
+        {[
+           PendingDeposit.changeset(%PendingDeposit{}, %{
+             pubkey: deposit["pubkey"],
+             withdrawal_credentials: deposit["withdrawal_credentials"],
+             amount: amount |> Decimal.new() |> Wei.from(:gwei) |> Wei.to(:wei),
+             signature: deposit["signature"],
+             block_timestamp: block_timestamp
+           }).changes
+           | acc
+         ], Enum.max([block_timestamp, max_block_timestamp], &DateTime.after?/2)}
       end)
 
-    tuple_not_in =
-      dynamic(
-        not (^QueryHelper.tuple_in([:pubkey, :withdrawal_credentials, :amount, :signature, :block_timestamp], ids))
-      )
-
-    batch_size = 100
-
-    query =
-      from(
-        deposit in Deposit,
-        where: deposit.status == :pending,
-        where: ^tuple_not_in,
-        select: deposit.index,
-        order_by: [asc: deposit.index]
-      )
-
-    all_batch_ids =
-      query
-      |> Repo.all(timeout: :infinity)
-
-    all_batch_ids
-    |> Enum.chunk_every(batch_size)
-    |> Enum.each(fn batch_ids ->
-      Deposit
-      |> where([deposit], deposit.index in ^batch_ids)
-      |> Repo.update_all(set: [status: "completed", updated_at: DateTime.utc_now()])
+    Multi.new()
+    |> Multi.run(:create_temp_beacon_pending_deposits_table, fn repo, _changes ->
+      repo.query("""
+        CREATE TEMP TABLE temp_beacon_pending_deposits (
+          pubkey bytea,
+          withdrawal_credentials bytea,
+          amount numeric,
+          signature bytea,
+          block_timestamp timestamp
+        ) ON COMMIT DROP
+      """)
     end)
+    |> Multi.run(:insert_pending_deposits, fn repo, _changes ->
+      {:ok, repo.safe_insert_all(PendingDeposit, changes_list, [])}
+    end)
+    |> Multi.update_all(
+      :mark_completed_deposits,
+      from(d in Deposit,
+        as: :deposit,
+        where: d.status == :pending,
+        where: d.block_timestamp <= ^max_block_timestamp,
+        where:
+          not exists(
+            from(pd in PendingDeposit,
+              where: pd.pubkey == parent_as(:deposit).pubkey,
+              where: pd.withdrawal_credentials == parent_as(:deposit).withdrawal_credentials,
+              where: pd.amount == parent_as(:deposit).amount,
+              where: pd.signature == parent_as(:deposit).signature,
+              where: pd.block_timestamp == parent_as(:deposit).block_timestamp
+            )
+          )
+      ),
+      [set: [status: :completed, updated_at: DateTime.utc_now()]],
+      timeout: :infinity
+    )
+    |> Repo.transaction()
   end
 
   defp slot_to_timestamp(slot) do
