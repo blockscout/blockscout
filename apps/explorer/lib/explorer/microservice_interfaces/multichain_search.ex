@@ -1131,10 +1131,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       hash: Hash.to_string(address.hash),
       is_contract: !is_nil(address.contract_code),
       is_verified_contract: address.verified,
-      is_token: token?(address.token),
-      ens_name: address.ens_domain_name,
-      token_name: get_token_name(address.token),
-      token_type: get_token_type(address.token),
       contract_name: get_smart_contract_name(address.smart_contract)
     }
   end
@@ -1201,29 +1197,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     }
   end
 
-  defp token?(nil), do: false
-
-  defp token?(%NotLoaded{}), do: false
-
-  defp token?(_), do: true
-
-  defp get_token_name(nil), do: nil
-
-  defp get_token_name(%NotLoaded{}), do: nil
-
-  defp get_token_name(token), do: token.name
-
   defp get_smart_contract_name(nil), do: nil
 
   defp get_smart_contract_name(%NotLoaded{}), do: nil
 
   defp get_smart_contract_name(smart_contract), do: smart_contract.name
-
-  defp get_token_type(nil), do: @unspecified
-
-  defp get_token_type(%NotLoaded{}), do: @unspecified
-
-  defp get_token_type(token), do: token.type
 
   defp get_block_ranges([]), do: []
 
