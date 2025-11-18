@@ -456,10 +456,14 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_addresses_sorting("transactions_count", "desc"), do: [desc_nulls_last: :transactions_count]
   defp do_addresses_sorting(_, _), do: []
 
+  @spec hot_contracts_sorting(%{sort: String.t(), order: String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
   def hot_contracts_sorting(%{sort: sort_field, order: order}) do
     [sorting: do_hot_contracts_sorting(sort_field, order)]
   end
 
+  @spec hot_contracts_sorting(any()) :: []
   def hot_contracts_sorting(_), do: []
 
   defp do_hot_contracts_sorting("transactions_count", "asc"),

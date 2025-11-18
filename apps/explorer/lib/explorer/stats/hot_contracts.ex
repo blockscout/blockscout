@@ -29,6 +29,7 @@ defmodule Explorer.Stats.HotContracts do
     timestamps()
   end
 
+  @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = struct, params \\ %{}) do
     struct
     |> cast(params, [:date, :contract_address_hash, :transactions_count, :total_gas_used])
@@ -57,7 +58,7 @@ defmodule Explorer.Stats.HotContracts do
   end
 
   @spec aggregate_hot_contracts_for_block_interval_query(Block.block_number(), Block.block_number()) :: Ecto.Query.t()
-  def aggregate_hot_contracts_for_block_interval_query(from_block, to_block) do
+  defp aggregate_hot_contracts_for_block_interval_query(from_block, to_block) do
     from(transaction in Transaction,
       as: :transaction,
       where: transaction.block_number >= ^from_block and transaction.block_number <= ^to_block,

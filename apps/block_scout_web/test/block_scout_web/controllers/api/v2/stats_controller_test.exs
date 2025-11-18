@@ -124,6 +124,18 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       addresses
     end
 
+    test "empty stats works for short scale", %{conn: conn} do
+      request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "5m"})
+      assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
+      assert length(items) == 0
+    end
+
+    test "empty stats works for long scale", %{conn: conn} do
+      request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "7d"})
+      assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
+      assert length(items) == 0
+    end
+
     # Daily scales pagination
     test "1d pagination", %{conn: conn} do
       insert_hot_contracts_daily(55)
