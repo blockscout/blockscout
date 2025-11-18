@@ -37,7 +37,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     state =
       case MigrationStatus.fetch(@migration_name) do
         nil ->
-          state = %{"max_block_number" => 0}
+          state = %{"max_block_number" => -1}
           MigrationStatus.set_status(@migration_name, "started")
           MigrationStatus.update_meta(@migration_name, state)
           state
@@ -54,16 +54,17 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   @impl true
   def handle_info(:update, %{"max_block_number" => max_number} = state) do
     border_number = get_border_number()
-    to_number = min(max_number + batch_size(), border_number)
+    to_number = border_number && min(max_number + batch_size(), border_number)
     clear_internal_transactions(max_number, to_number)
     completed? = to_number == border_number
+    new_max_number = (to_number && to_number + 1) || max_number
 
     new_state =
       if completed? and is_nil(state["completed"]) do
         MigrationStatus.set_status(@migration_name, "completed")
-        Map.merge(state, %{"max_block_number" => to_number + 1, "completed" => true})
+        Map.merge(state, %{"max_block_number" => new_max_number, "completed" => true})
       else
-        %{state | "max_block_number" => to_number + 1}
+        %{state | "max_block_number" => new_max_number}
       end
 
     MigrationStatus.update_meta(@migration_name, new_state)
@@ -71,7 +72,9 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     {:noreply, new_state}
   end
 
-  defp clear_internal_transactions(from_number, to_number) when from_number <= to_number do
+  @smallint_max_value 32767
+  defp clear_internal_transactions(from_number, to_number)
+       when is_integer(from_number) and is_integer(to_number) and from_number < to_number do
     Repo.transaction(fn ->
       locked_internal_transactions_to_delete_query =
         from(
@@ -135,7 +138,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
                 count_froms: 1
               },
               fn existing_params ->
-                %{existing_params | count_froms: existing_params.count_froms + 1}
+                %{existing_params | count_froms: min(existing_params.count_froms + 1, @smallint_max_value)}
               end
             )
             |> Map.update(
@@ -148,15 +151,16 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
               },
               # credo:disable-for-next-line Credo.Check.Refactor.Nesting
               fn existing_params ->
-                %{existing_params | count_tos: existing_params.count_tos + 1}
+                %{existing_params | count_tos: min(existing_params.count_tos + 1, @smallint_max_value)}
               end
             )
           end)
           |> Map.values()
+          |> Enum.reject(&is_nil(&1.address_id))
         end)
         |> Enum.sort_by(&{&1.address_id, &1.block_number})
 
-      Repo.insert_all(InternalTransactionsAddressPlaceholder, placeholders_params, on_conflict: :nothing)
+      Repo.insert_all(InternalTransactionsAddressPlaceholder, placeholders_params)
     end)
   end
 
@@ -172,7 +176,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     |> limit(1)
     |> select([b], b.number)
     |> Repo.one()
-    |> Kernel.||(0)
   end
 
   defp schedule_check(completed? \\ false) do
