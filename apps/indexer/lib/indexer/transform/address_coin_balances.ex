@@ -4,6 +4,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
   """
 
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
+
   use Utils.RuntimeEnvHelper,
     chain_type: [:explorer, :chain_type],
     arc_native_token_system_address: [:indexer, [:arc, :arc_native_token_system_address]]
@@ -90,7 +91,8 @@ defmodule Indexer.Transform.AddressCoinBalances do
             :second_topic => String.t(),
             :third_topic => String.t() | nil,
             :address_hash => String.t(),
-            :block_number => non_neg_integer()
+            :block_number => non_neg_integer(),
+            optional(:type) => String.t() | nil
           }
         ]) :: [%{:address_hash => String.t(), :block_number => non_neg_integer()}]
   defp handle_arc_transfer_logs(logs_params) do
@@ -102,25 +104,40 @@ defmodule Indexer.Transform.AddressCoinBalances do
     logs_params
     |> Enum.flat_map(fn
       %{
+        type: "pending"
+      } ->
+        []
+
+      %{
         first_topic: ^arc_native_coin_transferred_event,
-        address_hash: ^arc_native_token_system_address
-      } = log ->
+        second_topic: second_topic,
+        third_topic: third_topic,
+        address_hash: ^arc_native_token_system_address,
+        block_number: block_number
+      }
+      when is_integer(block_number) ->
         [
-          %{address_hash: truncate_address_hash(log.second_topic), block_number: log.block_number},
-          %{address_hash: truncate_address_hash(log.third_topic), block_number: log.block_number}
+          %{address_hash: truncate_address_hash(second_topic), block_number: block_number},
+          %{address_hash: truncate_address_hash(third_topic), block_number: block_number}
         ]
 
       %{
         first_topic: ^arc_native_coin_minted_event,
-        address_hash: ^arc_native_token_system_address
-      } = log ->
-        [%{address_hash: truncate_address_hash(log.second_topic), block_number: log.block_number}]
+        second_topic: second_topic,
+        address_hash: ^arc_native_token_system_address,
+        block_number: block_number
+      }
+      when is_integer(block_number) ->
+        [%{address_hash: truncate_address_hash(second_topic), block_number: block_number}]
 
       %{
         first_topic: ^arc_native_coin_burned_event,
-        address_hash: ^arc_native_token_system_address
-      } = log ->
-        [%{address_hash: truncate_address_hash(log.second_topic), block_number: log.block_number}]
+        second_topic: second_topic,
+        address_hash: ^arc_native_token_system_address,
+        block_number: block_number
+      }
+      when is_integer(block_number) ->
+        [%{address_hash: truncate_address_hash(second_topic), block_number: block_number}]
 
       _ ->
         []

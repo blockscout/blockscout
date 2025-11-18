@@ -24,21 +24,23 @@ defmodule Indexer.Transform.TokenTransfers do
   def parse(logs, skip_additional_fetchers? \\ false) do
     initial_acc = %{tokens: [], token_transfers: []}
 
-    allowed_erc20_erc721_token_transfer_events =
+    erc20_and_erc721_token_transfers_filtered =
       if chain_type() == :arc do
-        [
-          TokenTransfer.constant(),
-          TokenTransfer.arc_native_coin_transferred_event(),
-          TokenTransfer.arc_native_coin_minted_event(),
-          TokenTransfer.arc_native_coin_burned_event()
-        ]
+        allowed_erc20_erc721_token_transfer_events =
+          [
+            TokenTransfer.constant(),
+            TokenTransfer.arc_native_coin_transferred_event(),
+            TokenTransfer.arc_native_coin_minted_event(),
+            TokenTransfer.arc_native_coin_burned_event()
+          ]
+
+        Enum.filter(logs, &(&1.first_topic in allowed_erc20_erc721_token_transfer_events))
       else
-        [TokenTransfer.constant()]
+        Enum.filter(logs, &(&1.first_topic == unquote(TokenTransfer.constant())))
       end
 
     erc20_and_erc721_token_transfers =
-      logs
-      |> Enum.filter(&(&1.first_topic in allowed_erc20_erc721_token_transfer_events))
+      erc20_and_erc721_token_transfers_filtered
       |> Enum.reduce(initial_acc, &do_parse/2)
 
     weth_transfers =
@@ -556,8 +558,8 @@ defmodule Indexer.Transform.TokenTransfers do
           optional(any()) => any()
         }) :: boolean()
   defp arc_native_coin_transferred_event?(log) do
-    log.first_topic == TokenTransfer.arc_native_coin_transferred_event() and
-      log.address_hash == arc_native_token_system_address() and chain_type() == :arc
+    chain_type() == :arc and log.first_topic == TokenTransfer.arc_native_coin_transferred_event() and
+      log.address_hash == arc_native_token_system_address()
   end
 
   # Determines if the given log is the NativeCoinMinted event emitted by the native token system address on Arc chain.
@@ -573,8 +575,8 @@ defmodule Indexer.Transform.TokenTransfers do
           optional(any()) => any()
         }) :: boolean()
   defp arc_native_coin_minted_event?(log) do
-    log.first_topic == TokenTransfer.arc_native_coin_minted_event() and
-      log.address_hash == arc_native_token_system_address() and chain_type() == :arc
+    chain_type() == :arc and log.first_topic == TokenTransfer.arc_native_coin_minted_event() and
+      log.address_hash == arc_native_token_system_address()
   end
 
   # Determines if the given log is the NativeCoinBurned event emitted by the native token system address on Arc chain.
@@ -590,8 +592,8 @@ defmodule Indexer.Transform.TokenTransfers do
           optional(any()) => any()
         }) :: boolean()
   defp arc_native_coin_burned_event?(log) do
-    log.first_topic == TokenTransfer.arc_native_coin_burned_event() and
-      log.address_hash == arc_native_token_system_address() and chain_type() == :arc
+    chain_type() == :arc and log.first_topic == TokenTransfer.arc_native_coin_burned_event() and
+      log.address_hash == arc_native_token_system_address()
   end
 
   # Determines if the given log is the Transfer event emitted by the native token contract on Arc chain.
@@ -607,8 +609,8 @@ defmodule Indexer.Transform.TokenTransfers do
           optional(any()) => any()
         }) :: boolean()
   defp arc_native_token_transfer_event?(log) do
-    log.first_topic == TokenTransfer.constant() and log.address_hash == arc_native_token_address() and
-      chain_type() == :arc
+    chain_type() == :arc and log.first_topic == TokenTransfer.constant() and
+      log.address_hash == arc_native_token_address()
   end
 
   def filter_tokens_for_supply_update(token_transfers) do
