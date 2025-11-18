@@ -27,6 +27,9 @@ defmodule Explorer.Chain.Import do
       Import.Stage.Logs,
       Import.Stage.InternalTransactions,
       Import.Stage.ChainTypeSpecific
+    ],
+    [
+      Import.Stage.Stats
     ]
   ]
 
