@@ -41,7 +41,7 @@ defmodule Explorer.Account.Notifier.Summary do
       not (is_nil(summary) or
              summary == :nothing or
              is_nil(summary.amount) or
-             summary.amount == Decimal.new(0))
+             (summary.amount == Decimal.new(0) and summary.type != "ERC-7984"))
     end)
   end
 
@@ -153,6 +153,20 @@ defmodule Explorer.Account.Notifier.Summary do
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
           subject: if(token_ids_string == "", do: transfer.token.type, else: token_ids_string),
+          transaction_fee: fee(transaction),
+          name: token_name(transfer),
+          type: transfer.token.type
+        }
+
+      "ERC-7984" ->
+        %Summary{
+          amount: Decimal.new(0),
+          transaction_hash: transaction.hash,
+          method: method(transfer),
+          from_address_hash: transfer.from_address_hash,
+          to_address_hash: transfer.to_address_hash,
+          block_number: transfer.block_number,
+          subject: "Confidential transfer",
           transaction_fee: fee(transaction),
           name: token_name(transfer),
           type: transfer.token.type

@@ -43,7 +43,7 @@ defmodule Explorer.Chain.Address.Token do
   defp filter_and_group(query) do
     from(
       [token, balance] in query,
-      where: balance.value > 0,
+      where: balance.value > 0 or token.type == "ERC-7984",
       select: %Address.Token{
         contract_address_hash: token.contract_address_hash,
         inserted_at: max(token.inserted_at),
