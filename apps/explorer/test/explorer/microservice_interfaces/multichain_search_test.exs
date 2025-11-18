@@ -1321,31 +1321,19 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                  hash: "0x" <> Base.encode16(address_1.hash.bytes, case: :lower),
                  is_contract: false,
                  is_verified_contract: false,
-                 contract_name: nil,
-                 token_name: nil,
-                 token_type: "UNSPECIFIED",
-                 is_token: false,
-                 ens_name: "te.eth"
+                 contract_name: nil
                },
                %{
                  hash: "0x" <> Base.encode16(address_2.hash.bytes, case: :lower),
                  is_contract: true,
                  is_verified_contract: false,
-                 contract_name: nil,
-                 token_name: nil,
-                 token_type: "UNSPECIFIED",
-                 is_token: false,
-                 ens_name: nil
+                 contract_name: nil
                },
                %{
                  hash: "0x" <> Base.encode16(address_3.hash.bytes, case: :lower),
                  is_contract: true,
                  is_verified_contract: true,
-                 contract_name: "SimpleStorage",
-                 token_name: "Main Token",
-                 token_type: "ERC-721",
-                 is_token: true,
-                 ens_name: nil
+                 contract_name: "SimpleStorage"
                }
              ]
 
@@ -1371,12 +1359,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
   defp address_export_data(address) do
     %{
       hash: "0x" <> Base.encode16(address.hash.bytes, case: :lower),
-      token_type: "UNSPECIFIED",
       is_contract: false,
-      token_name: nil,
       contract_name: nil,
-      ens_name: nil,
-      is_token: false,
       is_verified_contract: false
     }
   end

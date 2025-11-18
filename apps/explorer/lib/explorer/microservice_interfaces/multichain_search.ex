@@ -23,7 +23,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   @max_concurrency 5
   @post_timeout :timer.minutes(5)
-  @unspecified "UNSPECIFIED"
 
   @doc """
   Processes a batch import of data by splitting the input parameters into chunks and sending each chunk as an HTTP POST request to a configured microservice endpoint.
