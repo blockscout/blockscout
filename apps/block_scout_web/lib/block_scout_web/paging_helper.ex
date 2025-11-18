@@ -11,8 +11,8 @@ defmodule BlockScoutWeb.PagingHelper do
   alias Explorer.Chain.InternalTransaction.CallType, as: InternalTransactionCallType
   alias Explorer.Chain.InternalTransaction.Type, as: InternalTransactionType
   alias Explorer.Chain.{SmartContract, Transaction}
-  alias Explorer.Stats.HotContracts
   alias Explorer.{Helper, PagingOptions, SortingHelper}
+  alias Explorer.Stats.HotContracts
 
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}

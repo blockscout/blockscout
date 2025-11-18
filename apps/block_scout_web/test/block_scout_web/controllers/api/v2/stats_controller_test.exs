@@ -201,11 +201,10 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
 
     # Seconds scales pagination (seed once covers all three)
     test "5m pagination", %{conn: conn} do
-      addresses = insert_transactions_in_last_seconds(55, 300)
-      Enum.map(addresses, fn addr -> to_string(addr.hash) end) |> dbg(limit: :infinity, printable_limit: :infinity)
+      insert_transactions_in_last_seconds(55, 300)
 
       request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "5m"})
-      assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200) |> dbg()
+      assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
       assert length(items) == 50
       assert is_map(next_page_params)
 
@@ -215,7 +214,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     end
 
     test "1h pagination", %{conn: conn} do
-      insert_transactions_in_last_seconds(55, 300)
+      insert_transactions_in_last_seconds(55, 3600)
 
       request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "1h"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
@@ -228,7 +227,10 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     end
 
     test "3h pagination", %{conn: conn} do
-      insert_transactions_in_last_seconds(55, 300)
+      addresses = insert_transactions_in_last_seconds(55, 10800)
+
+      addresses =
+        Enum.map(addresses, fn addr -> to_string(addr.hash) end) |> dbg(limit: :infinity, printable_limit: :infinity)
 
       request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "3h"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
@@ -236,7 +238,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       assert is_map(next_page_params)
 
       request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "3h"}))
-      assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
+      assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200) |> dbg()
       assert length(items) == 5
     end
 

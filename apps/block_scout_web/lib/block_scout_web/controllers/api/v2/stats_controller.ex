@@ -4,13 +4,12 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     chain_identity: [:explorer, :chain_identity]
 
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
   use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.PagingHelper, only: [hot_contracts_sorting: 1, delete_items_count_from_next_page_params: 1]
 
   import BlockScoutWeb.Chain,
-    only: [hot_contracts_paging_options: 1, split_list_by_page: 1, next_page_params: 4, fetch_scam_token_toggle: 2]
+    only: [hot_contracts_paging_options: 1, split_list_by_page: 1, next_page_params: 5, fetch_scam_token_toggle: 2]
 
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
@@ -192,7 +191,12 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     parameters:
       base_params() ++
         [sort_param(["transactions_count", "total_gas_used"]), order_param(), hot_contracts_scale_param()] ++
-        define_paging_params(["transactions_count_positive", "total_gas_used", "contract_address_hash_not_nullable"]),
+        define_paging_params([
+          "transactions_count_positive",
+          "total_gas_used",
+          "contract_address_hash_not_nullable",
+          "items_count"
+        ]),
     responses: [
       ok:
         {"Hot contracts.", "application/json",
@@ -201,7 +205,8 @@ defmodule BlockScoutWeb.API.V2.StatsController do
            next_page_params_example: %{
              "transactions_count" => 100,
              "total_gas_used" => "100",
-             "contract_address_hash" => "0x01a2A10583675E0e5dF52DE1b62734109201477a"
+             "contract_address_hash" => "0x01a2A10583675E0e5dF52DE1b62734109201477a",
+             "items_count" => 50
            },
            title_prefix: "HotContracts"
          )},
@@ -229,7 +234,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
     next_page_params =
       next_page
-      |> next_page_params(hot_contracts, params, &hot_contracts_paging_params/1)
+      |> next_page_params(hot_contracts, params, false, &hot_contracts_paging_params/1)
       |> delete_items_count_from_next_page_params()
 
     conn

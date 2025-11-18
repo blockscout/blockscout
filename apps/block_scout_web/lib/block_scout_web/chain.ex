@@ -743,7 +743,8 @@ defmodule BlockScoutWeb.Chain do
         | key: %{
             transactions_count: transactions_count,
             total_gas_used: total_gas_used,
-            contract_address_hash: contract_address_hash
+            contract_address_hash: contract_address_hash,
+            to_address_hash: contract_address_hash
           }
       }
     ]
