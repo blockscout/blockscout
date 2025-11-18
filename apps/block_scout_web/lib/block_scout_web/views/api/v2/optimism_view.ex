@@ -153,7 +153,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l1_block_timestamp" => deposit.l1_block_timestamp,
             "l1_transaction_hash" => deposit.l1_transaction_hash,
             "l1_transaction_origin" => deposit.l1_transaction_origin,
-            "l2_transaction_gas_limit" => deposit.l2_transaction.gas
+            "l2_transaction_gas_limit" => deposit.l2_transaction_gas_limit
           }
         end),
       next_page_params: next_page_params
@@ -266,11 +266,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               "init_transaction_hash" => message.init_transaction_hash,
               "relay_transaction_hash" => message.relay_transaction_hash,
               "sender_address_hash" => message.sender_address_hash,
-              # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `sender_address_hash` property
-              "sender" => message.sender_address_hash,
               "target_address_hash" => message.target_address_hash,
-              # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `target_address_hash` property
-              "target" => message.target_address_hash,
               "payload" => message.payload
             }
 
@@ -451,6 +447,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     |> add_optional_transaction_field(transaction, :l1_fee_scalar)
     |> add_optional_transaction_field(transaction, :l1_gas_price)
     |> add_optional_transaction_field(transaction, :l1_gas_used)
+    |> add_optional_transaction_field(transaction, :da_footprint_gas_scalar)
     |> add_optimism_fields(transaction)
   end
 
@@ -516,8 +513,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     else
       out_json
       |> Map.put("op_interop_messages", interop_messages)
-      # TODO: remove the deprecated `op_interop` map after frontend switches to the new `op_interop_messages`
-      |> Map.put("op_interop", Enum.at(interop_messages, 0))
     end
   end
 

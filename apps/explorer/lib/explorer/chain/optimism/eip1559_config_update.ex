@@ -7,12 +7,14 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
   alias Explorer.Repo
 
   @required_attrs ~w(l2_block_number l2_block_hash base_fee_max_change_denominator elasticity_multiplier)a
+  @optional_attrs ~w(min_base_fee)a
 
   @typedoc """
     * `l2_block_number` - An L2 block number where the config update was registered.
     * `l2_block_hash` - An L2 block hash where the config update was registered.
     * `base_fee_max_change_denominator` - A new value of the denominator.
     * `elasticity_multiplier` - A new value of the multiplier.
+    * `min_base_fee` - A minimum base fee introduced in OP Jovian upgrade.
   """
   @primary_key false
   typed_schema "op_eip1559_config_updates" do
@@ -20,6 +22,7 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
     field(:l2_block_hash, Hash.Full)
     field(:base_fee_max_change_denominator, :integer)
     field(:elasticity_multiplier, :integer)
+    field(:min_base_fee, :integer)
 
     timestamps()
   end
@@ -29,7 +32,7 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
   """
   def changeset(%__MODULE__{} = updates, attrs \\ %{}) do
     updates
-    |> cast(attrs, @required_attrs)
+    |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
   end
 
@@ -40,14 +43,14 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
     - `block_number`: The block number for which we need to read the actual config.
 
     ## Returns
-    - `{denominator, multiplier}` tuple in case the config exists.
+    - `{denominator, multiplier, min_base_fee}` tuple in case the config exists.
     - `nil` if the config is unknown.
   """
-  @spec actual_config_for_block(non_neg_integer()) :: {non_neg_integer(), non_neg_integer()} | nil
+  @spec actual_config_for_block(non_neg_integer()) :: {non_neg_integer(), non_neg_integer(), non_neg_integer()} | nil
   def actual_config_for_block(block_number) do
     query =
       from(u in __MODULE__,
-        select: {u.base_fee_max_change_denominator, u.elasticity_multiplier},
+        select: {u.base_fee_max_change_denominator, u.elasticity_multiplier, u.min_base_fee},
         where: u.l2_block_number < ^block_number,
         order_by: [desc: u.l2_block_number],
         limit: 1

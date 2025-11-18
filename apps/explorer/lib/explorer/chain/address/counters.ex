@@ -2,6 +2,9 @@ defmodule Explorer.Chain.Address.Counters do
   @moduledoc """
     Functions related to Explorer.Chain.Address counters
   """
+  use Utils.RuntimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   import Ecto.Query, only: [from: 2, limit: 2, select: 3, union_all: 2, where: 3]
 
   import Explorer.Chain,
@@ -453,7 +456,7 @@ defmodule Explorer.Chain.Address.Counters do
       )
 
     celo_election_rewards_count_task =
-      if Application.get_env(:explorer, :chain_type) == :celo do
+      if chain_identity() == {:optimism, :celo} do
         configure_task(
           :celo_election_rewards,
           cached_counters,

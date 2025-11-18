@@ -1,9 +1,11 @@
 defmodule BlockScoutWeb.API.V2.MainPageController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  alias Explorer.{Chain, PagingOptions}
+  use Utils.CompileTimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   alias BlockScoutWeb.API.V2.{BlockView, OptimismView, TransactionView}
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.Deposit
 
@@ -11,8 +13,8 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
-  case @chain_type do
-    :celo ->
+  case @chain_identity do
+    {:optimism, :celo} ->
       @chain_type_transaction_necessity_by_association %{
         [gas_token: reputation_association()] => :optional
       }

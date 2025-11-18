@@ -5,7 +5,8 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.TokenTransfers
   """
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
 
   alias Explorer.Chain.{
     Address,
@@ -16,10 +17,10 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
 
   alias Explorer.Chain.Token.Instance
 
-  # Remove `transaction_hash` from primary key for `:celo` chain type. See
+  # Remove `transaction_hash` from primary key for `optimism-celo` chain type. See
   # `Explorer.Chain.Log.Schema` for more details.
-  @transaction_field (case @chain_type do
-                        :celo ->
+  @transaction_field (case @chain_identity do
+                        {:optimism, :celo} ->
                           quote do
                             [
                               belongs_to(:transaction, Transaction,
@@ -134,8 +135,9 @@ defmodule Explorer.Chain.TokenTransfer do
   """
 
   use Explorer.Schema
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
-  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
+  use Utils.RuntimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   require Explorer.Chain.TokenTransfer.Schema
 
@@ -187,16 +189,16 @@ defmodule Explorer.Chain.TokenTransfer do
   Explorer.Chain.TokenTransfer.Schema.generate()
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash block_hash token_type)a
-                  |> (&(case @chain_type do
-                          :celo ->
+                  |> (&(case @chain_identity do
+                          {:optimism, :celo} ->
                             &1
 
                           _ ->
                             [:transaction_hash | &1]
                         end)).()
   @optional_attrs ~w(amount amounts token_ids block_consensus)a
-                  |> (&(case @chain_type do
-                          :celo ->
+                  |> (&(case @chain_identity do
+                          {:optimism, :celo} ->
                             [:transaction_hash | &1]
 
                           _ ->
@@ -694,9 +696,9 @@ defmodule Explorer.Chain.TokenTransfer do
         where: tt.log_index == parent_as(:log).index
       )
 
-    chain_type()
+    chain_identity()
     |> case do
-      :celo ->
+      {:optimism, :celo} ->
         query
         |> where(
           [tt],

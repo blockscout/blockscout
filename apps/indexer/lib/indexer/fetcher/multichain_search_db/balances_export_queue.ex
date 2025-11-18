@@ -8,8 +8,8 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
-  alias Explorer.Chain.Wei
   alias Explorer.Chain.{Hash, MultichainSearchDb.BalancesExportQueue}
+  alias Explorer.Chain.Wei
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Repo
 

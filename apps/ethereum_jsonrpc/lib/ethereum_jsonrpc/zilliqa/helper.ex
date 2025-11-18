@@ -2,8 +2,8 @@ defmodule EthereumJSONRPC.Zilliqa.Helper do
   @moduledoc """
   Helper functions for processing consensus data.
   """
-  alias EthereumJSONRPC.Zilliqa
   alias EthereumJSONRPC.{Block, Blocks}
+  alias EthereumJSONRPC.Zilliqa
 
   alias EthereumJSONRPC.Zilliqa.{
     AggregateQuorumCertificate,

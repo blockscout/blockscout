@@ -8,9 +8,9 @@ defmodule Indexer.Fetcher.Beacon.Blob do
 
   require Logger
 
-  alias Explorer.Repo
   alias Explorer.Chain.Beacon.{Blob, Reader}
   alias Explorer.Chain.Data
+  alias Explorer.Repo
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.Beacon.Blob.Supervisor, as: BlobSupervisor
   alias Indexer.Fetcher.Beacon.Client

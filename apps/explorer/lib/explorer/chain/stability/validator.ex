@@ -5,9 +5,9 @@ defmodule Explorer.Chain.Stability.Validator do
 
   use Explorer.Schema
 
+  alias Explorer.{Chain, Repo, SortingHelper}
   alias Explorer.Chain.{Address, Block, Import}
   alias Explorer.Chain.Hash.Address, as: HashAddress
-  alias Explorer.{Chain, Repo, SortingHelper}
   alias Explorer.SmartContract.Reader
 
   require Logger

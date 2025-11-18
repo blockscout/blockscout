@@ -1,5 +1,24 @@
 # Changelog
 
+## 9.2.2
+
+### 🐛 Bug Fixes
+
+- Fix next page params for tokens list API endpoint ([#13520](https://github.com/blockscout/blockscout/issues/13520))
+
+## 9.2.1
+
+### 🐛 Bug Fixes
+
+- Fix REST API token holders pagination ([#13500](https://github.com/blockscout/blockscout/issues/13500))
+- Add missing query binding to txlistinternal query ([#13479](https://github.com/blockscout/blockscout/issues/13479))
+- API v2 errors logging to the proper log file ([#13133](https://github.com/blockscout/blockscout/issues/13133))
+
+### ⚙️ Miscellaneous Tasks
+
+- Silence multiple cspell complaints ([#13424](https://github.com/blockscout/blockscout/issues/13424))
+
+
 ## 9.2.0
 
 ### 🚀 Features

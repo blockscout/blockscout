@@ -15,9 +15,9 @@ defmodule Explorer.Migrator.CeloL2Epochs do
   import Ecto.Query
 
   alias Explorer.Chain.Celo.Epoch
-  alias Explorer.{Helper, Repo}
   alias Explorer.Chain.{Import, Log}
   alias Explorer.Chain.Import.Runner.Celo.Epochs
+  alias Explorer.{Helper, Repo}
   alias Explorer.Migrator.FillingMigration
 
   @migration_name "celo_l2_epochs"

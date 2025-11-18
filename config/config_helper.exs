@@ -9,27 +9,28 @@ defmodule ConfigHelper do
   def repos do
     base_repos = [Explorer.Repo, Explorer.Repo.Account]
 
-    chain_type_repo =
+    chain_identity_repos =
       %{
-        arbitrum: Explorer.Repo.Arbitrum,
-        blackfort: Explorer.Repo.Blackfort,
-        celo: Explorer.Repo.Celo,
-        ethereum: Explorer.Repo.Beacon,
-        filecoin: Explorer.Repo.Filecoin,
-        optimism: Explorer.Repo.Optimism,
-        polygon_zkevm: Explorer.Repo.PolygonZkevm,
-        rsk: Explorer.Repo.RSK,
-        scroll: Explorer.Repo.Scroll,
-        shibarium: Explorer.Repo.Shibarium,
-        stability: Explorer.Repo.Stability,
-        suave: Explorer.Repo.Suave,
-        zilliqa: Explorer.Repo.Zilliqa,
-        zksync: Explorer.Repo.ZkSync,
-        neon: Explorer.Repo.Neon
+        {:arbitrum, nil} => [Explorer.Repo.Arbitrum],
+        {:blackfort, nil} => [Explorer.Repo.Blackfort],
+        {:ethereum, nil} => [Explorer.Repo.Beacon],
+        {:filecoin, nil} => [Explorer.Repo.Filecoin],
+        {:optimism, nil} => [Explorer.Repo.Optimism],
+        {:polygon_zkevm, nil} => [Explorer.Repo.PolygonZkevm],
+        {:rsk, nil} => [Explorer.Repo.RSK],
+        {:scroll, nil} => [Explorer.Repo.Scroll],
+        {:shibarium, nil} => [Explorer.Repo.Shibarium],
+        {:stability, nil} => [Explorer.Repo.Stability],
+        {:suave, nil} => [Explorer.Repo.Suave],
+        {:zilliqa, nil} => [Explorer.Repo.Zilliqa],
+        {:zksync, nil} => [Explorer.Repo.ZkSync],
+        {:neon, nil} => [Explorer.Repo.Neon],
+        {:optimism, :celo} => [
+          Explorer.Repo.Optimism,
+          Explorer.Repo.Celo
+        ]
       }
-      |> Map.get(chain_type())
-
-    chain_type_repos = (chain_type_repo && [chain_type_repo]) || []
+      |> Map.get(chain_identity(), [])
 
     ext_repos =
       [
@@ -41,7 +42,7 @@ defmodule ConfigHelper do
       |> Enum.filter(&elem(&1, 0))
       |> Enum.map(&elem(&1, 1))
 
-    base_repos ++ chain_type_repos ++ ext_repos
+    base_repos ++ chain_identity_repos ++ ext_repos
   end
 
   @doc """
@@ -185,6 +186,34 @@ defmodule ConfigHelper do
 
   defp wrong_value_error(value, env_var, catalog) do
     "Invalid value \"#{value}\" of #{env_var} environment variable is provided. Supported values are #{inspect(catalog)}"
+  end
+
+  @doc """
+  Parses value of env var through catalogued values map. If a value is not in
+  the map, nil is returned. Also, the application shutdown option is supported,
+  if a value is wrong.
+  """
+  @spec parse_catalog_map_value(String.t(), %{binary() => any()}, bool(), String.t() | nil) :: any() | nil
+  def parse_catalog_map_value(env_var, catalog, shutdown_on_wrong_key?, default_key \\ nil) do
+    key = env_var |> safe_get_env(default_key)
+
+    if key !== "" do
+      case Map.fetch(catalog, key) do
+        {:ok, value} ->
+          value
+
+        :error ->
+          if shutdown_on_wrong_key? do
+            Logger.error(wrong_value_error(key, env_var, catalog))
+            exit(:shutdown)
+          else
+            Logger.warning(wrong_value_error(key, env_var, catalog))
+            nil
+          end
+      end
+    else
+      nil
+    end
   end
 
   def safe_get_env(env_var, default_value) do
@@ -347,28 +376,101 @@ defmodule ConfigHelper do
     end
   end
 
-  @supported_chain_types [
-    "default",
-    "arbitrum",
-    "blackfort",
-    "celo",
-    "ethereum",
-    "filecoin",
-    "optimism",
-    "polygon_zkevm",
-    "rsk",
-    "scroll",
-    "shibarium",
-    "stability",
-    "suave",
-    "zetachain",
-    "zilliqa",
-    "zksync",
-    "neon"
-  ]
+  @supported_chain_identities %{
+    "default" => :default,
+    "arbitrum" => :arbitrum,
+    "blackfort" => :blackfort,
+    "ethereum" => :ethereum,
+    "filecoin" => :filecoin,
+    "optimism" => :optimism,
+    "polygon_zkevm" => :polygon_zkevm,
+    "rsk" => :rsk,
+    "scroll" => :scroll,
+    "shibarium" => :shibarium,
+    "stability" => :stability,
+    "suave" => :suave,
+    "zetachain" => :zetachain,
+    "zilliqa" => :zilliqa,
+    "zksync" => :zksync,
+    "neon" => :neon,
+    "optimism-celo" => {:optimism, :celo}
+  }
 
-  @spec chain_type() :: atom() | nil
-  def chain_type, do: parse_catalog_value("CHAIN_TYPE", @supported_chain_types, true, "default")
+  @doc """
+  Returns the primary chain type.
+
+  This function extracts the base chain type from the chain identity (see
+  chain_identity/1), which is used to determine the core feature set and
+  indexing behavior. For example, both `:optimism` and `{:optimism, :celo}`
+  identities will return `:optimism` as the chain type, allowing them to share
+  the same Optimism-specific logic.
+
+  ## Examples
+
+      iex> System.put_env("CHAIN_TYPE", "optimism")
+      iex> chain_type()
+      :optimism
+
+      iex> System.put_env("CHAIN_TYPE", "optimism-celo")
+      iex> chain_type()
+      :optimism
+
+  ## Returns
+
+    * `atom()` - The primary chain type identifier
+  """
+  @spec chain_type() :: atom()
+  def chain_type do
+    {type, _} = chain_identity()
+    type
+  end
+
+  @doc """
+  Returns the full chain identity as a tuple of base type and optional variant.
+
+  Chain identity is a concept that allows networks to inherit a base chain's
+  feature set while adding variant-specific customizations. The identity is
+  returned as a two-element tuple `{base_type, variant}` where:
+
+  - `base_type` - The primary chain type (e.g., `:optimism`, `:arbitrum`)
+  - `variant` - An optional sub-type for specialized networks (e.g., `:celo`)
+
+  This enables Celo to run on the OP Stack with the identity `{:optimism,
+  :celo}`, inheriting all Optimism features (deposits, withdrawals, batches,
+  etc.) while allowing Celo-specific endpoints, caches, and schema fields to be
+  gated on the full identity tuple.
+
+  The identity is configured via the `CHAIN_TYPE` environment variable and must
+  match one of the supported values in `@supported_chain_identities`.
+
+  ## Examples
+
+      iex> System.put_env("CHAIN_TYPE", "optimism")
+      iex> chain_identity()
+      {:optimism, nil}
+
+      iex> System.put_env("CHAIN_TYPE", "optimism-celo")
+      iex> chain_identity()
+      {:optimism, :celo}
+
+      iex> System.put_env("CHAIN_TYPE", "ethereum")
+      iex> chain_identity()
+      {:ethereum, nil}
+
+  ## Returns
+
+    * `{atom(), atom() | nil}` - A tuple containing the base chain type and
+      optional variant
+  """
+  @spec chain_identity() :: {atom(), atom() | nil}
+  def chain_identity do
+    "CHAIN_TYPE"
+    |> parse_catalog_map_value(@supported_chain_identities, true, "default")
+    |> case do
+      type when is_atom(type) -> {type, nil}
+      identity -> identity
+    end
+  end
 
   @supported_modes ["all", "indexer", "api"]
 

@@ -8,8 +8,8 @@ defmodule Indexer.Transform.TokenTransfers do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.Helper, only: [decode_data: 2, truncate_address_hash: 1]
 
-  alias Explorer.Repo
   alias Explorer.Chain.{Hash, Token, TokenTransfer}
+  alias Explorer.Repo
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
 
   @doc """

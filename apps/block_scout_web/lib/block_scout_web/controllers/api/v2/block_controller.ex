@@ -1,12 +1,16 @@
 defmodule BlockScoutWeb.API.V2.BlockController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
+
   use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
-      next_page_params: 4,
+      next_page_params: 5,
       paging_options: 1,
       param_to_block_number: 1,
       put_key_value_to_paging_options: 3,
@@ -54,7 +58,14 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       }
 
     :optimism ->
-      @chain_type_transaction_necessity_by_association %{}
+      if @chain_identity == {:optimism, :celo} do
+        @chain_type_transaction_necessity_by_association %{
+          [gas_token: reputation_association()] => :optional
+        }
+      else
+        @chain_type_transaction_necessity_by_association %{}
+      end
+
       @chain_type_block_necessity_by_association %{
         :op_frame_sequence => :optional
       }
@@ -67,12 +78,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :zksync_prove_transaction => :optional,
         :zksync_execute_transaction => :optional
       }
-
-    :celo ->
-      @chain_type_transaction_necessity_by_association %{
-        [gas_token: reputation_association()] => :optional
-      }
-      @chain_type_block_necessity_by_association %{}
 
     :arbitrum ->
       @chain_type_transaction_necessity_by_association %{}
@@ -478,6 +483,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> next_page_params(
           internal_transactions,
           params,
+          false,
           &InternalTransaction.internal_transaction_to_block_paging_options/1
         )
 
@@ -671,6 +677,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> next_page_params(
           deposits,
           params,
+          false,
           DepositController.paging_function()
         )
 

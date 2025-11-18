@@ -5,9 +5,9 @@ defmodule Explorer.Chain.Blackfort.Validator do
 
   use Explorer.Schema
 
+  alias Explorer.{Chain, Helper, HttpClient, Repo, SortingHelper}
   alias Explorer.Chain.{Address, Import}
   alias Explorer.Chain.Hash.Address, as: HashAddress
-  alias Explorer.{Chain, Helper, HttpClient, Repo, SortingHelper}
 
   require Logger
 

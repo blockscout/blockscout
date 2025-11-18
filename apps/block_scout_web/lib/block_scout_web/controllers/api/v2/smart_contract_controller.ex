@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.Chain,
     only: [
       fetch_scam_token_toggle: 2,
-      next_page_params: 4,
+      next_page_params: 5,
       split_list_by_page: 1
     ]
 
@@ -144,6 +144,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       |> next_page_params(
         addresses,
         params,
+        false,
         pager
       )
 

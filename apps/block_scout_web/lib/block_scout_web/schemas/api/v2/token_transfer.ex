@@ -1,13 +1,16 @@
 defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.TransactionHashCustomization do
   @moduledoc false
+  use Utils.RuntimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   require OpenApiSpex
   alias OpenApiSpex.Schema
 
   alias BlockScoutWeb.Schemas.API.V2.General
 
   def schema do
-    case Application.get_env(:explorer, :chain_type) do
-      :celo ->
+    case chain_identity() do
+      {:optimism, :celo} ->
         General.FullHashNullable
 
       _ ->
