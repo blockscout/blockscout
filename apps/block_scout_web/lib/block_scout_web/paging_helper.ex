@@ -456,19 +456,19 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_addresses_sorting("transactions_count", "desc"), do: [desc_nulls_last: :transactions_count]
   defp do_addresses_sorting(_, _), do: []
 
-  @spec hot_contracts_sorting(%{sort: String.t(), order: String.t()}) :: [
+  @spec hot_smart_contracts_sorting(%{sort: String.t(), order: String.t()}) :: [
           {:sorting, SortingHelper.sorting_params()}
         ]
-  def hot_contracts_sorting(%{sort: sort_field, order: order}) do
-    [sorting: do_hot_contracts_sorting(sort_field, order)]
+  def hot_smart_contracts_sorting(%{sort: sort_field, order: order}) do
+    [sorting: do_hot_smart_contracts_sorting(sort_field, order)]
   end
 
-  @spec hot_contracts_sorting(any()) :: []
-  def hot_contracts_sorting(_), do: []
+  @spec hot_smart_contracts_sorting(any()) :: []
+  def hot_smart_contracts_sorting(_), do: []
 
-  defp do_hot_contracts_sorting("transactions_count", "asc"),
+  defp do_hot_smart_contracts_sorting("transactions_count", "asc"),
     do: %{
-      aggregated_on_hot_contracts: [
+      aggregated_on_hot_smart_contracts: [
         {:dynamic, :transactions_count, :asc_nulls_first, HotSmartContracts.transactions_count_dynamic()}
       ],
       aggregated_on_transactions: [
@@ -477,9 +477,9 @@ defmodule BlockScoutWeb.PagingHelper do
       ]
     }
 
-  defp do_hot_contracts_sorting("transactions_count", "desc"),
+  defp do_hot_smart_contracts_sorting("transactions_count", "desc"),
     do: %{
-      aggregated_on_hot_contracts: [
+      aggregated_on_hot_smart_contracts: [
         {:dynamic, :transactions_count, :desc_nulls_last, HotSmartContracts.transactions_count_dynamic()}
       ],
       aggregated_on_transactions: [
@@ -488,9 +488,9 @@ defmodule BlockScoutWeb.PagingHelper do
       ]
     }
 
-  defp do_hot_contracts_sorting("total_gas_used", "asc"),
+  defp do_hot_smart_contracts_sorting("total_gas_used", "asc"),
     do: %{
-      aggregated_on_hot_contracts: [
+      aggregated_on_hot_smart_contracts: [
         {:dynamic, :total_gas_used, :asc_nulls_first, HotSmartContracts.total_gas_used_dynamic()}
       ],
       aggregated_on_transactions: [
@@ -498,9 +498,9 @@ defmodule BlockScoutWeb.PagingHelper do
       ]
     }
 
-  defp do_hot_contracts_sorting("total_gas_used", "desc"),
+  defp do_hot_smart_contracts_sorting("total_gas_used", "desc"),
     do: %{
-      aggregated_on_hot_contracts: [
+      aggregated_on_hot_smart_contracts: [
         {:dynamic, :total_gas_used, :desc_nulls_last, HotSmartContracts.total_gas_used_dynamic()}
       ],
       aggregated_on_transactions: [

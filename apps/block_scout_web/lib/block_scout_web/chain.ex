@@ -732,7 +732,7 @@ defmodule BlockScoutWeb.Chain do
 
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
-  def hot_contracts_paging_options(%{
+  def hot_smart_contracts_paging_options(%{
         transactions_count: transactions_count,
         total_gas_used: total_gas_used,
         contract_address_hash: contract_address_hash
@@ -750,7 +750,7 @@ defmodule BlockScoutWeb.Chain do
     ]
   end
 
-  def hot_contracts_paging_options(_params), do: [paging_options: @default_paging_options]
+  def hot_smart_contracts_paging_options(_params), do: [paging_options: @default_paging_options]
 
   def put_key_value_to_paging_options([paging_options: paging_options], key, value) do
     [paging_options: Map.put(paging_options, key, value)]

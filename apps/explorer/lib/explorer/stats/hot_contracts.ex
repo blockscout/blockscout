@@ -36,11 +36,11 @@ defmodule Explorer.Stats.HotSmartContracts do
     |> validate_required([:date, :contract_address_hash, :transactions_count, :total_gas_used])
   end
 
-  @spec aggregate_hot_contracts_for_date(Date.t(), keyword()) ::
+  @spec aggregate_hot_smart_contracts_for_date(Date.t(), keyword()) ::
           {:ok,
            [%{contract_address_hash: Hash.Address.t(), transactions_count: integer(), total_gas_used: Decimal.t()}]}
           | {:error, any()}
-  def aggregate_hot_contracts_for_date(date, options \\ []) do
+  def aggregate_hot_smart_contracts_for_date(date, options \\ []) do
     with {:ok, from_date} <- DateTime.new(date, ~T[00:00:00], "Etc/UTC"),
          {:ok, to_date} <- date |> Date.add(1) |> DateTime.new(~T[00:00:00], "Etc/UTC"),
          {:ok, from_block} <-
@@ -49,7 +49,7 @@ defmodule Explorer.Stats.HotSmartContracts do
            BlockReaderGeneral.timestamp_to_block_number(to_date, :before, options[:api?] || false, true) do
       {:ok,
        from_block
-       |> aggregate_hot_contracts_for_block_interval_query(to_block)
+       |> aggregate_hot_smart_contracts_for_block_interval_query(to_block)
        |> Chain.select_repo(options).all()
        |> Enum.map(&Map.put(&1, :date, date))}
     else
@@ -57,8 +57,9 @@ defmodule Explorer.Stats.HotSmartContracts do
     end
   end
 
-  @spec aggregate_hot_contracts_for_block_interval_query(Block.block_number(), Block.block_number()) :: Ecto.Query.t()
-  defp aggregate_hot_contracts_for_block_interval_query(from_block, to_block) do
+  @spec aggregate_hot_smart_contracts_for_block_interval_query(Block.block_number(), Block.block_number()) ::
+          Ecto.Query.t()
+  defp aggregate_hot_smart_contracts_for_block_interval_query(from_block, to_block) do
     from(transaction in Transaction,
       as: :transaction,
       where: transaction.block_number >= ^from_block and transaction.block_number <= ^to_block,
@@ -135,7 +136,7 @@ defmodule Explorer.Stats.HotSmartContracts do
          {:ok, to_block} <-
            BlockReaderGeneral.timestamp_to_block_number(now, :before, options[:api?] || false, true) do
       from_block
-      |> aggregate_hot_contracts_for_block_interval_query(to_block)
+      |> aggregate_hot_smart_contracts_for_block_interval_query(to_block)
       |> ExplorerHelper.maybe_hide_scam_addresses(:to_address_hash, options)
       |> SortingHelper.apply_sorting(sorting_options, default_sorting)
       |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
@@ -153,7 +154,7 @@ defmodule Explorer.Stats.HotSmartContracts do
     ]
 
     paging_options = Keyword.get(options, :paging_options, PagingOptions.default_paging_options())
-    sorting_options = Keyword.get(options, :sorting, %{})[:aggregated_on_hot_contracts] || []
+    sorting_options = Keyword.get(options, :sorting, %{})[:aggregated_on_hot_smart_contracts] || []
 
     preloads =
       Keyword.get(options, :preloads,

@@ -631,8 +631,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @doc """
   Returns a parameter definition for scale for hot contracts.
   """
-  @spec hot_contracts_scale_param() :: Parameter.t()
-  def hot_contracts_scale_param do
+  @spec hot_smart_contracts_scale_param() :: Parameter.t()
+  def hot_smart_contracts_scale_param do
     %Parameter{
       in: :query,
       schema: %Schema{type: :string, enum: ["5m", "1h", "3h", "1d", "7d", "30d"], nullable: false},

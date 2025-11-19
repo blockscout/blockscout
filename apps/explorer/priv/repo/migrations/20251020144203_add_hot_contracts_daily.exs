@@ -11,11 +11,13 @@ defmodule Explorer.Repo.Migrations.AddHotContractsDaily do
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
-    create(index(:hot_smart_contracts_daily, ["date DESC", "total_gas_used DESC"], name: :idx_hot_contracts_date_gas))
+    create(
+      index(:hot_smart_contracts_daily, ["date DESC", "total_gas_used DESC"], name: :idx_hot_smart_contracts_date_gas)
+    )
 
     create(
       index(:hot_smart_contracts_daily, ["date DESC", "transactions_count DESC"],
-        name: :idx_hot_contracts_date_transactions_count
+        name: :idx_hot_smart_contracts_date_transactions_count
       )
     )
   end

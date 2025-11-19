@@ -6,10 +6,15 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  import BlockScoutWeb.PagingHelper, only: [hot_contracts_sorting: 1, delete_items_count_from_next_page_params: 1]
+  import BlockScoutWeb.PagingHelper, only: [hot_smart_contracts_sorting: 1, delete_items_count_from_next_page_params: 1]
 
   import BlockScoutWeb.Chain,
-    only: [hot_contracts_paging_options: 1, split_list_by_page: 1, next_page_params: 5, fetch_scam_token_toggle: 2]
+    only: [
+      hot_smart_contracts_paging_options: 1,
+      split_list_by_page: 1,
+      next_page_params: 5,
+      fetch_scam_token_toggle: 2
+    ]
 
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
@@ -190,7 +195,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     description: "Retrieves hot contracts",
     parameters:
       base_params() ++
-        [sort_param(["transactions_count", "total_gas_used"]), order_param(), hot_contracts_scale_param()] ++
+        [sort_param(["transactions_count", "total_gas_used"]), order_param(), hot_smart_contracts_scale_param()] ++
         define_paging_params([
           "transactions_count_positive",
           "total_gas_used",
@@ -218,8 +223,8 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   def hot_smart_contracts(conn, %{scale: scale} = params) do
     options =
       params
-      |> hot_contracts_paging_options()
-      |> Keyword.merge(hot_contracts_sorting(params))
+      |> hot_smart_contracts_paging_options()
+      |> Keyword.merge(hot_smart_contracts_sorting(params))
       |> Keyword.merge(@api_true)
       |> fetch_scam_token_toggle(conn)
 
@@ -234,7 +239,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
     next_page_params =
       next_page
-      |> next_page_params(hot_smart_contracts, params, false, &hot_contracts_paging_params/1)
+      |> next_page_params(hot_smart_contracts, params, false, &hot_smart_contracts_paging_params/1)
       |> delete_items_count_from_next_page_params()
 
     conn
@@ -294,7 +299,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       defp add_chain_identity_fields(response), do: response
   end
 
-  defp hot_contracts_paging_params(hot_contract) do
+  defp hot_smart_contracts_paging_params(hot_contract) do
     %{
       contract_address_hash: hot_contract.contract_address_hash,
       transactions_count: hot_contract.transactions_count,
