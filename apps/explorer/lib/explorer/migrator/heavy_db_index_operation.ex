@@ -27,6 +27,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
               | :logs
               | :internal_transactions
               | :token_transfers
+              | :token_instances
               | :addresses
               | :smart_contracts
               | :arbitrum_batch_l2_blocks
