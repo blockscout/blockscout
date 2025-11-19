@@ -81,11 +81,14 @@ defmodule Explorer.Account.WatchlistAddress do
 
   @watchlist_not_found "Watchlist not found"
 
+  @attrs_base ~w(name address_hash watch_coin_input watch_coin_output watch_erc_20_input watch_erc_20_output watch_erc_721_input watch_erc_721_output watch_erc_1155_input watch_erc_1155_output watch_erc_404_input watch_erc_404_output notify_email notify_epns notify_feed notify_inapp watchlist_id)a
   if @chain_type == :zilliqa do
-    @attrs ~w(name address_hash watch_coin_input watch_coin_output watch_erc_20_input watch_erc_20_output watch_erc_721_input watch_erc_721_output watch_erc_1155_input watch_erc_1155_output watch_erc_404_input watch_erc_404_output watch_zrc_2_input watch_zrc_2_output notify_email notify_epns notify_feed notify_inapp watchlist_id)a
+    @attrs_chain_type ~w(watch_zrc_2_input watch_zrc_2_output)a
   else
-    @attrs ~w(name address_hash watch_coin_input watch_coin_output watch_erc_20_input watch_erc_20_output watch_erc_721_input watch_erc_721_output watch_erc_1155_input watch_erc_1155_output watch_erc_404_input watch_erc_404_output notify_email notify_epns notify_feed notify_inapp watchlist_id)a
+    @attrs_chain_type ~w()a
   end
+
+  @attrs @attrs_base ++ @attrs_chain_type
 
   Explorer.Account.WatchlistAddress.Schema.generate()
 

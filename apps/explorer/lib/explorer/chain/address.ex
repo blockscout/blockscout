@@ -68,23 +68,23 @@ defmodule Explorer.Chain.Address.Schema do
 
                           quote do
                             [
-                              has_one(:zrc2_token_contract, Zrc2TokenAdapter,
+                              has_one(:zilliqa_zrc2_token_contract, Zrc2TokenAdapter,
                                 foreign_key: :zrc2_address_hash,
                                 references: :hash
                               ),
-                              has_one(:zrc2_token_adapter, Zrc2TokenAdapter,
+                              has_one(:zilliqa_zrc2_token_adapter, Zrc2TokenAdapter,
                                 foreign_key: :adapter_address_hash,
                                 references: :hash
                               ),
-                              has_many(:zrc2_token_transfers_from, Zrc2TokenTransfer,
+                              has_many(:zilliqa_zrc2_token_transfers_from, Zrc2TokenTransfer,
                                 foreign_key: :from_address_hash,
                                 references: :hash
                               ),
-                              has_many(:zrc2_token_transfers_to, Zrc2TokenTransfer,
+                              has_many(:zilliqa_zrc2_token_transfers_to, Zrc2TokenTransfer,
                                 foreign_key: :to_address_hash,
                                 references: :hash
                               ),
-                              has_many(:zrc2_token_transfers_contract, Zrc2TokenTransfer,
+                              has_many(:zilliqa_zrc2_token_transfers_contract, Zrc2TokenTransfer,
                                 foreign_key: :zrc2_address_hash,
                                 references: :hash
                               )

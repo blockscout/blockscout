@@ -517,4 +517,21 @@ defmodule Explorer.Chain.Token do
 
     Chain.select_repo(options).exists?(query)
   end
+
+  @doc """
+  Checks if the given token is ZRC-2 token.
+
+  ## Parameters
+  - `token`: The token to check the type of.
+
+  ## Returns
+  - `true` if this is ZRC-2 token, `false` otherwise.
+  """
+  @spec zrc_2_token?(__MODULE__.t()) :: bool
+  def zrc_2_token?(token) do
+    case Map.get(token, :type) do
+      "ZRC-2" -> true
+      _ -> false
+    end
+  end
 end

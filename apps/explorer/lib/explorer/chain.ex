@@ -3413,23 +3413,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks if the given token is ZRC-2 token.
-
-  ## Parameters
-  - `token`: The token to check the type of.
-
-  ## Returns
-  - `true` if this is ZRC-2 token, `false` otherwise.
-  """
-  @spec zrc_2_token?(Token.t()) :: bool
-  def zrc_2_token?(token) do
-    case Map.get(token, :type) do
-      "ZRC-2" -> true
-      _ -> false
-    end
-  end
-
-  @doc """
   Checks if it exists an `t:Explorer.Chain.Address.t/0` that has the provided
   `t:Explorer.Chain.Address.t/0` `hash` and a contract.
 

@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Import.Runner.Zilliqa.Zrc2.TokenAdapters do
   def ecto_schema_module, do: TokenAdapter
 
   @impl Import.Runner
-  def option_key, do: :zrc2_token_adapters
+  def option_key, do: :zilliqa_zrc2_token_adapters
 
   @impl Import.Runner
   @spec imported_table_row() :: %{:value_description => binary(), :value_type => binary()}
@@ -42,12 +42,12 @@ defmodule Explorer.Chain.Import.Runner.Zilliqa.Zrc2.TokenAdapters do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_zrc2_token_adapters, fn repo, _ ->
+    Multi.run(multi, :insert_zilliqa_zrc2_token_adapters, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :zrc2_token_adapters,
-        :zrc2_token_adapters
+        :zilliqa_zrc2_token_adapters,
+        :zilliqa_zrc2_token_adapters
       )
     end)
   end

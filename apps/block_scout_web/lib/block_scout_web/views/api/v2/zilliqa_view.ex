@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
     alias Ecto.Association.NotLoaded, warn: false
     alias Explorer.Chain.{Address, Block, Transaction}, warn: false
     alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}, warn: false
+    alias Explorer.Chain.Zilliqa.Zrc2.TokenAdapter, as: Zrc2TokenAdapter
 
     @api_true [api?: true]
 
@@ -70,9 +71,8 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
     @spec extend_token_json_response(map(), Address.t()) :: map()
     def extend_token_json_response(%{"type" => "ZRC-2"} = out_json, %Address{} = adapter_address) do
       Map.put(out_json, :zilliqa, %{
-        # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
         zrc2_address_hash:
-          Explorer.Chain.Zilliqa.Zrc2.TokenAdapter.adapter_address_hash_to_zrc2_address_hash(
+          Zrc2TokenAdapter.adapter_address_hash_to_zrc2_address_hash(
             adapter_address.hash,
             @api_true
           )
