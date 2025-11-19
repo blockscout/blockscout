@@ -151,7 +151,10 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenTransfer do
   ## Returns
   - A list of transaction maps for the given list of logs.
   """
-  @spec read_transfer_transactions([%{first_topic: Hash.t(), transaction_hash: Hash.t(), adapter_address_hash: Hash.t() | nil}], String.t()) :: [%{hash: Hash.t(), input: Data.t(), to_address_hash: Hash.t()}]
+  @spec read_transfer_transactions(
+          [%{first_topic: Hash.t(), transaction_hash: Hash.t(), adapter_address_hash: Hash.t() | nil}],
+          String.t()
+        ) :: [%{hash: Hash.t(), input: Data.t(), to_address_hash: Hash.t()}]
   def read_transfer_transactions(logs, zrc2_transfer_success_event) do
     transaction_hashes =
       logs
@@ -181,7 +184,18 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenTransfer do
   ## Returns
   - The list of found rows. The list can be empty.
   """
-  @spec zrc2_token_transfers_having_adapter() :: [%{transaction_hash: Hash.t(), log_index: non_neg_integer(), from_address_hash: Hash.t(), to_address_hash: Hash.t(), amount: Decimal.t(), adapter_address_hash: Hash.t(), block_number: non_neg_integer(), block_hash: Hash.t()}]
+  @spec zrc2_token_transfers_having_adapter() :: [
+          %{
+            transaction_hash: Hash.t(),
+            log_index: non_neg_integer(),
+            from_address_hash: Hash.t(),
+            to_address_hash: Hash.t(),
+            amount: Decimal.t(),
+            adapter_address_hash: Hash.t(),
+            block_number: non_neg_integer(),
+            block_hash: Hash.t()
+          }
+        ]
   def zrc2_token_transfers_having_adapter do
     query =
       from(
