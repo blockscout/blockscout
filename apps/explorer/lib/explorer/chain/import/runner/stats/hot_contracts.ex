@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Import.Runner.Stats.HotContracts do
+defmodule Explorer.Chain.Import.Runner.Stats.HotSmartContracts do
   @moduledoc """
-  Bulk imports `t:Explorer.Stats.HotContracts.t/0` rows (hot_smart_contracts_daily).
+  Bulk imports `t:Explorer.Stats.HotSmartContracts.t/0` rows (hot_smart_contracts_daily).
   """
 
   require Ecto.Query
@@ -8,17 +8,17 @@ defmodule Explorer.Chain.Import.Runner.Stats.HotContracts do
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Import
   alias Explorer.Prometheus.Instrumenter
-  alias Explorer.Stats.HotContracts
+  alias Explorer.Stats.HotSmartContracts
 
   @behaviour Import.Runner
 
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [HotContracts.t()]
+  @type imported :: [HotSmartContracts.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: HotContracts
+  def ecto_schema_module, do: HotSmartContracts
 
   @impl Import.Runner
   def option_key, do: :hot_smart_contracts_daily
@@ -56,12 +56,12 @@ defmodule Explorer.Chain.Import.Runner.Stats.HotContracts do
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) ::
-          {:ok, [HotContracts.t()]}
+          {:ok, [HotSmartContracts.t()]}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce HotContracts ShareLocks order (see docs: sharelocks.md)
+    # Enforce HotSmartContracts ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.date, &1.contract_address_hash})
 
     Import.insert_changes_list(
@@ -69,7 +69,7 @@ defmodule Explorer.Chain.Import.Runner.Stats.HotContracts do
       ordered_changes_list,
       conflict_target: [:date, :contract_address_hash],
       on_conflict: on_conflict,
-      for: HotContracts,
+      for: HotSmartContracts,
       returning: true,
       timeout: timeout,
       timestamps: timestamps

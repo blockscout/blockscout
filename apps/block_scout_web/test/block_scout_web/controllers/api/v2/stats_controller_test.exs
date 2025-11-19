@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
   describe "/stats/hot-contracts" do
     import Explorer.Factory
     alias Explorer.Repo
-    alias Explorer.Stats.HotContracts
+    alias Explorer.Stats.HotSmartContracts
 
     setup do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
@@ -81,13 +81,13 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       addresses = Enum.map(1..count, fn _ -> insert(:address) end)
 
       Enum.each(addresses, fn addr ->
-        %HotContracts{
+        %HotSmartContracts{
           date: date,
           contract_address_hash: addr.hash,
           transactions_count: 1,
           total_gas_used: Decimal.new(21_000)
         }
-        |> HotContracts.changeset(%{})
+        |> HotSmartContracts.changeset(%{})
         |> Repo.insert!()
       end)
 

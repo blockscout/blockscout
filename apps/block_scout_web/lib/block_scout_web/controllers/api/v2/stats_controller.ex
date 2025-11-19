@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   alias Explorer.Chain.Cache.GasPriceOracle
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
-  alias Explorer.Stats.HotContracts
+  alias Explorer.Stats.HotSmartContracts
   alias Plug.Conn
   alias Timex.Duration
 
@@ -208,7 +208,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
              "contract_address_hash" => "0x01a2A10583675E0e5dF52DE1b62734109201477a",
              "items_count" => 50
            },
-           title_prefix: "HotContracts"
+           title_prefix: "HotSmartContracts"
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -225,7 +225,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
     {hot_contracts, next_page} =
       scale
-      |> HotContracts.paginated(options)
+      |> HotSmartContracts.paginated(options)
       |> case do
         {:error, :not_found} -> []
         hot_contracts -> hot_contracts

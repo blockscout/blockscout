@@ -1,6 +1,6 @@
-defmodule Explorer.Stats.HotContracts do
+defmodule Explorer.Stats.HotSmartContracts do
   @moduledoc """
-  This module defines the HotContracts schema and functions for aggregating and paginating hot contracts.
+  This module defines the HotSmartContracts schema and functions for aggregating and paginating hot contracts.
   """
   use Explorer.Schema
 

@@ -18,7 +18,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     Withdrawal
   }
 
-  alias Explorer.Stats.HotContracts
+  alias Explorer.Stats.HotSmartContracts
 
   @type supported_types ::
           Address.t()
@@ -202,7 +202,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     end
   end
 
-  defp item_to_address_hash_strings(%HotContracts{contract_address_hash: contract_address_hash}) do
+  defp item_to_address_hash_strings(%HotSmartContracts{contract_address_hash: contract_address_hash}) do
     [to_string(contract_address_hash)]
   end
 
@@ -328,11 +328,11 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   end
 
   defp put_meta_to_item(
-         %HotContracts{contract_address_hash: contract_address_hash, contract_address: contract_address} = hot_contract,
+         %HotSmartContracts{contract_address_hash: contract_address_hash, contract_address: contract_address} = hot_contract,
          names,
          field_to_put_info
        ) do
-    %HotContracts{
+    %HotSmartContracts{
       hot_contract
       | contract_address: alter_address(contract_address, contract_address_hash, names, field_to_put_info)
     }

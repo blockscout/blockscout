@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Stage.Stats do
   @behaviour Stage
 
   @runners [
-    Runner.Stats.HotContracts
+    Runner.Stats.HotSmartContracts
   ]
 
   @impl Stage

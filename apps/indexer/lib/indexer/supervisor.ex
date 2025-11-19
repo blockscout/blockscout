@@ -30,7 +30,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.MultichainSearchDb.MainExportQueue, as: MultichainSearchDbMainExportQueue
   alias Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue, as: MultichainSearchDbTokenInfoExportQueue
   alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
-  alias Indexer.Fetcher.Stats.HotContracts
+  alias Indexer.Fetcher.Stats.HotSmartContracts
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
@@ -300,7 +300,7 @@ defmodule Indexer.Supervisor do
           ]
         ),
         {Withdrawal.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
-        configure(HotContracts.Supervisor, [[memory_monitor: memory_monitor]])
+        configure(HotSmartContracts.Supervisor, [[memory_monitor: memory_monitor]])
       ]
       |> List.flatten()
 

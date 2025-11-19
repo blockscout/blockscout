@@ -1,12 +1,12 @@
-defmodule Indexer.Fetcher.Stats.HotContracts do
+defmodule Indexer.Fetcher.Stats.HotSmartContracts do
   @moduledoc """
-  This module defines the HotContracts fetcher for indexing hot contracts.
+  This module defines the HotSmartContracts fetcher for indexing hot contracts.
   """
   use Indexer.Fetcher, restart: :permanent
 
   use GenServer
   alias Explorer.Chain
-  alias Explorer.Stats.HotContracts
+  alias Explorer.Stats.HotSmartContracts
 
   require Logger
 
@@ -29,11 +29,11 @@ defmodule Indexer.Fetcher.Stats.HotContracts do
 
   @impl GenServer
   def handle_info({:fetch_for_date, date, new_day?}, state) do
-    with {:ok, hot_contracts} <- HotContracts.aggregate_hot_contracts_for_date(date),
+    with {:ok, hot_contracts} <- HotSmartContracts.aggregate_hot_contracts_for_date(date),
          {:ok, _} <- Chain.import(%{hot_smart_contracts_daily: %{params: hot_contracts}, timeout: :infinity}) do
       if new_day? do
         schedule_next_day_fetch()
-        HotContracts.delete_older_than(Date.add(date, 1 - @max_days_ago))
+        HotSmartContracts.delete_older_than(Date.add(date, 1 - @max_days_ago))
       end
 
       Logger.info("Hot contracts fetched for #{date}")
@@ -53,7 +53,7 @@ defmodule Indexer.Fetcher.Stats.HotContracts do
 
   @impl GenServer
   def handle_cast(:check_completeness, state) do
-    indexed_dates = HotContracts.indexed_dates()
+    indexed_dates = HotSmartContracts.indexed_dates()
 
     today = Date.utc_today()
 

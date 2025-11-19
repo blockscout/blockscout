@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.PagingHelper do
   alias Explorer.Chain.InternalTransaction.Type, as: InternalTransactionType
   alias Explorer.Chain.{SmartContract, Transaction}
   alias Explorer.{Helper, PagingOptions, SortingHelper}
-  alias Explorer.Stats.HotContracts
+  alias Explorer.Stats.HotSmartContracts
 
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
@@ -469,40 +469,40 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_hot_contracts_sorting("transactions_count", "asc"),
     do: %{
       aggregated_on_hot_contracts: [
-        {:dynamic, :transactions_count, :asc_nulls_first, HotContracts.transactions_count_dynamic()}
+        {:dynamic, :transactions_count, :asc_nulls_first, HotSmartContracts.transactions_count_dynamic()}
       ],
       aggregated_on_transactions: [
-        {:dynamic, :transactions_count, :asc_nulls_first, HotContracts.transactions_count_on_transactions_dynamic()}
+        {:dynamic, :transactions_count, :asc_nulls_first, HotSmartContracts.transactions_count_on_transactions_dynamic()}
       ]
     }
 
   defp do_hot_contracts_sorting("transactions_count", "desc"),
     do: %{
       aggregated_on_hot_contracts: [
-        {:dynamic, :transactions_count, :desc_nulls_last, HotContracts.transactions_count_dynamic()}
+        {:dynamic, :transactions_count, :desc_nulls_last, HotSmartContracts.transactions_count_dynamic()}
       ],
       aggregated_on_transactions: [
-        {:dynamic, :transactions_count, :desc_nulls_last, HotContracts.transactions_count_on_transactions_dynamic()}
+        {:dynamic, :transactions_count, :desc_nulls_last, HotSmartContracts.transactions_count_on_transactions_dynamic()}
       ]
     }
 
   defp do_hot_contracts_sorting("total_gas_used", "asc"),
     do: %{
       aggregated_on_hot_contracts: [
-        {:dynamic, :total_gas_used, :asc_nulls_first, HotContracts.total_gas_used_dynamic()}
+        {:dynamic, :total_gas_used, :asc_nulls_first, HotSmartContracts.total_gas_used_dynamic()}
       ],
       aggregated_on_transactions: [
-        {:dynamic, :total_gas_used, :asc_nulls_first, HotContracts.total_gas_used_on_transactions_dynamic()}
+        {:dynamic, :total_gas_used, :asc_nulls_first, HotSmartContracts.total_gas_used_on_transactions_dynamic()}
       ]
     }
 
   defp do_hot_contracts_sorting("total_gas_used", "desc"),
     do: %{
       aggregated_on_hot_contracts: [
-        {:dynamic, :total_gas_used, :desc_nulls_last, HotContracts.total_gas_used_dynamic()}
+        {:dynamic, :total_gas_used, :desc_nulls_last, HotSmartContracts.total_gas_used_dynamic()}
       ],
       aggregated_on_transactions: [
-        {:dynamic, :total_gas_used, :desc_nulls_last, HotContracts.total_gas_used_on_transactions_dynamic()}
+        {:dynamic, :total_gas_used, :desc_nulls_last, HotSmartContracts.total_gas_used_on_transactions_dynamic()}
       ]
     }
 end
