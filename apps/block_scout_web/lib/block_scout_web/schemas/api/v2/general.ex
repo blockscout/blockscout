@@ -629,6 +629,21 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for scale for hot contracts.
+  """
+  @spec hot_smart_contracts_scale_param() :: Parameter.t()
+  def hot_smart_contracts_scale_param do
+    %Parameter{
+      in: :query,
+      schema: %Schema{type: :string, enum: ["5m", "1h", "3h", "1d", "7d", "30d"], nullable: false},
+      required: true,
+      description:
+        "Time scale for hot contracts aggregation (5m=5 minutes, 1h=1 hour, 3h=3 hours, 1d=1 day, 7d=7 days, 30d=30 days)",
+      name: :scale
+    }
+  end
+
+  @doc """
   Returns a list of base parameters (api_key and key).
   """
   @spec base_params() :: [Parameter.t()]
@@ -933,6 +948,27 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Deposit index for paging",
       name: :index
+    },
+    "total_gas_used" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 0},
+      required: false,
+      description: "Total gas used for paging",
+      name: :total_gas_used
+    },
+    "contract_address_hash_not_nullable" => %Parameter{
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "Contract address hash for paging",
+      name: :contract_address_hash
+    },
+    "transactions_count_positive" => %Parameter{
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 1},
+      required: false,
+      description: "Transactions count for paging",
+      name: :transactions_count
     }
   }
 
