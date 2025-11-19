@@ -15,7 +15,7 @@ defmodule EthereumJSONRPC.MixProject do
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer_ignore.exs"
       ],
-      elixir: "~> 1.17",
+      elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
