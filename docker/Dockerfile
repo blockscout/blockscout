@@ -17,7 +17,7 @@ COPY apps/nft_media_handler/mix.exs ./apps/nft_media_handler/
 ENV MIX_ENV="prod"
 ENV MIX_HOME=/opt/mix
 RUN mix local.hex --force
-RUN mix do deps.get, local.rebar --force, deps.compile --skip-umbrella-children
+RUN MIX_OS_DEPS_COMPILE_PARTITION_COUNT=$(nproc) mix do deps.get + local.rebar --force + deps.compile --skip-umbrella-children
 
 COPY config ./config
 COPY rel ./rel
