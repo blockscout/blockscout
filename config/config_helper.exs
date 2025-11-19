@@ -379,6 +379,7 @@ defmodule ConfigHelper do
   @supported_chain_identities %{
     "default" => :default,
     "arbitrum" => :arbitrum,
+    "arc" => :arc,
     "blackfort" => :blackfort,
     "ethereum" => :ethereum,
     "filecoin" => :filecoin,

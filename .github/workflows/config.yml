@@ -52,6 +52,7 @@ jobs:
             const chainTypes = [
               "default",
               "arbitrum",
+              "arc",
               "blackfort",
               "ethereum",
               "filecoin",
