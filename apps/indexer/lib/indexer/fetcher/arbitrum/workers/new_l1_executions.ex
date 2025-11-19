@@ -245,7 +245,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
     {lifecycle_transactions, executions} = get_executions_from_logs(logs, l1_rpc_config)
 
-    unless executions == [] do
+    if executions != [] do
       log_info("Executions for #{length(executions)} L2 messages will be imported")
 
       {:ok, _} =
@@ -263,7 +263,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     # the execution transactions that have already been indexed.
     messages = get_relayed_messages()
 
-    unless messages == [] do
+    if messages != [] do
       log_info("Marking #{length(messages)} l2-to-l1 messages as completed")
 
       {:ok, _} =

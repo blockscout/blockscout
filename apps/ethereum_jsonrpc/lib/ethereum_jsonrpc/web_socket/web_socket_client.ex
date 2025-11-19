@@ -92,7 +92,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
   def handle_connect(_conn, state) do
     Logger.metadata(fetcher: :websocket_client)
 
-    unless state.fallback? do
+    if !state.fallback? do
       RetryWorker.deactivate()
       WebSocketSupervisor.stop_other_client(self())
     end
@@ -447,7 +447,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
            request: %{params: [event | params]}
          },
          %{"result" => subscription_id},
-         %{
+         %__MODULE__{
            subscription_id_to_subscription_reference: subscription_id_to_subscription_reference,
            subscription_reference_to_subscription: subscription_reference_to_subscription,
            subscription_reference_to_subscription_id: subscription_reference_to_subscription_id,
@@ -522,7 +522,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
            request: %{method: "eth_unsubscribe", params: [subscription_id]}
          },
          response,
-         %{
+         %__MODULE__{
            subscription_id_to_subscription_reference: subscription_id_to_subscription_reference,
            subscription_reference_to_subscription: subscription_reference_to_subscription,
            subscription_reference_to_subscription_id: subscription_reference_to_subscription_id

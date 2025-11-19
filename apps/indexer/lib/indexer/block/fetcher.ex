@@ -638,7 +638,7 @@ defmodule Indexer.Block.Fetcher do
 
     blocks
     |> Enum.map(fn block -> fetch_beneficiaries_manual(block, block_transactions_map[block.number] || []) end)
-    |> Enum.reduce(%FetchedBeneficiaries{}, fn params_set, %{params_set: acc_params_set} = acc ->
+    |> Enum.reduce(%FetchedBeneficiaries{}, fn params_set, %FetchedBeneficiaries{params_set: acc_params_set} = acc ->
       %FetchedBeneficiaries{acc | params_set: MapSet.union(acc_params_set, params_set)}
     end)
   end

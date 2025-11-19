@@ -129,7 +129,7 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactions do
 
     case result do
       {:ok, inserted_pbo} ->
-        unless is_nil(Process.whereis(InternalTransactionFetcher)) do
+        if not is_nil(Process.whereis(InternalTransactionFetcher)) do
           inserted_pbo
           |> Enum.map(& &1.block_number)
           |> InternalTransactionFetcher.async_fetch([], false)

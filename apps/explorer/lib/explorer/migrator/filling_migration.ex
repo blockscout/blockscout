@@ -259,7 +259,7 @@ defmodule Explorer.Migrator.FillingMigration do
             |> Task.await_many(:infinity)
 
             unquote do
-              unless opts[:skip_meta_update?] do
+              if !opts[:skip_meta_update?] do
                 quote do
                   MigrationStatus.update_meta(migration_name(), new_state)
                 end

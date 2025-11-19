@@ -34,13 +34,13 @@ defmodule Explorer.Account.IdentityTest do
         id: identity_id,
         email: "john@blockscout.com",
         uid: "github|666666"
-      } = Identity |> first |> Repo.account_repo().one()
+      } = Identity |> first() |> Repo.account_repo().one()
 
       %{
         id: watchlist_id,
         identity_id: ^identity_id,
         name: "default"
-      } = Watchlist |> first |> Repo.account_repo().one()
+      } = Watchlist |> first() |> Repo.account_repo().one()
 
       assert {:ok,
               %{
@@ -80,13 +80,13 @@ defmodule Explorer.Account.IdentityTest do
         id: identity_id,
         email: "john@blockscout.com",
         uid: "google-oauth2|666666"
-      } = Identity |> first |> Repo.account_repo().one()
+      } = Identity |> first() |> Repo.account_repo().one()
 
       %{
         id: watchlist_id,
         identity_id: ^identity_id,
         name: "default"
-      } = Watchlist |> first |> Repo.account_repo().one()
+      } = Watchlist |> first() |> Repo.account_repo().one()
 
       assert {:ok,
               %{

@@ -82,7 +82,7 @@ defmodule Indexer.Transform.TokenTransfers do
     tokens = sanitize_token_types(rough_tokens, rough_token_transfers)
     token_transfers = sanitize_weth_transfers(tokens, rough_token_transfers, weth_transfers.token_transfers)
 
-    unless skip_additional_fetchers? do
+    if !skip_additional_fetchers? do
       token_transfers
       |> filter_tokens_for_supply_update()
       |> TokenTotalSupplyUpdater.add_tokens()

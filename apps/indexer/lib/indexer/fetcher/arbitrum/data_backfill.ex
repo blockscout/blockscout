@@ -58,7 +58,7 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
   def child_spec([init_options, gen_server_options]) do
     {json_rpc_named_arguments, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
 
-    unless json_rpc_named_arguments do
+    if !json_rpc_named_arguments do
       raise ArgumentError,
             ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec` " <>
               "to allow for json_rpc calls when running."

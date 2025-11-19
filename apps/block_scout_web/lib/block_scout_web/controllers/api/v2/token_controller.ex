@@ -271,10 +271,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {:ok, holder_address_hash}} <- {:format, Chain.string_to_address_hash(holder_address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(holder_address_hash_string, params) do
-      holder_address = Address.get(holder_address_hash, @api_true)
-
       holder_address_with_proxy_implementations =
-        holder_address && %Address{holder_address | proxy_implementations: nil}
+        case Address.get(holder_address_hash, @api_true) do
+          %Address{} = holder_address -> %Address{holder_address | proxy_implementations: nil}
+          nil -> nil
+        end
 
       results_plus_one =
         Instance.token_instances_by_holder_address_hash(
@@ -361,7 +362,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
            Instance.nft_instance_by_token_id_and_token_address(token_id, address_hash, @api_true) do
       fill_metadata_url_task = maybe_run_fill_metadata_url_task(token_instance, token)
 
-      token_instance =
+      %Instance{} =
+        token_instance =
         token_instance
         |> Chain.select_repo(@api_true).preload(owner: [:names, :smart_contract, proxy_implementations_association()])
         |> Instance.put_owner_to_token_instance(token, @api_true)
@@ -752,13 +754,13 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   defp put_owner(token_instances, holder_address, holder_address_hash),
     do:
-      Enum.map(token_instances, fn token_instance ->
+      Enum.map(token_instances, fn %Instance{} = token_instance ->
         %Instance{token_instance | owner: holder_address, owner_address_hash: holder_address_hash}
       end)
 
   @spec put_token_to_instance(Instance.t(), Token.t()) :: Instance.t()
   defp put_token_to_instance(
-         token_instance,
+         %Instance{} = token_instance,
          token
        ) do
     %Instance{token_instance | token: token}

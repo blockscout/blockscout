@@ -208,11 +208,11 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       |> Query.encode()
       |> URI.decode_query()
       |> Enum.map(fn {k, v} ->
-        {k, unless(v == "", do: v)}
+        {k, if(v != "", do: v)}
       end)
       |> Enum.into(%{})
 
-    unless result == %{} do
+    if result != %{} do
       result
     end
   end

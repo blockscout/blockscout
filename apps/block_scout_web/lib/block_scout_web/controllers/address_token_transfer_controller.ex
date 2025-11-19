@@ -193,10 +193,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
     end
   end
 
-  def index(
-        conn,
-        %{"address_id" => address_hash_string} = params
-      ) do
+  def index(conn, %{"address_id" => address_hash_string} = params) do
     ip = AccessHelper.conn_to_ip_string(conn)
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -209,8 +206,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
         exchange_rate: Market.get_coin_exchange_rate(),
         filter: params["filter"],
-        current_path: Controller.current_full_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)}),
+        current_path: Controller.current_full_path(conn),
         tags: get_address_tags(address_hash, current_user(conn))
       )
     else

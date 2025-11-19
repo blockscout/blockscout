@@ -18,7 +18,7 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
   def child_spec([init_options, gen_server_options], defaults, module) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
 
-    unless state do
+    if !state do
       raise ArgumentError,
             ":json_rpc_named_arguments must be provided to `#{module}.child_spec " <>
               "to allow for json_rpc calls when running."

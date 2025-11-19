@@ -29,6 +29,6 @@
         gettext("State changes"),
         class: "card-tab #{tab_status("state", @conn.request_path)}",
         to: AccessHelper.get_path(@conn, :transaction_state_path, :index, @transaction)
-      ) 
+      )
     %>
 </div>

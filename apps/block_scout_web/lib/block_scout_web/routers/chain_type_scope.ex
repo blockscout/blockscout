@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.Routers.ChainTypeScope do
 
     quote do
       # Define pipeline if not already defined
-      unless Module.has_attribute?(__MODULE__, unquote(pipeline_name)) do
+      if !Module.has_attribute?(__MODULE__, unquote(pipeline_name)) do
         pipeline unquote(pipeline_name) do
           plug(BlockScoutWeb.Plug.CheckChainType, unquote(chain_type))
         end

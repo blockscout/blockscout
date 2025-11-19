@@ -348,7 +348,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
       l1_block_ranges_for_missing_batches =
         DbSettlement.get_l1_block_ranges_for_missing_batches(start_batch, end_batch, lowest_l1_block - 1)
 
-      unless l1_block_ranges_for_missing_batches == [] do
+      if l1_block_ranges_for_missing_batches != [] do
         discover_missing(
           sequencer_inbox_address,
           l1_block_ranges_for_missing_batches,

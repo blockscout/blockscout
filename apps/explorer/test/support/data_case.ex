@@ -37,7 +37,7 @@ defmodule Explorer.DataCase do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.Account)
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.EventNotifications)
 
-    unless tags[:async] do
+    if !tags[:async] do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, {:shared, self()})
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.EventNotifications, {:shared, self()})

@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.ConnCase do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo)
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.Account)
 
-    unless tags[:async] do
+    if !tags[:async] do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, {:shared, self()})
     end

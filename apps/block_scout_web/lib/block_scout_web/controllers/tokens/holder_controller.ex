@@ -1,14 +1,9 @@
 defmodule BlockScoutWeb.Tokens.HolderController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-  import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
-
-  alias BlockScoutWeb.{AccessHelper, Controller}
-  alias BlockScoutWeb.Tokens.HolderView
+  alias BlockScoutWeb.AccessHelper
+  alias BlockScoutWeb.Tokens.{HolderView, TransferController}
   alias Explorer.Chain
-  alias Explorer.Chain.Address
-  alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
   alias Phoenix.View
 
   import BlockScoutWeb.Chain,
@@ -57,31 +52,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
     end
   end
 
-  def index(conn, %{"token_id" => address_hash_string} = params) do
-    options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
-    ip = AccessHelper.conn_to_ip_string(conn)
-
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, token} <- Chain.token_from_address_hash(address_hash, options),
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
-      render(
-        conn,
-        "index.html",
-        current_path: Controller.current_full_path(conn),
-        token: token,
-        counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
-        token_total_supply_status: TokenTotalSupplyOnDemand.trigger_fetch(ip, address_hash),
-        tags: get_address_tags(address_hash, current_user(conn))
-      )
-    else
-      {:restricted_access, _} ->
-        not_found(conn)
-
-      :error ->
-        not_found(conn)
-
-      {:error, :not_found} ->
-        not_found(conn)
-    end
+  def index(conn, %{"token_id" => _address_hash_string} = params) do
+    TransferController.index(conn, params)
   end
 end

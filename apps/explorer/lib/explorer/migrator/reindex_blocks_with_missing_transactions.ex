@@ -68,7 +68,7 @@ defmodule Explorer.Migrator.ReindexBlocksWithMissingTransactions do
 
     case EthereumJSONRPC.fetch_transactions_count(consensus_block_numbers, json_rpc_named_arguments) do
       {:ok, %{transactions_count_map: node_transactions_count_map, errors: errors}} ->
-        unless Enum.empty?(errors) do
+        if !Enum.empty?(errors) do
           Logger.warning("Migration #{@migration_name} encountered errors fetching blocks: #{inspect(errors)}")
         end
 

@@ -3,8 +3,8 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
 
   if @chain_type == :filecoin do
     use ExUnit.Case, async: true
-    # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
-    alias Explorer.Chain.Hash, warn: false
+
+    alias Explorer.Chain.Hash
     alias Explorer.Chain.Filecoin.{NativeAddress, IDAddress}
 
     doctest NativeAddress

@@ -83,16 +83,6 @@ config :prometheus, BlockScoutWeb.Prometheus.PublicExporter,
   registry: :public,
   auth: false
 
-config :prometheus, BlockScoutWeb.Prometheus.PhoenixInstrumenter,
-  # override default for Phoenix 1.4 compatibility
-  # * `:transport_name` to `:transport`
-  # * remove `:vsn`
-  channel_join_labels: [:channel, :topic, :transport],
-  # override default for Phoenix 1.4 compatibility
-  # * `:transport_name` to `:transport`
-  # * remove `:vsn`
-  channel_receive_labels: [:channel, :topic, :transport, :event]
-
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
 
 config :block_scout_web, BlockScoutWeb.Routers.ApiRouter,

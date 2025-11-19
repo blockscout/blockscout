@@ -44,7 +44,7 @@ defmodule Explorer.Account.Notifier.NotifyTest do
 
       wn =
         WatchlistNotification
-        |> first
+        |> first()
         |> Repo.account_repo().one()
 
       assert notify == [[:ok]]
@@ -74,7 +74,7 @@ defmodule Explorer.Account.Notifier.NotifyTest do
 
       wn =
         WatchlistNotification
-        |> first
+        |> first()
         |> Repo.account_repo().one()
 
       assert notify == [[:ok]]
@@ -113,7 +113,7 @@ defmodule Explorer.Account.Notifier.NotifyTest do
 
       wn =
         WatchlistNotification
-        |> first
+        |> first()
         |> Repo.account_repo().one()
 
       assert notify == [[:ok]]
@@ -137,7 +137,7 @@ defmodule Explorer.Account.Notifier.NotifyTest do
       Notify.call([transaction])
 
       WatchlistNotification
-      |> first
+      |> first()
       |> Repo.account_repo().one!()
 
       Application.put_env(:explorer, Explorer.Account, old_envs)

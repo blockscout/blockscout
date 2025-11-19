@@ -5,11 +5,10 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   if @chain_type == :zilliqa do
-    # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
-    import Explorer.Chain.Zilliqa.Helper, only: [scilla_transaction?: 1], warn: false
-    alias Ecto.Association.NotLoaded, warn: false
-    alias Explorer.Chain.{Address, Block, Transaction}, warn: false
-    alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}, warn: false
+    import Explorer.Chain.Zilliqa.Helper, only: [scilla_transaction?: 1]
+    alias Ecto.Association.NotLoaded
+    alias Explorer.Chain.{Address, Block, Transaction}
+    alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}
 
     @doc """
     Extends the JSON output with a sub-map containing information related to Zilliqa,

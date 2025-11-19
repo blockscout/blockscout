@@ -199,7 +199,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
         |> Map.get(:blocks, [])
         |> Enum.map(&Map.get(&1, :number))
 
-      unless Enum.empty?(imported_block_numbers) do
+      if !Enum.empty?(imported_block_numbers) do
         cache_key = @pending_blocks_cache_key
         # credo:disable-for-next-line Credo.Check.Refactor.Nesting
         case pending_blocks_cache() do

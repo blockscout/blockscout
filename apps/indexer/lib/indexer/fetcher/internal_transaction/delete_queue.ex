@@ -72,7 +72,7 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
 
     case result do
       {:ok, {block_numbers, transactions}} ->
-        unless is_nil(Process.whereis(InternalTransactionFetcher)) do
+        if not is_nil(Process.whereis(InternalTransactionFetcher)) do
           InternalTransactionFetcher.async_fetch(block_numbers, transactions, true)
         end
 

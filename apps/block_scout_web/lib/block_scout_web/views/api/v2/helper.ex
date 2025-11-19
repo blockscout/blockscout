@@ -185,9 +185,22 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def smart_contract_verified?(%Address{smart_contract: %NotLoaded{}}), do: nil
   def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
 
-  def market_cap(:standard, %{available_supply: available_supply, fiat_value: fiat_value, market_cap: market_cap})
+  def market_cap(:standard, %{
+        available_supply: available_supply,
+        fiat_value: fiat_value,
+        market_cap: %Decimal{} = market_cap
+      })
       when is_nil(available_supply) or is_nil(fiat_value) do
-    max(Decimal.new(0), market_cap)
+    Decimal.max(Decimal.new(0), market_cap)
+  end
+
+  def market_cap(:standard, %{
+        available_supply: available_supply,
+        fiat_value: fiat_value,
+        market_cap: nil
+      })
+      when is_nil(available_supply) or is_nil(fiat_value) do
+    Decimal.new(0)
   end
 
   def market_cap(:standard, %{available_supply: available_supply, fiat_value: fiat_value}) do

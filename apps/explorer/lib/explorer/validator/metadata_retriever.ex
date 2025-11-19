@@ -9,8 +9,8 @@ defmodule Explorer.Validator.MetadataRetriever do
     fetch_validators_list()
     |> Enum.map(fn validator ->
       validator
-      |> fetch_validator_metadata
-      |> translate_metadata
+      |> fetch_validator_metadata()
+      |> translate_metadata()
       |> Map.merge(%{address_hash: validator, primary: true})
     end)
   end
