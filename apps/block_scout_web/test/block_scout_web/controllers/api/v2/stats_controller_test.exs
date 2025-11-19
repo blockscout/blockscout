@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       :ok
     end
 
-    defp insert_hot_contracts_daily(count, date \\ Date.utc_today(), scam \\ 0) do
+    defp insert_hot_smart_contracts_daily(count, date \\ Date.utc_today(), scam \\ 0) do
       addresses = Enum.map(1..count, fn _ -> insert(:address) end)
 
       Enum.each(addresses, fn addr ->
@@ -138,7 +138,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
 
     # Daily scales pagination
     test "1d pagination", %{conn: conn} do
-      insert_hot_contracts_daily(55)
+      insert_hot_smart_contracts_daily(55)
 
       request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "1d"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
@@ -155,9 +155,9 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     end
 
     test "7d pagination", %{conn: conn} do
-      insert_hot_contracts_daily(55)
+      insert_hot_smart_contracts_daily(55)
 
-      insert_hot_contracts_daily(55, Date.add(Date.utc_today(), -8))
+      insert_hot_smart_contracts_daily(55, Date.add(Date.utc_today(), -8))
 
       request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "7d"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
@@ -171,9 +171,9 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     end
 
     test "30d pagination", %{conn: conn} do
-      insert_hot_contracts_daily(55)
+      insert_hot_smart_contracts_daily(55)
 
-      insert_hot_contracts_daily(55, Date.add(Date.utc_today(), -31))
+      insert_hot_smart_contracts_daily(55, Date.add(Date.utc_today(), -31))
 
       request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "30d"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
@@ -190,7 +190,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     test "1d scam toggle respects cookie and hide config", %{conn: conn} do
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)
 
-      [normal | [scam | _]] = insert_hot_contracts_daily(2, Date.utc_today(), 1)
+      [normal | [scam | _]] = insert_hot_smart_contracts_daily(2, Date.utc_today(), 1)
 
       # Without cookie -> hide scam
       request1 = get(conn, "/api/v2/stats/hot-contracts", %{scale: "1d"})

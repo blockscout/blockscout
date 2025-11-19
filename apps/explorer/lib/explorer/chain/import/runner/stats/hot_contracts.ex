@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Runner.Stats.HotContracts do
   @moduledoc """
-  Bulk imports `t:Explorer.Stats.HotContracts.t/0` rows (hot_contracts_daily).
+  Bulk imports `t:Explorer.Stats.HotContracts.t/0` rows (hot_smart_contracts_daily).
   """
 
   require Ecto.Query
@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Import.Runner.Stats.HotContracts do
   def ecto_schema_module, do: HotContracts
 
   @impl Import.Runner
-  def option_key, do: :hot_contracts_daily
+  def option_key, do: :hot_smart_contracts_daily
 
   @impl Import.Runner
   def imported_table_row do
@@ -40,10 +40,10 @@ defmodule Explorer.Chain.Import.Runner.Stats.HotContracts do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :hot_contracts_daily, fn repo, _ ->
+    Multi.run(multi, :hot_smart_contracts_daily, fn repo, _ ->
       Instrumenter.stats_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
-        :hot_contracts_daily
+        :hot_smart_contracts_daily
       )
     end)
   end

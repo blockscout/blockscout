@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Stage.Stats do
   @moduledoc """
-  Imports stats data (hot_contracts_daily).
+  Imports stats data (hot_smart_contracts_daily).
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}

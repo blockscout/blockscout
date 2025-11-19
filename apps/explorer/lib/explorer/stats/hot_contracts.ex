@@ -13,7 +13,7 @@ defmodule Explorer.Stats.HotContracts do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   @primary_key false
-  typed_schema "hot_contracts_daily" do
+  typed_schema "hot_smart_contracts_daily" do
     field(:date, :date, primary_key: true)
     field(:contract_address_hash, Hash.Address, primary_key: true)
     field(:transactions_count, :integer)
@@ -77,7 +77,7 @@ defmodule Explorer.Stats.HotContracts do
   @spec indexed_dates(keyword()) :: [Date.t()]
   def indexed_dates(options \\ []) do
     __MODULE__
-    |> select([hot_contracts_daily], hot_contracts_daily.date)
+    |> select([hot_smart_contracts_daily], hot_smart_contracts_daily.date)
     |> distinct(true)
     |> Chain.select_repo(options).all()
   end
@@ -85,7 +85,7 @@ defmodule Explorer.Stats.HotContracts do
   @spec delete_older_than(Date.t(), keyword()) :: {non_neg_integer(), nil}
   def delete_older_than(date, options \\ []) do
     __MODULE__
-    |> where([hot_contracts_daily], hot_contracts_daily.date < ^date)
+    |> where([hot_smart_contracts_daily], hot_smart_contracts_daily.date < ^date)
     |> Chain.select_repo(options).delete_all(timeout: :infinity)
   end
 
@@ -161,13 +161,13 @@ defmodule Explorer.Stats.HotContracts do
       )
 
     __MODULE__
-    |> where([hot_contracts_daily], hot_contracts_daily.date >= ^Date.add(Date.utc_today(), -n))
+    |> where([hot_smart_contracts_daily], hot_smart_contracts_daily.date >= ^Date.add(Date.utc_today(), -n))
     |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
-    |> group_by([hot_contracts_daily], hot_contracts_daily.contract_address_hash)
-    |> select([hot_contracts_daily], %{
-      contract_address_hash: hot_contracts_daily.contract_address_hash,
-      transactions_count: sum(hot_contracts_daily.transactions_count),
-      total_gas_used: sum(hot_contracts_daily.total_gas_used)
+    |> group_by([hot_smart_contracts_daily], hot_smart_contracts_daily.contract_address_hash)
+    |> select([hot_smart_contracts_daily], %{
+      contract_address_hash: hot_smart_contracts_daily.contract_address_hash,
+      transactions_count: sum(hot_smart_contracts_daily.transactions_count),
+      total_gas_used: sum(hot_smart_contracts_daily.total_gas_used)
     })
     |> SortingHelper.apply_sorting(sorting_options, default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
@@ -178,12 +178,12 @@ defmodule Explorer.Stats.HotContracts do
 
   @spec transactions_count_dynamic() :: Ecto.Query.dynamic_expr()
   def transactions_count_dynamic do
-    dynamic([hot_contracts_daily], sum(hot_contracts_daily.transactions_count))
+    dynamic([hot_smart_contracts_daily], sum(hot_smart_contracts_daily.transactions_count))
   end
 
   @spec total_gas_used_dynamic() :: Ecto.Query.dynamic_expr()
   def total_gas_used_dynamic do
-    dynamic([hot_contracts_daily], sum(hot_contracts_daily.total_gas_used))
+    dynamic([hot_smart_contracts_daily], sum(hot_smart_contracts_daily.total_gas_used))
   end
 
   @spec transactions_count_on_transactions_dynamic() :: Ecto.Query.dynamic_expr()
