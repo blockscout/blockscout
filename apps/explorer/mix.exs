@@ -19,10 +19,6 @@ defmodule Explorer.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
-      preferred_cli_env: [
-        credo: :test,
-        dialyzer: :test
-      ],
       start_permanent: Mix.env() == :prod,
       version: "9.2.2",
       xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.InternalTransaction]]
@@ -37,6 +33,10 @@ defmodule Explorer.Mixfile do
       mod: {Explorer.Application, []},
       extra_applications: extra_applications()
     ]
+  end
+
+  def cli do
+    [preferred_envs: [credo: :test, dialyzer: :test]]
   end
 
   # Specifies which paths to compile per environment.

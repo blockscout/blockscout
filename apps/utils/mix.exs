@@ -12,11 +12,7 @@ defmodule Utils.MixProject do
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps(),
-      preferred_cli_env: [
-        credo: :test,
-        dialyzer: :test
-      ]
+      deps: deps()
     ]
   end
 
@@ -25,6 +21,10 @@ defmodule Utils.MixProject do
     [
       extra_applications: [:logger, :tesla]
     ]
+  end
+
+  def cli do
+    [preferred_envs: [credo: :test, dialyzer: :test]]
   end
 
   # Run "mix help deps" to learn about dependencies.

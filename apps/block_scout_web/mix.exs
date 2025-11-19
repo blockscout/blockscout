@@ -18,10 +18,6 @@ defmodule BlockScoutWeb.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env(), Application.get_env(:block_scout_web, :disable_api?)),
       lockfile: "../../mix.lock",
       package: package(),
-      preferred_cli_env: [
-        credo: :test,
-        dialyzer: :test
-      ],
       start_permanent: Mix.env() == :prod,
       version: "9.2.2",
       xref: [
@@ -46,6 +42,10 @@ defmodule BlockScoutWeb.Mixfile do
       mod: {BlockScoutWeb.Application, []},
       extra_applications: extra_applications()
     ]
+  end
+
+  def cli do
+    [preferred_envs: [credo: :test, dialyzer: :test]]
   end
 
   # Specifies which paths to compile per environment.
