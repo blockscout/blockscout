@@ -29,8 +29,8 @@ defmodule Indexer.Fetcher.Stats.HotSmartContracts do
 
   @impl GenServer
   def handle_info({:fetch_for_date, date, new_day?}, state) do
-    with {:ok, hot_contracts} <- HotSmartContracts.aggregate_hot_contracts_for_date(date),
-         {:ok, _} <- Chain.import(%{hot_smart_contracts_daily: %{params: hot_contracts}, timeout: :infinity}) do
+    with {:ok, hot_smart_contracts} <- HotSmartContracts.aggregate_hot_contracts_for_date(date),
+         {:ok, _} <- Chain.import(%{hot_smart_contracts_daily: %{params: hot_smart_contracts}, timeout: :infinity}) do
       if new_day? do
         schedule_next_day_fetch()
         HotSmartContracts.delete_older_than(Date.add(date, 1 - @max_days_ago))

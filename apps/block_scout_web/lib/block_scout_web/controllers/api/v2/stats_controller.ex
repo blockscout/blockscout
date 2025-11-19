@@ -185,7 +185,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     })
   end
 
-  operation :hot_contracts,
+  operation :hot_smart_contracts,
     summary: "Retrieve hot contracts",
     description: "Retrieves hot contracts",
     parameters:
@@ -214,8 +214,8 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       forbidden: ForbiddenResponse.response()
     ]
 
-  @spec hot_contracts(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def hot_contracts(conn, %{scale: scale} = params) do
+  @spec hot_smart_contracts(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def hot_smart_contracts(conn, %{scale: scale} = params) do
     options =
       params
       |> hot_contracts_paging_options()
@@ -223,24 +223,24 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       |> Keyword.merge(@api_true)
       |> fetch_scam_token_toggle(conn)
 
-    {hot_contracts, next_page} =
+    {hot_smart_contracts, next_page} =
       scale
       |> HotSmartContracts.paginated(options)
       |> case do
         {:error, :not_found} -> []
-        hot_contracts -> hot_contracts
+        hot_smart_contracts -> hot_smart_contracts
       end
       |> split_list_by_page()
 
     next_page_params =
       next_page
-      |> next_page_params(hot_contracts, params, false, &hot_contracts_paging_params/1)
+      |> next_page_params(hot_smart_contracts, params, false, &hot_contracts_paging_params/1)
       |> delete_items_count_from_next_page_params()
 
     conn
     |> put_status(200)
-    |> render(:hot_contracts, %{
-      hot_contracts: hot_contracts |> maybe_preload_metadata(),
+    |> render(:hot_smart_contracts, %{
+      hot_smart_contracts: hot_smart_contracts |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
   end

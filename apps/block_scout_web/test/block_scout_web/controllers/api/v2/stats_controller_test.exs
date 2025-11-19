@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     end
   end
 
-  describe "/stats/hot-contracts" do
+  describe "/stats/hot-smart-contracts" do
     import Explorer.Factory
     alias Explorer.Repo
     alias Explorer.Stats.HotSmartContracts
@@ -125,13 +125,13 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     end
 
     test "empty stats works for short scale", %{conn: conn} do
-      request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "5m"})
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "5m"})
       assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
       assert length(items) == 0
     end
 
     test "empty stats works for long scale", %{conn: conn} do
-      request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "7d"})
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "7d"})
       assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
       assert length(items) == 0
     end
@@ -140,7 +140,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     test "1d pagination", %{conn: conn} do
       insert_hot_smart_contracts_daily(55)
 
-      request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "1d"})
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "1d"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
 
       assert length(items) == 50
@@ -149,7 +149,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       assert Map.has_key?(next_page_params, "transactions_count")
       assert Map.has_key?(next_page_params, "total_gas_used")
 
-      request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "1d"}))
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", Map.merge(next_page_params, %{scale: "1d"}))
       assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
       assert length(items) == 5
     end
@@ -159,13 +159,13 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
 
       insert_hot_smart_contracts_daily(55, Date.add(Date.utc_today(), -8))
 
-      request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "7d"})
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "7d"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
 
       assert length(items) == 50
       assert is_map(next_page_params)
 
-      request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "7d"}))
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", Map.merge(next_page_params, %{scale: "7d"}))
       assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
       assert length(items) == 5
     end
@@ -175,13 +175,13 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
 
       insert_hot_smart_contracts_daily(55, Date.add(Date.utc_today(), -31))
 
-      request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "30d"})
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "30d"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
 
       assert length(items) == 50
       assert is_map(next_page_params)
 
-      request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "30d"}))
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", Map.merge(next_page_params, %{scale: "30d"}))
       assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
       assert length(items) == 5
     end
@@ -193,7 +193,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       [normal | [scam | _]] = insert_hot_smart_contracts_daily(2, Date.utc_today(), 1)
 
       # Without cookie -> hide scam
-      request1 = get(conn, "/api/v2/stats/hot-contracts", %{scale: "1d"})
+      request1 = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "1d"})
       resp1 = json_response(request1, 200)
       hashes1 = Enum.map(resp1["items"], fn %{"contract_address" => %{"hash" => h}} -> h end)
       assert Address.checksum(normal.hash) in hashes1
@@ -203,7 +203,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       request2 =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
-        |> get("/api/v2/stats/hot-contracts", %{scale: "1d"})
+        |> get("/api/v2/stats/hot-smart-contracts", %{scale: "1d"})
 
       resp2 = json_response(request2, 200)
       hashes2 = Enum.map(resp2["items"], fn %{"contract_address" => %{"hash" => h}} -> h end)
@@ -215,12 +215,12 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     test "5m pagination", %{conn: conn} do
       insert_transactions_in_last_seconds(55, 300)
 
-      request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "5m"})
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "5m"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
       assert length(items) == 50
       assert is_map(next_page_params)
 
-      request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "5m"}))
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", Map.merge(next_page_params, %{scale: "5m"}))
       assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
       assert length(items) == 5
     end
@@ -228,12 +228,12 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     test "1h pagination", %{conn: conn} do
       insert_transactions_in_last_seconds(55, 3600)
 
-      request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "1h"})
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "1h"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
       assert length(items) == 50
       assert is_map(next_page_params)
 
-      request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "1h"}))
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", Map.merge(next_page_params, %{scale: "1h"}))
       assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
       assert length(items) == 5
     end
@@ -244,12 +244,12 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       addresses =
         Enum.map(addresses, fn addr -> to_string(addr.hash) end) |> dbg(limit: :infinity, printable_limit: :infinity)
 
-      request = get(conn, "/api/v2/stats/hot-contracts", %{scale: "3h"})
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "3h"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
       assert length(items) == 50
       assert is_map(next_page_params)
 
-      request = get(conn, "/api/v2/stats/hot-contracts", Map.merge(next_page_params, %{scale: "3h"}))
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", Map.merge(next_page_params, %{scale: "3h"}))
       assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200) |> dbg()
       assert length(items) == 5
     end
@@ -260,7 +260,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
 
       [normal | [scam | _]] = insert_transactions_in_last_seconds(2, 300, 1)
 
-      request1 = get(conn, "/api/v2/stats/hot-contracts", %{scale: "5m"})
+      request1 = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "5m"})
       resp1 = json_response(request1, 200)
       hashes1 = Enum.map(resp1["items"], fn %{"contract_address" => %{"hash" => h}} -> h end)
       assert Address.checksum(normal.hash) in hashes1
@@ -269,7 +269,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       request2 =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
-        |> get("/api/v2/stats/hot-contracts", %{scale: "5m"})
+        |> get("/api/v2/stats/hot-smart-contracts", %{scale: "5m"})
 
       resp2 = json_response(request2, 200)
       hashes2 = Enum.map(resp2["items"], fn %{"contract_address" => %{"hash" => h}} -> h end)
@@ -282,7 +282,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
 
       [normal | [scam | _]] = insert_transactions_in_last_seconds(2, 300, 1)
 
-      request1 = get(conn, "/api/v2/stats/hot-contracts", %{scale: "1h"})
+      request1 = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "1h"})
       resp1 = json_response(request1, 200)
       hashes1 = Enum.map(resp1["items"], fn %{"contract_address" => %{"hash" => h}} -> h end)
       assert Address.checksum(normal.hash) in hashes1
@@ -291,7 +291,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       request2 =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
-        |> get("/api/v2/stats/hot-contracts", %{scale: "1h"})
+        |> get("/api/v2/stats/hot-smart-contracts", %{scale: "1h"})
 
       resp2 = json_response(request2, 200)
       hashes2 = Enum.map(resp2["items"], fn %{"contract_address" => %{"hash" => h}} -> h end)
@@ -304,7 +304,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
 
       [normal | [scam | _]] = insert_transactions_in_last_seconds(2, 300, 1)
 
-      request1 = get(conn, "/api/v2/stats/hot-contracts", %{scale: "3h"})
+      request1 = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "3h"})
       resp1 = json_response(request1, 200)
       hashes1 = Enum.map(resp1["items"], fn %{"contract_address" => %{"hash" => h}} -> h end)
       assert Address.checksum(normal.hash) in hashes1
@@ -313,7 +313,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       request2 =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
-        |> get("/api/v2/stats/hot-contracts", %{scale: "3h"})
+        |> get("/api/v2/stats/hot-smart-contracts", %{scale: "3h"})
 
       resp2 = json_response(request2, 200)
       hashes2 = Enum.map(resp2["items"], fn %{"contract_address" => %{"hash" => h}} -> h end)

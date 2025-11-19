@@ -3,9 +3,9 @@ defmodule BlockScoutWeb.API.V2.StatsView do
 
   alias BlockScoutWeb.API.V2.Helper
 
-  def render("hot_contracts.json", %{hot_contracts: hot_contracts, next_page_params: next_page_params}) do
+  def render("hot_smart_contracts.json", %{hot_smart_contracts: hot_smart_contracts, next_page_params: next_page_params}) do
     %{
-      items: Enum.map(hot_contracts, &prepare_hot_contract/1),
+      items: Enum.map(hot_smart_contracts, &prepare_hot_contract/1),
       next_page_params: next_page_params
     }
   end
