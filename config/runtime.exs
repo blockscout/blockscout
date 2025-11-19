@@ -967,9 +967,9 @@ config :indexer, :ipfs,
 config :indexer, :arc,
   arc_native_token_decimals: ConfigHelper.parse_integer_env_var("INDEXER_ARC_NATIVE_TOKEN_DECIMALS", 6),
   arc_native_token_address:
-    System.get_env("INDEXER_ARC_NATIVE_TOKEN_CONTRACT_ADDRESS", "0x3600000000000000000000000000000000000000"),
+    System.get_env("INDEXER_ARC_NATIVE_TOKEN_CONTRACT", "0x3600000000000000000000000000000000000000"),
   arc_native_token_system_address:
-    System.get_env("INDEXER_ARC_NATIVE_TOKEN_SYSTEM_CONTRACT_ADDRESS", "0x1800000000000000000000000000000000000000")
+    System.get_env("INDEXER_ARC_NATIVE_TOKEN_SYSTEM_CONTRACT", "0x1800000000000000000000000000000000000000")
 
 config :indexer, Indexer.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 
