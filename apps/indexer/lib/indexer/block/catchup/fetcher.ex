@@ -179,7 +179,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     {fetch_duration, result} = :timer.tc(fn -> fetch_and_import_range(block_fetcher, range) end)
 
-    Prometheus.Instrumenter.block_full_process(fetch_duration, __MODULE__)
+    Prometheus.Instrumenter.set_block_full_process(fetch_duration, __MODULE__)
 
     case result do
       {:ok, %{errors: errors}} ->
@@ -188,13 +188,13 @@ defmodule Indexer.Block.Catchup.Fetcher do
         {:ok, %{range: range, errors: valid_errors}}
 
       {:error, {:import = step, [%Changeset{} | _] = changesets}} = error ->
-        Prometheus.Instrumenter.import_errors()
+        Prometheus.Instrumenter.set_import_errors_count()
         Logger.error(fn -> ["failed to validate: ", inspect(changesets), ". Retrying."] end, step: step)
 
         error
 
       {:error, {:import = step, reason}} = error ->
-        Prometheus.Instrumenter.import_errors()
+        Prometheus.Instrumenter.set_import_errors_count()
         Logger.error(fn -> [inspect(reason), ". Retrying."] end, step: step)
         if reason == :timeout, do: add_range_to_massive_blocks(range)
 

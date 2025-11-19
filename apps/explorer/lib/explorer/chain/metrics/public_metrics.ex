@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Metrics do
+defmodule Explorer.Chain.Metrics.PublicMetrics do
   @moduledoc """
   Module responsible for periodically setting current chain metrics.
   """
@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Metrics do
 
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Metrics.Queries
+  alias Explorer.Chain.Metrics.Queries.PublicChainMetrics, as: PublicChainMetricsQueries
   alias Explorer.Prometheus.Instrumenter
 
   @interval :timer.hours(1)
@@ -69,12 +69,12 @@ defmodule Explorer.Chain.Metrics do
   defp set_handler_metric(metric) do
     func = String.to_atom(to_string(metric) <> "_query")
 
-    transactions_count =
-      Queries
+    items_count =
+      PublicChainMetricsQueries
       |> apply(func, [])
       |> select_repo(@options).one()
 
-    apply(Instrumenter, metric, [transactions_count])
+    apply(Instrumenter, metric, [items_count])
   end
 
   defp schedule_next_run do
