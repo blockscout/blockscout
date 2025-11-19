@@ -1,32 +1,32 @@
 defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   @moduledoc """
-  Fills `zrc2_token_transfers` (or `token_transfers`) and `zrc2_token_adapters` table
+  Fills `zilliqa_zrc2_token_transfers` (or `token_transfers`) and `zilliqa_zrc2_token_adapters` table
   (with accompanying tables like `tokens`, `address_token_balances`, etc.).
 
-  The `zrc2_token_transfers` table is used for temporary storing ZRC-2 transfers that have unknown adapter contract address.
+  The `zilliqa_zrc2_token_transfers` table is used for temporary storing ZRC-2 transfers that have unknown adapter contract address.
   Once the token adapter address becomes known, the corresponding transfers are moved from
-  the `zrc2_token_transfers` to `token_transfers` table (and the adapter address is used for the `token_contract_address_hash` field).
+  the `zilliqa_zrc2_token_transfers` to `token_transfers` table (and the adapter address is used for the `token_contract_address_hash` field).
 
   This fetcher is responsible for:
   - handling historic ZRC-2 transfer events (`TransferSuccess`, `TransferFromSuccess`, `Minted`, `Burnt`) and
     filling the token transfer and token adapter tables.
-  - periodically checking and moving ZRC-2 token transfers from the `zrc2_token_transfers`
+  - periodically checking and moving ZRC-2 token transfers from the `zilliqa_zrc2_token_transfers`
     to the `token_transfers` table.
 
   Also, this fetcher contains a common handling function which is also called by the realtime and catchup block fetchers
   (see `fetch_zrc2_token_transfers_and_adapters` code) to handle the ZRC-2 transfer events in catchup and realtime mode.
 
   The historic handler goes through the `logs` and `transactions` database tables (in the reverse block number order)
-  and fills the `zrc2_token_transfers` and `zrc2_token_adapters` tables. If ZRC-2 token adapter is already known
-  (exists in the `zrc2_token_adapters` table), the fetcher instead writes the corresponding rows directly into the `token_transfers` table
+  and fills the `zilliqa_zrc2_token_transfers` and `zilliqa_zrc2_token_adapters` tables. If ZRC-2 token adapter is already known
+  (exists in the `zilliqa_zrc2_token_adapters` table), the fetcher instead writes the corresponding rows directly into the `token_transfers` table
   setting `token_contract_address_hash` field to the adapter's address.
 
-  Periodically checking and moving ZRC-2 token transfers from the `zrc2_token_transfers` to the `token_transfers` table
+  Periodically checking and moving ZRC-2 token transfers from the `zilliqa_zrc2_token_transfers` to the `token_transfers` table
   is implemented in the `move_zrc2_token_transfers_to_token_transfers` function. It's called after every
   `fetch_zrc2_token_transfers_and_adapters` call. After the historic handler finishes its work (reaches the FIRST_BLOCK),
   the `move_zrc2_token_transfers_to_token_transfers` function continues to be called periodically (once per a few seconds)
   to check and move token transfers created by the realtime (or catchup) block fetcher. This call isn't invoked in the block
-  fetcher itself as it can take a lot of time (if there are a lot of rows in the `zrc2_token_transfers` table) and lead to
+  fetcher itself as it can take a lot of time (if there are a lot of rows in the `zilliqa_zrc2_token_transfers` table) and lead to
   block fetcher delays. It's called asynchronously by this fetcher instead.
 
   The handled token transfers are added with "ZRC-2" token type.
@@ -47,8 +47,8 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     ]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, Data, Hash, Log, SmartContract, TokenTransfer, Transaction}
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
+  alias Explorer.Chain.{Data, Hash, Log, SmartContract, TokenTransfer}
   alias Explorer.Chain.Zilliqa.Zrc2.TokenAdapter
   alias Explorer.Chain.Zilliqa.Zrc2.TokenTransfer, as: Zrc2TokenTransfer
   alias Indexer.Block.Fetcher, as: BlockFetcher
@@ -97,7 +97,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     # get the latest known block number from the `logs` table
     block_number_to_analyze =
       case LastFetchedCounter.get(@counter_type, nullable: true) do
-        nil -> last_known_block_number()
+        nil -> Log.last_known_block_number()
         block_number -> Decimal.to_integer(block_number)
       end
 
@@ -105,7 +105,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       # this is the first run of the instance from scratch, so the events will be handled by the realtime and catchup indexers
       # and we only need to call the `move_zrc2_token_transfers_to_token_transfers` periodically
       Logger.info(
-        "There are no known consensus blocks in the database, so #{__MODULE__} will only periodically check the `zrc2_token_transfers` table."
+        "There are no known consensus blocks in the database, so #{__MODULE__} will only periodically check the `zilliqa_zrc2_token_transfers` table."
       )
 
       LastFetchedCounter.upsert(%{counter_type: @counter_type, value: 0})
@@ -116,7 +116,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       # we continue handling after instance restart
       first_block_number =
         if block_number_to_analyze > 0 do
-          max(Application.get_env(:indexer, :first_block), first_known_block_number())
+          max(Application.get_env(:indexer, :first_block), Log.first_known_block_number())
         else
           0
         end
@@ -175,8 +175,16 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
           :ok
       end
 
-      logs = read_block_logs(block_number_to_analyze)
-      transactions = read_transfer_transactions(logs)
+      transfer_events = [
+        @zrc2_transfer_success_event,
+        @zrc2_transfer_from_success_event,
+        @zrc2_minted_event,
+        @zrc2_burnt_event,
+        TokenTransfer.constant()
+      ]
+
+      logs = Zrc2TokenTransfer.read_block_logs(block_number_to_analyze, transfer_events)
+      transactions = Zrc2TokenTransfer.read_transfer_transactions(logs, @zrc2_transfer_success_event)
 
       block_numbers_to_analyze = Range.new(block_number_to_analyze, block_number_to_analyze)
 
@@ -188,7 +196,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       # little pause to unload cpu
       Process.send_after(self(), :continue, 10)
     else
-      Logger.info("Checking zrc2_token_transfers table...")
+      Logger.info("Checking zilliqa_zrc2_token_transfers table...")
       move_zrc2_token_transfers_to_token_transfers()
       Process.send_after(self(), :continue, @check_zrc2_token_transfers_interval)
     end
@@ -297,7 +305,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           if is_nil(adapter_address_hash) do
-            # the adapter address is unknown yet, so place the token transfer to the `zrc2_token_transfers` table
+            # the adapter address is unknown yet, so place the token transfer to the `zilliqa_zrc2_token_transfers` table
             {[Map.put(token_transfer, :zrc2_address_hash, Hash.to_string(log.address_hash)) | zrc2_token_transfers_acc],
              token_transfers_acc}
           else
@@ -332,7 +340,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     addresses =
       Addresses.extract_addresses(%{
         token_transfers: token_transfers,
-        zrc2_token_transfers: zrc2_token_transfers
+        zilliqa_zrc2_token_transfers: zrc2_token_transfers
       })
 
     {tokens, address_token_balances, address_current_token_balances} =
@@ -345,7 +353,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         address_current_token_balances: %{params: address_current_token_balances},
         tokens: %{params: tokens},
         token_transfers: %{params: token_transfers},
-        zrc2_token_transfers: %{params: zrc2_token_transfers},
+        zilliqa_zrc2_token_transfers: %{params: zrc2_token_transfers},
         timeout: :infinity
       })
 
@@ -494,17 +502,17 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
       {:ok, _} =
         Chain.import(%{
-          addresses: %{params: Addresses.extract_addresses(%{zrc2_token_adapters: zrc2_token_adapters})},
-          zrc2_token_adapters: %{params: zrc2_token_adapters},
+          addresses: %{params: Addresses.extract_addresses(%{zilliqa_zrc2_token_adapters: zrc2_token_adapters})},
+          zilliqa_zrc2_token_adapters: %{params: zrc2_token_adapters},
           timeout: :infinity
         })
     end
   end
 
-  # Scans the `zrc2_token_transfers` table for the rows that have corresponding
-  # adapter addresses in the `zrc2_token_adapters` table. The found rows are inserted into the `token_transfers`
+  # Scans the `zilliqa_zrc2_token_transfers` table for the rows that have corresponding
+  # adapter addresses in the `zilliqa_zrc2_token_adapters` table. The found rows are inserted into the `token_transfers`
   # table (with the `token_contract_address_hash` == `adapter_address_hash` and `token_type` == "ZRC-2"), and then
-  # removed from the `zrc2_token_transfers` table.
+  # removed from the `zilliqa_zrc2_token_transfers` table.
   #
   # For the found token transfers, the function prepares and asynchronously imports the corresponding tokens
   # and their balances.
@@ -513,26 +521,10 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   # - :ok
   @spec move_zrc2_token_transfers_to_token_transfers() :: :ok
   defp move_zrc2_token_transfers_to_token_transfers do
-    query =
-      from(
-        ztt in Zrc2TokenTransfer,
-        inner_join: a in TokenAdapter,
-        on: a.zrc2_address_hash == ztt.zrc2_address_hash,
-        select: %{
-          transaction_hash: ztt.transaction_hash,
-          log_index: ztt.log_index,
-          from_address_hash: ztt.from_address_hash,
-          to_address_hash: ztt.to_address_hash,
-          amount: ztt.amount,
-          adapter_address_hash: a.adapter_address_hash,
-          block_number: ztt.block_number,
-          block_hash: ztt.block_hash
-        }
-      )
+    zrc2_token_transfers = Zrc2TokenTransfer.zrc2_token_transfers_having_adapter()
 
     token_transfers =
-      query
-      |> Repo.all(timeout: :infinity)
+      zrc2_token_transfers
       |> Enum.map(fn token_transfer ->
         token_transfer
         |> Map.put(:from_address_hash, Hash.to_string(token_transfer.from_address_hash))
@@ -623,129 +615,6 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       {:ok, adapter_address_hash} -> adapter_address_hash
       :error -> Map.get(adapter_address_hash_by_zrc2_address_hash, log.address_hash)
     end
-  end
-
-  # Gets all transfer logs from the `logs` table for the given block.
-  # This function is only used by the historic handler.
-  #
-  # ## Parameters
-  # - `block_number`: The block number.
-  #
-  # ## Returns
-  # - A list of found log maps for the given block.
-  #   Each returned log can have the corresponding non-empty `adapter_address_hash` field.
-  @spec read_block_logs(non_neg_integer()) :: [
-          %{
-            first_topic: Hash.t(),
-            data: Data.t(),
-            address_hash: Hash.t(),
-            transaction_hash: Hash.t(),
-            index: non_neg_integer(),
-            block_number: non_neg_integer(),
-            block_hash: Hash.t(),
-            adapter_address_hash: Hash.t() | nil
-          }
-        ]
-  defp read_block_logs(block_number) do
-    transfer_events = [
-      @zrc2_transfer_success_event,
-      @zrc2_transfer_from_success_event,
-      @zrc2_minted_event,
-      @zrc2_burnt_event,
-      TokenTransfer.constant()
-    ]
-
-    Repo.all(
-      from(
-        l in Log,
-        inner_join: b in Block,
-        on: b.hash == l.block_hash and b.consensus == true,
-        left_join: a in TokenAdapter,
-        on: a.zrc2_address_hash == l.address_hash,
-        where: l.block_number == ^block_number and l.first_topic in ^transfer_events,
-        select: %{
-          first_topic: l.first_topic,
-          data: l.data,
-          address_hash: l.address_hash,
-          transaction_hash: l.transaction_hash,
-          index: l.index,
-          block_number: l.block_number,
-          block_hash: l.block_hash,
-          adapter_address_hash: a.adapter_address_hash
-        }
-      ),
-      timeout: :infinity
-    )
-  end
-
-  # Gets a list of transactions with necessary data (such as transaction hash, input, and `to` address hash)
-  # by the list of logs prepared with the `read_block_logs` function. This function is only used by the
-  # historic handler.
-  #
-  # We only need the transactions having the `TransferSuccess` event with unknown ZRC-2 adapter address.
-  #
-  # ## Parameters
-  # - `logs`: The list of logs.
-  #
-  # ## Returns
-  # - A list of transaction maps for the given list of logs.
-  @spec read_transfer_transactions([
-          %{first_topic: Hash.t(), transaction_hash: Hash.t(), adapter_address_hash: Hash.t() | nil}
-        ]) :: [%{hash: Hash.t(), input: Data.t(), to_address_hash: Hash.t()}]
-  defp read_transfer_transactions(logs) do
-    transaction_hashes =
-      logs
-      |> Enum.filter(
-        &(Hash.to_string(&1.first_topic) == @zrc2_transfer_success_event and is_nil(&1.adapter_address_hash))
-      )
-      |> Enum.map(& &1.transaction_hash)
-
-    Repo.all(
-      from(
-        t in Transaction,
-        where: t.hash in ^transaction_hashes,
-        select: %{
-          hash: t.hash,
-          input: t.input,
-          to_address_hash: t.to_address_hash
-        }
-      ),
-      timeout: :infinity
-    )
-  end
-
-  # Returns the first (min) known consensus block number found in the `logs` table.
-  #
-  # ## Returns
-  # - An integer block number if found.
-  # - `nil` if not found.
-  @spec first_known_block_number() :: non_neg_integer() | nil
-  defp first_known_block_number do
-    Repo.aggregate(get_known_block_number_query(), :min, :block_number)
-  end
-
-  # Returns the last (max) known consensus block number found in the `logs` table.
-  #
-  # ## Returns
-  # - An integer block number if found.
-  # - `nil` if not found.
-  @spec last_known_block_number() :: non_neg_integer() | nil
-  defp last_known_block_number do
-    Repo.aggregate(get_known_block_number_query(), :max, :block_number)
-  end
-
-  # Returns a query to get all logs with consensus blocks.
-  #
-  # ## Returns
-  # - A query to be used by other Repo functions.
-  @spec get_known_block_number_query() :: Ecto.Query.t()
-  defp get_known_block_number_query do
-    from(
-      log in Log,
-      inner_join: block in Block,
-      on: block.hash == log.block_hash and block.consensus == true,
-      select: log
-    )
   end
 
   # Converts ZRC-2 event string parameter into a map.

@@ -23,7 +23,7 @@ defmodule Explorer.Chain.Import.Runner.Zilliqa.Zrc2.TokenTransfers do
   def ecto_schema_module, do: TokenTransfer
 
   @impl Import.Runner
-  def option_key, do: :zrc2_token_transfers
+  def option_key, do: :zilliqa_zrc2_token_transfers
 
   @impl Import.Runner
   def imported_table_row do
@@ -42,12 +42,12 @@ defmodule Explorer.Chain.Import.Runner.Zilliqa.Zrc2.TokenTransfers do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_zrc2_token_transfers, fn repo, _ ->
+    Multi.run(multi, :insert_zilliqa_zrc2_token_transfers, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :zrc2_token_transfers,
-        :zrc2_token_transfers
+        :zilliqa_zrc2_token_transfers,
+        :zilliqa_zrc2_token_transfers
       )
     end)
   end

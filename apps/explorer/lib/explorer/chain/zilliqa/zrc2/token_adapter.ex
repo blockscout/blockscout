@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenAdapter do
   * `adapter_address` - An instance of `Explorer.Chain.Address` referenced by `adapter_address_hash`.
   """
   @primary_key false
-  typed_schema "zrc2_token_adapters" do
+  typed_schema "zilliqa_zrc2_token_adapters" do
     belongs_to(:zrc2_address, Address,
       foreign_key: :zrc2_address_hash,
       references: :hash,

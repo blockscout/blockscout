@@ -235,11 +235,15 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     ]
   end
 
+  @default_allowed_transaction_types ~w(COIN_TRANSFER CONTRACT_INTERACTION CONTRACT_CREATION ERC-20 ERC-404 ERC-721 ERC-1155)
+
   if @chain_type == :zilliqa do
-    @allowed_transaction_types ~w(COIN_TRANSFER CONTRACT_INTERACTION CONTRACT_CREATION ERC-20 ERC-404 ERC-721 ERC-1155 ZRC-2)
+    @chain_type_allowed_transaction_types ~w(ZRC-2)
   else
-    @allowed_transaction_types ~w(COIN_TRANSFER CONTRACT_INTERACTION CONTRACT_CREATION ERC-20 ERC-404 ERC-721 ERC-1155)
+    @chain_type_allowed_transaction_types ~w()
   end
+
+  @allowed_transaction_types @default_allowed_transaction_types ++ @chain_type_allowed_transaction_types
 
   defp prepare_transaction_types(transaction_types) when is_binary(transaction_types) do
     transaction_types
