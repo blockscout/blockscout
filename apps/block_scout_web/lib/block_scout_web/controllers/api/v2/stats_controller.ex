@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     only: [
       hot_smart_contracts_paging_options: 1,
       split_list_by_page: 1,
-      next_page_params: 5,
+      next_page_params: 4,
       fetch_scam_token_toggle: 2
     ]
 
@@ -235,7 +235,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
     next_page_params =
       next_page
-      |> next_page_params(hot_smart_contracts, params, false, &hot_smart_contracts_paging_params/1)
+      |> next_page_params(hot_smart_contracts, params, &hot_smart_contracts_paging_params/1)
       |> delete_items_count_from_next_page_params()
 
     conn
