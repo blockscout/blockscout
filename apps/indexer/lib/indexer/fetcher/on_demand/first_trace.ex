@@ -13,11 +13,12 @@ defmodule Indexer.Fetcher.OnDemand.FirstTrace do
   require Logger
 
   def maybe_trigger_fetch(transaction, opts \\ []) do
-    unless Application.get_env(:explorer, :shrink_internal_transactions_enabled) do
+    if !Application.get_env(:explorer, :shrink_internal_transactions_enabled) do
       transaction.hash
       |> InternalTransaction.all_transaction_to_internal_transactions(opts)
       |> Enum.any?(&(&1.index == 0))
-      |> unless do
+      |> Kernel.!()
+      |> if do
         trigger_fetch(transaction)
       end
     end

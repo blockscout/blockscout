@@ -106,7 +106,7 @@ defmodule Explorer.Tags.AddressToTag do
         end)
         |> Enum.filter(&(!is_nil(&1)))
 
-      unless Enum.empty?(addresses_to_delete) do
+      if !Enum.empty?(addresses_to_delete) do
         delete_query_base =
           from(
             att in __MODULE__,

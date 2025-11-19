@@ -475,7 +475,7 @@ defmodule Explorer.Chain.Address do
     For more information: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-55.md#specification
 
     To bypass the checksum formatting, use `to_string/1` on the hash itself.
-    #{unless @chain_type == :rsk do
+    #{if @chain_type != :rsk do
       """
         iex> address = %Explorer.Chain.Address{
         ...>   hash: %Explorer.Chain.Hash{

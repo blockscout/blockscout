@@ -445,7 +445,7 @@ defmodule EthereumJSONRPC.Geth do
         )
 
       "" ->
-        unless allow_empty_traces?(), do: log_unknown_type(call)
+        if !allow_empty_traces?(), do: log_unknown_type(call)
         acc
 
       _unknown_type ->
@@ -455,7 +455,7 @@ defmodule EthereumJSONRPC.Geth do
   end
 
   defp parse_call_tracer_calls({%{} = call, _}, acc, _trace_address, _inner?) do
-    unless allow_empty_traces?(), do: log_unknown_type(call)
+    if !allow_empty_traces?(), do: log_unknown_type(call)
     acc
   end
 

@@ -92,7 +92,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
   def handle_connect(_conn, state) do
     Logger.metadata(fetcher: :websocket_client)
 
-    unless state.fallback? do
+    if !state.fallback? do
       RetryWorker.deactivate()
       WebSocketSupervisor.stop_other_client(self())
     end

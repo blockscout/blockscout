@@ -571,7 +571,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 errors: []
               }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
 
-      unless chain_identity() == {:optimism, :celo} do
+      if chain_identity() != {:optimism, :celo} do
         assert [
                  %Address{hash: ^first_address_hash},
                  %Address{hash: ^second_address_hash},
@@ -831,7 +831,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 errors: []
               }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
 
-      unless chain_identity() == {:optimism, :celo} do
+      if chain_identity() != {:optimism, :celo} do
         assert [
                  %Address{hash: ^first_address_hash},
                  %Address{hash: ^second_address_hash},

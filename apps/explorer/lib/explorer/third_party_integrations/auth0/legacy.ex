@@ -209,7 +209,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Legacy do
     |> Account.merge()
     |> case do
       {{:ok, 0}, nil} ->
-        unless match?(%{"user_metadata" => %{"web3_address_hash" => _}}, primary_user) do
+        if !match?(%{"user_metadata" => %{"web3_address_hash" => _}}, primary_user) do
           update_user_with_web3_address(
             primary_user["user_id"],
             primary_user |> Internal.create_auth() |> Identity.address_hash_from_auth()
@@ -221,7 +221,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Legacy do
       {{:ok, _}, primary_identity} ->
         primary_user_from_db = users_map[primary_identity.uid]
 
-        unless match?(%{"user_metadata" => %{"web3_address_hash" => _}}, primary_user_from_db) do
+        if !match?(%{"user_metadata" => %{"web3_address_hash" => _}}, primary_user_from_db) do
           update_user_with_web3_address(
             primary_user_from_db["user_id"],
             primary_user_from_db |> Internal.create_auth() |> Identity.address_hash_from_auth()

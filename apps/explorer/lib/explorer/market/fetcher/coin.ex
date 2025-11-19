@@ -75,7 +75,7 @@ defmodule Explorer.Market.Fetcher.Coin do
       :ets.insert(table_name(), {secondary_coin?, coin})
     end
 
-    unless secondary_coin? do
+    if !secondary_coin? do
       broadcast_event(:exchange_rate)
     end
 

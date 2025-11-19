@@ -226,7 +226,7 @@ defmodule Indexer.Fetcher.UncleBlock do
     loggable_errors = loggable_errors(errors)
     loggable_error_count = Enum.count(loggable_errors)
 
-    unless loggable_error_count == 0 do
+    if loggable_error_count != 0 do
       Logger.error(
         fn ->
           [

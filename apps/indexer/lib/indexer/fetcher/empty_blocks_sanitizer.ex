@@ -86,7 +86,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
     unprocessed_empty_blocks_list = unprocessed_empty_blocks_list_query(limit())
 
-    unless Enum.empty?(unprocessed_empty_blocks_list) do
+    if !Enum.empty?(unprocessed_empty_blocks_list) do
       blocks_response =
         unprocessed_empty_blocks_list
         |> Enum.map(fn %{number: block_number} -> %{number: integer_to_quantity(block_number)} end)
