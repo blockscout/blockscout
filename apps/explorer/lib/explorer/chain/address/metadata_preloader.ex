@@ -328,7 +328,8 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   end
 
   defp put_meta_to_item(
-         %HotSmartContracts{contract_address_hash: contract_address_hash, contract_address: contract_address} = hot_contract,
+         %HotSmartContracts{contract_address_hash: contract_address_hash, contract_address: contract_address} =
+           hot_contract,
          names,
          field_to_put_info
        ) do

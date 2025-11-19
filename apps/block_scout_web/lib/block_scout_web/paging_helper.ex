@@ -472,7 +472,8 @@ defmodule BlockScoutWeb.PagingHelper do
         {:dynamic, :transactions_count, :asc_nulls_first, HotSmartContracts.transactions_count_dynamic()}
       ],
       aggregated_on_transactions: [
-        {:dynamic, :transactions_count, :asc_nulls_first, HotSmartContracts.transactions_count_on_transactions_dynamic()}
+        {:dynamic, :transactions_count, :asc_nulls_first,
+         HotSmartContracts.transactions_count_on_transactions_dynamic()}
       ]
     }
 
@@ -482,7 +483,8 @@ defmodule BlockScoutWeb.PagingHelper do
         {:dynamic, :transactions_count, :desc_nulls_last, HotSmartContracts.transactions_count_dynamic()}
       ],
       aggregated_on_transactions: [
-        {:dynamic, :transactions_count, :desc_nulls_last, HotSmartContracts.transactions_count_on_transactions_dynamic()}
+        {:dynamic, :transactions_count, :desc_nulls_last,
+         HotSmartContracts.transactions_count_on_transactions_dynamic()}
       ]
     }
 
