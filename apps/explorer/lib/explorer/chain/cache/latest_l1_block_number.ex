@@ -11,7 +11,5 @@ defmodule Explorer.Chain.Cache.LatestL1BlockNumber do
 
   @dialyzer :no_match
 
-  defp handle_fallback(:update), do: {:update, nil}
-
   defp handle_fallback(_key), do: {:return, nil}
 end
