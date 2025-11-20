@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Token.FiatValue do
 
   use Ecto.Type
 
-  alias Explorer.Market.Fetcher.Token
+  alias Explorer.Market
 
   @impl Ecto.Type
   def type, do: :decimal
@@ -48,7 +48,7 @@ defmodule Explorer.Chain.Token.FiatValue do
 
   @impl Ecto.Type
   def load(%Decimal{} = decimal) do
-    if GenServer.whereis(Token) do
+    if Market.token_fetcher_enabled?() do
       {:ok, decimal}
     else
       {:ok, nil}

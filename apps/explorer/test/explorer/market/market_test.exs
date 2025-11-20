@@ -21,6 +21,7 @@ defmodule Explorer.MarketTest do
       ConCache.delete(:market_history, :last_update)
 
       start_supervised!(Explorer.Market.Fetcher.History)
+      start_supervised!(Explorer.Market)
 
       today = Date.utc_today()
 
@@ -42,6 +43,7 @@ defmodule Explorer.MarketTest do
 
     test "with disabled history fetcher" do
       ConCache.delete(:market_history, :last_update)
+      start_supervised!(Explorer.Market)
 
       old_env = Application.get_env(:explorer, Explorer.Market.Fetcher.History)
       Application.put_env(:explorer, Explorer.Market.Fetcher.History, Keyword.merge(old_env, enabled: false))

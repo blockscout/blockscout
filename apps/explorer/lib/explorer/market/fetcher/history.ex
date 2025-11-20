@@ -126,6 +126,7 @@ defmodule Explorer.Market.Fetcher.History do
 
     new_types_states = put_in(state.types_states, [type, :failed_attempts], failed_attempts)
     new_state = %{state | types_states: new_types_states}
+    maybe_insert_and_schedule_refetch(new_state)
 
     {:noreply, new_state}
   end

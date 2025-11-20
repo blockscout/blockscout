@@ -56,8 +56,7 @@ defmodule Explorer.Market.MarketHistory do
     Repo.transaction(fn ->
       Repo.safe_insert_all(__MODULE__, records_without_zeroes,
         on_conflict: market_history_on_conflict(),
-        conflict_target: [:date, :secondary_coin],
-        returning: true
+        conflict_target: [:date, :secondary_coin]
       )
     end)
   end

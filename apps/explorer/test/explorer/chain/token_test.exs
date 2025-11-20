@@ -168,6 +168,7 @@ defmodule Explorer.Chain.TokenTest do
       end)
 
       start_supervised!(Explorer.Market.Fetcher.Token)
+      start_supervised!(Explorer.Market)
 
       insert_list(10, :token)
 
@@ -178,6 +179,8 @@ defmodule Explorer.Chain.TokenTest do
 
     test "ignores market data with disabled token fetcher" do
       insert_list(10, :token)
+
+      start_supervised!(Explorer.Market)
 
       market_data = Token.list_top(nil)
 

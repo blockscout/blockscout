@@ -116,10 +116,10 @@ defmodule Explorer.Application do
   defp configurable_children do
     configurable_children_set =
       [
-        configure_libcluster(),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Coin, :api),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Token, :indexer),
         configure_mode_dependent_process(Explorer.Market.Fetcher.History, :indexer),
+        configure_mode_dependent_process(Explorer.Market, :api),
         configure(Explorer.ChainSpec.GenesisData),
         configure(Explorer.Chain.Cache.Counters.ContractsCount),
         configure(Explorer.Chain.Cache.Counters.NewContractsCount),
@@ -328,7 +328,9 @@ defmodule Explorer.Application do
         configure(Explorer.Chain.Fetcher.AddressesBlacklist),
         Explorer.Migrator.SwitchPendingOperations,
         configure_mode_dependent_process(Explorer.Utility.RateLimiter, :api),
-        Hammer.child_for_supervisor() |> configure_mode_dependent_process(:api)
+        Hammer.child_for_supervisor() |> configure_mode_dependent_process(:api),
+        # keep at the end
+        configure_libcluster()
       ]
       |> List.flatten()
 
@@ -431,7 +433,7 @@ defmodule Explorer.Application do
   end
 
   defp configure_mode_dependent_process(process, mode) do
-    if should_start?(process) and Application.get_env(:explorer, :mode) in [mode, :all] do
+    if should_start?(process) and Explorer.mode() in [mode, :all] do
       process
     else
       []
@@ -499,7 +501,7 @@ defmodule Explorer.Application do
   end
 
   defp configure_libcluster do
-    if Application.get_env(:explorer, :mode) in [:indexer, :api] do
+    if Explorer.mode() in [:indexer, :api] do
       libcluster()
     else
       []
