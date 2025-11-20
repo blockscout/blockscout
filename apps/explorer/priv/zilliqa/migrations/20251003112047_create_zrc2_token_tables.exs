@@ -1,7 +1,7 @@
 defmodule Explorer.Repo.Zilliqa.Migrations.CreateZRC2TokenTables do
   use Ecto.Migration
 
-  def change do
+  def up do
     create table(:zilliqa_zrc2_token_adapters, primary_key: false) do
       add(:zrc2_address_hash, references(:addresses, column: :hash, type: :bytea), null: false)
       add(:adapter_address_hash, references(:addresses, column: :hash, type: :bytea), primary_key: true)
@@ -30,5 +30,10 @@ defmodule Explorer.Repo.Zilliqa.Migrations.CreateZRC2TokenTables do
 
     create(index(:zilliqa_zrc2_token_transfers, :zrc2_address_hash))
     create(index(:zilliqa_zrc2_token_transfers, [:block_number, :block_hash]))
+  end
+
+  def down do
+    drop_if_exists(table(:zilliqa_zrc2_token_transfers))
+    drop_if_exists(table(:zilliqa_zrc2_token_adapters))
   end
 end
