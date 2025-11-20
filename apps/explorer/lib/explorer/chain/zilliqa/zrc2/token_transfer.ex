@@ -65,7 +65,7 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenTransfer do
       null: false
     )
 
-    field(:block_number, :integer) :: Block.block_number()
+    field(:block_number, :integer)
 
     belongs_to(:block, Block,
       foreign_key: :block_hash,
