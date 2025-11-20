@@ -64,11 +64,16 @@ defmodule Explorer.Market.Fetcher.History do
          }}
       end)
 
-    state = %{types_states: types_states}
+    if Enum.all?(types_states, fn {_type, type_state} -> is_nil(type_state.source) end) do
+      Logger.info("No market history sources are configured")
+      :ignore
+    else
+      state = %{types_states: types_states}
 
-    send(self(), {:fetch_all, config(:first_fetch_day_count)})
+      send(self(), {:fetch_all, config(:first_fetch_day_count)})
 
-    {:ok, state}
+      {:ok, state}
+    end
   end
 
   def handle_info({:fetch_all, day_count}, state) do
@@ -121,6 +126,7 @@ defmodule Explorer.Market.Fetcher.History do
 
     new_types_states = put_in(state.types_states, [type, :failed_attempts], failed_attempts)
     new_state = %{state | types_states: new_types_states}
+    maybe_insert_and_schedule_refetch(new_state)
 
     {:noreply, new_state}
   end

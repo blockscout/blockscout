@@ -17,7 +17,25 @@ defmodule NFTMediaHandler.DispatcherInterface do
   """
   @impl true
   def init(_) do
-    {:ok, %{used_nodes: [], unused_nodes: []}}
+    {:ok, nil, {:continue, 1}}
+  end
+
+  @impl true
+  def handle_continue(attempt, _state) do
+    attempt |> :timer.seconds() |> :timer.sleep()
+
+    get_indexer_nodes()
+    |> case do
+      [] ->
+        if attempt < 5 do
+          {:noreply, nil, {:continue, attempt * 2}}
+        else
+          raise "No indexer nodes discovered after #{attempt} attempts"
+        end
+
+      nodes ->
+        {:noreply, %{used_nodes: [], unused_nodes: nodes}}
+    end
   end
 
   @doc """
@@ -29,8 +47,7 @@ defmodule NFTMediaHandler.DispatcherInterface do
     {used, unused, node_to_call} =
       case unused_nodes do
         [] ->
-          Node.list()
-          |> Enum.filter(&Helper.indexer_node?/1)
+          get_indexer_nodes()
           |> case do
             [] ->
               raise "No indexer nodes discovered"
@@ -87,5 +104,10 @@ defmodule NFTMediaHandler.DispatcherInterface do
 
   defp remote_call(args, function, _node, false) do
     apply(Indexer.NFTMediaHandler.Queue, function, args)
+  end
+
+  defp get_indexer_nodes do
+    Node.list()
+    |> Enum.filter(&Helper.indexer_node?/1)
   end
 end

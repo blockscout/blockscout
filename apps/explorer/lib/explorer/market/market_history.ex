@@ -41,7 +41,7 @@ defmodule Explorer.Market.MarketHistory do
   end
 
   @doc false
-  @spec bulk_insert([map()]) :: {non_neg_integer(), nil | [term()]}
+  @spec bulk_insert([map()]) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, term()}
   def bulk_insert(records) do
     records_without_zeroes =
       records
@@ -53,10 +53,13 @@ defmodule Explorer.Market.MarketHistory do
       # Enforce MarketHistory ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(& &1.date)
 
-    Repo.safe_insert_all(__MODULE__, records_without_zeroes,
-      on_conflict: market_history_on_conflict(),
-      conflict_target: [:date, :secondary_coin]
-    )
+    Repo.transaction(fn ->
+      Repo.safe_insert_all(__MODULE__, records_without_zeroes,
+        on_conflict: market_history_on_conflict(),
+        conflict_target: [:date, :secondary_coin],
+        returning: true
+      )
+    end)
   end
 
   @spec to_token(t() | nil) :: Token.t()
