@@ -21,6 +21,15 @@ defmodule Explorer.Account.WatchlistAddress.Schema do
                           []
                       end)
 
+  @doc """
+  Generates the typed schema for watchlist addresses.
+
+  This macro dynamically creates the schema definition including both common fields and chain-type-specific
+  fields (e.g., ZRC-2 fields for Zilliqa). Should be invoked in the module that requires the schema definition.
+
+  ## Returns
+  - The typed_schema block with all necessary fields.
+  """
   defmacro generate do
     quote do
       typed_schema "account_watchlist_addresses" do
