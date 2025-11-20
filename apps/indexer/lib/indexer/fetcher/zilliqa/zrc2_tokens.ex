@@ -196,8 +196,9 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
       # little pause to unload cpu
       Process.send_after(self(), :continue, 10)
     else
-      Logger.info("Checking zilliqa_zrc2_token_transfers table...")
+      Logger.info("Checking zilliqa_zrc2_token_transfers table and hanging adapters...")
       move_zrc2_token_transfers_to_token_transfers()
+      remove_hanging_adapters()
       Process.send_after(self(), :continue, @check_zrc2_token_transfers_interval)
     end
 
@@ -565,6 +566,44 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
         )
       )
     end)
+  end
+
+  # Checks if there are adapter addresses not bound to any consensus token transfers: if there are,
+  # they are removed from the `zilliqa_zrc2_token_adapters` table. Also, the corresponding rows are
+  # removed from the `zilliqa_zrc2_token_transfers` table by the `zrc2_address_hash` address.
+  # The hanging adapters can appear due to reorgs.
+  @spec remove_hanging_adapters() :: any()
+  defp remove_hanging_adapters do
+    query = from(_a in TokenAdapter)
+
+    hanging_adapters =
+      query
+      |> Repo.all()
+      |> Enum.reduce([], fn adapter, acc ->
+        token_transfers_query =
+          from(tt in TokenTransfer,
+            where: tt.token_contract_address_hash == ^adapter.adapter_address_hash and tt.block_consensus == true,
+            limit: 1
+          )
+
+        case Repo.one(token_transfers_query) do
+          nil -> [adapter | acc]
+          _ -> acc
+        end
+      end)
+
+    if hanging_adapters != [] do
+      adapter_address_hashes =
+        hanging_adapters
+        |> Enum.map(& &1.adapter_address_hash)
+
+      zrc2_address_hashes =
+        hanging_adapters
+        |> Enum.map(& &1.zrc2_address_hash)
+
+      Repo.delete_all(from(a in TokenAdapter, where: a.adapter_address_hash in ^adapter_address_hashes))
+      Repo.delete_all(from(ztt in Zrc2TokenTransfer, where: ztt.zrc2_address_hash in ^zrc2_address_hashes))
+    end
   end
 
   # Prepares tokens, token balances, and current token balances to be imported
