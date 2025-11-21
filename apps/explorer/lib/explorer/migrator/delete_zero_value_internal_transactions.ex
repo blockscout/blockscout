@@ -27,6 +27,9 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
+  @spec border_number() :: non_neg_integer() | nil
+  def border_number, do: get_border_number()
+
   @impl true
   def init(_) do
     {:ok, %{}, {:continue, :ok}}
