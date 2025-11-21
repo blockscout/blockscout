@@ -574,19 +574,17 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   # The hanging adapters can appear due to reorgs.
   @spec remove_hanging_adapters() :: any()
   defp remove_hanging_adapters do
-    query = from(_a in TokenAdapter)
-
     hanging_adapters =
-      query
+      TokenAdapter
       |> Repo.all()
       |> Enum.reduce([], fn adapter, acc ->
-        token_transfers_query =
+        query =
           from(tt in TokenTransfer,
             where: tt.token_contract_address_hash == ^adapter.adapter_address_hash and tt.block_consensus == true,
             limit: 1
           )
 
-        case Repo.one(token_transfers_query) do
+        case Repo.one(query) do
           nil -> [adapter | acc]
           _ -> acc
         end
