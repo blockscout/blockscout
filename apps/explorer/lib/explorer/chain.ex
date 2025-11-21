@@ -97,6 +97,8 @@ defmodule Explorer.Chain do
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
+  alias Indexer.Fetcher.OnDemand.InternalTransaction, as: InternalTransactionOnDemand
+
   @default_page_size 50
   @default_paging_options %PagingOptions{page_size: @default_page_size}
 
@@ -4059,6 +4061,91 @@ defmodule Explorer.Chain do
 
       _ ->
         token_transfers
+    end
+  end
+
+  @doc """
+    Fetches internal transactions for the given transaction, routing to either the database or on-demand RPC source.
+
+    When internal transactions are present in the database (for recent blocks
+    within the storage period), they are fetched from the DB. For older blocks
+    where zero-value internal transactions have been deleted, the function
+    falls back to fetching on-demand from the JSON-RPC node.
+
+    ## Parameters
+    - `transaction`: The transaction struct to fetch internal transactions for
+    - `options`: Keyword list with optional keys:
+      - `:necessity_by_association` - associations to preload as required or optional
+      - `:paging_options` - pagination options including page_size and key
+
+    ## Returns
+    - List of InternalTransaction structs for the given transaction
+  """
+  @spec transaction_to_internal_transactions(Transaction.t(), Keyword.t()) :: [InternalTransaction.t()]
+  def transaction_to_internal_transactions(transaction, options \\ []) do
+    if InternalTransaction.present_in_db?(transaction.block_number) do
+      InternalTransaction.transaction_to_internal_transactions(transaction.hash, options)
+    else
+      InternalTransactionOnDemand.fetch_by_transaction(transaction, options)
+    end
+  end
+
+  @doc """
+    Fetches internal transactions for the given block, routing to either the database or on-demand RPC source.
+
+    When internal transactions are present in the database (for recent blocks
+    within the storage period), they are fetched from the DB. For older blocks
+    where zero-value internal transactions have been deleted, the function
+    falls back to fetching on-demand from the JSON-RPC node.
+
+    ## Parameters
+    - `block`: The block struct to fetch internal transactions for
+    - `options`: Keyword list with optional keys:
+      - `:necessity_by_association` - associations to preload as required or optional
+      - `:paging_options` - pagination options including page_size and key
+      - `:type` - filter by transaction type
+      - `:call_type` - filter by call type
+
+    ## Returns
+    - List of InternalTransaction structs for the given block
+  """
+  @spec block_to_internal_transactions(Block.t(), Keyword.t()) :: [InternalTransaction.t()]
+  def block_to_internal_transactions(block, options \\ []) do
+    if InternalTransaction.present_in_db?(block.number) do
+      InternalTransaction.block_to_internal_transactions(block.hash, options)
+    else
+      InternalTransactionOnDemand.fetch_by_block(block.number, options)
+    end
+  end
+
+  @doc """
+    Fetches internal transactions for the given address by combining DB and on-demand sources.
+
+    It first loads DB-backed internal transactions for the requested page, then,
+    if there is remaining capacity (`page_size - length(db_results)`), fetches
+    additional items on-demand via JSON-RPC. The merged list is deduplicated on
+    `{block_number, transaction_index, index}`, sorted in descending order, and
+    trimmed to the requested page size.
+  """
+  @spec address_to_internal_transactions(Hash.Address.t(), Keyword.t()) :: [InternalTransaction.t()]
+  def address_to_internal_transactions(address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, default_paging_options())
+
+    case paging_options do
+      %PagingOptions{key: {0, 0, 0}} ->
+        []
+
+      _ ->
+        internal_transactions_from_db = InternalTransaction.fetch_from_db_by_address(address_hash, options)
+
+        internal_transactions_from_node =
+          InternalTransactionOnDemand.fetch_by_address(address_hash, options)
+
+        internal_transactions_from_db
+        |> Enum.concat(internal_transactions_from_node)
+        |> Enum.uniq_by(&{&1.block_number, &1.transaction_index, &1.index})
+        |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
+        |> Enum.take(paging_options.page_size)
     end
   end
 

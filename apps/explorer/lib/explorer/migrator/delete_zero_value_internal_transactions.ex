@@ -27,6 +27,13 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
+  @doc """
+  Returns the border block number. All internal transactions with zero value (and no contract creation) and
+  block number less than or equal to the border number are subject to deletion.
+  """
+  @spec border_number() :: non_neg_integer() | nil
+  def border_number, do: get_border_number()
+
   @impl true
   def init(_) do
     {:ok, %{}, {:continue, :ok}}
