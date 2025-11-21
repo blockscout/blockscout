@@ -33,6 +33,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
+  alias Explorer.Chain.Zilliqa.Zrc2.TokenTransfer, as: Zrc2TokenTransfer
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
@@ -525,10 +526,25 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     |> Enum.map(& &1.number)
   end
 
-  defp lose_consensus(repo, changes_list, %{
-         timeout: timeout,
-         timestamps: %{updated_at: updated_at}
-       }) do
+  # Handles block consensus loss.
+  #
+  # ## Parameters
+  # - `repo`: The `t:Explorer.Repo.t/0` or db replica instance.
+  # - `changes_list`: List of block changes to process.
+  # - `_opts`: The options containing timeout and `updated_at` timestamp for db operations.
+  #
+  # ## Returns
+  # - `{:ok, removed_consensus_blocks}` tuple with the list of `{block_number, block_hash}`
+  #   tuples for the blocks that lost consensus.
+  # - `{:error, %{exception: postgrex_error}}` in case of database error.
+  defp lose_consensus(
+         repo,
+         changes_list,
+         %{
+           timeout: timeout,
+           timestamps: %{updated_at: updated_at}
+         } = _opts
+       ) do
     hashes = Enum.map(changes_list, & &1.hash)
     consensus_block_numbers = consensus_block_numbers(changes_list)
 
@@ -596,6 +612,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       [set: [block_consensus: false, updated_at: updated_at]],
       timeout: timeout
     )
+
+    if Application.get_env(:explorer, :chain_type) == :zilliqa do
+      repo.delete_all(
+        from(
+          zrc2_token_transfer in Zrc2TokenTransfer,
+          join: s in subquery(acquire_query),
+          on: zrc2_token_transfer.block_number == s.number,
+          where: zrc2_token_transfer.block_hash not in ^hashes
+        ),
+        timeout: timeout
+      )
+    end
 
     removed_consensus_block_numbers
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))

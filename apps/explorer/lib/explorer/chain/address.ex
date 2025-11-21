@@ -62,6 +62,35 @@ defmodule Explorer.Chain.Address.Schema do
                             ]
                           end
 
+                        :zilliqa ->
+                          alias Explorer.Chain.Zilliqa.Zrc2.TokenAdapter, as: Zrc2TokenAdapter
+                          alias Explorer.Chain.Zilliqa.Zrc2.TokenTransfer, as: Zrc2TokenTransfer
+
+                          quote do
+                            [
+                              has_one(:zilliqa_zrc2_token_contract, Zrc2TokenAdapter,
+                                foreign_key: :zrc2_address_hash,
+                                references: :hash
+                              ),
+                              has_one(:zilliqa_zrc2_token_adapter, Zrc2TokenAdapter,
+                                foreign_key: :adapter_address_hash,
+                                references: :hash
+                              ),
+                              has_many(:zilliqa_zrc2_token_transfers_from, Zrc2TokenTransfer,
+                                foreign_key: :from_address_hash,
+                                references: :hash
+                              ),
+                              has_many(:zilliqa_zrc2_token_transfers_to, Zrc2TokenTransfer,
+                                foreign_key: :to_address_hash,
+                                references: :hash
+                              ),
+                              has_many(:zilliqa_zrc2_token_transfers_contract, Zrc2TokenTransfer,
+                                foreign_key: :zrc2_address_hash,
+                                references: :hash
+                              )
+                            ]
+                          end
+
                         :zksync ->
                           quote do
                             [

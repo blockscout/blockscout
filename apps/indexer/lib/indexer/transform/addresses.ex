@@ -137,6 +137,28 @@ defmodule Indexer.Transform.Addresses do
         %{from: :token_contract_address_hash, to: :hash}
       ]
     ],
+    zilliqa_zrc2_token_transfers: [
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :from_address_hash, to: :hash}
+      ],
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :to_address_hash, to: :hash}
+      ],
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :zrc2_address_hash, to: :hash}
+      ]
+    ],
+    zilliqa_zrc2_token_adapters: [
+      [
+        %{from: :zrc2_address_hash, to: :hash}
+      ],
+      [
+        %{from: :adapter_address_hash, to: :hash}
+      ]
+    ],
     mint_transfers: [
       [
         %{from: :block_number, to: :fetched_coin_balance_block_number},
@@ -478,6 +500,20 @@ defmodule Indexer.Transform.Addresses do
               required(:to_address_hash) => String.t(),
               required(:token_contract_address_hash) => String.t(),
               required(:block_number) => non_neg_integer()
+            }
+          ],
+          optional(:zilliqa_zrc2_token_transfers) => [
+            %{
+              required(:from_address_hash) => String.t(),
+              required(:to_address_hash) => String.t(),
+              required(:zrc2_address_hash) => String.t(),
+              required(:block_number) => non_neg_integer()
+            }
+          ],
+          optional(:zilliqa_zrc2_token_adapters) => [
+            %{
+              required(:zrc2_address_hash) => String.t(),
+              required(:adapter_address_hash) => String.t()
             }
           ],
           optional(:transaction_actions) => [
