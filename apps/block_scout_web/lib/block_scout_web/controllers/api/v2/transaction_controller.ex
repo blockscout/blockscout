@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Cache.Counters.{NewPendingTransactionsCount, Transactions24hCount}
-  alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
@@ -757,14 +757,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   """
   @spec internal_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def internal_transactions(conn, %{transaction_hash_param: transaction_hash_string} = params) do
-    with {:ok, _transaction, transaction_hash} <- validate_transaction(transaction_hash_string, params) do
+    with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
       full_options =
         @internal_transaction_necessity_by_association
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(@api_true)
 
-      internal_transactions_plus_one =
-        InternalTransaction.transaction_to_internal_transactions(transaction_hash, full_options)
+      internal_transactions_plus_one = Chain.transaction_to_internal_transactions(transaction, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
