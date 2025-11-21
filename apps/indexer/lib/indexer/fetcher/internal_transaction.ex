@@ -229,7 +229,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     EthereumJSONRPC.RSK,
     EthereumJSONRPC.Filecoin
   ]
-  defp block_traceable_variants do
+  def block_traceable_variants do
     if Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)[:block_traceable?] do
       [EthereumJSONRPC.Geth | @default_block_traceable_variants]
     else
@@ -326,7 +326,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   # TODO: should we cover this with tests?
   @zetachain_non_traceable_type 88
-  defp filter_non_traceable_transactions(transactions) do
+  def filter_non_traceable_transactions(transactions) do
     case Application.get_env(:explorer, :chain_type) do
       :zetachain -> Enum.reject(transactions, &(&1.type == @zetachain_non_traceable_type))
       :zilliqa -> Enum.reject(transactions, &ZilliqaHelper.scilla_transaction?/1)
