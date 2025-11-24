@@ -88,7 +88,7 @@ defmodule EthereumJSONRPC.MixProject do
       {:poolboy, "~> 1.5.2"},
       {:logger_json, "~> 5.1"},
       {:utils, in_umbrella: true},
-      {:websockex, "~> 0.4.3"}
+      {:websockex, "~> 0.5.0"}
     ]
   end
 end
