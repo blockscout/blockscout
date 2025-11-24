@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Search.Results do
     description: "Search results containing blocks, transactions, and addresses",
     type: :object,
     properties: %{
-      search_results: %Schema{type: :array, items: %Schema{type: :object}},
+      items: %Schema{type: :array, items: %Schema{type: :object}},
       next_page_params: %Schema{type: :object, nullable: true}
     },
     required: []

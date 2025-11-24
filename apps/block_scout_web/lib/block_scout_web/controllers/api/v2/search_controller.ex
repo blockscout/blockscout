@@ -67,7 +67,15 @@ defmodule BlockScoutWeb.API.V2.SearchController do
         {"Redirect check result", "application/json",
          %Schema{
            type: :object,
-           properties: %{result: %Schema{type: :object}, redirect: %Schema{type: :boolean, nullable: true}}
+           properties: %{
+             parameter: %Schema{type: :string, nullable: true},
+             redirect: %Schema{type: :boolean, nullable: true},
+             type: %Schema{
+               type: :string,
+               enum: ["address", "block", "transaction", "user_operation", "blob"],
+               nullable: true
+             }
+           }
          }},
       unprocessable_entity: JsonErrorResponse.response()
     ]

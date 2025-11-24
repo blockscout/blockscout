@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
       ok:
         {"Withdrawals", "application/json",
          paginated_response(
-           items: BlockScoutWeb.Schemas.API.V2.Withdrawal,
+           items: Schemas.Withdrawal,
            next_page_params_example: %{
              "index" => 50,
              "items_count" => 50
@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
     description: "Returns total withdrawals count and sum from cache.",
     parameters: base_params(),
     responses: [
-      ok: {"Withdrawals counters", "application/json", BlockScoutWeb.Schemas.API.V2.Withdrawal.Counter},
+      ok: {"Withdrawals counters", "application/json", Schemas.Withdrawal.Counter},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 

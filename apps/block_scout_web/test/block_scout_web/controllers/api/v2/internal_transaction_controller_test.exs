@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
       insert(:internal_transaction,
         transaction: tx,
         transaction_index: 0,
-        block_number: 0,
+        block_number: tx.block_number,
         block_hash: tx.block_hash,
         index: 0,
         block_index: 0

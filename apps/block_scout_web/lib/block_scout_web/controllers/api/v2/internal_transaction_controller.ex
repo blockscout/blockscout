@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Explorer.{Chain, Helper, PagingOptions}
+  alias Explorer.{Chain, PagingOptions}
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.InternalTransaction
@@ -18,9 +18,11 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
-  @api_true [api?: true]
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
 
   tags(["internal_transactions"])
+
+  @api_true [api?: true]
 
   operation :internal_transactions,
     summary: "List internal transactions",
@@ -33,7 +35,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
       ok:
         {"Internal transactions", "application/json",
          paginated_response(
-           items: BlockScoutWeb.Schemas.API.V2.InternalTransaction,
+           items: Schemas.InternalTransaction,
            next_page_params_example: %{
              "index" => 50,
              "transaction_index" => 68,
@@ -94,7 +96,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
     |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
                                                                       page_size: page_size
                                                                     } = paging_options ->
-      maybe_parsed_limit = Helper.parse_integer(params[:limit])
+      maybe_parsed_limit = params[:limit]
       %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
     end)
     |> Keyword.merge(@api_true)

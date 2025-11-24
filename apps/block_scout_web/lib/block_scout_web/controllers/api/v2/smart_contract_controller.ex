@@ -30,12 +30,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     ]
 
   alias BlockScoutWeb.AccessHelper
-  alias BlockScoutWeb.Schemas.API.V2.General
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.AuditReport
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.SmartContract.Solidity.PublishHelper
+
+  action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @api_true [api?: true]
 
@@ -48,7 +49,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     description: "Returns details for a smart contract address.",
     parameters: [address_hash_param() | base_params()],
     responses: [
-      ok: {"Smart contract", "application/json", BlockScoutWeb.Schemas.API.V2.SmartContract}
+      ok: {"Smart contract", "application/json", Schemas.SmartContract}
     ]
 
   @doc """
@@ -82,7 +83,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
           %OpenApiSpex.Parameter{
             name: :filter,
             in: :query,
-            schema: BlockScoutWeb.Schemas.API.V2.SmartContract.Language,
+            schema: Schemas.SmartContract.Language,
             required: false,
             description: "Filter to apply"
           }
@@ -90,7 +91,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
         define_paging_params([
           "smart_contract_id",
           "coin_balance",
-          "address_hash_param_2",
+          "address_hash",
           "transactions_count",
           "items_count"
         ]),
@@ -98,7 +99,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       ok:
         {"Smart contracts", "application/json",
          paginated_response(
-           items: BlockScoutWeb.Schemas.API.V2.SmartContract,
+           items: Schemas.SmartContract,
            next_page_params_example: %{
              "smart_contract_id" => 1_947_801,
              "items_count" => 50
@@ -158,7 +159,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     description: "Returns counts for smart contracts and related metrics.",
     parameters: base_params(),
     responses: [
-      ok: {"Smart contracts counters", "application/json", BlockScoutWeb.Schemas.API.V2.SmartContract.Counters},
+      ok: {"Smart contracts counters", "application/json", Schemas.SmartContract.Counters},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -189,7 +190,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
            properties: %{
              items: %Schema{
                type: :array,
-               items: BlockScoutWeb.Schemas.API.V2.SmartContract.AuditReport,
+               items: Schemas.SmartContract.AuditReport,
                nullable: false
              },
              next_page_params: %Schema{type: :object, nullable: true}
@@ -221,7 +222,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     summary: "Submit audit report",
     description: "Submits an audit report for a given smart contract address.",
     parameters: [address_hash_param() | base_params()],
-    request_body: General.audit_report_request_body(),
+    request_body: audit_report_request_body(),
     responses: [
       ok:
         {"OK", "application/json",
@@ -298,8 +299,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     ]
     |> Keyword.merge(@api_true)
   end
-
-  action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @doc """
   Builds paging options for smart contract addresses based on request

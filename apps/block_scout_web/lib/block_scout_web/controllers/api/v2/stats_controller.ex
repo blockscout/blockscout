@@ -6,8 +6,6 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     chain_type: [:explorer, :chain_type],
     chain_identity: [:explorer, :chain_identity]
 
-  use OpenApiSpex.ControllerSpecs
-
   import BlockScoutWeb.PagingHelper, only: [hot_smart_contracts_sorting: 1, delete_items_count_from_next_page_params: 1]
 
   import BlockScoutWeb.Chain,
@@ -44,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     description: "Returns current indexing progress, chain stats and market data used on the UI.",
     parameters: base_params(),
     responses: [
-      ok: {"Stats", "application/json", BlockScoutWeb.Schemas.API.V2.Stats.Response},
+      ok: {"Stats", "application/json", Schemas.Stats.Response},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -180,7 +178,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
            type: :object,
            properties: %{
              chart_data: %Schema{type: :array, items: %Schema{type: :object}},
-             available_supply: %Schema{type: :number}
+             available_supply: %Schema{anyOf: [Schemas.General.FloatString, %Schema{type: :integer}]}
            }
          }},
       unprocessable_entity: JsonErrorResponse.response()

@@ -15,7 +15,8 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     parameters: base_params(),
     responses: [
       ok:
-        {"Backend version", "application/json", %Schema{type: :object, properties: %{version: %Schema{type: :string}}}},
+        {"Backend version", "application/json",
+         %Schema{type: :object, properties: %{backend_version: %Schema{type: :string, nullable: true}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -96,7 +97,7 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
            properties: %{
              languages: %OpenApiSpex.Schema{
                type: :array,
-               items: BlockScoutWeb.Schemas.API.V2.SmartContract.Language
+               items: Schemas.SmartContract.Language
              }
            }
          }},

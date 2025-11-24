@@ -52,14 +52,14 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
         {"Blocks List on the main page.", "application/json",
          %Schema{
            type: :array,
-           items: BlockScoutWeb.Schemas.API.V2.Block.Response,
+           items: Schemas.Block.Response,
            nullable: false,
            additionalProperties: false
          }}
     ]
 
   @doc """
-  Lists blocks with optional filtering and sorting.
+  Returns the last 4 blocks for display on the main page.
   """
   @spec blocks(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def blocks(conn, _params) do
@@ -87,7 +87,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
         {"Transactions list on the main page.", "application/json",
          %Schema{
            type: :array,
-           items: BlockScoutWeb.Schemas.API.V2.Transaction.Response,
+           items: Schemas.Transaction.Response,
            nullable: false,
            additionalProperties: false
          }},
@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     ]
 
   @doc """
-  Lists transactions with optional filtering and sorting.
+  Returns the last 6 transactions for display on the main page.
   """
   @spec transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transactions(conn, _params) do
@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
         {"List of watchlist transactions", "application/json",
          %Schema{
            type: :array,
-           items: BlockScoutWeb.Schemas.API.V2.Transaction.Response,
+           items: Schemas.Transaction.Response,
            nullable: false,
            additionalProperties: false
          }},
@@ -124,7 +124,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     ]
 
   @doc """
-  Lists watchlist transactions for the current user.
+  Returns the last 6 watchlist transactions for display on the main page.
   """
   @spec watchlist_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def watchlist_transactions(conn, _params) do

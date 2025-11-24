@@ -74,6 +74,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   # todo: It should be removed when the frontend stops sending the address_id parameter with the request
+  # https://github.com/blockscout/frontend/issues/3090
   @doc """
   Returns a parameter definition for an address hash in the path.
   """
@@ -156,7 +157,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :limit,
       in: :query,
-      schema: %Schema{type: :string, nullable: true},
+      schema: %Schema{type: :integer, nullable: true},
       required: false,
       description: "Limit result items in the response"
     }
@@ -338,16 +339,26 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
           schema: %OpenApiSpex.Schema{
             type: :object,
             properties: %{
-              submitter_name: %Schema{type: :string, nullable: true},
-              submitter_email: %Schema{type: :string, nullable: true},
-              is_project_owner: %Schema{type: :boolean, nullable: true},
-              project_name: %Schema{type: :string, nullable: true},
-              project_url: %Schema{type: :string, nullable: true},
-              audit_company_name: %Schema{type: :string, nullable: true},
-              audit_report_url: %Schema{type: :string, nullable: true},
-              audit_publish_date: %Schema{type: :string, format: :date, nullable: true},
+              submitter_name: %Schema{type: :string},
+              submitter_email: %Schema{type: :string},
+              is_project_owner: %Schema{type: :boolean},
+              project_name: %Schema{type: :string},
+              project_url: %Schema{type: :string},
+              audit_company_name: %Schema{type: :string},
+              audit_report_url: %Schema{type: :string},
+              audit_publish_date: %Schema{type: :string, format: :date},
               comment: %Schema{type: :string, nullable: true}
-            }
+            },
+            required: [
+              :submitter_name,
+              :submitter_email,
+              :is_project_owner,
+              :project_name,
+              :project_url,
+              :audit_company_name,
+              :audit_report_url,
+              :audit_publish_date
+            ]
           }
         }
       }
@@ -817,14 +828,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     },
     "address_hash_param" => %Parameter{
       name: :address_hash,
-      in: :query,
-      schema: AddressHash,
-      required: false,
-      description: "Address hash for paging"
-    },
-    # todo: consider removing in favour of address_hash_param
-    "address_hash_param_2" => %Parameter{
-      name: :hash,
       in: :query,
       schema: AddressHash,
       required: false,
