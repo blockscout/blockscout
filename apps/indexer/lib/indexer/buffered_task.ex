@@ -718,7 +718,7 @@ defmodule Indexer.BufferedTask do
   # Handles the successful completion of a task processing queue data, updated the
   # callback module state, removes the reference to the task, and triggers processing
   # of the next batch if queue contains data.
-  def handle_info({ref, {:ok, new_callback_module_state}}, state) do
+  def handle_info({ref, {:ok, new_callback_module_state}}, %__MODULE__{} = state) do
     {:noreply, drop_task(%__MODULE__{state | callback_module_state: new_callback_module_state}, ref)}
   end
 
@@ -745,7 +745,7 @@ defmodule Indexer.BufferedTask do
   # the next batch is triggered.
   # If all entries are needed to be retried, the `retryable_entries` should
   # be `nil`.
-  def handle_info({ref, {:retry, retryable_entries, new_callback_module_state}}, state) do
+  def handle_info({ref, {:retry, retryable_entries, new_callback_module_state}}, %__MODULE__{} = state) do
     Logger.debug("Retrying batch with ref #{inspect(ref)} and specific entries #{inspect(retryable_entries)}")
 
     {:noreply,
@@ -885,7 +885,7 @@ defmodule Indexer.BufferedTask do
   # Updated state after removing the task and potentially spawning a new data
   # portion for processing.
   @spec drop_task(t(), reference()) :: t()
-  defp drop_task(state, ref) do
+  defp drop_task(%__MODULE__{} = state, ref) do
     spawn_next_batch(%__MODULE__{state | task_ref_to_batch: Map.delete(state.task_ref_to_batch, ref)})
   end
 
@@ -942,12 +942,12 @@ defmodule Indexer.BufferedTask do
   defp buffer_entries(state, [], _front?), do: state
 
   @spec buffer_entries(t(), nonempty_list(), true) :: t()
-  defp buffer_entries(state, entries, true) do
+  defp buffer_entries(%__MODULE__{} = state, entries, true) do
     %__MODULE__{state | current_front_buffer: [entries | state.current_front_buffer]}
   end
 
   @spec buffer_entries(t(), nonempty_list(), false) :: t()
-  defp buffer_entries(state, entries, false) do
+  defp buffer_entries(%__MODULE__{} = state, entries, false) do
     %__MODULE__{state | current_buffer: [entries | state.current_buffer]}
   end
 
@@ -1261,7 +1261,7 @@ defmodule Indexer.BufferedTask do
   # - The updated state with the new flush_timer if a flush was scheduled,
   #   or the unchanged state if flush_interval is :infinity.
   @spec schedule_next_buffer_flush(%__MODULE__{flush_interval: timeout() | :infinity}) :: t()
-  defp schedule_next_buffer_flush(state) do
+  defp schedule_next_buffer_flush(%__MODULE__{} = state) do
     if state.flush_interval == :infinity do
       state
     else

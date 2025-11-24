@@ -389,8 +389,8 @@ defmodule Explorer.Token.MetadataRetriever do
 
     contract_functions
     |> handle_invalid_strings(contract_address_hash)
-    |> handle_large_strings
-    |> limit_decimals
+    |> handle_large_strings()
+    |> limit_decimals()
   end
 
   defp atomized_key(@name_signature), do: :name

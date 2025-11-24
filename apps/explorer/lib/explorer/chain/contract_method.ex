@@ -35,7 +35,7 @@ defmodule Explorer.Chain.ContractMethod do
         end
       end)
 
-    unless Enum.empty?(errors) do
+    if !Enum.empty?(errors) do
       Logger.error(fn ->
         ["Error parsing some abi elements at ", Hash.to_iodata(address_hash), ": ", Enum.intersperse(errors, "\n")]
       end)

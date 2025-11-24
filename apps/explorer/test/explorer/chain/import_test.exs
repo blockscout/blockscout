@@ -1637,7 +1637,12 @@ defmodule Explorer.Chain.ImportTest do
                  },
                  blocks: %{
                    params: [
-                     params_for(:block, hash: block_hash, consensus: true, miner_hash: miner_hash, number: block_number),
+                     params_for(:block,
+                       hash: block_hash,
+                       consensus: true,
+                       miner_hash: miner_hash,
+                       number: block_number
+                     ),
                      params_for(:block,
                        hash: uncle_hash,
                        consensus: false,

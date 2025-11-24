@@ -30,10 +30,12 @@
           <% price_chart_legend_enabled? = Application.get_env(:block_scout_web, :chart)[:price_chart_legend_enabled?] %>
           <%= if Map.has_key?(@chart_config, :market) || price_chart_legend_enabled? do %>
 
-            <%# THE FOLLOWING LINE PREVENTS COPY/PASTE ERRORS %>
-            <%# Explicitly put @chart_config.market in a variable %>
-            <%# This is done so that when people add a new chart source, x, %>
-            <%# They wont just access @chart_config.x w/o first checking if x exists %>
+            <!--
+            THE FOLLOWING LINE PREVENTS COPY/PASTE ERRORS
+            Explicitly put @chart_config.market in a variable
+            This is done so that when people add a new chart source, x,
+            They wont just access @chart_config.x w/o first checking if x exists
+            -->
             <% market_chart_config = Map.has_key?(@chart_config, :market) && @chart_config.market%>
 
             <%= if price_chart_legend_enabled? || Enum.member?(market_chart_config, :price) do %>

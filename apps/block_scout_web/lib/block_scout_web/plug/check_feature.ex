@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.Plug.CheckFeature do
   @doc false
   @spec init(Keyword.t()) :: Keyword.t()
   def init(opts) do
-    unless Keyword.has_key?(opts, :feature_check) do
+    if !Keyword.has_key?(opts, :feature_check) do
       raise ArgumentError, "CheckFeature plug requires :feature_check option"
     end
 

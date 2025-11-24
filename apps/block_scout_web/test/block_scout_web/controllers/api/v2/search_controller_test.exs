@@ -508,7 +508,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
     end
 
     test "search for a big positive integer", %{conn: conn} do
-      big_integer = :math.pow(2, 64) |> round |> :erlang.integer_to_binary()
+      big_integer = :math.pow(2, 64) |> round() |> :erlang.integer_to_binary()
       request = get(conn, "/api/v2/search?q=#{big_integer}")
       assert response = json_response(request, 200)
 
@@ -517,7 +517,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
     end
 
     test "search for a big negative integer", %{conn: conn} do
-      big_integer = (:math.pow(2, 64) - 1) |> round |> :erlang.integer_to_binary()
+      big_integer = (:math.pow(2, 64) - 1) |> round() |> :erlang.integer_to_binary()
       request = get(conn, "/api/v2/search?q=#{big_integer}")
       assert response = json_response(request, 200)
 

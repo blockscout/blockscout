@@ -228,7 +228,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
              @api_true
            ) do
         # `%{hash: address_hash}` will match with `address_with_info(_, address_hash)` clause in `BlockScoutWeb.API.V2.Helper`
-        {:ok, token_instance} ->
+        {:ok, %Instance{} = token_instance} ->
           %Instance{
             token_instance
             | owner: %{hash: address_hash},
