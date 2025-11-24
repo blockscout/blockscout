@@ -14,6 +14,14 @@ defmodule Explorer.Prometheus.Instrumenter do
   ]
 
   @histogram [
+    name: :stats_import_stage_runner_duration_microseconds,
+    labels: [:stats_type],
+    buckets: [1000, 5000, 10000, 100_000],
+    duration_unit: :microseconds,
+    help: "Stats import stage runner duration microseconds"
+  ]
+
+  @histogram [
     name: :media_processing_time,
     buckets: :default,
     duration_unit: :seconds,
@@ -81,6 +89,14 @@ defmodule Explorer.Prometheus.Instrumenter do
     {time, result} = :timer.tc(function)
 
     Histogram.observe([name: :block_import_stage_runner_duration_microseconds, labels: [stage, runner, step]], time)
+
+    result
+  end
+
+  def stats_import_stage_runner(function, stats_type) do
+    {time, result} = :timer.tc(function)
+
+    Histogram.observe([name: :stats_import_stage_runner_duration_microseconds, labels: [stats_type]], time)
 
     result
   end

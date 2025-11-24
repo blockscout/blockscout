@@ -61,8 +61,14 @@ defmodule Explorer.SortingHelper do
     |> merge_sorting_params_with_defaults(default_sorting)
     |> do_page_with_sorting()
     |> case do
-      nil -> query
-      dynamic_where -> query |> where(^dynamic_where.(key))
+      nil ->
+        query
+
+      dynamic_where ->
+        case query.group_bys do
+          [] -> query |> where(^dynamic_where.(key))
+          _ -> query |> having(^dynamic_where.(key))
+        end
     end
     |> limit_query(page_size)
   end
