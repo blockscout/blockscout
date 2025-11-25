@@ -198,8 +198,8 @@ defmodule Explorer.SmartContract.Helper do
     Metadata will be sent to a verifier microservice
   """
   @spec fetch_data_for_verification(binary() | Hash.t()) :: {binary() | nil, binary(), map()}
-  def fetch_data_for_verification(address_hash) do
-    deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
+  def fetch_data_for_verification(address_hash, deployed_bytecode \\ nil) do
+    deployed_bytecode = deployed_bytecode || Chain.smart_contract_bytecode(address_hash)
 
     metadata = %{
       "contractAddress" => to_string(address_hash),

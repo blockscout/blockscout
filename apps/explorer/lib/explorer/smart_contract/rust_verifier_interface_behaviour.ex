@@ -24,7 +24,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
             } = body,
             metadata
           ) do
-        http_post_request(solidity_multiple_files_verification_url(), append_metadata(body, metadata), true)
+        http_post_request(solidity_multiple_files_verification_url(), append_metadata(body, metadata))
       end
 
       def verify_standard_json_input(
@@ -36,7 +36,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
             } = body,
             metadata
           ) do
-        http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata), true)
+        http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata))
       end
 
       def zksync_verify_standard_json_input(
@@ -48,7 +48,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
             } = body,
             metadata
           ) do
-        http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata), true)
+        http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata))
       end
 
       def vyper_verify_multipart(
@@ -60,7 +60,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
             } = body,
             metadata
           ) do
-        http_post_request(vyper_multiple_files_verification_url(), append_metadata(body, metadata), true)
+        http_post_request(vyper_multiple_files_verification_url(), append_metadata(body, metadata))
       end
 
       def vyper_verify_standard_json(
@@ -72,15 +72,13 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
             } = body,
             metadata
           ) do
-        http_post_request(vyper_standard_json_verification_url(), append_metadata(body, metadata), true)
+        http_post_request(vyper_standard_json_verification_url(), append_metadata(body, metadata))
       end
 
-      def http_post_request(url, body, is_verification_request?, options \\ []) do
+      def http_post_request(url, body, options \\ []) do
         headers = [{"Content-Type", "application/json"}]
 
-        case HttpClient.post(url, Jason.encode!(body), maybe_put_api_key_header(headers, is_verification_request?),
-               recv_timeout: @post_timeout
-             ) do
+        case HttpClient.post(url, Jason.encode!(body), put_api_key_header(headers), recv_timeout: @post_timeout) do
           {:ok, %{body: body, status_code: _}} ->
             process_verifier_response(body, options)
 
@@ -100,9 +98,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         end
       end
 
-      defp maybe_put_api_key_header(headers, false), do: headers
-
-      defp maybe_put_api_key_header(headers, true) do
+      defp put_api_key_header(headers) do
         api_key = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)[:api_key]
 
         if api_key do

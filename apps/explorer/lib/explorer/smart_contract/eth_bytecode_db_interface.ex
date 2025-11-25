@@ -3,18 +3,19 @@ defmodule Explorer.SmartContract.EthBytecodeDBInterface do
     Adapter for interaction with https://github.com/blockscout/blockscout-rs/tree/main/eth-bytecode-db
   """
 
-  def search_contract(%{"bytecode" => _, "bytecodeType" => _} = body, address_hash) do
+  def search_contract(%{"bytecode" => _, "bytecodeType" => _} = body, address_hash, metadata) do
     if chain_id = Application.get_env(:block_scout_web, :chain_id) do
       http_post_request(
         bytecode_search_all_sources_url(),
-        Map.merge(body, %{
+        body
+        |> Map.merge(%{
           "chain" => to_string(chain_id),
           "address" => to_string(address_hash)
-        }),
-        false
+        })
+        |> append_metadata(metadata)
       )
     else
-      http_post_request(bytecode_search_sources_url(), body, false)
+      http_post_request(bytecode_search_sources_url(), append_metadata(body, metadata))
     end
   end
 
@@ -22,11 +23,12 @@ defmodule Explorer.SmartContract.EthBytecodeDBInterface do
     Function to search smart contracts in eth-bytecode-db, similar to `search_contract/2` but
       this function uses only `/api/v2/bytecodes/sources:search` method
   """
-  @spec search_contract_in_eth_bytecode_internal_db(map(), binary(), keyword()) :: {:error, any} | {:ok, any}
+  @spec search_contract_in_eth_bytecode_internal_db(map(), binary(), keyword(), map()) :: {:error, any} | {:ok, any}
   def search_contract_in_eth_bytecode_internal_db(
         %{"bytecode" => _, "bytecodeType" => _} = body,
         address_hash_string,
-        options
+        options,
+        metadata
       ) do
     chain_id = Application.get_env(:block_scout_web, :chain_id)
 
@@ -51,7 +53,7 @@ defmodule Explorer.SmartContract.EthBytecodeDBInterface do
            })}
       end
 
-    http_post_request(url, body, false, options)
+    http_post_request(url, body |> append_metadata(metadata), options)
   end
 
   def process_verifier_response(
