@@ -4,7 +4,7 @@ defmodule Indexer.Prometheus.Instrumenter do
   """
 
   use Prometheus.Metric
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias EthereumJSONRPC.Utility.RangesHelper
 
@@ -44,28 +44,20 @@ defmodule Indexer.Prometheus.Instrumenter do
 
   @gauge [name: :latest_block_timestamp, help: "Latest block timestamp"]
 
-  if @chain_type in @rollups do
-    @spec setup() :: :ok
-    def setup do
-      min_blockchain_block_number =
-        RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
+  @spec setup() :: :ok
+  def setup do
+    min_blockchain_block_number =
+      RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
-      set_latest_block_number(min_blockchain_block_number)
-      set_latest_block_timestamp(0)
+    set_latest_block_number(min_blockchain_block_number)
+    set_latest_block_timestamp(0)
+
+    if chain_type() in @rollups do
       set_latest_batch_number(0)
       set_latest_batch_timestamp(0)
-      :ok
     end
-  else
-    @spec setup() :: :ok
-    def setup do
-      min_blockchain_block_number =
-        RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
 
-      set_latest_block_number(min_blockchain_block_number)
-      set_latest_block_timestamp(0)
-      :ok
-    end
+    :ok
   end
 
   @doc """
@@ -142,43 +134,32 @@ defmodule Indexer.Prometheus.Instrumenter do
     set_latest_block_timestamp(DateTime.to_unix(timestamp))
   end
 
-  if @chain_type in @rollups do
-    @gauge [name: :latest_batch_number, help: "L2 latest batch number"]
+  @gauge [name: :latest_batch_number, help: "L2 latest batch number"]
 
-    @gauge [name: :latest_batch_timestamp, help: "L2 latest batch timestamp"]
+  @gauge [name: :latest_batch_timestamp, help: "L2 latest batch timestamp"]
 
-    defp set_latest_batch_number(number) do
-      Gauge.set([name: :latest_batch_number], number)
-    end
+  defp set_latest_batch_number(number) do
+    Gauge.set([name: :latest_batch_number], number)
+  end
 
-    defp set_latest_batch_timestamp(timestamp) do
-      Gauge.set([name: :latest_batch_timestamp], timestamp)
-    end
+  defp set_latest_batch_timestamp(timestamp) do
+    Gauge.set([name: :latest_batch_timestamp], timestamp)
+  end
 
-    @doc """
-    Generates the latest batch number and timestamp Prometheus metrics.
+  @doc """
+  Generates the latest batch number and timestamp Prometheus metrics.
 
-    ## Parameters
+  ## Parameters
 
-      - `number`: The batch number to set.
-      - `timestamp`: The timestamp of the batch as a `DateTime` struct.
-    """
-    @spec set_latest_batch(number :: integer, timestamp :: DateTime.t()) :: :ok
-    def set_latest_batch(number, timestamp) do
+    - `number`: The batch number to set.
+    - `timestamp`: The timestamp of the batch as a `DateTime` struct.
+  """
+  @spec set_latest_batch(number :: integer, timestamp :: DateTime.t()) :: :ok
+  def set_latest_batch(number, timestamp) do
+    if chain_type() in @rollups do
       set_latest_batch_number(number)
       set_latest_batch_timestamp(DateTime.to_unix(timestamp))
-    end
-  else
-    @doc """
-    Generates the latest batch number and timestamp Prometheus metrics.
-
-    ## Parameters
-
-      - `number`: The batch number to set.
-      - `timestamp`: The timestamp of the batch as a `DateTime` struct.
-    """
-    @spec set_latest_batch(number :: integer, timestamp :: DateTime.t()) :: :ok
-    def set_latest_batch(_number, _timestamp) do
+    else
       :ok
     end
   end
