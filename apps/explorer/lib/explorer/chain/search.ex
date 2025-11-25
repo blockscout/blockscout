@@ -279,7 +279,15 @@ defmodule Explorer.Chain.Search do
           | {:text, binary()}
           | nil
 
-  @spec match_search_result(map(), binary()) :: base_search_results()
+  case @chain_type do
+    :filecoin ->
+      @type search_results :: base_search_results() | {:filecoin, any()}
+
+    _ ->
+      @type search_results :: base_search_results()
+  end
+
+  @spec match_search_result(map(), binary()) :: search_results()
   defp match_search_result(%{address_hash_result: {:ok, address_hash}}, _prepared_term),
     do: {:address_hash, address_hash}
 
@@ -305,20 +313,11 @@ defmodule Explorer.Chain.Search do
 
   defp match_search_result(_, _), do: nil
 
-  if @chain_type == :filecoin do
-    @spec prepare_search_query(binary(), {:some, binary()} | :none) :: base_search_results() | {:filecoin, any()}
-    defp prepare_search_query(query, {:some, prepared_term}) do
-      results = prepare_results(query)
+  @spec prepare_search_query(binary(), {:some, binary()} | :none) :: search_results()
+  defp prepare_search_query(query, {:some, prepared_term}) do
+    results = prepare_results(query)
 
-      match_search_result(results, prepared_term)
-    end
-  else
-    @spec prepare_search_query(binary(), {:some, binary()} | :none) :: base_search_results()
-    defp prepare_search_query(query, {:some, prepared_term}) do
-      results = prepare_results(query)
-
-      match_search_result(results, prepared_term)
-    end
+    match_search_result(results, prepared_term)
   end
 
   defp prepare_search_query(_query, _) do
