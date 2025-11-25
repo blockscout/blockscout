@@ -263,6 +263,7 @@ defmodule Indexer.Supervisor do
            ]
          ]},
         {Indexer.Fetcher.Zilliqa.ScillaSmartContracts.Supervisor, [[memory_monitor: memory_monitor]]},
+        {Indexer.Fetcher.Zilliqa.Zrc2Tokens.Supervisor, [[memory_monitor: memory_monitor]]},
         {Indexer.Fetcher.Beacon.Blob.Supervisor, [[memory_monitor: memory_monitor]]},
         {Indexer.Fetcher.Beacon.Deposit.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {Indexer.Fetcher.Beacon.Deposit.Status.Supervisor, []},

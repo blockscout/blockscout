@@ -153,6 +153,12 @@ defmodule BlockScoutWeb.API.V2.TokenView do
         BlockScoutWeb.API.V2.FilecoinView.put_filecoin_robust_address(result, params)
       end
 
+    :zilliqa ->
+      defp chain_type_fields(result, params) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.ZilliqaView.extend_token_json_response(result, params.address)
+      end
+
     _ ->
       defp chain_type_fields(result, _params) do
         result

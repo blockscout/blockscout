@@ -3200,18 +3200,30 @@ defmodule Explorer.Chain do
   @spec data() :: Dataloader.Ecto.t()
   def data, do: DataloaderEcto.new(Repo)
 
+  @doc """
+    Determines token transfer type by its transaction.
+
+    ## Parameters
+    - `transaction`: The transaction which token transfer type we need to determine.
+
+    ## Returns
+    - A token transfer type which can be one of the following cases:
+      :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2 | :token_transfer
+      The `:token_transfer` means the token transfer of unknown type.
+    - `nil` if this transaction is not related to any token transfer.
+  """
   @spec transaction_token_transfer_type(Transaction.t()) ::
-          :erc20 | :erc721 | :erc1155 | :erc404 | :token_transfer | nil
+          :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2 | :token_transfer | nil
   def transaction_token_transfer_type(
         %Transaction{
           status: :ok,
           created_contract_address_hash: nil,
-          input: input,
+          input: _input,
           value: value
         } = transaction
       ) do
     zero_wei = %Wei{value: Decimal.new(0)}
-    result = find_token_transfer_type(transaction, input, value)
+    result = find_token_transfer_type(transaction)
 
     if is_nil(result) && not Enum.empty?(transaction.token_transfers) && value == zero_wei,
       do: :token_transfer,
@@ -3222,11 +3234,21 @@ defmodule Explorer.Chain do
 
   def transaction_token_transfer_type(_), do: nil
 
-  defp find_token_transfer_type(transaction, input, value) do
+  # Determines token transfer type by its transaction.
+  #
+  # ## Parameters
+  # - `transaction`: The transaction which token transfer type we need to determine.
+  #
+  # ## Returns
+  # - A token transfer type which can be one of the following cases:
+  #   :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2
+  # - `nil` if this transaction has unknown transfer type or not related to any token transfer.
+  @spec find_token_transfer_type(Transaction.t()) :: :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2 | nil
+  defp find_token_transfer_type(transaction) do
     zero_wei = %Wei{value: Decimal.new(0)}
 
     # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721.sol#L35
-    case {to_string(input), value} do
+    case {to_string(transaction.input), transaction.value} do
       # transferFrom(address,address,uint256)
       {"0x23b872dd" <> params, ^zero_wei} ->
         types = [:address, :address, {:uint, 256}]
@@ -3262,7 +3284,7 @@ defmodule Explorer.Chain do
 
         find_erc1155_token_transfer(transaction.token_transfers, {from_address, to_address})
 
-      # check for ERC-20 or for old ERC-721, ERC-1155, ERC-404 token versions
+      # check for ERC-20, ZRC-2 or for old ERC-721, ERC-1155, ERC-404 token versions
       {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
         types = [:address, {:uint, 256}]
 
@@ -3270,7 +3292,7 @@ defmodule Explorer.Chain do
 
         decimal_value = Decimal.new(value)
 
-        find_known_token_transfer(transaction.token_transfers, {address, decimal_value})
+        find_known_token_transfer(transaction.token_transfers, address, decimal_value)
 
       _ ->
         nil
@@ -3295,7 +3317,20 @@ defmodule Explorer.Chain do
     if token_transfer, do: :erc1155
   end
 
-  defp find_known_token_transfer(token_transfers, {address, decimal_value}) do
+  # Finds token transfer type by the given list of token transfers in a transaction.
+  # To filter transaction's token transfers, the `to_address_hash` and `amount` fields are used.
+  #
+  # ## Parameters
+  # - `token_transfers`: The list of transaction's token transfers.
+  # - `address`: The destination address of the transfer.
+  # - `decimal_value`: The decimal amount of the transfer.
+  #
+  # ## Returns
+  # - A token transfer type which can be one of the following cases:
+  #   :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2
+  # - `nil` if the corresponding transaction has unknown transfer type.
+  @spec find_known_token_transfer(list(), binary(), Decimal.t()) :: :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2 | nil
+  defp find_known_token_transfer(token_transfers, address, decimal_value) do
     token_transfer =
       Enum.find(token_transfers, fn token_transfer ->
         token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value
@@ -3307,6 +3342,7 @@ defmodule Explorer.Chain do
         %Token{type: "ERC-721"} -> :erc721
         %Token{type: "ERC-1155"} -> :erc1155
         %Token{type: "ERC-404"} -> :erc404
+        %Token{type: "ZRC-2"} -> :zrc2
         _ -> nil
       end
     else

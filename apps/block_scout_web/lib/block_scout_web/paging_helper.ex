@@ -17,8 +17,15 @@ defmodule BlockScoutWeb.PagingHelper do
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
+  @allowed_base_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+  if @chain_type == :zilliqa do
+    @allowed_chain_type_token_transfer_type_labels ["ZRC-2"]
+  else
+    @allowed_chain_type_token_transfer_type_labels []
+  end
 
-  @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+  @allowed_token_transfer_type_labels @allowed_base_token_transfer_type_labels ++
+                                        @allowed_chain_type_token_transfer_type_labels
   @allowed_nft_type_labels ["ERC-721", "ERC-1155", "ERC-404"]
   @allowed_chain_id [1, 56, 99]
   @allowed_stability_validators_states ["active", "probation", "inactive"]

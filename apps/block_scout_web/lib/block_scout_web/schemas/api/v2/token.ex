@@ -107,13 +107,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Type do
   """
   require OpenApiSpex
 
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  @token_types ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+
+  if @chain_type == :zilliqa do
+    @chain_type_token_types ["ZRC-2"]
+  else
+    @chain_type_token_types []
+  end
+
   OpenApiSpex.schema(%{
     type: :string,
-    enum: [
-      "ERC-20",
-      "ERC-721",
-      "ERC-1155",
-      "ERC-404"
-    ]
+    enum: @token_types ++ @chain_type_token_types
   })
 end

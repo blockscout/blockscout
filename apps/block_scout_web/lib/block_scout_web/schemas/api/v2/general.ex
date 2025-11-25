@@ -27,7 +27,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @address_hash_pattern ~r"^0x([A-Fa-f0-9]{40})$"
   @full_hash_pattern ~r"^0x([A-Fa-f0-9]{64})$"
   @hex_string_pattern ~r"^0x([A-Fa-f0-9]*)$"
-  @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*\]?$/i
+
+  if @chain_type == :zilliqa do
+    @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2))*\]?$/i
+  else
+    @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*\]?$/i
+  end
+
   # Matches ISO-like datetime strings where separators between time fields can be ':' or percent-encoded '%3A'.
   # Accepts examples like:
   #  - "2025-10-12T09"
@@ -457,6 +463,23 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @token_type_param_description """
+  Filter by token type. Comma-separated list of:
+  * ERC-20 - Fungible tokens
+  * ERC-721 - Non-fungible tokens
+  * ERC-1155 - Multi-token standard
+  * ERC-404 - Hybrid fungible/non-fungible tokens
+  #{if @chain_type == :zilliqa do
+    """
+    * ZRC-2 - Fungible tokens on Zilliqa
+    """
+  else
+    ""
+  end}
+
+  Example: `ERC-20,ERC-721` to show both fungible and NFT transfers
+  """
+
   @doc """
   Returns a parameter definition for filtering by token type.
   """
@@ -474,15 +497,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
         ]
       },
       required: false,
-      description: """
-      Filter by token type. Comma-separated list of:
-      * ERC-20 - Fungible tokens
-      * ERC-721 - Non-fungible tokens
-      * ERC-1155 - Multi-token standard
-      * ERC-404 - Hybrid fungible/non-fungible tokens
-
-      Example: `ERC-20,ERC-721` to show both fungible and NFT transfers
-      """,
+      description: @token_type_param_description,
       name: :type
     }
   end

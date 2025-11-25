@@ -1,9 +1,82 @@
+defmodule Explorer.Account.WatchlistAddress.Schema do
+  @moduledoc """
+    Models account's addresses watchlist.
+  """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  alias Explorer.Account.Watchlist
+  alias Explorer.Chain.Wei
+
+  @chain_type_fields (case @chain_type do
+                        :zilliqa ->
+                          elem(
+                            quote do
+                              field(:watch_zrc_2_input, :boolean, default: true, null: false)
+                              field(:watch_zrc_2_output, :boolean, default: true, null: false)
+                            end,
+                            2
+                          )
+
+                        _ ->
+                          []
+                      end)
+
+  @doc """
+  Generates the typed schema for watchlist addresses.
+
+  This macro dynamically creates the schema definition including both common fields and chain-type-specific
+  fields (e.g., ZRC-2 fields for Zilliqa). Should be invoked in the module that requires the schema definition.
+
+  ## Returns
+  - The typed_schema block with all necessary fields.
+  """
+  defmacro generate do
+    quote do
+      typed_schema "account_watchlist_addresses" do
+        field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
+        field(:name, Explorer.Encrypted.Binary, null: false)
+        field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+        field(:user_created, :boolean, null: false, default: true)
+
+        belongs_to(:watchlist, Watchlist, null: false)
+
+        field(:watch_coin_input, :boolean, default: true, null: false)
+        field(:watch_coin_output, :boolean, default: true, null: false)
+        field(:watch_erc_20_input, :boolean, default: true, null: false)
+        field(:watch_erc_20_output, :boolean, default: true, null: false)
+        field(:watch_erc_721_input, :boolean, default: true, null: false)
+        field(:watch_erc_721_output, :boolean, default: true, null: false)
+        field(:watch_erc_1155_input, :boolean, default: true, null: false)
+        field(:watch_erc_1155_output, :boolean, default: true, null: false)
+        field(:watch_erc_404_input, :boolean, default: true, null: false)
+        field(:watch_erc_404_output, :boolean, default: true, null: false)
+        field(:notify_email, :boolean, default: true, null: false)
+        field(:notify_epns, :boolean)
+        field(:notify_feed, :boolean)
+        field(:notify_inapp, :boolean)
+
+        field(:fetched_coin_balance, Wei, virtual: true)
+        field(:tokens_fiat_value, :decimal, virtual: true)
+        field(:tokens_count, :integer, virtual: true)
+        field(:tokens_overflow, :boolean, virtual: true)
+
+        timestamps()
+
+        unquote_splicing(@chain_type_fields)
+      end
+    end
+  end
+end
+
 defmodule Explorer.Account.WatchlistAddress do
   @moduledoc """
     WatchlistAddress entity
   """
 
+  require Explorer.Account.WatchlistAddress.Schema
+
   use Explorer.Schema
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Ecto.Changeset
 
@@ -11,44 +84,22 @@ defmodule Explorer.Account.WatchlistAddress do
   alias Explorer.Account.Notifier.ForbiddenAddress
   alias Explorer.Account.Watchlist
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.Address
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
   @watchlist_not_found "Watchlist not found"
 
-  typed_schema "account_watchlist_addresses" do
-    field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
-    field(:name, Explorer.Encrypted.Binary, null: false)
-    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
-    field(:user_created, :boolean, null: false, default: true)
-
-    belongs_to(:watchlist, Watchlist, null: false)
-
-    field(:watch_coin_input, :boolean, default: true, null: false)
-    field(:watch_coin_output, :boolean, default: true, null: false)
-    field(:watch_erc_20_input, :boolean, default: true, null: false)
-    field(:watch_erc_20_output, :boolean, default: true, null: false)
-    field(:watch_erc_721_input, :boolean, default: true, null: false)
-    field(:watch_erc_721_output, :boolean, default: true, null: false)
-    field(:watch_erc_1155_input, :boolean, default: true, null: false)
-    field(:watch_erc_1155_output, :boolean, default: true, null: false)
-    field(:watch_erc_404_input, :boolean, default: true, null: false)
-    field(:watch_erc_404_output, :boolean, default: true, null: false)
-    field(:notify_email, :boolean, default: true, null: false)
-    field(:notify_epns, :boolean)
-    field(:notify_feed, :boolean)
-    field(:notify_inapp, :boolean)
-
-    field(:fetched_coin_balance, Wei, virtual: true)
-    field(:tokens_fiat_value, :decimal, virtual: true)
-    field(:tokens_count, :integer, virtual: true)
-    field(:tokens_overflow, :boolean, virtual: true)
-
-    timestamps()
+  @attrs_base ~w(name address_hash watch_coin_input watch_coin_output watch_erc_20_input watch_erc_20_output watch_erc_721_input watch_erc_721_output watch_erc_1155_input watch_erc_1155_output watch_erc_404_input watch_erc_404_output notify_email notify_epns notify_feed notify_inapp watchlist_id)a
+  if @chain_type == :zilliqa do
+    @attrs_chain_type ~w(watch_zrc_2_input watch_zrc_2_output)a
+  else
+    @attrs_chain_type ~w()a
   end
 
-  @attrs ~w(name address_hash watch_coin_input watch_coin_output watch_erc_20_input watch_erc_20_output watch_erc_721_input watch_erc_721_output watch_erc_1155_input watch_erc_1155_output watch_erc_404_input watch_erc_404_output notify_email notify_epns notify_feed notify_inapp watchlist_id)a
+  @attrs @attrs_base ++ @attrs_chain_type
+
+  Explorer.Account.WatchlistAddress.Schema.generate()
 
   def changeset do
     %__MODULE__{}
