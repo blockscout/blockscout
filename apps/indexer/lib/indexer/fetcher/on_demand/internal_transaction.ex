@@ -2,7 +2,11 @@
 defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   @moduledoc """
   Fetches internal transactions from node.
+
+  Implements `Explorer.Chain.InternalTransaction.OnDemandFetcher` behaviour.
   """
+
+  @behaviour Explorer.Chain.InternalTransaction.OnDemandFetcher
 
   require Logger
 

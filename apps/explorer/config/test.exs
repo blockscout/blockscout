@@ -116,4 +116,8 @@ config :logger, :explorer,
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: false
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: false
 
+# Disable on-demand internal transaction fetcher in explorer tests
+# (it's implemented in indexer which is not available in explorer tests)
+config :explorer, :on_demand_internal_transaction_fetcher, nil
+
 config :tesla, adapter: Explorer.Mock.TeslaAdapter

@@ -1023,6 +1023,13 @@ config :indexer, Indexer.Fetcher.OnDemand.ContractCode,
 config :indexer, Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch,
   threshold: ConfigHelper.parse_time_env_var("TOKEN_INSTANCE_METADATA_REFETCH_ON_DEMAND_FETCHER_THRESHOLD", "5s")
 
+# On-demand internal transaction fetcher - configured here because it's implemented in indexer
+# but called from explorer via the OnDemandFetcher behaviour.
+# In test environment, set to nil since indexer module is not available in explorer tests.
+if config_env() != :test do
+  config :explorer, :on_demand_internal_transaction_fetcher, Indexer.Fetcher.OnDemand.InternalTransaction
+end
+
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BLOCK_REWARD_FETCHER")
 

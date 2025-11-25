@@ -97,7 +97,7 @@ defmodule Explorer.Chain do
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
-  alias Indexer.Fetcher.OnDemand.InternalTransaction, as: InternalTransactionOnDemand
+  alias Explorer.Chain.InternalTransaction.OnDemandFetcher, as: InternalTransactionOnDemand
 
   @default_page_size 50
   @default_paging_options %PagingOptions{page_size: @default_page_size}
