@@ -355,7 +355,7 @@ defmodule Explorer.Chain.Search do
   defp run_ens_task_if_first_page(_, _query_string, _options), do: nil
 
   @spec balanced_unpaginated_search_result(
-          base_search_results(),
+          search_results(),
           PagingOptions.t(),
           binary(),
           [Chain.api?() | Chain.show_scam_tokens?()]
