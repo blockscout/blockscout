@@ -16,7 +16,7 @@ env:
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
-    runs-on: ubuntu-latest
+    runs-on: build
     env:
       RELEASE_VERSION: 9.2.2
     steps:
@@ -62,4 +62,3 @@ jobs:
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=polygon_zkevm
-

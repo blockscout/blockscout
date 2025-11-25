@@ -10,11 +10,11 @@ on:
 
 jobs:
   copy-bundle:
-    runs-on: ubuntu-latest
+    runs-on: build
     permissions:
       contents: read
       packages: write
-    
+
     steps:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -40,7 +40,7 @@ jobs:
       - name: Copy chain-specific images from private to public repositories
         run: |
           RELEASE_NUMBER="${{ github.event.inputs.release_number }}"
-          
+
           # Array of chain-specific repositories
           CHAINS=(
             "blockscout"
@@ -58,21 +58,21 @@ jobs:
             "blockscout-zilliqa"
             "blockscout-zksync"
           )
-          
+
           # Copy each chain-specific image
           for CHAIN in "${CHAINS[@]}"; do
             echo "Copying ${CHAIN}..."
-            
+
             # Copy with the specific release number tag
             docker buildx imagetools create \
               --tag ghcr.io/blockscout/${CHAIN}:${RELEASE_NUMBER} \
               ghcr.io/blockscout/${CHAIN}-private:${RELEASE_NUMBER}
-            
+
             # Also copy with latest tag
             docker buildx imagetools create \
               --tag ghcr.io/blockscout/${CHAIN}:latest \
               ghcr.io/blockscout/${CHAIN}-private:latest
-              
+
             echo "✅ Completed copying ${CHAIN}"
           done
 
@@ -82,7 +82,7 @@ jobs:
           echo "🎉 All bundles successfully copied from private to public repositories"
           echo ""
           echo "🔗 All repositories copied:"
-          
+
           CHAINS=(
             "blockscout"
             "blockscout-arbitrum"
@@ -99,11 +99,11 @@ jobs:
             "blockscout-zilliqa"
             "blockscout-zksync"
           )
-          
+
           for CHAIN in "${CHAINS[@]}"; do
             echo "  ✅ ${CHAIN}-private -> ${CHAIN} (tags: ${RELEASE_NUMBER}, latest)"
           done
-          
+
           echo ""
           echo "🔍 Inspecting main repository images:"
           docker buildx imagetools inspect ghcr.io/blockscout/blockscout:${TARGET_TAG}
