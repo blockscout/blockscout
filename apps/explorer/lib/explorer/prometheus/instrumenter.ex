@@ -1,6 +1,6 @@
 defmodule Explorer.Prometheus.Instrumenter do
   @moduledoc """
-  Blocks fetch and import metrics for `Prometheus`.
+  Explorer metrics for `Prometheus`.
   """
 
   use Prometheus.Metric
@@ -21,12 +21,7 @@ defmodule Explorer.Prometheus.Instrumenter do
     help: "Stats import stage runner duration microseconds"
   ]
 
-  @histogram [
-    name: :media_processing_time,
-    buckets: :default,
-    duration_unit: :seconds,
-    help: "Time in seconds taken for media resizing and uploading"
-  ]
+  # Public chain metrics exposed at /public_metrics endpoint
 
   @gauge [
     name: :success_transactions_number,
@@ -71,6 +66,31 @@ defmodule Explorer.Prometheus.Instrumenter do
     registry: :public
   ]
 
+  # metrics of indexing monitor
+  @gauge [name: :missing_blocks_count, help: "Number of blocks missing in the chain"]
+  @gauge [
+    name: :missing_internal_transactions_count,
+    help: "Number of blocks with not yet fetched internal transactions"
+  ]
+  @gauge [name: :missing_current_token_balances_count, help: "Number of missing current token balances"]
+  @gauge [name: :missing_archival_token_balances_count, help: "Number of missing token balances in history"]
+  @gauge [name: :unfetched_token_instances_count, help: "Number of unfetched token instances"]
+  @gauge [name: :failed_token_instances_metadata_count, help: "Number of failed token instances metadata"]
+  @gauge [name: :token_instances_not_uploaded_to_cdn_count, help: "Token instances not uploaded to CDN"]
+  @gauge [name: :multichain_search_db_main_export_queue_count, help: "Size of the main multichain export queue"]
+  @gauge [name: :multichain_search_db_export_balances_queue_count, help: "Size of the balances export queue"]
+  @gauge [name: :multichain_search_db_export_counters_queue_count, help: "Size of the counters export queue"]
+  @gauge [name: :multichain_search_db_export_token_info_queue_count, help: "Size of the token info export queue"]
+
+  # metrics of NFT media handler
+
+  @histogram [
+    name: :media_processing_time,
+    buckets: :default,
+    duration_unit: :seconds,
+    help: "Time in seconds taken for media resizing and uploading"
+  ]
+
   @counter [
     name: :successfully_uploaded_media_number,
     help: "Number of successfully uploaded media to CDN",
@@ -85,6 +105,15 @@ defmodule Explorer.Prometheus.Instrumenter do
 
   @gauge [name: :batch_average_time, help: "L2 average batch time"]
 
+  def setup do
+    prepare_batch_metric([])
+  end
+
+  @doc """
+  Defines the metric for the full processing time of a block (in microseconds).
+  """
+  @spec block_import_stage_runner(function :: (-> any()), stage :: atom(), runner :: atom(), step :: atom()) ::
+          any()
   def block_import_stage_runner(function, stage, runner, step) do
     {time, result} = :timer.tc(function)
 
@@ -93,6 +122,11 @@ defmodule Explorer.Prometheus.Instrumenter do
     result
   end
 
+  @doc """
+  Defines the metric for the full processing time of a stats import stage runner
+  (in microseconds).
+  """
+  @spec stats_import_stage_runner(function :: (-> any()), stats_type :: atom()) :: any()
   def stats_import_stage_runner(function, stats_type) do
     {time, result} = :timer.tc(function)
 
@@ -101,50 +135,169 @@ defmodule Explorer.Prometheus.Instrumenter do
     result
   end
 
+  @doc """
+  Defines the metric for the number of successful transactions in the period (default is 1 day).
+  """
+  @spec success_transactions_number(number :: integer()) :: :ok
   def success_transactions_number(number) do
     Gauge.set([name: :success_transactions_number, registry: :public], number)
   end
 
-  def media_processing_time(seconds) do
-    Histogram.observe([name: :media_processing_time], seconds)
-  end
-
+  @doc """
+  Defines the metric for the number of weekly successful transactions.
+  """
+  @spec weekly_success_transactions_number(number :: integer()) :: :ok
   def weekly_success_transactions_number(number) do
     Gauge.set([name: :weekly_success_transactions_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of deployed smart-contracts in the period (default is 1 day).
+  """
+  @spec deployed_smart_contracts_number(number :: integer()) :: :ok
   def deployed_smart_contracts_number(number) do
     Gauge.set([name: :deployed_smart_contracts_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of verified smart-contracts in the period (default is 1 day).
+  """
+  @spec verified_smart_contracts_number(number :: integer()) :: :ok
   def verified_smart_contracts_number(number) do
     Gauge.set([name: :verified_smart_contracts_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of new addresses in the period (default is 1 day).
+  """
+  @spec new_addresses_number(number :: integer()) :: :ok
   def new_addresses_number(number) do
     Gauge.set([name: :new_addresses_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of new tokens in the period (default is 1 day).
+  """
+  @spec new_tokens_number(number :: integer()) :: :ok
   def new_tokens_number(number) do
     Gauge.set([name: :new_tokens_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of new token transfers in the period (default is 1 day).
+  """
+  @spec new_token_transfers_number(number :: integer()) :: :ok
   def new_token_transfers_number(number) do
     Gauge.set([name: :new_token_transfers_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of active EOA addresses in the period (default is 1 day).
+  """
+  @spec simplified_active_addresses_number(number :: integer()) :: :ok
   def simplified_active_addresses_number(number) do
     Gauge.set([name: :active_addresses_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of blocks missing in the chain.
+  """
+  @spec missing_blocks_count(integer()) :: :ok
+  def missing_blocks_count(value), do: Gauge.set([name: :missing_blocks_count], value)
+
+  @doc """
+  Defines the metric for the number of blocks with not yet fetched internal transactions.
+  """
+  @spec missing_internal_transactions_count(integer()) :: :ok
+  def missing_internal_transactions_count(value), do: Gauge.set([name: :missing_internal_transactions_count], value)
+
+  @doc """
+  Defines the metric for the number of missing current token balances.
+  """
+  @spec missing_current_token_balances_count(integer()) :: :ok
+  def missing_current_token_balances_count(value),
+    do: Gauge.set([name: :missing_current_token_balances_count], value)
+
+  @doc """
+  Defines the metric for the number of missing token balances in history.
+  """
+  @spec missing_archival_token_balances_count(integer()) :: :ok
+  def missing_archival_token_balances_count(value), do: Gauge.set([name: :missing_archival_token_balances_count], value)
+
+  @doc """
+  Defines the metric for the number of unfetched token instances.
+  """
+  @spec unfetched_token_instances_count(integer()) :: :ok
+  def unfetched_token_instances_count(value),
+    do: Gauge.set([name: :unfetched_token_instances_count], value)
+
+  @doc """
+  Defines the metric for the number of failed token instances metadata.
+  """
+  @spec failed_token_instances_metadata_count(integer()) :: :ok
+  def failed_token_instances_metadata_count(value),
+    do: Gauge.set([name: :failed_token_instances_metadata_count], value)
+
+  @doc """
+  Defines the metric for the number of token instances not uploaded to CDN.
+  """
+  @spec token_instances_not_uploaded_to_cdn_count(integer()) :: :ok
+  def token_instances_not_uploaded_to_cdn_count(value),
+    do: Gauge.set([name: :token_instances_not_uploaded_to_cdn_count], value)
+
+  @doc """
+  Defines the metric for the size of the main multichain export queue.
+  """
+  @spec multichain_search_db_main_export_queue_count(integer()) :: :ok
+  def multichain_search_db_main_export_queue_count(value),
+    do: Gauge.set([name: :multichain_search_db_main_export_queue_count], value)
+
+  @doc """
+  Defines the metric for the size of the balances export queue.
+  """
+  @spec multichain_search_db_export_balances_queue_count(integer()) :: :ok
+  def multichain_search_db_export_balances_queue_count(value),
+    do: Gauge.set([name: :multichain_search_db_export_balances_queue_count], value)
+
+  @doc """
+  Defines the metric for the size of the counters export queue.
+  """
+  @spec multichain_search_db_export_counters_queue_count(integer()) :: :ok
+  def multichain_search_db_export_counters_queue_count(value),
+    do: Gauge.set([name: :multichain_search_db_export_counters_queue_count], value)
+
+  @doc """
+  Defines the metric for the size of the token info export queue.
+  """
+  @spec multichain_search_db_export_token_info_queue_count(integer()) :: :ok
+  def multichain_search_db_export_token_info_queue_count(value),
+    do: Gauge.set([name: :multichain_search_db_export_token_info_queue_count], value)
+
+  @doc """
+  Defines the metric for time taken for media resizing and uploading (in seconds).
+  """
+  @spec media_processing_time(number()) :: :ok
+  def media_processing_time(seconds) do
+    Histogram.observe([name: :media_processing_time], seconds)
+  end
+
+  @doc """
+  Increments the counter for successfully uploaded media to the CDN.
+  """
+  @spec increment_successfully_uploaded_media_number() :: :ok
   def increment_successfully_uploaded_media_number do
     Counter.inc(name: :successfully_uploaded_media_number, registry: :public)
   end
 
+  @doc """
+  Increments the counter for failed media uploads to the CDN.
+  """
+  @spec increment_failed_uploading_media_number() :: :ok
   def increment_failed_uploading_media_number do
     Counter.inc(name: :failed_uploading_media_number, registry: :public)
   end
 
+  @spec batch_average_time(integer()) :: :ok
   defp batch_average_time(average_time) do
     Gauge.set([name: :batch_average_time], average_time)
   end
@@ -201,6 +354,8 @@ defmodule Explorer.Prometheus.Instrumenter do
   def prepare_batch_metric(batches) do
     case batches do
       [] ->
+        batch_average_time(0)
+
         {:error, :not_found}
 
       [batch] ->
