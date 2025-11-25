@@ -64,7 +64,6 @@ defmodule ConfigHelper do
       file_logger_backends =
         [
           {LoggerFileBackend, :error},
-          {LoggerFileBackend, :ecto_sql},
           {LoggerFileBackend, :block_scout_web},
           {LoggerFileBackend, :ethereum_jsonrpc},
           {LoggerFileBackend, :explorer},

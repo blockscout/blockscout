@@ -17,8 +17,6 @@ config :logger, :default_formatter, format: "$dateT$time $metadata[$level] $mess
 
 config :logger, :console, metadata: ConfigHelper.logger_metadata()
 
-config :logger, :ecto_sql, metadata: ConfigHelper.logger_metadata(), metadata_filter: [application: :ecto_sql]
-
 config :logger, :error, metadata: ConfigHelper.logger_metadata()
 
 # todo: migrate from deprecated usages
