@@ -14,7 +14,7 @@ permissions:
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
-    runs-on: ubuntu-latest
+    runs-on: build
     env:
       RELEASE_VERSION: 9.2.2
     steps:
