@@ -23,10 +23,10 @@ defmodule BlockScoutWeb.API.V2.ConfigControllerTest do
   describe "/config/public-metrics" do
     test "returns configured update period hours", %{conn: conn} do
       # save existing configuration and set test value
-      prev = Application.get_env(:explorer, Explorer.Chain.Metrics)
-      Application.put_env(:explorer, Explorer.Chain.Metrics, update_period_hours: 7)
+      prev = Application.get_env(:explorer, Explorer.Chain.Metrics.PublicMetrics)
+      Application.put_env(:explorer, Explorer.Chain.Metrics.PublicMetrics, update_period_hours: 7)
 
-      on_exit(fn -> Application.put_env(:explorer, Explorer.Chain.Metrics, prev) end)
+      on_exit(fn -> Application.put_env(:explorer, Explorer.Chain.Metrics.PublicMetrics, prev) end)
 
       request = get(conn, "/api/v2/config/public-metrics")
       assert %{"update_period_hours" => 7} = json_response(request, 200)
