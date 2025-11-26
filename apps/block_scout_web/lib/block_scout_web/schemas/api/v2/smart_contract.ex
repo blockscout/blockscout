@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
         constructor_args: %Schema{type: :string, nullable: true}
       },
       required: [],
-      additionalProperties: true
+      additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()
   )
