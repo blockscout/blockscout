@@ -10,7 +10,7 @@ config :logger,
 config :logger, :default_handler,
   formatter:
     (if Mix.env() == :prod do
-       LoggerJSON.Formatters.Basic.new(metadata: ConfigHelper.logger_metadata())
+       LoggerJSON.Formatters.Basic.new(metadata: ConfigHelper.logger_backend_metadata())
      else
        Logger.Formatter.new()
      end)

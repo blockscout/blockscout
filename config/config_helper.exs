@@ -93,6 +93,15 @@ defmodule ConfigHelper do
        block_number step count error_count shrunk import_id transaction_id)a
   end
 
+  @doc """
+  Returns the list of metadata fields to be included in logger backend output.
+  """
+  @spec logger_backend_metadata() :: list()
+  def logger_backend_metadata() do
+    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+        block_number step count error_count shrunk import_id transaction_id duration status unit endpoint method)a
+  end
+
   @spec http_options(non_neg_integer()) :: list()
   def http_options(default_timeout \\ 1) do
     http_timeout = timeout(default_timeout)
