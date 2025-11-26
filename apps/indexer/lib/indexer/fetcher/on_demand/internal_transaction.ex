@@ -9,7 +9,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   import Ecto.Query
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{BlockNumberHelper, Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Block, BlockNumberHelper, Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Repo
   alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionsAddressPlaceholder}
@@ -45,7 +45,6 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
     |> page_internal_transaction(paging_options)
     |> Enum.take(paging_options.page_size)
-    |> add_block_hashes()
   end
 
   @doc """
@@ -126,8 +125,14 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     ## Returns
     - List of InternalTransaction structs for the given block
   """
-  @spec fetch_by_block(non_neg_integer(), Keyword.t()) :: [InternalTransaction.t()]
-  def fetch_by_block(block, options \\ []) do
+  @spec fetch_by_block(map() | non_neg_integer(), Keyword.t()) :: [InternalTransaction.t()]
+  def fetch_by_block(block, options \\ [])
+
+  def fetch_by_block(block_number, options) when is_integer(block_number) do
+    fetch_by_block(%Block{number: block_number, hash: nil}, options)
+  end
+
+  def fetch_by_block(%Block{} = block, options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     type_filter = Keyword.get(options, :type)

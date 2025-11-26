@@ -1335,8 +1335,7 @@ defmodule BlockScoutWeb.Chain do
   @doc """
     Fetches internal transactions for the given address by combining DB and on-demand sources.
 
-    It first loads DB-backed internal transactions for the requested page, then,
-    if there is remaining capacity (`page_size - length(db_results)`), fetches
+    It first loads DB-backed internal transactions for the requested page, then fetches
     additional items on-demand via JSON-RPC. The merged list is deduplicated on
     `{block_number, transaction_index, index}`, sorted in descending order, and
     trimmed to the requested page size.
@@ -1353,10 +1352,12 @@ defmodule BlockScoutWeb.Chain do
         from_db = InternalTransaction.fetch_from_db_by_address(address_hash, options)
 
         from_node =
-          if Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] do
-            InternalTransactionOnDemand.fetch_by_address(address_hash, options)
-          else
+          with true <- Enum.count(from_db) >= paging_options.page_size,
+               border_number = DeleteZeroValueInternalTransactions.border_number(),
+               true <- is_nil(border_number) or Enum.all?(from_db, &(&1.block_number > border_number)) do
             []
+          else
+            _ -> InternalTransactionOnDemand.fetch_by_address(address_hash, options)
           end
 
         merge_internal_transactions(from_db, from_node, paging_options.page_size)
