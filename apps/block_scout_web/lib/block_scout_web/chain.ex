@@ -13,6 +13,8 @@ defmodule BlockScoutWeb.Chain do
       string_to_full_hash: 1
     ]
 
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+
   import Explorer.PagingOptions,
     only: [
       default_paging_options: 0,
@@ -55,7 +57,9 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
+  alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.PagingOptions
+  alias Indexer.Fetcher.OnDemand.InternalTransaction, as: InternalTransactionOnDemand
   alias Plug.Conn
 
   @page_size page_size()
@@ -1222,6 +1226,149 @@ defmodule BlockScoutWeb.Chain do
       end
       |> parse_boolean()
     )
+  end
+
+  @doc """
+    Fetches latest internal transactions, routing to either the database or on-demand RPC source.
+
+    When internal transactions are present in the database (for recent blocks
+    within the storage period), they are fetched from the DB. For older blocks
+    where zero-value internal transactions have been deleted, the function
+    falls back to fetching on-demand from the JSON-RPC node.
+
+    ## Parameters
+    - `options`: Keyword list with optional keys:
+      - `:paging_options` - pagination options including page_size and key
+      - `:transaction_hash` - filter by specific transaction option
+
+    ## Returns
+    - List of InternalTransaction structs
+  """
+  @spec fetch_internal_transactions(Keyword.t()) :: [InternalTransaction.t()]
+  def fetch_internal_transactions(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    transaction_hash = Keyword.get(options, :transaction_hash)
+
+    necessity_by_association =
+      %{
+        :block => :optional,
+        [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+        [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
+      }
+
+    options_with_necessity = Keyword.put_new(options, :necessity_by_association, necessity_by_association)
+
+    cond do
+      match?(%PagingOptions{key: {0, 0}}, paging_options) ->
+        []
+
+      not is_nil(transaction_hash) ->
+        {:ok, transaction} = hash_to_transaction(transaction_hash)
+        transaction_to_internal_transactions(transaction, options)
+
+      match?(%PagingOptions{key: {_, _, _}}, paging_options) and
+          not InternalTransaction.present_in_db?(elem(paging_options.key, 0)) ->
+        InternalTransactionOnDemand.fetch_latest(options_with_necessity)
+
+      true ->
+        from_db = InternalTransaction.fetch(options)
+        from_node = InternalTransactionOnDemand.fetch_latest(options_with_necessity)
+
+        merge_internal_transactions(from_db, from_node, paging_options.page_size)
+    end
+  end
+
+  @doc """
+    Fetches internal transactions for the given transaction, routing to either the database or on-demand RPC source.
+
+    When internal transactions are present in the database (for recent blocks
+    within the storage period), they are fetched from the DB. For older blocks
+    where zero-value internal transactions have been deleted, the function
+    falls back to fetching on-demand from the JSON-RPC node.
+
+    ## Parameters
+    - `transaction`: The transaction struct to fetch internal transactions for
+    - `options`: Keyword list with optional keys:
+      - `:necessity_by_association` - associations to preload as required or optional
+      - `:paging_options` - pagination options including page_size and key
+
+    ## Returns
+    - List of InternalTransaction structs for the given transaction
+  """
+  @spec transaction_to_internal_transactions(Transaction.t(), Keyword.t()) :: [InternalTransaction.t()]
+  def transaction_to_internal_transactions(transaction, options \\ []) do
+    if InternalTransaction.present_in_db?(transaction.block_number) do
+      InternalTransaction.transaction_to_internal_transactions(transaction.hash, options)
+    else
+      InternalTransactionOnDemand.fetch_by_transaction(transaction, options)
+    end
+  end
+
+  @doc """
+    Fetches internal transactions for the given block, routing to either the database or on-demand RPC source.
+
+    When internal transactions are present in the database (for recent blocks
+    within the storage period), they are fetched from the DB. For older blocks
+    where zero-value internal transactions have been deleted, the function
+    falls back to fetching on-demand from the JSON-RPC node.
+
+    ## Parameters
+    - `block`: The block struct to fetch internal transactions for
+    - `options`: Keyword list with optional keys:
+      - `:necessity_by_association` - associations to preload as required or optional
+      - `:paging_options` - pagination options including page_size and key
+      - `:type` - filter by transaction type
+      - `:call_type` - filter by call type
+
+    ## Returns
+    - List of InternalTransaction structs for the given block
+  """
+  @spec block_to_internal_transactions(Block.t(), Keyword.t()) :: [InternalTransaction.t()]
+  def block_to_internal_transactions(block, options \\ []) do
+    if InternalTransaction.present_in_db?(block.number) do
+      InternalTransaction.block_to_internal_transactions(block.hash, options)
+    else
+      InternalTransactionOnDemand.fetch_by_block(block.number, options)
+    end
+  end
+
+  @doc """
+    Fetches internal transactions for the given address by combining DB and on-demand sources.
+
+    It first loads DB-backed internal transactions for the requested page, then,
+    if there is remaining capacity (`page_size - length(db_results)`), fetches
+    additional items on-demand via JSON-RPC. The merged list is deduplicated on
+    `{block_number, transaction_index, index}`, sorted in descending order, and
+    trimmed to the requested page size.
+  """
+  @spec address_to_internal_transactions(Hash.Address.t(), Keyword.t()) :: [InternalTransaction.t()]
+  def address_to_internal_transactions(address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, default_paging_options())
+
+    case paging_options do
+      %PagingOptions{key: {0, 0, 0}} ->
+        []
+
+      _ ->
+        from_db = InternalTransaction.fetch_from_db_by_address(address_hash, options)
+
+        from_node =
+          if Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] do
+            InternalTransactionOnDemand.fetch_by_address(address_hash, options)
+          else
+            []
+          end
+
+        merge_internal_transactions(from_db, from_node, paging_options.page_size)
+    end
+  end
+
+  defp merge_internal_transactions(first_list, second_list, limit) do
+    first_list
+    |> Enum.concat(second_list)
+    |> Enum.uniq_by(&{&1.block_number, &1.transaction_index, &1.index})
+    |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
+    |> Enum.take(limit)
   end
 
   defp map_to_string_keys(map) do

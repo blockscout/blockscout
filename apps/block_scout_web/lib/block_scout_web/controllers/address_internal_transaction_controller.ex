@@ -6,7 +6,16 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-  import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+
+  import BlockScoutWeb.Chain,
+    only: [
+      current_filter: 1,
+      paging_options: 1,
+      next_page_params: 3,
+      split_list_by_page: 1,
+      address_to_internal_transactions: 2
+    ]
+
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelper, Controller, InternalTransactionView}
@@ -34,7 +43,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      internal_transactions_plus_one = Chain.address_to_internal_transactions(address_hash, full_options)
+      internal_transactions_plus_one = address_to_internal_transactions(address_hash, full_options)
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
       next_page_path =

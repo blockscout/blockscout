@@ -1,9 +1,10 @@
-defmodule Explorer.Chain.CsvExport.Address.InternalTransactions do
+defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
   @moduledoc """
   Exports internal transactions to a csv file.
   """
 
-  alias Explorer.Chain
+  import BlockScoutWeb.Chain, only: [address_to_internal_transactions: 2]
+
   alias Explorer.Chain.{Address, Hash, Transaction, Wei}
   alias Explorer.Chain.CsvExport.Helper
 
@@ -40,7 +41,7 @@ defmodule Explorer.Chain.CsvExport.Address.InternalTransactions do
             else: &1
           )).()
 
-    Chain.address_to_internal_transactions(address_hash, options)
+    address_to_internal_transactions(address_hash, options)
   end
 
   defp to_csv_format(internal_transactions) do

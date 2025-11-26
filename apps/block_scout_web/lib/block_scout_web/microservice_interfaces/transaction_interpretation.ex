@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     Module to interact with Transaction Interpretation Service
   """
 
+  import BlockScoutWeb.Chain, only: [transaction_to_internal_transactions: 2]
+
   alias BlockScoutWeb.API.V2.{Helper, InternalTransactionView, TokenTransferView, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, HttpClient}
@@ -230,7 +232,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       |> Keyword.merge(@api_true)
 
     transaction
-    |> Chain.transaction_to_internal_transactions(full_options)
+    |> transaction_to_internal_transactions(full_options)
     |> Enum.take(@items_limit)
   end
 

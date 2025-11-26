@@ -9,12 +9,43 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   import Ecto.Query
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.{BlockNumberHelper, Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Repo
   alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionsAddressPlaceholder}
   alias Indexer.Fetcher.InternalTransaction, as: InternalTransactionFetcher
 
   @default_paging_options %PagingOptions{page_size: 50}
+
+  @doc """
+    Fetches latest internal transactions.
+
+    This function acts like `Explorer.Chain.InternalTransaction.fetch/2` without `transaction_hash`
+    which means that it applies paging and associations preloading and returning list of DB model records.
+
+    ## Parameters
+    - `options`: Keyword list with optional keys:
+      - `:necessity_by_association` - associations to preload as required or optional
+      - `:paging_options` - pagination options including page_size and key
+
+    ## Returns
+    - List of latest InternalTransaction structs
+  """
+  def fetch_latest(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    to_block_number =
+      case paging_options do
+        %PagingOptions{key: {block_number, _transaction_index, _index}} -> block_number
+        _ -> BlockNumber.get_max()
+      end
+
+    to_block_number
+    |> fetch_enough(paging_options.page_size, options)
+    |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
+    |> page_internal_transaction(paging_options)
+    |> Enum.take(paging_options.page_size)
+  end
 
   @doc """
     Fetches internal transactions for the given transaction from node.
@@ -152,7 +183,9 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     max_block_number =
       case {to_block, block_number_from_paging_options} do
         {nil, nil} -> nil
-        {first, second} -> max(first || 0, second || 0)
+        {nil, key} -> key
+        {to, nil} -> to
+        {to, key} -> min(to, key)
       end
 
     sum_mode =
@@ -171,6 +204,20 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
     |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
     |> Enum.take(paging_options.page_size)
+  end
+
+  defp fetch_enough(start_block_number, count, options, acc \\ []) do
+    internal_transactions = fetch_by_block(start_block_number, options)
+    fetched_count = Enum.count(internal_transactions)
+    result = Enum.concat(acc, internal_transactions)
+
+    if fetched_count >= count or start_block_number == 0 do
+      Enum.concat(acc, internal_transactions)
+    else
+      start_block_number
+      |> BlockNumberHelper.previous_block_number()
+      |> fetch_enough(count - fetched_count, options, result)
+    end
   end
 
   defp get_block_numbers_for_address(nil, _start_block, _end_block, _limit, _sum_mode), do: []
