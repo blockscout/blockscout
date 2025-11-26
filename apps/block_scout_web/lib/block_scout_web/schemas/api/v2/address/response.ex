@@ -1,18 +1,12 @@
 defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations do
   @moduledoc false
   require OpenApiSpex
+  import BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations, only: [filecoin_robust_address_schema: 0]
 
   alias BlockScoutWeb.Schemas.{API.V2.Address, Helper}
   alias OpenApiSpex.Schema
 
   use Utils.RuntimeEnvHelper, chain_identity: [:explorer, :chain_identity]
-
-  @filecoin_robust_address_schema %Schema{
-    type: :string,
-    description: "Robust f0/f1/f2/f3/f4 Filecoin address",
-    example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-    nullable: true
-  }
 
   @zilliqa_schema %Schema{
     type: :object,
@@ -84,7 +78,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
       {:filecoin, nil} ->
         schema
         |> Helper.extend_schema(
-          properties: %{creator_filecoin_robust_address: @filecoin_robust_address_schema},
+          properties: %{creator_filecoin_robust_address: filecoin_robust_address_schema()},
           required: [:creator_filecoin_robust_address]
         )
 

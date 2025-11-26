@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.Schemas.API.V2.General.Implementation.ChainTypeCustomizations do
   @moduledoc false
-  alias OpenApiSpex.Schema
+  import BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations, only: [filecoin_robust_address_schema: 0]
 
   @doc """
    Applies chain-specific field customizations to the given schema based on the configured chain type.
@@ -14,18 +14,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General.Implementation.ChainTypeCustomiza
   @spec chain_type_fields(map()) :: map()
   def chain_type_fields(schema) do
     alias BlockScoutWeb.Schemas.Helper
-    alias OpenApiSpex.Schema
 
     case Application.get_env(:explorer, :chain_type) do
       :filecoin ->
         schema
         |> Helper.extend_schema(
           properties: %{
-            filecoin_robust_address: %Schema{
-              type: :string,
-              example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-              nullable: true
-            }
+            filecoin_robust_address: filecoin_robust_address_schema()
           },
           required: [:filecoin_robust_address]
         )

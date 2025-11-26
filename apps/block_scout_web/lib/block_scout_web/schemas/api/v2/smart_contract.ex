@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ChainTypeCustomizations do
   @moduledoc false
+  import BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations, only: [filecoin_robust_address_schema: 0]
   alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
@@ -31,6 +32,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ChainTypeCustomizations do
         |> Helper.extend_schema(
           properties: %{
             zk_compiler_version: %Schema{type: :string, nullable: true}
+          },
+          required: []
+        )
+
+      :filecoin ->
+        schema
+        |> Helper.extend_schema(
+          properties: %{
+            verified_twin_filecoin_robust_address: filecoin_robust_address_schema()
           },
           required: []
         )
