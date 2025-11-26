@@ -109,9 +109,7 @@ config :explorer, Explorer.Repo.PolygonZkevm,
   timeout: :timer.seconds(60),
   queue_target: 1000
 
-config :logger, :explorer,
-  level: :warn,
-  path: Path.absname("logs/test/explorer.log")
+config :logger, :explorer, path: Path.absname("logs/test/explorer.log")
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: false
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: false

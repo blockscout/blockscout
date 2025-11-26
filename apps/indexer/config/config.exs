@@ -15,11 +15,7 @@ config :indexer, Indexer.Block.Catchup.MissingRangesCollector, future_check_inte
 config :indexer, Indexer.Migrator.RecoveryWETHTokenTransfers, enabled: true
 
 config :logger, :indexer,
-  # keep synced with `config/config.exs`
-  format: "$dateT$time $metadata[$level] $message\n",
-  metadata:
-    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-       block_number step count error_count shrunk import_id transaction_id)a,
+  metadata: ConfigHelper.logger_metadata(),
   metadata_filter: [application: :indexer]
 
 config :os_mon,

@@ -9,7 +9,6 @@ defmodule Explorer.SmartContract.Helper do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.{Reader, Writer}
-  alias Phoenix.HTML
 
   @api_true [api?: true]
 
@@ -82,15 +81,6 @@ defmodule Explorer.SmartContract.Helper do
     else
       attrs
     end
-  end
-
-  def sanitize_input(nil), do: nil
-
-  def sanitize_input(input) do
-    input
-    |> HTML.html_escape()
-    |> HTML.safe_to_string()
-    |> String.trim()
   end
 
   @doc """
