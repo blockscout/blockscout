@@ -49,6 +49,10 @@ config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
   # days
   history_size: 30
 
+config :logger, :block_scout_web,
+  metadata: ConfigHelper.logger_metadata(),
+  metadata_filter: [application: :block_scout_web]
+
 config :ex_cldr,
   default_locale: "en",
   default_backend: BlockScoutWeb.Cldr

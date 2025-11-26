@@ -15,11 +15,9 @@ config :logger, :default_handler,
        Logger.Formatter.new()
      end)
 
-config :logger, :block_scout_web, metadata_filter: [application: :block_scout_web]
+config :logger, :api, metadata: ConfigHelper.logger_metadata(), metadata_filter: [application: :api]
 
-config :logger, :api, metadata_filter: [application: :api]
-
-config :logger, :api_v2, metadata_filter: [application: :api_v2]
+config :logger, :api_v2, metadata: ConfigHelper.logger_metadata(), metadata_filter: [application: :api_v2]
 
 microservice_multichain_search_url = System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")
 transactions_stats_enabled = ConfigHelper.parse_bool_env_var("TXS_STATS_ENABLED", "true")

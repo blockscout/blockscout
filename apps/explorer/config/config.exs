@@ -210,7 +210,9 @@ config :explorer, :http_client, Explorer.HttpClient.Tesla
 
 config :explorer, Explorer.Chain.BridgedToken, enabled: ConfigHelper.parse_bool_env_var("BRIDGED_TOKENS_ENABLED")
 
-config :logger, :explorer, metadata_filter: [application: :explorer]
+config :logger, :explorer,
+  metadata: ConfigHelper.logger_metadata(),
+  metadata_filter: [application: :explorer]
 
 config :spandex_ecto, SpandexEcto.EctoLogger,
   service: :ecto,

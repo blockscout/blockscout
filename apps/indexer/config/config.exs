@@ -14,7 +14,9 @@ config :indexer, Indexer.Block.Catchup.MissingRangesCollector, future_check_inte
 
 config :indexer, Indexer.Migrator.RecoveryWETHTokenTransfers, enabled: true
 
-config :logger, :indexer, metadata_filter: [application: :indexer]
+config :logger, :indexer,
+  metadata: ConfigHelper.logger_metadata(),
+  metadata_filter: [application: :indexer]
 
 config :os_mon,
   start_cpu_sup: false,

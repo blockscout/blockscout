@@ -21,7 +21,9 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Tracer,
   adapter: SpandexDatadog.Adapter,
   trace_key: :blockscout
 
-config :logger, :ethereum_jsonrpc, metadata_filter: [application: :ethereum_jsonrpc]
+config :logger, :ethereum_jsonrpc,
+  metadata: ConfigHelper.logger_metadata(),
+  metadata_filter: [application: :ethereum_jsonrpc]
 
 config :tesla, adapter: Tesla.Adapter.Mint
 

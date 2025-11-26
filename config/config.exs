@@ -19,6 +19,8 @@ config :logger, :console, metadata: ConfigHelper.logger_metadata()
 
 config :logger, :error, metadata: ConfigHelper.logger_metadata()
 
+config :logger, :block_scout_web, metadata: ConfigHelper.logger_metadata()
+
 # todo: migrate from deprecated usages
 config :tesla, disable_deprecated_builder_warning: true
 
