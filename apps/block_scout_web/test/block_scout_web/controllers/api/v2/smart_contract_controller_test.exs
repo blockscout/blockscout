@@ -53,7 +53,15 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/smart-contracts/0x")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "get unverified smart-contract info", %{conn: conn} do
@@ -770,7 +778,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
-        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+        {:ok, _pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
         bypass = Bypass.open()
 
         Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
@@ -1778,24 +1786,30 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         check_paginated_response(response, response_2nd_page, smart_contracts)
       end
 
-      test "ignores wrong ordering params", %{conn: conn} do
-        smart_contracts =
-          for _ <- 0..50 do
-            insert(:smart_contract)
-          end
-          |> Enum.sort_by(& &1.id)
+      test "Returns error with wrong ordering params", %{conn: conn} do
+        for _ <- 0..50 do
+          insert(:smart_contract)
+        end
+        |> Enum.sort_by(& &1.id)
 
         ordering_params = %{"sort" => "foo", "order" => "bar"}
 
         request = get(conn, "/api/v2/smart-contracts", ordering_params)
-        assert response = json_response(request, 200)
 
-        request_2nd_page =
-          get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
-
-        assert response_2nd_page = json_response(request_2nd_page, 200)
-
-        check_paginated_response(response, response_2nd_page, smart_contracts)
+        assert %{
+                 "errors" => [
+                   %{
+                     "detail" => "Invalid value for enum",
+                     "source" => %{"pointer" => "/sort"},
+                     "title" => "Invalid value"
+                   },
+                   %{
+                     "detail" => "Invalid value for enum",
+                     "source" => %{"pointer" => "/order"},
+                     "title" => "Invalid value"
+                   }
+                 ]
+               } = json_response(request, 422)
       end
 
       test "can order by balance ascending", %{conn: conn} do

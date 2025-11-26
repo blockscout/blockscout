@@ -12,8 +12,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   import Explorer.Helper, only: [hash_to_binary: 1]
 
-  alias BlockScoutWeb.API.V2.ApiView
-  alias Explorer.Chain
+  alias BlockScoutWeb.API.V2.{ApiView, OptimismView}
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Data, Hash, Token, Transaction}
 
@@ -35,8 +35,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   @api_true [api?: true]
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/txn-batches` and
-    `/api/v2/optimism/txn-batches/:l2_block_range_start/:l2_block_range_end` endpoints.
+  Function to handle GET requests to `/api/v2/optimism/txn-batches` and
+  `/api/v2/optimism/txn-batches/:l2_block_range_start/:l2_block_range_end` endpoints.
   """
   @spec transaction_batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transaction_batches(conn, params) do
@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/txn-batches/count` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/txn-batches/count` endpoint.
   """
   @spec transaction_batches_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transaction_batches_count(conn, _params) do
@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/batches` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/batches` endpoint.
   """
   @spec batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches(conn, params) do
@@ -122,7 +122,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/batches/count` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/batches/count` endpoint.
   """
   @spec batches_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches_count(conn, _params) do
@@ -130,7 +130,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment` endpoint.
   """
   @spec batch_by_celestia_blob(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batch_by_celestia_blob(conn, %{"height" => height, "commitment" => commitment}) do
@@ -155,7 +155,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/batches/:number` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/batches/:number` endpoint.
   """
   @spec batch_by_number(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batch_by_number(conn, %{"number" => number}) do
@@ -173,7 +173,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/output-roots` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/output-roots` endpoint.
   """
   @spec output_roots(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def output_roots(conn, params) do
@@ -195,7 +195,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/output-roots/count` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/output-roots/count` endpoint.
   """
   @spec output_roots_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def output_roots_count(conn, _params) do
@@ -203,7 +203,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/games` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/games` endpoint.
   """
   @spec games(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def games(conn, params) do
@@ -225,7 +225,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/games/count` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/games/count` endpoint.
   """
   @spec games_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def games_count(conn, _params) do
@@ -237,7 +237,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/deposits` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/deposits` endpoint.
   """
   @spec deposits(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits(conn, params) do
@@ -259,7 +259,24 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/deposits/count` endpoint.
+  Function to handle GET requests to `/api/v2/main-page/optimism-deposits` endpoint.
+  """
+  @spec main_page_deposits(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def main_page_deposits(conn, _params) do
+    recent_deposits =
+      Deposit.list(
+        paging_options: %PagingOptions{page_size: 6},
+        api?: true
+      )
+
+    conn
+    |> put_status(200)
+    |> put_view(OptimismView)
+    |> render(:optimism_deposits, %{deposits: recent_deposits})
+  end
+
+  @doc """
+  Function to handle GET requests to `/api/v2/optimism/deposits/count` endpoint.
   """
   @spec deposits_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits_count(conn, _params) do
@@ -271,7 +288,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/interop/messages/:unique_id` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/interop/messages/:unique_id` endpoint.
   """
   @spec interop_message(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def interop_message(conn, params) do
@@ -392,7 +409,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/interop/messages/count` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/interop/messages/count` endpoint.
   """
   @spec interop_messages_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def interop_messages_count(conn, _params) do
@@ -402,7 +419,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/withdrawals` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/withdrawals` endpoint.
   """
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals(conn, params) do
@@ -424,7 +441,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/withdrawals/count` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/withdrawals/count` endpoint.
   """
   @spec withdrawals_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals_count(conn, _params) do
@@ -432,7 +449,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/interop/public-key` endpoint.
+  Function to handle GET requests to `/api/v2/optimism/interop/public-key` endpoint.
   """
   @spec interop_public_key(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def interop_public_key(conn, _params) do
@@ -455,9 +472,9 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle POST request to `/api/v2/import/optimism/interop/` endpoint.
-    Accepts `init` part of the interop message from the source instance or
-    `relay` part of the interop message from the target instance.
+  Function to handle POST request to `/api/v2/import/optimism/interop/` endpoint.
+  Accepts `init` part of the interop message from the source instance or
+  `relay` part of the interop message from the target instance.
   """
   @spec interop_import(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def interop_import(

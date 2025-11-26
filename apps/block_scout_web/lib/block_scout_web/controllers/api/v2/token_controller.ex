@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
-  alias Explorer.{Chain, Helper, PagingOptions}
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Explorer.Migrator.BackfillMetadataURL
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param` endpoint.
   """
   @spec token(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def token(conn, %{address_hash_param: address_hash_string} = params) do
@@ -109,7 +109,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param/counters` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/counters` endpoint.
   """
   @spec counters(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def counters(conn, %{address_hash_param: address_hash_string} = params) do
@@ -156,7 +156,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param/transfers` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/transfers` endpoint.
   """
   @spec transfers(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transfers(conn, %{address_hash_param: address_hash_string} = params) do
@@ -212,7 +212,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param/holders` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/holders` endpoint.
   """
   @spec holders(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def holders(conn, %{address_hash_param: address_hash_string} = params) do
@@ -257,7 +257,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param/instances` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances` endpoint.
   """
   @spec instances(Plug.Conn.t(), map()) :: Plug.Conn.t()
 
@@ -349,7 +349,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param/instances/:token_id_param` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param` endpoint.
   """
   @spec instance(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def instance(conn, %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params) do
@@ -409,6 +409,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       not_found: NotFoundResponse.response()
     ]
 
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param/transfers` endpoint.
+  """
+  @spec transfers_by_instance(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transfers_by_instance(
         conn,
         %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params
@@ -466,6 +470,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       not_found: NotFoundResponse.response()
     ]
 
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param/holders` endpoint.
+  """
+  @spec holders_by_instance(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def holders_by_instance(conn, %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
@@ -508,11 +516,15 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     responses: [
       ok:
         {"Transfer count for the instance.", "application/json",
-         %OpenApiSpex.Schema{type: :object, properties: %{transfers_count: %Schema{type: :integer}}}},
+         %Schema{type: :object, properties: %{transfers_count: %Schema{type: :integer}}}},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
 
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param/transfers-count` endpoint.
+  """
+  @spec transfers_count_by_instance(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transfers_count_by_instance(
         conn,
         %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params
@@ -570,6 +582,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
+  @doc """
+  Handles GET requests to `/api/v2/tokens` endpoint.
+  """
+  @spec tokens_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def tokens_list(conn, params) do
     filter = params[:q]
 
@@ -579,7 +595,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
                                                                         page_size: page_size
                                                                       } = paging_options ->
-        maybe_parsed_limit = Helper.parse_integer(params[:limit])
+        maybe_parsed_limit = params[:limit]
         %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
       end)
       |> Keyword.merge(token_transfers_types_options(params))
@@ -630,6 +646,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
+  @doc """
+  Handles GET requests to `/api/v2/tokens/bridged` endpoint.
+  """
+  @spec bridged_tokens_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def bridged_tokens_list(conn, params) do
     filter = params[:q]
 
@@ -662,11 +682,15 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     responses: [
       ok:
         {"Metadata refetch triggered.", "application/json",
-         %OpenApiSpex.Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
+         %Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
 
+  @doc """
+  Handles PATCH requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param/refetch-metadata` endpoint.
+  """
+  @spec refetch_metadata(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def refetch_metadata(
         conn,
         params
@@ -702,11 +726,15 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     responses: [
       ok:
         {"NFT collection metadata refetch triggered.", "application/json",
-         %OpenApiSpex.Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
+         %Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
 
+  @doc """
+  Handles PATCH requests to `/api/v2/tokens/:address_hash_param/instances/refetch-metadata` endpoint.
+  """
+  @spec trigger_nft_collection_metadata_refetch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def trigger_nft_collection_metadata_refetch(
         conn,
         params

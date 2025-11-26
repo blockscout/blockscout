@@ -143,7 +143,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       "Retrieves detailed information for a specific transaction, including token transfers, internal transactions, and metadata.",
     parameters: [transaction_hash_param() | base_params()],
     responses: [
-      ok: {"Transaction details", "application/json", BlockScoutWeb.Schemas.API.V2.Transaction.Response},
+      ok: {"Transaction details", "application/json", Schemas.Transaction.Response},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -631,7 +631,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       "Retrieves the raw trace for a specific transaction, including internal operations and execution details.",
     parameters: [transaction_hash_param() | base_params()],
     responses: [
-      ok: {"Raw trace for transaction", "application/json", BlockScoutWeb.Schemas.API.V2.Transaction.RawTrace},
+      ok: {"Raw trace for transaction", "application/json", Schemas.Transaction.RawTrace},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -943,8 +943,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         {"Transaction summary", "application/json",
          %Schema{
            anyOf: [
-             BlockScoutWeb.Schemas.API.V2.Transaction.Summary,
-             BlockScoutWeb.Schemas.API.V2.Transaction.SummaryJustRequestBody
+             Schemas.Transaction.Summary,
+             Schemas.Transaction.SummaryJustRequestBody
            ]
          }},
       not_found: NotFoundResponse.response(),
@@ -1015,7 +1015,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            title: "TransactionBlobs",
            type: :object,
            properties: %{
-             items: %Schema{type: :array, items: BlockScoutWeb.Schemas.API.V2.Blob.Response}
+             items: %Schema{type: :array, items: Schemas.Blob.Response}
            },
            nullable: false,
            additionalProperties: false
@@ -1097,7 +1097,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       ok:
         {"Beacon deposits for transaction", "application/json",
          paginated_response(
-           items: BlockScoutWeb.Schemas.API.V2.Beacon.Deposit.Response,
+           items: Schemas.Beacon.Deposit.Response,
            next_page_params_example: %{
              "index" => 2_287_943,
              "items_count" => 50

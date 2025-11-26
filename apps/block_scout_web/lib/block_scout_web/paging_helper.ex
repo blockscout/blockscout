@@ -299,7 +299,17 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def delete_items_count_from_next_page_params(other), do: other
 
+  # todo: it is used in the old UI only, consider removing it later
   def current_filter(%{"filter" => language_string}) do
+    SmartContract.language_string_to_atom()
+    |> Map.fetch(language_string)
+    |> case do
+      {:ok, language} -> [filter: language]
+      :error -> []
+    end
+  end
+
+  def current_filter(%{filter: language_string}) do
     SmartContract.language_string_to_atom()
     |> Map.fetch(language_string)
     |> case do
@@ -316,9 +326,16 @@ defmodule BlockScoutWeb.PagingHelper do
     [search: search_string]
   end
 
+  # todo: it is used in the old UI only, consider removing it later
   def search_query(%{"q" => ""}), do: []
 
   def search_query(%{"q" => search_string}) do
+    [search: search_string]
+  end
+
+  def search_query(%{q: ""}), do: []
+
+  def search_query(%{q: search_string}) do
     [search: search_string]
   end
 
