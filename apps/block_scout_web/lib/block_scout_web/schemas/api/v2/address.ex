@@ -14,6 +14,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
     nullable: true
   }
 
+  @doc """
+   OpenAPI schema for Filecoin robust address.
+  """
+  @spec filecoin_robust_address_schema() :: Schema.t()
+  def filecoin_robust_address_schema, do: @filecoin_robust_address_schema
+
   def chain_type_fields(schema) do
     case Application.get_env(:explorer, :chain_type) do
       :filecoin ->
