@@ -45,6 +45,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
     |> page_internal_transaction(paging_options)
     |> Enum.take(paging_options.page_size)
+    |> add_block_hashes()
   end
 
   @doc """
@@ -80,10 +81,11 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       {:ok, internal_transactions_params} ->
         internal_transactions_params
         |> Enum.map(&serialize/1)
-        |> join_associations(necessity_by_association)
         |> Enum.sort_by(& &1.index)
-        |> page_internal_transaction(paging_options)
         |> Enum.take(paging_options.page_size)
+        |> add_block_hashes(transaction.block_hash)
+        |> join_associations(necessity_by_association)
+        |> page_internal_transaction(paging_options)
         |> Repo.preload(:block)
 
       :ignore ->
@@ -91,10 +93,11 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         |> fetch_block_internal_transactions()
         |> Enum.map(&serialize/1)
         |> Enum.filter(&(&1.transaction_hash == transaction.hash))
-        |> join_associations(necessity_by_association)
         |> Enum.sort_by(& &1.index)
-        |> page_internal_transaction(paging_options)
         |> Enum.take(paging_options.page_size)
+        |> add_block_hashes(transaction.block_hash)
+        |> join_associations(necessity_by_association)
+        |> page_internal_transaction(paging_options)
         |> Repo.preload(:block)
 
       error ->
@@ -124,21 +127,22 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     - List of InternalTransaction structs for the given block
   """
   @spec fetch_by_block(non_neg_integer(), Keyword.t()) :: [InternalTransaction.t()]
-  def fetch_by_block(block_number, options \\ []) do
+  def fetch_by_block(block, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     type_filter = Keyword.get(options, :type)
     call_type_filter = Keyword.get(options, :call_type)
 
-    [block_number]
+    [block.number]
     |> fetch_block_internal_transactions()
     |> Enum.map(&serialize/1)
-    |> join_associations(necessity_by_association)
-    |> Enum.sort_by(& &1.block_index)
-    |> page_block_internal_transaction(paging_options)
     |> filter_by_type(type_filter, call_type_filter)
     |> filter_by_call_type(call_type_filter)
+    |> page_block_internal_transaction(paging_options)
+    |> Enum.sort_by(&{&1.transaction_index, &1.index})
     |> Enum.take(paging_options.page_size)
+    |> add_block_hashes(block.hash)
+    |> join_associations(necessity_by_association)
   end
 
   @doc """
@@ -200,10 +204,11 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> fetch_block_internal_transactions()
     |> Enum.map(&serialize/1)
     |> filter_by_address(address_hash, direction)
-    |> join_associations(necessity_by_association)
-    |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
     |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
+    |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
     |> Enum.take(paging_options.page_size)
+    |> add_block_hashes()
+    |> join_associations(necessity_by_association)
   end
 
   defp fetch_enough(start_block_number, count, options, acc \\ []) do
@@ -475,6 +480,25 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
           true
       end
     end)
+  end
+
+  defp add_block_hashes(internal_transactions, block_hash \\ nil) do
+    block_number_to_hash_map =
+      case block_hash do
+        nil ->
+          internal_transactions
+          |> Enum.map(& &1.transaction_hash)
+          |> Enum.uniq()
+          |> Transaction.by_hashes_query()
+          |> select([t], {t.block_number, t.block_hash})
+          |> Repo.all()
+          |> Map.new()
+
+        _ ->
+          %{}
+      end
+
+    Enum.map(internal_transactions, &%{&1 | block_hash: block_hash || block_number_to_hash_map[&1.block_number]})
   end
 
   defp serialize(internal_transaction_params) do
