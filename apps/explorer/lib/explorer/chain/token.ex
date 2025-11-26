@@ -380,7 +380,7 @@ defmodule Explorer.Chain.Token do
       case filter && filter !== "" && Search.prepare_search_term(filter) do
         {:some, filter_term} ->
           sorted_paginated_query
-          |> where(fragment("to_tsvector('english', symbol || ' ' || name) @@ to_tsquery(?)", ^filter_term))
+          |> apply_fts_filter(filter_term)
 
         _ ->
           sorted_paginated_query
@@ -388,6 +388,29 @@ defmodule Explorer.Chain.Token do
 
     filtered_query
     |> Chain.select_repo(options).all()
+  end
+
+  def apply_fts_filter(query, filter_term) do
+    query
+    |> where(
+      [token],
+      (not is_nil(token.symbol) and
+        fragment(
+          "to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)",
+          token.symbol,
+          token.name,
+          ^filter_term
+        )
+      )
+      or
+      (is_nil(token.symbol) and
+        fragment(
+          "to_tsvector('english', ?) @@ to_tsquery(?)",
+          token.name,
+          ^filter_term
+        )
+      )
+    )
   end
 
   defp apply_filter(query, empty_type) when empty_type in [nil, []], do: query

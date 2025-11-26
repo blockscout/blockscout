@@ -11,8 +11,7 @@ defmodule Explorer.Chain.BridgedToken do
   import Ecto.Query,
     only: [
       from: 2,
-      limit: 2,
-      where: 2
+      limit: 2
     ]
 
   alias ABI.{TypeDecoder, TypeEncoder}
@@ -957,7 +956,7 @@ defmodule Explorer.Chain.BridgedToken do
         case Search.prepare_search_term(filter) do
           {:some, filter_term} ->
             base_query_with_paging
-            |> where(fragment("to_tsvector('english', symbol || ' ' || name) @@ to_tsquery(?)", ^filter_term))
+            |> Token.apply_fts_filter(filter_term)
 
           _ ->
             base_query_with_paging
