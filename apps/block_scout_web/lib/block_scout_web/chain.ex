@@ -1328,7 +1328,7 @@ defmodule BlockScoutWeb.Chain do
     if InternalTransaction.present_in_db?(block.number) do
       InternalTransaction.block_to_internal_transactions(block.hash, options)
     else
-      InternalTransactionOnDemand.fetch_by_block(block.number, options)
+      InternalTransactionOnDemand.fetch_by_block(block, options)
     end
   end
 
