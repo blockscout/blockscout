@@ -15,7 +15,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       param_to_block_number: 1,
       put_key_value_to_paging_options: 3,
       split_list_by_page: 1,
-      parse_block_hash_or_number_param: 1
+      parse_block_hash_or_number_param: 1,
+      block_to_internal_transactions: 2
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -474,7 +475,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> Keyword.merge(internal_transaction_type_options(params))
         |> Keyword.merge(internal_transaction_call_type_options(params))
 
-      internal_transactions_plus_one = Chain.block_to_internal_transactions(block, full_options)
+      internal_transactions_plus_one = block_to_internal_transactions(block, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 

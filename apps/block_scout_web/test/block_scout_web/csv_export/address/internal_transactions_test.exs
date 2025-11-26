@@ -1,7 +1,7 @@
-defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
+defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.CsvExport.Address.InternalTransactions, as: AddressInternalTransactionsCsvExporter
+  alias BlockScoutWeb.CsvExport.Address.InternalTransactions, as: AddressInternalTransactionsCsvExporter
   alias Explorer.Chain.{Address, Wei}
 
   describe "export/3" do
