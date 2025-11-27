@@ -508,6 +508,12 @@ config :explorer, Explorer.Market.Source.Mobula,
   secondary_coin_id:
     System.get_env("MARKET_MOBULA_SECONDARY_COIN_ID") || System.get_env("EXCHANGE_RATES_MOBULA_SECONDARY_COIN_ID")
 
+config :explorer, Explorer.Market.Source.DIA,
+  blockchain: System.get_env("MARKET_DIA_BLOCKCHAIN"),
+  base_url: System.get_env("MARKET_DIA_BASE_URL", "https://api.diadata.org/v1"),
+  coin_address_hash: System.get_env("MARKET_DIA_COIN_ADDRESS_HASH"),
+  secondary_coin_address_hash: System.get_env("MARKET_DIA_SECONDARY_COIN_ADDRESS_HASH")
+
 config :explorer, Explorer.Market.Fetcher.Coin,
   store: :ets,
   enabled: !disable_exchange_rates? && ConfigHelper.parse_bool_env_var("MARKET_COIN_FETCHER_ENABLED", "true"),

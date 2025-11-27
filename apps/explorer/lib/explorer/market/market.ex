@@ -5,6 +5,7 @@ defmodule Explorer.Market do
 
   use GenServer
 
+  require Logger
   alias Explorer.Helper
   alias Explorer.Market.Fetcher.Coin, as: CoinFetcher
   alias Explorer.Market.Fetcher.History, as: HistoryFetcher
@@ -34,13 +35,13 @@ defmodule Explorer.Market do
 
   @impl GenServer
   def handle_continue(attempt, _state) do
-    attempt |> :timer.seconds() |> :timer.sleep()
+    attempt |> Math.pow(3) |> :timer.seconds() |> :timer.sleep()
 
     case Node.list()
          |> Enum.filter(&Helper.indexer_node?/1) do
       [] ->
         if attempt < 5 do
-          {:noreply, nil, {:continue, attempt * 2}}
+          {:noreply, nil, {:continue, attempt + 1}}
         else
           raise "No indexer nodes discovered after #{attempt} attempts"
         end
@@ -56,7 +57,11 @@ defmodule Explorer.Market do
         {:stop, :normal}
 
       multiple_indexers ->
-        raise "Multiple indexer nodes discovered: #{inspect(multiple_indexers)}"
+        if attempt < 5 do
+          {:noreply, nil, {:continue, attempt + 1}}
+        else
+          raise "Multiple indexer nodes discovered: #{inspect(multiple_indexers)}"
+        end
     end
   end
 
