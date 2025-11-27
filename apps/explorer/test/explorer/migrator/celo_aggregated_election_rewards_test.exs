@@ -340,9 +340,12 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         )
 
         # Run migration first time
-        start_supervised!(CeloAggregatedElectionRewards)
+        {:ok, pid} = CeloAggregatedElectionRewards.start_link([])
 
         Process.sleep(500)
+
+        # Verify process has stopped after migration completed
+        refute Process.alive?(pid)
 
         # Verify data was created (only 1 type has data, so only 1 aggregate)
         assert Repo.aggregate(AggregatedElectionReward, :count) == 1
@@ -355,9 +358,12 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewardsTest do
         MigrationStatus.set_status("celo_aggregated_election_rewards", nil)
 
         # Run migration second time
-        start_supervised!(CeloAggregatedElectionRewards)
+        {:ok, pid} = CeloAggregatedElectionRewards.start_link([])
 
         Process.sleep(500)
+
+        # Verify second process has also stopped
+        refute Process.alive?(pid)
 
         # Verify data was not duplicated
         assert Repo.aggregate(AggregatedElectionReward, :count) == 1
