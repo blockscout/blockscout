@@ -1263,18 +1263,26 @@ defmodule BlockScoutWeb.Chain do
         []
 
       not is_nil(transaction_hash) ->
-        {:ok, transaction} = hash_to_transaction(transaction_hash)
-        transaction_to_internal_transactions(transaction, options)
+        case hash_to_transaction(transaction_hash) do
+          {:ok, transaction} ->
+            transaction_to_internal_transactions(transaction, options_with_necessity)
+
+          {:error, :not_found} ->
+            []
+        end
 
       match?(%PagingOptions{key: {_, _, _}}, paging_options) and
           not InternalTransaction.present_in_db?(elem(paging_options.key, 0)) ->
         InternalTransactionOnDemand.fetch_latest(options_with_necessity)
 
-      true ->
+      Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] ->
         from_db = InternalTransaction.fetch(options)
         from_node = InternalTransactionOnDemand.fetch_latest(options_with_necessity)
 
         merge_internal_transactions(from_db, from_node, paging_options.page_size)
+
+      true ->
+        InternalTransaction.fetch(options)
     end
   end
 
