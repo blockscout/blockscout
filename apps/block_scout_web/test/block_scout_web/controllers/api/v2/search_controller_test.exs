@@ -2461,7 +2461,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
             "priority" => 0,
             "type" => "address",
             "url" => "/address/#{address_hash}",
-            "reputation" => "ok"
+            "reputation" => "ok",
+            "is_smart_contract_address" => false
           }
           | for(
               i <- 0..48,
