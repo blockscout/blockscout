@@ -43,7 +43,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     to_block_number
     |> fetch_enough(paging_options.page_size, options)
     |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
-    |> page_internal_transaction(paging_options)
+    |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
     |> Enum.take(paging_options.page_size)
   end
 
@@ -137,6 +137,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     type_filter = Keyword.get(options, :type)
     call_type_filter = Keyword.get(options, :call_type)
+    unlimited? = Keyword.get(options, :unlimited)
 
     [block.number]
     |> fetch_block_internal_transactions()
@@ -145,7 +146,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> filter_by_call_type(call_type_filter)
     |> page_block_internal_transaction(paging_options)
     |> Enum.sort_by(&{&1.transaction_index, &1.index})
-    |> Enum.take(paging_options.page_size)
+    |> then(&if unlimited?, do: &1, else: Enum.take(&1, paging_options.page_size))
     |> add_block_hashes(block.hash)
     |> join_associations(necessity_by_association)
   end
@@ -217,8 +218,14 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   end
 
   defp fetch_enough(start_block_number, count, options, acc \\ []) do
-    internal_transactions = fetch_by_block(start_block_number, options)
-    fetched_count = Enum.count(internal_transactions)
+    internal_transactions = fetch_by_block(start_block_number, Keyword.put(options, :unlimited, true))
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    fetched_count =
+      internal_transactions
+      |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
+      |> Enum.count()
+
     result = Enum.concat(acc, internal_transactions)
 
     if fetched_count >= count or start_block_number == 0 do
@@ -326,7 +333,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
           result
 
         error ->
-          Logger.error("Failed to fetch internal transactions for blocks #{block_numbers}: #{inspect(error)}")
+          Logger.error("Failed to fetch internal transactions for blocks #{inspect(block_numbers)}: #{inspect(error)}")
           []
       end
     else
