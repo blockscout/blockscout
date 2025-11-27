@@ -229,7 +229,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     result = Enum.concat(acc, internal_transactions)
 
     if fetched_count >= count or start_block_number == 0 do
-      Enum.concat(acc, internal_transactions)
+      result
     else
       start_block_number
       |> BlockNumberHelper.previous_block_number()
