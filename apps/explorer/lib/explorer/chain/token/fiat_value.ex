@@ -7,6 +7,8 @@ defmodule Explorer.Chain.Token.FiatValue do
 
   alias Explorer.Market
 
+  @type t :: Decimal.t() | nil
+
   @impl Ecto.Type
   def type, do: :decimal
 

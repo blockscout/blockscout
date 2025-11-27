@@ -185,7 +185,8 @@ defmodule Explorer.Market.Source.DIA do
           }
         },
         acc ->
-          case String.downcase(token_contract_address_hash_string) != String.downcase(coin_address_hash) &&
+          case (is_nil(coin_address_hash) ||
+                  String.downcase(token_contract_address_hash_string) != String.downcase(coin_address_hash)) &&
                  Hash.Address.cast(token_contract_address_hash_string) do
             {:ok, token_contract_address_hash} ->
               token = %{
@@ -263,7 +264,7 @@ defmodule Explorer.Market.Source.DIA do
     else
       {:coin, nil} -> {:error, "#{Source.secondary_coin_string(secondary_coin?)} address hash not specified"}
       {:blockchain, nil} -> {:error, "Blockchain not specified"}
-      {:ok, nil} -> {:ok, []}
+      {:ok, _} -> {:ok, []}
       {:error, _reason} = error -> error
     end
   end

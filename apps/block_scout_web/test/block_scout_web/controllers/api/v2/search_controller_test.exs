@@ -7,6 +7,15 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   alias Plug.Conn.Query
 
   describe "/search" do
+    setup do
+      initial_value = :persistent_term.get(:market_token_fetcher_enabled, false)
+      :persistent_term.put(:market_token_fetcher_enabled, true)
+
+      on_exit(fn ->
+        :persistent_term.put(:market_token_fetcher_enabled, initial_value)
+      end)
+    end
+
     test "get token-transfers with ok reputation", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)

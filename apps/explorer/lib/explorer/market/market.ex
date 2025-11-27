@@ -35,7 +35,7 @@ defmodule Explorer.Market do
 
   @impl GenServer
   def handle_continue(attempt, _state) do
-    attempt |> Math.pow(3) |> :timer.seconds() |> :timer.sleep()
+    attempt |> Kernel.**(3) |> :timer.seconds() |> :timer.sleep()
 
     case Node.list()
          |> Enum.filter(&Helper.indexer_node?/1) do

@@ -22,13 +22,13 @@ defmodule NFTMediaHandler.DispatcherInterface do
 
   @impl true
   def handle_continue(attempt, _state) do
-    attempt |> :timer.seconds() |> :timer.sleep()
+    attempt |> Kernel.**(3) |> :timer.seconds() |> :timer.sleep()
 
     get_indexer_nodes()
     |> case do
       [] ->
         if attempt < 5 do
-          {:noreply, nil, {:continue, attempt * 2}}
+          {:noreply, nil, {:continue, attempt + 1}}
         else
           raise "No indexer nodes discovered after #{attempt} attempts"
         end

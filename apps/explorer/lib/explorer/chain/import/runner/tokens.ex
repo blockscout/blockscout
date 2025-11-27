@@ -299,7 +299,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     `:volume_24h`
   """
   @spec market_data_fields_to_update() :: [
-          :name | :symbol | :type | :fiat_value | :circulating_market_cap | :volume_24h
+          :name | :symbol | :type | :fiat_value | :circulating_market_cap | :volume_24h | :decimals
         ]
   def market_data_fields_to_update do
     [:name, :symbol, :type, :fiat_value, :circulating_market_cap, :volume_24h, :decimals]

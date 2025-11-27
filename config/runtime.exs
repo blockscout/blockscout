@@ -427,6 +427,8 @@ config :explorer, Explorer.Chain.Cache.Counters.NewPendingTransactionsCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_FRESH_PENDING_TRANSACTIONS_COUNTER_PERIOD", "5m"),
   enable_consolidation: true
 
+config :explorer, Explorer.Market, enabled: !disable_exchange_rates?
+
 config :explorer, Explorer.Market.Source,
   native_coin_source:
     ConfigHelper.market_source("MARKET_NATIVE_COIN_SOURCE") || ConfigHelper.market_source("EXCHANGE_RATES_SOURCE"),
