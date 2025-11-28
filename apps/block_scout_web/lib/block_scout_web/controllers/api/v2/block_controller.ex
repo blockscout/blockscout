@@ -145,7 +145,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   tags(["blocks"])
 
   operation :block,
-    summary: "Retrieve detailed information about a specific block",
+    summary: "Retrieves detailed information for a specific block identified by its number or hash.",
     description:
       "Retrieves detailed information for a specific block, including transactions, internal transactions, and metadata.",
     parameters: [block_hash_or_number_param() | base_params()],
@@ -185,15 +185,15 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   end
 
   operation :blocks,
-    summary: "List blocks with optional filtering and sorting",
-    description: "Retrieves a paginated list of blocks with optional filtering by block type and sorting options.",
+    summary: "List blocks with optional filtering by block type",
+    description: "Retrieves a paginated list of blocks with optional filtering by block type.",
     parameters:
       base_params() ++
         [block_type_param()] ++
         define_paging_params(["block_number", "items_count"]),
     responses: [
       ok:
-        {"List of blocks with pagination.", "application/json",
+        {"List of blocks with pagination information.", "application/json",
          paginated_response(
            items: Schemas.Block,
            next_page_params_example: %{
@@ -376,15 +376,15 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   end
 
   operation :transactions,
-    summary: "List transactions in a specific block",
-    description: "Retrieves transactions included in a specific block with optional filtering and sorting.",
+    summary: "List transactions and tx details included in a specific block",
+    description: "Retrieves transactions included in a specific block, ordered by transaction index.",
     parameters:
       base_params() ++
         [block_hash_or_number_param(), transaction_type_param()] ++
         define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"Transactions in the specified block.", "application/json",
+        {"Transactions in the specified block, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Transaction,
            next_page_params_example: %{
@@ -499,15 +499,15 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   end
 
   operation :withdrawals,
-    summary: "List withdrawals in a specific block",
-    description: "Retrieves validator withdrawals included in a specific block.",
+    summary: "List validator withdrawals including amounts, index and receiver details processed in a specific block",
+    description: "Retrieves withdrawals processed in a specific block (typically for proof-of-stake networks).",
     parameters:
       base_params() ++
         [block_hash_or_number_param()] ++
         define_paging_params(["index", "items_count"]),
     responses: [
       ok:
-        {"Withdrawals in the specified block.", "application/json",
+        {"Withdrawals in the specified block, with pagination. Note that block_number and timestamp fields are not included in this endpoint.", "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
            next_page_params_example: %{

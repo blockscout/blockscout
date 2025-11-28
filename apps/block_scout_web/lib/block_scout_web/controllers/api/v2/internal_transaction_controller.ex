@@ -25,15 +25,16 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   @api_true [api?: true]
 
   operation :internal_transactions,
-    summary: "List internal transactions",
-    description: "Retrieves internal transactions with optional filtering and pagination.",
+    summary: "List internal transactions generated during smart contract execution",
+    description:
+      "Retrieves a paginated list of internal transactions. Internal transactions are generated during contract execution and not directly recorded on the blockchain.",
     parameters:
       base_params() ++
         [query_transaction_hash_param(), limit_param()] ++
         define_paging_params(["index", "block_number", "transaction_index", "items_count"]),
     responses: [
       ok:
-        {"Internal transactions", "application/json",
+        {"List of internal transactions with pagination information.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
            next_page_params_example: %{

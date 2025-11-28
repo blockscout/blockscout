@@ -17,8 +17,9 @@ defmodule BlockScoutWeb.API.V2.SearchController do
   @min_query_length 3
 
   operation :search,
-    summary: "Search across blocks, transactions and addresses",
-    description: "Performs a joint search for blocks, transactions, addresses and other resources.",
+    summary: "Search for tokens, addresses, contracts, blocks, or transactions by identifier",
+    description:
+      "Performs a unified search across multiple blockchain entity types including tokens, addresses, contracts, blocks, transactions and other resources.",
     parameters:
       [q_param() | base_params()] ++
         define_search_paging_params([
@@ -35,7 +36,10 @@ defmodule BlockScoutWeb.API.V2.SearchController do
           "ens_domain"
         ]),
     responses: [
-      ok: {"Search results", "application/json", Schemas.Search.Results},
+      ok:
+        {"Successful search response containing matched items and pagination information.
+            Results are ordered by relevance and limited to 50 items per page.", "application/json",
+         Schemas.Search.Results},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -59,12 +63,12 @@ defmodule BlockScoutWeb.API.V2.SearchController do
   end
 
   operation :check_redirect,
-    summary: "Check redirect target for a query",
-    description: "Check whether the query resolves to a single redirect target (eg. an address or tx) and return it.",
+    summary: "Check if search query should redirect to a specific entity page",
+    description: "Checks if a search query redirects to a specific entity page rather than showing search results.",
     parameters: [q_param() | base_params()],
     responses: [
       ok:
-        {"Redirect check result", "application/json",
+        {"Response indicating whether the query should redirect to a specific entity page.", "application/json",
          %Schema{
            type: :object,
            properties: %{
@@ -101,7 +105,7 @@ defmodule BlockScoutWeb.API.V2.SearchController do
     parameters: [q_param() | base_params()],
     responses: [
       ok:
-        {"Quick search results", "application/json",
+        {"Quick search results.", "application/json",
          %Schema{type: :array, items: %Schema{type: :object}, nullable: false}},
       unprocessable_entity: JsonErrorResponse.response()
     ]

@@ -237,7 +237,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       "Retrieves count statistics for an address, including transactions, token transfers, gas usage, and validations.",
     parameters: [address_hash_param() | base_params()],
     responses: [
-      ok: {"Count statistics for the specified address", "application/json", Schemas.Address.Counters},
+      ok: {"Count statistics for the specified address.", "application/json", Schemas.Address.Counters},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
     ]

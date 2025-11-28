@@ -32,8 +32,8 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
   @api_true [api?: true]
 
   operation :token_transfers,
-    summary: "List token transfers",
-    description: "Retrieves token transfers with optional filtering and pagination.",
+    summary: "List token transfers across all token types (ERC-20, ERC-721, ERC-1155)",
+    description: "Retrieves a paginated list of token transfers across all token types (ERC-20, ERC-721, ERC-1155).",
     parameters:
       base_params() ++
         [token_type_param(), limit_param()] ++
@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
         ]),
     responses: [
       ok:
-        {"Token transfers", "application/json",
+        {"List of token transfers with pagination information.", "application/json",
          paginated_response(
            items: Schemas.TokenTransfer,
            next_page_params_example: %{

@@ -139,11 +139,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   operation :transaction,
     summary: "Retrieve detailed information about a specific transaction",
-    description:
-      "Retrieves detailed information for a specific transaction, including token transfers, internal transactions, and metadata.",
+    description: "Retrieves detailed information for a specific transaction identified by its hash.",
     parameters: [transaction_hash_param() | base_params()],
     responses: [
-      ok: {"Transaction details", "application/json", Schemas.Transaction.Response},
+      ok: {"Detailed information about the specified transaction.", "application/json", Schemas.Transaction.Response},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -215,15 +214,15 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :transactions,
-    summary: "List transactions with optional filtering and sorting",
-    description: "Retrieves a paginated list of transactions with optional filtering and sorting options.",
+    summary: "List blockchain transactions with filtering options for status, type, and method",
+    description: "Retrieves a paginated list of transactions with optional filtering by status, type, and method.",
     parameters:
       base_params() ++
         [transaction_filter_param()] ++
         define_paging_params(["block_number", "index", "items_count", "hash", "inserted_at"]),
     responses: [
       ok:
-        {"List of transactions", "application/json",
+        {"List of transactions with pagination information.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
@@ -272,7 +271,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     parameters: [batch_number_param() | base_params()],
     responses: [
       ok:
-        {"Polygon ZkEVM batch transactions", "application/json",
+        {"Polygon ZkEVM batch transactions.", "application/json",
          %Schema{
            title: "PolygonZkEVMBatchTransactions",
            type: :object,
@@ -317,7 +316,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         [batch_number_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"ZkSync batch transactions", "application/json",
+        {"ZkSync batch transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
@@ -347,7 +346,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         [batch_number_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"Arbitrum batch transactions", "application/json",
+        {"Arbitrum batch transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
@@ -376,7 +375,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     parameters: [transaction_hash_param() | base_params()],
     responses: [
       ok:
-        {"Linked external transactions", "application/json",
+        {"Linked external transactions.", "application/json",
          %Schema{type: :array, items: %Schema{type: :string}, nullable: false}},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
@@ -418,7 +417,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         [batch_number_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"Optimism batch transactions", "application/json",
+        {"Optimism batch transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
@@ -453,7 +452,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         [batch_number_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"Scroll batch transactions", "application/json",
+        {"Scroll batch transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
@@ -583,7 +582,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       [execution_node_hash_param() | base_params()] ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"List of transactions", "application/json",
+        {"List of transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
@@ -626,12 +625,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :raw_trace,
-    summary: "Get raw trace for a transaction",
+    summary: "Get step-by-step execution trace for a specific transaction",
     description:
-      "Retrieves the raw trace for a specific transaction, including internal operations and execution details.",
+      "Retrieves the raw execution trace for a transaction, showing the step-by-step execution path and all contract interactions.",
     parameters: [transaction_hash_param() | base_params()],
     responses: [
-      ok: {"Raw trace for transaction", "application/json", Schemas.Transaction.RawTrace},
+      ok: {"Raw execution trace for the specified transaction.", "application/json", Schemas.Transaction.RawTrace},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -664,8 +663,9 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :token_transfers,
-    summary: "List token transfers for a transaction",
-    description: "Retrieves token transfers for a specific transaction.",
+    summary: "List token transfers within a specific transaction",
+    description:
+      "Retrieves token transfers that occurred within a specific transaction, with optional filtering by token type.",
     parameters:
       base_params() ++
         [transaction_hash_param(), token_type_param()] ++
@@ -679,7 +679,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         ]),
     responses: [
       ok:
-        {"Token transfers for transaction", "application/json",
+        {"Token transfers within the specified transaction, with pagination.", "application/json",
          paginated_response(
            items: Schemas.TokenTransfer,
            next_page_params_example: %{
@@ -730,14 +730,15 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :internal_transactions,
-    summary: "List internal transactions for a transaction",
-    description: "Retrieves internal transactions for a specific transaction.",
+    summary: "List internal transactions triggered during a specific transaction",
+    description:
+      "Retrieves internal transactions generated during the execution of a specific transaction. Useful for analyzing contract interactions and debugging failed transactions.",
     parameters:
       [transaction_hash_param() | base_params()] ++
         define_paging_params(["index", "block_number", "transaction_index", "items_count"]),
     responses: [
       ok:
-        {"Internal transactions for transaction", "application/json",
+        {"Internal transactions for the specified transaction, with pagination.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
            next_page_params_example: %{
@@ -782,14 +783,15 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :logs,
-    summary: "List logs for a transaction",
-    description: "Retrieves logs for a specific transaction.",
+    summary: "List event logs emitted during a specific transaction",
+    description:
+      "Retrieves event logs emitted during the execution of a specific transaction. Logs contain information about contract events and state changes.",
     parameters:
       [transaction_hash_param() | base_params()] ++
         define_paging_params(["index", "block_number", "items_count"]),
     responses: [
       ok:
-        {"Logs for transaction", "application/json",
+        {"Event logs for the specified transaction, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Log,
            next_page_params_example: %{
@@ -837,13 +839,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :state_changes,
-    summary: "List state changes for a transaction",
-    description: "Retrieves state changes for a specific transaction.",
+    summary: "Get on-chain state changes caused by a specific transaction",
+    description: "Retrieves state changes (balance changes, token transfers) caused by a specific transaction.",
     parameters:
       [transaction_hash_param() | base_params()] ++ define_state_changes_paging_params(["state_changes", "items_count"]),
     responses: [
       ok: {
-        "State changes for transaction",
+        "State changes caused by the specified transaction, with pagination.",
         "application/json",
         paginated_response(
           items: Schemas.Transaction.StateChange,
@@ -891,7 +893,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     parameters: base_params() ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"Watchlist transactions", "application/json",
+        {"Watchlist transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
@@ -935,12 +937,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :summary,
-    summary: "Get interpreted summary for a transaction",
-    description: "Retrieves interpreted summary for a specific transaction.",
+    summary: "Get a human-readable, LLM-based transaction summary",
+    description: "Retrieves a human-readable summary of what a transaction did, presented in natural language.",
     parameters: base_params() ++ [transaction_hash_param(), just_request_body_param()],
     responses: [
       ok:
-        {"Transaction summary", "application/json",
+        {"Human-readable summary of the specified transaction.", "application/json",
          %Schema{
            anyOf: [
              Schemas.Transaction.Summary,
@@ -1010,7 +1012,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     parameters: [transaction_hash_param() | base_params()],
     responses: [
       ok:
-        {"Blobs for transaction", "application/json",
+        {"Blobs for transaction.", "application/json",
          %Schema{
            title: "TransactionBlobs",
            type: :object,
@@ -1046,7 +1048,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     description: "Retrieves statistics for transactions, including counts and fee summaries for the last 24 hours.",
     responses: [
       ok:
-        {"Transaction statistics", "application/json",
+        {"Transaction statistics.", "application/json",
          %Schema{
            type: :object,
            properties: %{
@@ -1095,7 +1097,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     parameters: [transaction_hash_param() | base_params()] ++ define_paging_params(["index", "items_count"]),
     responses: [
       ok:
-        {"Beacon deposits for transaction", "application/json",
+        {"Beacon deposits for transaction.", "application/json",
          paginated_response(
            items: Schemas.Beacon.Deposit.Response,
            next_page_params_example: %{
