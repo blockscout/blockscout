@@ -229,7 +229,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
     EthereumJSONRPC.RSK,
     EthereumJSONRPC.Filecoin
   ]
-  defp block_traceable_variants do
+  @doc """
+  Returns the list of JSON-RPC variants that support block-traceable internal transactions.
+  """
+  @spec block_traceable_variants() :: [module()]
+  def block_traceable_variants do
     if Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)[:block_traceable?] do
       [EthereumJSONRPC.Geth | @default_block_traceable_variants]
     else
@@ -326,7 +330,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   # TODO: should we cover this with tests?
   @zetachain_non_traceable_type 88
-  defp filter_non_traceable_transactions(transactions) do
+  @doc """
+  Filters out transactions that are known to not have traceable internal transactions.
+  """
+  @spec filter_non_traceable_transactions([Transaction.t()]) :: [Transaction.t()]
+  def filter_non_traceable_transactions(transactions) do
     case Application.get_env(:explorer, :chain_type) do
       :zetachain -> Enum.reject(transactions, &(&1.type == @zetachain_non_traceable_type))
       :zilliqa -> Enum.reject(transactions, &ZilliqaHelper.scilla_transaction?/1)
