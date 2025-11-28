@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.OptimismController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   require Logger
 
@@ -66,6 +67,29 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   def transaction_batches_count(conn, _params) do
     items_count(conn, TransactionBatch)
   end
+
+  operation :batches,
+    summary: "List batches",
+    description: "Retrieves a paginated list of batches.",
+    parameters:
+      base_params() ++
+        define_paging_params([
+          "id",
+          "items_count"
+        ]),
+    responses: [
+      ok:
+        {"List of batches.", "application/json",
+         paginated_response(
+           items: Schemas.Optimism.Batch,
+           next_page_params_example: %{
+             "id" => 394_591,
+             "items_count" => 50
+           },
+           title_prefix: "Batches"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
   Function to handle GET requests to `/api/v2/optimism/batches` endpoint.
