@@ -507,7 +507,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         define_paging_params(["index", "items_count"]),
     responses: [
       ok:
-        {"Withdrawals in the specified block, with pagination. Note that block_number and timestamp fields are not included in this endpoint.", "application/json",
+        {"Withdrawals in the specified block, with pagination. Note that block_number and timestamp fields are not included in this endpoint.",
+         "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
            next_page_params_example: %{

@@ -34,7 +34,8 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     parameters: base_params(),
     responses: [
       ok:
-        {"CSV export limits.", "application/json", %Schema{type: :object, properties: %{limit: %Schema{type: :integer}}}},
+        {"CSV export limits.", "application/json",
+         %Schema{type: :object, properties: %{limit: %Schema{type: :integer}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 

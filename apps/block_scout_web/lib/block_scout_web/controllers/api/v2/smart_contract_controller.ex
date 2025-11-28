@@ -50,7 +50,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       "Retrieves detailed information about a specific verified smart contract, including source code, ABI, and deployment details.",
     parameters: [address_hash_param() | base_params()],
     responses: [
-      ok: {"Detailed information about the specified verified smart contract.", "application/json", Schemas.SmartContract}
+      ok:
+        {"Detailed information about the specified verified smart contract.", "application/json", Schemas.SmartContract}
     ]
 
   @doc """
