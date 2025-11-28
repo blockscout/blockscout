@@ -106,11 +106,11 @@ defmodule Explorer.Market.Source.CryptoRankTest do
   end
 
   describe "tokens_fetching_enabled?" do
-    test "returns true if coin_id is configured" do
+    test "returns true if platform is configured" do
       assert CryptoRank.tokens_fetching_enabled?()
     end
 
-    test "returns false if coin_id is not configured", %{old_env: old_env} do
+    test "returns false if platform is not configured", %{old_env: old_env} do
       Application.put_env(:explorer, CryptoRank, Keyword.merge(old_env, platform: nil))
 
       refute CryptoRank.tokens_fetching_enabled?()

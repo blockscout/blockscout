@@ -105,7 +105,7 @@ defmodule Indexer.Memory.Monitor do
     default_limit = 1 <<< 30
 
     percentage =
-      case Application.get_env(:explorer, :mode) do
+      case Explorer.mode() do
         :indexer -> 100
         _ -> Application.get_env(:indexer, :system_memory_percentage)
       end

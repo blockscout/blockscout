@@ -242,7 +242,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       addresses = insert_transactions_in_last_seconds(55, 10800)
 
       addresses =
-        Enum.map(addresses, fn addr -> to_string(addr.hash) end) |> dbg(limit: :infinity, printable_limit: :infinity)
+        Enum.map(addresses, fn addr -> to_string(addr.hash) end)
 
       request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "3h"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
@@ -250,7 +250,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       assert is_map(next_page_params)
 
       request = get(conn, "/api/v2/stats/hot-smart-contracts", Map.merge(next_page_params, %{scale: "3h"}))
-      assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200) |> dbg()
+      assert %{"items" => items, "next_page_params" => nil} = json_response(request, 200)
       assert length(items) == 5
     end
 

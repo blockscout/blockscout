@@ -292,6 +292,15 @@ defmodule Explorer.Chain.Address.TokenTest do
   end
 
   describe "page_tokens/2" do
+    setup do
+      initial_value = :persistent_term.get(:market_token_fetcher_enabled, false)
+      :persistent_term.put(:market_token_fetcher_enabled, true)
+
+      on_exit(fn ->
+        :persistent_term.put(:market_token_fetcher_enabled, initial_value)
+      end)
+    end
+
     test "just bring the normal query when PagingOptions.key is nil" do
       options = %PagingOptions{key: nil}
 

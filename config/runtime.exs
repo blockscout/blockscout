@@ -401,7 +401,7 @@ config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime,
   num_of_blocks: ConfigHelper.parse_integer_env_var("CACHE_AVERAGE_BLOCK_TIME_WINDOW", 100)
 
 config :explorer, Explorer.Market.MarketHistoryCache,
-  cache_period: ConfigHelper.parse_time_env_var("CACHE_MARKET_HISTORY_PERIOD", "6h")
+  cache_period: ConfigHelper.parse_time_env_var("CACHE_MARKET_HISTORY_PERIOD", "1h")
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_COUNTER_PERIOD", "1h")
@@ -426,6 +426,8 @@ config :explorer, Explorer.Chain.Cache.Counters.NewPendingTransactionsCount,
   enabled: true,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_FRESH_PENDING_TRANSACTIONS_COUNTER_PERIOD", "5m"),
   enable_consolidation: true
+
+config :explorer, Explorer.Market, enabled: !disable_exchange_rates?
 
 config :explorer, Explorer.Market.Source,
   native_coin_source:
@@ -507,6 +509,12 @@ config :explorer, Explorer.Market.Source.Mobula,
   coin_id: System.get_env("MARKET_MOBULA_COIN_ID") || System.get_env("EXCHANGE_RATES_MOBULA_COIN_ID"),
   secondary_coin_id:
     System.get_env("MARKET_MOBULA_SECONDARY_COIN_ID") || System.get_env("EXCHANGE_RATES_MOBULA_SECONDARY_COIN_ID")
+
+config :explorer, Explorer.Market.Source.DIA,
+  blockchain: System.get_env("MARKET_DIA_BLOCKCHAIN"),
+  base_url: System.get_env("MARKET_DIA_BASE_URL", "https://api.diadata.org/v1"),
+  coin_address_hash: System.get_env("MARKET_DIA_COIN_ADDRESS_HASH"),
+  secondary_coin_address_hash: System.get_env("MARKET_DIA_SECONDARY_COIN_ADDRESS_HASH")
 
 config :explorer, Explorer.Market.Fetcher.Coin,
   store: :ets,
