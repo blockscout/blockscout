@@ -11,9 +11,7 @@ defmodule Explorer.Market.Source.DIATest do
     bypass = Bypass.open()
     old_env = Application.get_env(:explorer, DIA, [])
 
-    Application.put_env(
-      :explorer,
-      DIA,
+    new_env =
       Keyword.merge(
         old_env,
         blockchain: "Ethereum",
@@ -21,6 +19,11 @@ defmodule Explorer.Market.Source.DIATest do
         coin_address_hash: "0x0000000000000000000000000000000000000000",
         secondary_coin_address_hash: "0x0000000000000000000000000000000000000001"
       )
+
+    Application.put_env(
+      :explorer,
+      DIA,
+      new_env
     )
 
     Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
@@ -30,16 +33,16 @@ defmodule Explorer.Market.Source.DIATest do
       Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
     end)
 
-    {:ok, old_env: old_env, bypass: bypass}
+    {:ok, env: new_env, bypass: bypass}
   end
 
   describe "native_coin_fetching_enabled?" do
-    test "returns true if coin_id is configured" do
+    test "returns true if coin_address_hash is configured" do
       assert DIA.native_coin_fetching_enabled?()
     end
 
-    test "returns false if coin_id is not configured", %{old_env: old_env} do
-      Application.put_env(:explorer, DIA, Keyword.merge(old_env, coin_address_hash: nil))
+    test "returns false if coin_address_hash is not configured", %{env: env} do
+      Application.put_env(:explorer, DIA, Keyword.merge(env, coin_address_hash: nil))
       refute DIA.native_coin_fetching_enabled?()
     end
   end
@@ -78,12 +81,12 @@ defmodule Explorer.Market.Source.DIATest do
   end
 
   describe "secondary_coin_fetching_enabled?" do
-    test "returns true if secondary_coin_id is configured" do
+    test "returns true if secondary_coin_address_hash is configured" do
       assert DIA.secondary_coin_fetching_enabled?()
     end
 
-    test "returns false if secondary_coin_id is not configured", %{old_env: old_env} do
-      Application.put_env(:explorer, DIA, Keyword.merge(old_env, secondary_coin_id: nil))
+    test "returns false if secondary_coin_address_hash is not configured", %{env: env} do
+      Application.put_env(:explorer, DIA, Keyword.merge(env, secondary_coin_address_hash: nil))
 
       refute DIA.secondary_coin_fetching_enabled?()
     end
@@ -127,8 +130,8 @@ defmodule Explorer.Market.Source.DIATest do
       assert DIA.tokens_fetching_enabled?()
     end
 
-    test "returns false if blockchain is not configured", %{old_env: old_env} do
-      Application.put_env(:explorer, DIA, Keyword.merge(old_env, blockchain: nil))
+    test "returns false if blockchain is not configured", %{env: env} do
+      Application.put_env(:explorer, DIA, Keyword.merge(env, blockchain: nil))
 
       refute DIA.tokens_fetching_enabled?()
     end
@@ -218,8 +221,8 @@ defmodule Explorer.Market.Source.DIATest do
       assert DIA.native_coin_price_history_fetching_enabled?()
     end
 
-    test "returns false if coin_address_hash is not configured", %{old_env: old_env} do
-      Application.put_env(:explorer, DIA, Keyword.merge(old_env, coin_address_hash: nil))
+    test "returns false if coin_address_hash is not configured", %{env: env} do
+      Application.put_env(:explorer, DIA, Keyword.merge(env, coin_address_hash: nil))
 
       refute DIA.native_coin_price_history_fetching_enabled?()
     end
@@ -280,12 +283,12 @@ defmodule Explorer.Market.Source.DIATest do
   end
 
   describe "secondary_coin_price_history_fetching_enabled?" do
-    test "returns true if secondary_coin_id is configured" do
+    test "returns true if secondary_coin_address_hash is configured" do
       assert DIA.secondary_coin_price_history_fetching_enabled?()
     end
 
-    test "returns false if secondary_coin_id is not configured", %{old_env: old_env} do
-      Application.put_env(:explorer, DIA, Keyword.merge(old_env, secondary_coin_id: nil))
+    test "returns false if secondary_coin_address_hash is not configured", %{env: env} do
+      Application.put_env(:explorer, DIA, Keyword.merge(env, secondary_coin_address_hash: nil))
       refute DIA.secondary_coin_price_history_fetching_enabled?()
     end
   end
