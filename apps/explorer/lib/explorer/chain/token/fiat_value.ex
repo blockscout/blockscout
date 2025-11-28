@@ -28,6 +28,7 @@ defmodule Explorer.Chain.Token.FiatValue do
     {:ok, Decimal.new(value)}
   end
 
+  @impl Ecto.Type
   def cast(value) when is_float(value) do
     {:ok, Decimal.from_float(value)}
   end
