@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     parameters: base_params(),
     responses: [
       ok:
-        {"Backend version", "application/json",
+        {"Backend version.", "application/json",
          %Schema{type: :object, properties: %{backend_version: %Schema{type: :string, nullable: true}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -34,7 +34,8 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     parameters: base_params(),
     responses: [
       ok:
-        {"CSV export limits", "application/json", %Schema{type: :object, properties: %{limit: %Schema{type: :integer}}}},
+        {"CSV export limits.", "application/json",
+         %Schema{type: :object, properties: %{limit: %Schema{type: :integer}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -52,7 +53,7 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     parameters: base_params(),
     responses: [
       ok:
-        {"Public metrics config", "application/json",
+        {"Public metrics config.", "application/json",
          %Schema{type: :object, properties: %{update_period_hours: %Schema{type: :integer}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -72,7 +73,7 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     parameters: base_params(),
     responses: [
       ok:
-        {"Celo config", "application/json",
+        {"Celo config.", "application/json",
          %Schema{type: :object, properties: %{l2_migration_block: %Schema{type: :integer, nullable: true}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -91,7 +92,7 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     parameters: base_params(),
     responses: [
       ok:
-        {"Smart contract languages", "application/json",
+        {"Smart contract languages.", "application/json",
          %OpenApiSpex.Schema{
            type: :object,
            properties: %{
