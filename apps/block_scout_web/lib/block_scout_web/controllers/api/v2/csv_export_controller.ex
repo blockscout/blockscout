@@ -3,11 +3,11 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   use OpenApiSpex.ControllerSpecs
 
   alias BlockScoutWeb.AccessHelper
+  alias BlockScoutWeb.CsvExport.Address.InternalTransactions, as: AddressInternalTransactionsCsvExporter
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Chain
   alias Explorer.Chain.Address
   alias Explorer.Chain.Address.CurrentTokenBalance
-  alias Explorer.Chain.CsvExport.Address.InternalTransactions, as: AddressInternalTransactionsCsvExporter
   alias Explorer.Chain.CsvExport.Address.Logs, as: AddressLogsCsvExporter
   alias Explorer.Chain.CsvExport.Address.TokenTransfers, as: AddressTokenTransfersCsvExporter
   alias Explorer.Chain.CsvExport.Address.Transactions, as: AddressTransactionsCsvExporter
