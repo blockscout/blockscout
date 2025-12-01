@@ -101,7 +101,7 @@ defmodule BlockScoutWeb.SmartContractController do
   defp implementation_address_hash(contract_type, address) do
     if contract_type == "proxy" do
       implementation = Implementation.get_implementation(address.smart_contract)
-      (implementation && implementation.address_hashes |> List.first()) || burn_address_hash_string()
+      (implementation && (implementation.address_hashes || []) |> List.first()) || burn_address_hash_string()
     else
       burn_address_hash_string()
     end
