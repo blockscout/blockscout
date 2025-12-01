@@ -19,7 +19,7 @@
 - Fix filecoin web tests ([#13634](https://github.com/blockscout/blockscout/issues/13634))
 - Fix dialyzer test for filecoin chain type ([#13623](https://github.com/blockscout/blockscout/issues/13623))
 - Handle deposit status statement too complex ([#13588](https://github.com/blockscout/blockscout/issues/13588))
-- Beacon deposits: fallback to node ([#13425](https://github.com/blockscout/blockscout/issues/13425))
+- Beacon deposits: fallback to node ([#13425](https://github.com/blockscout/blockscout/issues/13425), [#13656](https://github.com/blockscout/blockscout/pull/13656))
 - Fix logic of disable token exchange rate ([#13414](https://github.com/blockscout/blockscout/issues/13414))
 - Null-checks for distribution field in celo epochs api ([#13457](https://github.com/blockscout/blockscout/issues/13457))
 - Reset ResetSanitizeDuplicatedLogsMigration status ([#13556](https://github.com/blockscout/blockscout/issues/13556))
