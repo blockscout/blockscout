@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.API.V2.AddressController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
+  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity], chain_type: [:explorer, :chain_type]
   use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
   use OpenApiSpex.ControllerSpecs
 
@@ -192,7 +192,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, address} ->
-          fully_preloaded_address =
+          %Address{} =
+            fully_preloaded_address =
             Address.maybe_preload_smart_contract_associations(address, contract_address_preloads(), @api_true)
 
           implementations = SmartContractHelper.pre_fetch_implementations(fully_preloaded_address)
@@ -236,7 +237,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       "Retrieves count statistics for an address, including transactions, token transfers, gas usage, and validations.",
     parameters: [address_hash_param() | base_params()],
     responses: [
-      ok: {"Count statistics for the specified address", "application/json", Schemas.Address.Counters},
+      ok: {"Count statistics for the specified address.", "application/json", Schemas.Address.Counters},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
     ]
@@ -283,10 +284,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  if @chain_type == :zilliqa do
+    @token_balances_operation_description "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155, ERC-404, and ZRC-2 tokens."
+  else
+    @token_balances_operation_description "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155, and ERC-404 tokens."
+  end
+
   operation :token_balances,
     summary: "List all token balances held by a specific address",
-    description:
-      "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155 and ERC-404 tokens.",
+    description: @token_balances_operation_description,
     parameters: [address_hash_param() | base_params()],
     responses: [
       ok:
@@ -1474,7 +1480,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     ]
 
   @doc """
-  Handles `api/v2/addresses/:address_hash/beacon/deposits` endpoint.
+  Handles `api/v2/addresses/:address_hash_param/beacon/deposits` endpoint.
   Fetches beacon deposits for a given address with pagination support.
 
   This endpoint retrieves all beacon deposits originating from the specified

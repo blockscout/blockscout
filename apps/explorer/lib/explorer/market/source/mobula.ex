@@ -66,7 +66,10 @@ defmodule Explorer.Market.Source.Mobula do
           end
         end)
 
-      {:ok, offset + batch_size, initial_tokens_len < batch_size, tokens_to_import}
+      fetch_finished? = initial_tokens_len < batch_size
+      new_state = if fetch_finished?, do: nil, else: offset + batch_size
+
+      {:ok, new_state, fetch_finished?, tokens_to_import}
     else
       nil -> {:error, "Platform ID not specified"}
       {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("Mobula", unexpected_response)}

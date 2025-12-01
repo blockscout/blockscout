@@ -1,5 +1,81 @@
 # Changelog
 
+## 9.3.0
+
+### 🚀 Features
+
+- Add DIA market source ([#12678](https://github.com/blockscout/blockscout/issues/12678))
+- Add metadata to eth bytecode DB lookup request ([#13625](https://github.com/blockscout/blockscout/issues/13625))
+- Support ZRC-2 tokens for `zilliqa` chain type ([#13443](https://github.com/blockscout/blockscout/issues/13443))
+- Indexer monitor Prometheus metrics ([#13539](https://github.com/blockscout/blockscout/issues/13539))
+- Hot smart-contracts ([#13471](https://github.com/blockscout/blockscout/issues/13471))
+- Support OP Jovian upgrade, other enhancements ([#13538](https://github.com/blockscout/blockscout/issues/13538))
+- Scope celo under optimism chain type ([#13375](https://github.com/blockscout/blockscout/issues/13375))
+
+### 🐛 Bug Fixes
+
+- `Mix.env()` in `runtime.exs` ([#13641](https://github.com/blockscout/blockscout/issues/13641))
+- Celo aggregated election rewards migrator test ([#13639](https://github.com/blockscout/blockscout/issues/13639))
+- Fix filecoin web tests ([#13634](https://github.com/blockscout/blockscout/issues/13634))
+- Fix dialyzer test for filecoin chain type ([#13623](https://github.com/blockscout/blockscout/issues/13623))
+- Handle deposit status statement too complex ([#13588](https://github.com/blockscout/blockscout/issues/13588))
+- Beacon deposits: fallback to node ([#13425](https://github.com/blockscout/blockscout/issues/13425), [#13656](https://github.com/blockscout/blockscout/pull/13656))
+- Fix logic of disable token exchange rate ([#13414](https://github.com/blockscout/blockscout/issues/13414))
+- Null-checks for distribution field in celo epochs api ([#13457](https://github.com/blockscout/blockscout/issues/13457))
+- Reset ResetSanitizeDuplicatedLogsMigration status ([#13556](https://github.com/blockscout/blockscout/issues/13556))
+- Duplicated block numbers in int txs queue ([#13554](https://github.com/blockscout/blockscout/issues/13554))
+- Fix coin balance history - related normalize_balances_by_day/2 function ([#13515](https://github.com/blockscout/blockscout/issues/13515))
+
+### 📚 Documentation
+
+- Update API endpoints descriptions in OpenAPI ([#13647](https://github.com/blockscout/blockscout/issues/13647))
+
+### ⚡ Performance
+
+- Implement celo aggregated election rewards ([#13418](https://github.com/blockscout/blockscout/issues/13418))
+
+### ⚙️ Miscellaneous Tasks
+
+- Use chain id `31337` for `anvil` ([#13644](https://github.com/blockscout/blockscout/issues/13644))
+- Update devcontainer image to use Elixir 1.19.4 ([#13645](https://github.com/blockscout/blockscout/issues/13645))
+- Elixir 1.19.3 -> 1.19.4 ([#13643](https://github.com/blockscout/blockscout/issues/13643))
+- Update devcontainer image to use Elixir 1.19 ([#13637](https://github.com/blockscout/blockscout/issues/13637))
+- Internal transaction, Token transfer, Withdrawal, Smart-contracts, Main Page, Stats, Config and Search controllers OpenAPI specs ([#13557](https://github.com/blockscout/blockscout/issues/13557))
+- Using own runner for build ([#13624](https://github.com/blockscout/blockscout/issues/13624))
+- Drop token_instances_token_id_index index ([#13598](https://github.com/blockscout/blockscout/issues/13598))
+- Add migration to drop unique tokens_contract_address_hash_index index ([#13596](https://github.com/blockscout/blockscout/issues/13596), [#13655](https://github.com/blockscout/blockscout/pull/13655))
+- Elixir 1.17 -> 1.19 ([#13566](https://github.com/blockscout/blockscout/issues/13566))
+- Handle `NativeCoin*ed` events on Arc chain to make dual token balances synced ([#13452](https://github.com/blockscout/blockscout/issues/13452))
+- Improve DeleteZeroValueInternalTransactions migration ([#13569](https://github.com/blockscout/blockscout/issues/13569))
+- Remove address-related props from sending to multichain service ([#13584](https://github.com/blockscout/blockscout/issues/13584))
+- Move not auth cookies to headers ([#13478](https://github.com/blockscout/blockscout/issues/13478))
+- Transaction controller OpenAPI spec ([#13419](https://github.com/blockscout/blockscout/issues/13419))
+- Increase genesis file content fetch timeout ([#13527](https://github.com/blockscout/blockscout/issues/13527))
+
+### New ENV variables
+| Variable              | Description                                                                                                                                                      | Parameters                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `INDEXER_DISABLE_HOT_SMART_CONTRACTS_FETCHER`                 | If `true`, `Indexer.Fetcher.Stats.HotSmartContracts` won't be started. Implemented in [#13471](https://github.com/blockscout/blockscout/pull/13471).                                                                                                                                                                                                                                                                                                                                                                             | Version: v9.3.0\+ <br />Default: `false` <br />Applications: Indexer                                        |
+| `MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_ENABLED`      | Enable of delete zero-value calls migration. Implemented in [#13305](https://github.com/blockscout/blockscout/pull/13305). | Version: v9.3.0\+ <br />Default: `false` <br />Applications: Indexer |
+| `MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_BATCH_SIZE`   | Specifies the block batch size selected for the delete zero-value calls migration. Implemented in [#13305](https://github.com/blockscout/blockscout/pull/13305). | Version: v9.3.0\+ <br />Default: `100` <br />Applications: Indexer |
+| `MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_STORAGE_PERIOD_DAYS` | Specifies the period for which recent zero-value calls won't be deleted in delete zero-value calls migration. Implemented in [#13305](https://github.com/blockscout/blockscout/pull/13305). | Version: v9.3.0\+ <br />Default: `30` <br />Applications: Indexer |
+| `MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_CHECK_INTERVAL` | Specifies the interval between checking of new zero-value calls to be deleted in delete zero-value calls migration. Implemented in [#13305](https://github.com/blockscout/blockscout/pull/13305). | Version: v9.3.0\+ <br />Default: `1m` <br />Applications: Indexer |
+| `MARKET_DIA_BLOCKCHAIN`                      | Sets DIA platform from https://www.diadata.org/docs/reference/apis/token-prices/api-endpoints/blockchains. Implemented in [#12678](https://github.com/blockscout/blockscout/pull/12678).                                                                                                                             | Version: v9.3.0\+ <br />Default: (empty) <br />Applications: Indexer                                     |
+| `MARKET_DIA_BASE_URL`                        | If set, overrides the DIA API url. Implemented in [#12678](https://github.com/blockscout/blockscout/pull/12678).                                                                                                                                                                                                     | Version: v9.3.0\+ <br />Default: `https://api.diadata.org/v1` <br />Applications: API, Indexer           |
+| `MARKET_DIA_COIN_ADDRESS_HASH`               | Sets address hash for native coin in DIA. Implemented in [#12678](https://github.com/blockscout/blockscout/pull/12678).                                                                                                                                                                                              | Version: v9.3.0\+ <br />Default: (empty) <br />Applications: API                                         |
+| `MARKET_DIA_SECONDARY_COIN_ADDRESS_HASH`     | Sets address hash for secondary coin in DIA. Implemented in [#12678](https://github.com/blockscout/blockscout/pull/12678).                                                                                                                                                                                           | Version: v9.3.0\+ <br />Default: (empty) <br />Applications: API                                         |
+| `INDEXER_METRICS_ENABLED`                                           | Flag to enable base indexer metrics. Implemented in [#13539](https://github.com/blockscout/blockscout/pull/13539).                                                      | Version: v9.3.0\+ <br />Default: true <br />Applications: Indexer   |
+| `INDEXER_METRICS_ENABLED_TOKEN_INSTANCES_NOT_UPLOADED_TO_CDN_COUNT` | Flag to enable indexer metric: the count of token instances not uploaded to CDN. Implemented in [#13539](https://github.com/blockscout/blockscout/pull/13539).          | Version: v9.3.0\+ <br />Default: false <br />Applications: Indexer  |
+| `INDEXER_METRICS_ENABLED_FAILED_TOKEN_INSTANCES_METADATA_COUNT`     | Flag to enable indexer metric: the count of token instances with failed metadata fetches. Implemented in [#13539](https://github.com/blockscout/blockscout/pull/13539). | Version: v9.3.0\+ <br />Default: true <br />Applications: Indexer   |
+| `INDEXER_METRICS_ENABLED_UNFETCHED_TOKEN_INSTANCES_COUNT`           | Flag to enable indexer metric: the count of token instances pending to fetch. Implemented in [#13539](https://github.com/blockscout/blockscout/pull/13539).             | Version: v9.3.0\+ <br />Default: true <br />Applications: Indexer   |
+| `INDEXER_METRICS_ENABLED_MISSING_CURRENT_TOKEN_BALANCES_COUNT`      | Flag to enable indexer metric: the count of current token balances with missing values. Implemented in [#13539](https://github.com/blockscout/blockscout/pull/13539).   | Version: v9.3.0\+ <br />Default: true <br />Applications: Indexer   |
+| `INDEXER_METRICS_ENABLED_MISSING_ARCHIVAL_TOKEN_BALANCES_COUNT`     | Flag to enable indexer metric: the count of archival token balances with missing values. Implemented in [#13539](https://github.com/blockscout/blockscout/pull/13539).  | Version: v9.3.0\+ <br />Default: true <br />Applications: Indexer   |
+| `INDEXER_OPTIMISM_L2_JOVIAN_TIMESTAMP`               | Jovian upgrade L2 block timestamp. If set to `0`, the Jovian is assumed to be active from genesis block. Implemented in [#13538](https://github.com/blockscout/blockscout/pull/13538).                                                                                                                                                                                                                                                                                                                                                                                        | Version: v9.3.0+ <br />Default: (empty) <br />Applications: API, Indexer                                 |
+| `INDEXER_ARC_NATIVE_TOKEN_DECIMALS`        | Defines the number of decimals for Arc chain native token (e.g. USDC). Implemented in [#13452](https://github.com/blockscout/blockscout/pull/13452).    | Version: v9.3.0+ <br />Default: `6` <br />Applications: Indexer                                          |
+| `INDEXER_ARC_NATIVE_TOKEN_CONTRACT`        | Arc chain native token contract address. Implemented in [#13452](https://github.com/blockscout/blockscout/pull/13452).                                  | Version: v9.3.0+ <br />Default: `0x3600000000000000000000000000000000000000` <br />Applications: Indexer |
+| `INDEXER_ARC_NATIVE_TOKEN_SYSTEM_CONTRACT` | Arc chain system contract address emitting `NativeCoinTransferred` event. Implemented in [#13452](https://github.com/blockscout/blockscout/pull/13452). | Version: v9.3.0+ <br />Default: `0x1800000000000000000000000000000000000000` <br />Applications: Indexer |
+
+
 ## 9.2.2
 
 ### 🐛 Bug Fixes

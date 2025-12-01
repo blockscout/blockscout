@@ -15,15 +15,11 @@ defmodule EthereumJSONRPC.MixProject do
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer_ignore.exs"
       ],
-      elixir: "~> 1.17",
+      elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
-      preferred_cli_env: [
-        credo: :test,
-        dialyzer: :test
-      ],
       start_permanent: Mix.env() == :prod,
-      version: "9.2.2"
+      version: "9.3.0"
     ]
   end
 
@@ -33,6 +29,10 @@ defmodule EthereumJSONRPC.MixProject do
       mod: {EthereumJSONRPC.Application, []},
       extra_applications: [:logger, :tesla]
     ]
+  end
+
+  def cli do
+    [preferred_envs: [credo: :test, dialyzer: :test]]
   end
 
   defp aliases(env) do
@@ -67,6 +67,7 @@ defmodule EthereumJSONRPC.MixProject do
       {:jason, "~> 1.3"},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
+      {:logger_json, "~> 7.0"},
       # Mocking `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` so we avoid hitting real chains for local testing
       {:mox, "~> 1.1.0", only: [:test]},
       {:prometheus_ex, "~> 5.0.0", override: true},
@@ -86,9 +87,8 @@ defmodule EthereumJSONRPC.MixProject do
       {:decorator, "~> 1.4"},
       {:hackney, "~> 1.18"},
       {:poolboy, "~> 1.5.2"},
-      {:logger_json, "~> 5.1"},
       {:utils, in_umbrella: true},
-      {:websockex, "~> 0.4.3"}
+      {:websockex, "~> 0.5.0"}
     ]
   end
 end

@@ -7,15 +7,11 @@ defmodule BlockScout.Mixfile do
     [
       # app: :block_scout,
       # aliases: aliases(config_env()),
-      version: "9.2.2",
+      version: "9.3.0",
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
-      elixir: "~> 1.17",
-      preferred_cli_env: [
-        credo: :test,
-        dialyzer: :test
-      ],
+      elixir: "~> 1.19",
       # start_permanent: config_env() == :prod,
       releases: [
         blockscout: [
@@ -32,6 +28,10 @@ defmodule BlockScout.Mixfile do
         ]
       ]
     ]
+  end
+
+  def cli do
+    [preferred_envs: [credo: :test, dialyzer: :test]]
   end
 
   ## Private Functions

@@ -5,9 +5,8 @@ defmodule BlockScoutWeb.API.V2.FilecoinView do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   if @chain_type == :filecoin do
-    # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
-    alias Explorer.Chain, warn: false
-    alias Explorer.Chain.Address, warn: false
+    alias Explorer.Chain
+    alias Explorer.Chain.Address
 
     @api_true [api?: true]
 

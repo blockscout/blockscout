@@ -63,7 +63,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
     {:ok, state}
   end
 
-  defp new(%{block_fetcher: common_block_fetcher} = named_arguments) do
+  defp new(%{block_fetcher: %Block.Fetcher{} = common_block_fetcher} = named_arguments) do
     block_fetcher = %Block.Fetcher{common_block_fetcher | broadcast: :catchup, callback_module: Catchup.Fetcher}
 
     block_interval = Map.get(named_arguments, :block_interval, @block_interval)

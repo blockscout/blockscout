@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
-  alias Explorer.{Chain, Helper, PagingOptions}
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Explorer.Migrator.BackfillMetadataURL
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
@@ -50,7 +50,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   operation :token,
     summary: "Retrieve detailed information about a specific token",
-    description: "Retrieves detailed information for a specific token, including metadata and statistics.",
+    description: "Retrieves detailed information for a specific token identified by its contract address.",
     parameters: [address_hash_param() | base_params()],
     responses: [
       ok: {"Detailed information about the specified token.", "application/json", Schemas.Token.Response},
@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param` endpoint.
   """
   @spec token(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def token(conn, %{address_hash_param: address_hash_string} = params) do
@@ -99,17 +99,17 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :counters,
-    summary: "Get activity count stats for a specific token",
-    description: "Retrieves count statistics for a token, including transfers, holders, and other metrics.",
+    summary: "Get holder and transfer count statistics for a specific token",
+    description: "Retrieves count statistics for a specific token, including holders count and transfers count.",
     parameters: [address_hash_param() | base_params()],
     responses: [
-      ok: {"Count statistics for the specified token", "application/json", Schemas.Token.Counters},
+      ok: {"Count statistics for the specified token.", "application/json", Schemas.Token.Counters},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param/counters` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/counters` endpoint.
   """
   @spec counters(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def counters(conn, %{address_hash_param: address_hash_string} = params) do
@@ -123,8 +123,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :transfers,
-    summary: "List token transfers for a specific token",
-    description: "Retrieves token transfers for a specific token, with optional filtering and pagination.",
+    summary: "List ownership transfer history for a specific NFT",
+    description: "Retrieves transfer history for a specific NFT instance, showing ownership changes over time.",
     parameters:
       base_params() ++
         [address_hash_param()] ++
@@ -138,7 +138,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         ]),
     responses: [
       ok:
-        {"List of token transfers.", "application/json",
+        {"Transfers of the specified token, with pagination.", "application/json",
          paginated_response(
            items: Schemas.TokenTransfer,
            next_page_params_example: %{
@@ -156,7 +156,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param/transfers` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/transfers` endpoint.
   """
   @spec transfers(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transfers(conn, %{address_hash_param: address_hash_string} = params) do
@@ -189,15 +189,16 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :holders,
-    summary: "List holders for a specific token",
-    description: "Retrieves holders for a specific token, with optional filtering and pagination.",
+    summary: "List addresses holding a specific token sorted by balance",
+    description:
+      "Retrieves addresses holding a specific token, sorted by balance. Useful for analyzing token distribution.",
     parameters:
       base_params() ++
         [address_hash_param()] ++
         define_paging_params(["address_hash_param", "value", "items_count"]),
     responses: [
       ok:
-        {"List of token holders.", "application/json",
+        {"Holders of the specified token, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Token.Holder,
            next_page_params_example: %{
@@ -212,7 +213,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param/holders` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/holders` endpoint.
   """
   @spec holders(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def holders(conn, %{address_hash_param: address_hash_string} = params) do
@@ -236,15 +237,16 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :instances,
-    summary: "List all instances of a specific token",
-    description: "Retrieves all instances of a specific token, including holders and balances.",
+    summary: "List individual NFT instances for a token contract",
+    description:
+      "Retrieves instances of NFTs for a specific token contract. This endpoint is primarily for ERC-721 and ERC-1155 tokens.",
     parameters:
       base_params() ++
         [address_hash_param(), holder_address_hash_param()] ++
         define_paging_params(["unique_token"]),
     responses: [
       ok:
-        {"List of token instances.", "application/json",
+        {"NFT instances for the specified token contract, with pagination.", "application/json",
          paginated_response(
            items: Schemas.TokenInstance,
            next_page_params_example: %{
@@ -257,7 +259,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param/instances` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances` endpoint.
   """
   @spec instances(Plug.Conn.t(), map()) :: Plug.Conn.t()
 
@@ -268,13 +270,14 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @token_options)},
-         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token) or Token.zrc_2_token?(token)},
          {:format, {:ok, holder_address_hash}} <- {:format, Chain.string_to_address_hash(holder_address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(holder_address_hash_string, params) do
-      holder_address = Address.get(holder_address_hash, @api_true)
-
       holder_address_with_proxy_implementations =
-        holder_address && %Address{holder_address | proxy_implementations: nil}
+        case Address.get(holder_address_hash, @api_true) do
+          %Address{} = holder_address -> %Address{holder_address | proxy_implementations: nil}
+          nil -> nil
+        end
 
       results_plus_one =
         Instance.token_instances_by_holder_address_hash(
@@ -333,8 +336,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :instance,
-    summary: "Get details for a specific token instance",
-    description: "Retrieves details for a specific token instance by token address and token ID.",
+    summary: "Retrieve detailed information about a specific NFT",
+    description:
+      "Retrieves detailed information about a specific NFT instance, identified by its token contract address and token ID.",
     parameters:
       base_params() ++
         [
@@ -342,26 +346,27 @@ defmodule BlockScoutWeb.API.V2.TokenController do
           token_id_param()
         ],
     responses: [
-      ok: {"Details for the token instance.", "application/json", Schemas.TokenInstance},
+      ok: {"Detailed information about the specified NFT instance.", "application/json", Schemas.TokenInstance},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
 
   @doc """
-  Handles GET requests to `/api/v2/tokens/:token_address_param/instances/:token_id_param` endpoint.
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param` endpoint.
   """
   @spec instance(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def instance(conn, %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @token_options)},
-         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token) or Token.zrc_2_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)},
          {:ok, token_instance} <-
            Instance.nft_instance_by_token_id_and_token_address(token_id, address_hash, @api_true) do
       fill_metadata_url_task = maybe_run_fill_metadata_url_task(token_instance, token)
 
-      token_instance =
+      %Instance{} =
+        token_instance =
         token_instance
         |> Chain.select_repo(@api_true).preload(owner: [:names, :smart_contract, proxy_implementations_association()])
         |> Instance.put_owner_to_token_instance(token, @api_true)
@@ -393,7 +398,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         define_paging_params(["index", "block_number", "token_id"]),
     responses: [
       ok:
-        {"List of token transfers for the instance.", "application/json",
+        {"Transfer history for the specified NFT instance, with pagination.", "application/json",
          paginated_response(
            items: Schemas.TokenTransfer,
            next_page_params_example: %{
@@ -407,6 +412,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       not_found: NotFoundResponse.response()
     ]
 
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param/transfers` endpoint.
+  """
+  @spec transfers_by_instance(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transfers_by_instance(
         conn,
         %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params
@@ -414,7 +423,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
-         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token) or Token.zrc_2_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)} do
       paging_options = paging_options(params)
 
@@ -441,15 +450,16 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :holders_by_instance,
-    summary: "List holders for a specific token instance",
-    description: "Retrieves holders for a specific token instance (by token address and token ID).",
+    summary: "List current holders of a specific NFT",
+    description:
+      "Retrieves current holders of a specific NFT instance. For ERC-721, this will typically be a single address. For ERC-1155, multiple addresses may hold the same token ID.",
     parameters:
       base_params() ++
         [address_hash_param(), token_id_param()] ++
         define_paging_params(["address_hash_param", "items_count", "token_id", "value"]),
     responses: [
       ok:
-        {"List of token holders for the instance.", "application/json",
+        {"Current holders of the specified NFT instance, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Token.Holder,
            next_page_params_example: %{
@@ -464,11 +474,15 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       not_found: NotFoundResponse.response()
     ]
 
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param/holders` endpoint.
+  """
+  @spec holders_by_instance(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def holders_by_instance(conn, %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
-         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token) or Token.zrc_2_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)} do
       paging_options = paging_options(params)
 
@@ -495,8 +509,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :transfers_count_by_instance,
-    summary: "Get transfer count for a specific token instance",
-    description: "Retrieves the number of transfers for a specific token instance (by token address and token ID).",
+    summary: "Get total number of ownership transfers for a specific NFT",
+    description:
+      "Retrieves the total number of transfers for a specific NFT instance. Useful for determining how frequently an NFT has changed hands.",
     parameters:
       base_params() ++
         [
@@ -505,12 +520,16 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         ],
     responses: [
       ok:
-        {"Transfer count for the instance.", "application/json",
-         %OpenApiSpex.Schema{type: :object, properties: %{transfers_count: %Schema{type: :integer}}}},
+        {"Total number of transfers for the specified NFT instance.", "application/json",
+         %Schema{type: :object, properties: %{transfers_count: %Schema{type: :integer}}}},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
 
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param/transfers-count` endpoint.
+  """
+  @spec transfers_count_by_instance(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transfers_count_by_instance(
         conn,
         %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params
@@ -518,7 +537,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
-         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token) or Token.zrc_2_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)} do
       conn
       |> put_status(200)
@@ -529,8 +548,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :tokens_list,
-    summary: "List tokens with optional filtering and sorting",
-    description: "Retrieves a paginated list of tokens with optional filtering and sorting.",
+    summary: "List tokens with optional filtering by name, symbol, or type",
+    description: "Retrieves a paginated list of tokens with optional filtering by name, symbol, or type.",
     parameters:
       base_params() ++
         [
@@ -551,7 +570,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         ]),
     responses: [
       ok:
-        {"List of tokens.", "application/json",
+        {"List of tokens matching the filter criteria, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Token,
            next_page_params_example: %{
@@ -568,6 +587,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
+  @doc """
+  Handles GET requests to `/api/v2/tokens` endpoint.
+  """
+  @spec tokens_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def tokens_list(conn, params) do
     filter = params[:q]
 
@@ -577,7 +600,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
                                                                         page_size: page_size
                                                                       } = paging_options ->
-        maybe_parsed_limit = Helper.parse_integer(params[:limit])
+        maybe_parsed_limit = params[:limit]
         %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
       end)
       |> Keyword.merge(token_transfers_types_options(params))
@@ -628,6 +651,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
+  @doc """
+  Handles GET requests to `/api/v2/tokens/bridged` endpoint.
+  """
+  @spec bridged_tokens_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def bridged_tokens_list(conn, params) do
     filter = params[:q]
 
@@ -648,8 +675,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :refetch_metadata,
-    summary: "Trigger metadata refetch for a specific token instance",
-    description: "Triggers a metadata refetch for a specific token instance (by token address and token ID).",
+    summary: "Trigger a refresh of metadata for a specific NFT",
+    description:
+      "Triggers a refresh of metadata for a specific NFT instance. Useful when the NFT's metadata has been updated but is not yet reflected in the BlockScout database.",
     parameters:
       base_params() ++
         [
@@ -659,12 +687,16 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         ],
     responses: [
       ok:
-        {"Metadata refetch triggered.", "application/json",
-         %OpenApiSpex.Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
+        {"Metadata refresh has been successfully initiated.", "application/json",
+         %Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
 
+  @doc """
+  Handles PATCH requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param/refetch-metadata` endpoint.
+  """
+  @spec refetch_metadata(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def refetch_metadata(
         conn,
         params
@@ -675,7 +707,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
-         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token) or Token.zrc_2_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)},
          {:ok, token_instance} <-
            Instance.nft_instance_by_token_id_and_token_address(token_id, address_hash, @api_true) do
@@ -700,11 +732,15 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     responses: [
       ok:
         {"NFT collection metadata refetch triggered.", "application/json",
-         %OpenApiSpex.Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
+         %Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
 
+  @doc """
+  Handles PATCH requests to `/api/v2/tokens/:address_hash_param/instances/refetch-metadata` endpoint.
+  """
+  @spec trigger_nft_collection_metadata_refetch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def trigger_nft_collection_metadata_refetch(
         conn,
         params
@@ -719,7 +755,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
-         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)} do
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token) or Token.zrc_2_token?(token)} do
       NFTCollectionMetadataRefetchOnDemand.trigger_refetch(ip, token)
 
       conn
@@ -752,13 +788,13 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   defp put_owner(token_instances, holder_address, holder_address_hash),
     do:
-      Enum.map(token_instances, fn token_instance ->
+      Enum.map(token_instances, fn %Instance{} = token_instance ->
         %Instance{token_instance | owner: holder_address, owner_address_hash: holder_address_hash}
       end)
 
   @spec put_token_to_instance(Instance.t(), Token.t()) :: Instance.t()
   defp put_token_to_instance(
-         token_instance,
+         %Instance{} = token_instance,
          token
        ) do
     %Instance{token_instance | token: token}

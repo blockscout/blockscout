@@ -12,12 +12,20 @@ defmodule BlockScoutWeb.PagingHelper do
   alias Explorer.Chain.InternalTransaction.Type, as: InternalTransactionType
   alias Explorer.Chain.{SmartContract, Transaction}
   alias Explorer.{Helper, PagingOptions, SortingHelper}
+  alias Explorer.Stats.HotSmartContracts
 
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
+  @allowed_base_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155", "ERC-404", "ERC-7984"]
+  if @chain_type == :zilliqa do
+    @allowed_chain_type_token_transfer_type_labels ["ZRC-2"]
+  else
+    @allowed_chain_type_token_transfer_type_labels []
+  end
 
-  @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155", "ERC-404", "ERC-7984"]
+  @allowed_token_transfer_type_labels @allowed_base_token_transfer_type_labels ++
+                                        @allowed_chain_type_token_transfer_type_labels
   @allowed_nft_type_labels ["ERC-721", "ERC-1155", "ERC-404"]
   @allowed_chain_id [1, 56, 99]
   @allowed_stability_validators_states ["active", "probation", "inactive"]
@@ -257,6 +265,7 @@ defmodule BlockScoutWeb.PagingHelper do
       :block_hash_or_number_param,
       :transaction_hash_param,
       :batch_number_param,
+      :scale,
       :token_id_param,
       :token_id,
       :type,
@@ -283,7 +292,24 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def delete_parameters_from_next_page_params(_), do: nil
 
+  def delete_items_count_from_next_page_params(params) when is_map(params) do
+    params
+    |> Map.drop(["items_count"])
+  end
+
+  def delete_items_count_from_next_page_params(other), do: other
+
+  # todo: it is used in the old UI only, consider removing it later
   def current_filter(%{"filter" => language_string}) do
+    SmartContract.language_string_to_atom()
+    |> Map.fetch(language_string)
+    |> case do
+      {:ok, language} -> [filter: language]
+      :error -> []
+    end
+  end
+
+  def current_filter(%{filter: language_string}) do
     SmartContract.language_string_to_atom()
     |> Map.fetch(language_string)
     |> case do
@@ -300,9 +326,16 @@ defmodule BlockScoutWeb.PagingHelper do
     [search: search_string]
   end
 
+  # todo: it is used in the old UI only, consider removing it later
   def search_query(%{"q" => ""}), do: []
 
   def search_query(%{"q" => search_string}) do
+    [search: search_string]
+  end
+
+  def search_query(%{q: ""}), do: []
+
+  def search_query(%{q: search_string}) do
     [search: search_string]
   end
 
@@ -446,4 +479,56 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_addresses_sorting("transactions_count", "asc"), do: [asc_nulls_first: :transactions_count]
   defp do_addresses_sorting("transactions_count", "desc"), do: [desc_nulls_last: :transactions_count]
   defp do_addresses_sorting(_, _), do: []
+
+  @spec hot_smart_contracts_sorting(%{sort: String.t(), order: String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
+  def hot_smart_contracts_sorting(%{sort: sort_field, order: order}) do
+    [sorting: do_hot_smart_contracts_sorting(sort_field, order)]
+  end
+
+  @spec hot_smart_contracts_sorting(any()) :: []
+  def hot_smart_contracts_sorting(_), do: []
+
+  defp do_hot_smart_contracts_sorting("transactions_count", "asc"),
+    do: %{
+      aggregated_on_hot_smart_contracts: [
+        {:dynamic, :transactions_count, :asc_nulls_first, HotSmartContracts.transactions_count_dynamic()}
+      ],
+      aggregated_on_transactions: [
+        {:dynamic, :transactions_count, :asc_nulls_first,
+         HotSmartContracts.transactions_count_on_transactions_dynamic()}
+      ]
+    }
+
+  defp do_hot_smart_contracts_sorting("transactions_count", "desc"),
+    do: %{
+      aggregated_on_hot_smart_contracts: [
+        {:dynamic, :transactions_count, :desc_nulls_last, HotSmartContracts.transactions_count_dynamic()}
+      ],
+      aggregated_on_transactions: [
+        {:dynamic, :transactions_count, :desc_nulls_last,
+         HotSmartContracts.transactions_count_on_transactions_dynamic()}
+      ]
+    }
+
+  defp do_hot_smart_contracts_sorting("total_gas_used", "asc"),
+    do: %{
+      aggregated_on_hot_smart_contracts: [
+        {:dynamic, :total_gas_used, :asc_nulls_first, HotSmartContracts.total_gas_used_dynamic()}
+      ],
+      aggregated_on_transactions: [
+        {:dynamic, :total_gas_used, :asc_nulls_first, HotSmartContracts.total_gas_used_on_transactions_dynamic()}
+      ]
+    }
+
+  defp do_hot_smart_contracts_sorting("total_gas_used", "desc"),
+    do: %{
+      aggregated_on_hot_smart_contracts: [
+        {:dynamic, :total_gas_used, :desc_nulls_last, HotSmartContracts.total_gas_used_dynamic()}
+      ],
+      aggregated_on_transactions: [
+        {:dynamic, :total_gas_used, :desc_nulls_last, HotSmartContracts.total_gas_used_on_transactions_dynamic()}
+      ]
+    }
 end

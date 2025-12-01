@@ -15,16 +15,12 @@ defmodule Explorer.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer_ignore.exs"
       ],
-      elixir: "~> 1.17",
+      elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
-      preferred_cli_env: [
-        credo: :test,
-        dialyzer: :test
-      ],
       start_permanent: Mix.env() == :prod,
-      version: "9.2.2",
+      version: "9.3.0",
       xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.InternalTransaction]]
     ]
   end
@@ -37,6 +33,10 @@ defmodule Explorer.Mixfile do
       mod: {Explorer.Application, []},
       extra_applications: extra_applications()
     ]
+  end
+
+  def cli do
+    [preferred_envs: [credo: :test, dialyzer: :test]]
   end
 
   # Specifies which paths to compile per environment.
@@ -86,9 +86,10 @@ defmodule Explorer.Mixfile do
       {:httpoison, "~> 2.0"},
       {:jason, "~> 1.3"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
+      {:libcluster, "~> 3.5"},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
-      {:libcluster, "~> 3.5"},
+      {:logger_json, "~> 7.0"},
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 1.1.0"},
@@ -119,7 +120,6 @@ defmodule Explorer.Mixfile do
       {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
       {:hammer_backend_redis, "~> 7.0"},
-      {:logger_json, "~> 5.1"},
       {:typed_ecto_schema, "~> 0.4.1"},
       {:ueberauth, "~> 0.7"},
       {:recon, "~> 2.5"},

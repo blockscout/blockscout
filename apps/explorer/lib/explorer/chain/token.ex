@@ -3,6 +3,7 @@ defmodule Explorer.Chain.Token.Schema do
   use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias Explorer.Chain.{Address, Address.Reputation, Hash}
+  alias Explorer.Chain.Token.FiatValue
 
   if @bridged_tokens_enabled do
     @bridged_field [
@@ -28,11 +29,11 @@ defmodule Explorer.Chain.Token.Schema do
         field(:skip_metadata, :boolean)
         field(:total_supply_updated_at_block, :integer)
         field(:metadata_updated_at, :utc_datetime_usec)
-        field(:fiat_value, :decimal)
-        field(:circulating_market_cap, :decimal)
+        field(:fiat_value, FiatValue)
+        field(:circulating_market_cap, FiatValue)
         field(:icon_url, :string)
         field(:is_verified_via_admin_panel, :boolean)
-        field(:volume_24h, :decimal)
+        field(:volume_24h, FiatValue)
         field(:transfer_count, :integer)
 
         belongs_to(
@@ -67,6 +68,7 @@ defmodule Explorer.Chain.Token do
   * ERC-721
   * ERC-1155
   * ERC-404
+  * ZRC-2 (for Zilliqa chain type)
   * ERC-7984
 
   ## Token Specifications
@@ -76,6 +78,7 @@ defmodule Explorer.Chain.Token do
   * [ERC-777](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-777.md)
   * [ERC-1155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md)
   * [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
+  * [ZRC-2](https://github.com/Zilliqa/ZRC/blob/main/zrcs/zrc-2.md)
   * [ERC-7984](https://github.com/ethereum/ERCs/blob/39197cde3e32d8fc7fde74c7d0ce5e67ad4de409/ERCS/erc-7984.md)
   """
 
@@ -516,5 +519,22 @@ defmodule Explorer.Chain.Token do
       )
 
     Chain.select_repo(options).exists?(query)
+  end
+
+  @doc """
+  Checks if the given token is ZRC-2 token.
+
+  ## Parameters
+  - `token`: The token to check the type of.
+
+  ## Returns
+  - `true` if this is ZRC-2 token, `false` otherwise.
+  """
+  @spec zrc_2_token?(__MODULE__.t()) :: bool
+  def zrc_2_token?(token) do
+    case Map.get(token, :type) do
+      "ZRC-2" -> true
+      _ -> false
+    end
   end
 end

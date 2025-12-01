@@ -2,7 +2,14 @@ defmodule Indexer.Transform.AddressCoinBalances do
   @moduledoc """
   Extracts `Explorer.Chain.Address.CoinBalance` params from other schema's params.
   """
+
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
+
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    arc_native_token_system_address: [:indexer, [:arc, :arc_native_token_system_address]]
+
+  import Explorer.Helper, only: [truncate_address_hash: 1]
 
   alias Explorer.Chain.TokenTransfer
 
@@ -28,22 +35,32 @@ defmodule Indexer.Transform.AddressCoinBalances do
 
   defp reducer({:logs_params, logs_params}, acc) when is_list(logs_params) do
     # a log MUST have address_hash and block_number
-    logs_params
-    |> Enum.reject(
-      &(&1.first_topic == TokenTransfer.constant() or
-          &1.first_topic == TokenTransfer.erc1155_single_transfer_signature() or
-          &1.first_topic == TokenTransfer.erc1155_batch_transfer_signature())
-    )
-    |> Enum.into(acc, fn
-      %{address_hash: address_hash, block_number: block_number}
-      when is_binary(address_hash) and is_integer(block_number) ->
+    filtered_logs =
+      logs_params
+      |> Enum.reject(
+        &(&1.first_topic == TokenTransfer.constant() or
+            &1.first_topic == TokenTransfer.erc1155_single_transfer_signature() or
+            &1.first_topic == TokenTransfer.erc1155_batch_transfer_signature())
+      )
+      |> Enum.into(acc, fn
         %{address_hash: address_hash, block_number: block_number}
+        when is_binary(address_hash) and is_integer(block_number) ->
+          %{address_hash: address_hash, block_number: block_number}
 
-      %{type: "pending"} ->
-        nil
-    end)
-    |> Enum.reject(fn val -> is_nil(val) end)
-    |> MapSet.new()
+        %{type: "pending"} ->
+          nil
+      end)
+      |> Enum.reject(fn val -> is_nil(val) end)
+
+    # for :arc chain type we also need to parse the `NativeCoinTransferred`, `NativeCoinMinted`, `NativeCoinBurned` events
+    filtered_arc_logs =
+      if chain_type() == :arc do
+        handle_arc_transfer_logs(logs_params)
+      else
+        []
+      end
+
+    MapSet.new(filtered_logs ++ filtered_arc_logs)
   end
 
   defp reducer({:transactions_params, transactions_params}, initial) when is_list(transactions_params) do
@@ -58,6 +75,72 @@ defmodule Indexer.Transform.AddressCoinBalances do
     Enum.into(withdrawals, acc, fn %{address_hash: address_hash, block_number: block_number}
                                    when is_binary(address_hash) and is_integer(block_number) ->
       %{address_hash: address_hash, block_number: block_number}
+    end)
+  end
+
+  # Handles Arc chain type logs.
+  #
+  # ## Parameters
+  # - `logs_params`: The given list of logs.
+  #
+  # ## Returns
+  # - The list of `address_hash, block_number` pairs.
+  @spec handle_arc_transfer_logs([
+          %{
+            :first_topic => String.t(),
+            :second_topic => String.t(),
+            :third_topic => String.t() | nil,
+            :address_hash => String.t(),
+            :block_number => non_neg_integer(),
+            optional(:type) => String.t() | nil
+          }
+        ]) :: [%{:address_hash => String.t(), :block_number => non_neg_integer()}]
+  defp handle_arc_transfer_logs(logs_params) do
+    arc_native_coin_transferred_event = TokenTransfer.arc_native_coin_transferred_event()
+    arc_native_coin_minted_event = TokenTransfer.arc_native_coin_minted_event()
+    arc_native_coin_burned_event = TokenTransfer.arc_native_coin_burned_event()
+    arc_native_token_system_address = arc_native_token_system_address()
+
+    logs_params
+    |> Enum.flat_map(fn
+      %{
+        type: "pending"
+      } ->
+        []
+
+      %{
+        first_topic: ^arc_native_coin_transferred_event,
+        second_topic: second_topic,
+        third_topic: third_topic,
+        address_hash: ^arc_native_token_system_address,
+        block_number: block_number
+      }
+      when is_integer(block_number) ->
+        [
+          %{address_hash: truncate_address_hash(second_topic), block_number: block_number},
+          %{address_hash: truncate_address_hash(third_topic), block_number: block_number}
+        ]
+
+      %{
+        first_topic: ^arc_native_coin_minted_event,
+        second_topic: second_topic,
+        address_hash: ^arc_native_token_system_address,
+        block_number: block_number
+      }
+      when is_integer(block_number) ->
+        [%{address_hash: truncate_address_hash(second_topic), block_number: block_number}]
+
+      %{
+        first_topic: ^arc_native_coin_burned_event,
+        second_topic: second_topic,
+        address_hash: ^arc_native_token_system_address,
+        block_number: block_number
+      }
+      when is_integer(block_number) ->
+        [%{address_hash: truncate_address_hash(second_topic), block_number: block_number}]
+
+      _ ->
+        []
     end)
   end
 

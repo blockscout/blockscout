@@ -27,6 +27,9 @@ defmodule Explorer.Chain.Import do
       Import.Stage.Logs,
       Import.Stage.InternalTransactions,
       Import.Stage.ChainTypeSpecific
+    ],
+    [
+      Import.Stage.Stats
     ]
   ]
 
@@ -343,7 +346,7 @@ defmodule Explorer.Chain.Import do
         end)
       end)
 
-    unless Enum.empty?(final_runner_to_changes_list) do
+    if !Enum.empty?(final_runner_to_changes_list) do
       raise ArgumentError,
             "No stages consumed the following runners: #{final_runner_to_changes_list |> Map.keys() |> inspect()}"
     end

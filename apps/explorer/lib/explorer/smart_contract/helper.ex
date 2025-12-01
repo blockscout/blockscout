@@ -9,7 +9,6 @@ defmodule Explorer.SmartContract.Helper do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.{Reader, Writer}
-  alias Phoenix.HTML
 
   @api_true [api?: true]
 
@@ -82,15 +81,6 @@ defmodule Explorer.SmartContract.Helper do
     else
       attrs
     end
-  end
-
-  def sanitize_input(nil), do: nil
-
-  def sanitize_input(input) do
-    input
-    |> HTML.html_escape()
-    |> HTML.safe_to_string()
-    |> String.trim()
   end
 
   @doc """
@@ -198,8 +188,8 @@ defmodule Explorer.SmartContract.Helper do
     Metadata will be sent to a verifier microservice
   """
   @spec fetch_data_for_verification(binary() | Hash.t()) :: {binary() | nil, binary(), map()}
-  def fetch_data_for_verification(address_hash) do
-    deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
+  def fetch_data_for_verification(address_hash, deployed_bytecode \\ nil) do
+    deployed_bytecode = deployed_bytecode || Chain.smart_contract_bytecode(address_hash)
 
     metadata = %{
       "contractAddress" => to_string(address_hash),

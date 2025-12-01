@@ -469,6 +469,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   end
 
   describe "/tokens" do
+    setup do
+      initial_value = :persistent_term.get(:market_token_fetcher_enabled, false)
+      :persistent_term.put(:market_token_fetcher_enabled, true)
+
+      on_exit(fn ->
+        :persistent_term.put(:market_token_fetcher_enabled, initial_value)
+      end)
+    end
+
     defp check_tokens_pagination(tokens, conn, additional_params \\ %{}) do
       request = get(conn, "/api/v2/tokens", additional_params)
       assert response = json_response(request, 200)

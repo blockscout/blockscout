@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Metrics.Queries do
+defmodule Explorer.Chain.Metrics.Queries.PublicChainMetrics do
   @moduledoc """
   Module for DB queries to get chain metrics exposed at /public-metrics endpoint
   """
@@ -268,6 +268,6 @@ defmodule Explorer.Chain.Metrics.Queries do
   end
 
   defp update_period_hours do
-    Application.get_env(:explorer, Explorer.Chain.Metrics)[:update_period_hours]
+    Application.get_env(:explorer, Explorer.Chain.Metrics.PublicMetrics)[:update_period_hours]
   end
 end

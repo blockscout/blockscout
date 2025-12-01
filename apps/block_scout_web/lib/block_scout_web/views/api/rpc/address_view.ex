@@ -211,6 +211,12 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     |> Map.put_new(:value, to_string(token_transfer.amount))
   end
 
+  defp prepare_token_transfer(%{token_type: "ZRC-2"} = token_transfer, max_block_number, decoded_input) do
+    token_transfer
+    |> prepare_common_token_transfer(max_block_number, decoded_input)
+    |> Map.put_new(:value, to_string(token_transfer.amount))
+  end
+
   defp prepare_token_transfer(%{token_type: "ERC-7984"} = token_transfer, max_block_number, decoded_input) do
     token_transfer
     |> prepare_common_token_transfer(max_block_number, decoded_input)

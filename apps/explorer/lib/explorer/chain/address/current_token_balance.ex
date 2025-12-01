@@ -103,7 +103,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
         offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
 
         token_contract_address_hash
-        |> token_holders_query
+        |> token_holders_query()
         |> order_by([tb], desc: :value, desc: :address_hash)
         |> Chain.page_token_balances(paging_options)
         |> limit(^paging_options.page_size)

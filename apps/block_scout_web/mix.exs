@@ -14,16 +14,12 @@ defmodule BlockScoutWeb.Mixfile do
         plt_add_deps: :app_tree,
         ignore_warnings: "../../.dialyzer_ignore.exs"
       ],
-      elixir: "~> 1.17",
+      elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env(), Application.get_env(:block_scout_web, :disable_api?)),
       lockfile: "../../mix.lock",
       package: package(),
-      preferred_cli_env: [
-        credo: :test,
-        dialyzer: :test
-      ],
       start_permanent: Mix.env() == :prod,
-      version: "9.2.2",
+      version: "9.3.0",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
@@ -46,6 +42,10 @@ defmodule BlockScoutWeb.Mixfile do
       mod: {BlockScoutWeb.Application, []},
       extra_applications: extra_applications()
     ]
+  end
+
+  def cli do
+    [preferred_envs: [credo: :test, dialyzer: :test]]
   end
 
   # Specifies which paths to compile per environment.
@@ -118,6 +118,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
+      {:logger_json, "~> 7.0"},
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:number, "~> 1.0.1"},
@@ -136,8 +137,6 @@ defmodule BlockScoutWeb.Mixfile do
       {:poison, "~> 5.0.0"},
       {:postgrex, ">= 0.0.0"},
       {:prometheus, "~> 6.0", override: true},
-      # Gather methods for Phoenix requests
-      {:prometheus_phoenix, "~> 1.2"},
       # Expose metrics from URL Prometheus server can scrape
       {:prometheus_plugs, "~> 1.1"},
       # OS process metrics for Prometheus, custom ref to include https://github.com/deadtrickster/prometheus_process_collector/pull/30
@@ -162,7 +161,6 @@ defmodule BlockScoutWeb.Mixfile do
       {:ueberauth_auth0, "~> 2.0"},
       {:utils, in_umbrella: true},
       {:bureaucrat, "~> 0.2.9", only: :test},
-      {:logger_json, "~> 5.1"},
       {:open_api_spex, "~> 3.21"},
       {:ymlr, "~> 5.1"}
     ]

@@ -88,7 +88,7 @@ defmodule Explorer.Chain.Log do
 
   alias ABI.{Event, FunctionSelector}
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{ContractMethod, Hash, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Block, ContractMethod, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index)a
@@ -583,6 +583,44 @@ defmodule Explorer.Chain.Log do
     dynamic(
       [log: log],
       log.first_topic not in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
+    )
+  end
+
+  @doc """
+  Returns the first (min) known consensus block number found in the `logs` table.
+
+  ## Returns
+  - An integer block number if found.
+  - `nil` if not found.
+  """
+  @spec first_known_block_number() :: non_neg_integer() | nil
+  def first_known_block_number do
+    Repo.aggregate(get_known_block_number_query(), :min, :block_number)
+  end
+
+  @doc """
+  Returns the last (max) known consensus block number found in the `logs` table.
+
+  ## Returns
+  - An integer block number if found.
+  - `nil` if not found.
+  """
+  @spec last_known_block_number() :: non_neg_integer() | nil
+  def last_known_block_number do
+    Repo.aggregate(get_known_block_number_query(), :max, :block_number)
+  end
+
+  # Returns a query to get all logs with consensus blocks.
+  #
+  # ## Returns
+  # - A query to be used by other Repo functions.
+  @spec get_known_block_number_query() :: Ecto.Query.t()
+  defp get_known_block_number_query do
+    from(
+      log in __MODULE__,
+      inner_join: block in Block,
+      on: block.hash == log.block_hash and block.consensus == true,
+      select: log
     )
   end
 end
