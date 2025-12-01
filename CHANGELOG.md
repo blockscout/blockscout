@@ -43,7 +43,7 @@
 - Internal transaction, Token transfer, Withdrawal, Smart-contracts, Main Page, Stats, Config and Search controllers OpenAPI specs ([#13557](https://github.com/blockscout/blockscout/issues/13557))
 - Using own runner for build ([#13624](https://github.com/blockscout/blockscout/issues/13624))
 - Drop token_instances_token_id_index index ([#13598](https://github.com/blockscout/blockscout/issues/13598))
-- Add migration to drop unique tokens_contract_address_hash_index index ([#13596](https://github.com/blockscout/blockscout/issues/13596))
+- Add migration to drop unique tokens_contract_address_hash_index index ([#13596](https://github.com/blockscout/blockscout/issues/13596), [#13655](https://github.com/blockscout/blockscout/pull/13655))
 - Elixir 1.17 -> 1.19 ([#13566](https://github.com/blockscout/blockscout/issues/13566))
 - Handle `NativeCoin*ed` events on Arc chain to make dual token balances synced ([#13452](https://github.com/blockscout/blockscout/issues/13452))
 - Improve DeleteZeroValueInternalTransactions migration ([#13569](https://github.com/blockscout/blockscout/issues/13569))
