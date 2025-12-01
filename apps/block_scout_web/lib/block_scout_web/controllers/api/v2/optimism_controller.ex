@@ -215,6 +215,25 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     end
   end
 
+  operation :batch_by_number,
+    summary: "Batch by its number.",
+    description: "Retrieves batch detailed info by the given number.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :number,
+        in: :path,
+        schema: Schemas.General.IntegerString,
+        required: true,
+        description: "Batch number in the path."
+      }
+      | base_params()
+    ],
+    responses: [
+      ok: {"Batch detailed info.", "application/json", Schemas.Optimism.Batch.Detailed},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/optimism/batches/:number` endpoint.
   """
