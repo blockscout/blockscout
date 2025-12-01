@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
-    description: "Optimism Batch struct",
+    description: "Optimism Batch struct.",
     type: :object,
     properties: %{
       number: %Schema{type: :integer},
