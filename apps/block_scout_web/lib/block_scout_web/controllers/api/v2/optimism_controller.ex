@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   import Explorer.Helper, only: [hash_to_binary: 1]
 
   alias BlockScoutWeb.API.V2.{ApiView, OptimismView}
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.{Data, Hash, Token, Transaction}
@@ -69,7 +70,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   operation :batches,
-    summary: "List batches",
+    summary: "List batches.",
     description: "Retrieves a paginated list of batches.",
     parameters:
       base_params() ++
@@ -145,6 +146,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     })
   end
 
+  operation :batches_count,
+    summary: "Number of batches in the list.",
+    description: "Retrieves a size of the batch list.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Number of items in the batch list.", "application/json", Schemas.Optimism.Batch.Count},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/optimism/batches/count` endpoint.
   """
@@ -152,6 +162,33 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   def batches_count(conn, _params) do
     items_count(conn, FrameSequence)
   end
+
+  operation :batch_by_celestia_blob,
+    summary: "Batch by celestia blob.",
+    description: "Retrieves batch detailed info by the given celestia blob metadata (height and commitment).",
+    parameters:
+      base_params() ++
+        [
+          %OpenApiSpex.Parameter{
+            name: :height,
+            in: :path,
+            schema: Schemas.General.IntegerString,
+            required: true,
+            description: "Celestia blob height in the path."
+          },
+          %OpenApiSpex.Parameter{
+            name: :commitment,
+            in: :path,
+            schema: Schemas.General.HexString,
+            required: true,
+            description: "Celestia blob commitment in the path."
+          }
+        ],
+    responses: [
+      ok: {"Batch detailed info.", "application/json", Schemas.Optimism.Batch.Detailed},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
 
   @doc """
   Function to handle GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment` endpoint.
