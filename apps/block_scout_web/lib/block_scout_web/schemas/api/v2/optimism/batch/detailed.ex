@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch.Detailed do
   @moduledoc """
-  This module defines the schema for batch response from /api/v2/optimism/batches/da/celestia/:height/:commitment.
+  This module defines the schema for batch response from /api/v2/optimism/batches/:number and
+  /api/v2/optimism/batches/da/celestia/:height/:commitment
   """
   require OpenApiSpex
 
