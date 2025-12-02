@@ -66,7 +66,11 @@ defmodule Explorer.SmartContract.Helper do
 
   def add_contract_code_md5(attrs), do: attrs
 
-  def contract_code_md5(bytes) do
+  @doc """
+  Calculates MD5 hash of given binary.
+  """
+  @spec md5(binary()) :: String.t()
+  def md5(bytes) do
     :md5
     |> :crypto.hash(bytes)
     |> Base.encode16(case: :lower)
@@ -74,7 +78,7 @@ defmodule Explorer.SmartContract.Helper do
 
   defp attrs_extend_with_contract_code_md5(attrs, address) do
     if address.contract_code do
-      contract_code_md5 = contract_code_md5(address.contract_code.bytes)
+      contract_code_md5 = md5(address.contract_code.bytes)
 
       attrs
       |> Map.put_new(:contract_code_md5, contract_code_md5)

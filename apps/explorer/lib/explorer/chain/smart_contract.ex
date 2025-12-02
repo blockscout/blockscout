@@ -821,7 +821,7 @@ defmodule Explorer.Chain.SmartContract do
 
     contract_code_md5 =
       target_address.contract_code.bytes
-      |> Helper.contract_code_md5()
+      |> Helper.md5()
 
     verified_bytecode_twin_contract_query =
       from(
