@@ -18,6 +18,30 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   @default_paging_options %PagingOptions{page_size: 50}
 
   @doc """
+    Determines whether internal transactions should be fetched on-demand based on DB records and limit.
+
+    ## Parameters
+    - `records_from_db`: List of internal transaction records from the database
+    - `limit`: The number of records requested
+
+    ## Returns
+    - `true` if on-demand fetching is needed
+    - `false` if DB records are sufficient
+  """
+  @spec should_fetch?([InternalTransaction.t()], non_neg_integer()) :: boolean()
+  def should_fetch?(_records, 0), do: false
+
+  def should_fetch?(records_from_db, limit) do
+    with true <- Enum.count(records_from_db) >= limit,
+         %{block_number: min_block_number} <- Enum.min_by(records_from_db, & &1.block_number),
+         true <- InternalTransaction.present_in_db?(min_block_number) do
+      false
+    else
+      _ -> true
+    end
+  end
+
+  @doc """
     Fetches latest internal transactions.
 
     This function acts like `Explorer.Chain.InternalTransaction.fetch/2` without `transaction_hash`
@@ -95,10 +119,10 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         internal_transactions_params
         |> Enum.map(&serialize/1)
         |> Enum.sort_by(& &1.index)
-        |> Enum.take(paging_options.page_size)
         |> add_block_hashes(transaction.block_hash)
         |> join_associations(necessity_by_association)
         |> page_internal_transaction(paging_options)
+        |> Enum.take(paging_options.page_size)
         |> Repo.preload(:block)
 
       :ignore ->
@@ -107,10 +131,10 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         |> Enum.map(&serialize/1)
         |> Enum.filter(&(&1.transaction_hash == transaction.hash))
         |> Enum.sort_by(& &1.index)
-        |> Enum.take(paging_options.page_size)
         |> add_block_hashes(transaction.block_hash)
         |> join_associations(necessity_by_association)
         |> page_internal_transaction(paging_options)
+        |> Enum.take(paging_options.page_size)
         |> Repo.preload(:block)
 
       error ->
@@ -184,7 +208,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       - `:to_block` - upper boundary for block number
 
     ## Returns
-    - List of InternalTransaction structs for the given block
+    - List of InternalTransaction structs for the given address
   """
   @spec fetch_by_address(Hash.Address.t(), Keyword.t()) :: [InternalTransaction.t()]
   def fetch_by_address(address_hash, options) do
@@ -241,6 +265,17 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> join_associations(necessity_by_association)
   end
 
+  @doc """
+    Fetches internal transactions for the given transaction from node, formatted for Etherscan API compatibility.
+
+    ## Parameters
+    - `transaction`: The transaction struct to fetch internal transactions for
+    - `raw_options`: Map of Etherscan-compatible options including page_size
+
+    ## Returns
+    - List of internal transactions serialized in Etherscan format
+  """
+  @spec etherscan_fetch_by_transaction(Transaction.t(), map()) :: [map()]
   def etherscan_fetch_by_transaction(transaction, raw_options) do
     options = Map.merge(Etherscan.default_options(), raw_options)
 
@@ -249,6 +284,17 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> Enum.map(&etherscan_serialize/1)
   end
 
+  @doc """
+    Fetches internal transactions for the given address from node, formatted for Etherscan API compatibility.
+
+    ## Parameters
+    - `address_hash`: The address hash to fetch internal transactions for
+    - `raw_options`: Map of Etherscan-compatible options including page_size, direction filter, and block range
+
+    ## Returns
+    - List of internal transactions serialized in Etherscan format
+  """
+  @spec etherscan_fetch_by_address(Hash.Address.t(), map()) :: [map()]
   def etherscan_fetch_by_address(address_hash, raw_options) do
     options = Map.merge(Etherscan.default_options(), raw_options)
 
@@ -265,7 +311,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       from_block: Map.get(options, :startblock),
       to_block: Map.get(options, :endblock),
       sort_direction: Map.get(options, :order_by_direction),
-      index_internal_transaction_desc_order: Map.get(options, :order_by_direction)
+      index_internal_transaction_desc_order: Map.get(options, :order_by_direction) != :asc
     ]
 
     address_hash
@@ -274,6 +320,16 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> Enum.map(&etherscan_serialize/1)
   end
 
+  @doc """
+    Fetches latest internal transactions from node, formatted for Etherscan API compatibility.
+
+    ## Parameters
+    - `raw_options`: Map of Etherscan-compatible options including page_size, page_number, and block range
+
+    ## Returns
+    - List of internal transactions serialized in Etherscan format
+  """
+  @spec etherscan_fetch_latest(map()) :: [map()]
   def etherscan_fetch_latest(raw_options) do
     options = Map.merge(Etherscan.default_options(), raw_options)
 
@@ -282,10 +338,10 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       from_block: Map.get(options, :startblock),
       to_block: Map.get(options, :endblock),
       sort_direction: Map.get(options, :order_by_direction),
-      index_internal_transaction_desc_order: Map.get(options, :order_by_direction)
+      index_internal_transaction_desc_order: Map.get(options, :order_by_direction) != :asc
     ]
 
-    options
+    prepared_options
     |> fetch_latest()
     |> Repo.preload(:block)
     |> Enum.map(&etherscan_serialize/1)

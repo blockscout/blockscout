@@ -33,6 +33,11 @@ defmodule Explorer.Etherscan do
     @default_options.page_size
   end
 
+  @doc """
+  Returns the default options map used for querying operations.
+
+  The map includes default values for pagination, ordering, block ranges, and filtering options.
+  """
   @spec default_options() :: map()
   def default_options, do: @default_options
 
@@ -92,7 +97,13 @@ defmodule Explorer.Etherscan do
     error
   )a
 
-  @spec internal_transaction_fields() :: map()
+  @doc """
+  Returns the list of internal transaction fields used in query selections.
+
+  These fields represent the core attributes of internal transactions that are
+  consistently retrieved across different query operations.
+  """
+  @spec internal_transaction_fields() :: [atom()]
   def internal_transaction_fields, do: @internal_transaction_fields
 
   @doc """

@@ -85,8 +85,8 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     batch_size = batch_size()
 
     ZeroValueDeleteQueue
-    |> order_by([zvdq], zvdk.block_number)
-    |> select([zvdq], zvdq.block_number)
+    |> order_by([z], z.block_number)
+    |> select([z], z.block_number)
     |> limit(^batch_size)
     |> Repo.all()
     |> clear_internal_transactions()
@@ -98,6 +98,8 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
 
     do_clear_internal_transactions(dynamic_condition)
   end
+
+  defp clear_internal_transactions(_from, _to), do: :ok
 
   defp clear_internal_transactions(block_numbers) when is_list(block_numbers) do
     dynamic_condition = dynamic([it], it.block_number in ^block_numbers)
@@ -132,6 +134,10 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
         )
 
       {_count, deleted_internal_transactions} = Repo.delete_all(delete_query, timeout: :infinity)
+
+      ZeroValueDeleteQueue
+      |> where([it], ^dynamic_condition)
+      |> Repo.delete_all(timeout: :infinity)
 
       address_hashes =
         deleted_internal_transactions
@@ -194,8 +200,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
       Repo.insert_all(InternalTransactionsAddressPlaceholder, placeholders_params)
     end)
   end
-
-  defp clear_internal_transactions(_from, _to), do: :ok
 
   defp get_border_number do
     storage_period = Application.get_env(:explorer, __MODULE__)[:storage_period_days] || @default_storage_period_days

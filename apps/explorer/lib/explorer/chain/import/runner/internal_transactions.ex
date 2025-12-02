@@ -22,6 +22,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Chain.InternalTransaction.ZeroValueDeleteQueue
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
@@ -871,9 +872,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   def save_zero_value_to_delete(repo, internal_transactions, %{timeout: timeout, timestamps: timestamps}) do
-    if Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] do
-      border_number = DeleteZeroValueInternalTransactions.border_number()
-
+    with true <- Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled],
+         border_number when is_integer(border_number) <- DeleteZeroValueInternalTransactions.border_number() do
       internal_transactions
       |> Enum.map(& &1.block_number)
       |> Enum.uniq()
@@ -885,8 +885,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
         insert_params ->
           {_total, result} =
-            Repo.insert_all(
-              __MODULE__,
+            repo.insert_all(
+              ZeroValueDeleteQueue,
               insert_params,
               conflict_target: [:block_number],
               on_conflict: {:replace, [:updated_at]},
@@ -897,7 +897,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           {:ok, result}
       end
     else
-      {:ok, []}
+      _ -> {:ok, []}
     end
   end
 

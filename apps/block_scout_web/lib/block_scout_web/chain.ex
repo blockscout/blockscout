@@ -1245,6 +1245,7 @@ defmodule BlockScoutWeb.Chain do
     - List of InternalTransaction structs
   """
   @spec fetch_internal_transactions(Keyword.t()) :: [InternalTransaction.t()]
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def fetch_internal_transactions(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     transaction_hash = Keyword.get(options, :transaction_hash)
@@ -1277,7 +1278,13 @@ defmodule BlockScoutWeb.Chain do
 
       Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] ->
         from_db = InternalTransaction.fetch(options)
-        from_node = InternalTransactionOnDemand.fetch_latest(options_with_necessity)
+
+        from_node =
+          if InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size) do
+            InternalTransactionOnDemand.fetch_latest(options_with_necessity)
+          else
+            []
+          end
 
         merge_internal_transactions(from_db, from_node, paging_options.page_size)
 
@@ -1360,12 +1367,10 @@ defmodule BlockScoutWeb.Chain do
         from_db = InternalTransaction.fetch_from_db_by_address(address_hash, options)
 
         from_node =
-          with true <- Enum.count(from_db) >= paging_options.page_size,
-               border_number = DeleteZeroValueInternalTransactions.border_number(),
-               true <- is_nil(border_number) or Enum.all?(from_db, &(&1.block_number > border_number)) do
-            []
+          if InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size) do
+            InternalTransactionOnDemand.fetch_by_address(address_hash, options)
           else
-            _ -> InternalTransactionOnDemand.fetch_by_address(address_hash, options)
+            []
           end
 
         merge_internal_transactions(from_db, from_node, paging_options.page_size)
@@ -1389,10 +1394,12 @@ defmodule BlockScoutWeb.Chain do
     - List of InternalTransaction fields maps for the given param
   """
   @spec list_internal_transactions(Hash.Full.t() | Hash.Address.t() | :all, map()) :: [map()]
-  def list_internal_transactions(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash, options) do
+  def list_internal_transactions(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash, raw_options) do
+    options = Map.merge(Etherscan.default_options(), raw_options)
+
     case hash_to_transaction(transaction_hash) do
       {:ok, transaction} ->
-        if InternalTransaction.present_in_db?(transaction.block_number) do
+        if InternalTransaction.present_in_db?(transaction.block_number) or not options.include_zero_value do
           Etherscan.list_internal_transactions(transaction.hash, options)
         else
           InternalTransactionOnDemand.etherscan_fetch_by_transaction(transaction, options)
@@ -1409,32 +1416,39 @@ defmodule BlockScoutWeb.Chain do
     options = Map.merge(Etherscan.default_options(), raw_options)
 
     from_node =
-      with true <- Enum.count(from_db) >= options.page_size,
-           border_number = DeleteZeroValueInternalTransactions.border_number(),
-           true <- is_nil(border_number) or Enum.all?(from_db, &(&1.block_number > border_number)) do
-        []
+      if InternalTransactionOnDemand.should_fetch?(from_db, options.page_size) and options.include_zero_value do
+        InternalTransactionOnDemand.etherscan_fetch_by_address(address_hash, options)
       else
-        _ -> InternalTransactionOnDemand.etherscan_fetch_by_address(address_hash, options)
+        []
       end
 
-    merge_internal_transactions(from_db, from_node, options.page_size)
+    merge_internal_transactions(from_db, from_node, options.page_size, options.order_by_direction)
   end
 
   def list_internal_transactions(:all, raw_options) do
     options = Map.merge(Etherscan.default_options(), raw_options)
 
     cond do
+      not options.include_zero_value ->
+        Etherscan.list_internal_transactions(:all, options)
+
       not is_nil(options[:endblock]) and not InternalTransaction.present_in_db?(options[:endblock]) ->
         InternalTransactionOnDemand.etherscan_fetch_latest(options)
 
       Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] ->
         from_db = Etherscan.list_internal_transactions(:all, options)
-        from_node = InternalTransactionOnDemand.etherscan_fetch_latest(options)
 
-        merge_internal_transactions(from_db, from_node, options.page_size)
+        from_node =
+          if InternalTransactionOnDemand.should_fetch?(from_db, options.page_size) do
+            InternalTransactionOnDemand.etherscan_fetch_latest(options)
+          else
+            []
+          end
+
+        merge_internal_transactions(from_db, from_node, options.page_size, options.order_by_direction)
 
       true ->
-        InternalTransaction.etherscan_fetch_latest(options)
+        Etherscan.list_internal_transactions(:all, options)
     end
   end
 
