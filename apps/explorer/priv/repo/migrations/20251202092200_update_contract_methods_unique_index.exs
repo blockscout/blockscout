@@ -6,23 +6,7 @@ defmodule Explorer.Repo.Migrations.UpdateContractMethodsUniqueIndex do
       unique_index(:contract_methods, [:identifier, "md5(abi::text)"], name: :contract_methods_identifier_md5_abi_index)
     )
 
-    create(
-      index(
-        :contract_methods,
-        ["(abi ->> 'type')"],
-        name: "contract_methods_abi_type_index"
-      )
-    )
-
-    create(
-      index(
-        :contract_methods,
-        ["(abi ->> 'name')"],
-        name: "contract_methods_abi_name_index"
-      )
-    )
-
-    drop(unique_index(:contract_methods, [:identifier, :abi]))
+    drop(unique_index(:contract_methods, [:identifier, :abi]), name: :contract_methods_identifier_abi_index)
   end
 
   def down do
@@ -30,22 +14,6 @@ defmodule Explorer.Repo.Migrations.UpdateContractMethodsUniqueIndex do
 
     drop(
       unique_index(:contract_methods, [:identifier, "md5(abi::text)"], name: :contract_methods_identifier_md5_abi_index)
-    )
-
-    drop(
-      index(
-        :contract_methods,
-        ["(abi ->> 'type')"],
-        name: "contract_methods_abi_type_index"
-      )
-    )
-
-    drop(
-      index(
-        :contract_methods,
-        ["(abi ->> 'name')"],
-        name: "contract_methods_abi_name_index"
-      )
     )
   end
 end
