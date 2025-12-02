@@ -516,6 +516,26 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {block_number}}]
   end
 
+  def paging_options(%{"transaction_index" => transaction_index_string, "index" => index_string})
+      when is_binary(transaction_index_string) and is_binary(index_string) do
+    with {transaction_index, ""} <- Integer.parse(transaction_index_string),
+         {index, ""} <- Integer.parse(index_string) do
+      [paging_options: %{@default_paging_options | key: %{transaction_index: transaction_index, index: index}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"transaction_index" => transaction_index, "index" => index})
+      when is_integer(transaction_index) and is_integer(index) do
+    [paging_options: %{@default_paging_options | key: %{transaction_index: transaction_index, index: index}}]
+  end
+
+  def paging_options(%{transaction_index: transaction_index, index: index}) do
+    [paging_options: %{@default_paging_options | key: %{transaction_index: transaction_index, index: index}}]
+  end
+
   def paging_options(%{"index" => index_string}) when is_binary(index_string) do
     case Integer.parse(index_string) do
       {index, ""} ->
@@ -947,8 +967,11 @@ defmodule BlockScoutWeb.Chain do
     %{block_number: number}
   end
 
-  defp paging_params(%InternalTransaction{index: index, transaction_hash: transaction_hash}) do
-    {:ok, %Transaction{block_number: block_number, index: transaction_index}} = hash_to_transaction(transaction_hash)
+  defp paging_params(%InternalTransaction{
+         index: index,
+         transaction_index: transaction_index,
+         block_number: block_number
+       }) do
     %{block_number: block_number, transaction_index: transaction_index, index: index}
   end
 
@@ -1399,7 +1422,7 @@ defmodule BlockScoutWeb.Chain do
 
     case hash_to_transaction(transaction_hash) do
       {:ok, transaction} ->
-        if InternalTransaction.present_in_db?(transaction.block_number) or not options.include_zero_value do
+        if not options.include_zero_value or InternalTransaction.present_in_db?(transaction.block_number) do
           Etherscan.list_internal_transactions(transaction.hash, options)
         else
           InternalTransactionOnDemand.etherscan_fetch_by_transaction(transaction, options)
@@ -1416,7 +1439,7 @@ defmodule BlockScoutWeb.Chain do
     options = Map.merge(Etherscan.default_options(), raw_options)
 
     from_node =
-      if InternalTransactionOnDemand.should_fetch?(from_db, options.page_size) and options.include_zero_value do
+      if options.include_zero_value and InternalTransactionOnDemand.should_fetch?(from_db, options.page_size) do
         InternalTransactionOnDemand.etherscan_fetch_by_address(address_hash, options)
       else
         []

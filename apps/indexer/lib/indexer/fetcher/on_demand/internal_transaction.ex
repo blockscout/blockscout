@@ -263,6 +263,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> Enum.take(paging_options.page_size)
     |> add_block_hashes()
     |> join_associations(necessity_by_association)
+    |> Repo.preload(:block)
   end
 
   @doc """
@@ -371,24 +372,24 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
 
   defp fetch_enough(_start_number, _end_number, _count, _options, acc), do: acc
 
-  defp get_block_numbers_for_address(nil, _start_block, _end_block, _limit, _sum_mode), do: []
+  defp get_block_numbers_for_address(nil, _end_block, _start_block, _limit, _sum_mode), do: []
 
-  defp get_block_numbers_for_address(address_id, start_block, end_block, limit, sum_mode) do
+  defp get_block_numbers_for_address(address_id, end_block, start_block, limit, sum_mode) do
     ranked_query =
       InternalTransactionsAddressPlaceholder
       |> where([q], q.address_id == ^address_id)
       |> then(fn query ->
-        if is_nil(start_block) do
-          query
-        else
-          where(query, [q], q.block_number <= ^start_block)
-        end
-      end)
-      |> then(fn query ->
         if is_nil(end_block) do
           query
         else
-          where(query, [q], q.block_number >= ^end_block)
+          where(query, [q], q.block_number <= ^end_block)
+        end
+      end)
+      |> then(fn query ->
+        if is_nil(start_block) do
+          query
+        else
+          where(query, [q], q.block_number >= ^start_block)
         end
       end)
       |> windows([q], w: [order_by: [desc: :block_number]])
@@ -559,8 +560,13 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     end
   end
 
-  defp page_block_internal_transaction(internal_transactions, %PagingOptions{key: %{block_index: block_index}}) do
-    Stream.filter(internal_transactions, &(&1.block_index > block_index))
+  defp page_block_internal_transaction(internal_transactions, %PagingOptions{
+         key: %{transaction_index: transaction_index, index: index}
+       }) do
+    Stream.filter(
+      internal_transactions,
+      &((&1.transaction_index == transaction_index and &1.index > index) or &1.transaction_index > transaction_index)
+    )
   end
 
   defp page_block_internal_transaction(internal_transactions, _), do: internal_transactions

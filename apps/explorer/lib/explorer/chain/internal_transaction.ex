@@ -680,7 +680,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> filter_by_type(type_filter, call_type_filter)
     |> filter_by_call_type(call_type_filter)
     |> limit(^paging_options.page_size)
-    |> order_by([internal_transaction], asc: internal_transaction.block_index)
+    |> order_by([internal_transaction], asc: internal_transaction.transaction_index, asc: internal_transaction.index)
     |> Chain.select_repo(options).all()
   end
 
@@ -1020,15 +1020,19 @@ defmodule Explorer.Chain.InternalTransaction do
     end
   end
 
-  defp page_block_internal_transaction(query, %PagingOptions{key: %{block_index: block_index}}) do
+  defp page_block_internal_transaction(query, %PagingOptions{key: %{transaction_index: transaction_index, index: index}}) do
     query
-    |> where([internal_transaction], internal_transaction.block_index > ^block_index)
+    |> where(
+      [internal_transaction],
+      (internal_transaction.transaction_index == ^transaction_index and internal_transaction.index > ^index) or
+        internal_transaction.transaction_index > ^transaction_index
+    )
   end
 
   defp page_block_internal_transaction(query, _), do: query
 
-  def internal_transaction_to_block_paging_options(%__MODULE__{block_index: block_index}) do
-    %{"block_index" => block_index}
+  def internal_transaction_to_block_paging_options(%__MODULE__{transaction_index: transaction_index, index: index}) do
+    %{"transaction_index" => transaction_index, "index" => index}
   end
 
   defp where_consensus_transactions(query) do

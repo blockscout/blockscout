@@ -871,13 +871,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
-  def save_zero_value_to_delete(repo, internal_transactions, %{timeout: timeout, timestamps: timestamps}) do
+  defp save_zero_value_to_delete(repo, internal_transactions, %{timeout: timeout, timestamps: timestamps}) do
     with true <- Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled],
          border_number when is_integer(border_number) <- DeleteZeroValueInternalTransactions.border_number() do
       internal_transactions
       |> Enum.map(& &1.block_number)
       |> Enum.uniq()
-      |> Enum.filter(&(not is_nil(&1) and &1 < border_number))
+      |> Enum.filter(&(not is_nil(&1) and &1 <= border_number))
       |> Enum.map(&Map.put(timestamps, :block_number, &1))
       |> case do
         [] ->
