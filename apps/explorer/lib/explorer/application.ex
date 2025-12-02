@@ -189,7 +189,8 @@ defmodule Explorer.Application do
         |> configure_chain_type_dependent_process([
           :polygon_zkevm,
           :rsk,
-          :filecoin
+          :filecoin,
+          :astar
         ]),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeMissingTokenBalances, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeReplacedTransactions, :indexer),

@@ -412,6 +412,7 @@ defmodule ConfigHelper do
     "zilliqa" => :zilliqa,
     "zksync" => :zksync,
     "neon" => :neon,
+    "astar" => :astar,
     "optimism-celo" => {:optimism, :celo}
   }
 
