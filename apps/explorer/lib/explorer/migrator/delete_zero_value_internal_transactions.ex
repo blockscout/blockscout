@@ -11,6 +11,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
 
   alias Explorer.Chain.{Block, InternalTransaction}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
+  alias Explorer.Chain.InternalTransaction.ZeroValueDeleteQueue
   alias Explorer.Migrator.MigrationStatus
   alias Explorer.Repo
   alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionsAddressPlaceholder}
@@ -63,6 +64,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     border_number = get_border_number()
     to_number = border_number && min(max_number + batch_size(), border_number)
     clear_internal_transactions(max_number, to_number)
+    clear_from_delete_queue()
     completed? = to_number == border_number
     new_max_number = (to_number && to_number + 1) || max_number
 
@@ -79,18 +81,40 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     {:noreply, new_state}
   end
 
-  @smallint_max_value 32767
+  defp clear_from_delete_queue do
+    batch_size = batch_size()
+
+    ZeroValueDeleteQueue
+    |> order_by([zvdq], zvdk.block_number)
+    |> select([zvdq], zvdq.block_number)
+    |> limit(^batch_size)
+    |> Repo.all()
+    |> clear_internal_transactions()
+  end
+
   defp clear_internal_transactions(from_number, to_number)
        when is_integer(from_number) and is_integer(to_number) and from_number < to_number do
+    dynamic_condition = dynamic([it], it.block_number >= ^from_number and it.block_number <= ^to_number)
+
+    do_clear_internal_transactions(dynamic_condition)
+  end
+
+  defp clear_internal_transactions(block_numbers) when is_list(block_numbers) do
+    dynamic_condition = dynamic([it], it.block_number in ^block_numbers)
+
+    do_clear_internal_transactions(dynamic_condition)
+  end
+
+  @smallint_max_value 32767
+  defp do_clear_internal_transactions(dynamic_condition) do
     Repo.transaction(fn ->
+      condition = dynamic([it], ^dynamic_condition and it.type == ^:call and it.value == ^0)
+
       locked_internal_transactions_to_delete_query =
         from(
           it in InternalTransaction,
           select: select_ctid(it),
-          where: it.block_number >= ^from_number,
-          where: it.block_number <= ^to_number,
-          where: it.type == ^:call,
-          where: it.value == ^0,
+          where: ^condition,
           order_by: [asc: it.transaction_hash, asc: it.index],
           lock: "FOR UPDATE"
         )

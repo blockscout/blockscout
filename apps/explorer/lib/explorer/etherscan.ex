@@ -33,6 +33,9 @@ defmodule Explorer.Etherscan do
     @default_options.page_size
   end
 
+  @spec default_options() :: map()
+  def default_options, do: @default_options
+
   @doc """
   Gets a list of transactions for a given `t:Explorer.Chain.Hash.Address.t/0`.
 
@@ -73,6 +76,7 @@ defmodule Explorer.Etherscan do
   end
 
   @internal_transaction_fields ~w(
+    block_number
     from_address_hash
     to_address_hash
     transaction_hash
@@ -87,6 +91,9 @@ defmodule Explorer.Etherscan do
     gas_used
     error
   )a
+
+  @spec internal_transaction_fields() :: map()
+  def internal_transaction_fields, do: @internal_transaction_fields
 
   @doc """
   Gets a list of all internal transactions (with :all option) or for a given address hash
@@ -117,8 +124,7 @@ defmodule Explorer.Etherscan do
           limit: 10_000,
           select:
             merge(map(it, ^@internal_transaction_fields), %{
-              block_timestamp: transaction.block_timestamp,
-              block_number: transaction.block_number
+              block_timestamp: transaction.block_timestamp
             })
         )
       else
@@ -130,8 +136,7 @@ defmodule Explorer.Etherscan do
           limit: 10_000,
           select:
             merge(map(it, ^@internal_transaction_fields), %{
-              block_timestamp: b.timestamp,
-              block_number: b.number
+              block_timestamp: b.timestamp
             })
         )
       end
@@ -212,8 +217,7 @@ defmodule Explorer.Etherscan do
         limit: ^options_to_limit_for_inner_query(options),
         select:
           merge(map(it, ^@internal_transaction_fields), %{
-            block_timestamp: transaction.block_timestamp,
-            block_number: transaction.block_number
+            block_timestamp: transaction.block_timestamp
           })
       )
     else
@@ -231,8 +235,7 @@ defmodule Explorer.Etherscan do
         limit: ^options_to_limit_for_inner_query(options),
         select:
           merge(map(it, ^@internal_transaction_fields), %{
-            block_timestamp: b.timestamp,
-            block_number: b.number
+            block_timestamp: b.timestamp
           })
       )
     end
@@ -253,8 +256,7 @@ defmodule Explorer.Etherscan do
       offset: ^options_to_offset(options),
       select:
         merge(map(it, ^@internal_transaction_fields), %{
-          block_timestamp: block.timestamp,
-          block_number: block.number
+          block_timestamp: block.timestamp
         })
     )
   end

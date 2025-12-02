@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
 
   import Ecto.Query
 
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, Etherscan, PagingOptions}
   alias Explorer.Chain.{Block, BlockNumberHelper, Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Repo
@@ -34,16 +34,30 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   def fetch_latest(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
+    from_block = Chain.from_block(options)
+    to_block = Chain.to_block(options)
+
     to_block_number =
-      case paging_options do
-        %PagingOptions{key: {block_number, _transaction_index, _index}} -> block_number
+      case {paging_options, to_block} do
+        {%PagingOptions{key: {block_number, _, _}}, _} -> block_number
+        {_, block_number} when is_integer(block_number) -> block_number
         _ -> BlockNumber.get_max()
       end
 
+    sort_direction =
+      case Keyword.get(options, :sort_direction) do
+        :asc -> &<=/2
+        _ -> &>=/2
+      end
+
+    index_internal_transaction_desc_order = Keyword.get(options, :index_internal_transaction_desc_order, true)
+
     to_block_number
-    |> fetch_enough(paging_options.page_size, options)
-    |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
-    |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
+    |> fetch_enough(from_block || 0, paging_options.page_size, options)
+    |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, sort_direction)
+    |> page_internal_transaction(paging_options, %{
+      index_internal_transaction_desc_order: index_internal_transaction_desc_order
+    })
     |> Enum.take(paging_options.page_size)
   end
 
@@ -205,20 +219,82 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         _ -> "both"
       end
 
+    sort_direction =
+      case Keyword.get(options, :sort_direction) do
+        :asc -> &<=/2
+        _ -> &>=/2
+      end
+
+    index_internal_transaction_desc_order = Keyword.get(options, :index_internal_transaction_desc_order, true)
+
     address_id
     |> get_block_numbers_for_address(max_block_number, from_block, paging_options.page_size, sum_mode)
     |> fetch_block_internal_transactions()
     |> Enum.map(&serialize/1)
     |> filter_by_address(address_hash, direction)
-    |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
-    |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
+    |> page_internal_transaction(paging_options, %{
+      index_internal_transaction_desc_order: index_internal_transaction_desc_order
+    })
+    |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, sort_direction)
     |> Enum.take(paging_options.page_size)
     |> add_block_hashes()
     |> join_associations(necessity_by_association)
   end
 
-  defp fetch_enough(start_block_number, count, options, acc \\ []) do
-    internal_transactions = fetch_by_block(start_block_number, Keyword.put(options, :unlimited, true))
+  def etherscan_fetch_by_transaction(transaction, raw_options) do
+    options = Map.merge(Etherscan.default_options(), raw_options)
+
+    transaction
+    |> fetch_by_transaction(paging_options: %PagingOptions{page_size: options.page_size})
+    |> Enum.map(&etherscan_serialize/1)
+  end
+
+  def etherscan_fetch_by_address(address_hash, raw_options) do
+    options = Map.merge(Etherscan.default_options(), raw_options)
+
+    direction =
+      case options do
+        %{filter_by: "to"} -> :to
+        %{filter_by: "from"} -> :from
+        _ -> :both
+      end
+
+    prepared_options = [
+      paging_options: %PagingOptions{page_size: options.page_size, page_number: options.page_number},
+      direction: direction,
+      from_block: Map.get(options, :startblock),
+      to_block: Map.get(options, :endblock),
+      sort_direction: Map.get(options, :order_by_direction),
+      index_internal_transaction_desc_order: Map.get(options, :order_by_direction)
+    ]
+
+    address_hash
+    |> fetch_by_address(prepared_options)
+    |> Repo.preload(:block)
+    |> Enum.map(&etherscan_serialize/1)
+  end
+
+  def etherscan_fetch_latest(raw_options) do
+    options = Map.merge(Etherscan.default_options(), raw_options)
+
+    prepared_options = [
+      paging_options: %PagingOptions{page_size: options.page_size, page_number: options.page_number},
+      from_block: Map.get(options, :startblock),
+      to_block: Map.get(options, :endblock),
+      sort_direction: Map.get(options, :order_by_direction),
+      index_internal_transaction_desc_order: Map.get(options, :order_by_direction)
+    ]
+
+    options
+    |> fetch_latest()
+    |> Repo.preload(:block)
+    |> Enum.map(&etherscan_serialize/1)
+  end
+
+  defp fetch_enough(start_block_number, end_block_number, count, options, acc \\ [])
+
+  defp fetch_enough(start_number, end_number, count, options, acc) when start_number >= end_number do
+    internal_transactions = fetch_by_block(start_number, Keyword.put(options, :unlimited, true))
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     fetched_count =
@@ -228,14 +304,16 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
 
     result = Enum.concat(acc, internal_transactions)
 
-    if fetched_count >= count or start_block_number == 0 do
+    if fetched_count >= count or start_number == 0 do
       result
     else
-      start_block_number
+      start_number
       |> BlockNumberHelper.previous_block_number()
-      |> fetch_enough(count - fetched_count, options, result)
+      |> fetch_enough(end_number, count - fetched_count, options, result)
     end
   end
+
+  defp fetch_enough(_start_number, _end_number, _count, _options, acc), do: acc
 
   defp get_block_numbers_for_address(nil, _start_block, _end_block, _limit, _sum_mode), do: []
 
@@ -517,5 +595,11 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     %InternalTransaction{}
     |> InternalTransaction.changeset(internal_transaction_params)
     |> Ecto.Changeset.apply_changes()
+  end
+
+  defp etherscan_serialize(internal_transaction) do
+    internal_transaction
+    |> Map.take(Etherscan.internal_transaction_fields())
+    |> Map.put(:block_timestamp, internal_transaction.block.timestamp)
   end
 end

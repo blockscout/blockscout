@@ -57,8 +57,8 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
+  alias Explorer.{Etherscan, PagingOptions}
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
-  alias Explorer.PagingOptions
   alias Indexer.Fetcher.OnDemand.InternalTransaction, as: InternalTransactionOnDemand
   alias Plug.Conn
 
@@ -1372,11 +1372,83 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  defp merge_internal_transactions(first_list, second_list, limit) do
+  @doc """
+    Works similar to `Explorer.Etherscan.list_internal_transactions/2`
+    but using DB or on-demand RPC based on internal transactions presence in DB.
+
+    When internal transactions are present in the database (for recent blocks
+    within the storage period), they are fetched from the DB. For older blocks
+    where zero-value internal transactions have been deleted, the function
+    falls back to fetching on-demand from the JSON-RPC node.
+
+    ## Parameters
+    - `transaction_or_address_hash_param_or_no_param`: Transaction or address hash or `:all` as a source to fetching internal transactions
+    - `options`: Map of options
+
+    ## Returns
+    - List of InternalTransaction fields maps for the given param
+  """
+  @spec list_internal_transactions(Hash.Full.t() | Hash.Address.t() | :all, map()) :: [map()]
+  def list_internal_transactions(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash, options) do
+    case hash_to_transaction(transaction_hash) do
+      {:ok, transaction} ->
+        if InternalTransaction.present_in_db?(transaction.block_number) do
+          Etherscan.list_internal_transactions(transaction.hash, options)
+        else
+          InternalTransactionOnDemand.etherscan_fetch_by_transaction(transaction, options)
+        end
+
+      {:error, :not_found} ->
+        []
+    end
+  end
+
+  def list_internal_transactions(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash, raw_options) do
+    from_db = Etherscan.list_internal_transactions(address_hash, raw_options)
+
+    options = Map.merge(Etherscan.default_options(), raw_options)
+
+    from_node =
+      with true <- Enum.count(from_db) >= options.page_size,
+           border_number = DeleteZeroValueInternalTransactions.border_number(),
+           true <- is_nil(border_number) or Enum.all?(from_db, &(&1.block_number > border_number)) do
+        []
+      else
+        _ -> InternalTransactionOnDemand.etherscan_fetch_by_address(address_hash, options)
+      end
+
+    merge_internal_transactions(from_db, from_node, options.page_size)
+  end
+
+  def list_internal_transactions(:all, raw_options) do
+    options = Map.merge(Etherscan.default_options(), raw_options)
+
+    cond do
+      not is_nil(options[:endblock]) and not InternalTransaction.present_in_db?(options[:endblock]) ->
+        InternalTransactionOnDemand.etherscan_fetch_latest(options)
+
+      Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] ->
+        from_db = Etherscan.list_internal_transactions(:all, options)
+        from_node = InternalTransactionOnDemand.etherscan_fetch_latest(options)
+
+        merge_internal_transactions(from_db, from_node, options.page_size)
+
+      true ->
+        InternalTransaction.etherscan_fetch_latest(options)
+    end
+  end
+
+  defp merge_internal_transactions(first_list, second_list, limit, sort_direction \\ :desc) do
+    sort_func =
+      case sort_direction do
+        :asc -> &<=/2
+        _ -> &>=/2
+      end
+
     first_list
     |> Enum.concat(second_list)
     |> Enum.uniq_by(&{&1.block_number, &1.transaction_index, &1.index})
-    |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
+    |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, sort_func)
     |> Enum.take(limit)
   end
 
