@@ -94,7 +94,10 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
 
       {:error, error} ->
         APILogger.error(fn ->
-          ["Error while calling RPC action", inspect(error, limit: :infinity, printable_limit: :infinity)]
+          [
+            "Error while calling RPC action #{action} in module #{module} with query string #{conn.query_string}",
+            inspect(error, limit: :infinity, printable_limit: :infinity)
+          ]
         end)
 
         conn
