@@ -39,6 +39,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Validate NFT_MEDIA_HANDLER_BUCKET_FOLDER env ([#13671](https://github.com/blockscout/blockscout/pull/13671))
+- Enhance RPC API errors logging ([#13664](https://github.com/blockscout/blockscout/pull/13664))
 - Use chain id `31337` for `anvil` ([#13644](https://github.com/blockscout/blockscout/issues/13644))
 - Update devcontainer image to use Elixir 1.19.4 ([#13645](https://github.com/blockscout/blockscout/issues/13645))
 - Elixir 1.19.3 -> 1.19.4 ([#13643](https://github.com/blockscout/blockscout/issues/13643))
