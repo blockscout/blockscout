@@ -36,7 +36,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- Fix 500 for pending tx in gettxinfo RPC API([#13665](https://github.com/blockscout/blockscout/pull/13665))
+- Fix 500 for pending tx in gettxinfo RPC API endpoint([#13665](https://github.com/blockscout/blockscout/pull/13665))
 - Use chain id `31337` for `anvil` ([#13644](https://github.com/blockscout/blockscout/issues/13644))
 - Update devcontainer image to use Elixir 1.19.4 ([#13645](https://github.com/blockscout/blockscout/issues/13645))
 - Elixir 1.19.3 -> 1.19.4 ([#13643](https://github.com/blockscout/blockscout/issues/13643))
