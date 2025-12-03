@@ -61,7 +61,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "hash" => "#{transaction.hash}",
       "timeStamp" => "#{DateTime.to_unix(Transaction.block_timestamp(transaction))}",
       "blockNumber" => "#{transaction.block_number}",
-      "confirmations" => "#{block_height - transaction.block_number}",
+      "confirmations" =>
+        if(is_nil(transaction.block_number), do: "0", else: "#{block_height - transaction.block_number}"),
       "success" => if(transaction.status == :ok, do: true, else: false),
       "from" => "#{transaction.from_address_hash}",
       "to" => "#{transaction.to_address_hash}",
