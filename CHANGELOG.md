@@ -8,7 +8,7 @@
 - Add metadata to eth bytecode DB lookup request ([#13625](https://github.com/blockscout/blockscout/issues/13625))
 - Support ZRC-2 tokens for `zilliqa` chain type ([#13443](https://github.com/blockscout/blockscout/issues/13443))
 - Indexer monitor Prometheus metrics ([#13539](https://github.com/blockscout/blockscout/issues/13539), [#13668](https://github.com/blockscout/blockscout/pull/13668))
-- Hot smart-contracts ([#13471](https://github.com/blockscout/blockscout/issues/13471))
+- Hot smart-contracts ([#13471](https://github.com/blockscout/blockscout/issues/13471), [#13669](https://github.com/blockscout/blockscout/pull/13669))
 - Support OP Jovian upgrade, other enhancements ([#13538](https://github.com/blockscout/blockscout/issues/13538))
 - Scope celo under optimism chain type ([#13375](https://github.com/blockscout/blockscout/issues/13375))
 
