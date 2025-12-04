@@ -50,7 +50,7 @@ defmodule Explorer.Stats.HotSmartContracts do
       {:ok,
        from_block
        |> aggregate_hot_smart_contracts_for_block_interval_query(to_block)
-       |> Chain.select_repo(options).all()
+       |> Chain.select_repo(options).all(timeout: :infinity)
        |> Enum.map(&Map.put(&1, :date, date))}
     else
       error -> {:error, error}
@@ -80,7 +80,7 @@ defmodule Explorer.Stats.HotSmartContracts do
     __MODULE__
     |> select([hot_smart_contracts_daily], hot_smart_contracts_daily.date)
     |> distinct(true)
-    |> Chain.select_repo(options).all()
+    |> Chain.select_repo(options).all(timeout: :infinity)
   end
 
   @spec delete_older_than(Date.t(), keyword()) :: {non_neg_integer(), nil}
