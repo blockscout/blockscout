@@ -151,7 +151,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a size of the batch list.",
     parameters: base_params(),
     responses: [
-      ok: {"Number of items in the batch list.", "application/json", Schemas.Optimism.Batch.Count},
+      ok: {"Number of items in the batch list.", "application/json", %Schema{type: :integer, nullable: true}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -252,6 +252,29 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     end
   end
 
+  operation :output_roots,
+    summary: "List output roots.",
+    description: "Retrieves a paginated list of output roots.",
+    parameters:
+      base_params() ++
+        define_paging_params([
+          "index",
+          "items_count"
+        ]),
+    responses: [
+      ok:
+        {"List of output roots.", "application/json",
+         paginated_response(
+           items: Schemas.Optimism.OutputRoot,
+           next_page_params_example: %{
+             "index" => 8829,
+             "items_count" => 50
+           },
+           title_prefix: "OutputRoots"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/optimism/output-roots` endpoint.
   """
@@ -274,6 +297,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     })
   end
 
+  operation :output_roots_count,
+    summary: "Number of output roots in the list.",
+    description: "Retrieves a size of the output roots list.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Number of items in the output roots list.", "application/json", %Schema{type: :integer, nullable: true}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/optimism/output-roots/count` endpoint.
   """
@@ -281,6 +313,29 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   def output_roots_count(conn, _params) do
     items_count(conn, OutputRoot)
   end
+
+  operation :games,
+    summary: "List games.",
+    description: "Retrieves a paginated list of games.",
+    parameters:
+      base_params() ++
+        define_paging_params([
+          "index",
+          "items_count"
+        ]),
+    responses: [
+      ok:
+        {"List of games.", "application/json",
+         paginated_response(
+           items: Schemas.Optimism.Game,
+           next_page_params_example: %{
+             "index" => 12967,
+             "items_count" => 50
+           },
+           title_prefix: "Games"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
   Function to handle GET requests to `/api/v2/optimism/games` endpoint.
@@ -304,6 +359,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     })
   end
 
+  operation :games_count,
+    summary: "Number of games in the list.",
+    description: "Retrieves a size of the games list.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Number of items in the games list.", "application/json", %Schema{type: :integer, nullable: false}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/optimism/games/count` endpoint.
   """
@@ -315,6 +379,31 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     |> put_status(200)
     |> render(:optimism_items_count, %{count: count})
   end
+
+  operation :deposits,
+    summary: "List deposits.",
+    description: "Retrieves a paginated list of deposits.",
+    parameters:
+      base_params() ++
+        define_paging_params([
+          "items_count",
+          "l1_block_number",
+          "transaction_hash"
+        ]),
+    responses: [
+      ok:
+        {"List of deposits.", "application/json",
+         paginated_response(
+           items: Schemas.Optimism.Deposit,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "l1_block_number" => 23_937_283,
+             "transaction_hash" => "0x5dc155c382d95353c5876e735d675d284e3b29b1379e5859dc35cfd4a1dd5188"
+           },
+           title_prefix: "Deposits"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
   Function to handle GET requests to `/api/v2/optimism/deposits` endpoint.
@@ -338,6 +427,17 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     })
   end
 
+  operation :main_page_deposits,
+    summary: "List deposits on the main page.",
+    description: "Retrieves a list of deposits for the main page.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"List of deposits on the main page.", "application/json",
+         %Schema{type: :array, items: Schemas.Optimism.Deposit.MainPage, nullable: false}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/main-page/optimism-deposits` endpoint.
   """
@@ -354,6 +454,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     |> put_view(OptimismView)
     |> render(:optimism_deposits, %{deposits: recent_deposits})
   end
+
+  operation :deposits_count,
+    summary: "Number of deposits in the list.",
+    description: "Retrieves a size of the deposits list.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Number of items in the deposits list.", "application/json", %Schema{type: :integer, nullable: true}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
   Function to handle GET requests to `/api/v2/optimism/deposits/count` endpoint.
@@ -498,6 +607,29 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     |> render(:optimism_items_count, %{count: InteropMessage.count(@api_true)})
   end
 
+  operation :withdrawals,
+    summary: "List withdrawals.",
+    description: "Retrieves a paginated list of withdrawals.",
+    parameters:
+      base_params() ++
+        define_paging_params([
+          "items_count",
+          "nonce"
+        ]),
+    responses: [
+      ok:
+        {"List of withdrawals.", "application/json",
+         paginated_response(
+           items: Schemas.Optimism.Withdrawal,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "nonce" => "1766847064778384329583297500742918515827483896875618958121606201292650102"
+           },
+           title_prefix: "Withdrawals"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/optimism/withdrawals` endpoint.
   """
@@ -519,6 +651,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       next_page_params: next_page_params
     })
   end
+
+  operation :withdrawals_count,
+    summary: "Number of withdrawals in the list.",
+    description: "Retrieves a size of the withdrawals list.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Number of items in the withdrawals list.", "application/json", %Schema{type: :integer, nullable: true}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
   Function to handle GET requests to `/api/v2/optimism/withdrawals/count` endpoint.
