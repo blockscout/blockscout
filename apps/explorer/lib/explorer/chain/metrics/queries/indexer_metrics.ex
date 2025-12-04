@@ -30,7 +30,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
     );
     """
 
-    case SQL.query(Repo, sql_string) do
+    case SQL.query(Repo, sql_string, [], timeout: :infinity) do
       {:ok, %Postgrex.Result{command: :select, columns: ["missing_blocks_count"], rows: [[missing_blocks_count]]}} ->
         missing_blocks_count
 
@@ -44,7 +44,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   """
   @spec missing_internal_transactions_count() :: integer()
   def missing_internal_transactions_count do
-    Repo.aggregate(PendingBlockOperation, :count, :block_hash)
+    Repo.aggregate(PendingBlockOperation, :count, :block_hash, timeout: :infinity)
   end
 
   @doc """
@@ -66,7 +66,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
       );
       """
 
-    case SQL.query(Repo, sql_string) do
+    case SQL.query(Repo, sql_string, [], timeout: :infinity) do
       {:ok,
        %Postgrex.Result{
          command: :select,
@@ -92,7 +92,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
       )
 
     query
-    |> Repo.aggregate(:count, :id)
+    |> Repo.aggregate(:count, :id, timeout: :infinity)
   end
 
   @doc """
@@ -107,7 +107,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
       )
 
     query
-    |> Repo.aggregate(:count, :token_id)
+    |> Repo.aggregate(:count, :token_id, timeout: :infinity)
   end
 
   @doc """
@@ -137,7 +137,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
       ) AS a;
       """
 
-    case SQL.query(Repo, sql_string) do
+    case SQL.query(Repo, sql_string, [], timeout: :infinity) do
       {:ok,
        %Postgrex.Result{
          command: :select,
@@ -163,7 +163,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
       FROM token_instances WHERE metadata IS NOT NULL AND thumbnails IS NULL AND cdn_upload_error IS NULL;
       """
 
-    case SQL.query(Repo, sql_string) do
+    case SQL.query(Repo, sql_string, [], timeout: :infinity) do
       {:ok,
        %Postgrex.Result{
          command: :select,
@@ -182,7 +182,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   """
   @spec multichain_search_db_export_balances_queue_count() :: integer()
   def multichain_search_db_export_balances_queue_count do
-    Repo.aggregate(MultichainSearchDbBalancesExportQueue, :count, :id)
+    Repo.aggregate(MultichainSearchDbBalancesExportQueue, :count, :id, timeout: :infinity)
   end
 
   @doc """
@@ -190,7 +190,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   """
   @spec multichain_search_db_export_counters_queue_count() :: integer()
   def multichain_search_db_export_counters_queue_count do
-    Repo.aggregate(MultichainSearchDbCountersExportQueue, :count, :timestamp)
+    Repo.aggregate(MultichainSearchDbCountersExportQueue, :count, :timestamp, timeout: :infinity)
   end
 
   @doc """
@@ -198,7 +198,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   """
   @spec multichain_search_db_export_token_info_queue_count() :: integer()
   def multichain_search_db_export_token_info_queue_count do
-    Repo.aggregate(MultichainSearchDbTokenInfoExportQueue, :count, :address_hash)
+    Repo.aggregate(MultichainSearchDbTokenInfoExportQueue, :count, :address_hash, timeout: :infinity)
   end
 
   @doc """
@@ -206,6 +206,6 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   """
   @spec multichain_search_db_main_export_queue_count() :: integer()
   def multichain_search_db_main_export_queue_count do
-    Repo.aggregate(MultichainSearchDbMainExportQueue, :count, :hash)
+    Repo.aggregate(MultichainSearchDbMainExportQueue, :count, :hash, timeout: :infinity)
   end
 end
