@@ -38,6 +38,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Filter out empty addresses from multichain export ([#13674](https://github.com/blockscout/blockscout/pull/13674))
 - Validate NFT_MEDIA_HANDLER_BUCKET_FOLDER env ([#13671](https://github.com/blockscout/blockscout/pull/13671))
 - Enhance RPC API errors logging ([#13664](https://github.com/blockscout/blockscout/pull/13664))
 - Use chain id `31337` for `anvil` ([#13644](https://github.com/blockscout/blockscout/issues/13644))
