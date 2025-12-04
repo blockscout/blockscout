@@ -246,7 +246,7 @@ defmodule ConfigHelper do
   def parse_bool_env_var(env_var, default_value \\ "false"),
     do: String.downcase(safe_get_env(env_var, default_value)) == "true"
 
-  @spec parse_path_env_var(String.t(), String.t() | nil) :: String.t()
+  @spec parse_path_env_var(String.t(), String.t() | nil) :: String.t() | nil
   def parse_path_env_var(env_var, default_value \\ nil) do
     env_var
     |> System.get_env(default_value)
