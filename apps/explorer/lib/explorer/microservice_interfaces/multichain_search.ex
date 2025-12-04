@@ -699,16 +699,21 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   @spec filter_addresses_to_multichain_import(
           [Address.t()],
-          :on_demand | nil
+          atom() | nil
         ) :: [Address.t()]
   def filter_addresses_to_multichain_import(addresses, :on_demand) do
     addresses
-    |> Enum.filter(fn %{
+    |> Enum.filter(fn %Address{
                         fetched_coin_balance: fetched_coin_balance,
                         transactions_count: transactions_count,
                         token_transfers_count: token_transfers_count
                       } ->
-      fetched_coin_balance > 0 || transactions_count > 0 || token_transfers_count > 0
+      case fetched_coin_balance do
+        %Wei{value: value} -> Decimal.compare(value, 0) == :gt
+        _ -> false
+      end ||
+        (is_number(transactions_count) and transactions_count > 0) ||
+        (is_number(token_transfers_count) and token_transfers_count > 0)
     end)
   end
 
