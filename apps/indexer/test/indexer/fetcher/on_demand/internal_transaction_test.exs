@@ -111,7 +111,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       block_traceable?: true
     )
 
-    assert [%InternalTransaction{block_hash: ^block_hash}, %InternalTransaction{block_hash: ^block_hash}] =
+    assert [%InternalTransaction{block_hash: ^block_hash, index: 1}] =
              InternalTransactionOnDemand.fetch_by_block(block, [])
   end
 
@@ -157,7 +157,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       block_traceable?: false
     )
 
-    assert [%InternalTransaction{block_hash: ^block_hash}, %InternalTransaction{block_hash: ^block_hash}] =
+    assert [%InternalTransaction{block_hash: ^block_hash, index: 1}] =
              InternalTransactionOnDemand.fetch_by_block(transaction.block, [])
   end
 
@@ -200,6 +200,18 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
              result: [
                %{
                  "result" => %{
+                   "calls" => [
+                     %{
+                       "from" => "0x4200000000000000000000000000000000000015",
+                       "gas" => "0xe9a3c",
+                       "gasUsed" => "0x4a28",
+                       "input" =>
+                         "0x015d8eb900000000000000000000000000000000000000000000000000000000009cb0d80000000000000000000000000000000000000000000000000000000065898738000000000000000000000000000000000000000000000000000000000000001b65f7961a6893850c1f001edeaa0aa4f1fb36b67eee61a8623f8f4da81be25c0000000000000000000000000000000000000000000000000000000000000000050000000000000000000000007431310e026b69bfc676c0013e12a1a11411eec9000000000000000000000000000000000000000000000000000000000000083400000000000000000000000000000000000000000000000000000000000f4240",
+                       "to" => address_hash_str,
+                       "type" => "CALL",
+                       "value" => "0x0"
+                     }
+                   ],
                    "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
                    "gas" => "0xf4240",
                    "gasUsed" => "0xb6f9",
@@ -213,6 +225,18 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
                },
                %{
                  "result" => %{
+                   "calls" => [
+                     %{
+                       "from" => "0x4200000000000000000000000000000000000015",
+                       "gas" => "0xe9a3c",
+                       "gasUsed" => "0x4a28",
+                       "input" =>
+                         "0x015d8eb900000000000000000000000000000000000000000000000000000000009cb0d80000000000000000000000000000000000000000000000000000000065898738000000000000000000000000000000000000000000000000000000000000001b65f7961a6893850c1f001edeaa0aa4f1fb36b67eee61a8623f8f4da81be25c0000000000000000000000000000000000000000000000000000000000000000050000000000000000000000007431310e026b69bfc676c0013e12a1a11411eec9000000000000000000000000000000000000000000000000000000000000083400000000000000000000000000000000000000000000000000000000000f4240",
+                       "to" => address_hash_str,
+                       "type" => "CALL",
+                       "value" => "0x0"
+                     }
+                   ],
                    "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
                    "gas" => "0xf4240",
                    "gasUsed" => "0xb6f9",
@@ -226,6 +250,18 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
                },
                %{
                  "result" => %{
+                   "calls" => [
+                     %{
+                       "from" => "0x4200000000000000000000000000000000000015",
+                       "gas" => "0xe9a3c",
+                       "gasUsed" => "0x4a28",
+                       "input" =>
+                         "0x015d8eb900000000000000000000000000000000000000000000000000000000009cb0d80000000000000000000000000000000000000000000000000000000065898738000000000000000000000000000000000000000000000000000000000000001b65f7961a6893850c1f001edeaa0aa4f1fb36b67eee61a8623f8f4da81be25c0000000000000000000000000000000000000000000000000000000000000000050000000000000000000000007431310e026b69bfc676c0013e12a1a11411eec9000000000000000000000000000000000000000000000000000000000000083400000000000000000000000000000000000000000000000000000000000f4240",
+                       "to" => address_hash_str,
+                       "type" => "CALL",
+                       "value" => "0x0"
+                     }
+                   ],
                    "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
                    "gas" => "0xf4240",
                    "gasUsed" => "0xb6f9",
@@ -244,6 +280,18 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
              result: [
                %{
                  "result" => %{
+                   "calls" => [
+                     %{
+                       "from" => "0x4200000000000000000000000000000000000015",
+                       "gas" => "0xe9a3c",
+                       "gasUsed" => "0x4a28",
+                       "input" =>
+                         "0x015d8eb900000000000000000000000000000000000000000000000000000000009cb0d80000000000000000000000000000000000000000000000000000000065898738000000000000000000000000000000000000000000000000000000000000001b65f7961a6893850c1f001edeaa0aa4f1fb36b67eee61a8623f8f4da81be25c0000000000000000000000000000000000000000000000000000000000000000050000000000000000000000007431310e026b69bfc676c0013e12a1a11411eec9000000000000000000000000000000000000000000000000000000000000083400000000000000000000000000000000000000000000000000000000000f4240",
+                       "to" => address_hash_str,
+                       "type" => "CALL",
+                       "value" => "0x0"
+                     }
+                   ],
                    "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
                    "gas" => "0xf4240",
                    "gasUsed" => "0xb6f9",
@@ -257,6 +305,18 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
                },
                %{
                  "result" => %{
+                   "calls" => [
+                     %{
+                       "from" => "0x4200000000000000000000000000000000000015",
+                       "gas" => "0xe9a3c",
+                       "gasUsed" => "0x4a28",
+                       "input" =>
+                         "0x015d8eb900000000000000000000000000000000000000000000000000000000009cb0d80000000000000000000000000000000000000000000000000000000065898738000000000000000000000000000000000000000000000000000000000000001b65f7961a6893850c1f001edeaa0aa4f1fb36b67eee61a8623f8f4da81be25c0000000000000000000000000000000000000000000000000000000000000000050000000000000000000000007431310e026b69bfc676c0013e12a1a11411eec9000000000000000000000000000000000000000000000000000000000000083400000000000000000000000000000000000000000000000000000000000f4240",
+                       "to" => address_hash_str,
+                       "type" => "CALL",
+                       "value" => "0x0"
+                     }
+                   ],
                    "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
                    "gas" => "0xf4240",
                    "gasUsed" => "0xb6f9",

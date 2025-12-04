@@ -1283,7 +1283,8 @@ defmodule BlockScoutWeb.Chain do
     options_with_necessity = Keyword.put_new(options, :necessity_by_association, necessity_by_association)
 
     cond do
-      match?(%PagingOptions{key: {0, 0}}, paging_options) ->
+      match?(%PagingOptions{key: {0, 0, 0}}, paging_options) or
+          match?(%PagingOptions{key: %{transaction_index: 0, index: 0}}, paging_options) ->
         []
 
       not is_nil(transaction_hash) ->
@@ -1373,10 +1374,18 @@ defmodule BlockScoutWeb.Chain do
   @doc """
     Fetches internal transactions for the given address by combining DB and on-demand sources.
 
-    It first loads DB-backed internal transactions for the requested page, then fetches
-    additional items on-demand via JSON-RPC. The merged list is deduplicated on
-    `{block_number, transaction_index, index}`, sorted in descending order, and
-    trimmed to the requested page size.
+    It first loads DB-backed internal transactions for the requested page, then
+    fetches additional items on-demand via JSON-RPC if needed. The merged list is
+    deduplicated, sorted in descending order, and trimmed to the requested page size.
+
+    ## Parameters
+    - `address_hash`: The address hash to fetch internal transactions for
+    - `options`: Keyword list with optional keys:
+      - `:paging_options` - pagination options including page_size and key
+      - `:necessity_by_association` - associations to preload as required or optional
+
+    ## Returns
+    - List of InternalTransaction structs for the given address
   """
   @spec address_to_internal_transactions(Hash.Address.t(), Keyword.t()) :: [InternalTransaction.t()]
   def address_to_internal_transactions(address_hash, options \\ []) do

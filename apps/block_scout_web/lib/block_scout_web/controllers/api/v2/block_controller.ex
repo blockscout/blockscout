@@ -446,7 +446,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
          paginated_response(
            items: Schemas.InternalTransaction,
            next_page_params_example: %{
-             "block_index" => 8,
+             "transaction_index" => 3,
+             "index" => 8,
              "items_count" => 50
            },
            title_prefix: "BlockInternalTransactions"

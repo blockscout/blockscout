@@ -129,7 +129,8 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
           select: %{
             from_address_hash: it.from_address_hash,
             to_address_hash: it.to_address_hash,
-            block_number: it.block_number
+            block_number: it.block_number,
+            index: it.index
           }
         )
 
@@ -161,36 +162,40 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
         |> Enum.group_by(& &1.block_number)
         |> Enum.flat_map(fn {block_number, internal_transactions} ->
           internal_transactions
-          |> Enum.reduce(%{}, fn internal_transaction, inner_acc ->
-            from_address_hash = internal_transaction.from_address_hash
-            to_address_hash = internal_transaction.to_address_hash
+          |> Enum.reduce(%{}, fn
+            %{index: 0}, inner_acc ->
+              inner_acc
 
-            inner_acc
-            |> Map.update(
-              from_address_hash,
-              %{
-                address_id: address_to_id_map[from_address_hash],
-                block_number: block_number,
-                count_tos: 0,
-                count_froms: 1
-              },
-              fn existing_params ->
-                %{existing_params | count_froms: min(existing_params.count_froms + 1, @smallint_max_value)}
-              end
-            )
-            |> Map.update(
-              to_address_hash,
-              %{
-                address_id: address_to_id_map[to_address_hash],
-                block_number: block_number,
-                count_tos: 1,
-                count_froms: 0
-              },
-              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-              fn existing_params ->
-                %{existing_params | count_tos: min(existing_params.count_tos + 1, @smallint_max_value)}
-              end
-            )
+            internal_transaction, inner_acc ->
+              from_address_hash = internal_transaction.from_address_hash
+              to_address_hash = internal_transaction.to_address_hash
+
+              inner_acc
+              |> Map.update(
+                from_address_hash,
+                %{
+                  address_id: address_to_id_map[from_address_hash],
+                  block_number: block_number,
+                  count_tos: 0,
+                  count_froms: 1
+                },
+                fn existing_params ->
+                  %{existing_params | count_froms: min(existing_params.count_froms + 1, @smallint_max_value)}
+                end
+              )
+              |> Map.update(
+                to_address_hash,
+                %{
+                  address_id: address_to_id_map[to_address_hash],
+                  block_number: block_number,
+                  count_tos: 1,
+                  count_froms: 0
+                },
+                # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+                fn existing_params ->
+                  %{existing_params | count_tos: min(existing_params.count_tos + 1, @smallint_max_value)}
+                end
+              )
           end)
           |> Map.values()
           |> Enum.reject(&is_nil(&1.address_id))
