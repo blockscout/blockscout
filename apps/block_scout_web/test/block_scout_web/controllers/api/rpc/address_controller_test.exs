@@ -2118,7 +2118,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           value: 1,
           from_address: address,
           block_hash: transaction.block_hash,
-          block_index: 0
+          block_index: 0,
+          block_number: transaction.block_number
         )
         |> with_contract_creation(contract_address)
 

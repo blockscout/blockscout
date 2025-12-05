@@ -11,6 +11,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
 
   alias Explorer.Chain.{Block, InternalTransaction}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
+  alias Explorer.Chain.InternalTransaction.ZeroValueDeleteQueue
   alias Explorer.Migrator.MigrationStatus
   alias Explorer.Repo
   alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionsAddressPlaceholder}
@@ -26,6 +27,13 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
+
+  @doc """
+  Returns the border block number. All internal transactions with zero value (and no contract creation) and
+  block number less than or equal to the border number are subject to deletion.
+  """
+  @spec border_number() :: non_neg_integer() | nil
+  def border_number, do: get_border_number()
 
   @impl true
   def init(_) do
@@ -56,6 +64,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     border_number = get_border_number()
     to_number = border_number && min(max_number + batch_size(), border_number)
     clear_internal_transactions(max_number, to_number)
+    clear_from_delete_queue()
     completed? = to_number == border_number
     new_max_number = (to_number && to_number + 1) || max_number
 
@@ -72,18 +81,42 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     {:noreply, new_state}
   end
 
-  @smallint_max_value 32767
+  defp clear_from_delete_queue do
+    batch_size = batch_size()
+
+    ZeroValueDeleteQueue
+    |> order_by([z], z.block_number)
+    |> select([z], z.block_number)
+    |> limit(^batch_size)
+    |> Repo.all()
+    |> clear_internal_transactions()
+  end
+
   defp clear_internal_transactions(from_number, to_number)
        when is_integer(from_number) and is_integer(to_number) and from_number < to_number do
+    dynamic_condition = dynamic([it], it.block_number >= ^from_number and it.block_number <= ^to_number)
+
+    do_clear_internal_transactions(dynamic_condition)
+  end
+
+  defp clear_internal_transactions(_from, _to), do: :ok
+
+  defp clear_internal_transactions(block_numbers) when is_list(block_numbers) do
+    dynamic_condition = dynamic([it], it.block_number in ^block_numbers)
+
+    do_clear_internal_transactions(dynamic_condition)
+  end
+
+  @smallint_max_value 32767
+  defp do_clear_internal_transactions(dynamic_condition) do
     Repo.transaction(fn ->
+      condition = dynamic([it], ^dynamic_condition and it.type == ^:call and it.value == ^0)
+
       locked_internal_transactions_to_delete_query =
         from(
           it in InternalTransaction,
           select: select_ctid(it),
-          where: it.block_number >= ^from_number,
-          where: it.block_number <= ^to_number,
-          where: it.type == ^:call,
-          where: it.value == ^0,
+          where: ^condition,
           order_by: [asc: it.transaction_hash, asc: it.index],
           lock: "FOR UPDATE"
         )
@@ -96,11 +129,16 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
           select: %{
             from_address_hash: it.from_address_hash,
             to_address_hash: it.to_address_hash,
-            block_number: it.block_number
+            block_number: it.block_number,
+            index: it.index
           }
         )
 
       {_count, deleted_internal_transactions} = Repo.delete_all(delete_query, timeout: :infinity)
+
+      ZeroValueDeleteQueue
+      |> where([it], ^dynamic_condition)
+      |> Repo.delete_all(timeout: :infinity)
 
       address_hashes =
         deleted_internal_transactions
@@ -124,36 +162,40 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
         |> Enum.group_by(& &1.block_number)
         |> Enum.flat_map(fn {block_number, internal_transactions} ->
           internal_transactions
-          |> Enum.reduce(%{}, fn internal_transaction, inner_acc ->
-            from_address_hash = internal_transaction.from_address_hash
-            to_address_hash = internal_transaction.to_address_hash
+          |> Enum.reduce(%{}, fn
+            %{index: 0}, inner_acc ->
+              inner_acc
 
-            inner_acc
-            |> Map.update(
-              from_address_hash,
-              %{
-                address_id: address_to_id_map[from_address_hash],
-                block_number: block_number,
-                count_tos: 0,
-                count_froms: 1
-              },
-              fn existing_params ->
-                %{existing_params | count_froms: min(existing_params.count_froms + 1, @smallint_max_value)}
-              end
-            )
-            |> Map.update(
-              to_address_hash,
-              %{
-                address_id: address_to_id_map[to_address_hash],
-                block_number: block_number,
-                count_tos: 1,
-                count_froms: 0
-              },
-              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-              fn existing_params ->
-                %{existing_params | count_tos: min(existing_params.count_tos + 1, @smallint_max_value)}
-              end
-            )
+            internal_transaction, inner_acc ->
+              from_address_hash = internal_transaction.from_address_hash
+              to_address_hash = internal_transaction.to_address_hash
+
+              inner_acc
+              |> Map.update(
+                from_address_hash,
+                %{
+                  address_id: address_to_id_map[from_address_hash],
+                  block_number: block_number,
+                  count_tos: 0,
+                  count_froms: 1
+                },
+                fn existing_params ->
+                  %{existing_params | count_froms: min(existing_params.count_froms + 1, @smallint_max_value)}
+                end
+              )
+              |> Map.update(
+                to_address_hash,
+                %{
+                  address_id: address_to_id_map[to_address_hash],
+                  block_number: block_number,
+                  count_tos: 1,
+                  count_froms: 0
+                },
+                # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+                fn existing_params ->
+                  %{existing_params | count_tos: min(existing_params.count_tos + 1, @smallint_max_value)}
+                end
+              )
           end)
           |> Map.values()
           |> Enum.reject(&is_nil(&1.address_id))
@@ -163,8 +205,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
       Repo.insert_all(InternalTransactionsAddressPlaceholder, placeholders_params)
     end)
   end
-
-  defp clear_internal_transactions(_from, _to), do: :ok
 
   defp get_border_number do
     storage_period = Application.get_env(:explorer, __MODULE__)[:storage_period_days] || @default_storage_period_days

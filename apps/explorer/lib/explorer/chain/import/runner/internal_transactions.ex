@@ -22,6 +22,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Chain.InternalTransaction.ZeroValueDeleteQueue
+  alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
@@ -189,6 +191,14 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :block_pending,
         :internal_transactions,
         :update_pending_blocks_status
+      )
+    end)
+    |> Multi.run(:save_zero_value_to_delete, fn repo, %{internal_transactions: internal_transactions} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> save_zero_value_to_delete(repo, internal_transactions, insert_options) end,
+        :block_pending,
+        :internal_transactions,
+        :save_zero_value_to_delete
       )
     end)
   end
@@ -858,6 +868,36 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, pending_hashes: pending_hashes}}
+    end
+  end
+
+  defp save_zero_value_to_delete(repo, internal_transactions, %{timeout: timeout, timestamps: timestamps}) do
+    with true <- Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled],
+         border_number when is_integer(border_number) <- DeleteZeroValueInternalTransactions.border_number() do
+      internal_transactions
+      |> Enum.map(& &1.block_number)
+      |> Enum.uniq()
+      |> Enum.filter(&(not is_nil(&1) and &1 <= border_number))
+      |> Enum.map(&Map.put(timestamps, :block_number, &1))
+      |> case do
+        [] ->
+          {:ok, []}
+
+        insert_params ->
+          {_total, result} =
+            repo.insert_all(
+              ZeroValueDeleteQueue,
+              insert_params,
+              conflict_target: [:block_number],
+              on_conflict: {:replace, [:updated_at]},
+              returning: [:block_number],
+              timeout: timeout
+            )
+
+          {:ok, result}
+      end
+    else
+      _ -> {:ok, []}
     end
   end
 

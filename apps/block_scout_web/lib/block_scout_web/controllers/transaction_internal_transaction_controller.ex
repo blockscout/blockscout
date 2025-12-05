@@ -2,13 +2,16 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+
+  import BlockScoutWeb.Chain,
+    only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1, transaction_to_internal_transactions: 2]
+
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
   import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresses_tags: 2]
 
   alias BlockScoutWeb.{AccessHelper, Controller, InternalTransactionView, TransactionController}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{DenormalizationHelper, InternalTransaction}
+  alias Explorer.Chain.DenormalizationHelper
   alias Phoenix.View
 
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do
@@ -32,8 +35,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
         |> DenormalizationHelper.extend_transaction_block_necessity(:optional)
         |> Keyword.merge(paging_options(params))
 
-      internal_transactions_plus_one =
-        InternalTransaction.transaction_to_internal_transactions(transaction_hash, full_options)
+      internal_transactions_plus_one = transaction_to_internal_transactions(transaction, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
