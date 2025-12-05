@@ -4,8 +4,6 @@ defmodule Explorer.EthRPC do
   """
   import Explorer.EthRpcHelper
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
-
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Type, as: EctoType
