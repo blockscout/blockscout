@@ -12,7 +12,7 @@ config :logger, :default_handler,
     (if config_env() == :prod do
        LoggerJSON.Formatters.Basic.new(metadata: ConfigHelper.logger_backend_metadata())
      else
-       Logger.Formatter.new()
+       Logger.Formatter.new(metadata: ConfigHelper.logger_backend_metadata())
      end)
 
 config :logger, :api, metadata: ConfigHelper.logger_metadata(), metadata_filter: [application: :api]
