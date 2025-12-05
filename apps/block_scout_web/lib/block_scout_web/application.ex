@@ -4,32 +4,53 @@ defmodule BlockScoutWeb.Application do
   """
 
   use Application
+  use Utils.CompileTimeEnvHelper, disable_api?: [:block_scout_web, :disable_api?]
 
   alias BlockScoutWeb.{Endpoint, HealthEndpoint, RateLimit.Hammer}
   alias BlockScoutWeb.Utility.RateLimitConfigHelper
   alias Explorer
 
-  def start(_type, _args) do
-    opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
+  if @disable_api? do
+    def start(_type, _args) do
+      opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
 
-    if Explorer.mode() in [:api, :all] do
-      RateLimitConfigHelper.store_rate_limit_config()
+      if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
+        Supervisor.start_link([Supervisor.child_spec(HealthEndpoint, [])], opts)
+      else
+        # Endpoint must be the last child in the supervision tree
+        # since it must be started after all of the other processes
+        # (to be sure that application is ready to handle traffic)
+        # and stopped before them for the same reason.
+        # However, some processes may depend on Endpoint
+        # so they need to be started after.
+        base_children = [Supervisor.child_spec(Endpoint, [])]
+        {first_api_children, last_api_children} = setup_and_define_children()
+        all_children = first_api_children ++ base_children ++ last_api_children
+
+        Supervisor.start_link(all_children, opts)
+      end
     end
+  else
+    def start(_type, _args) do
+      opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
 
-    if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
-      Supervisor.start_link([Supervisor.child_spec(HealthEndpoint, [])], opts)
-    else
-      # Endpoint must be the last child in the supervision tree
-      # since it must be started after all of the other processes
-      # (to be sure that application is ready to handle traffic)
-      # and stopped before them for the same reason.
-      # However, some processes may depend on Endpoint
-      # so they need to be started after.
-      base_children = [Supervisor.child_spec(Endpoint, [])]
-      {first_api_children, last_api_children} = setup_and_define_children()
-      all_children = first_api_children ++ base_children ++ last_api_children
+      RateLimitConfigHelper.store_rate_limit_config()
 
-      Supervisor.start_link(all_children, opts)
+      if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
+        Supervisor.start_link([Supervisor.child_spec(HealthEndpoint, [])], opts)
+      else
+        # Endpoint must be the last child in the supervision tree
+        # since it must be started after all of the other processes
+        # (to be sure that application is ready to handle traffic)
+        # and stopped before them for the same reason.
+        # However, some processes may depend on Endpoint
+        # so they need to be started after.
+        base_children = [Supervisor.child_spec(Endpoint, [])]
+        {first_api_children, last_api_children} = setup_and_define_children()
+        all_children = first_api_children ++ base_children ++ last_api_children
+
+        Supervisor.start_link(all_children, opts)
+      end
     end
   end
 
@@ -40,9 +61,9 @@ defmodule BlockScoutWeb.Application do
     :ok
   end
 
-  defp indexer_metric_worker do
-    alias Indexer.Prometheus.Metrics, as: IndexerMetrics
+  alias Indexer.Prometheus.Metrics, as: IndexerMetrics
 
+  defp indexer_metric_worker do
     if Explorer.mode() in [:indexer, :all] do
       [{IndexerMetrics, []}]
     else
@@ -50,11 +71,13 @@ defmodule BlockScoutWeb.Application do
     end
   end
 
-  defp setup_and_define_children do
-    if Explorer.mode() == :indexer do
+  if @disable_api? do
+    defp setup_and_define_children do
       BlockScoutWeb.Prometheus.Exporter.setup()
       {indexer_metric_worker(), []}
-    else
+    end
+  else
+    defp setup_and_define_children do
       alias BlockScoutWeb.API.APILogger
       alias BlockScoutWeb.Counters.{BlocksIndexedCounter, InternalTransactionsIndexedCounter}
       alias BlockScoutWeb.Prometheus.{Exporter, PublicExporter}
