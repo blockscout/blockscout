@@ -38,6 +38,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add osaka to the default list of supported EVM versions ([#13680](https://github.com/blockscout/blockscout/pull/13680))
 - Filter out empty addresses from multichain export ([#13674](https://github.com/blockscout/blockscout/pull/13674))
 - Validate NFT_MEDIA_HANDLER_BUCKET_FOLDER env ([#13671](https://github.com/blockscout/blockscout/pull/13671))
 - Enhance RPC API errors logging ([#13664](https://github.com/blockscout/blockscout/pull/13664))
