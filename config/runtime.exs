@@ -295,7 +295,7 @@ config :explorer,
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,shanghai,cancun,prague,osaka,default",
   allowed_vyper_evm_versions:
     System.get_env("CONTRACT_VERIFICATION_ALLOWED_VYPER_EVM_VERSIONS") ||
-      "byzantium,constantinople,petersburg,istanbul,berlin,paris,shanghai,cancun,default",
+      "byzantium,constantinople,petersburg,istanbul,berlin,paris,shanghai,cancun,osaka,default",
   include_uncles_in_average_block_time: ConfigHelper.parse_bool_env_var("UNCLES_IN_AVERAGE_BLOCK_TIME"),
   realtime_events_sender:
     (case app_mode do
