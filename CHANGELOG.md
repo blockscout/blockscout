@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Internal transactions on demand fetcher ([#13604](https://github.com/blockscout/blockscout/pull/13604))
 - Indexer config API endpoint ([#13679](https://github.com/blockscout/blockscout/pull/13679))
 - Add DIA market source ([#12678](https://github.com/blockscout/blockscout/issues/12678))
 - Add metadata to eth bytecode DB lookup request ([#13625](https://github.com/blockscout/blockscout/issues/13625))
