@@ -16,6 +16,7 @@
 
 ### 🐛 Bug Fixes
 
+- Add missed reputation fetch ([#13695](https://github.com/blockscout/blockscout/pull/13695))
 - Fix NFTMediaHandler postgres parameters overflow error ([#13694](https://github.com/blockscout/blockscout/pull/13694))
 - Add smart contract preload to hot contracts query ([#13691](https://github.com/blockscout/blockscout/pull/13691))
 - Restore fetcher name to dev console output ([#13681](https://github.com/blockscout/blockscout/pull/13681))
