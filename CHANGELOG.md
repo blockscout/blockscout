@@ -16,6 +16,7 @@
 
 ### 🐛 Bug Fixes
 
+- Add smart contract preload to hot contracts query ([#13691](https://github.com/blockscout/blockscout/pull/13691))
 - Restore fetcher name to dev console output ([#13681](https://github.com/blockscout/blockscout/pull/13681))
 - JSON RPC encoding for signed authorizations ([#13678](https://github.com/blockscout/blockscout/pull/13678))
 - Fix 500 for pending tx in tokentx RPC API endpoint ([#13666](https://github.com/blockscout/blockscout/pull/13666))

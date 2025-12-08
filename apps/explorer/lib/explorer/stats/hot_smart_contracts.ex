@@ -125,7 +125,7 @@ defmodule Explorer.Stats.HotSmartContracts do
 
     preloads =
       Keyword.get(options, :preloads,
-        contract_address: [:names, proxy_implementations_association(), reputation_association()]
+        contract_address: [:smart_contract, :names, proxy_implementations_association(), reputation_association()]
       )
 
     now = DateTime.utc_now()
@@ -158,7 +158,7 @@ defmodule Explorer.Stats.HotSmartContracts do
 
     preloads =
       Keyword.get(options, :preloads,
-        contract_address: [:names, proxy_implementations_association(), reputation_association()]
+        contract_address: [:smart_contract, :names, proxy_implementations_association(), reputation_association()]
       )
 
     __MODULE__
