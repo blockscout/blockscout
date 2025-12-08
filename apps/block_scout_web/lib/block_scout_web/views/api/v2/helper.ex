@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.{Address, Address.Reputation, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.Transaction.History.TransactionStats
 
@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "is_contract" => smart_contract?,
       "name" => address_name(address),
       "is_scam" => address_marked_as_scam?(address),
-      "reputation" => (address_marked_as_scam?(address) && "scam") || "ok",
+      "reputation" => (address_marked_as_scam?(address) && "scam") || address_reputation_if_loaded(address),
       "proxy_type" => proxy_implementations && proxy_implementations.proxy_type,
       "implementations" => Proxy.proxy_object_info(proxy_implementations),
       "is_verified" => smart_contract_verified?(address) || verified_as_proxy?(proxy_implementations),
@@ -120,6 +120,14 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "ens_domain_name" => nil,
       "metadata" => nil
     }
+  end
+
+  defp address_reputation_if_loaded(%Address{reputation: %Reputation{reputation: reputation}}) do
+    reputation
+  end
+
+  defp address_reputation_if_loaded(_) do
+    "ok"
   end
 
   case @chain_type do
