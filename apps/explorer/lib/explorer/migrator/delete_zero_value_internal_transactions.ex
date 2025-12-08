@@ -202,7 +202,10 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
         end)
         |> Enum.sort_by(&{&1.address_id, &1.block_number})
 
-      Repo.insert_all(InternalTransactionsAddressPlaceholder, placeholders_params)
+      Repo.insert_all(InternalTransactionsAddressPlaceholder, placeholders_params,
+        on_conflict: :replace_all,
+        conflict_target: [:address_id, :block_number]
+      )
     end)
   end
 
