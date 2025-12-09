@@ -40,6 +40,7 @@ defmodule Indexer.Block.Fetcher do
     Beacon.Blob,
     BlockReward,
     ContractCode,
+    CurrentTokenBalanceImporter,
     InternalTransaction,
     ReplacedTransaction,
     SignedAuthorizationStatus,
@@ -238,14 +239,12 @@ defmodule Indexer.Block.Fetcher do
          transaction_actions =
            Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
          TokenInstanceImporter.add(token_transfers),
+         process_current_token_balances(address_token_balances),
          stability_validators = StabilityValidators.parse(blocks),
          basic_import_options = %{
            addresses: %{params: addresses},
            address_coin_balances: %{params: coin_balances_params_set},
            address_token_balances: %{params: address_token_balances},
-           address_current_token_balances: %{
-             params: address_token_balances |> MapSet.to_list() |> TokenBalances.to_address_current_token_balances()
-           },
            blocks: %{params: blocks},
            block_second_degree_relations: %{params: block_second_degree_relations_params},
            block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
@@ -423,6 +422,13 @@ defmodule Indexer.Block.Fetcher do
       zilliqa_aggregate_quorum_certificates: Map.get(fetched_blocks, :zilliqa_aggregate_quorum_certificates_params, []),
       zilliqa_nested_quorum_certificates: Map.get(fetched_blocks, :zilliqa_nested_quorum_certificates_params, [])
     })
+  end
+
+  defp process_current_token_balances(address_token_balances) do
+    address_token_balances
+    |> MapSet.to_list()
+    |> TokenBalances.to_address_current_token_balances()
+    |> CurrentTokenBalanceImporter.add()
   end
 
   defp update_block_cache([]), do: :ok

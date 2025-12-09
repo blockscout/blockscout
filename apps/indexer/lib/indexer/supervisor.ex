@@ -41,6 +41,7 @@ defmodule Indexer.Supervisor do
     AddressImporter,
     BlockReward,
     ContractCode,
+    CurrentTokenBalanceImporter,
     EmptyBlocksSanitizer,
     InternalTransaction,
     PendingBlockOperationsSanitizer,
@@ -277,6 +278,7 @@ defmodule Indexer.Supervisor do
         {TokenTotalSupplyUpdater, [[]]},
         AddressImporter,
         TokenInstanceImporter,
+        CurrentTokenBalanceImporter,
 
         # Notifications cleaner
         configure(EventNotificationsCleaner, [[]]),
