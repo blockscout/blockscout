@@ -44,6 +44,7 @@ defmodule Indexer.Supervisor do
     AddressNonceUpdater,
     BlockReward,
     ContractCode,
+    CurrentTokenBalanceImporter,
     EmptyBlocksSanitizer,
     InternalTransaction,
     PendingBlockOperationsSanitizer,
@@ -280,6 +281,7 @@ defmodule Indexer.Supervisor do
         {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {TokenTotalSupplyUpdater, [[]]},
         AddressNonceUpdater,
+        CurrentTokenBalanceImporter,
 
         # Notifications cleaner
         configure(EventNotificationsCleaner, [[]]),
