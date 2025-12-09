@@ -30,6 +30,7 @@ defmodule Indexer.Helper do
   @infinite_retries_number 100_000_000
   @block_check_interval_range_size 100
   @block_by_number_chunk_size 50
+  @http_get_request_max_attempts 10
 
   @beacon_blob_fetcher_reference_slot_eth 8_500_000
   @beacon_blob_fetcher_reference_timestamp_eth 1_708_824_023
@@ -780,14 +781,17 @@ defmodule Indexer.Helper do
     - `url`: The URL which needs to be requested.
     - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Jason.decode`.
     - `attempts_done`: The number of attempts done. Incremented by the function itself.
+    - `avoid_retry_for_statuses`: The list of http error codes we don't need to re-send the request for.
+                                  E.g. for 404 error we don't try to re-send the request.
 
     ## Returns
     - `{:ok, response}` where `response` is a map decoded from a JSON object, or the raw bytes (depending on the `response_format` parameter).
-    - `{:error, reason}` in case of failure (after three unsuccessful attempts).
+    - `{:error, reason}` in case of failure (after all unsuccessful attempts).
   """
-  @spec http_get_request(String.t(), :json | :raw, non_neg_integer()) :: {:ok, map() | binary()} | {:error, any()}
-  def http_get_request(url, response_format \\ :json, attempts_done \\ 0) do
-    recv_timeout = 5_000
+  @spec http_get_request(String.t(), :json | :raw, non_neg_integer(), [non_neg_integer()]) ::
+          {:ok, map() | binary()} | {:error, any()}
+  def http_get_request(url, response_format \\ :json, attempts_done \\ 0, avoid_retry_for_statuses \\ [404]) do
+    recv_timeout = 60_000
     connect_timeout = 8_000
     client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
 
@@ -799,11 +803,15 @@ defmodule Indexer.Helper do
           {:ok, body}
         end
 
-      {:ok, %{body: body, status: _}} ->
-        http_get_request_error(url, response_format, body, attempts_done)
+      {:ok, %{body: body, status: status}} ->
+        if status in avoid_retry_for_statuses do
+          http_get_request_error(url, response_format, body, @http_get_request_max_attempts, avoid_retry_for_statuses)
+        else
+          http_get_request_error(url, response_format, body, attempts_done, avoid_retry_for_statuses)
+        end
 
       {:error, error} ->
-        http_get_request_error(url, response_format, error, attempts_done)
+        http_get_request_error(url, response_format, error, attempts_done, avoid_retry_for_statuses)
     end
   end
 
@@ -814,12 +822,15 @@ defmodule Indexer.Helper do
   # - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Jason.decode`.
   # - `error`: The error description for logging purposes.
   # - `attempts_done`: The number of attempts done. Incremented by the function itself.
+  # - `avoid_retry_for_statuses`: The list of http error codes we don't need to re-send the request for.
+  #                               E.g. for 404 error we don't try to re-send the request.
   #
   # ## Returns
   # - `{:ok, response}` tuple if the re-call was successful.
   # - `{:error, reason}` if all attempts were failed.
-  @spec http_get_request_error(String.t(), :json | :raw, any(), non_neg_integer()) :: {:ok, map()} | {:error, any()}
-  defp http_get_request_error(url, response_format, error, attempts_done) do
+  @spec http_get_request_error(String.t(), :json | :raw, any(), non_neg_integer(), [non_neg_integer()]) ::
+          {:ok, map()} | {:error, any()}
+  defp http_get_request_error(url, response_format, error, attempts_done, avoid_retry_for_statuses) do
     old_truncate = Application.get_env(:logger, :truncate)
     Logger.configure(truncate: :infinity)
 
@@ -835,11 +846,11 @@ defmodule Indexer.Helper do
     # retry to send the request
     attempts_done = attempts_done + 1
 
-    if attempts_done < 10 do
+    if attempts_done < @http_get_request_max_attempts do
       # wait up to 20 minutes and then retry
       :timer.sleep(min(3000 * Integer.pow(2, attempts_done - 1), 1_200_000))
       Logger.info("Retry to send the request to #{url} ...")
-      http_get_request(url, response_format, attempts_done)
+      http_get_request(url, response_format, attempts_done, avoid_retry_for_statuses)
     else
       {:error, "Error while sending request to #{url}"}
     end
