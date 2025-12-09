@@ -51,7 +51,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch.Detailed do
                 pattern: General.hex_string_pattern(),
                 nullable: false,
                 description: "Celestia or Alt-DA blob commitment."
-              }
+              },
+              cert: %Schema{
+                type: :string,
+                pattern: General.hex_string_pattern(),
+                nullable: false,
+                description: "EigenDA cert raw bytes."
+              },
             },
             required: [
               :l1_transaction_hash,

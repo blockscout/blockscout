@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch do
       },
       batch_data_container: %Schema{
         type: :string,
-        enum: ["in_blob4844", "in_celestia", "in_alt_da", "in_calldata"],
+        enum: ["in_blob4844", "in_celestia", "in_eigenda", "in_alt_da", "in_calldata"],
         nullable: true
       },
       l2_end_block_number: %Schema{type: :integer},
