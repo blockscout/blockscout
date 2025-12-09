@@ -133,6 +133,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          batch_submitter: batch_submitter,
          eip4844_blobs_api_url: Helper.trim_url(env[:eip4844_blobs_api_url]),
          celestia_blobs_api_url: Helper.trim_url(env[:celestia_blobs_api_url]),
+         eigenda_blobs_api_url: Helper.trim_url(env[:eigenda_blobs_api_url]),
          alt_da_server_url: Helper.trim_url(env[:alt_da_server_url]),
          block_check_interval: block_check_interval,
          start_block: start_block,
@@ -217,6 +218,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   # - `batch_submitter`: L1 address which sends L1 batch transactions to the `batch_inbox`
   # - `eip4844_blobs_api_url`: URL of Blockscout Blobs API to get EIP-4844 blobs
   # - `celestia_blobs_api_url`: URL of the server where Celestia blobs can be read from
+  # - `eigenda_blobs_api_url`: URL of the server where EigenDA blobs can be read from
   # - `alt_da_server_url`: URL of Alt-DA server where keccak commitment data can be read from
   # - `block_check_interval`: time interval for checking latest block number
   # - `start_block`: start block number of the block range
@@ -236,6 +238,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           batch_submitter: batch_submitter,
           eip4844_blobs_api_url: eip4844_blobs_api_url,
           celestia_blobs_api_url: celestia_blobs_api_url,
+          eigenda_blobs_api_url: eigenda_blobs_api_url,
           alt_da_server_url: alt_da_server_url,
           block_check_interval: block_check_interval,
           start_block: start_block,
@@ -279,7 +282,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
                 {genesis_block_l2, block_duration},
                 incomplete_channels_acc,
                 {json_rpc_named_arguments, json_rpc_named_arguments_l2},
-                {eip4844_blobs_api_url, celestia_blobs_api_url, alt_da_server_url, chain_id_l1},
+                {eip4844_blobs_api_url, celestia_blobs_api_url, eigenda_blobs_api_url, alt_da_server_url, chain_id_l1},
                 Helper.infinite_retries_number()
               )
 
@@ -738,6 +741,72 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     []
   end
 
+  # Gets EigenDA blob data & metadata by L1 transaction input (encoding blob's certificate).
+  # The data is read from the remote `da-indexer` service.
+  #
+  # ## Parameters
+  # - `transaction_input`: The contents of transaction `input` field.
+  # - `offset`: Offset (in bytes) within the `transaction_input` where blob's certificate is encoded.
+  # - `transaction_hash`: The L1 transaction hash for logging purposes.
+  # - `blobs_api_url`: The URL to `da-indexer` API.
+  #
+  # ## Returns
+  # - A list with a map containing blob's data and certificate.
+  # - An empty list in case of an error (`da-indexer` didn't respond, URL is not defined, or transaction input is incorrect).
+  @spec eigenda_blob_to_input(binary(), non_neg_integer(), String.t(), String.t()) :: [
+          %{:bytes => binary(), :eigenda_cert => binary()}
+        ]
+  defp eigenda_blob_to_input("0x" <> transaction_input, offset, transaction_hash, blobs_api_url) do
+    transaction_input
+    |> Base.decode16!(case: :mixed)
+    |> eigenda_blob_to_input(offset, transaction_hash, blobs_api_url)
+  end
+
+  defp eigenda_blob_to_input(transaction_input, offset, transaction_hash, blobs_api_url) when blobs_api_url != "" do
+    <<_::binary-size(offset), cert::binary>> = transaction_input
+
+    url = blobs_api_url <> "/0x" <> Base.encode16(cert, case: :lower)
+
+    url_with_proxy =
+      case Application.get_all_env(:indexer)[__MODULE__][:eigenda_proxy_base_url] do
+        nil ->
+          url
+
+        eigenda_proxy_base_url ->
+          url <> "?proxyBaseUrl=" <> Helper.trim_url(eigenda_proxy_base_url)
+      end
+
+    with {:ok, response} <- Helper.http_get_request(url_with_proxy),
+         data = Map.get(response, "data"),
+         true <- !is_nil(data),
+         data_binary = hash_to_binary(data),
+         true <- byte_size(data_binary) > 0 do
+      [
+        %{
+          bytes: data_binary,
+          eigenda_cert: cert
+        }
+      ]
+    else
+      false ->
+        Logger.error("EigenDA Proxy server response is empty for the request #{url_with_proxy}")
+
+        []
+
+      _ ->
+        Logger.warning("Transaction hash: #{transaction_hash}")
+        []
+    end
+  end
+
+  defp eigenda_blob_to_input(_transaction_input, _offset, _transaction_hash, "") do
+    Logger.error(
+      "Cannot read EigenDA blobs from the server as the API URL is not defined. Please, check INDEXER_OPTIMISM_L1_BATCH_EIGENDA_BLOBS_API_URL env variable."
+    )
+
+    []
+  end
+
   # Gets Alt-DA data & commitment hash by L1 transaction input (encoding the commitment).
   # The data is then read from the remote DA server.
   #
@@ -807,7 +876,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          {genesis_block_l2, block_duration},
          incomplete_channels,
          json_rpc_named_arguments_l2,
-         {eip4844_blobs_api_url, celestia_blobs_api_url, alt_da_server_url, chain_id_l1}
+         {eip4844_blobs_api_url, celestia_blobs_api_url, eigenda_blobs_api_url, alt_da_server_url, chain_id_l1}
        ) do
     transactions_filtered
     |> Enum.reduce({:ok, incomplete_channels, [], [], []}, fn transaction,
@@ -830,6 +899,10 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           commitment_alt_da_signature(transaction.input) == 0x01010C ->
             # this is Celestia DA transaction, so we get the data from Celestia blob
             celestia_blob_to_input(transaction.input, 3, transaction.hash, celestia_blobs_api_url)
+
+          commitment_alt_da_signature(transaction.input) == 0x010100 ->
+            # this is Eigen DA transaction, so we get the data from EigenDA blob
+            eigenda_blob_to_input(transaction.input, 3, transaction.hash, eigenda_blobs_api_url)
 
           commitment_alt_da_signature(transaction.input) == 0x0100 ->
             # this is Alt-DA transaction with a keccak commitment, so we get the data from a DA server
@@ -891,6 +964,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         transaction_hash: transaction.hash,
         eip4844_blob_hash: Map.get(input, :eip4844_blob_hash),
         celestia_blob_metadata: Map.get(input, :celestia_blob_metadata),
+        eigenda_cert: Map.get(input, :eigenda_cert),
         alt_da_commitment: Map.get(input, :alt_da_commitment)
       })
 
@@ -982,6 +1056,21 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
                     key: :crypto.hash(:sha256, height <> commitment),
                     type: :celestia,
                     metadata: frame.celestia_blob_metadata,
+                    l1_transaction_hash: frame.transaction_hash,
+                    l1_timestamp: frame.block_timestamp,
+                    frame_sequence_id: frame_sequence_id
+                  }
+                ]
+
+            !is_nil(Map.get(frame, :eigenda_cert)) ->
+              # credo:disable-for-next-line /Credo.Check.Refactor.AppendSingleItem/
+              new_blobs_acc ++
+                [
+                  %{
+                    id: next_blob_id,
+                    key: :crypto.hash(:sha256, frame.eigenda_cert),
+                    type: :eigenda,
+                    metadata: %{cert: "0x" <> Base.encode16(frame.eigenda_cert, case: :lower)},
                     l1_transaction_hash: frame.transaction_hash,
                     l1_timestamp: frame.block_timestamp,
                     frame_sequence_id: frame_sequence_id
