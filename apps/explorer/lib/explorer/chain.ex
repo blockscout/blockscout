@@ -4162,10 +4162,14 @@ defmodule Explorer.Chain do
   end
 
   def upsert_count_withdrawals(index) do
-    LastFetchedCounter.upsert(%{
-      counter_type: "withdrawals_count",
-      value: index
-    })
+    current_value = LastFetchedCounter.get("withdrawals_count")
+
+    if index > current_value do
+      LastFetchedCounter.upsert(%{
+        counter_type: "withdrawals_count",
+        value: index
+      })
+    end
   end
 
   def sum_withdrawals_from_cache(options \\ []) do
