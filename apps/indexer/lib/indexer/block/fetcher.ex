@@ -14,7 +14,7 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
@@ -285,8 +285,9 @@ defmodule Indexer.Block.Fetcher do
       inserted = Map.merge(inserted, inserted_transaction_actions)
       Prometheus.Instrumenter.set_block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
-      update_block_cache(inserted[:blocks])
-      update_transactions_cache(inserted[:transactions])
+
+      update_block_cache(inserted[:blocks], inserted)
+      update_transactions_cache(inserted[:transactions], inserted)
       update_addresses_cache(inserted[:addresses])
       update_uncles_cache(inserted[:block_second_degree_relations])
       update_withdrawals_cache(inserted[:withdrawals])
@@ -426,20 +427,47 @@ defmodule Indexer.Block.Fetcher do
     })
   end
 
-  defp update_block_cache([]), do: :ok
+  defp update_block_cache([], _), do: :ok
 
-  defp update_block_cache(blocks) when is_list(blocks) do
+  defp update_block_cache(blocks, inserted) when is_list(blocks) do
     {min_block, max_block} = Enum.min_max_by(blocks, & &1.number)
 
     BlockNumber.update_all(max_block.number)
     BlockNumber.update_all(min_block.number)
-    BlocksCache.update(blocks)
+
+    transactions_by_block = Enum.group_by(Map.get(inserted, :transactions, []), & &1.block_hash)
+    rewards_by_block = Enum.group_by(Map.get(inserted, :block_rewards, []), & &1.block_hash)
+
+    blocks
+    |> Repo.preload(
+      transactions: fn block_hashes ->
+        Enum.flat_map(block_hashes, &Map.get(transactions_by_block, &1, []))
+      end,
+      rewards: fn block_hashes ->
+        Enum.flat_map(block_hashes, &Map.get(rewards_by_block, &1, []))
+      end
+    )
+    |> BlocksCache.update()
   end
 
-  defp update_block_cache(_), do: :ok
+  defp update_block_cache(_, _), do: :ok
 
-  defp update_transactions_cache(transactions) do
-    Transactions.update(transactions)
+  defp update_transactions_cache(transactions, inserted) do
+    blocks_map = Map.new(Map.get(inserted, :blocks, []), fn block -> {block.hash, block} end)
+
+    token_transfers_by_transaction =
+      Enum.group_by(Map.get(inserted, :token_transfers, []), & &1.transaction_hash)
+
+    transactions
+    |> Repo.preload(
+      block: fn transaction_block_hashes ->
+        Enum.map(transaction_block_hashes, &Map.get(blocks_map, &1))
+      end,
+      token_transfers: fn transaction_hashes ->
+        Enum.flat_map(transaction_hashes, &Map.get(token_transfers_by_transaction, &1, []))
+      end
+    )
+    |> Transactions.update()
   end
 
   defp update_addresses_cache(addresses), do: Accounts.drop(addresses)
