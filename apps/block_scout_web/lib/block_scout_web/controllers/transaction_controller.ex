@@ -2,19 +2,8 @@ defmodule BlockScoutWeb.TransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
-
-  import BlockScoutWeb.Chain,
-    only: [
-      fetch_page_number: 1,
-      paging_options: 1,
-      next_page_params: 3,
-      update_page_parameters: 3,
-      split_list_by_page: 1
-    ]
-
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
   import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresses_tags: 2]
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias BlockScoutWeb.{
     AccessHelper,
@@ -26,8 +15,6 @@ defmodule BlockScoutWeb.TransactionController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Counters.TransactionsCount
-  alias Explorer.Chain.{DenormalizationHelper, Transaction}
-  alias Phoenix.View
 
   @necessity_by_association %{
     :block => :optional,
@@ -37,85 +24,6 @@ defmodule BlockScoutWeb.TransactionController do
     [to_address: :smart_contract] => :optional,
     :token_transfers => :optional
   }
-
-  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
-  @burn_address_hash burn_address_hash
-
-  @default_options [
-    necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional
-    }
-  ]
-
-  def index(conn, %{"type" => "JSON"} = params) do
-    options =
-      @default_options
-      |> DenormalizationHelper.extend_block_necessity(:required)
-      |> Keyword.merge(paging_options(params))
-
-    full_options =
-      options
-      |> Keyword.put(
-        :paging_options,
-        params
-        |> fetch_page_number()
-        |> update_page_parameters(Chain.default_page_size(), Keyword.get(options, :paging_options))
-      )
-
-    %{total_transactions_count: transactions_count, transactions: transactions_plus_one} =
-      Transaction.recent_collated_transactions_for_rap(full_options)
-
-    {transactions, next_page} =
-      if fetch_page_number(params) == 1 do
-        split_list_by_page(transactions_plus_one)
-      else
-        {transactions_plus_one, nil}
-      end
-
-    next_page_params =
-      if fetch_page_number(params) == 1 do
-        page_size = Chain.default_page_size()
-
-        pages_limit = transactions_count |> Kernel./(page_size) |> Float.ceil() |> trunc()
-
-        case next_page_params(next_page, transactions, params) do
-          nil ->
-            nil
-
-          next_page_params ->
-            next_page_params
-            |> Map.delete("type")
-            |> Map.delete("items_count")
-            |> Map.put("pages_limit", pages_limit)
-            |> Map.put("page_size", page_size)
-            |> Map.put("page_number", 1)
-        end
-      else
-        Map.delete(params, "type")
-      end
-
-    json(
-      conn,
-      %{
-        items:
-          Enum.map(transactions, fn transaction ->
-            View.render_to_string(
-              TransactionView,
-              "_tile.html",
-              transaction: transaction,
-              burn_address_hash: @burn_address_hash,
-              conn: conn
-            )
-          end),
-        next_page_params: next_page_params
-      }
-    )
-  end
 
   def index(conn, _params) do
     transaction_estimated_count = TransactionsCount.get()

@@ -2536,11 +2536,7 @@ defmodule Explorer.Chain.Transaction do
       the `block_number` and `index` that are passed.
 
   """
-  @spec recent_collated_transactions(true | false, [
-          Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
-        ]) :: [
-          __MODULE__.t()
-        ]
+  @spec recent_collated_transactions(true | false, [Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()]) :: [t()]
   def recent_collated_transactions(old_ui?, options \\ [])
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
@@ -2548,14 +2544,20 @@ defmodule Explorer.Chain.Transaction do
     method_id_filter = Keyword.get(options, :method)
     type_filter = Keyword.get(options, :type)
 
-    fetch_recent_collated_transactions(
-      old_ui?,
-      paging_options,
-      necessity_by_association,
-      method_id_filter,
-      type_filter,
-      options
-    )
+    case paging_options.key && Transactions.atomic_take_enough(paging_options.page_size) do
+      transactions when is_list(transactions) ->
+        transactions |> select_repo(options).preload(Map.keys(necessity_by_association))
+
+      _ ->
+        fetch_recent_collated_transactions(
+          old_ui?,
+          paging_options,
+          necessity_by_association,
+          method_id_filter,
+          type_filter,
+          options
+        )
+    end
   end
 
   defp fetch_recent_collated_transactions(
@@ -2726,67 +2728,8 @@ defmodule Explorer.Chain.Transaction do
     dynamic([transaction], ^dynamic or transaction.type == 3)
   end
 
-  @doc """
-  Returns recently collated transactions using random access pagination (RAP).
 
-  This function supports efficient pagination for large transaction lists by
-  allowing direct access to any page without requiring sequential traversal.
-  It uses a cache for the first page to improve performance.
 
-  ## Parameters
-  - `options`: Keyword list of options including:
-    - `:necessity_by_association` - Associations to preload (defaults to %{})
-    - `:paging_options` - Random access pagination options (defaults to @default_paging_options)
-
-  ## Returns
-  - A map containing:
-    - `:total_transactions_count` - Total number of transactions available
-    - `:transactions` - List of transaction structs for the requested page
-  """
-  @spec recent_collated_transactions_for_rap([Chain.paging_options() | Chain.necessity_by_association_option()]) :: %{
-          :total_transactions_count => non_neg_integer(),
-          :transactions => [__MODULE__.t()]
-        }
-  def recent_collated_transactions_for_rap(options \\ []) when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    total_transactions_count = transactions_available_count()
-
-    fetched_transactions =
-      if is_nil(paging_options.key) or paging_options.page_number == 1 do
-        paging_options.page_size
-        |> Kernel.+(1)
-        |> Transactions.atomic_take_enough()
-        |> case do
-          nil ->
-            transactions = fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association)
-            Transactions.update(transactions)
-            transactions
-
-          transactions ->
-            transactions
-        end
-      else
-        fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association)
-      end
-
-    %{total_transactions_count: total_transactions_count, transactions: fetched_transactions}
-  end
-
-  defp fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association) do
-    fetch_transactions_for_rap()
-    |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
-    |> handle_random_access_paging_options(paging_options)
-    |> Chain.join_associations(necessity_by_association)
-    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
-    |> Repo.all()
-  end
-
-  defp fetch_transactions_for_rap do
-    __MODULE__
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
-  end
 
   @doc """
   Returns the count of available transactions shown in the UI.
