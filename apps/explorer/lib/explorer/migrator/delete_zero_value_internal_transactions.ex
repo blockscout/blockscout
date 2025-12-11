@@ -109,108 +109,111 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
 
   @smallint_max_value 32767
   defp do_clear_internal_transactions(dynamic_condition) do
-    Repo.transaction(fn ->
-      condition = dynamic([it], ^dynamic_condition and it.type == ^:call and it.value == ^0)
+    Repo.transaction(
+      fn ->
+        condition = dynamic([it], ^dynamic_condition and it.type == ^:call and it.value == ^0)
 
-      locked_internal_transactions_to_delete_query =
-        from(
-          it in InternalTransaction,
-          select: select_ctid(it),
-          where: ^condition,
-          order_by: [asc: it.transaction_hash, asc: it.index],
-          lock: "FOR UPDATE"
-        )
+        locked_internal_transactions_to_delete_query =
+          from(
+            it in InternalTransaction,
+            select: select_ctid(it),
+            where: ^condition,
+            order_by: [asc: it.transaction_hash, asc: it.index],
+            lock: "FOR UPDATE"
+          )
 
-      delete_query =
-        from(
-          it in InternalTransaction,
-          inner_join: locked_it in subquery(locked_internal_transactions_to_delete_query),
-          on: join_on_ctid(it, locked_it),
-          select: %{
-            from_address_hash: it.from_address_hash,
-            to_address_hash: it.to_address_hash,
-            block_number: it.block_number,
-            index: it.index
-          }
-        )
+        delete_query =
+          from(
+            it in InternalTransaction,
+            inner_join: locked_it in subquery(locked_internal_transactions_to_delete_query),
+            on: join_on_ctid(it, locked_it),
+            select: %{
+              from_address_hash: it.from_address_hash,
+              to_address_hash: it.to_address_hash,
+              block_number: it.block_number,
+              index: it.index
+            }
+          )
 
-      {_count, deleted_internal_transactions} = Repo.delete_all(delete_query, timeout: :infinity)
+        {_count, deleted_internal_transactions} = Repo.delete_all(delete_query, timeout: :infinity)
 
-      ZeroValueDeleteQueue
-      |> where([it], ^dynamic_condition)
-      |> Repo.delete_all(timeout: :infinity)
+        ZeroValueDeleteQueue
+        |> where([it], ^dynamic_condition)
+        |> Repo.delete_all(timeout: :infinity)
 
-      address_hashes =
-        deleted_internal_transactions
-        |> Enum.flat_map(&[&1.from_address_hash, &1.to_address_hash])
-        |> Enum.uniq()
-        |> Enum.reject(&is_nil/1)
+        address_hashes =
+          deleted_internal_transactions
+          |> Enum.flat_map(&[&1.from_address_hash, &1.to_address_hash])
+          |> Enum.uniq()
+          |> Enum.reject(&is_nil/1)
 
-      id_to_address_params = Enum.map(address_hashes, &%{address_hash: &1})
+        id_to_address_params = Enum.map(address_hashes, &%{address_hash: &1})
 
-      Repo.insert_all(AddressIdToAddressHash, id_to_address_params, on_conflict: :nothing)
+        Repo.insert_all(AddressIdToAddressHash, id_to_address_params, on_conflict: :nothing)
 
-      address_to_id_map =
-        AddressIdToAddressHash
-        |> where([a], a.address_hash in ^address_hashes)
-        |> select([a], {a.address_hash, a.address_id})
-        |> Repo.all()
-        |> Map.new()
+        address_to_id_map =
+          AddressIdToAddressHash
+          |> where([a], a.address_hash in ^address_hashes)
+          |> select([a], {a.address_hash, a.address_id})
+          |> Repo.all()
+          |> Map.new()
 
-      placeholders_params =
-        deleted_internal_transactions
-        |> Enum.group_by(& &1.block_number)
-        |> Enum.flat_map(fn {block_number, internal_transactions} ->
-          internal_transactions
-          |> Enum.reduce(%{}, fn
-            %{index: 0}, inner_acc ->
-              inner_acc
+        placeholders_params =
+          deleted_internal_transactions
+          |> Enum.group_by(& &1.block_number)
+          |> Enum.flat_map(fn {block_number, internal_transactions} ->
+            internal_transactions
+            |> Enum.reduce(%{}, fn
+              %{index: 0}, inner_acc ->
+                inner_acc
 
-            internal_transaction, inner_acc ->
-              from_address_hash = internal_transaction.from_address_hash
-              to_address_hash = internal_transaction.to_address_hash
+              internal_transaction, inner_acc ->
+                from_address_hash = internal_transaction.from_address_hash
+                to_address_hash = internal_transaction.to_address_hash
 
-              inner_acc
-              |> Map.update(
-                from_address_hash,
-                %{
-                  address_id: address_to_id_map[from_address_hash],
-                  block_number: block_number,
-                  count_tos: 0,
-                  count_froms: 1
-                },
-                fn existing_params ->
-                  %{existing_params | count_froms: min(existing_params.count_froms + 1, @smallint_max_value)}
-                end
-              )
-              |> Map.update(
-                to_address_hash,
-                %{
-                  address_id: address_to_id_map[to_address_hash],
-                  block_number: block_number,
-                  count_tos: 1,
-                  count_froms: 0
-                },
-                # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-                fn existing_params ->
-                  %{existing_params | count_tos: min(existing_params.count_tos + 1, @smallint_max_value)}
-                end
-              )
+                inner_acc
+                |> Map.update(
+                  from_address_hash,
+                  %{
+                    address_id: address_to_id_map[from_address_hash],
+                    block_number: block_number,
+                    count_tos: 0,
+                    count_froms: 1
+                  },
+                  fn existing_params ->
+                    %{existing_params | count_froms: min(existing_params.count_froms + 1, @smallint_max_value)}
+                  end
+                )
+                |> Map.update(
+                  to_address_hash,
+                  %{
+                    address_id: address_to_id_map[to_address_hash],
+                    block_number: block_number,
+                    count_tos: 1,
+                    count_froms: 0
+                  },
+                  # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+                  fn existing_params ->
+                    %{existing_params | count_tos: min(existing_params.count_tos + 1, @smallint_max_value)}
+                  end
+                )
+            end)
+            |> Map.values()
+            |> Enum.reject(&is_nil(&1.address_id))
           end)
-          |> Map.values()
-          |> Enum.reject(&is_nil(&1.address_id))
-        end)
-        |> Enum.sort_by(&{&1.address_id, &1.block_number})
+          |> Enum.sort_by(&{&1.address_id, &1.block_number})
 
-      placeholders_params
-      |> Enum.chunk_every(1000)
-      |> Enum.each(fn placeholders_batch ->
-        Repo.insert_all(InternalTransactionsAddressPlaceholder, placeholders_batch,
-          on_conflict: :replace_all,
-          conflict_target: [:address_id, :block_number]
-        )
-      end)
-    end)
+        placeholders_params
+        |> Enum.chunk_every(1000)
+        |> Enum.each(fn placeholders_batch ->
+          Repo.insert_all(InternalTransactionsAddressPlaceholder, placeholders_batch,
+            on_conflict: :replace_all,
+            conflict_target: [:address_id, :block_number]
+          )
+        end)
+      end,
+      timeout: :infinity
+    )
   end
 
   defp get_border_number do

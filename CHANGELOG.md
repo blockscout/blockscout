@@ -17,6 +17,7 @@
 
 ### 🐛 Bug Fixes
 
+- Set timeout: :infinity for delete zero value migration ([#13708](https://github.com/blockscout/blockscout/pull/13708))
 - Limit batch size for placeholders insertion ([#13699](https://github.com/blockscout/blockscout/pull/13699))
 - Add missed reputation fetch ([#13695](https://github.com/blockscout/blockscout/pull/13695))
 - Fix NFTMediaHandler postgres parameters overflow error ([#13694](https://github.com/blockscout/blockscout/pull/13694))
