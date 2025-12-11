@@ -1,6 +1,6 @@
 defmodule Explorer.SmartContract.CompilerVersion do
   @moduledoc """
-  Adapter for fetching compiler versions from https://solc-bin.ethereum.org/bin/list.json.
+  Adapter for fetching compiler versions from https://binaries.soliditylang.org/bin/list.json.
   """
 
   alias Explorer.{Helper, HttpClient}
