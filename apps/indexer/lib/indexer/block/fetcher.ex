@@ -15,7 +15,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei, Withdrawal}
+  alias Explorer.Chain.{Block, Hash, Import, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
@@ -57,7 +57,6 @@ defmodule Indexer.Block.Fetcher do
     AddressTokenBalances,
     MintTransfers,
     SignedAuthorizations,
-    TokenInstances,
     TokenTransfers,
     TransactionActions
   }
@@ -248,7 +247,7 @@ defmodule Indexer.Block.Fetcher do
            AddressTokenBalances.params_set(%{token_transfers_params: token_transfers_with_token}),
          transaction_actions =
            Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
-         TokenInstanceImporter.add(token_transfers),
+         TokenInstanceImporter.add(tokens, token_transfers),
          process_current_token_balances(address_token_balances),
          stability_validators = StabilityValidators.parse(blocks),
          basic_import_options = %{
@@ -260,7 +259,6 @@ defmodule Indexer.Block.Fetcher do
            block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
            logs: %{params: logs},
            token_transfers: %{params: token_transfers},
-           tokens: %{params: tokens},
            transactions: %{params: transactions_with_receipts},
            withdrawals: %{params: withdrawals_params},
            signed_authorizations: %{params: SignedAuthorizations.parse(transactions_with_receipts)}
