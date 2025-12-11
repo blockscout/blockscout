@@ -204,7 +204,7 @@ config :explorer, Explorer.Tracer,
   trace_key: :blockscout
 
 config :explorer,
-  solc_bin_api_url: "https://solc-bin.ethereum.org"
+  solc_bin_api_url: "https://binaries.soliditylang.org"
 
 config :explorer, :http_client, Explorer.HttpClient.Tesla
 
