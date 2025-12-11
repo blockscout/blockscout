@@ -132,7 +132,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp async_import_remaining_block_data(
          imported,
-         %{block_rewards: %{errors: block_reward_errors}} = options
+         %{block_rewards: %{errors: block_reward_errors}}
        ) do
     realtime? = false
 
