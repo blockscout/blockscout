@@ -117,6 +117,7 @@ defmodule Indexer.Block.Fetcher do
   @enforce_keys ~w(json_rpc_named_arguments)a
   defstruct broadcast: nil,
             callback_module: nil,
+            task_supervisor: nil,
             json_rpc_named_arguments: nil,
             receipts_batch_size: @receipts_batch_size,
             receipts_concurrency: @receipts_concurrency
@@ -150,7 +151,8 @@ defmodule Indexer.Block.Fetcher do
         %__MODULE__{
           broadcast: _broadcast,
           callback_module: callback_module,
-          json_rpc_named_arguments: json_rpc_named_arguments
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          task_supervisor: task_supervisor
         } = state,
         _.._//_ = range,
         additional_options \\ %{}
@@ -286,11 +288,13 @@ defmodule Indexer.Block.Fetcher do
       Prometheus.Instrumenter.set_block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
 
-      update_block_cache(inserted[:blocks], inserted)
-      update_transactions_cache(inserted[:transactions], inserted)
-      update_addresses_cache(inserted[:addresses])
-      update_uncles_cache(inserted[:block_second_degree_relations])
-      update_withdrawals_cache(inserted[:withdrawals])
+      Task.Supervisor.async_nolink(task_supervisor, fn ->
+        update_block_cache(inserted[:blocks], inserted)
+        update_transactions_cache(inserted[:transactions], inserted)
+        update_addresses_cache(inserted[:addresses])
+        update_uncles_cache(inserted[:block_second_degree_relations])
+        update_withdrawals_cache(inserted[:withdrawals])
+      end)
 
       async_match_arbitrum_messages_to_l2(arbitrum_transactions_for_further_handling)
 
@@ -455,16 +459,10 @@ defmodule Indexer.Block.Fetcher do
   defp update_transactions_cache(transactions, inserted) do
     blocks_map = Map.new(Map.get(inserted, :blocks, []), fn block -> {block.hash, block} end)
 
-    token_transfers_by_transaction =
-      Enum.group_by(Map.get(inserted, :token_transfers, []), & &1.transaction_hash)
-
     transactions
     |> Repo.preload(
       block: fn transaction_block_hashes ->
         Enum.map(transaction_block_hashes, &Map.get(blocks_map, &1))
-      end,
-      token_transfers: fn transaction_hashes ->
-        Enum.flat_map(transaction_hashes, &Map.get(token_transfers_by_transaction, &1, []))
       end
     )
     |> Transactions.update()
