@@ -93,9 +93,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          json_rpc_named_arguments = Helper.json_rpc_named_arguments(optimism_l1_rpc),
-         {:system_config_read, {_start_block_l1, batch_inbox, batch_submitter}} <-
+         {:system_config_read, {start_block_l1, batch_inbox, batch_submitter}} <-
            {:system_config_read, read_system_config(system_config, json_rpc_named_arguments)},
-         start_block_l1 = 9_695_000,
          {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.address_correct?(batch_inbox)},
          {:batch_submitter_valid, true} <-
            {:batch_submitter_valid, Helper.address_correct?(batch_submitter)},
@@ -751,7 +750,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     |> eigenda_blob_to_input(offset, transaction_hash, blobs_api_url)
   end
 
-  defp eigenda_blob_to_input(transaction_input, offset, _transaction_hash, blobs_api_url) when blobs_api_url != "" do
+  defp eigenda_blob_to_input(transaction_input, offset, transaction_hash, blobs_api_url) when blobs_api_url != "" do
     <<_::binary-size(offset), cert::binary>> = transaction_input
 
     url = blobs_api_url <> "/0x" <> Base.encode16(cert, case: :lower)
@@ -783,6 +782,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         []
 
       _ ->
+        Logger.warning("Transaction hash: #{transaction_hash}")
         []
     end
   end

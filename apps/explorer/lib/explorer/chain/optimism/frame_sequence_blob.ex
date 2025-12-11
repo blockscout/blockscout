@@ -63,7 +63,8 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
     - A tuple {type, blobs} where `type` can be one of: `in_blob4844`, `in_celestia`, `in_eigenda`, `in_alt_da`, `in_calldata`.
       The `blobs` in the list of blobs related to the specified frame sequence id sorted by an entity id.
   """
-  @spec list(non_neg_integer(), list()) :: {:in_blob4844 | :in_celestia | :in_eigenda | :in_alt_da | :in_calldata, [map()]}
+  @spec list(non_neg_integer(), list()) ::
+          {:in_blob4844 | :in_celestia | :in_eigenda | :in_alt_da | :in_calldata, [map()]}
   def list(frame_sequence_id, options \\ []) do
     repo = select_repo(options)
 

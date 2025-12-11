@@ -788,9 +788,10 @@ defmodule Indexer.Helper do
     - `{:ok, response}` where `response` is a map decoded from a JSON object, or the raw bytes (depending on the `response_format` parameter).
     - `{:error, reason}` in case of failure (after three unsuccessful attempts).
   """
-  @spec http_get_request(String.t(), :json | :raw, non_neg_integer(), [non_neg_integer()]) :: {:ok, map() | binary()} | {:error, any()}
+  @spec http_get_request(String.t(), :json | :raw, non_neg_integer(), [non_neg_integer()]) ::
+          {:ok, map() | binary()} | {:error, any()}
   def http_get_request(url, response_format \\ :json, attempts_done \\ 0, avoid_retry_for_statuses \\ [404]) do
-    recv_timeout = 15_000
+    recv_timeout = 60_000
     connect_timeout = 8_000
     client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
 
