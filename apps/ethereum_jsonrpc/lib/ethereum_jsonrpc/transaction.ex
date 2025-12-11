@@ -544,6 +544,51 @@ defmodule EthereumJSONRPC.Transaction do
     ])
   end
 
+  # function clause for Tempo chain
+  # to allow their service transactions without input and value fields
+  defp do_elixir_to_params(
+         %{
+           "blockHash" => block_hash,
+           "blockNumber" => block_number,
+           "from" => from_address_hash,
+           "gas" => gas,
+           "gasPrice" => gas_price,
+           "hash" => hash,
+           "nonce" => nonce,
+           "transactionIndex" => index,
+           "type" => type,
+           "maxPriorityFeePerGas" => max_priority_fee_per_gas,
+           "maxFeePerGas" => max_fee_per_gas
+         } = transaction
+       ) do
+    result = %{
+      block_hash: block_hash,
+      block_number: block_number,
+      from_address_hash: from_address_hash,
+      gas: gas,
+      gas_price: gas_price,
+      hash: hash,
+      index: index,
+      input: "0x",
+      nonce: nonce,
+      to_address_hash: Map.get(transaction, "to"),
+      value: 0,
+      transaction_index: index,
+      type: type,
+      max_priority_fee_per_gas: max_priority_fee_per_gas,
+      max_fee_per_gas: max_fee_per_gas
+    }
+
+    put_if_present(result, transaction, [
+      {"creates", :created_contract_address_hash},
+      {"block_timestamp", :block_timestamp},
+      {"r", :r, %{default: 0}},
+      {"s", :s, %{default: 0}},
+      {"v", :v, %{default: 0}},
+      {"authorizationList", :authorization_list}
+    ])
+  end
+
   defp chain_type_fields(params, elixir) do
     case chain_type() do
       :ethereum ->
