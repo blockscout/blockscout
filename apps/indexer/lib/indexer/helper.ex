@@ -786,7 +786,7 @@ defmodule Indexer.Helper do
 
     ## Returns
     - `{:ok, response}` where `response` is a map decoded from a JSON object, or the raw bytes (depending on the `response_format` parameter).
-    - `{:error, reason}` in case of failure (after three unsuccessful attempts).
+    - `{:error, reason}` in case of failure (after all unsuccessful attempts).
   """
   @spec http_get_request(String.t(), :json | :raw, non_neg_integer(), [non_neg_integer()]) ::
           {:ok, map() | binary()} | {:error, any()}
@@ -805,13 +805,13 @@ defmodule Indexer.Helper do
 
       {:ok, %{body: body, status: status}} ->
         if status in avoid_retry_for_statuses do
-          http_get_request_error(url, response_format, body, @http_get_request_max_attempts)
+          http_get_request_error(url, response_format, body, @http_get_request_max_attempts, avoid_retry_for_statuses)
         else
-          http_get_request_error(url, response_format, body, attempts_done)
+          http_get_request_error(url, response_format, body, attempts_done, avoid_retry_for_statuses)
         end
 
       {:error, error} ->
-        http_get_request_error(url, response_format, error, attempts_done)
+        http_get_request_error(url, response_format, error, attempts_done, avoid_retry_for_statuses)
     end
   end
 
@@ -822,12 +822,15 @@ defmodule Indexer.Helper do
   # - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Jason.decode`.
   # - `error`: The error description for logging purposes.
   # - `attempts_done`: The number of attempts done. Incremented by the function itself.
+  # - `avoid_retry_for_statuses`: The list of http error codes we don't need to re-send the request for.
+  #                               E.g. for 404 error we don't try to re-send the request.
   #
   # ## Returns
   # - `{:ok, response}` tuple if the re-call was successful.
   # - `{:error, reason}` if all attempts were failed.
-  @spec http_get_request_error(String.t(), :json | :raw, any(), non_neg_integer()) :: {:ok, map()} | {:error, any()}
-  defp http_get_request_error(url, response_format, error, attempts_done) do
+  @spec http_get_request_error(String.t(), :json | :raw, any(), non_neg_integer(), [non_neg_integer()]) ::
+          {:ok, map()} | {:error, any()}
+  defp http_get_request_error(url, response_format, error, attempts_done, avoid_retry_for_statuses) do
     old_truncate = Application.get_env(:logger, :truncate)
     Logger.configure(truncate: :infinity)
 
@@ -847,7 +850,7 @@ defmodule Indexer.Helper do
       # wait up to 20 minutes and then retry
       :timer.sleep(min(3000 * Integer.pow(2, attempts_done - 1), 1_200_000))
       Logger.info("Retry to send the request to #{url} ...")
-      http_get_request(url, response_format, attempts_done)
+      http_get_request(url, response_format, attempts_done, avoid_retry_for_statuses)
     else
       {:error, "Error while sending request to #{url}"}
     end
