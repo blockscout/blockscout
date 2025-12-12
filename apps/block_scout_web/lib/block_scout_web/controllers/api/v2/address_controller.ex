@@ -298,7 +298,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     responses: [
       ok:
         {"All token balances for the specified address.", "application/json",
-         %Schema{title: "AddressTokenBalances", type: :array, items: Schemas.Address.TokenBalance}},
+         %Schema{type: :array, items: Schemas.Address.TokenBalance}},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
     ]
@@ -380,8 +380,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "inserted_at" => "2025-05-26T10:26:51.474448Z",
              "items_count" => 50,
              "value" => "24741049597737"
-           },
-           title_prefix: "AddressTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -469,8 +468,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "block_number" => 12_345_678,
              "index" => 0,
              "items_count" => 50
-           },
-           title_prefix: "AddressTokenTransfers"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -563,8 +561,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "index" => 8,
              "items_count" => 50,
              "transaction_index" => 8
-           },
-           title_prefix: "AddressInternalTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -640,8 +637,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {"Event logs for the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Log,
-           next_page_params_example: %{"block_number" => 22_546_398, "index" => 268, "items_count" => 50},
-           title_prefix: "AddressLogs"
+           next_page_params_example: %{"block_number" => 22_546_398, "index" => 268, "items_count" => 50}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -714,8 +710,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {"Blocks validated by the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Block,
-           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50},
-           title_prefix: "AddressBlocksValidated"
+           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -782,8 +777,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {"Historical coin balance changes for the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.CoinBalance,
-           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50},
-           title_prefix: "AddressCoinBalanceHistory"
+           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -838,7 +832,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       ok:
         {"Daily coin balance history for the specified address.", "application/json",
          %Schema{
-           title: "AddressCoinBalanceHistoryByDay",
            type: :object,
            properties: %{
              days: %Schema{type: :integer, nullable: false},
@@ -905,8 +898,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "id" => 12_519_063_346,
              "items_count" => 50,
              "value" => "3750000000000000000000"
-           },
-           title_prefix: "AddressTokens"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -980,8 +972,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
          "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
-           next_page_params_example: %{"index" => 88_192_653, "items_count" => 50},
-           title_prefix: "AddressWithdrawals"
+           next_page_params_example: %{"index" => 88_192_653, "items_count" => 50}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -1047,7 +1038,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              items:
                Schemas.Address.schema()
                |> SchemasHelper.extend_schema(
-                 title: "AddressWithCoinBalanceAndTransactionsCount",
                  properties: %{
                    coin_balance: Schemas.General.IntegerStringNullable,
                    transactions_count: %Schema{
@@ -1066,8 +1056,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
                "hash" => "0x59708733fbbf64378d9293ec56b977c011a08fd2",
                "items_count" => 50,
                "transactions_count" => nil
-             },
-             title_prefix: "AddressList"
+             }
            ),
            properties: %{
              exchange_rate: Schemas.General.FloatStringNullable,
@@ -1208,8 +1197,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
              "token_id" => "24950",
              "token_type" => "ERC-721"
-           },
-           title_prefix: "AddressNFTs"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -1285,8 +1273,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "items_count" => 50,
              "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
              "token_type" => "ERC-721"
-           },
-           title_prefix: "AddressNFTCollections"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -1363,8 +1350,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "associated_account_address_hash" => "0x1234567890123456789012345678901234567890",
              "type" => "validator",
              "items_count" => 50
-           },
-           title_prefix: "AddressCeloElectionRewards"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -1473,8 +1459,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
            next_page_params_example: %{
              "index" => 123,
              "items_count" => 50
-           },
-           title_prefix: "AddressBeaconDeposits"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()

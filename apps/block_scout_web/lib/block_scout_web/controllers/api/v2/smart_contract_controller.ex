@@ -105,8 +105,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
            next_page_params_example: %{
              "smart_contract_id" => 1_947_801,
              "items_count" => 50
-           },
-           title_prefix: "SmartContracts"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]

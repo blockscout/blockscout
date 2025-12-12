@@ -272,8 +272,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
              "total_gas_used" => "100",
              "contract_address_hash" => "0x01a2A10583675E0e5dF52DE1b62734109201477a",
              "items_count" => 50
-           },
-           title_prefix: "HotSmartContracts"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()

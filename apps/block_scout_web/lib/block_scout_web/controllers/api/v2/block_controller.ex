@@ -200,8 +200,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "Blocks"
+           }
          )}
     ]
 
@@ -245,8 +244,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "ArbitrumBatchBlocks"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -293,8 +291,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "OptimismBatchBlocks"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -342,8 +339,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "ScrollBatchBlocks"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -392,8 +388,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
              "block_number" => 12_345_678,
              "index" => 103,
              "items_count" => 50
-           },
-           title_prefix: "BlockTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -449,8 +444,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
              "transaction_index" => 3,
              "index" => 8,
              "items_count" => 50
-           },
-           title_prefix: "BlockInternalTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -516,8 +510,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "index" => 88_192_653,
              "items_count" => 50
-           },
-           title_prefix: "BlockWithdrawals"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -620,8 +613,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "index" => 123,
              "items_count" => 50
-           },
-           title_prefix: "BlockBeaconDeposits"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()

@@ -53,8 +53,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
          %Schema{
            type: :array,
            items: Schemas.Block.Response,
-           nullable: false,
-           additionalProperties: false
+           nullable: false
          }}
     ]
 
@@ -88,8 +87,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
          %Schema{
            type: :array,
            items: Schemas.Transaction.Response,
-           nullable: false,
-           additionalProperties: false
+           nullable: false
          }},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -117,8 +115,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
          %Schema{
            type: :array,
            items: Schemas.Transaction.Response,
-           nullable: false,
-           additionalProperties: false
+           nullable: false
          }},
       unprocessable_entity: JsonErrorResponse.response()
     ]

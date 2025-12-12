@@ -230,8 +230,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              "block_number" => 23_532_302,
              "index" => 375,
              "items_count" => 50
-           },
-           title_prefix: "Transactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -274,7 +273,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       ok:
         {"Polygon ZkEVM batch transactions.", "application/json",
          %Schema{
-           title: "PolygonZkEVMBatchTransactions",
            type: :object,
            properties: %{
              items: %Schema{type: :array, items: Schemas.Transaction.Response}
@@ -324,8 +322,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              "block_number" => 65_361_291,
              "index" => 1,
              "items_count" => 50
-           },
-           title_prefix: "ZkSyncBatchTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -354,8 +351,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              "block_number" => 391_483_842,
              "index" => 0,
              "items_count" => 50
-           },
-           title_prefix: "ArbitrumBatchTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -425,8 +421,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              "block_number" => 142_678_440,
              "index" => 5,
              "items_count" => 50
-           },
-           title_prefix: "OptimismBatchTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -460,8 +455,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              "block_number" => 14_127_868,
              "index" => 0,
              "items_count" => 50
-           },
-           title_prefix: "ScrollBatchTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -590,8 +584,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              "block_number" => 14_127_868,
              "index" => 0,
              "items_count" => 50
-           },
-           title_prefix: "ExecutionNodeTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -686,8 +679,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            next_page_params_example: %{
              "index" => 442,
              "block_number" => 21_307_214
-           },
-           title_prefix: "TransactionTokenTransfers"
+           }
          )},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
@@ -747,8 +739,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              "block_number" => 22_133_247,
              "transaction_index" => 68,
              "items_count" => 50
-           },
-           title_prefix: "TransactionInternalTransactions"
+           }
          )},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
@@ -798,8 +789,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              "index" => 124,
              "block_number" => 21_925_703,
              "items_count" => 50
-           },
-           title_prefix: "TransactionLogs"
+           }
          )},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
@@ -852,8 +842,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           next_page_params_example: %{
             "state_changes" => nil,
             "items_count" => 50
-          },
-          title_prefix: "TransactionStateChanges"
+          }
         )
       },
       not_found: NotFoundResponse.response(),
@@ -900,8 +889,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              "block_number" => 23_617_990,
              "index" => 128,
              "items_count" => 50
-           },
-           title_prefix: "WatchlistTransactions"
+           }
          )},
       forbidden: ForbiddenResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
@@ -1014,7 +1002,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       ok:
         {"Blobs for transaction.", "application/json",
          %Schema{
-           title: "TransactionBlobs",
            type: :object,
            properties: %{
              items: %Schema{type: :array, items: Schemas.Blob.Response}
@@ -1103,8 +1090,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            next_page_params_example: %{
              "index" => 2_287_943,
              "items_count" => 50
-           },
-           title_prefix: "Transactions"
+           }
          )},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
