@@ -1,4 +1,4 @@
-name: Optimism Publish Docker image
+name: Optimism Publish experimental Docker image
 
 on:
   workflow_dispatch:
