@@ -12,7 +12,6 @@ defmodule Explorer.Chain do
       join: 5,
       limit: 2,
       lock: 2,
-      offset: 2,
       order_by: 2,
       order_by: 3,
       preload: 2,
@@ -1358,7 +1357,7 @@ defmodule Explorer.Chain do
         elements
 
       blocks ->
-        blocks |> Repo.preload(Map.keys(necessity_by_association))
+        blocks |> select_repo(options).preload(Map.keys(necessity_by_association))
     end
   end
 
@@ -2021,63 +2020,23 @@ defmodule Explorer.Chain do
     method_id_filter = Keyword.get(options, :method)
     type_filter = Keyword.get(options, :type)
 
-    fetch_recent_collated_transactions(
-      old_ui?,
-      paging_options,
-      necessity_by_association,
-      method_id_filter,
-      type_filter,
-      options
-    )
-  end
+    case paging_options.key && Transactions.atomic_take_enough(paging_options.page_size) do
+      transactions when is_list(transactions) ->
+        transactions |> select_repo(options).preload(Map.keys(necessity_by_association))
 
-  # RAP - random access pagination
-  @spec recent_collated_transactions_for_rap([paging_options | necessity_by_association_option]) :: %{
-          :total_transactions_count => non_neg_integer(),
-          :transactions => [Transaction.t()]
-        }
-  def recent_collated_transactions_for_rap(options \\ []) when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    total_transactions_count = transactions_available_count()
-
-    fetched_transactions =
-      if is_nil(paging_options.key) or paging_options.page_number == 1 do
-        paging_options.page_size
-        |> Kernel.+(1)
-        |> Transactions.atomic_take_enough()
-        |> case do
-          nil ->
-            transactions = fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association)
-            Transactions.update(transactions)
-            transactions
-
-          transactions ->
-            transactions
-        end
-      else
-        fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association)
-      end
-
-    %{total_transactions_count: total_transactions_count, transactions: fetched_transactions}
+      _ ->
+        fetch_recent_collated_transactions(
+          old_ui?,
+          paging_options,
+          necessity_by_association,
+          method_id_filter,
+          type_filter,
+          options
+        )
+    end
   end
 
   def default_page_size, do: @default_page_size
-
-  def fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association) do
-    fetch_transactions_for_rap()
-    |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
-    |> handle_random_access_paging_options(paging_options)
-    |> join_associations(necessity_by_association)
-    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
-    |> Repo.all()
-  end
-
-  defp fetch_transactions_for_rap do
-    Transaction
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
-  end
 
   def transactions_available_count do
     Transaction
@@ -2645,45 +2604,6 @@ defmodule Explorer.Chain do
     |> Withdrawal.page_withdrawals(paging_options)
     |> limit(^paging_options.page_size)
   end
-
-  defp handle_random_access_paging_options(query, empty_options) when empty_options in [nil, [], %{}],
-    do: limit(query, ^(@default_page_size + 1))
-
-  defp handle_random_access_paging_options(query, paging_options) do
-    query
-    |> (&if(paging_options |> Map.get(:page_number, 1) |> process_page_number() == 1,
-          do: &1,
-          else: Transaction.page_transaction(&1, paging_options)
-        )).()
-    |> handle_page(paging_options)
-  end
-
-  defp handle_page(query, paging_options) do
-    page_number = paging_options |> Map.get(:page_number, 1) |> process_page_number()
-    page_size = Map.get(paging_options, :page_size, @default_page_size)
-
-    cond do
-      page_in_bounds?(page_number, page_size) && page_number == 1 ->
-        query
-        |> limit(^(page_size + 1))
-
-      page_in_bounds?(page_number, page_size) ->
-        query
-        |> limit(^page_size)
-        |> offset(^((page_number - 2) * page_size))
-
-      true ->
-        query
-        |> limit(^(@default_page_size + 1))
-    end
-  end
-
-  defp process_page_number(number) when number < 1, do: 1
-
-  defp process_page_number(number), do: number
-
-  defp page_in_bounds?(page_number, page_size),
-    do: page_size <= @limit_showing_transactions && @limit_showing_transactions - page_number * page_size >= 0
 
   def limit_showing_transactions, do: @limit_showing_transactions
 
@@ -4162,10 +4082,14 @@ defmodule Explorer.Chain do
   end
 
   def upsert_count_withdrawals(index) do
-    LastFetchedCounter.upsert(%{
-      counter_type: "withdrawals_count",
-      value: index
-    })
+    current_value = LastFetchedCounter.get("withdrawals_count")
+
+    if index > current_value do
+      LastFetchedCounter.upsert(%{
+        counter_type: "withdrawals_count",
+        value: index
+      })
+    end
   end
 
   def sum_withdrawals_from_cache(options \\ []) do
