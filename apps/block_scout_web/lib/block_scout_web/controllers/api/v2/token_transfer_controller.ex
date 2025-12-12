@@ -53,8 +53,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
            next_page_params_example: %{
              "index" => 50,
              "block_number" => 22_133_247
-           },
-           title_prefix: "TokenTransfers"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]

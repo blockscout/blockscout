@@ -732,10 +732,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   def paginated_response(options) do
     items_schema = Keyword.fetch!(options, :items)
     next_page_params_example = Keyword.fetch!(options, :next_page_params_example)
-    title_prefix = Keyword.fetch!(options, :title_prefix)
 
     %Schema{
-      title: "#{title_prefix}PaginatedResponse",
       type: :object,
       properties: %{
         items: %Schema{type: :array, items: items_schema, nullable: false},

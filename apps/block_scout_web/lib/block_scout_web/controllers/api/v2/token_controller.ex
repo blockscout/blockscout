@@ -148,8 +148,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "batch_block_hash" => "0x789",
              "batch_transaction_hash" => "0xabc",
              "index_in_batch" => 2
-           },
-           title_prefix: "TokenTransfers"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -205,8 +204,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "address_hash" => "0x48bb9b14483e43c7726df702b271d410e7460656",
              "value" => "200000000000000",
              "items_count" => 50
-           },
-           title_prefix: "TokenHolders"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -251,8 +249,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
            items: Schemas.TokenInstance,
            next_page_params_example: %{
              "unique_token" => 782_098
-           },
-           title_prefix: "TokenInstances"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -405,8 +402,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "index" => 920,
              "block_number" => 23_489_243,
              "token_id" => "4"
-           },
-           title_prefix: "TokenInstanceTransfers"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -467,8 +463,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "items_count" => 50,
              "token_id" => "0",
              "value" => "4217417051704137590935"
-           },
-           title_prefix: "TokenInstanceHolders"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -581,8 +576,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "market_cap" => "570958125.135513",
              "name" => "Wrapped Staked ETH",
              "items_count" => 50
-           },
-           title_prefix: "Tokens"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -645,8 +639,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "market_cap" => "570958125.135513",
              "name" => "Wrapped Staked ETH",
              "items_count" => 50
-           },
-           title_prefix: "BridgedTokens"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]

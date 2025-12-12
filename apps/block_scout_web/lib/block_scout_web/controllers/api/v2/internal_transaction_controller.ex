@@ -42,8 +42,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
              "transaction_index" => 68,
              "block_number" => 22_133_247,
              "items_count" => 50
-           },
-           title_prefix: "InternalTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
