@@ -256,7 +256,7 @@ defmodule Explorer.Chain.OrderedCache do
 
       def update(elements) when is_list(elements) do
         case Explorer.mode() do
-          :all ->
+          mode when mode in [:all, :api] ->
             elements
             |> Enum.sort_by(&element_to_id(&1), &prevails?(&1, &2))
             |> Enum.take(max_size())
