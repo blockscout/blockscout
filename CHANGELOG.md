@@ -48,6 +48,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Github workflows: Stop using ELIXIR_VERSION & OTP_VERSION from GA envs ([#13718](https://github.com/blockscout/blockscout/pull/13718))
 - Refactoring of the application mode config ([#13715](https://github.com/blockscout/blockscout/pull/13715))
 - Eliminate warnings in the Swagger file ([#13714](https://github.com/blockscout/blockscout/pull/13714))
 - Change URL to Solidity binaries list ([#13711](https://github.com/blockscout/blockscout/pull/13711))
