@@ -12,16 +12,33 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
 
   @increased_interval 10000
 
-  @spec start_link(term()) :: GenServer.on_start()
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  @type named_arguments :: %{required(:task_supervisor) => module()}
+
+  @spec child_spec([named_arguments | GenServer.options(), ...]) :: Supervisor.child_spec()
+  def child_spec([named_arguments]) when is_map(named_arguments), do: child_spec([named_arguments, []])
+
+  def child_spec([named_arguments, gen_server_options] = start_link_arguments)
+      when is_map(named_arguments) and is_list(gen_server_options) do
+    # The `child_spec` from `use Supervisor` because the one from `use GenServer` will set the `type` to `:worker`
+    # instead of `:supervisor` and use the wrong shutdown timeout
+    Supervisor.child_spec(
+      %{id: __MODULE__, start: {__MODULE__, :start_link, start_link_arguments}, type: :supervisor},
+      []
+    )
+  end
+
+  @spec start_link(named_arguments :: map()) :: {:ok, pid}
+  @spec start_link(named_arguments :: %{}, GenServer.options()) :: {:ok, pid}
+  def start_link(named_arguments, gen_server_options \\ [])
+      when is_map(named_arguments) and is_list(gen_server_options) do
+    GenServer.start_link(__MODULE__, named_arguments, gen_server_options)
   end
 
   @impl true
-  def init(_) do
+  def init(opts) do
     send_new_task()
 
-    {:ok, %{block_fetcher: generate_block_fetcher(), low_priority_blocks: []}}
+    {:ok, %{block_fetcher: generate_block_fetcher(opts), low_priority_blocks: []}}
   end
 
   @impl true
@@ -72,7 +89,7 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
       [number]
   end
 
-  defp generate_block_fetcher do
+  defp generate_block_fetcher(opts) do
     receipts_batch_size = Application.get_env(:indexer, :receipts_batch_size)
     receipts_concurrency = Application.get_env(:indexer, :receipts_concurrency)
     json_rpc_named_arguments = Application.get_env(:indexer, :json_rpc_named_arguments)
@@ -82,7 +99,8 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
       callback_module: Indexer.Block.Catchup.Fetcher,
       json_rpc_named_arguments: json_rpc_named_arguments,
       receipts_batch_size: receipts_batch_size,
-      receipts_concurrency: receipts_concurrency
+      receipts_concurrency: receipts_concurrency,
+      task_supervisor: opts[:task_supervisor]
     }
   end
 

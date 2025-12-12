@@ -10,10 +10,8 @@ defmodule Indexer.Block.FetcherTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain
-  alias Explorer.Chain.Celo.Legacy.Events
-  alias Explorer.Chain.Celo.PendingAccountOperation
   alias Explorer.Chain.{Address, Log, Transaction, Wei}
-  alias Explorer.TestHelper
+  # alias Explorer.TestHelper
   alias Indexer.Block.Fetcher
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
@@ -83,11 +81,14 @@ defmodule Indexer.Block.FetcherTest do
 
       maybe_set_celo_core_contracts_env()
 
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
       %{
         block_fetcher: %Fetcher{
           broadcast: false,
           callback_module: Indexer.Block.Catchup.Fetcher,
-          json_rpc_named_arguments: json_rpc_named_arguments
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          task_supervisor: Indexer.TaskSupervisor
         }
       }
     end
@@ -809,6 +810,9 @@ defmodule Indexer.Block.FetcherTest do
   end
 
   if @chain_identity == {:optimism, :celo} do
+    alias Explorer.Chain.Celo.Legacy.Events
+    alias Explorer.Chain.Celo.PendingAccountOperation
+
     describe "import_range/2 celo" do
       setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
         CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
