@@ -9,8 +9,8 @@ on:
       - '**/README.md'
       - 'docker-compose/*'
 env:
-  OTP_VERSION: ${{ vars.OTP_VERSION }}
-  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
+  OTP_VERSION: '27.3.4.6'
+  ELIXIR_VERSION: '1.19.4'
   RELEASE_VERSION: 9.3.0
 
 permissions:
