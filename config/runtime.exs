@@ -272,9 +272,8 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Utility.EndpointAvailabilityChecker, e
 ### Explorer ###
 ################
 
-disable_indexer? = ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
-disable_webapp? = ConfigHelper.parse_bool_env_var("DISABLE_WEBAPP")
 app_mode = ConfigHelper.mode()
+disable_indexer? = app_mode == :api || ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 
 disable_exchange_rates? =
   if System.get_env("DISABLE_MARKET"),
@@ -715,7 +714,7 @@ config :explorer, Explorer.Account,
   siwe_message: System.get_env("ACCOUNT_SIWE_MESSAGE", "Sign in to Blockscout Account V2")
 
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
-  enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER"),
+  enabled: !disable_indexer?,
   batch_size: ConfigHelper.parse_integer_env_var("MIN_MISSING_BLOCK_NUMBER_BATCH_SIZE", 100_000)
 
 config :explorer, :spandex,
@@ -991,7 +990,7 @@ config :indexer, :arc,
   arc_native_token_system_address:
     System.get_env("INDEXER_ARC_NATIVE_TOKEN_SYSTEM_CONTRACT", "0x1800000000000000000000000000000000000000")
 
-config :indexer, Indexer.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
+config :indexer, Indexer.Supervisor, enabled: !disable_indexer?
 
 config :indexer, Indexer.Fetcher.TransactionAction.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_TX_ACTIONS_ENABLE")
