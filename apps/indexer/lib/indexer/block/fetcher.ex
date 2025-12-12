@@ -78,7 +78,14 @@ defmodule Indexer.Block.Fetcher do
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
-  @type t :: %__MODULE__{}
+  @type t :: %__MODULE__{
+          broadcast: term(),
+          task_supervisor: module(),
+          callback_module: module(),
+          json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments(),
+          receipts_batch_size: pos_integer(),
+          receipts_concurrency: pos_integer()
+        }
 
   @doc """
   Calculates the balances and internal transactions and imports those with the given data.

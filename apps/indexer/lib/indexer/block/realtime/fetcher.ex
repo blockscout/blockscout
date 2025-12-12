@@ -61,13 +61,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
             last_realtime_blocks: %{}
 
   @type t :: %__MODULE__{
-          block_fetcher: %Block.Fetcher{
-            broadcast: term(),
-            callback_module: __MODULE__,
-            json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments(),
-            receipts_batch_size: pos_integer(),
-            receipts_concurrency: pos_integer()
-          },
+          block_fetcher: Block.Fetcher.t(),
           subscription: Subscription.t(),
           previous_number: pos_integer() | nil,
           timer: reference(),
