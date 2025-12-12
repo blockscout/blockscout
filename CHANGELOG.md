@@ -48,6 +48,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Refactoring of the application mode config ([#13715](https://github.com/blockscout/blockscout/pull/13715))
 - Eliminate warnings in the Swagger file ([#13714](https://github.com/blockscout/blockscout/pull/13714))
 - Change URL to Solidity binaries list ([#13711](https://github.com/blockscout/blockscout/pull/13711))
 - Add osaka to the default list of supported EVM versions ([#13680](https://github.com/blockscout/blockscout/pull/13680))
