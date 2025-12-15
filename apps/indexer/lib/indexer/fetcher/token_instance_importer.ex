@@ -93,7 +93,7 @@ defmodule Indexer.Fetcher.TokenInstanceImporter do
           "TokenInstanceImporter imported #{Enum.count(tokens_params)} tokens and #{Enum.count(token_instances_params)} token instances"
         )
 
-        %{}
+        %{tokens_map: %{}, token_instances_map: %{}}
 
       error ->
         log_error(inspect(error))
