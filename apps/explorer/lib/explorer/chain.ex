@@ -707,6 +707,10 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Checks if indexing of blocks finished based on the ratio of indexed blocks to blockchain height
+  """
+  @spec finished_indexing_from_ratio?(Decimal.t()) :: boolean()
   def finished_indexing_from_ratio?(ratio) do
     Decimal.compare(ratio, 1) !== :lt
   end
@@ -1718,28 +1722,47 @@ defmodule Explorer.Chain do
     select_repo(options).one!(query)
   end
 
-  def indexer_running? do
+  @spec indexer_running?() :: boolean()
+  defp indexer_running? do
     Application.get_env(:indexer, Indexer.Supervisor)[:enabled] or
       match?({:ok, _, _}, HealthHelper.last_db_block_status())
   end
 
-  def internal_transactions_fetcher_running? do
+  @spec internal_transactions_fetcher_running?() :: boolean()
+  defp internal_transactions_fetcher_running? do
     not Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] or
       match?({:ok, _, _}, last_db_internal_transaction_block_status())
   end
 
-  def last_db_internal_transaction_block_status do
-    query =
-      from(it in InternalTransaction,
-        join: block in assoc(it, :block),
-        select: {block.number, block.timestamp},
-        order_by: [desc: block.number],
+  @spec last_db_internal_transaction_block_status() ::
+          {:ok, Block.block_number(), DateTime.t()}
+          | {:stale, Block.block_number(), DateTime.t()}
+          | {:error, :no_blocks}
+  defp last_db_internal_transaction_block_status do
+    it_query =
+      from(internal_transaction in InternalTransaction,
+        select: internal_transaction.block_number,
+        order_by: [desc: internal_transaction.block_number],
         limit: 1
       )
 
-    query
-    |> Repo.one()
-    |> HealthHelper.block_status()
+    last_it_block_number =
+      it_query
+      |> Repo.one()
+
+    if is_nil(last_it_block_number) do
+      {:error, :no_blocks}
+    else
+      block_query =
+        from(block in Block,
+          select: {block.number, block.timestamp},
+          where: block.consensus == true and block.number == ^last_it_block_number
+        )
+
+      block_query
+      |> Repo.one()
+      |> HealthHelper.block_status()
+    end
   end
 
   def fetch_min_missing_block_cache(from \\ nil, to \\ nil) do
