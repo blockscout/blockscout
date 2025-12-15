@@ -492,6 +492,16 @@
             <% gas_used_perc = gas_used_perc(@transaction) %>
             <dd class="col-sm-9 col-lg-10"> <%= gas_used(@transaction) %> <%= if gas_used_perc, do: "| #{gas_used_perc}%" %></dd>
           </dl>
+          <%= if @gas_fee_grant_info do %>
+            <dl class="row">
+              <dt class="col-sm-3 col-lg-2 text-muted">
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
+                  text: gettext("The remaining gas fee grant allowance for the sender.") %>
+                <%= gettext "Gas Grant Remaining" %>
+              </dt>
+              <dd class="col-sm-9 col-lg-10"> <%= format_wei_value(Wei.from(@gas_fee_grant_info.amount, :wei), :ether) %> </dd>
+            </dl>
+          <% end %>
           <%= if Application.get_env(:explorer, :chain_type) == :optimism do %>
             <%= if @transaction.l1_gas_used do %>
               <!-- L1 Gas Used by Transaction -->
