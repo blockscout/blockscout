@@ -581,7 +581,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         ),
       "has_error_in_internal_transactions" => transaction.has_error_in_internal_transactions,
       "authorization_list" => authorization_list(transaction.signed_authorizations),
-      "gas_fee_grant" => gas_fee_grant_info
+      "gas_fee_grant_info" => gas_fee_grant_info
     }
 
     result
