@@ -431,9 +431,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     It renders the list of L2 transactions bound to the specified batch.
   """
   @spec optimism_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def optimism_batch(conn, %{batch_number_param: batch_number_string} = params) do
-    {batch_number, ""} = Integer.parse(batch_number_string)
-
+  def optimism_batch(conn, %{batch_number_param: batch_number} = params) do
     l2_block_number_from = OptimismTransactionBatch.edge_l2_block_number(batch_number, :min, @api_true)
     l2_block_number_to = OptimismTransactionBatch.edge_l2_block_number(batch_number, :max, @api_true)
 
@@ -465,9 +463,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     It renders the list of L2 transactions bound to the specified batch.
   """
   @spec scroll_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def scroll_batch(conn, %{batch_number_param: batch_number_string} = params) do
-    {batch_number, ""} = Integer.parse(batch_number_string)
-
+  def scroll_batch(conn, %{batch_number_param: batch_number} = params) do
     {l2_block_number_from, l2_block_number_to} =
       case ScrollReader.batch(batch_number, @api_true) do
         {:ok, batch} -> {batch.l2_block_range.from, batch.l2_block_range.to}
