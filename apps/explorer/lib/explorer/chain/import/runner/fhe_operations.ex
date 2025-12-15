@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
   during block indexing. It follows the standard Blockscout import runner pattern
   with proper conflict resolution and error handling.
 
-  Also check sets FHE contract tags.
+  Also checks and sets FHE contract tags.
   """
 
   require Ecto.Query

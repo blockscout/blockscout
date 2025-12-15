@@ -50,6 +50,7 @@ defmodule Explorer.Chain.FheContractChecker do
   @doc """
   Checks if a contract is a Confidential/FHE contract by calling confidentialProtocolId()
   """
+  @spec is_fhe_contract?(Hash.Address.t()) :: {:ok, boolean()}
   def is_fhe_contract?(%Hash{byte_count: 20} = address_hash) do
     address_string = Hash.to_string(address_hash)
 
