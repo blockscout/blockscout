@@ -72,8 +72,8 @@ defmodule Explorer.Chain.FheContractChecker do
         {:ok, false}
     end
   end
-  
-  +@spec is_fhe_contract?(binary()) :: {:ok, boolean()} | {:error, :invalid_hash}
+
+  @spec is_fhe_contract?(binary()) :: {:ok, boolean()} | {:error, :invalid_hash}
   def is_fhe_contract?(address_hash_string) when is_binary(address_hash_string) do
     case Hash.Address.cast(address_hash_string) do
       {:ok, address_hash} -> is_fhe_contract?(address_hash)
