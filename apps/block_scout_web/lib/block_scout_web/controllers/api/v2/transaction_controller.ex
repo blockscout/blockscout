@@ -846,6 +846,29 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     ]
 
   @doc """
+    Function to handle GET requests to `/api/v2/transactions/:transaction_hash_param/fhe-operations` endpoint.
+  """
+  @spec fhe_operations(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
+  def fhe_operations(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
+    with {:ok, _transaction, transaction_hash} <- validate_transaction(transaction_hash_string, params) do
+      # Fetch pre-parsed FHE operations from database
+      operations = Explorer.Chain.FheOperation.by_transaction_hash(transaction_hash)
+      metrics = Explorer.Chain.FheOperation.transaction_metrics(transaction_hash)
+
+      conn
+      |> put_status(200)
+      |> render(:fhe_operations,
+        operations: operations,
+        total_hcu: metrics.total_hcu,
+        max_depth_hcu: metrics.max_depth_hcu,
+        operation_count: metrics.operation_count
+      )
+    end
+  end
+
+
+
+  @doc """
     Function to handle GET requests to `/api/v2/transactions/:transaction_hash_param/state-changes` endpoint.
   """
   @spec state_changes(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}

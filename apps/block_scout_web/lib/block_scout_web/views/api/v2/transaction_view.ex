@@ -524,7 +524,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_transaction? && conn)),
       "has_error_in_internal_transactions" => transaction.has_error_in_internal_transactions,
       "authorization_list" => authorization_list(transaction.signed_authorizations),
-      "is_pending_update" => transaction.block && transaction.block.refetch_needed
+      "is_pending_update" => transaction.block && transaction.block.refetch_needed,
+      "fhe_operations_count" => fhe_operations_count(transaction.hash)
     }
 
     result
@@ -1007,5 +1008,53 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
          _watchlist_names
        ) do
     result
+  end
+
+  @doc """
+  Renders FHE operations for a transaction.
+  """
+  def render("fhe_operations.json", %{operations: operations, total_hcu: total_hcu, max_depth_hcu: max_depth_hcu, operation_count: operation_count}) do
+    %{
+      "items" => Enum.map(operations, &prepare_fhe_operation/1),
+      "total_hcu" => total_hcu,
+      "max_depth_hcu" => max_depth_hcu,
+      "operation_count" => operation_count
+    }
+  end
+
+
+
+  defp prepare_fhe_operation(operation) do
+    caller_info =
+      if operation.caller do
+        # operation.caller is an Explorer.Chain.Hash struct
+        address_hash = operation.caller
+        Helper.address_with_info(nil, %{hash: address_hash}, address_hash, false)
+      else
+        nil
+      end
+
+    %{
+      "log_index" => operation.log_index,
+      "operation" => operation.operation,
+      "type" => operation.operation_type,
+      "fhe_type" => operation.fhe_type,
+      "is_scalar" => operation.is_scalar,
+      "hcu_cost" => operation.hcu_cost,
+      "hcu_depth" => operation.hcu_depth,
+      "caller" => caller_info,
+      "inputs" => operation.input_handles,
+      "result" => "0x" <> Base.encode16(operation.result_handle, case: :lower),
+      "block_number" => operation.block_number
+    }
+  end
+
+  @doc """
+  Returns the count of FHE operations for a transaction.
+  Returns 0 if no operations exist.
+  """
+  defp fhe_operations_count(transaction_hash) do
+    metrics = Explorer.Chain.FheOperation.transaction_metrics(transaction_hash)
+    metrics.operation_count || 0
   end
 end
