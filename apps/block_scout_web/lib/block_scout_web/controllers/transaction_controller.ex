@@ -64,7 +64,10 @@ defmodule BlockScoutWeb.TransactionController do
         :paging_options,
         params
         |> fetch_page_number()
-        |> update_page_parameters(Chain.default_page_size(), Keyword.get(options, :paging_options))
+        |> update_page_parameters(
+          Chain.default_page_size(),
+          Keyword.get(options, :paging_options)
+        )
       )
 
     %{total_transactions_count: transactions_count, transactions: transactions_plus_one} =
@@ -153,9 +156,13 @@ defmodule BlockScoutWeb.TransactionController do
          :ok <- Chain.check_transaction_exists(transaction_hash) do
       if Chain.transaction_has_token_transfers?(transaction_hash) do
         with {:ok, transaction} <-
-               Chain.hash_to_transaction(transaction_hash, necessity_by_association: @necessity_by_association),
-             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
-             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
+               Chain.hash_to_transaction(transaction_hash,
+                 necessity_by_association: @necessity_by_association
+               ),
+             {:ok, false} <-
+               AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+             {:ok, false} <-
+               AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
           render(
             conn,
             "show_token_transfers.html",
@@ -171,7 +178,8 @@ defmodule BlockScoutWeb.TransactionController do
               get_transaction_with_addresses_tags(
                 transaction,
                 current_user(conn)
-              )
+              ),
+            gas_fee_grant_info: fetch_gas_fee_grant_info(transaction)
           )
         else
           {:error, :not_found} ->
@@ -182,9 +190,13 @@ defmodule BlockScoutWeb.TransactionController do
         end
       else
         with {:ok, transaction} <-
-               Chain.hash_to_transaction(transaction_hash, necessity_by_association: @necessity_by_association),
-             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
-             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
+               Chain.hash_to_transaction(transaction_hash,
+                 necessity_by_association: @necessity_by_association
+               ),
+             {:ok, false} <-
+               AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+             {:ok, false} <-
+               AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
           render(
             conn,
             "show_internal_transactions.html",
@@ -200,7 +212,8 @@ defmodule BlockScoutWeb.TransactionController do
               get_transaction_with_addresses_tags(
                 transaction,
                 current_user(conn)
-              )
+              ),
+            gas_fee_grant_info: fetch_gas_fee_grant_info(transaction)
           )
         else
           {:error, :not_found} ->
@@ -216,6 +229,24 @@ defmodule BlockScoutWeb.TransactionController do
 
       :not_found ->
         set_not_found_view(conn, id)
+    end
+  end
+
+  defp fetch_gas_fee_grant_info(transaction) do
+    if transaction.to_address_hash do
+      case Indexer.Fetcher.GasFeeGrant.fetch_grant(
+             to_string(transaction.from_address_hash),
+             to_string(transaction.to_address_hash),
+             transaction.block_number
+           ) do
+        {:ok, %{granter: granter, period_can_spend: val}} ->
+          %{amount: to_string(val), granter: granter}
+
+        _ ->
+          nil
+      end
+    else
+      nil
     end
   end
 
