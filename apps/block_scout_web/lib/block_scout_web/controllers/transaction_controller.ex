@@ -240,7 +240,7 @@ defmodule BlockScoutWeb.TransactionController do
              transaction.block_number
            ) do
         {:ok, %{granter: granter, period_can_spend: val}} ->
-          %{amount: to_string(val), granter: granter}
+          %{amount: Decimal.new(val), granter: granter}
 
         _ ->
           nil
