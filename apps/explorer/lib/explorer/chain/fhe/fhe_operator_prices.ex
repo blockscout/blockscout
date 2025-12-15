@@ -446,13 +446,14 @@ defmodule Explorer.Chain.FheOperatorPrices do
       iex> get_price("fheAdd", "Uint8", false)
       88_000
   """
+  @spec get_price(String.t() | atom(), String.t() | atom(), boolean()) :: non_neg_integer()
   def get_price(operation_name, fhe_type, is_scalar \\ false) do
     case @operator_prices[operation_name] do
       %{scalar: scalar_prices, non_scalar: non_scalar_prices} ->
         prices = if is_scalar, do: scalar_prices, else: non_scalar_prices
         Map.get(prices, fhe_type, 0)
 
-      %{scalar: scalar_prices} when is_scalar ->
+      %{scalar: scalar_prices} ->
         Map.get(scalar_prices, fhe_type, 0)
 
       %{types: type_prices} ->
@@ -470,6 +471,7 @@ defmodule Explorer.Chain.FheOperatorPrices do
       iex> get_type_name(1)
       "Uint8"
   """
+  @spec get_type_name(integer()) :: String.t()
   def get_type_name(type_index) when is_integer(type_index) do
     Map.get(@type_mapping, type_index, "Unknown")
   end
@@ -477,10 +479,12 @@ defmodule Explorer.Chain.FheOperatorPrices do
   @doc """
   Get all operator prices.
   """
+  @spec all_prices() :: map()
   def all_prices, do: @operator_prices
 
   @doc """
   Get type mapping.
   """
+  @spec type_mapping() :: %{integer() => String.t()}
   def type_mapping, do: @type_mapping
 end

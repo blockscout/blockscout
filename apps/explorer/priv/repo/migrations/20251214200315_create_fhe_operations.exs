@@ -27,7 +27,6 @@ defmodule Explorer.Repo.Migrations.CreateFheOperations do
     end
 
     # Indexes for efficient queries
-    create(index(:fhe_operations, [:transaction_hash]))
     create(index(:fhe_operations, ["block_number DESC"]))
     create(index(:fhe_operations, [:caller], where: "caller IS NOT NULL"))
     create(index(:fhe_operations, [:operation_type]))

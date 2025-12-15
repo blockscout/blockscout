@@ -1049,10 +1049,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  @doc """
-  Returns the count of FHE operations for a transaction.
-  Returns 0 if no operations exist.
-  """
+  # Returns the count of FHE operations for a transaction.
+  # Returns 0 if no operations exist.
   defp fhe_operations_count(transaction_hash) do
     metrics = Explorer.Chain.FheOperation.transaction_metrics(transaction_hash)
     metrics.operation_count || 0

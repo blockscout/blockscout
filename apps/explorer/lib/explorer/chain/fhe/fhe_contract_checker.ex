@@ -36,7 +36,7 @@ defmodule Explorer.Chain.FheContractChecker do
             save_fhe_tag(address_hash, options)
           {:ok, false} ->
             :ok
-          error ->
+          _error ->
             :error
         end
       end
@@ -104,11 +104,11 @@ defmodule Explorer.Chain.FheContractChecker do
     
     case AddressTag.get_id_by_label(@fhe_tag_label) do
       nil -> :error
-      tag_id -> insert_tag_mapping(address_hash, tag_id, select_repo(options))
+      tag_id -> insert_tag_mapping(address_hash, tag_id)
     end
   end
 
-  defp insert_tag_mapping(address_hash, tag_id, _repo) do
+  defp insert_tag_mapping(address_hash, tag_id) do
     params = %{
       address_hash: address_hash,
       tag_id: tag_id,
@@ -120,7 +120,8 @@ defmodule Explorer.Chain.FheContractChecker do
     Repo.insert_all(AddressToTag, [params], on_conflict: :nothing, conflict_target: [:address_hash, :tag_id])
     :ok
   rescue
-    e -> 
+    e ->
+      Logger.error("Failed to insert FHE tag mapping: #{inspect(e)}")
       :error
   end
 

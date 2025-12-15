@@ -21,6 +21,8 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
 
   @behaviour Import.Runner
 
+  @timeout 60_000
+
   # Required by Import.Runner behaviour
   @impl Import.Runner
   def ecto_schema_module, do: FheOperation
@@ -52,8 +54,6 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
   @impl Import.Runner
   def timeout, do: @timeout
 
-  @timeout 60_000
-
   @spec insert(Repo.t(), [map()], %{
           required(:timeout) => timeout(),
           required(:timestamps) => Import.timestamps()
@@ -70,38 +70,36 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
 
       # Insert with conflict resolution
       # If the same operation exists (same transaction_hash + log_index), replace it
-      {:ok, inserted} =
-        Import.insert_changes_list(
-          repo,
-          ordered_changes_list,
-          conflict_target: [:transaction_hash, :log_index],
-          on_conflict: :replace_all,
-          for: FheOperation,
-          returning: true,
-          timeout: timeout,
-          timestamps: timestamps
-        )
+      case Import.insert_changes_list(
+        repo,
+        ordered_changes_list,
+        conflict_target: [:transaction_hash, :log_index],
+        on_conflict: :replace_all,
+        for: FheOperation,
+        returning: true,
+        timeout: timeout,
+        timestamps: timestamps
+      ) do
+        {:ok, inserted} ->
+          tag_contracts_from_fhe_operations(ordered_changes_list)
+          {:ok, inserted}
 
-      tag_contracts_from_fhe_operations(ordered_changes_list)
-
-      {:ok, inserted}
+        {:error, changesets} = error ->
+          Logger.error("Failed to insert FHE operations: #{inspect(changesets)}")
+          error
+      end
     end
   end
   
   # Tags contracts that were called in transactions with FHE operations
   defp tag_contracts_from_fhe_operations(fhe_operations) when is_list(fhe_operations) do
-    if Enum.empty?(fhe_operations) do
-      :ok
-    else
-      contract_addresses = get_all_contract_addresses_from_fhe_operations(fhe_operations)
+    contract_addresses = get_all_contract_addresses_from_fhe_operations(fhe_operations)
 
+    Enum.each(contract_addresses, fn address_hash ->
+       FheContractChecker.check_and_save_fhe_status(address_hash, [])
+    end)
 
-      Enum.each(contract_addresses, fn address_hash ->
-         FheContractChecker.check_and_save_fhe_status(address_hash, [])
-      end)
-
-      :ok
-    end
+    :ok
   end
 
   defp tag_contracts_from_fhe_operations(_), do: :ok

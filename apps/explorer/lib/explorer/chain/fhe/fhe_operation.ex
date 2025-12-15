@@ -94,8 +94,8 @@ defmodule Explorer.Chain.FheOperation do
         where: op.transaction_hash == ^transaction_hash,
         select: %{
           operation_count: count(op.log_index),
-          total_hcu: sum(op.hcu_cost),
-          max_depth_hcu: max(op.hcu_depth)
+          total_hcu: coalesce(sum(op.hcu_cost), 0),
+          max_depth_hcu: coalesce(max(op.hcu_depth), 0)
         }
       )
 
@@ -127,7 +127,7 @@ defmodule Explorer.Chain.FheOperation do
   @doc """
   Returns operation distribution statistics.
   """
-  @spec operation_stats() :: [%{operation: String.t(), count: non_neg_integer()}]
+  @spec operation_stats() :: [%{operation: String.t(), operation_type: String.t(), count: non_neg_integer()}]
   def operation_stats do
     query =
       from(

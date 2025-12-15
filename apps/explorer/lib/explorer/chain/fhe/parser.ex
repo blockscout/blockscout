@@ -3,6 +3,8 @@ defmodule Explorer.Chain.Fhe.Parser do
   Logic for parsing FHE operations from transaction logs.
   """
 
+  require Logger
+
   alias Explorer.Chain.{Hash, FheOperatorPrices, Log}
   alias Explorer.Helper
 
@@ -50,6 +52,36 @@ defmodule Explorer.Chain.Fhe.Parser do
     @fhe_rand_event, @fhe_rand_bounded_event
   ]
 
+  @event_names %{
+    @fhe_add_event => "FheAdd",
+    @fhe_sub_event => "FheSub",
+    @fhe_mul_event => "FheMul",
+    @fhe_div_event => "FheDiv",
+    @fhe_rem_event => "FheRem",
+    @fhe_bit_and_event => "FheBitAnd",
+    @fhe_bit_or_event => "FheBitOr",
+    @fhe_bit_xor_event => "FheBitXor",
+    @fhe_shl_event => "FheShl",
+    @fhe_shr_event => "FheShr",
+    @fhe_rotl_event => "FheRotl",
+    @fhe_rotr_event => "FheRotr",
+    @fhe_eq_event => "FheEq",
+    @fhe_ne_event => "FheNe",
+    @fhe_ge_event => "FheGe",
+    @fhe_gt_event => "FheGt",
+    @fhe_le_event => "FheLe",
+    @fhe_lt_event => "FheLt",
+    @fhe_min_event => "FheMin",
+    @fhe_max_event => "FheMax",
+    @fhe_neg_event => "FheNeg",
+    @fhe_not_event => "FheNot",
+    @trivial_encrypt_event => "TrivialEncrypt",
+    @cast_event => "Cast",
+    @fhe_if_then_else_event => "FheIfThenElse",
+    @fhe_rand_event => "FheRand",
+    @fhe_rand_bounded_event => "FheRandBounded"
+  }
+
   @doc """
   Returns the list of all FHE event topics.
   """
@@ -60,37 +92,7 @@ defmodule Explorer.Chain.Fhe.Parser do
   """
   def get_event_name(topic) do
     normalized_topic = String.downcase(to_string(topic))
-
-    case normalized_topic do
-      t when t == @fhe_add_event -> "FheAdd"
-      t when t == @fhe_sub_event -> "FheSub"
-      t when t == @fhe_mul_event -> "FheMul"
-      t when t == @fhe_div_event -> "FheDiv"
-      t when t == @fhe_rem_event -> "FheRem"
-      t when t == @fhe_bit_and_event -> "FheBitAnd"
-      t when t == @fhe_bit_or_event -> "FheBitOr"
-      t when t == @fhe_bit_xor_event -> "FheBitXor"
-      t when t == @fhe_shl_event -> "FheShl"
-      t when t == @fhe_shr_event -> "FheShr"
-      t when t == @fhe_rotl_event -> "FheRotl"
-      t when t == @fhe_rotr_event -> "FheRotr"
-      t when t == @fhe_eq_event -> "FheEq"
-      t when t == @fhe_ne_event -> "FheNe"
-      t when t == @fhe_ge_event -> "FheGe"
-      t when t == @fhe_gt_event -> "FheGt"
-      t when t == @fhe_le_event -> "FheLe"
-      t when t == @fhe_lt_event -> "FheLt"
-      t when t == @fhe_min_event -> "FheMin"
-      t when t == @fhe_max_event -> "FheMax"
-      t when t == @fhe_neg_event -> "FheNeg"
-      t when t == @fhe_not_event -> "FheNot"
-      t when t == @trivial_encrypt_event -> "TrivialEncrypt"
-      t when t == @cast_event -> "Cast"
-      t when t == @fhe_if_then_else_event -> "FheIfThenElse"
-      t when t == @fhe_rand_event -> "FheRand"
-      t when t == @fhe_rand_bounded_event -> "FheRandBounded"
-      _ -> "Unknown"
-    end
+    Map.get(@event_names, normalized_topic, "Unknown")
   end
 
   @doc """
@@ -98,15 +100,25 @@ defmodule Explorer.Chain.Fhe.Parser do
   """
   def extract_caller(nil), do: nil
 
+  def extract_caller(topic) when is_binary(topic) and byte_size(topic) < 32, do: nil
+
   def extract_caller(topic) do
     case topic do
       %Hash{} = hash ->
-        <<_::binary-size(12), address_bytes::binary-size(20)>> = hash.bytes
-        "0x" <> Base.encode16(address_bytes, case: :lower)
+        if byte_size(hash.bytes) == 32 do
+          <<_::binary-size(12), address_bytes::binary-size(20)>> = hash.bytes
+          "0x" <> Base.encode16(address_bytes, case: :lower)
+        else
+          nil
+        end
       
       binary when is_binary(binary) ->
-        <<_::binary-size(12), address_bytes::binary-size(20)>> = binary
-        "0x" <> Base.encode16(address_bytes, case: :lower)
+        if byte_size(binary) >= 32 do
+          <<_::binary-size(12), address_bytes::binary-size(20)>> = binary
+          "0x" <> Base.encode16(address_bytes, case: :lower)
+        else
+          nil
+        end
       
       _ ->
         topic_str = to_string(topic) |> String.downcase()
@@ -336,10 +348,13 @@ defmodule Explorer.Chain.Fhe.Parser do
   """
   def build_hcu_depth_map(operations) do
     Enum.reduce(operations, %{}, fn op, acc ->
-      result_handle = Base.encode16(op.result, case: :lower)
-
-      # For binary operations, depth is max of input depths + current cost
-      depth = case op.inputs do
+      result_handle = if is_binary(op.result), do: Base.encode16(op.result, case: :lower), else: nil
+      
+      if is_nil(result_handle) do
+        acc
+      else
+        # For binary operations, depth is max of input depths + current cost
+        depth = case op.inputs do
         %{lhs: lhs, rhs: rhs} ->
           lhs_depth = Map.get(acc, lhs, 0)
           rhs_depth = Map.get(acc, rhs, 0)
@@ -357,9 +372,10 @@ defmodule Explorer.Chain.Fhe.Parser do
 
          _ ->
             op.hcu_cost
-      end
+        end
 
-      Map.put(acc, result_handle, depth)
+        Map.put(acc, result_handle, depth)
+      end
     end)
   end
 end
