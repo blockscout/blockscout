@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.GasFeeGrant do
+defmodule Explorer.Chain.GasFeeGrant do
   @moduledoc """
   Fetches gas fee grants for validators.
 
@@ -7,6 +7,10 @@ defmodule Indexer.Fetcher.GasFeeGrant do
   """
 
   require Logger
+
+  import EthereumJSONRPC, only: [json_rpc: 2, request: 1]
+
+  alias EthereumJSONRPC.Contract
 
   @default_precompile_address "0x0000000000000000000000000000000000001006"
 
@@ -26,6 +30,20 @@ defmodule Indexer.Fetcher.GasFeeGrant do
     * `{:error, any()}`
   """
   def fetch_grant(grantee, program, block_number_int \\ nil) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    if is_nil(json_rpc_named_arguments) do
+      {:error, :no_json_rpc_named_arguments}
+    else
+      do_fetch_grant(grantee, program, block_number_int, json_rpc_named_arguments)
+    end
+  rescue
+    error ->
+      Logger.error("Failed to fetch gas fee grant: #{inspect(error)}")
+      {:error, :exception}
+  end
+
+  defp do_fetch_grant(grantee, program, block_number_int, json_rpc_named_arguments) do
     precompile_address = config(:precompile_address, @default_precompile_address)
     method_id = config(:grant_method_id, @grant_method_id)
 
@@ -35,17 +53,19 @@ defmodule Indexer.Fetcher.GasFeeGrant do
 
     data = "0x" <> method_id <> clean_grantee <> clean_program
 
-    # 2. Convert block number to hex for the RPC call
-    block_param =
-      if block_number_int, do: "0x" <> Integer.to_string(block_number_int, 16), else: "latest"
+    # 2. Build the eth_call request using the Contract module pattern
+    result =
+      data
+      |> Contract.eth_call_request(precompile_address, 0, block_number_int, nil)
+      |> json_rpc(json_rpc_named_arguments)
 
-    # 3. Perform eth_call
-    case EthereumJSONRPC.execute_contract_call(precompile_address, data, block_param) do
+    # 3. Parse the response
+    case result do
       {:ok, hex_value} ->
         parse_grant_response(hex_value)
 
       {:error, reason} ->
-        Logger.error("Failed to fetch gas fee grant: #{inspect(reason)}")
+        Logger.debug("Failed to fetch gas fee grant: #{inspect(reason)}")
         {:error, reason}
     end
   end
@@ -53,6 +73,7 @@ defmodule Indexer.Fetcher.GasFeeGrant do
   defp clean_address(address) do
     address
     |> String.trim_leading("0x")
+    |> String.downcase()
     |> String.pad_leading(64, "0")
   end
 
@@ -82,18 +103,8 @@ defmodule Indexer.Fetcher.GasFeeGrant do
     end
   end
 
-  defp parse_hex_value(hex_value) do
-    hex_value
-    |> String.trim_leading("0x")
-    |> Integer.parse(16)
-    |> case do
-      {int_val, ""} -> {:ok, int_val}
-      _ -> {:error, :invalid_hex_response}
-    end
-  end
-
   defp config(key, default) do
-    Application.get_env(:indexer, __MODULE__, [])
+    Application.get_env(:explorer, __MODULE__, [])
     |> Keyword.get(key, default)
   end
 end

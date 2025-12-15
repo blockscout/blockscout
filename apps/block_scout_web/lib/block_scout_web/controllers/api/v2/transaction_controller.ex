@@ -212,8 +212,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   defp fetch_gas_fee_grant_info(transaction) do
-    if transaction.to_address_hash do
-      case Indexer.Fetcher.GasFeeGrant.fetch_grant(
+    if transaction.to_address_hash && transaction.block_number do
+      case Explorer.Chain.GasFeeGrant.fetch_grant(
              to_string(transaction.from_address_hash),
              to_string(transaction.to_address_hash),
              transaction.block_number
