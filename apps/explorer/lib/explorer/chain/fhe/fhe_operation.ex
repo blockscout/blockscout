@@ -105,7 +105,7 @@ defmodule Explorer.Chain.FheOperation do
   @doc """
   Returns all unique FHE contract addresses (callers) ordered by total HCU usage.
   """
-  @spec top_fhe_callers(non_neg_integer()) :: [%{caller: binary(), total_hcu: non_neg_integer(), operation_count: non_neg_integer()}]
+  @spec top_fhe_callers(non_neg_integer()) :: [%{caller: Hash.Address.t(), total_hcu: non_neg_integer(), operation_count: non_neg_integer()}]
   def top_fhe_callers(limit \\ 10) do
     query =
       from(

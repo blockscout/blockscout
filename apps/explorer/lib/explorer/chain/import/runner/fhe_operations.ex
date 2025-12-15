@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
   require Logger
 
   alias Ecto.{Changeset, Multi}
-  alias Explorer.Chain.{FheOperation, Import, Hash, Transaction}
+  alias Explorer.Chain.{FheOperation, Import, Transaction}
   alias Explorer.Chain.FheContractChecker
   alias Explorer.Repo
 
@@ -111,7 +111,7 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
     # Get caller addresses from FHE operation logs
     caller_addresses =
       fhe_operations
-      |> Enum.map(& &1.caller)
+      |> Enum.map(&Map.get(&1, :caller))
       |> Enum.filter(&(not is_nil(&1)))
       |> Enum.uniq()
 

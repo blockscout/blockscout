@@ -37,6 +37,7 @@ defmodule Explorer.Factory do
     Block,
     ContractMethod,
     Data,
+    FheOperation,
     Hash,
     InternalTransaction,
     InternalTransaction.DeleteQueue,
@@ -1677,6 +1678,31 @@ defmodule Explorer.Factory do
       from_address: insert(:address),
       block: transaction.block,
       transaction: transaction
+    }
+  end
+
+  def fhe_operation_factory do
+    transaction = insert(:transaction) |> with_block()
+    block = transaction.block
+    caller = insert(:address)
+
+    %FheOperation{
+      transaction_hash: transaction.hash,
+      log_index: sequence("fhe_operation_log_index", & &1),
+      block_hash: block.hash,
+      block_number: block.number,
+      operation: sequence("fhe_operation", fn i -> "FheAdd#{i}" end),
+      operation_type: "arithmetic",
+      fhe_type: "Uint8",
+      is_scalar: false,
+      hcu_cost: sequence("fhe_operation_hcu_cost", fn i -> Kernel.+(100, i) end),
+      hcu_depth: sequence("fhe_operation_hcu_depth", fn i -> Kernel.+(1, rem(i, 5)) end),
+      caller: caller.hash,
+      result_handle: sequence("fhe_operation_result_handle", &<<&1::256>>),
+      input_handles: %{
+        "lhs" => "0x" <> Base.encode16(<<1::256>>, case: :lower),
+        "rhs" => "0x" <> Base.encode16(<<2::256>>, case: :lower)
+      }
     }
   end
 end

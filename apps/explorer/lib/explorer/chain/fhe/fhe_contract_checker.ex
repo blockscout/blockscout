@@ -63,11 +63,11 @@ defmodule Explorer.Chain.FheContractChecker do
       {:ok, [%{result: result}]} when is_binary(result) -> 
         is_fhe = decode_uint256(result) != 0
         {:ok, is_fhe}
-      {:ok, other} ->
+      {:ok, _other} ->
         {:ok, false}
-      {:error, reason} ->
+      {:error, _reason} ->
         {:ok, false} # Treat RPC error as false to avoid crashing/retrying loop, or return error?
-      other ->
+      _other ->
         {:ok, false}
     end
   end
@@ -99,7 +99,7 @@ defmodule Explorer.Chain.FheContractChecker do
     end
   end
 
-  defp save_fhe_tag(address_hash, options) do
+  defp save_fhe_tag(address_hash, _options) do
     ensure_fhe_tag_exists()
     
     case AddressTag.get_id_by_label(@fhe_tag_label) do
