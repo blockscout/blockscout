@@ -464,12 +464,12 @@ defmodule Indexer.Block.Fetcher do
   defp update_block_cache(_, _), do: :ok
 
   defp update_transactions_cache(transactions, inserted) do
-    blocks_map = Map.new(Map.get(inserted, :blocks, []), fn block -> {block.hash, block} end)
+    blocks_map = Map.new(Map.get(inserted, :blocks, []), fn block -> {block.hash, [block]} end)
 
     transactions
     |> Repo.preload(
       block: fn transaction_block_hashes ->
-        Enum.map(transaction_block_hashes, &Map.get(blocks_map, &1))
+        Enum.flat_map(transaction_block_hashes, &Map.get(blocks_map, &1, []))
       end
     )
     |> Transactions.update()
