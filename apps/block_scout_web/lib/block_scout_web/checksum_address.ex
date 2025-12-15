@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.ChecksumAddress do
 
       conn
       |> Controller.redirect(to: new_path |> BlockScoutWebController.full_path())
-      |> halt
+      |> halt()
     else
       conn
     end

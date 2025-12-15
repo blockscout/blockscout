@@ -211,7 +211,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
 
     messages = get_messages_from_logs(logs, json_rpc_named_argument, chunk_size)
 
-    unless messages == [] do
+    if messages != [] do
       log_info("Origins of #{length(messages)} L1-to-L2 messages will be imported")
     end
 

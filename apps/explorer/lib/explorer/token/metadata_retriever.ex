@@ -5,15 +5,15 @@ defmodule Explorer.Token.MetadataRetriever do
 
   require Logger
 
-  alias Explorer.{HttpClient, MetadataURIValidator}
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.{HttpClient, MetadataURIValidator}
   alias Explorer.SmartContract.Reader
 
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
   @invalid_base64_data "invalid data:application/json;base64"
-  @default_headers [{"User-Agent", "blockscout-9.2.0"}]
+  @default_headers [{"User-Agent", "blockscout-9.3.0"}]
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -389,8 +389,8 @@ defmodule Explorer.Token.MetadataRetriever do
 
     contract_functions
     |> handle_invalid_strings(contract_address_hash)
-    |> handle_large_strings
-    |> limit_decimals
+    |> handle_large_strings()
+    |> limit_decimals()
   end
 
   defp atomized_key(@name_signature), do: :name

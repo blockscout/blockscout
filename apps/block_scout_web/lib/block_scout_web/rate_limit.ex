@@ -2,10 +2,10 @@ defmodule BlockScoutWeb.RateLimit do
   @moduledoc """
   Rate limiting
   """
-  alias BlockScoutWeb.RateLimit.Hammer
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
+  alias BlockScoutWeb.RateLimit.Hammer
   alias Explorer.Account.Api.Key, as: ApiKey
-  alias Plug.Conn
+  alias Plug.{Conn, Crypto}
 
   require Logger
 
@@ -337,15 +337,25 @@ defmodule BlockScoutWeb.RateLimit do
   end
 
   defp get_ui_v2_token(conn, ip_string) do
-    api_v2_temp_token_key = Application.get_env(:block_scout_web, :api_v2_temp_token_key)
-    conn = Conn.fetch_cookies(conn, signed: [api_v2_temp_token_key])
+    api_v2_temp_token_cookie_key = Application.get_env(:block_scout_web, :api_v2_temp_token_cookie_key)
+    conn = Conn.fetch_cookies(conn, signed: [api_v2_temp_token_cookie_key])
+    api_v2_temp_token_header_key = Application.get_env(:block_scout_web, :api_v2_temp_token_header_key)
 
-    case conn.cookies[api_v2_temp_token_key] do
-      %{ip: ^ip_string} ->
-        conn.req_cookies[api_v2_temp_token_key]
+    case Conn.get_req_header(conn, api_v2_temp_token_header_key) do
+      [token] ->
+        case Crypto.verify(conn.secret_key_base, api_v2_temp_token_header_key <> "-header", token, keys: Plug.Keys) do
+          {:ok, %{ip: ^ip_string}} -> token
+          _ -> nil
+        end
 
       _ ->
-        nil
+        case conn.cookies[api_v2_temp_token_cookie_key] do
+          %{ip: ^ip_string} ->
+            conn.req_cookies[api_v2_temp_token_cookie_key]
+
+          _ ->
+            nil
+        end
     end
   end
 

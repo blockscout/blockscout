@@ -1,24 +1,19 @@
 defmodule BlockScoutWeb.Schemas.API.V2.Token.ChainTypeCustomizations do
   @moduledoc false
   require OpenApiSpex
+  import BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations, only: [filecoin_robust_address_schema: 0]
 
   alias BlockScoutWeb.Schemas.API.V2.General
   alias BlockScoutWeb.Schemas.Helper
   alias Explorer.Chain.BridgedToken
   alias OpenApiSpex.Schema
 
-  @filecoin_robust_address_schema %Schema{
-    type: :string,
-    example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-    nullable: true
-  }
-
   def chain_type_fields(schema) do
     case Application.get_env(:explorer, :chain_type) do
       :filecoin ->
         schema
         |> Helper.extend_schema(
-          properties: %{filecoin_robust_address: @filecoin_robust_address_schema},
+          properties: %{filecoin_robust_address: filecoin_robust_address_schema()},
           required: [:filecoin_robust_address]
         )
 
@@ -107,13 +102,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Type do
   """
   require OpenApiSpex
 
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  @token_types ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+
+  if @chain_type == :zilliqa do
+    @chain_type_token_types ["ZRC-2"]
+  else
+    @chain_type_token_types []
+  end
+
   OpenApiSpex.schema(%{
     type: :string,
-    enum: [
-      "ERC-20",
-      "ERC-721",
-      "ERC-1155",
-      "ERC-404"
-    ]
+    enum: @token_types ++ @chain_type_token_types
   })
 end

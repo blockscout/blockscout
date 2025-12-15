@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   require Ecto.Query
 
   import Ecto.Query, only: [dynamic: 1, dynamic: 2, from: 2, where: 3, subquery: 1]
-  import Explorer.Chain.Import.Runner.Helper, only: [chain_type_dependent_import: 3]
+  import Explorer.Chain.Import.Runner.Helper, only: [chain_identity_dependent_import: 3]
   import Explorer.QueryHelper, only: [select_ctid: 1, join_on_ctid: 2]
 
   alias Ecto.{Changeset, Multi, Repo}
@@ -33,10 +33,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
+  alias Explorer.Chain.Zilliqa.Zrc2.TokenTransfer, as: Zrc2TokenTransfer
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
 
+  alias Explorer.Chain.Celo.AggregatedElectionReward, as: CeloAggregatedElectionReward
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
   alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
   alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
@@ -242,8 +244,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :blocks_update_token_holder_counts
       )
     end)
-    |> chain_type_dependent_import(
-      :celo,
+    |> chain_identity_dependent_import(
+      {:optimism, :celo},
       &Multi.run(
         &1,
         :celo_delete_epoch_rewards,
@@ -524,10 +526,25 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     |> Enum.map(& &1.number)
   end
 
-  defp lose_consensus(repo, changes_list, %{
-         timeout: timeout,
-         timestamps: %{updated_at: updated_at}
-       }) do
+  # Handles block consensus loss.
+  #
+  # ## Parameters
+  # - `repo`: The `t:Explorer.Repo.t/0` or db replica instance.
+  # - `changes_list`: List of block changes to process.
+  # - `_opts`: The options containing timeout and `updated_at` timestamp for db operations.
+  #
+  # ## Returns
+  # - `{:ok, removed_consensus_blocks}` tuple with the list of `{block_number, block_hash}`
+  #   tuples for the blocks that lost consensus.
+  # - `{:error, %{exception: postgrex_error}}` in case of database error.
+  defp lose_consensus(
+         repo,
+         changes_list,
+         %{
+           timeout: timeout,
+           timestamps: %{updated_at: updated_at}
+         } = _opts
+       ) do
     hashes = Enum.map(changes_list, & &1.hash)
     consensus_block_numbers = consensus_block_numbers(changes_list)
 
@@ -595,6 +612,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       [set: [block_consensus: false, updated_at: updated_at]],
       timeout: timeout
     )
+
+    if Application.get_env(:explorer, :chain_type) == :zilliqa do
+      repo.delete_all(
+        from(
+          zrc2_token_transfer in Zrc2TokenTransfer,
+          join: s in subquery(acquire_query),
+          on: zrc2_token_transfer.block_number == s.number,
+          where: zrc2_token_transfer.block_hash not in ^hashes
+        ),
+        timeout: timeout
+      )
+    end
 
     removed_consensus_block_numbers
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
@@ -865,9 +894,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   defp save_internal_transactions_for_delete(repo, non_consensus_blocks, %{timeout: timeout, timestamps: timestamps}) do
     insert_params =
-      Enum.map(non_consensus_blocks, fn {number, _hash} ->
+      non_consensus_blocks
+      |> Enum.map(fn {number, _hash} ->
         Map.put(timestamps, :block_number, number)
       end)
+      |> Enum.uniq()
 
     {_total, result} =
       repo.insert_all(
@@ -1228,8 +1259,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         on: reward.epoch_number == epoch.number
       )
 
+    aggregated_election_rewards_query =
+      from(reward in CeloAggregatedElectionReward,
+        join: epoch in subquery(ordered_query),
+        on: reward.epoch_number == epoch.number
+      )
+
     repo.delete_all(epoch_rewards_query, timeout: timeout)
     repo.delete_all(election_rewards_query, timeout: timeout)
+    repo.delete_all(aggregated_election_rewards_query, timeout: timeout)
 
     {_count, updated_epochs} =
       repo.update_all(

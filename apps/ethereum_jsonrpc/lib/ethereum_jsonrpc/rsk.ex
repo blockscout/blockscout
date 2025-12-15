@@ -3,8 +3,8 @@ defmodule EthereumJSONRPC.RSK do
   Ethereum JSONRPC methods that are/are not supported by [RSK](https://www.rsk.co/).
   """
 
-  alias EthereumJSONRPC.RSK.Traces
   alias EthereumJSONRPC.{Geth, TraceBlock}
+  alias EthereumJSONRPC.RSK.Traces
 
   @behaviour EthereumJSONRPC.Variant
 

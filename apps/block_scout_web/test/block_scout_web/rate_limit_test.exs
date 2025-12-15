@@ -320,6 +320,99 @@ defmodule BlockScoutWeb.RateLimitTest do
       assert count == 1
       assert limit == 100
       assert period == 60_000
+
+      assert {:allow, count, limit, period} =
+               RateLimit.rate_limit_with_config(conn |> Map.put(:remote_ip, {192, 168, 1, 2}), config)
+
+      assert count == 1
+      assert limit == 1
+      assert period == 60_000
+    end
+
+    test "applies rate limit by temporary token in header" do
+      config = %{
+        temporary_token: %{
+          period: 60_000,
+          limit: 100
+        },
+        static_api_key: %{
+          period: 60_000,
+          limit: 200
+        },
+        account_api_key: %{
+          period: 60_000,
+          limit: 300
+        },
+        whitelisted_ip: %{
+          period: 60_000,
+          limit: 400
+        },
+        ip: %{
+          period: 60_000,
+          limit: 1
+        }
+      }
+
+      Application.put_env(
+        :block_scout_web,
+        :recaptcha,
+        Keyword.put(Application.get_env(:block_scout_web, :recaptcha), :bypass_token, "test_token")
+      )
+
+      conn =
+        build_conn()
+        |> Map.put(:remote_ip, {192, 168, 1, 1})
+
+      assert {:allow, count, limit, period} = RateLimit.rate_limit_with_config(conn, config)
+      assert count == 1
+      assert limit == 1
+      assert period == 60_000
+
+      assert {:deny, time_to_reset, limit, period} = RateLimit.rate_limit_with_config(conn, config)
+      assert time_to_reset > 0 and time_to_reset < 60_000
+      assert limit == 1
+      assert period == 60_000
+
+      # First make request to get temporary token
+      conn =
+        build_conn()
+        |> Map.put(:remote_ip, {192, 168, 1, 1})
+        |> Map.put(:req_headers, [{"user-agent", "test-agent"}])
+        |> post("/api/v2/key", %{"recaptcha_bypass_token" => "test_token", "in_header" => "true"})
+
+      # Extract token from response
+      [token] = Plug.Conn.get_resp_header(conn, "api-v2-temp-token")
+      assert conn.resp_cookies["api_v2_temp_token"] == nil
+
+      # Now make request with the token
+      conn =
+        conn
+        |> Map.put(:remote_ip, {192, 168, 1, 1})
+        |> Map.put(:req_headers, [{"user-agent", "test-agent"}, {"api-v2-temp-token", token}])
+
+      assert {:allow, count, limit, period} = RateLimit.rate_limit_with_config(conn, config)
+      assert count == 1
+      assert limit == 100
+      assert period == 60_000
+
+      # Token from header does not work in cookies
+      conn =
+        conn
+        |> Map.put(:remote_ip, {192, 168, 1, 1})
+        |> Map.put(:req_headers, [{"user-agent", "test-agent"}])
+        |> Map.put(:req_cookies, %{"api_v2_temp_token" => token})
+
+      assert {:deny, time_to_reset, limit, period} = RateLimit.rate_limit_with_config(conn, config)
+      assert time_to_reset > 0 and time_to_reset < 60_000
+      assert limit == 1
+      assert period == 60_000
+
+      assert {:allow, count, limit, period} =
+               RateLimit.rate_limit_with_config(conn |> Map.put(:remote_ip, {192, 168, 1, 2}), config)
+
+      assert count == 1
+      assert limit == 1
+      assert period == 60_000
     end
 
     test "handles recaptcha bypass" do

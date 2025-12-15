@@ -251,6 +251,8 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         game_address_hash: game_address_hash
       }
     end)
+    |> MapSet.new()
+    |> MapSet.to_list()
   end
 
   @doc """

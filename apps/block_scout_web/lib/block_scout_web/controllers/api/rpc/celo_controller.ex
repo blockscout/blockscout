@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.CeloController do
   use BlockScoutWeb, :controller
+
+  alias Explorer.Chain.Celo.{AggregatedElectionReward, Epoch}
   alias Explorer.Helper
-  alias Explorer.Chain.Celo.{ElectionReward, Epoch}
 
   @max_safe_epoch_number 32_768
 
@@ -20,7 +21,11 @@ defmodule BlockScoutWeb.API.RPC.CeloController do
          {:format, {:ok, epoch_number}} <-
            {:format, Helper.safe_parse_non_negative_integer(epoch_number, @max_safe_epoch_number)},
          {:epoch, {:ok, epoch}} <- {:epoch, Epoch.from_number(epoch_number, options)} do
-      aggregated_rewards = ElectionReward.epoch_number_to_rewards_aggregated_by_type(epoch.number, options)
+      aggregated_rewards =
+        AggregatedElectionReward.epoch_number_to_rewards_aggregated_by_type(
+          epoch.number,
+          options
+        )
 
       conn
       |> render(:celo_epoch, epoch: epoch, aggregated_rewards: aggregated_rewards)

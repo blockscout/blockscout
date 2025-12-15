@@ -45,7 +45,7 @@ defmodule EthereumJSONRPC.RollingWindow do
     duration = Keyword.fetch!(opts, :duration)
     window_count = Keyword.fetch!(opts, :window_count)
 
-    unless rem(duration, window_count) == 0 do
+    if rem(duration, window_count) != 0 do
       raise ArgumentError, "duration must be evenly divisible by window_count"
     end
 

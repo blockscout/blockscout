@@ -10,9 +10,9 @@ on:
       - '**/README.md'
       - 'docker-compose/*'
 env:
-  OTP_VERSION: ${{ vars.OTP_VERSION }}
-  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
-  RELEASE_VERSION: 9.2.0
+  OTP_VERSION: '27.3.4.6'
+  ELIXIR_VERSION: '1.19.4'
+  RELEASE_VERSION: 9.3.0
 
 permissions:
   contents: read
@@ -21,7 +21,7 @@ permissions:
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
-    runs-on: ubuntu-latest
+    runs-on: build
     steps:
       - uses: actions/checkout@v5
       - name: Setup repo

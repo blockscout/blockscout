@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.ApiSpec do
   @moduledoc """
   This module defines the API specification for the BlockScoutWeb application.
   """
-  alias BlockScoutWeb.Routers.{ApiRouter, TokensApiV2Router}
+  alias BlockScoutWeb.Routers.{ApiRouter, SmartContractsApiV2Router, TokensApiV2Router}
   alias OpenApiSpex.{Contact, Info, OpenApi, Paths, Server}
   alias Utils.Helper
 
@@ -25,6 +25,7 @@ defmodule BlockScoutWeb.ApiSpec do
         ApiRouter
         |> Paths.from_router()
         |> Map.merge(Paths.from_routes(routes_with_prefix(TokensApiV2Router, "/v2/tokens")))
+        |> Map.merge(Paths.from_routes(routes_with_prefix(SmartContractsApiV2Router, "/v2/smart-contracts")))
     }
     |> OpenApiSpex.resolve_schema_modules()
   end

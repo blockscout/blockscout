@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 4, fetch_scam_token_toggle: 2]
+  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 5, fetch_scam_token_toggle: 2]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias BlockScoutWeb.API.V2.{AdvancedFilterView, CsvExportController}
@@ -70,7 +71,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       |> Transaction.decode_transactions(true, @api_true)
 
     next_page_params =
-      next_page |> next_page_params(advanced_filters, Map.take(params, ["items_count"]), &paging_params/1)
+      next_page |> next_page_params(advanced_filters, Map.take(params, ["items_count"]), false, &paging_params/1)
 
     render(conn, :advanced_filters,
       advanced_filters: advanced_filters,
@@ -92,7 +93,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       params
       |> extract_filters()
       |> Keyword.merge(paging_options(params))
-      |> Keyword.update(:paging_options, %PagingOptions{page_size: CsvHelper.limit()}, fn paging_options ->
+      |> Keyword.update(:paging_options, %PagingOptions{page_size: CsvHelper.limit()}, fn %PagingOptions{} =
+                                                                                            paging_options ->
         %PagingOptions{paging_options | page_size: CsvHelper.limit()}
       end)
       |> Keyword.put(:timeout, :timer.minutes(5))
@@ -233,7 +235,15 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     ]
   end
 
-  @allowed_transaction_types ~w(COIN_TRANSFER CONTRACT_INTERACTION CONTRACT_CREATION ERC-20 ERC-404 ERC-721 ERC-1155)
+  @default_allowed_transaction_types ~w(COIN_TRANSFER CONTRACT_INTERACTION CONTRACT_CREATION ERC-20 ERC-404 ERC-721 ERC-1155)
+
+  if @chain_type == :zilliqa do
+    @chain_type_allowed_transaction_types ~w(ZRC-2)
+  else
+    @chain_type_allowed_transaction_types ~w()
+  end
+
+  @allowed_transaction_types @default_allowed_transaction_types ++ @chain_type_allowed_transaction_types
 
   defp prepare_transaction_types(transaction_types) when is_binary(transaction_types) do
     transaction_types

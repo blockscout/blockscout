@@ -1,19 +1,20 @@
 defmodule BlockScoutWeb.API.V2.AddressController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity], chain_type: [:explorer, :chain_type]
   use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
   use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
-      next_page_params: 4,
+      next_page_params: 5,
       token_transfers_next_page_params: 3,
       paging_options: 1,
       split_list_by_page: 1,
       current_filter: 1,
       paging_params_with_fiat_value: 1,
-      fetch_scam_token_toggle: 2
+      fetch_scam_token_toggle: 2,
+      address_to_internal_transactions: 2
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -42,7 +43,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias BlockScoutWeb.Schemas.Helper, as: SchemasHelper
   alias Explorer.{Chain, Market, PagingOptions}
-  alias Explorer.Chain.{Address, Beacon.Deposit, Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, Beacon.Deposit, Hash, Transaction}
   alias Explorer.Chain.Address.{CoinBalance, Counters}
 
   alias Explorer.Chain.Token.Instance
@@ -55,8 +56,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 
-  case @chain_type do
-    :celo ->
+  case @chain_identity do
+    {:optimism, :celo} ->
       @chain_type_transaction_necessity_by_association %{
         [gas_token: reputation_association()] => :optional
       }
@@ -89,8 +90,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     api?: true
   ]
 
-  case @chain_type do
-    :celo ->
+  case @chain_identity do
+    {:optimism, :celo} ->
       @chain_type_address_necessity_by_association %{
         [
           celo_account: [
@@ -192,7 +193,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, address} ->
-          fully_preloaded_address =
+          %Address{} =
+            fully_preloaded_address =
             Address.maybe_preload_smart_contract_associations(address, contract_address_preloads(), @api_true)
 
           implementations = SmartContractHelper.pre_fetch_implementations(fully_preloaded_address)
@@ -236,7 +238,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       "Retrieves count statistics for an address, including transactions, token transfers, gas usage, and validations.",
     parameters: [address_hash_param() | base_params()],
     responses: [
-      ok: {"Count statistics for the specified address", "application/json", Schemas.Address.Counters},
+      ok: {"Count statistics for the specified address.", "application/json", Schemas.Address.Counters},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
     ]
@@ -283,15 +285,20 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  if @chain_type == :zilliqa do
+    @token_balances_operation_description "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155, ERC-404, and ZRC-2 tokens."
+  else
+    @token_balances_operation_description "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155, and ERC-404 tokens."
+  end
+
   operation :token_balances,
     summary: "List all token balances held by a specific address",
-    description:
-      "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155 and ERC-404 tokens.",
+    description: @token_balances_operation_description,
     parameters: [address_hash_param() | base_params()],
     responses: [
       ok:
         {"All token balances for the specified address.", "application/json",
-         %Schema{title: "AddressTokenBalances", type: :array, items: Schemas.Address.TokenBalance}},
+         %Schema{type: :array, items: Schemas.Address.TokenBalance}},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
     ]
@@ -373,8 +380,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "inserted_at" => "2025-05-26T10:26:51.474448Z",
              "items_count" => 50,
              "value" => "24741049597737"
-           },
-           title_prefix: "AddressTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -413,6 +419,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               transactions,
               params,
+              false,
               &Transaction.address_transactions_next_page_params/1
             )
 
@@ -461,8 +468,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "block_number" => 12_345_678,
              "index" => 0,
              "items_count" => 50
-           },
-           title_prefix: "AddressTokenTransfers"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -555,8 +561,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "index" => 8,
              "items_count" => 50,
              "transaction_index" => 8
-           },
-           title_prefix: "AddressInternalTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -595,7 +600,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(current_filter(params))
             |> Keyword.merge(@api_true)
 
-          results_plus_one = InternalTransaction.address_to_internal_transactions(address_hash, full_options)
+          results_plus_one = address_to_internal_transactions(address_hash, full_options)
           {internal_transactions, next_page} = split_list_by_page(results_plus_one)
 
           next_page_params =
@@ -632,8 +637,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {"Event logs for the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Log,
-           next_page_params_example: %{"block_number" => 22_546_398, "index" => 268, "items_count" => 50},
-           title_prefix: "AddressLogs"
+           next_page_params_example: %{"block_number" => 22_546_398, "index" => 268, "items_count" => 50}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -706,8 +710,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {"Blocks validated by the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Block,
-           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50},
-           title_prefix: "AddressBlocksValidated"
+           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -774,8 +777,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {"Historical coin balance changes for the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.CoinBalance,
-           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50},
-           title_prefix: "AddressCoinBalanceHistory"
+           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -830,7 +832,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       ok:
         {"Daily coin balance history for the specified address.", "application/json",
          %Schema{
-           title: "AddressCoinBalanceHistoryByDay",
            type: :object,
            properties: %{
              days: %Schema{type: :integer, nullable: false},
@@ -897,8 +898,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "id" => 12_519_063_346,
              "items_count" => 50,
              "value" => "3750000000000000000000"
-           },
-           title_prefix: "AddressTokens"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -945,6 +945,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               tokens,
               params,
+              false,
               &paging_params_with_fiat_value/1
             )
 
@@ -971,8 +972,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
          "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
-           next_page_params_example: %{"index" => 88_192_653, "items_count" => 50},
-           title_prefix: "AddressWithdrawals"
+           next_page_params_example: %{"index" => 88_192_653, "items_count" => 50}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -1038,7 +1038,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              items:
                Schemas.Address.schema()
                |> SchemasHelper.extend_schema(
-                 title: "AddressWithCoinBalanceAndTransactionsCount",
                  properties: %{
                    coin_balance: Schemas.General.IntegerStringNullable,
                    transactions_count: %Schema{
@@ -1057,8 +1056,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
                "hash" => "0x59708733fbbf64378d9293ec56b977c011a08fd2",
                "items_count" => 50,
                "transactions_count" => nil
-             },
-             title_prefix: "AddressList"
+             }
            ),
            properties: %{
              exchange_rate: Schemas.General.FloatStringNullable,
@@ -1199,8 +1197,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
              "token_id" => "24950",
              "token_type" => "ERC-721"
-           },
-           title_prefix: "AddressNFTs"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -1243,6 +1240,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               nfts,
               params,
+              false,
               &Instance.nft_list_next_page_params/1
             )
 
@@ -1275,8 +1273,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "items_count" => 50,
              "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
              "token_type" => "ERC-721"
-           },
-           title_prefix: "AddressNFTCollections"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -1319,6 +1316,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               collections,
               params,
+              false,
               &Instance.nft_collections_next_page_params/1
             )
 
@@ -1352,8 +1350,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "associated_account_address_hash" => "0x1234567890123456789012345678901234567890",
              "type" => "validator",
              "items_count" => 50
-           },
-           title_prefix: "AddressCeloElectionRewards"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -1391,6 +1388,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           next_page,
           rewards,
           filtered_params,
+          false,
           &%{
             epoch_number: &1.epoch_number,
             amount: &1.amount,
@@ -1461,15 +1459,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
            next_page_params_example: %{
              "index" => 123,
              "items_count" => 50
-           },
-           title_prefix: "AddressBeaconDeposits"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
     ]
 
   @doc """
-  Handles `api/v2/addresses/:address_hash/beacon/deposits` endpoint.
+  Handles `api/v2/addresses/:address_hash_param/beacon/deposits` endpoint.
   Fetches beacon deposits for a given address with pagination support.
 
   This endpoint retrieves all beacon deposits originating from the specified
@@ -1514,6 +1511,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> next_page_params(
           deposits,
           params,
+          false,
           DepositController.paging_function()
         )
 

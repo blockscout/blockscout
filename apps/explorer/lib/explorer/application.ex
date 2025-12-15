@@ -36,12 +36,14 @@ defmodule Explorer.Application do
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.MicroserviceInterfaces.MultichainSearch
+  alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo.PrometheusLogger
   alias Explorer.Utility.Hammer
 
   @impl Application
   def start(_type, _args) do
     PrometheusLogger.setup()
+    Instrumenter.setup()
 
     :telemetry.attach(
       "prometheus-ecto",
@@ -56,7 +58,9 @@ defmodule Explorer.Application do
       Explorer.Repo.Replica1,
       Explorer.Vault,
       Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
-      Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor}, id: Explorer.HistoryTaskSupervisor),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor},
+        id: Explorer.HistoryTaskSupervisor
+      ),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.GenesisDataTaskSupervisor}, id: GenesisDataTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
@@ -112,10 +116,10 @@ defmodule Explorer.Application do
   defp configurable_children do
     configurable_children_set =
       [
-        configure_libcluster(),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Coin, :api),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Token, :indexer),
         configure_mode_dependent_process(Explorer.Market.Fetcher.History, :indexer),
+        configure_mode_dependent_process(Explorer.Market, :api),
         configure(Explorer.ChainSpec.GenesisData),
         configure(Explorer.Chain.Cache.Counters.ContractsCount),
         configure(Explorer.Chain.Cache.Counters.NewContractsCount),
@@ -164,6 +168,7 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.SmartContractLanguage, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.CeloL2Epochs, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.CeloAccounts, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.CeloAggregatedElectionRewards, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds, :indexer),
         Explorer.Migrator.BackfillMultichainSearchDB
         |> configure_mode_dependent_process(:indexer)
@@ -315,11 +320,17 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsOperatorFeeConstantIndex,
           :indexer
         ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropTokenInstancesTokenIdIndex,
+          :indexer
+        ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),
         configure(Explorer.Chain.Fetcher.AddressesBlacklist),
         Explorer.Migrator.SwitchPendingOperations,
         configure_mode_dependent_process(Explorer.Utility.RateLimiter, :api),
-        Hammer.child_for_supervisor() |> configure_mode_dependent_process(:api)
+        Hammer.child_for_supervisor() |> configure_mode_dependent_process(:api),
+        # keep at the end
+        configure_libcluster()
       ]
       |> List.flatten()
 
@@ -422,7 +433,7 @@ defmodule Explorer.Application do
   end
 
   defp configure_mode_dependent_process(process, mode) do
-    if should_start?(process) and Application.get_env(:explorer, :mode) in [mode, :all] do
+    if should_start?(process) and Explorer.mode() in [mode, :all] do
       process
     else
       []
@@ -490,7 +501,7 @@ defmodule Explorer.Application do
   end
 
   defp configure_libcluster do
-    if Application.get_env(:explorer, :mode) in [:indexer, :api] do
+    if Explorer.mode() in [:indexer, :api] do
       libcluster()
     else
       []

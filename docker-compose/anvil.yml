@@ -33,7 +33,7 @@ services:
         ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
         INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
         INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
-        CHAIN_ID: '1337'
+        CHAIN_ID: '31337'
 
   visualizer:
     extends:
@@ -52,7 +52,7 @@ services:
       file: ./services/frontend.yml
       service: frontend
     environment:
-      NEXT_PUBLIC_NETWORK_ID: '1337'
+      NEXT_PUBLIC_NETWORK_ID: '31337'
       NEXT_PUBLIC_NETWORK_RPC_URL: http://host.docker.internal:8545/
 
   stats-db-init:

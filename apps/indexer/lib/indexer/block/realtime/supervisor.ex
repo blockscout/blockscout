@@ -14,7 +14,8 @@ defmodule Indexer.Block.Realtime.Supervisor do
     children =
       case Keyword.fetch!(subscribe_named_arguments, :transport) do
         EthereumJSONRPC.WebSocket ->
-          transport_options =
+          %EthereumJSONRPC.WebSocket{} =
+            transport_options =
             struct!(EthereumJSONRPC.WebSocket, Keyword.fetch!(subscribe_named_arguments, :transport_options))
 
           web_socket = Indexer.Block.Realtime.WebSocket

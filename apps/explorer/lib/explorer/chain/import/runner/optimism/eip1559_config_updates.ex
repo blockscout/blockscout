@@ -88,16 +88,18 @@ defmodule Explorer.Chain.Import.Runner.Optimism.EIP1559ConfigUpdates do
           l2_block_hash: fragment("EXCLUDED.l2_block_hash"),
           base_fee_max_change_denominator: fragment("EXCLUDED.base_fee_max_change_denominator"),
           elasticity_multiplier: fragment("EXCLUDED.elasticity_multiplier"),
+          min_base_fee: fragment("EXCLUDED.min_base_fee"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", update.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", update.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.l2_block_hash, EXCLUDED.base_fee_max_change_denominator, EXCLUDED.elasticity_multiplier) IS DISTINCT FROM (?, ?, ?)",
+          "(EXCLUDED.l2_block_hash, EXCLUDED.base_fee_max_change_denominator, EXCLUDED.elasticity_multiplier, EXCLUDED.min_base_fee) IS DISTINCT FROM (?, ?, ?, ?)",
           update.l2_block_hash,
           update.base_fee_max_change_denominator,
-          update.elasticity_multiplier
+          update.elasticity_multiplier,
+          update.min_base_fee
         )
     )
   end

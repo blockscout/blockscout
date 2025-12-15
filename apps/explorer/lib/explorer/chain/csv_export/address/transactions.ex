@@ -3,10 +3,10 @@ defmodule Explorer.Chain.CsvExport.Address.Transactions do
   Exports transactions to a csv file.
   """
 
-  alias Explorer.Market
-  alias Explorer.Market.MarketHistory
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Transaction, Wei}
   alias Explorer.Chain.CsvExport.Helper
+  alias Explorer.Market
+  alias Explorer.Market.MarketHistory
 
   @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
           Enumerable.t()

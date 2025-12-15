@@ -94,7 +94,12 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
 
       {:error, error} ->
         APILogger.error(fn ->
-          ["Error while calling RPC action", inspect(error, limit: :infinity, printable_limit: :infinity)]
+          redacted_query_string = redact_apikey(conn.query_string)
+
+          [
+            "Error while calling RPC action #{action} in module #{module} with query string #{redacted_query_string}",
+            inspect(error, limit: :infinity, printable_limit: :infinity)
+          ]
         end)
 
         conn
@@ -125,6 +130,14 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
     |> put_view(RPCView)
     |> Controller.render(:error, error: "Params 'module' and 'action' are required parameters")
     |> halt()
+  end
+
+  @doc """
+  Redacts the API key from the query string.
+  """
+  @spec redact_apikey(String.t()) :: String.t()
+  def redact_apikey(query_string) do
+    String.replace(query_string, ~r/apikey=[^&]*/i, "apikey=[REDACTED]")
   end
 
   @doc false

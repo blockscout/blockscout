@@ -16,7 +16,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.General.DecodedInput do
             name: %Schema{type: :string, nullable: false},
             type: %Schema{type: :string, nullable: false},
             value: %Schema{
-              anyOf: [%Schema{type: :object}, %Schema{type: :array}, %Schema{type: :string}],
+              anyOf: [
+                %Schema{type: :object},
+                %Schema{
+                  type: :array,
+                  items: %Schema{
+                    anyOf: [
+                      %Schema{type: :object},
+                      %Schema{type: :array, items: %Schema{type: :string}},
+                      %Schema{type: :string}
+                    ]
+                  }
+                },
+                %Schema{type: :string}
+              ],
               nullable: false
             }
           },

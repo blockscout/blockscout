@@ -10,10 +10,10 @@ defmodule Explorer.Migrator.ReindexBlocksWithMissingTransactions do
 
   import Ecto.Query
 
-  alias Explorer.Repo
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Migrator.{FillingMigration, MigrationStatus}
+  alias Explorer.Repo
 
   @migration_name "reindex_blocks_with_missing_transactions"
 
@@ -68,7 +68,7 @@ defmodule Explorer.Migrator.ReindexBlocksWithMissingTransactions do
 
     case EthereumJSONRPC.fetch_transactions_count(consensus_block_numbers, json_rpc_named_arguments) do
       {:ok, %{transactions_count_map: node_transactions_count_map, errors: errors}} ->
-        unless Enum.empty?(errors) do
+        if !Enum.empty?(errors) do
           Logger.warning("Migration #{@migration_name} encountered errors fetching blocks: #{inspect(errors)}")
         end
 

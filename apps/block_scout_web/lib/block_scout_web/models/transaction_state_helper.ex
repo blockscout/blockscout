@@ -8,10 +8,10 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  alias Explorer.Chain.Transaction.StateChange
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address.CoinBalance, BlockNumberHelper, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Cache.StateChanges
+  alias Explorer.Chain.Transaction.StateChange
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 

@@ -1,6 +1,7 @@
 defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Ecto.Query
 
@@ -59,6 +60,9 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ZilliqaStaker
 
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
+  alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
+
   alias Explorer.Migrator.MigrationStatus
 
   alias Explorer.SmartContract.Helper
@@ -66,7 +70,13 @@ defmodule Explorer.Factory do
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
-  alias Explorer.Utility.{EventNotification, MissingBalanceOfToken, MissingBlockRange}
+  alias Explorer.Utility.{
+    AddressIdToAddressHash,
+    EventNotification,
+    InternalTransactionsAddressPlaceholder,
+    MissingBalanceOfToken,
+    MissingBlockRange
+  }
 
   alias Ueberauth.Strategy.Auth0
   alias Ueberauth.Auth.{Extra, Info}
@@ -144,27 +154,36 @@ defmodule Explorer.Factory do
   end
 
   def watchlist_address_factory do
+    notification_settings = %{
+      "native" => %{
+        "incoming" => random_bool(),
+        "outcoming" => random_bool()
+      },
+      "ERC-20" => %{
+        "incoming" => random_bool(),
+        "outcoming" => random_bool()
+      },
+      "ERC-721" => %{
+        "incoming" => random_bool(),
+        "outcoming" => random_bool()
+      },
+      "ERC-404" => %{
+        "incoming" => random_bool(),
+        "outcoming" => random_bool()
+      }
+    }
+
+    notification_settings_extended =
+      if chain_type() == :zilliqa do
+        Map.put(notification_settings, "ZRC-2", %{"incoming" => random_bool(), "outcoming" => random_bool()})
+      else
+        notification_settings
+      end
+
     %{
       "address_hash" => to_string(build(:address).hash),
       "name" => sequence("test"),
-      "notification_settings" => %{
-        "native" => %{
-          "incoming" => random_bool(),
-          "outcoming" => random_bool()
-        },
-        "ERC-20" => %{
-          "incoming" => random_bool(),
-          "outcoming" => random_bool()
-        },
-        "ERC-721" => %{
-          "incoming" => random_bool(),
-          "outcoming" => random_bool()
-        },
-        "ERC-404" => %{
-          "incoming" => random_bool(),
-          "outcoming" => random_bool()
-        }
-      },
+      "notification_settings" => notification_settings_extended,
       "notification_methods" => %{
         "email" => random_bool()
       }
@@ -174,7 +193,7 @@ defmodule Explorer.Factory do
   def watchlist_address_db_factory(%{wl_id: id}) do
     hash = insert(:address).hash
 
-    %WatchlistAddress{
+    watchlist_address = %WatchlistAddress{
       name: sequence("test"),
       watchlist_id: id,
       address_hash: hash,
@@ -191,6 +210,17 @@ defmodule Explorer.Factory do
       watch_erc_404_output: random_bool(),
       notify_email: random_bool()
     }
+
+    watchlist_address_extended =
+      if chain_type() == :zilliqa do
+        watchlist_address
+        |> Map.put(:watch_zrc_2_input, random_bool())
+        |> Map.put(:watch_zrc_2_output, random_bool())
+      else
+        watchlist_address
+      end
+
+    watchlist_address_extended
   end
 
   def custom_abi_factory do
@@ -293,6 +323,22 @@ defmodule Explorer.Factory do
       hash: address_hash()
     }
     |> Map.merge(address_factory_chain_type_fields())
+  end
+
+  def address_id_to_address_hash_factory do
+    %AddressIdToAddressHash{
+      address_id: sequence("address_id", & &1),
+      address_hash: address_hash()
+    }
+  end
+
+  def deleted_internal_transactions_address_placeholder_factory do
+    %InternalTransactionsAddressPlaceholder{
+      address_id: sequence("address_id", & &1),
+      block_number: block_number(),
+      count_tos: 1,
+      count_froms: 1
+    }
   end
 
   case @chain_type do
@@ -1081,7 +1127,7 @@ defmodule Explorer.Factory do
     contract_code_info = contract_code_info()
 
     {:ok, data} = Explorer.Chain.Data.cast(contract_code_info.bytecode)
-    bytecode_md5 = Helper.contract_code_md5(data.bytes)
+    bytecode_md5 = Helper.md5(data.bytes)
 
     %SmartContract{
       address_hash: insert(:address, contract_code: contract_code_info.bytecode, verified: true).hash,
@@ -1396,6 +1442,27 @@ defmodule Explorer.Factory do
   end
 
   def random_bool, do: Enum.random([true, false])
+
+  def celo_epoch_factory do
+    %CeloEpoch{
+      number: sequence("celo_epoch_number", & &1),
+      fetched?: false,
+      start_block_number: nil,
+      end_block_number: nil,
+      start_processing_block_hash: nil,
+      end_processing_block_hash: nil
+    }
+  end
+
+  def celo_election_reward_factory do
+    %CeloElectionReward{
+      amount: Enum.random(1..100_000),
+      type: Enum.random([:voter, :validator, :group, :delegated_payment]),
+      epoch_number: sequence("celo_election_reward_epoch_number", & &1),
+      account_address_hash: insert(:address).hash,
+      associated_account_address_hash: insert(:address).hash
+    }
+  end
 
   def validator_stability_factory do
     address = insert(:address)

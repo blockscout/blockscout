@@ -3,11 +3,11 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   use OpenApiSpex.ControllerSpecs
 
   alias BlockScoutWeb.AccessHelper
+  alias BlockScoutWeb.CsvExport.Address.InternalTransactions, as: AddressInternalTransactionsCsvExporter
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Chain
   alias Explorer.Chain.Address
   alias Explorer.Chain.Address.CurrentTokenBalance
-  alias Explorer.Chain.CsvExport.Address.InternalTransactions, as: AddressInternalTransactionsCsvExporter
   alias Explorer.Chain.CsvExport.Address.Logs, as: AddressLogsCsvExporter
   alias Explorer.Chain.CsvExport.Address.TokenTransfers, as: AddressTokenTransfersCsvExporter
   alias Explorer.Chain.CsvExport.Address.Transactions, as: AddressTransactionsCsvExporter
@@ -29,7 +29,16 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   operation :export_token_holders,
     summary: "Export token holders as CSV",
     description: "Exports the holders of a specific token as a CSV file.",
-    parameters: base_params() ++ [address_hash_param(), address_id_param()],
+    parameters:
+      base_params() ++
+        [
+          address_hash_param(),
+          address_id_param(),
+          from_period_param(),
+          to_period_param(),
+          filter_type_param(),
+          filter_value_param()
+        ],
     responses: [
       ok: {"CSV file of token holders.", "application/csv", nil},
       unprocessable_entity: JsonErrorResponse.response(),

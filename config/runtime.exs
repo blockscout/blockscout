@@ -7,6 +7,18 @@ import Config
 config :logger,
   backends: ConfigHelper.logger_backends()
 
+config :logger, :default_handler,
+  formatter:
+    (if config_env() == :prod do
+       LoggerJSON.Formatters.Basic.new(metadata: ConfigHelper.logger_backend_metadata())
+     else
+       Logger.Formatter.new(metadata: ConfigHelper.logger_backend_metadata())
+     end)
+
+config :logger, :api, metadata: ConfigHelper.logger_metadata(), metadata_filter: [application: :api]
+
+config :logger, :api_v2, metadata: ConfigHelper.logger_metadata(), metadata_filter: [application: :api_v2]
+
 microservice_multichain_search_url = System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")
 transactions_stats_enabled = ConfigHelper.parse_bool_env_var("TXS_STATS_ENABLED", "true")
 
@@ -260,9 +272,8 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Utility.EndpointAvailabilityChecker, e
 ### Explorer ###
 ################
 
-disable_indexer? = ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
-disable_webapp? = ConfigHelper.parse_bool_env_var("DISABLE_WEBAPP")
 app_mode = ConfigHelper.mode()
+disable_indexer? = app_mode == :api || ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 
 disable_exchange_rates? =
   if System.get_env("DISABLE_MARKET"),
@@ -275,14 +286,15 @@ config :explorer,
   mode: app_mode,
   ecto_repos: ConfigHelper.repos(),
   chain_type: ConfigHelper.chain_type(),
+  chain_identity: ConfigHelper.chain_identity(),
   coin: coin,
   coin_name: System.get_env("COIN_NAME") || "ETH",
   allowed_solidity_evm_versions:
     System.get_env("CONTRACT_VERIFICATION_ALLOWED_SOLIDITY_EVM_VERSIONS") ||
-      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,shanghai,cancun,prague,default",
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,shanghai,cancun,prague,osaka,default",
   allowed_vyper_evm_versions:
     System.get_env("CONTRACT_VERIFICATION_ALLOWED_VYPER_EVM_VERSIONS") ||
-      "byzantium,constantinople,petersburg,istanbul,berlin,paris,shanghai,cancun,default",
+      "byzantium,constantinople,petersburg,istanbul,berlin,paris,shanghai,cancun,osaka,default",
   include_uncles_in_average_block_time: ConfigHelper.parse_bool_env_var("UNCLES_IN_AVERAGE_BLOCK_TIME"),
   realtime_events_sender:
     (case app_mode do
@@ -388,7 +400,7 @@ config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime,
   num_of_blocks: ConfigHelper.parse_integer_env_var("CACHE_AVERAGE_BLOCK_TIME_WINDOW", 100)
 
 config :explorer, Explorer.Market.MarketHistoryCache,
-  cache_period: ConfigHelper.parse_time_env_var("CACHE_MARKET_HISTORY_PERIOD", "6h")
+  cache_period: ConfigHelper.parse_time_env_var("CACHE_MARKET_HISTORY_PERIOD", "1h")
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_COUNTER_PERIOD", "1h")
@@ -413,6 +425,8 @@ config :explorer, Explorer.Chain.Cache.Counters.NewPendingTransactionsCount,
   enabled: true,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_FRESH_PENDING_TRANSACTIONS_COUNTER_PERIOD", "5m"),
   enable_consolidation: true
+
+config :explorer, Explorer.Market, enabled: !disable_exchange_rates?
 
 config :explorer, Explorer.Market.Source,
   native_coin_source:
@@ -495,19 +509,23 @@ config :explorer, Explorer.Market.Source.Mobula,
   secondary_coin_id:
     System.get_env("MARKET_MOBULA_SECONDARY_COIN_ID") || System.get_env("EXCHANGE_RATES_MOBULA_SECONDARY_COIN_ID")
 
+config :explorer, Explorer.Market.Source.DIA,
+  blockchain: System.get_env("MARKET_DIA_BLOCKCHAIN"),
+  base_url: System.get_env("MARKET_DIA_BASE_URL", "https://api.diadata.org/v1"),
+  coin_address_hash: System.get_env("MARKET_DIA_COIN_ADDRESS_HASH"),
+  secondary_coin_address_hash: System.get_env("MARKET_DIA_SECONDARY_COIN_ADDRESS_HASH")
+
 config :explorer, Explorer.Market.Fetcher.Coin,
   store: :ets,
   enabled: !disable_exchange_rates? && ConfigHelper.parse_bool_env_var("MARKET_COIN_FETCHER_ENABLED", "true"),
   enable_consolidation: true,
   cache_period: ConfigHelper.parse_time_env_var("MARKET_COIN_CACHE_PERIOD", "10m")
 
+disable_token_exchange_rates? = ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_EXCHANGE_RATE")
+market_tokens_fetcher_enabled? = ConfigHelper.parse_bool_env_var("MARKET_TOKENS_FETCHER_ENABLED", "true")
+
 config :explorer, Explorer.Market.Fetcher.Token,
-  enabled:
-    !disable_exchange_rates? &&
-      ConfigHelper.parse_bool_env_var(
-        "MARKET_TOKENS_FETCHER_ENABLED",
-        ConfigHelper.safe_get_env("DISABLE_TOKEN_EXCHANGE_RATE", "true")
-      ),
+  enabled: !disable_exchange_rates? && !disable_token_exchange_rates? && market_tokens_fetcher_enabled?,
   interval:
     ConfigHelper.parse_time_env_var(
       "MARKET_TOKENS_INTERVAL",
@@ -579,10 +597,6 @@ config :explorer, Explorer.Chain.Cache.TransactionsApiV2,
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
 config :explorer, Explorer.Chain.Cache.Accounts,
-  ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
-  global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
-
-config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
@@ -700,7 +714,7 @@ config :explorer, Explorer.Account,
   siwe_message: System.get_env("ACCOUNT_SIWE_MESSAGE", "Sign in to Blockscout Account V2")
 
 config :explorer, Explorer.Chain.Cache.MinMissingBlockNumber,
-  enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER"),
+  enabled: !disable_indexer?,
   batch_size: ConfigHelper.parse_integer_env_var("MIN_MISSING_BLOCK_NUMBER_BATCH_SIZE", 100_000)
 
 config :explorer, :spandex,
@@ -808,15 +822,18 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILECOIN_PENDING_ADDRESS_OPERATIONS_CONCURRENCY", 1)
 
-config :explorer, Explorer.Migrator.CeloAccounts, enabled: ConfigHelper.chain_type() == :celo
+config :explorer, Explorer.Migrator.CeloAccounts, enabled: ConfigHelper.chain_identity() == {:optimism, :celo}
+
+config :explorer, Explorer.Migrator.CeloAggregatedElectionRewards,
+  enabled: ConfigHelper.chain_identity() == {:optimism, :celo}
 
 config :explorer, Explorer.Migrator.CeloL2Epochs,
   enabled:
-    ConfigHelper.chain_type() == :celo &&
+    ConfigHelper.chain_identity() == {:optimism, :celo} &&
       !is_nil(celo_l2_migration_block) &&
       !is_nil(celo_epoch_manager_contract_address)
 
-config :explorer, Explorer.Chain.Cache.CeloEpochs, enabled: ConfigHelper.chain_type() == :celo
+config :explorer, Explorer.Chain.Cache.CeloEpochs, enabled: ConfigHelper.chain_identity() == {:optimism, :celo}
 
 config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
@@ -841,8 +858,8 @@ config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),
   storage_period_days:
     ConfigHelper.parse_integer_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_STORAGE_PERIOD_DAYS", 30),
-  future_check_interval:
-    ConfigHelper.parse_time_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_FUTURE_CHECK_INTERVAL", "1m")
+  check_interval:
+    ConfigHelper.parse_time_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_CHECK_INTERVAL", "1m")
 
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
@@ -858,7 +875,7 @@ config :explorer, Explorer.Chain.TokenTransfer,
   whitelisted_weth_contracts: ConfigHelper.parse_list_env_var("WHITELISTED_WETH_CONTRACTS", ""),
   weth_token_transfers_filtering_enabled: ConfigHelper.parse_bool_env_var("WETH_TOKEN_TRANSFERS_FILTERING_ENABLED")
 
-config :explorer, Explorer.Chain.Metrics,
+config :explorer, Explorer.Chain.Metrics.PublicMetrics,
   enabled: ConfigHelper.parse_bool_env_var("PUBLIC_METRICS_ENABLED", "false"),
   update_period_hours: ConfigHelper.parse_integer_env_var("PUBLIC_METRICS_UPDATE_PERIOD_HOURS", 24)
 
@@ -966,7 +983,14 @@ config :indexer, :ipfs,
     ConfigHelper.parse_catalog_value("IPFS_GATEWAY_URL_PARAM_LOCATION", ["query", "header"], true),
   public_gateway_url: System.get_env("IPFS_PUBLIC_GATEWAY_URL", "https://ipfs.io/ipfs")
 
-config :indexer, Indexer.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
+config :indexer, :arc,
+  arc_native_token_decimals: ConfigHelper.parse_integer_env_var("INDEXER_ARC_NATIVE_TOKEN_DECIMALS", 6),
+  arc_native_token_address:
+    System.get_env("INDEXER_ARC_NATIVE_TOKEN_CONTRACT", "0x3600000000000000000000000000000000000000"),
+  arc_native_token_system_address:
+    System.get_env("INDEXER_ARC_NATIVE_TOKEN_SYSTEM_CONTRACT", "0x1800000000000000000000000000000000000000")
+
+config :indexer, Indexer.Supervisor, enabled: !disable_indexer?
 
 config :indexer, Indexer.Fetcher.TransactionAction.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_TX_ACTIONS_ENABLE")
@@ -1094,6 +1118,10 @@ config :indexer, Indexer.Fetcher.MultichainSearchDb.CountersFetcher.Supervisor,
     disable_multichain_search_db_export_counters_queue_fetcher ||
       is_nil(microservice_multichain_search_url) ||
       !transactions_stats_enabled
+
+config :indexer, Indexer.Fetcher.Stats.HotSmartContracts.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_HOT_SMART_CONTRACTS_FETCHER"),
+  enabled: !ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_HOT_SMART_CONTRACTS_FETCHER")
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE", 10),
@@ -1299,7 +1327,8 @@ config :indexer, Indexer.Fetcher.Optimism.TransactionBatch,
 
 config :indexer, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate,
   chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L2_HOLOCENE_BLOCKS_CHUNK_SIZE", 25),
-  holocene_timestamp_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP")
+  holocene_timestamp_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP"),
+  jovian_timestamp_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_JOVIAN_TIMESTAMP")
 
 config :indexer, Indexer.Fetcher.Optimism.Interop.Message,
   start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_INTEROP_START_BLOCK"),
@@ -1509,11 +1538,11 @@ config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes,
 
 config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor,
   enabled:
-    ConfigHelper.chain_type() == :celo and
+    ConfigHelper.chain_identity() == {:optimism, :celo} and
       not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CELO_VALIDATOR_GROUP_VOTES_FETCHER")
 
 celo_epoch_fetchers_enabled? =
-  ConfigHelper.chain_type() == :celo and
+  ConfigHelper.chain_identity() == {:optimism, :celo} and
     not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CELO_EPOCH_FETCHER")
 
 config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,
@@ -1525,8 +1554,8 @@ config :indexer, Indexer.Fetcher.Celo.Legacy.Account,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_CELO_ACCOUNTS_BATCH_SIZE", 100)
 
 config :indexer, Indexer.Fetcher.Celo.Legacy.Account.Supervisor,
-  enabled: ConfigHelper.chain_type() == :celo,
-  disabled?: not (ConfigHelper.chain_type() == :celo)
+  enabled: ConfigHelper.chain_identity() == {:optimism, :celo},
+  disabled?: not (ConfigHelper.chain_identity() == {:optimism, :celo})
 
 config :indexer, Indexer.Fetcher.Filecoin.BeryxAPI,
   base_url: ConfigHelper.safe_get_env("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3/mainnet"),
@@ -1577,6 +1606,21 @@ config :indexer, Indexer.Utils.EventNotificationsCleaner,
     app_mode == :indexer && ConfigHelper.parse_bool_env_var("INDEXER_DB_EVENT_NOTIFICATIONS_CLEANUP_ENABLED", "true"),
   max_age: ConfigHelper.parse_time_env_var("INDEXER_DB_EVENT_NOTIFICATIONS_CLEANUP_MAX_AGE", "5m")
 
+config :indexer, Indexer.Prometheus.Metrics,
+  enabled: app_mode in [:indexer, :all] && ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED", "true"),
+  specific_metrics_enabled?: %{
+    token_instances_not_uploaded_to_cdn_count:
+      ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED_TOKEN_INSTANCES_NOT_UPLOADED_TO_CDN_COUNT", "false"),
+    failed_token_instances_metadata_count:
+      ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED_FAILED_TOKEN_INSTANCES_METADATA_COUNT", "true"),
+    unfetched_token_instances_count:
+      ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED_UNFETCHED_TOKEN_INSTANCES_COUNT", "true"),
+    missing_current_token_balances_count:
+      ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED_MISSING_CURRENT_TOKEN_BALANCES_COUNT", "true"),
+    missing_archival_token_balances_count:
+      ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED_MISSING_ARCHIVAL_TOKEN_BALANCES_COUNT", "true")
+  }
+
 config :ex_aws,
   json_codec: Jason,
   access_key_id: System.get_env("NFT_MEDIA_HANDLER_AWS_ACCESS_KEY_ID"),
@@ -1598,7 +1642,7 @@ config :nft_media_handler,
   tmp_dir: "./temp",
   remote?: nmh_remote?,
   worker?: nmh_worker?,
-  r2_folder: System.get_env("NFT_MEDIA_HANDLER_BUCKET_FOLDER"),
+  r2_folder: ConfigHelper.parse_path_env_var("NFT_MEDIA_HANDLER_BUCKET_FOLDER"),
   standalone_media_worker?: nmh_enabled? && nmh_remote? && nmh_worker?,
   worker_concurrency: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_WORKER_CONCURRENCY", 10),
   worker_batch_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_WORKER_BATCH_SIZE", 10),
@@ -1614,6 +1658,8 @@ config :nft_media_handler, Indexer.NFTMediaHandler.Backfiller,
 
 config :indexer, Indexer.Fetcher.Zilliqa.ScillaSmartContracts.Supervisor,
   disabled?: ConfigHelper.chain_type() != :zilliqa
+
+config :indexer, Indexer.Fetcher.Zilliqa.Zrc2Tokens.Supervisor, disabled?: ConfigHelper.chain_type() != :zilliqa
 
 config :libcluster,
   topologies: [

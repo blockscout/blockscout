@@ -11,14 +11,14 @@ defmodule Explorer.Market.MarketHistoryTest do
         %{date: ~D[2023-01-02], opening_price: Decimal.new("7.50"), closing_price: Decimal.new("5.00")}
       ]
 
-      assert {2, _} = MarketHistory.bulk_insert(records)
+      assert {:ok, {2, _}} = MarketHistory.bulk_insert(records)
 
       records = [
         %{date: ~D[2023-01-01], opening_price: Decimal.new("50.00"), closing_price: Decimal.new("55.00")},
         %{date: ~D[2023-01-02], opening_price: Decimal.new("10.00"), closing_price: Decimal.new("8.00")}
       ]
 
-      assert {2, _} = MarketHistory.bulk_insert(records)
+      assert {:ok, {2, _}} = MarketHistory.bulk_insert(records)
 
       assert [date1, date2] = Repo.all(MarketHistory)
       assert date1.opening_price == Decimal.new("50.00")

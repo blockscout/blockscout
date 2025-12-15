@@ -15,8 +15,8 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartController do
 
       transaction_history_data =
         date_range
-        |> extract_history
-        |> encode_transaction_history_data
+        |> extract_history()
+        |> encode_transaction_history_data()
 
       json(conn, %{
         history_data: transaction_history_data

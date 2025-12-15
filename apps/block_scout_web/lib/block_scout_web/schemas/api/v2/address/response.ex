@@ -1,16 +1,12 @@
 defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations do
   @moduledoc false
   require OpenApiSpex
+  import BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations, only: [filecoin_robust_address_schema: 0]
 
   alias BlockScoutWeb.Schemas.{API.V2.Address, Helper}
   alias OpenApiSpex.Schema
 
-  @filecoin_robust_address_schema %Schema{
-    type: :string,
-    description: "Robust f0/f1/f2/f3/f4 Filecoin address",
-    example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-    nullable: true
-  }
+  use Utils.RuntimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   @zilliqa_schema %Schema{
     type: :object,
@@ -78,22 +74,22 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations 
   """
   @spec chain_type_fields(map()) :: map()
   def chain_type_fields(schema) do
-    case Application.get_env(:explorer, :chain_type) do
-      :filecoin ->
+    case chain_identity() do
+      {:filecoin, nil} ->
         schema
         |> Helper.extend_schema(
-          properties: %{creator_filecoin_robust_address: @filecoin_robust_address_schema},
+          properties: %{creator_filecoin_robust_address: filecoin_robust_address_schema()},
           required: [:creator_filecoin_robust_address]
         )
 
-      :zilliqa ->
+      {:zilliqa, nil} ->
         schema
         |> Helper.extend_schema(
           properties: %{zilliqa: @zilliqa_schema},
           required: [:zilliqa]
         )
 
-      :celo ->
+      {:optimism, :celo} ->
         schema
         |> Helper.extend_schema(
           properties: %{celo: @celo_schema},
@@ -112,8 +108,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.Response do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+  alias BlockScoutWeb.Schemas.API.V2.Address.Response.ChainTypeCustomizations
   alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 

@@ -7,8 +7,8 @@ defmodule Explorer.Chain.Import.Runner.Beacon.BlobTransactions do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Chain.Beacon.BlobTransaction
   alias Ecto.{Multi, Repo}
+  alias Explorer.Chain.Beacon.BlobTransaction
   alias Explorer.Chain.{Hash, Import}
   alias Explorer.Prometheus.Instrumenter
 

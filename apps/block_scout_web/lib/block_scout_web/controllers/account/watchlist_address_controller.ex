@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.Account.WatchlistAddressController do
   use BlockScoutWeb, :controller
 
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias Explorer.Account.WatchlistAddress
 
   import BlockScoutWeb.Account.AuthController, only: [authenticate!: 1]
@@ -71,10 +73,10 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
            "watch_erc_721_input" => watch_nft_input,
            "watch_erc_721_output" => watch_nft_output,
            "notify_email" => notify_email
-         },
+         } = params,
          watchlist_id
        ) do
-    %{
+    attributes = %{
       address_hash: address_hash,
       name: name,
       watch_coin_input: watch_coin_input,
@@ -88,5 +90,16 @@ defmodule BlockScoutWeb.Account.WatchlistAddressController do
       notify_email: notify_email,
       watchlist_id: watchlist_id
     }
+
+    if chain_type() == :zilliqa do
+      watch_zrc_2_input = Map.get(params, "watch_zrc_2_input", true)
+      watch_zrc_2_output = Map.get(params, "watch_zrc_2_output", true)
+
+      attributes
+      |> Map.put(:watch_zrc_2_input, watch_zrc_2_input)
+      |> Map.put(:watch_zrc_2_output, watch_zrc_2_output)
+    else
+      attributes
+    end
   end
 end

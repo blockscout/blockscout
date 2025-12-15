@@ -5,9 +5,9 @@ defmodule Explorer.Chain.Stability.Validator do
 
   use Explorer.Schema
 
+  alias Explorer.{Chain, Repo, SortingHelper}
   alias Explorer.Chain.{Address, Block, Import}
   alias Explorer.Chain.Hash.Address, as: HashAddress
-  alias Explorer.{Chain, Repo, SortingHelper}
   alias Explorer.SmartContract.Reader
 
   require Logger
@@ -157,7 +157,9 @@ defmodule Explorer.Chain.Stability.Validator do
       result =
         case format_missing_blocks_result(response) do
           {:error, message} ->
-            Logger.warning(fn -> ["Error on getValidatorMissingBlocks for #{validators_address_hashes}: #{message}"] end)
+            Logger.warning(fn ->
+              ["Error on getValidatorMissingBlocks for #{address_hash}: #{message}"]
+            end)
 
             nil
 

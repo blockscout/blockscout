@@ -9,6 +9,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
+  use Utils.RuntimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   require Logger
 
   import Indexer.Block.Fetcher,
@@ -72,7 +75,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   def child_spec([init_options, gen_server_options]) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
 
-    unless state do
+    if !state do
       raise ArgumentError,
             ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec " <>
               "to allow for json_rpc calls when running."
@@ -226,7 +229,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
     EthereumJSONRPC.RSK,
     EthereumJSONRPC.Filecoin
   ]
-  defp block_traceable_variants do
+  @doc """
+  Returns the list of JSON-RPC variants that support block-traceable internal transactions.
+  """
+  @spec block_traceable_variants() :: [module()]
+  def block_traceable_variants do
     if Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)[:block_traceable?] do
       [EthereumJSONRPC.Geth | @default_block_traceable_variants]
     else
@@ -323,7 +330,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   # TODO: should we cover this with tests?
   @zetachain_non_traceable_type 88
-  defp filter_non_traceable_transactions(transactions) do
+  @doc """
+  Filters out transactions that are known to not have traceable internal transactions.
+  """
+  @spec filter_non_traceable_transactions([Transaction.t()]) :: [Transaction.t()]
+  def filter_non_traceable_transactions(transactions) do
     case Application.get_env(:explorer, :chain_type) do
       :zetachain -> Enum.reject(transactions, &(&1.type == @zetachain_non_traceable_type))
       :zilliqa -> Enum.reject(transactions, &ZilliqaHelper.scilla_transaction?/1)
@@ -371,7 +382,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     celo_token_transfers_params =
       %{token_transfers: celo_token_transfers, tokens: celo_tokens} =
-      if Application.get_env(:explorer, :chain_type) == :celo do
+      if chain_identity() == {:optimism, :celo} do
         block_number_to_block_hash =
           transactions_params_or_unique_numbers
           |> data_to_block_numbers(data_type)
@@ -560,7 +571,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp async_import_celo_token_balances(%{token_transfers: token_transfers, tokens: tokens}) do
-    if Application.get_env(:explorer, :chain_type) == :celo do
+    if chain_identity() == {:optimism, :celo} do
       token_transfers_with_token = token_transfers_merge_token(token_transfers, tokens)
 
       address_token_balances =

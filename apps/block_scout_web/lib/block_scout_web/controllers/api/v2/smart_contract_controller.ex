@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.SmartContractController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   use Utils.RuntimeEnvHelper,
     chain_type: [:explorer, :chain_type]
@@ -7,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.Chain,
     only: [
       fetch_scam_token_toggle: 2,
-      next_page_params: 4,
+      next_page_params: 5,
       split_list_by_page: 1
     ]
 
@@ -34,9 +35,239 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   alias Explorer.Chain.SmartContract.AuditReport
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.SmartContract.Solidity.PublishHelper
-  alias Explorer.ThirdPartyIntegrations.SolidityScan
+
+  action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @api_true [api?: true]
+
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags(["smart_contracts"])
+
+  operation :smart_contract,
+    summary: "Retrieve detailed information about a verified smart contract",
+    description:
+      "Retrieves detailed information about a specific verified smart contract, including source code, ABI, and deployment details.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok:
+        {"Detailed information about the specified verified smart contract.", "application/json", Schemas.SmartContract}
+    ]
+
+  @doc """
+    GET /api/v2/smart-contracts/:address_hash_param
+  """
+  @spec smart_contract(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def smart_contract(conn, %{address_hash_param: address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         _ <- PublishHelper.sourcify_check(address_hash_string),
+         {:not_found, {:ok, %Address{} = address}} <-
+           {:not_found, Chain.find_contract_address(address_hash, smart_contract_address_options())} do
+      implementations = SmartContractHelper.pre_fetch_implementations(address)
+
+      conn
+      |> put_status(200)
+      |> render(:smart_contract, %{address: %Address{address | proxy_implementations: implementations}})
+    end
+  end
+
+  operation :smart_contracts_list,
+    summary: "List verified smart contracts with optional filtering options",
+    description:
+      "Retrieves a paginated list of verified smart contracts with optional filtering by proxy status or programming language.",
+    parameters:
+      base_params() ++
+        [
+          sort_param(["balance", "transactions_count"]),
+          order_param(),
+          q_param(),
+          %OpenApiSpex.Parameter{
+            name: :filter,
+            in: :query,
+            schema: Schemas.SmartContract.Language,
+            required: false,
+            description: "Filter to apply"
+          }
+        ] ++
+        define_paging_params([
+          "smart_contract_id",
+          "coin_balance",
+          "address_hash",
+          "transactions_count",
+          "items_count"
+        ]),
+    responses: [
+      ok:
+        {"List of verified smart contracts matching the filter criteria, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.SmartContract,
+           next_page_params_example: %{
+             "smart_contract_id" => 1_947_801,
+             "items_count" => 50
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+    Function to handle GET requests to `/api/v2/smart-contracts` endpoint.
+  """
+  @spec smart_contracts_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def smart_contracts_list(conn, params) do
+    full_options =
+      verified_smart_contract_addresses_options()
+      |> Keyword.merge(current_filter(params))
+      |> Keyword.merge(search_query(params))
+      |> Keyword.merge(smart_contract_addresses_paging_options(params))
+      |> Keyword.merge(smart_contract_addresses_sorting(params))
+      |> fetch_scam_token_toggle(conn)
+
+    addresses_plus_one = SmartContract.verified_contract_addresses(full_options)
+    {addresses, next_page} = split_list_by_page(addresses_plus_one)
+
+    # If no sorting options are provided, we sort by `id` descending only. If
+    # there are some sorting options supplied, we sort by `:hash` ascending as a
+    # secondary key.
+    pager =
+      full_options
+      |> Keyword.get(:sorting)
+      |> if do
+        &smart_contract_addresses_paging_params/1
+      else
+        &%{smart_contract_id: &1.smart_contract.id}
+      end
+
+    next_page_params =
+      next_page
+      |> next_page_params(
+        addresses,
+        params,
+        false,
+        pager
+      )
+
+    conn
+    |> put_status(200)
+    |> render(:smart_contracts, %{
+      addresses: addresses,
+      next_page_params: next_page_params
+    })
+  end
+
+  operation :smart_contracts_counters,
+    summary: "Get count statistics (new & newly verified) for deployed smart contracts",
+    description:
+      "Retrieves count statistics for smart contracts, including total contracts, verified contracts, and new contracts in the last 24 hours.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Count statistics for smart contracts.", "application/json", Schemas.SmartContract.Counters},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+    Function to handle GET requests to `/api/v2/smart-contracts/counters` endpoint.
+  """
+  @spec smart_contracts_counters(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def smart_contracts_counters(conn, _params) do
+    conn
+    |> json(%{
+      smart_contracts: Chain.count_contracts_from_cache(@api_true),
+      new_smart_contracts_24h: Chain.count_new_contracts_from_cache(@api_true),
+      verified_smart_contracts: Chain.count_verified_contracts_from_cache(@api_true),
+      new_verified_smart_contracts_24h: Chain.count_new_verified_contracts_from_cache(@api_true)
+    })
+  end
+
+  operation :audit_reports_list,
+    summary: "Audit reports list",
+    description: "Returns audit reports for a given smart contract address.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok:
+        {"Audit reports.", "application/json",
+         %Schema{
+           description: "List of smart-contract's audit reports",
+           type: :object,
+           properties: %{
+             items: %Schema{
+               type: :array,
+               items: Schemas.SmartContract.AuditReport,
+               nullable: false
+             },
+             next_page_params: %Schema{type: :object, nullable: true}
+           },
+           required: [:items, :next_page_params],
+           additionalProperties: false
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+    GET /api/v2/smart-contracts/{address_hash}/audit-reports
+  """
+  @spec audit_reports_list(Plug.Conn.t(), map()) ::
+          {:format, :error}
+          | {:not_found, nil | Explorer.Chain.SmartContract.t()}
+          | {:restricted_access, true}
+          | Plug.Conn.t()
+  def audit_reports_list(conn, %{address_hash_param: address_hash_string} = params) do
+    with {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string) do
+      reports = AuditReport.get_audit_reports_by_smart_contract_address_hash(address_hash, @api_true)
+
+      conn
+      |> render(:audit_reports, %{reports: reports})
+    end
+  end
+
+  operation :audit_report_submission,
+    summary: "Submit audit report",
+    description: "Submits an audit report for a given smart contract address.",
+    parameters: [address_hash_param() | base_params()],
+    request_body: audit_report_request_body(),
+    responses: [
+      ok:
+        {"Audit report submission is successful.", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{
+             message: %Schema{type: :string}
+           }
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+    POST /api/v2/smart-contracts/{address_hash}/audit-reports
+  """
+  @spec audit_report_submission(Plug.Conn.t(), map()) ::
+          {:error, Ecto.Changeset.t()}
+          | {:format, :error}
+          | {:not_found, nil | Explorer.Chain.SmartContract.t()}
+          | {:recaptcha, any()}
+          | {:restricted_access, true}
+          | Plug.Conn.t()
+  def audit_report_submission(conn, %{address_hash_param: address_hash_string} = params) do
+    with {:disabled, true} <- {:disabled, Application.get_env(:explorer, :air_table_audit_reports)[:enabled]},
+         {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
+         audit_report_params <- %{
+           address_hash: address_hash,
+           submitter_name: params[:submitter_name],
+           submitter_email: params[:submitter_email],
+           is_project_owner: params[:is_project_owner],
+           project_name: params[:project_name],
+           project_url: params[:project_url],
+           audit_company_name: params[:audit_company_name],
+           audit_report_url: params[:audit_report_url],
+           audit_publish_date: params[:audit_publish_date],
+           comment: params[:comment]
+         },
+         {:ok, _} <- AuditReport.create(audit_report_params) do
+      conn
+      |> put_status(200)
+      |> json(%{message: "OK"})
+    end
+  end
 
   @spec contract_creation_transaction_associations() :: [keyword()]
   defp contract_creation_transaction_associations do
@@ -71,90 +302,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     |> Keyword.merge(@api_true)
   end
 
-  action_fallback(BlockScoutWeb.API.V2.FallbackController)
-
-  def smart_contract(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         _ <- PublishHelper.sourcify_check(address_hash_string),
-         {:not_found, {:ok, address}} <-
-           {:not_found, Chain.find_contract_address(address_hash, smart_contract_address_options())} do
-      implementations = SmartContractHelper.pre_fetch_implementations(address)
-
-      conn
-      |> put_status(200)
-      |> render(:smart_contract, %{address: %Address{address | proxy_implementations: implementations}})
-    end
-  end
-
-  @doc """
-  /api/v2/smart-contracts/:address_hash_string/solidityscan-report logic
-  """
-  @spec solidityscan_report(Plug.Conn.t(), map()) ::
-          {:address, {:error, :not_found}}
-          | {:format_address, :error}
-          | {:is_empty_response, true}
-          | {:is_smart_contract, false | nil}
-          | {:restricted_access, true}
-          | {:is_verified_smart_contract, false}
-          | {:language, :vyper}
-          | Plug.Conn.t()
-  def solidityscan_report(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:format_address, {:ok, address_hash}} <- {:format_address, Chain.string_to_address_hash(address_hash_string)},
-         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:address, {:ok, address}} <- {:address, Chain.hash_to_address(address_hash)},
-         {:is_smart_contract, true} <- {:is_smart_contract, Address.smart_contract?(address)},
-         smart_contract = SmartContract.address_hash_to_smart_contract(address_hash, @api_true),
-         {:is_verified_smart_contract, true} <- {:is_verified_smart_contract, !is_nil(smart_contract)},
-         {:language, language} when language != :vyper <- {:language, SmartContract.language(smart_contract)},
-         response = SolidityScan.solidityscan_request(address_hash_string),
-         {:is_empty_response, false} <- {:is_empty_response, is_nil(response)} do
-      conn
-      |> put_status(200)
-      |> json(response)
-    end
-  end
-
-  def smart_contracts_list(conn, params) do
-    full_options =
-      verified_smart_contract_addresses_options()
-      |> Keyword.merge(current_filter(params))
-      |> Keyword.merge(search_query(params))
-      |> Keyword.merge(smart_contract_addresses_paging_options(params))
-      |> Keyword.merge(smart_contract_addresses_sorting(params))
-      |> fetch_scam_token_toggle(conn)
-
-    addresses_plus_one = SmartContract.verified_contract_addresses(full_options)
-    {addresses, next_page} = split_list_by_page(addresses_plus_one)
-
-    # If no sorting options are provided, we sort by `id` descending only. If
-    # there are some sorting options supplied, we sort by `:hash` ascending as a
-    # secondary key.
-    pager =
-      full_options
-      |> Keyword.get(:sorting)
-      |> if do
-        &smart_contract_addresses_paging_params/1
-      else
-        &%{smart_contract_id: &1.smart_contract.id}
-      end
-
-    next_page_params =
-      next_page
-      |> next_page_params(
-        addresses,
-        params,
-        pager
-      )
-
-    conn
-    |> put_status(200)
-    |> render(:smart_contracts, %{
-      addresses: addresses,
-      next_page_params: next_page_params
-    })
-  end
-
   @doc """
   Builds paging options for smart contract addresses based on request
   parameters.
@@ -166,30 +313,30 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   sorting. Otherwise, returns default paging options.
 
   ## Examples
-      iex> smart_contract_addresses_paging_options(%{"hash" => "0x123...", "transactions_count" => "100", "coin_balance" => "1000"})
+      iex> smart_contract_addresses_paging_options(%{hash: "0x123...", transactions_count: "100", coin_balance: "1000"})
       [paging_options: %{key: %{hash: ..., transactions_count: 100, fetched_coin_balance: 1000}}]
 
-      iex> smart_contract_addresses_paging_options(%{"smart_contract_id" => "42"})
+      iex> smart_contract_addresses_paging_options(%{smart_contract_id: "42"})
       [paging_options: %{key: %{id: 42}}]
 
       iex> smart_contract_addresses_paging_options(%{})
       [paging_options: %{}]
   """
-  @spec smart_contract_addresses_paging_options(%{required(String.t()) => String.t()}) ::
+  @spec smart_contract_addresses_paging_options(%{required(atom()) => String.t()}) ::
           [paging_options: map()]
   def smart_contract_addresses_paging_options(params) do
     options = do_smart_contract_addresses_paging_options(params)
     [paging_options: default_paging_options() |> Map.merge(options)]
   end
 
-  @spec do_smart_contract_addresses_paging_options(%{required(String.t()) => String.t()}) :: map()
-  defp do_smart_contract_addresses_paging_options(%{"hash" => hash_string} = params) do
+  @spec do_smart_contract_addresses_paging_options(%{required(atom()) => String.t()}) :: map()
+  defp do_smart_contract_addresses_paging_options(%{hash: hash_string} = params) do
     hash_string
     |> Chain.string_to_address_hash()
     |> case do
       {:ok, address_hash} ->
-        transactions_count = parse_integer(params["transactions_count"])
-        coin_balance = parse_integer(params["coin_balance"])
+        transactions_count = parse_integer(params[:transactions_count])
+        coin_balance = parse_integer(params[:coin_balance])
 
         %{
           key: %{
@@ -204,7 +351,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     end
   end
 
-  defp do_smart_contract_addresses_paging_options(%{"smart_contract_id" => smart_contract_id}) do
+  defp do_smart_contract_addresses_paging_options(%{smart_contract_id: smart_contract_id})
+       when is_integer(smart_contract_id) do
+    %{key: %{id: smart_contract_id}}
+  end
+
+  # todo: remove this function clause when all controllers are covered with OpenAPI spec
+  defp do_smart_contract_addresses_paging_options(%{smart_contract_id: smart_contract_id}) do
     smart_contract_id
     |> safe_parse_non_negative_integer()
     |> case do
@@ -215,37 +368,35 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   defp do_smart_contract_addresses_paging_options(_params), do: %{}
 
-  @doc """
-  Extracts pagination parameters from an Address struct for use in the next page
-  URL.
+  # Extracts pagination parameters from an Address struct for use in the next page
+  # URL.
 
-  ## Returns
-  A map with string keys that can be used as query parameters.
+  # ## Returns
+  # A map with string keys that can be used as query parameters.
 
-  ## Examples
-      iex> address = %Explorer.Chain.Address{hash: "0x123...", transactions_count: 100, fetched_coin_balance: 1000}
-      iex> smart_contract_addresses_paging_params(address)
-      %{"hash" => "0x123...", "transactions_count" => 100, "coin_balance" => 1000}
-  """
+  # ## Examples
+  #     iex> address = %Explorer.Chain.Address{hash: "0x123...", transactions_count: 100, fetched_coin_balance: 1000}
+  #     iex> smart_contract_addresses_paging_params(address)
+  #     %{hash: "0x123...", transactions_count: 100, coin_balance: 1000}
   @spec smart_contract_addresses_paging_params(Explorer.Chain.Address.t()) :: %{
-          required(String.t()) => any()
+          required(atom()) => any()
         }
-  def smart_contract_addresses_paging_params(%Explorer.Chain.Address{
-        hash: address_hash,
-        transactions_count: transactions_count,
-        fetched_coin_balance: coin_balance
-      }) do
+  defp smart_contract_addresses_paging_params(%Explorer.Chain.Address{
+         hash: address_hash,
+         transactions_count: transactions_count,
+         fetched_coin_balance: coin_balance
+       }) do
     %{
-      "hash" => address_hash,
-      "transactions_count" => transactions_count,
-      "coin_balance" => coin_balance
+      hash: address_hash,
+      transactions_count: transactions_count,
+      coin_balance: coin_balance
     }
   end
 
-  @spec smart_contract_addresses_sorting(%{required(String.t()) => String.t()}) :: [
+  @spec smart_contract_addresses_sorting(%{required(atom()) => String.t()}) :: [
           {:sorting, list()}
         ]
-  defp smart_contract_addresses_sorting(%{"sort" => sort_field, "order" => order}) do
+  defp smart_contract_addresses_sorting(%{sort: sort_field, order: order}) do
     {sort_field, order}
     |> case do
       {"balance", "asc"} -> {:ok, [{:asc_nulls_first, :fetched_coin_balance}]}
@@ -264,68 +415,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   end
 
   defp smart_contract_addresses_sorting(_), do: []
-
-  @doc """
-    POST /api/v2/smart-contracts/{address_hash}/audit-reports
-  """
-  @spec audit_report_submission(Plug.Conn.t(), map()) ::
-          {:error, Ecto.Changeset.t()}
-          | {:format, :error}
-          | {:not_found, nil | Explorer.Chain.SmartContract.t()}
-          | {:recaptcha, any()}
-          | {:restricted_access, true}
-          | Plug.Conn.t()
-  def audit_report_submission(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:disabled, true} <- {:disabled, Application.get_env(:explorer, :air_table_audit_reports)[:enabled]},
-         {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
-         audit_report_params <- %{
-           address_hash: address_hash,
-           submitter_name: params["submitter_name"],
-           submitter_email: params["submitter_email"],
-           is_project_owner: params["is_project_owner"],
-           project_name: params["project_name"],
-           project_url: params["project_url"],
-           audit_company_name: params["audit_company_name"],
-           audit_report_url: params["audit_report_url"],
-           audit_publish_date: params["audit_publish_date"],
-           comment: params["comment"]
-         },
-         {:ok, _} <- AuditReport.create(audit_report_params) do
-      conn
-      |> put_status(200)
-      |> json(%{message: "OK"})
-    end
-  end
-
-  @doc """
-    GET /api/v2/smart-contracts/{address_hash}/audit-reports
-  """
-  @spec audit_reports_list(Plug.Conn.t(), map()) ::
-          {:format, :error}
-          | {:not_found, nil | Explorer.Chain.SmartContract.t()}
-          | {:restricted_access, true}
-          | Plug.Conn.t()
-  def audit_reports_list(conn, %{"address_hash" => address_hash_string} = params) do
-    with {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string) do
-      reports = AuditReport.get_audit_reports_by_smart_contract_address_hash(address_hash, @api_true)
-
-      conn
-      |> render(:audit_reports, %{reports: reports})
-    end
-  end
-
-  def smart_contracts_counters(conn, _params) do
-    conn
-    |> json(%{
-      smart_contracts: Chain.count_contracts_from_cache(@api_true),
-      new_smart_contracts_24h: Chain.count_new_contracts_from_cache(@api_true),
-      verified_smart_contracts: Chain.count_verified_contracts_from_cache(@api_true),
-      new_verified_smart_contracts_24h: Chain.count_new_verified_contracts_from_cache(@api_true)
-    })
-  end
-
-  def prepare_args(list) when is_list(list), do: list
-  def prepare_args(other), do: [other]
 
   defp validate_smart_contract(params, address_hash_string) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},

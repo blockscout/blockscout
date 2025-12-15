@@ -8,8 +8,8 @@ defmodule BlockScoutWeb.AddressView do
   alias BlockScoutWeb.API.V2.TransactionView, as: APIV2TransactionView
   alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelper, Repo}
-  alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Market.Token, as: TokenExchangeRate

@@ -17,7 +17,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.General.DecodedLogInput do
             type: %Schema{type: :string, nullable: false},
             indexed: %Schema{type: :boolean, nullable: false},
             value: %Schema{
-              anyOf: [%Schema{type: :object}, %Schema{type: :array}, %Schema{type: :string}],
+              anyOf: [
+                %Schema{type: :object},
+                %Schema{
+                  type: :array,
+                  items: %Schema{
+                    anyOf: [
+                      %Schema{type: :object},
+                      %Schema{type: :array, items: %Schema{type: :string}},
+                      %Schema{type: :string}
+                    ]
+                  }
+                },
+                %Schema{type: :string}
+              ],
               nullable: false
             }
           },

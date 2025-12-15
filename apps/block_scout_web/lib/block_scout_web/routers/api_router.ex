@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
   use Utils.CompileTimeEnvHelper,
     chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity],
     graphql_enabled: [:block_scout_web, [Api.GraphQL, :enabled]],
     graphql_max_complexity: [:block_scout_web, [Api.GraphQL, :max_complexity]],
     graphql_token_limit: [:block_scout_web, [Api.GraphQL, :token_limit]],
@@ -139,9 +140,11 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     scope "/config" do
       get("/backend-version", V2.ConfigController, :backend_version)
       get("/csv-export", V2.ConfigController, :csv_export)
+      get("/indexer", V2.ConfigController, :indexer)
       get("/public-metrics", V2.ConfigController, :public_metrics)
+      get("/smart-contracts/languages", V2.ConfigController, :languages_list)
 
-      if @chain_type == :celo do
+      if @chain_identity == {:optimism, :celo} do
         get("/celo", V2.ConfigController, :celo)
       end
     end
@@ -152,23 +155,23 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/stats", V2.TransactionController, :stats)
 
       if @chain_type == :polygon_zkevm do
-        get("/zkevm-batch/:batch_number", V2.TransactionController, :polygon_zkevm_batch)
+        get("/zkevm-batch/:batch_number_param", V2.TransactionController, :polygon_zkevm_batch)
       end
 
       if @chain_type == :zksync do
-        get("/zksync-batch/:batch_number", V2.TransactionController, :zksync_batch)
+        get("/zksync-batch/:batch_number_param", V2.TransactionController, :zksync_batch)
       end
 
       if @chain_type == :arbitrum do
-        get("/arbitrum-batch/:batch_number", V2.TransactionController, :arbitrum_batch)
+        get("/arbitrum-batch/:batch_number_param", V2.TransactionController, :arbitrum_batch)
       end
 
       if @chain_type == :optimism do
-        get("/optimism-batch/:batch_number", V2.TransactionController, :optimism_batch)
+        get("/optimism-batch/:batch_number_param", V2.TransactionController, :optimism_batch)
       end
 
       if @chain_type == :scroll do
-        get("/scroll-batch/:batch_number", V2.TransactionController, :scroll_batch)
+        get("/scroll-batch/:batch_number_param", V2.TransactionController, :scroll_batch)
       end
 
       if @chain_type == :suave do
@@ -251,7 +254,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:address_hash_param/nft", V2.AddressController, :nft_list)
       get("/:address_hash_param/nft/collections", V2.AddressController, :nft_collections)
 
-      if @chain_type == :celo do
+      if @chain_identity == {:optimism, :celo} do
         get("/:address_hash_param/celo/election-rewards", V2.AddressController, :celo_election_rewards)
         get("/:address_hash_param/celo/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
       end
@@ -268,7 +271,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/indexing-status", V2.MainPageController, :indexing_status)
 
       if @chain_type == :optimism do
-        get("/optimism-deposits", V2.MainPageController, :optimism_deposits)
+        get("/optimism-deposits", V2.OptimismController, :main_page_deposits)
       end
 
       if @chain_type == :polygon_zkevm do
@@ -290,6 +293,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     scope "/stats" do
       get("/", V2.StatsController, :stats)
+      get("/hot-smart-contracts", V2.StatsController, :hot_smart_contracts)
 
       scope "/charts" do
         get("/transactions", V2.StatsController, :transactions_chart)
@@ -322,7 +326,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
-    if @chain_type == :celo do
+    if @chain_identity == {:optimism, :celo} do
       scope "/celo/epochs" do
         get("/", V2.CeloController, :epochs)
         get("/:number", V2.CeloController, :epoch)
@@ -385,7 +389,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         end
 
         scope "/solidityscan" do
-          get("/smart-contracts/:address_hash/report", V2.SmartContractController, :solidityscan_report)
+          get("/smart-contracts/:address_hash/report", V2.Proxy.SolidityScanController, :solidityscan_report)
         end
       end
 
@@ -547,6 +551,12 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     get("/multichain-search-export", BlockScoutWeb.API.HealthController, :multichain_search_db_export)
   end
 
+  scope "/v2" do
+    pipe_through(:api_v2)
+
+    get("/*path", BlockScoutWeb.API.V2.FallbackController, :unknown_action)
+  end
+
   scope "/" do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC}
@@ -567,7 +577,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
           "transaction" => {RPC.TransactionController, []}
         }
         |> then(fn options ->
-          if @chain_type == :celo do
+          if @chain_identity == {:optimism, :celo} do
             Map.put(options, "epoch", {BlockScoutWeb.API.RPC.CeloController, []})
           else
             options

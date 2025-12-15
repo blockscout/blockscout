@@ -104,7 +104,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
           Repo.insert_all(PendingTransactionOperation, params, on_conflict: :nothing, returning: [:transaction_hash])
       end
 
-    unless is_nil(Process.whereis(InternalTransactionFetcher)) do
+    if not is_nil(Process.whereis(InternalTransactionFetcher)) do
       {block_numbers, transactions} =
         case pending_operations_type do
           "blocks" ->

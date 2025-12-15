@@ -30,6 +30,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.MultichainSearchDb.MainExportQueue, as: MultichainSearchDbMainExportQueue
   alias Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue, as: MultichainSearchDbTokenInfoExportQueue
   alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
+  alias Indexer.Fetcher.Stats.HotSmartContracts
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
@@ -262,8 +263,9 @@ defmodule Indexer.Supervisor do
            ]
          ]},
         {Indexer.Fetcher.Zilliqa.ScillaSmartContracts.Supervisor, [[memory_monitor: memory_monitor]]},
+        {Indexer.Fetcher.Zilliqa.Zrc2Tokens.Supervisor, [[memory_monitor: memory_monitor]]},
         {Indexer.Fetcher.Beacon.Blob.Supervisor, [[memory_monitor: memory_monitor]]},
-        {Indexer.Fetcher.Beacon.Deposit.Supervisor, []},
+        {Indexer.Fetcher.Beacon.Deposit.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {Indexer.Fetcher.Beacon.Deposit.Status.Supervisor, []},
         {Indexer.Fetcher.SignedAuthorizationStatus.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
@@ -298,7 +300,8 @@ defmodule Indexer.Supervisor do
             [name: BlockCatchup.Supervisor]
           ]
         ),
-        {Withdrawal.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]}
+        {Withdrawal.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
+        configure(HotSmartContracts.Supervisor, [[memory_monitor: memory_monitor]])
       ]
       |> List.flatten()
 

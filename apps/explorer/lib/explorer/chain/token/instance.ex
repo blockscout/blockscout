@@ -680,7 +680,7 @@ defmodule Explorer.Chain.Token.Instance do
     is_unique is true for ERC-721 always and for ERC-1155 only if token_id is unique
   """
   @spec put_is_unique(__MODULE__.t(), Token.t(), Keyword.t()) :: __MODULE__.t()
-  def put_is_unique(instance, token, options) do
+  def put_is_unique(%__MODULE__{} = instance, token, options) do
     %__MODULE__{instance | is_unique: unique?(instance, token, options)}
   end
 
@@ -831,7 +831,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   def batch_upsert_cdn_results(instances) do
     {_, result} =
-      Repo.insert_all(__MODULE__, instances,
+      Repo.safe_insert_all(__MODULE__, instances,
         on_conflict: {:replace, [:thumbnails, :media_type, :updated_at, :cdn_upload_error]},
         conflict_target: [:token_id, :token_contract_address_hash],
         returning: true

@@ -236,7 +236,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       }
     else
       Logger.error(
-        "message_to_withdrawal: log doesn't correspond message (#{fields.position} != #{message.message_id})"
+        "message_to_withdrawal: log doesn't correspond message (#{fields.message_id} != #{message.message_id})"
       )
 
       nil

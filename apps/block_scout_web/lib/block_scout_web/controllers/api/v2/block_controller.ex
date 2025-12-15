@@ -1,17 +1,22 @@
 defmodule BlockScoutWeb.API.V2.BlockController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
+
   use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
-      next_page_params: 4,
+      next_page_params: 5,
       paging_options: 1,
       param_to_block_number: 1,
       put_key_value_to_paging_options: 3,
       split_list_by_page: 1,
-      parse_block_hash_or_number_param: 1
+      parse_block_hash_or_number_param: 1,
+      block_to_internal_transactions: 2
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -54,7 +59,14 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       }
 
     :optimism ->
-      @chain_type_transaction_necessity_by_association %{}
+      if @chain_identity == {:optimism, :celo} do
+        @chain_type_transaction_necessity_by_association %{
+          [gas_token: reputation_association()] => :optional
+        }
+      else
+        @chain_type_transaction_necessity_by_association %{}
+      end
+
       @chain_type_block_necessity_by_association %{
         :op_frame_sequence => :optional
       }
@@ -67,12 +79,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :zksync_prove_transaction => :optional,
         :zksync_execute_transaction => :optional
       }
-
-    :celo ->
-      @chain_type_transaction_necessity_by_association %{
-        [gas_token: reputation_association()] => :optional
-      }
-      @chain_type_block_necessity_by_association %{}
 
     :arbitrum ->
       @chain_type_transaction_necessity_by_association %{}
@@ -140,7 +146,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   tags(["blocks"])
 
   operation :block,
-    summary: "Retrieve detailed information about a specific block",
+    summary: "Retrieves detailed information for a specific block identified by its number or hash.",
     description:
       "Retrieves detailed information for a specific block, including transactions, internal transactions, and metadata.",
     parameters: [block_hash_or_number_param() | base_params()],
@@ -180,22 +186,21 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   end
 
   operation :blocks,
-    summary: "List blocks with optional filtering and sorting",
-    description: "Retrieves a paginated list of blocks with optional filtering by block type and sorting options.",
+    summary: "List blocks with optional filtering by block type",
+    description: "Retrieves a paginated list of blocks with optional filtering by block type.",
     parameters:
       base_params() ++
         [block_type_param()] ++
         define_paging_params(["block_number", "items_count"]),
     responses: [
       ok:
-        {"List of blocks with pagination.", "application/json",
+        {"List of blocks with pagination information.", "application/json",
          paginated_response(
            items: Schemas.Block,
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "Blocks"
+           }
          )}
     ]
 
@@ -239,8 +244,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "ArbitrumBatchBlocks"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -287,8 +291,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "OptimismBatchBlocks"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -336,8 +339,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "ScrollBatchBlocks"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -371,23 +373,22 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   end
 
   operation :transactions,
-    summary: "List transactions in a specific block",
-    description: "Retrieves transactions included in a specific block with optional filtering and sorting.",
+    summary: "List transactions and tx details included in a specific block",
+    description: "Retrieves transactions included in a specific block, ordered by transaction index.",
     parameters:
       base_params() ++
         [block_hash_or_number_param(), transaction_type_param()] ++
         define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"Transactions in the specified block.", "application/json",
+        {"Transactions in the specified block, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Transaction,
            next_page_params_example: %{
              "block_number" => 12_345_678,
              "index" => 103,
              "items_count" => 50
-           },
-           title_prefix: "BlockTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -433,17 +434,17 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [block_hash_or_number_param(), internal_transaction_type_param(), internal_transaction_call_type_param()] ++
-        define_paging_params(["block_index", "items_count"]),
+        define_paging_params(["transaction_index", "index", "items_count"]),
     responses: [
       ok:
         {"Internal transactions in the specified block.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
            next_page_params_example: %{
-             "block_index" => 8,
+             "transaction_index" => 3,
+             "index" => 8,
              "items_count" => 50
-           },
-           title_prefix: "BlockInternalTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -469,7 +470,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> Keyword.merge(internal_transaction_type_options(params))
         |> Keyword.merge(internal_transaction_call_type_options(params))
 
-      internal_transactions_plus_one = InternalTransaction.block_to_internal_transactions(block.hash, full_options)
+      internal_transactions_plus_one = block_to_internal_transactions(block, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
@@ -478,6 +479,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> next_page_params(
           internal_transactions,
           params,
+          false,
           &InternalTransaction.internal_transaction_to_block_paging_options/1
         )
 
@@ -493,22 +495,22 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   end
 
   operation :withdrawals,
-    summary: "List withdrawals in a specific block",
-    description: "Retrieves validator withdrawals included in a specific block.",
+    summary: "List validator withdrawals including amounts, index and receiver details processed in a specific block",
+    description: "Retrieves withdrawals processed in a specific block (typically for proof-of-stake networks).",
     parameters:
       base_params() ++
         [block_hash_or_number_param()] ++
         define_paging_params(["index", "items_count"]),
     responses: [
       ok:
-        {"Withdrawals in the specified block.", "application/json",
+        {"Withdrawals in the specified block, with pagination. Note that block_number and timestamp fields are not included in this endpoint.",
+         "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
            next_page_params_example: %{
              "index" => 88_192_653,
              "items_count" => 50
-           },
-           title_prefix: "BlockWithdrawals"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -611,8 +613,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "index" => 123,
              "items_count" => 50
-           },
-           title_prefix: "BlockBeaconDeposits"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -671,6 +672,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> next_page_params(
           deposits,
           params,
+          false,
           DepositController.paging_function()
         )
 

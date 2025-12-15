@@ -4,8 +4,6 @@ defmodule Explorer.EthRPC do
   """
   import Explorer.EthRpcHelper
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
-
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Type, as: EctoType
@@ -965,8 +963,8 @@ defmodule Explorer.EthRPC do
       signed_authorizations
       |> Enum.map(fn signed_authorization ->
         %{
-          "chainId" => String.downcase(integer_to_quantity(signed_authorization.chain_id)),
-          "nonce" => Helper.integer_to_hex(Decimal.to_integer(signed_authorization.nonce)),
+          "chainId" => Helper.decimal_to_hex(signed_authorization.chain_id),
+          "nonce" => Helper.decimal_to_hex(signed_authorization.nonce),
           "address" => to_string(signed_authorization.address),
           "r" => Helper.decimal_to_hex(signed_authorization.r),
           "s" => Helper.decimal_to_hex(signed_authorization.s),

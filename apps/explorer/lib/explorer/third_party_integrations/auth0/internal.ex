@@ -17,8 +17,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Internal do
 
   require Logger
 
-  alias Explorer.Account.Identity
   alias Explorer.{Account, Helper, Repo}
+  alias Explorer.Account.Identity
   alias Explorer.Chain.Address
   alias Explorer.ThirdPartyIntegrations.Auth0
   alias Explorer.ThirdPartyIntegrations.Auth0.{Legacy, Migrated}

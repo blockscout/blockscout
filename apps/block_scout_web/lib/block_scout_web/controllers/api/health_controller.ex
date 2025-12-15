@@ -132,7 +132,7 @@ defmodule BlockScoutWeb.API.HealthController do
   """
   @spec readiness(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def readiness(conn, _) do
-    unless Application.get_env(:nft_media_handler, :standalone_media_worker?) do
+    if !Application.get_env(:nft_media_handler, :standalone_media_worker?) do
       HealthHelper.last_db_block_status()
     end
 

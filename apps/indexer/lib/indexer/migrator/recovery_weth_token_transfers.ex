@@ -151,7 +151,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
       |> where([log, tt], is_nil(tt))
       |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
       |> Repo.all(timeout: :infinity)
-      |> Enum.map(fn log ->
+      |> Enum.map(fn %Log{} = log ->
         %Log{
           log
           | first_topic: to_string(log.first_topic),

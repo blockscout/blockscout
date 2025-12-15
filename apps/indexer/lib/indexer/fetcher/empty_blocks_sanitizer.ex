@@ -14,9 +14,9 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
-  alias Explorer.Repo
   alias Explorer.Chain.{Block, Hash, PendingOperationsHelper, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Repo
 
   @update_timeout 60_000
 
@@ -86,7 +86,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
     unprocessed_empty_blocks_list = unprocessed_empty_blocks_list_query(limit())
 
-    unless Enum.empty?(unprocessed_empty_blocks_list) do
+    if !Enum.empty?(unprocessed_empty_blocks_list) do
       blocks_response =
         unprocessed_empty_blocks_list
         |> Enum.map(fn %{number: block_number} -> %{number: integer_to_quantity(block_number)} end)

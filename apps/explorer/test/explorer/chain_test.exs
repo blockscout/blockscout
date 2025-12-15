@@ -1431,6 +1431,118 @@ defmodule Explorer.ChainTest do
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 5
     end
 
+    test "doesn't populate main multichain export queue from on_demand fetcher, if the address is inactive on the chain" do
+      Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
+      multichain_configuration = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, multichain_configuration)
+      end)
+
+      bypass = Bypass.open()
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        addresses_chunk_size: 7_000
+      )
+
+      import_data_1 = %{
+        addresses: %{
+          params: [
+            %{
+              hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+              transactions_count: 0,
+              token_transfers_count: 0,
+              fetched_coin_balance: nil
+            }
+          ]
+        },
+        broadcast: :on_demand
+      }
+
+      TestHelper.get_chain_id_mock()
+      Chain.import(import_data_1)
+
+      # non-active address isn't imported from on-demand fetcher
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
+
+      import_data_2 = %{
+        addresses: %{
+          params: [
+            %{
+              hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987acb",
+              transactions_count: 0,
+              token_transfers_count: 0,
+              fetched_coin_balance: nil
+            }
+          ]
+        }
+      }
+
+      Chain.import(import_data_2)
+
+      # "non-active" address is imported from regular fetcher
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 1
+
+      import_data_3 = %{
+        addresses: %{
+          params: [
+            %{
+              hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987acd",
+              transactions_count: 0,
+              token_transfers_count: 0,
+              fetched_coin_balance: %Wei{value: Decimal.new(10)}
+            }
+          ]
+        },
+        broadcast: :on_demand
+      }
+
+      Chain.import(import_data_3)
+
+      # address with a non-zero balance is imported from on-demand fetcher
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 2
+
+      import_data_4 = %{
+        addresses: %{
+          params: [
+            %{
+              hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987ace",
+              transactions_count: 1,
+              token_transfers_count: 0,
+              fetched_coin_balance: %Wei{value: Decimal.new(0)}
+            }
+          ]
+        },
+        broadcast: :on_demand
+      }
+
+      Chain.import(import_data_4)
+
+      # address with non-zero transactions counter is imported from on-demand fetcher
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 3
+
+      import_data_5 = %{
+        addresses: %{
+          params: [
+            %{
+              hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987acc",
+              transactions_count: 1,
+              token_transfers_count: nil,
+              fetched_coin_balance: nil
+            }
+          ]
+        },
+        broadcast: :on_demand
+      }
+
+      Chain.import(import_data_5)
+
+      # address with non-zero token transfers counter is imported from on-demand fetcher
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 4
+    end
+
     test "populates balances multichain export queue and updates it, if the multichain service is enabled" do
       Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
       Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())

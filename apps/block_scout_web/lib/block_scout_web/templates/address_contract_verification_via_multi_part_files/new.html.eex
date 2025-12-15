@@ -98,8 +98,6 @@
           >
             <%= render BlockScoutWeb.CommonComponentsView, "_loading_spinner.html", loading_text: gettext("Loading...") %>
           </button>
-          <%#= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-button-loading": "animation", "data-submit-button": "" %>
-          <%# verify-via-multi-part-files-submit %>
           <button id="verify-via-metadata-json-submit" class="btn-full-primary mr-2" disabled data-button-loading="animation"><%= gettext("Verify & publish") %></button>
           <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
           <%=
