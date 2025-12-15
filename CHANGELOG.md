@@ -17,6 +17,7 @@
 
 ### 🐛 Bug Fixes
 
+- `batch_number` input param is now integer for OP and Scroll API endpoints ([#13727](https://github.com/blockscout/blockscout/pull/13727))
 - Set timeout: :infinity for delete zero value migration ([#13708](https://github.com/blockscout/blockscout/pull/13708))
 - Limit batch size for placeholders insertion ([#13699](https://github.com/blockscout/blockscout/pull/13699))
 - Add missed reputation fetch ([#13695](https://github.com/blockscout/blockscout/pull/13695))
@@ -73,6 +74,7 @@
 - Increase genesis file content fetch timeout ([#13527](https://github.com/blockscout/blockscout/issues/13527))
 
 ### New ENV variables
+
 | Variable              | Description                                                                                                                                                      | Parameters                                                                                      |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `INDEXER_DISABLE_HOT_SMART_CONTRACTS_FETCHER`                 | If `true`, `Indexer.Fetcher.Stats.HotSmartContracts` won't be started. Implemented in [#13471](https://github.com/blockscout/blockscout/pull/13471).                                                                                                                                                                                                                                                                                                                                                                             | Version: v9.3.0\+ <br />Default: `false` <br />Applications: Indexer                                        |
