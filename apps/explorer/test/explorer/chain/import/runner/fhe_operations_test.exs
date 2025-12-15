@@ -222,8 +222,6 @@ defmodule Explorer.Chain.Import.Runner.FheOperationsTest do
                |> FheOperations.run(changes_list, options)
                |> Repo.transaction()
 
-      # Note: The actual tagging happens asynchronously, so we can't easily test it here
-      # without mocking the FheContractChecker module
     end
   end
 end
