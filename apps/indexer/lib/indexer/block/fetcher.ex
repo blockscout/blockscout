@@ -78,10 +78,10 @@ defmodule Indexer.Block.Fetcher do
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
-  @type t :: %__MODULE__{
+  @type t(callback_module) :: %__MODULE__{
           broadcast: term(),
           task_supervisor: module(),
-          callback_module: module(),
+          callback_module: callback_module,
           json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments(),
           receipts_batch_size: pos_integer(),
           receipts_concurrency: pos_integer()
@@ -91,7 +91,7 @@ defmodule Indexer.Block.Fetcher do
   Calculates the balances and internal transactions and imports those with the given data.
   """
   @callback import(
-              t,
+              t(module()),
               %{
                 address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
                 addresses: Import.Runner.options(),
@@ -149,7 +149,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   @decorate span(tracer: Tracer)
-  @spec fetch_and_import_range(t, Range.t(), map) ::
+  @spec fetch_and_import_range(t(module()), Range.t(), map) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
              {step :: atom(), reason :: [Ecto.Changeset.t()] | term()}

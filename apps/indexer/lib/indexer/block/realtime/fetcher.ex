@@ -61,7 +61,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
             last_realtime_blocks: %{}
 
   @type t :: %__MODULE__{
-          block_fetcher: Block.Fetcher.t(),
+          block_fetcher: Block.Fetcher.t(__MODULE__),
           subscription: Subscription.t(),
           previous_number: pos_integer() | nil,
           timer: reference(),
