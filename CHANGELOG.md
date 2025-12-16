@@ -45,6 +45,7 @@
 
 ### ⚡ Performance
 
+- Improve performance of api/v2/main-page/indexing-status endpoint ([#13730](https://github.com/blockscout/blockscout/pull/13730))
 - Implement celo aggregated election rewards ([#13418](https://github.com/blockscout/blockscout/issues/13418))
 
 ### ⚙️ Miscellaneous Tasks
