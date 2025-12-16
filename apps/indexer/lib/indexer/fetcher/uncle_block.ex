@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.UncleBlock do
   alias Ecto.Changeset
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
+  alias Explorer.Chain.Block, as: ExplorerChainBlock
   alias Explorer.Chain.Cache.{Accounts, Uncles}
   alias Explorer.Chain.Hash
   alias Indexer.{Block, BufferedTask, Tracer}
@@ -68,7 +69,7 @@ defmodule Indexer.Fetcher.UncleBlock do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_uncles(
+      ExplorerChainBlock.stream_unfetched_uncles(
         initial,
         fn uncle, acc ->
           uncle

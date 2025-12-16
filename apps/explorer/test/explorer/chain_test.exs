@@ -4,8 +4,6 @@ defmodule Explorer.ChainTest do
 
   require Ecto.Query
 
-  import Ecto.Query
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
   import Explorer.Factory
   import Mox
 
@@ -18,7 +16,6 @@ defmodule Explorer.ChainTest do
     Hash,
     InternalTransaction,
     Log,
-    PendingBlockOperation,
     Token,
     TokenTransfer,
     Transaction,
@@ -28,7 +25,6 @@ defmodule Explorer.ChainTest do
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.Cache.Counters.{BlocksCount, TransactionsCount, PendingBlockOperationCount}
-  alias Explorer.Chain.InternalTransaction.Type
   alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue}
 
   alias Explorer.Chain.Supply.ProofOfAuthority
@@ -45,48 +41,6 @@ defmodule Explorer.ChainTest do
   setup :set_mox_global
 
   setup :verify_on_exit!
-
-  describe "remove_nonconsensus_blocks_from_pending_ops/0" do
-    test "removes pending ops for nonconsensus blocks" do
-      block = insert(:block)
-      insert(:pending_block_operation, block: block, block_number: block.number)
-
-      nonconsensus_block = insert(:block, consensus: false)
-      insert(:pending_block_operation, block: nonconsensus_block, block_number: nonconsensus_block.number)
-
-      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
-      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
-
-      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
-
-      :ok = Chain.remove_nonconsensus_blocks_from_pending_ops()
-
-      assert Repo.get(PendingBlockOperation, block.hash)
-      assert is_nil(Repo.get(PendingBlockOperation, nonconsensus_block.hash))
-    end
-
-    test "removes pending ops for nonconsensus blocks by block hashes" do
-      block = insert(:block)
-      insert(:pending_block_operation, block: block, block_number: block.number)
-
-      nonconsensus_block = insert(:block, consensus: false)
-      insert(:pending_block_operation, block: nonconsensus_block, block_number: nonconsensus_block.number)
-
-      nonconsensus_block1 = insert(:block, consensus: false)
-      insert(:pending_block_operation, block: nonconsensus_block1, block_number: nonconsensus_block1.number)
-
-      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
-      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
-
-      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
-
-      :ok = Chain.remove_nonconsensus_blocks_from_pending_ops([nonconsensus_block1.hash])
-
-      assert Repo.get(PendingBlockOperation, block.hash)
-      assert Repo.get(PendingBlockOperation, nonconsensus_block.hash)
-      assert is_nil(Repo.get(PendingBlockOperation, nonconsensus_block1.hash))
-    end
-  end
 
   describe "address_estimated_count/0" do
     test "returns the number of all addresses" do
@@ -919,35 +873,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "fetch_min_block_number/0" do
-    test "fetches min block numbers" do
-      for index <- 5..9 do
-        insert(:block, number: index)
-        Process.sleep(200)
-      end
-
-      assert 5 = Chain.fetch_min_block_number()
-    end
-
-    test "fetches min when there are no blocks" do
-      assert 0 = Chain.fetch_min_block_number()
-    end
-  end
-
-  describe "fetch_max_block_number/0" do
-    test "fetches max block numbers" do
-      for index <- 5..9 do
-        insert(:block, number: index)
-      end
-
-      assert 9 = Chain.fetch_max_block_number()
-    end
-
-    test "fetches max when there are no blocks" do
-      assert 0 = Chain.fetch_max_block_number()
-    end
-  end
-
   describe "fetch_sum_coin_total_supply/0" do
     test "fetches coin total supply" do
       for index <- 0..4 do
@@ -1293,12 +1218,12 @@ defmodule Explorer.ChainTest do
                     gas_used: ^gas_used_int,
                     index: 1,
                     init: nil,
-                    input: %Explorer.Chain.Data{
+                    input: %Data{
                       bytes:
                         <<16, 133, 82, 105, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 134, 45, 103, 203, 7, 115, 238, 63, 140,
                           231, 234, 137, 179, 40, 255, 234, 134, 26, 179, 239>>
                     },
-                    output: %Explorer.Chain.Data{bytes: ""},
+                    output: %Data{bytes: ""},
                     trace_address: [],
                     type: :call,
                     block_number: 37,
@@ -1638,88 +1563,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "block_hash_by_number/1" do
-    test "without blocks returns empty map" do
-      assert Chain.block_hash_by_number([]) == %{}
-    end
-
-    test "with consensus block returns mapping" do
-      block = insert(:block)
-
-      assert Chain.block_hash_by_number([block.number]) == %{block.number => block.hash}
-    end
-
-    test "with non-consensus block does not return mapping" do
-      block = insert(:block, consensus: false)
-
-      assert Chain.block_hash_by_number([block.number]) == %{}
-    end
-  end
-
-  describe "stream_blocks_without_rewards/2" do
-    test "includes consensus blocks" do
-      %Block{hash: consensus_hash} = insert(:block, consensus: true)
-
-      assert {:ok, [%Block{hash: ^consensus_hash}]} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
-    end
-
-    test "does not include consensus block that has a reward" do
-      %Block{hash: consensus_hash, miner_hash: miner_hash} = insert(:block, consensus: true)
-      insert(:reward, address_hash: miner_hash, block_hash: consensus_hash)
-
-      assert {:ok, []} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
-    end
-
-    # https://github.com/poanetwork/blockscout/issues/1310 regression test
-    test "does not include non-consensus blocks" do
-      insert(:block, consensus: false)
-
-      assert {:ok, []} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
-    end
-  end
-
-  describe "get_blocks_validated_by_address/2" do
-    test "returns nothing when there are no blocks" do
-      %Address{hash: address_hash} = insert(:address)
-
-      assert [] = Chain.get_blocks_validated_by_address(address_hash)
-    end
-
-    test "returns the blocks validated by a specified address" do
-      %Address{hash: address_hash} = address = insert(:address)
-      another_address = insert(:address)
-
-      block = insert(:block, miner: address, miner_hash: address.hash)
-      insert(:block, miner: another_address, miner_hash: another_address.hash)
-
-      results =
-        address_hash
-        |> Chain.get_blocks_validated_by_address()
-        |> Enum.map(& &1.hash)
-
-      assert results == [block.hash]
-    end
-
-    test "with blocks can be paginated" do
-      %Address{hash: address_hash} = address = insert(:address)
-
-      first_page_block = insert(:block, miner: address, miner_hash: address.hash, number: 0)
-      second_page_block = insert(:block, miner: address, miner_hash: address.hash, number: 2)
-
-      assert [first_page_block.number] ==
-               [paging_options: %PagingOptions{key: {1}, page_size: 1}]
-               |> Chain.get_blocks_validated_by_address(address_hash)
-               |> Enum.map(& &1.number)
-               |> Enum.reverse()
-
-      assert [second_page_block.number] ==
-               [paging_options: %PagingOptions{key: {3}, page_size: 1}]
-               |> Chain.get_blocks_validated_by_address(address_hash)
-               |> Enum.map(& &1.number)
-               |> Enum.reverse()
-    end
-  end
-
   describe "number_to_block/1" do
     test "without block" do
       assert {:error, :not_found} = Chain.number_to_block(-1)
@@ -1729,33 +1572,6 @@ defmodule Explorer.ChainTest do
       %Block{number: number} = insert(:block)
 
       assert {:ok, %Block{number: ^number}} = Chain.number_to_block(number)
-    end
-  end
-
-  describe "pending_transactions/0" do
-    test "without transactions" do
-      assert [] = Chain.recent_pending_transactions()
-    end
-
-    test "with transactions" do
-      %Transaction{hash: hash} = insert(:transaction)
-
-      assert [%Transaction{hash: ^hash}] = Chain.recent_pending_transactions()
-    end
-
-    test "with transactions can be paginated" do
-      second_page_hashes =
-        50
-        |> insert_list(:transaction)
-        |> Enum.map(& &1.hash)
-
-      %Transaction{inserted_at: inserted_at, hash: hash} = insert(:transaction)
-
-      assert second_page_hashes ==
-               [paging_options: %PagingOptions{key: {inserted_at, hash}, page_size: 50}]
-               |> Chain.recent_pending_transactions()
-               |> Enum.map(& &1.hash)
-               |> Enum.reverse()
     end
   end
 
@@ -2114,99 +1930,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "find_contract_address/1" do
-    test "doesn't find an address that doesn't have a code" do
-      address = insert(:address, contract_code: nil)
-
-      response = Chain.find_contract_address(address.hash)
-
-      assert {:error, :not_found} == response
-    end
-
-    test "doesn't find a nonexistent address" do
-      nonexistent_address_hash = Factory.address_hash()
-
-      response = Chain.find_contract_address(nonexistent_address_hash)
-
-      assert {:error, :not_found} == response
-    end
-
-    test "finds a contract address" do
-      address =
-        insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil, names: [])
-        |> Repo.preload(
-          [
-            :token,
-            [smart_contract: :smart_contract_additional_sources],
-            Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
-          ] ++ Address.contract_creation_transaction_associations()
-        )
-
-      options = [
-        necessity_by_association: %{
-          :names => :optional,
-          :smart_contract => :optional,
-          :token => :optional,
-          Address.contract_creation_transaction_associations() => :optional
-        }
-      ]
-
-      response = Chain.find_contract_address(address.hash, options)
-
-      assert response == {:ok, address}
-    end
-  end
-
-  describe "gas_payment_by_block_hash/1" do
-    setup do
-      number = 1
-
-      block = insert(:block, number: number, consensus: true)
-
-      %{consensus_block: block, number: number}
-    end
-
-    test "without consensus block hash has key with 0 value", %{consensus_block: consensus_block, number: number} do
-      non_consensus_block = insert(:block, number: number, consensus: false)
-
-      :transaction
-      |> insert(gas_price: 1, block_consensus: false)
-      |> with_block(consensus_block, gas_used: 1)
-
-      :transaction
-      |> insert(gas_price: 1, block_consensus: false)
-      |> with_block(consensus_block, gas_used: 2)
-
-      assert Chain.gas_payment_by_block_hash([non_consensus_block.hash]) == %{
-               non_consensus_block.hash => %Wei{value: Decimal.new(0)}
-             }
-    end
-
-    test "with consensus block hash without transactions has key with 0 value", %{
-      consensus_block: %Block{hash: consensus_block_hash}
-    } do
-      assert Chain.gas_payment_by_block_hash([consensus_block_hash]) == %{
-               consensus_block_hash => %Wei{value: Decimal.new(0)}
-             }
-    end
-
-    test "with consensus block hash with transactions has key with value", %{
-      consensus_block: %Block{hash: consensus_block_hash} = consensus_block
-    } do
-      :transaction
-      |> insert(gas_price: 1)
-      |> with_block(consensus_block, gas_used: 2)
-
-      :transaction
-      |> insert(gas_price: 3)
-      |> with_block(consensus_block, gas_used: 4)
-
-      assert Chain.gas_payment_by_block_hash([consensus_block_hash]) == %{
-               consensus_block_hash => %Wei{value: Decimal.new(14)}
-             }
-    end
-  end
-
   describe "missing_block_number_ranges/1" do
     # 0000
     test "0..0 without blocks" do
@@ -2330,57 +2053,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "recent_collated_transactions/1" do
-    test "with no collated transactions it returns an empty list" do
-      assert [] == Explorer.Chain.recent_collated_transactions(true)
-    end
-
-    test "it excludes pending transactions" do
-      insert(:transaction)
-      assert [] == Explorer.Chain.recent_collated_transactions(true)
-    end
-
-    test "returns a list of recent collated transactions" do
-      newest_first_transactions =
-        50
-        |> insert_list(:transaction)
-        |> with_block()
-        |> Enum.reverse()
-
-      oldest_seen = Enum.at(newest_first_transactions, 9)
-      paging_options = %Explorer.PagingOptions{page_size: 10, key: {oldest_seen.block_number, oldest_seen.index}}
-      recent_collated_transactions = Explorer.Chain.recent_collated_transactions(true, paging_options: paging_options)
-
-      assert length(recent_collated_transactions) == 10
-      assert hd(recent_collated_transactions).hash == Enum.at(newest_first_transactions, 10).hash
-    end
-
-    test "returns transactions with token_transfers preloaded" do
-      address = insert(:address)
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address)
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert_list(
-        2,
-        :token_transfer,
-        to_address: address,
-        transaction: transaction,
-        token_contract_address: token_contract_address,
-        token: token,
-        block: transaction.block
-      )
-
-      fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions(true))
-      assert fetched_transaction.hash == transaction.hash
-      assert length(fetched_transaction.token_transfers) == 2
-    end
-  end
-
   describe "smart_contract_bytecode/1" do
     test "fetches the smart contract bytecode" do
       smart_contract_bytecode =
@@ -2406,102 +2078,6 @@ defmodule Explorer.ChainTest do
       )
 
       assert Chain.smart_contract_bytecode(created_contract_address.hash) == smart_contract_bytecode
-    end
-  end
-
-  describe "update_replaced_transactions/2" do
-    test "update replaced transactions" do
-      replaced_transaction_hash = "0x2a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
-
-      address = insert(:address, hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6")
-
-      insert(:transaction,
-        from_address: address,
-        nonce: 1,
-        block_hash: nil,
-        index: nil,
-        block_number: nil,
-        hash: replaced_transaction_hash
-      )
-
-      mined_transaction_hash = "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
-      block = insert(:block)
-
-      mined_transaction =
-        insert(:transaction,
-          from_address: address,
-          nonce: 1,
-          index: 0,
-          block_hash: block.hash,
-          block_number: block.number,
-          cumulative_gas_used: 1,
-          gas_used: 1,
-          hash: mined_transaction_hash
-        )
-
-      second_mined_transaction_hash = "0x3a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
-      second_block = insert(:block)
-
-      insert(:transaction,
-        from_address: address,
-        nonce: 1,
-        index: 0,
-        block_hash: second_block.hash,
-        block_number: second_block.number,
-        cumulative_gas_used: 1,
-        gas_used: 1,
-        hash: second_mined_transaction_hash
-      )
-
-      {1, _} =
-        Chain.update_replaced_transactions([
-          %{
-            block_hash: mined_transaction.block_hash,
-            nonce: mined_transaction.nonce,
-            from_address_hash: mined_transaction.from_address_hash
-          }
-        ])
-
-      replaced_transaction = Repo.get(Transaction, replaced_transaction_hash)
-
-      assert replaced_transaction.status == :error
-      assert replaced_transaction.error == "dropped/replaced"
-
-      found_mined_transaction = Repo.get(Transaction, mined_transaction_hash)
-
-      assert found_mined_transaction.status == nil
-      assert found_mined_transaction.error == nil
-
-      second_mined_transaction = Repo.get(Transaction, second_mined_transaction_hash)
-
-      assert second_mined_transaction.status == nil
-      assert second_mined_transaction.error == nil
-    end
-  end
-
-  describe "stream_unfetched_token_balances/2" do
-    test "executes the given reducer with the query result" do
-      address = insert(:address, hash: "0xc45e4830dff873cf8b70de2b194d0ddd06ef651e")
-      token_balance = insert(:token_balance, value_fetched_at: nil, address: address)
-      insert(:token_balance)
-
-      assert Chain.stream_unfetched_token_balances([], &[&1.block_number | &2]) == {:ok, [token_balance.block_number]}
-    end
-  end
-
-  describe "stream_unfetched_uncles/2" do
-    test "does not return uncle hashes where t:Explorer.Chain.Block.SecondDegreeRelation.t/0 uncle_fetched_at is not nil" do
-      %Block.SecondDegreeRelation{nephew: %Block{}, nephew_hash: nephew_hash, index: index, uncle_hash: uncle_hash} =
-        insert(:block_second_degree_relation)
-
-      assert {:ok, [%{nephew_hash: ^nephew_hash, index: ^index}]} =
-               Explorer.Chain.stream_unfetched_uncles([], &[&1 | &2])
-
-      query = from(bsdr in Block.SecondDegreeRelation, where: bsdr.uncle_hash == ^uncle_hash)
-
-      assert {1, _} = Repo.update_all(query, set: [uncle_fetched_at: DateTime.utc_now()])
-
-      assert {:ok, []} = Explorer.Chain.stream_unfetched_uncles([], &[&1 | &2])
     end
   end
 
@@ -2790,42 +2366,6 @@ defmodule Explorer.ChainTest do
     # end
   end
 
-  describe "block_combined_rewards/1" do
-    test "sums the block_rewards values" do
-      block = insert(:block)
-
-      insert(
-        :reward,
-        address_hash: block.miner_hash,
-        block_hash: block.hash,
-        address_type: :validator,
-        reward: Decimal.new(1_000_000_000_000_000_000)
-      )
-
-      insert(
-        :reward,
-        address_hash: block.miner_hash,
-        block_hash: block.hash,
-        address_type: :emission_funds,
-        reward: Decimal.new(1_000_000_000_000_000_000)
-      )
-
-      insert(
-        :reward,
-        address_hash: block.miner_hash,
-        block_hash: block.hash,
-        address_type: :uncle,
-        reward: Decimal.new(1_000_000_000_000_000_000)
-      )
-
-      block = Repo.preload(block, :rewards)
-
-      {:ok, expected_value} = Wei.cast(3_000_000_000_000_000_000)
-
-      assert Chain.block_combined_rewards(block) == expected_value
-    end
-  end
-
   describe "transaction_token_transfer_type/1" do
     test "detects erc721 token transfer" do
       from_address_hash = "0x7a30272c902563b712245696f0a81c5a0e45ddc8"
@@ -2875,113 +2415,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "fetch_first_trace/2" do
-    test "fetched first trace", %{
-      json_rpc_named_arguments: json_rpc_named_arguments
-    } do
-      from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
-      gas = 4_533_872
-
-      init =
-        "0x6060604052341561000f57600080fd5b60405160208061071a83398101604052808051906020019091905050806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506003600160006001600281111561007e57fe5b60ff1660ff168152602001908152602001600020819055506002600160006002808111156100a857fe5b60ff1660ff168152602001908152602001600020819055505061064a806100d06000396000f30060606040526004361061008e576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063247b3210146100935780632ffdfc8a146100bc57806374294144146100f6578063ae4b1b5b14610125578063bf7370d11461017a578063d1104cb2146101a3578063eecd1079146101f8578063fcff021c14610221575b600080fd5b341561009e57600080fd5b6100a661024a565b6040518082815260200191505060405180910390f35b34156100c757600080fd5b6100e0600480803560ff16906020019091905050610253565b6040518082815260200191505060405180910390f35b341561010157600080fd5b610123600480803590602001909190803560ff16906020019091905050610276565b005b341561013057600080fd5b61013861037a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561018557600080fd5b61018d61039f565b6040518082815260200191505060405180910390f35b34156101ae57600080fd5b6101b66104d9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561020357600080fd5b61020b610588565b6040518082815260200191505060405180910390f35b341561022c57600080fd5b6102346105bd565b6040518082815260200191505060405180910390f35b600060c8905090565b6000600160008360ff1660ff168152602001908152602001600020549050919050565b61027e6104d9565b73ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415156102b757600080fd5b60008160ff161115156102c957600080fd5b6002808111156102d557fe5b60ff168160ff16111515156102e957600080fd5b6000821180156103125750600160008260ff1660ff168152602001908152602001600020548214155b151561031d57600080fd5b81600160008360ff1660ff168152602001908152602001600020819055508060ff167fe868bbbdd6cd2efcd9ba6e0129d43c349b0645524aba13f8a43bfc7c5ffb0889836040518082815260200191505060405180910390a25050565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000806000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16638b8414c46000604051602001526040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401602060405180830381600087803b151561042f57600080fd5b6102c65a03f1151561044057600080fd5b5050506040518051905090508073ffffffffffffffffffffffffffffffffffffffff16630eaba26a6000604051602001526040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401602060405180830381600087803b15156104b857600080fd5b6102c65a03f115156104c957600080fd5b5050506040518051905091505090565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1663a3b3fff16000604051602001526040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401602060405180830381600087803b151561056857600080fd5b6102c65a03f1151561057957600080fd5b50505060405180519050905090565b60006105b860016105aa600261059c61039f565b6105e590919063ffffffff16565b61060090919063ffffffff16565b905090565b60006105e06105ca61039f565b6105d261024a565b6105e590919063ffffffff16565b905090565b60008082848115156105f357fe5b0490508091505092915050565b600080828401905083811015151561061457fe5b80915050929150505600a165627a7a723058206b7eef2a57eb659d5e77e45ab5bc074e99c6a841921038cdb931e119c6aac46c0029000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef"
-
-      value = 0
-      block_number = 39
-      block_hash = "0x74c72ccabcb98b7ebbd7b31de938212b7e8814a002263b6569564e944d88f51f"
-      index = 0
-      created_contract_address_hash = "0x1e0eaa06d02f965be2dfe0bc9ff52b2d82133461"
-
-      created_contract_code =
-        "0x60606040526004361061008e576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063247b3210146100935780632ffdfc8a146100bc57806374294144146100f6578063ae4b1b5b14610125578063bf7370d11461017a578063d1104cb2146101a3578063eecd1079146101f8578063fcff021c14610221575b600080fd5b341561009e57600080fd5b6100a661024a565b6040518082815260200191505060405180910390f35b34156100c757600080fd5b6100e0600480803560ff16906020019091905050610253565b6040518082815260200191505060405180910390f35b341561010157600080fd5b610123600480803590602001909190803560ff16906020019091905050610276565b005b341561013057600080fd5b61013861037a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561018557600080fd5b61018d61039f565b6040518082815260200191505060405180910390f35b34156101ae57600080fd5b6101b66104d9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561020357600080fd5b61020b610588565b6040518082815260200191505060405180910390f35b341561022c57600080fd5b6102346105bd565b6040518082815260200191505060405180910390f35b600060c8905090565b6000600160008360ff1660ff168152602001908152602001600020549050919050565b61027e6104d9565b73ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415156102b757600080fd5b60008160ff161115156102c957600080fd5b6002808111156102d557fe5b60ff168160ff16111515156102e957600080fd5b6000821180156103125750600160008260ff1660ff168152602001908152602001600020548214155b151561031d57600080fd5b81600160008360ff1660ff168152602001908152602001600020819055508060ff167fe868bbbdd6cd2efcd9ba6e0129d43c349b0645524aba13f8a43bfc7c5ffb0889836040518082815260200191505060405180910390a25050565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000806000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16638b8414c46000604051602001526040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401602060405180830381600087803b151561042f57600080fd5b6102c65a03f1151561044057600080fd5b5050506040518051905090508073ffffffffffffffffffffffffffffffffffffffff16630eaba26a6000604051602001526040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401602060405180830381600087803b15156104b857600080fd5b6102c65a03f115156104c957600080fd5b5050506040518051905091505090565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1663a3b3fff16000604051602001526040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401602060405180830381600087803b151561056857600080fd5b6102c65a03f1151561057957600080fd5b50505060405180519050905090565b60006105b860016105aa600261059c61039f565b6105e590919063ffffffff16565b61060090919063ffffffff16565b905090565b60006105e06105ca61039f565b6105d261024a565b6105e590919063ffffffff16565b905090565b60008082848115156105f357fe5b0490508091505092915050565b600080828401905083811015151561061457fe5b80915050929150505600a165627a7a723058206b7eef2a57eb659d5e77e45ab5bc074e99c6a841921038cdb931e119c6aac46c0029"
-
-      gas_used = 382_953
-      trace_address = []
-      transaction_hash = "0x0fa6f723216dba694337f9bb37d8870725655bdf2573526a39454685659e39b1"
-      transaction_index = 0
-      type = "create"
-
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok,
-           [
-             %{
-               id: 0,
-               result: %{
-                 "output" => "0x",
-                 "stateDiff" => nil,
-                 "trace" => [
-                   %{
-                     "action" => %{
-                       "from" => from_address_hash,
-                       "gas" => integer_to_quantity(gas),
-                       "init" => init,
-                       "value" => integer_to_quantity(value)
-                     },
-                     "blockNumber" => block_number,
-                     "index" => index,
-                     "result" => %{
-                       "address" => created_contract_address_hash,
-                       "code" => created_contract_code,
-                       "gasUsed" => integer_to_quantity(gas_used)
-                     },
-                     "traceAddress" => trace_address,
-                     "type" => type
-                   }
-                 ],
-                 "transactionHash" => transaction_hash
-               }
-             }
-           ]}
-        end)
-      end
-
-      {:ok, created_contract_address_hash_bytes} = Chain.string_to_address_hash(created_contract_address_hash)
-      {:ok, from_address_hash_bytes} = Chain.string_to_address_hash(from_address_hash)
-      {:ok, created_contract_code_bytes} = Data.cast(created_contract_code)
-      {:ok, init_bytes} = Data.cast(init)
-      {:ok, transaction_hash_bytes} = Chain.string_to_full_hash(transaction_hash)
-      {:ok, type_bytes} = Type.load(type)
-      value_wei = %Wei{value: Decimal.new(value)}
-
-      assert Chain.fetch_first_trace(
-               [
-                 %{
-                   hash_data: transaction_hash,
-                   block_hash: block_hash,
-                   block_number: block_number,
-                   transaction_index: transaction_index
-                 }
-               ],
-               json_rpc_named_arguments
-             ) == {
-               :ok,
-               [
-                 %{
-                   block_index: 0,
-                   block_number: block_number,
-                   block_hash: block_hash,
-                   call_type: nil,
-                   created_contract_address_hash: created_contract_address_hash_bytes,
-                   created_contract_code: created_contract_code_bytes,
-                   from_address_hash: from_address_hash_bytes,
-                   gas: gas,
-                   gas_used: gas_used,
-                   index: index,
-                   init: init_bytes,
-                   input: nil,
-                   output: nil,
-                   to_address_hash: nil,
-                   trace_address: trace_address,
-                   transaction_hash: transaction_hash_bytes,
-                   type: type_bytes,
-                   value: value_wei,
-                   transaction_index: transaction_index
-                 }
-               ]
-             }
-    end
-  end
-
   describe "transaction_to_revert_reason/1" do
     test "returns correct revert_reason from DB" do
       # Error("No credit of that type")
@@ -2998,7 +2431,7 @@ defmodule Explorer.ChainTest do
           gas: 27319,
           gas_price: "0x1b31d2900",
           value: "0x86b3",
-          input: %Explorer.Chain.Data{bytes: <<1>>}
+          input: %Data{bytes: <<1>>}
         )
         |> with_block(insert(:block, number: 1))
 

@@ -12,8 +12,8 @@ defmodule Indexer.PendingTransactionsSanitizer do
   import EthereumJSONRPC.Receipt, only: [to_elixir: 1]
 
   alias Ecto.Changeset
-  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Repo
 
   defstruct interval: nil,
             json_rpc_named_arguments: []
@@ -63,7 +63,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
   defp sanitize_pending_transactions(json_rpc_named_arguments) do
     receipts_batch_size = Application.get_env(:indexer, :receipts_batch_size)
-    pending_transactions_list_from_db = Chain.pending_transactions_list()
+    pending_transactions_list_from_db = Transaction.pending_transactions_list()
     id_to_params = id_to_params(pending_transactions_list_from_db)
 
     with {:ok, responses} <-
@@ -147,7 +147,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
   end
 
   defp fetch_block_and_invalidate(block_hash, pending_transaction, transaction) do
-    case Chain.fetch_block_by_hash(block_hash) do
+    case Block.fetch_block_by_hash(block_hash) do
       %{number: number, consensus: consensus} = block ->
         Logger.debug(
           "Corresponding number of the block with hash #{block_hash} to invalidate is #{number} and consensus #{consensus}",

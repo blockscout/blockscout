@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.TransactionController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Counters.TransactionsCount
-  alias Explorer.Chain.DenormalizationHelper
+  alias Explorer.Chain.{DenormalizationHelper, Transaction}
   alias Phoenix.View
 
   @necessity_by_association %{
@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.TransactionController do
       )
 
     %{total_transactions_count: transactions_count, transactions: transactions_plus_one} =
-      Chain.recent_collated_transactions_for_rap(full_options)
+      Transaction.recent_collated_transactions_for_rap(full_options)
 
     {transactions, next_page} =
       if fetch_page_number(params) == 1 do
@@ -150,7 +150,7 @@ defmodule BlockScoutWeb.TransactionController do
 
   def show(conn, %{"id" => id} = params) do
     with {:ok, transaction_hash} <- Chain.string_to_full_hash(id),
-         :ok <- Chain.check_transaction_exists(transaction_hash) do
+         :ok <- Transaction.check_transaction_exists(transaction_hash) do
       if Chain.transaction_has_token_transfers?(transaction_hash) do
         with {:ok, transaction} <-
                Chain.hash_to_transaction(transaction_hash, necessity_by_association: @necessity_by_association),

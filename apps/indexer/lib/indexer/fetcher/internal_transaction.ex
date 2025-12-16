@@ -196,7 +196,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
       Enum.reduce(block_numbers, {:ok, []}, fn
         block_number, {:ok, acc_list} ->
           block_number
-          |> Chain.get_transactions_of_block_number()
+          |> Transaction.get_transactions_of_block_number()
           |> filter_non_traceable_transactions()
           |> Enum.map(&params/1)
           |> case do
@@ -278,7 +278,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   defp filter_block_numbers(block_numbers, :block_number, json_rpc_named_arguments) do
     block_numbers
     |> Enum.uniq()
-    |> Chain.filter_non_refetch_needed_block_numbers()
+    |> Block.filter_non_refetch_needed_block_numbers()
     |> RangesHelper.filter_traceable_block_numbers()
     |> drop_genesis(json_rpc_named_arguments)
   end
@@ -386,7 +386,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         block_number_to_block_hash =
           transactions_params_or_unique_numbers
           |> data_to_block_numbers(data_type)
-          |> Chain.block_hash_by_number()
+          |> Block.block_hash_by_number()
           |> Map.new(fn
             {block_number, block_hash} ->
               {block_number, Hash.to_string(block_hash)}

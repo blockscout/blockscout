@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias BlockScoutWeb.Schemas.Helper, as: SchemasHelper
   alias Explorer.{Chain, Market, PagingOptions}
-  alias Explorer.Chain.{Address, Beacon.Deposit, Hash, Transaction}
+  alias Explorer.Chain.{Address, Beacon.Deposit, Block, Hash, Token, Transaction}
   alias Explorer.Chain.Address.{CoinBalance, Counters}
 
   alias Explorer.Chain.Token.Instance
@@ -497,7 +497,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   def token_transfers(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params),
          {:ok, token_address_hash} <- validate_optional_address_hash(params[:token], params),
-         token_address_exists <- (token_address_hash && Chain.check_token_exists(token_address_hash)) || :ok do
+         token_address_exists <- (token_address_hash && Token.check_token_exists(token_address_hash)) || :ok do
       case {Chain.hash_to_address(address_hash, @address_options), token_address_exists} do
         {{:ok, _address}, :ok} ->
           paging_options = paging_options(params)
@@ -748,7 +748,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(paging_options(params))
             |> Keyword.merge(@api_true)
 
-          results_plus_one = Chain.get_blocks_validated_by_address(full_options, address_hash)
+          results_plus_one = Block.get_blocks_validated_by_address(full_options, address_hash)
           {blocks, next_page} = split_list_by_page(results_plus_one)
 
           next_page_params = next_page |> next_page_params(blocks, params)

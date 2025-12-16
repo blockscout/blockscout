@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
   alias BlockScoutWeb.{AddressContractView, AddressView}
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
+  alias Explorer.Account.WatchlistAddress
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.Chain.Address.Counters
@@ -120,7 +121,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         "has_logs" => Counters.check_if_logs_at_address(address.hash, @api_true),
         "has_tokens" => Counters.check_if_tokens_at_address(address.hash, @api_true),
         "has_token_transfers" => Counters.check_if_token_transfers_at_address(address.hash, @api_true),
-        "watchlist_address_id" => Chain.select_watchlist_address_id(get_watchlist_id(conn), address.hash),
+        "watchlist_address_id" => WatchlistAddress.select_watchlist_address_id(get_watchlist_id(conn), address.hash),
         "has_beacon_chain_withdrawals" => Counters.check_if_withdrawals_at_address(address.hash, @api_true)
       })
 

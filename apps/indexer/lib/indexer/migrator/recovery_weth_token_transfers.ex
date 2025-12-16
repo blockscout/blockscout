@@ -10,7 +10,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
   import Ecto.Query
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Log, TokenTransfer}
+  alias Explorer.Chain.{Block, Log, TokenTransfer}
   alias Explorer.Migrator.MigrationStatus
   alias Indexer.Transform.TokenTransfers
 
@@ -32,8 +32,8 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
         {:stop, :normal, state}
 
       migration_status ->
-        max_block_number = Chain.fetch_max_block_number()
-        min_block_number = Chain.fetch_min_block_number()
+        max_block_number = Block.fetch_max_block_number()
+        min_block_number = Block.fetch_min_block_number()
 
         state =
           (migration_status && migration_status.meta) ||
