@@ -15,8 +15,9 @@ defmodule Explorer.Chain.Cache.Counters.VerifiedContractsCount do
     enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]],
     update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
-  alias Explorer.Chain
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
+  alias Explorer.Chain.SmartContract
+  alias Explorer.Repo
 
   @counter_type "verified_contracts_count"
 
@@ -69,7 +70,7 @@ defmodule Explorer.Chain.Cache.Counters.VerifiedContractsCount do
   Consolidates the info by populating the `last_fetched_counters` table with the current database information.
   """
   def consolidate do
-    verified_counter = Chain.count_verified_contracts()
+    verified_counter = count_verified_contracts()
 
     params = %{
       counter_type: @counter_type,
@@ -92,4 +93,8 @@ defmodule Explorer.Chain.Cache.Counters.VerifiedContractsCount do
   `config :explorer, Explorer.Chain.Cache.Counters.VerifiedContractsCount, enable_consolidation: false`
   """
   def enable_consolidation?, do: @enable_consolidation
+
+  defp count_verified_contracts do
+    Repo.aggregate(SmartContract, :count, timeout: :infinity)
+  end
 end

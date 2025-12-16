@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.AddressReadProxyController do
     ]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options),
+         {:ok, address} <- Address.find_contract_address(address_hash, address_options),
          false <- is_nil(address.smart_contract),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(

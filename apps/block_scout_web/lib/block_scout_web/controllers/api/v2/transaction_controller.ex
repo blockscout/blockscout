@@ -49,6 +49,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.{ForbiddenResponse, NotFoundResponse}
+  alias Explorer.Account.WatchlistAddress
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
@@ -904,7 +905,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         |> Keyword.merge(paging_options(params, [:validated]))
         |> Keyword.merge(@api_true)
 
-      {watchlist_names, transactions_plus_one} = Chain.fetch_watchlist_transactions(watchlist_id, full_options)
+      {watchlist_names, transactions_plus_one} =
+        WatchlistAddress.fetch_watchlist_transactions(watchlist_id, full_options)
 
       {transactions, next_page} = split_list_by_page(transactions_plus_one)
 

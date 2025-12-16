@@ -37,10 +37,10 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
+  alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Chain.Hash
   alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
@@ -655,7 +655,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   defp block_hash_by_number(block_number, json_rpc_named_arguments) do
     hash_from_db =
       [block_number]
-      |> Chain.block_hash_by_number()
+      |> Block.block_hash_by_number()
       |> Map.get(block_number)
 
     if is_nil(hash_from_db) do

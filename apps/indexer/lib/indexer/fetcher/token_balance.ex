@@ -21,7 +21,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   alias Explorer.Chain
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, Token}
   alias Explorer.Utility.MissingBalanceOfToken
   alias Indexer.{BufferedTask, TokenBalances, Tracer}
   alias Indexer.Fetcher.TokenBalance.Supervisor, as: TokenBalanceSupervisor
@@ -76,7 +76,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_token_balances(
+      TokenBalance.stream_unfetched_token_balances(
         initial,
         fn token_balance, acc ->
           token_balance
@@ -262,7 +262,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   end
 
   defp put_token_type_to_balance_object(token_balance) do
-    token_type = Chain.get_token_type(token_balance.token_contract_address_hash)
+    token_type = Token.get_token_type(token_balance.token_contract_address_hash)
 
     if token_type do
       Map.put(token_balance, :token_type, token_type)

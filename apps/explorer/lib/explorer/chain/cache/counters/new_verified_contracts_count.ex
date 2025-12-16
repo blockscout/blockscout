@@ -15,8 +15,11 @@ defmodule Explorer.Chain.Cache.Counters.NewVerifiedContractsCount do
     enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]],
     update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
-  alias Explorer.Chain
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
+  alias Explorer.Chain.SmartContract
+  alias Explorer.Repo
+
+  import Ecto.Query, only: [from: 2]
 
   @counter_type "new_verified_contracts_count"
 
@@ -70,7 +73,7 @@ defmodule Explorer.Chain.Cache.Counters.NewVerifiedContractsCount do
   Consolidates the info by populating the `last_fetched_counters` table with the current database information.
   """
   def consolidate do
-    new_verified_counter = Chain.count_new_verified_contracts()
+    new_verified_counter = count_new_verified_contracts()
 
     params = %{
       counter_type: @counter_type,
@@ -93,4 +96,15 @@ defmodule Explorer.Chain.Cache.Counters.NewVerifiedContractsCount do
   `config :explorer, Explorer.Chain.Cache.Counters.NewVerifiedContractsCount, enable_consolidation: false`
   """
   def enable_consolidation?, do: @enable_consolidation
+
+  defp count_new_verified_contracts do
+    query =
+      from(contract in SmartContract,
+        select: contract.inserted_at,
+        where: fragment("NOW() - ? at time zone 'UTC' <= interval '24 hours'", contract.inserted_at)
+      )
+
+    query
+    |> Repo.aggregate(:count, timeout: :infinity)
+  end
 end

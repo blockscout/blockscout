@@ -6,7 +6,6 @@ defmodule Indexer.Fetcher.TokenCountersUpdater do
 
   require Logger
 
-  alias Explorer.Chain
   alias Explorer.Chain.Token
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.BufferedTask
@@ -63,7 +62,7 @@ defmodule Indexer.Fetcher.TokenCountersUpdater do
 
     entries
     |> Enum.reduce(%{}, fn token, acc ->
-      {transfers_count, holders_count} = Chain.fetch_token_counters(token.contract_address_hash, :infinity)
+      {transfers_count, holders_count} = Token.fetch_token_counters(token.contract_address_hash, :infinity)
 
       data_for_multichain = MultichainSearch.prepare_token_counters_for_queue(transfers_count, holders_count)
       Map.put(acc, token.contract_address_hash.bytes, data_for_multichain)

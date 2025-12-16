@@ -6,6 +6,7 @@ defmodule Explorer.Chain.Withdrawal do
   use Explorer.Schema
 
   alias Explorer.Chain.{Address, Block, Hash, Wei}
+  alias Explorer.Chain.Cache.Counters.{LastFetchedCounter, WithdrawalsSum}
   alias Explorer.PagingOptions
 
   @required_attrs ~w(index validator_index amount address_hash block_hash)a
@@ -102,5 +103,32 @@ defmodule Explorer.Chain.Withdrawal do
       select: withdrawal,
       order_by: [desc: :index]
     )
+  end
+
+  @doc """
+  Upserts the count of all withdrawals into the `last_fetched_counters` table.
+  """
+  @spec upsert_count_withdrawals(Wei.t()) :: :ok | {:error, any()}
+  def upsert_count_withdrawals(index) do
+    LastFetchedCounter.upsert(%{
+      counter_type: "withdrawals_count",
+      value: index
+    })
+  end
+
+  @doc """
+  Fetches the count of withdrawals from the cache and adds 1 to it.
+  """
+  @spec count_withdrawals_from_cache(Keyword.t()) :: Decimal.t()
+  def count_withdrawals_from_cache(options \\ []) do
+    "withdrawals_count" |> LastFetchedCounter.get(options) |> Decimal.add(1)
+  end
+
+  @doc """
+  Fetches the sum of withdrawals from the cache.
+  """
+  @spec sum_withdrawals_from_cache(Keyword.t()) :: Decimal.t() | nil
+  def sum_withdrawals_from_cache(options \\ []) do
+    WithdrawalsSum.fetch(options)
   end
 end

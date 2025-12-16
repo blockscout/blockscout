@@ -879,4 +879,154 @@ defmodule Explorer.Chain.TransactionTest do
       assert "0x3078f114" == Transaction.get_method_name(transaction)
     end
   end
+
+  describe "recent_collated_transactions/1" do
+    test "with no collated transactions it returns an empty list" do
+      assert [] == Transaction.recent_collated_transactions(true)
+    end
+
+    test "it excludes pending transactions" do
+      insert(:transaction)
+      assert [] == Transaction.recent_collated_transactions(true)
+    end
+
+    test "returns a list of recent collated transactions" do
+      newest_first_transactions =
+        50
+        |> insert_list(:transaction)
+        |> with_block()
+        |> Enum.reverse()
+
+      oldest_seen = Enum.at(newest_first_transactions, 9)
+      paging_options = %Explorer.PagingOptions{page_size: 10, key: {oldest_seen.block_number, oldest_seen.index}}
+
+      recent_collated_transactions =
+        Transaction.recent_collated_transactions(true, paging_options: paging_options)
+
+      assert length(recent_collated_transactions) == 10
+      assert hd(recent_collated_transactions).hash == Enum.at(newest_first_transactions, 10).hash
+    end
+
+    test "returns transactions with token_transfers preloaded" do
+      address = insert(:address)
+      token_contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert_list(
+        2,
+        :token_transfer,
+        to_address: address,
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token,
+        block: transaction.block
+      )
+
+      fetched_transaction = List.first(Explorer.Chain.Transaction.recent_collated_transactions(true))
+      assert fetched_transaction.hash == transaction.hash
+      assert length(fetched_transaction.token_transfers) == 2
+    end
+  end
+
+  describe "update_replaced_transactions/2" do
+    test "update replaced transactions" do
+      replaced_transaction_hash = "0x2a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
+
+      address = insert(:address, hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6")
+
+      insert(:transaction,
+        from_address: address,
+        nonce: 1,
+        block_hash: nil,
+        index: nil,
+        block_number: nil,
+        hash: replaced_transaction_hash
+      )
+
+      mined_transaction_hash = "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
+      block = insert(:block)
+
+      mined_transaction =
+        insert(:transaction,
+          from_address: address,
+          nonce: 1,
+          index: 0,
+          block_hash: block.hash,
+          block_number: block.number,
+          cumulative_gas_used: 1,
+          gas_used: 1,
+          hash: mined_transaction_hash
+        )
+
+      second_mined_transaction_hash = "0x3a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
+      second_block = insert(:block)
+
+      insert(:transaction,
+        from_address: address,
+        nonce: 1,
+        index: 0,
+        block_hash: second_block.hash,
+        block_number: second_block.number,
+        cumulative_gas_used: 1,
+        gas_used: 1,
+        hash: second_mined_transaction_hash
+      )
+
+      {1, _} =
+        Transaction.update_replaced_transactions([
+          %{
+            block_hash: mined_transaction.block_hash,
+            nonce: mined_transaction.nonce,
+            from_address_hash: mined_transaction.from_address_hash
+          }
+        ])
+
+      replaced_transaction = Repo.get(Transaction, replaced_transaction_hash)
+
+      assert replaced_transaction.status == :error
+      assert replaced_transaction.error == "dropped/replaced"
+
+      found_mined_transaction = Repo.get(Transaction, mined_transaction_hash)
+
+      assert found_mined_transaction.status == nil
+      assert found_mined_transaction.error == nil
+
+      second_mined_transaction = Repo.get(Transaction, second_mined_transaction_hash)
+
+      assert second_mined_transaction.status == nil
+      assert second_mined_transaction.error == nil
+    end
+  end
+
+  describe "pending_transactions/0" do
+    test "without transactions" do
+      assert [] = Transaction.recent_pending_transactions()
+    end
+
+    test "with transactions" do
+      %Transaction{hash: hash} = insert(:transaction)
+
+      assert [%Transaction{hash: ^hash}] = Transaction.recent_pending_transactions()
+    end
+
+    test "with transactions can be paginated" do
+      second_page_hashes =
+        50
+        |> insert_list(:transaction)
+        |> Enum.map(& &1.hash)
+
+      %Transaction{inserted_at: inserted_at, hash: hash} = insert(:transaction)
+
+      assert second_page_hashes ==
+               [paging_options: %PagingOptions{key: {inserted_at, hash}, page_size: 50}]
+               |> Transaction.recent_pending_transactions()
+               |> Enum.map(& &1.hash)
+               |> Enum.reverse()
+    end
+  end
 end
