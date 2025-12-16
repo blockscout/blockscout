@@ -19,8 +19,6 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
 
   def child_spec([named_arguments, gen_server_options] = start_link_arguments)
       when is_map(named_arguments) and is_list(gen_server_options) do
-    # The `child_spec` from `use Supervisor` because the one from `use GenServer` will set the `type` to `:worker`
-    # instead of `:supervisor` and use the wrong shutdown timeout
     Supervisor.child_spec(
       %{id: __MODULE__, start: {__MODULE__, :start_link, start_link_arguments}, type: :supervisor},
       []
