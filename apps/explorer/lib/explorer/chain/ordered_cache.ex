@@ -151,6 +151,7 @@ defmodule Explorer.Chain.OrderedCache do
 
     # credo:disable-for-next-line Credo.Check.Refactor.LongQuoteBlocks
     quote do
+      require Logger
       alias Explorer.Chain.OrderedCache
 
       @behaviour OrderedCache
@@ -256,24 +257,30 @@ defmodule Explorer.Chain.OrderedCache do
 
       def update(elements) when is_list(elements) do
         case Explorer.mode() do
-          mode when mode in [:all, :api] ->
-            elements
-            |> Enum.sort_by(&element_to_id(&1), &prevails?(&1, &2))
-            |> Enum.take(max_size())
-            |> do_preloads()
-            |> Enum.map(&{element_to_id(&1), sanitize_before_update(&1)})
-            |> do_raw_update()
-
-          :indexer ->
-            prepared_elements =
+          mode when mode in [:all, :api, :indexer] ->
+            elements_for_preload =
               elements
               |> Enum.sort_by(&element_to_id(&1), &prevails?(&1, &2))
               |> Enum.take(max_size())
-              |> do_preloads()
-              |> Enum.map(&{element_to_id(&1), sanitize_before_update(&1)})
 
-            Node.list()
-            |> :erpc.multicast(__MODULE__, :do_raw_update, [prepared_elements])
+            preloaded_elements =
+              try do
+                do_preloads(elements_for_preload)
+              rescue
+                postgrex_error in Postgrex.Error ->
+                  Logger.error(fn ->
+                    [
+                      "Error while preloading elements for ordered cache: ",
+                      Exception.format(:error, postgrex_error, __STACKTRACE__)
+                    ]
+                  end)
+
+                  elements_for_preload
+              end
+
+            preloaded_elements
+            |> Enum.map(&{element_to_id(&1), sanitize_before_update(&1)})
+            |> do_raw_update()
 
           _ ->
             :ok
@@ -293,6 +300,9 @@ defmodule Explorer.Chain.OrderedCache do
               # ids_list is set to never expire
               {:ok, %ConCache.Item{value: updated_list, ttl: :infinity}}
             end)
+
+          :indexer ->
+            Node.list() |> :erpc.multicast(__MODULE__, :do_raw_update, [prepared_elements])
 
           _ ->
             :ok
