@@ -70,7 +70,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Events do
           {cached_logs, cache}
       end
 
-    if length(logs) > 0 do
+    unless Enum.empty?(logs) do
       log_debug("Found #{length(logs)} SendRootUpdated logs")
     end
 

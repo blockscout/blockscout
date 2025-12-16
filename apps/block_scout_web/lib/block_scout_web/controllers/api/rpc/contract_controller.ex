@@ -355,7 +355,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         files_array
         |> Enum.filter(fn file -> SmartContractHelper.sol_file?(file.filename) end)
 
-      if length(jsons) > 0 and length(sols) > 0 do
+      if not Enum.empty?(jsons) and not Enum.empty?(sols) do
         {:ok, files_array}
       else
         {:error, "You should attach at least one *.json and one *.sol files"}
