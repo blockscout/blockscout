@@ -17,6 +17,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix tests for on-demand internal transaction fetcher ([#13744](https://github.com/blockscout/blockscout/pull/13744))
 - `batch_number` input param is now integer for OP and Scroll API endpoints ([#13727](https://github.com/blockscout/blockscout/pull/13727))
 - Set timeout: :infinity for delete zero value migration ([#13708](https://github.com/blockscout/blockscout/pull/13708))
 - Limit batch size for placeholders insertion ([#13699](https://github.com/blockscout/blockscout/pull/13699))
