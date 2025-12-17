@@ -108,7 +108,7 @@ defmodule Explorer.Chain.Withdrawal do
   @doc """
   Upserts the count of all withdrawals into the `last_fetched_counters` table.
   """
-  @spec upsert_count_withdrawals(Wei.t()) :: :ok | {:error, any()}
+  @spec upsert_count_withdrawals(non_neg_integer()) :: {:ok, any()} | {:error, any()}
   def upsert_count_withdrawals(index) do
     LastFetchedCounter.upsert(%{
       counter_type: "withdrawals_count",

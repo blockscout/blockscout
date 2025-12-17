@@ -1087,8 +1087,25 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @doc """
-  Fetches the first trace from the Nethermind trace URL.
+  Fetches and formats the first internal transaction trace for the given transaction parameters from the EthereumJSONRPC.
+
+  This function retrieves the first trace by delegating to
+  EthereumJSONRPC.fetch_first_trace and then formats the result into a
+  structure suitable for insertion into the database, including type
+  conversions and block index calculation.
+
+  ## Parameters
+  - `transactions_params`: List of transaction parameter maps containing
+    block_hash, block_number, hash_data, and transaction_index
+  - `json_rpc_named_arguments`: Named arguments for the JSON RPC call
+
+  ## Returns
+  - `{:ok, [formatted_trace]}` if the trace is successfully fetched and
+    formatted
+  - `{:error, reason}` if there's an error fetching the trace
+  - `:ignore` if the trace should be ignored
   """
+  @spec fetch_first_trace(list(map()), keyword()) :: {:ok, [map()]} | {:error, term()} | :ignore
   def fetch_first_trace(transactions_params, json_rpc_named_arguments) do
     case EthereumJSONRPC.fetch_first_trace(transactions_params, json_rpc_named_arguments) do
       {:ok, [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]} ->

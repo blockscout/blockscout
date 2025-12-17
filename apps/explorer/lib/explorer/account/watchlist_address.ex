@@ -88,8 +88,6 @@ defmodule Explorer.Account.WatchlistAddress do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
-  alias Explorer.PagingOptions
-
   @default_page_size 50
   @default_paging_options %PagingOptions{page_size: @default_page_size}
 
@@ -365,6 +363,11 @@ defmodule Explorer.Account.WatchlistAddress do
     end)
   end
 
+  @doc """
+  Fetches the watchlist transactions for the given watchlist ID and options.
+  """
+  @spec fetch_watchlist_transactions(integer(), keyword()) ::
+          {%{Hash.Address.t() => %{label: String.t(), display_name: String.t()}}, [Transaction.t()]}
   def fetch_watchlist_transactions(watchlist_id, options) do
     watchlist_addresses =
       watchlist_id

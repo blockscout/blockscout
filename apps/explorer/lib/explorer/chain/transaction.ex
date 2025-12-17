@@ -2424,6 +2424,10 @@ defmodule Explorer.Chain.Transaction do
 
   def method_id(_transaction), do: "0x"
 
+  @doc """
+  Fetches the revert reason of a transaction.
+  """
+  @spec fetch_transaction_revert_reason(__MODULE__.t()) :: String.t()
   def fetch_transaction_revert_reason(transaction) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
@@ -2504,6 +2508,12 @@ defmodule Explorer.Chain.Transaction do
   @limit_showing_transactions 10_000
 
   @doc """
+  Returns the maximum number of transactions that can be shown in the UI.
+  """
+  @spec limit_showing_transactions :: non_neg_integer()
+  def limit_showing_transactions, do: @limit_showing_transactions
+
+  @doc """
   Returns the paged list of collated transactions that occurred recently from newest to oldest using `block_number`
   and `index`.
 
@@ -2573,6 +2583,10 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
+  @doc """
+  Applies a filter to the query based on the method ID of the transaction.
+  """
+  @spec apply_filter_by_method_id_to_transactions(query :: Ecto.Query.t(), filter :: list() | nil) :: Ecto.Query.t()
   def apply_filter_by_method_id_to_transactions(query, nil), do: query
 
   def apply_filter_by_method_id_to_transactions(query, filter) when is_list(filter) do
@@ -2619,6 +2633,10 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
+  @doc """
+  Applies a filter to the query based on the type of transaction.
+  """
+  @spec apply_filter_by_type_to_transactions(query :: Ecto.Query.t(), filter :: list()) :: Ecto.Query.t()
   def apply_filter_by_type_to_transactions(query, [_ | _] = filter) do
     {dynamic, modified_query} = apply_filter_by_type_to_transactions_inner(filter, query)
 
@@ -2708,7 +2726,23 @@ defmodule Explorer.Chain.Transaction do
     dynamic([transaction], ^dynamic or transaction.type == 3)
   end
 
-  # RAP - random access pagination
+  @doc """
+  Returns recently collated transactions using random access pagination (RAP).
+
+  This function supports efficient pagination for large transaction lists by
+  allowing direct access to any page without requiring sequential traversal.
+  It uses a cache for the first page to improve performance.
+
+  ## Parameters
+  - `options`: Keyword list of options including:
+    - `:necessity_by_association` - Associations to preload (defaults to %{})
+    - `:paging_options` - Random access pagination options (defaults to @default_paging_options)
+
+  ## Returns
+  - A map containing:
+    - `:total_transactions_count` - Total number of transactions available
+    - `:transactions` - List of transaction structs for the requested page
+  """
   @spec recent_collated_transactions_for_rap([Chain.paging_options() | Chain.necessity_by_association_option()]) :: %{
           :total_transactions_count => non_neg_integer(),
           :transactions => [__MODULE__.t()]
@@ -2754,6 +2788,15 @@ defmodule Explorer.Chain.Transaction do
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
   end
 
+  @doc """
+  Returns the count of available transactions shown in the UI.
+
+  This function returns the number of transactions that have been mined and are
+  available for display, up to a maximum of #{@limit_showing_transactions} transactions.
+
+  ## Returns
+  - The count of available transactions (non-negative integer)
+  """
   @spec transactions_available_count() :: non_neg_integer()
   def transactions_available_count do
     __MODULE__
@@ -2801,6 +2844,9 @@ defmodule Explorer.Chain.Transaction do
   defp page_in_bounds?(page_number, page_size),
     do: page_size <= @limit_showing_transactions && @limit_showing_transactions - page_number * page_size >= 0
 
+  @doc """
+  Finds and updates replaced transactions in the database.
+  """
   @spec find_and_update_replaced_transactions([
           %{
             required(:nonce) => non_neg_integer,
@@ -2830,14 +2876,16 @@ defmodule Explorer.Chain.Transaction do
     transactions_to_update =
       from(pending in __MODULE__,
         join: duplicate in subquery(query),
-        on: duplicate.nonce == pending.nonce,
-        on: duplicate.from_address_hash == pending.from_address_hash,
+        on: duplicate.nonce == pending.nonce and duplicate.from_address_hash == pending.from_address_hash,
         where: pending.hash in ^hashes and is_nil(pending.block_hash)
       )
 
     Repo.update_all(transactions_to_update, [set: [error: "dropped/replaced", status: :error]], timeout: timeout)
   end
 
+  @doc """
+  Updates the replaced transactions in the database.
+  """
   @spec update_replaced_transactions([
           %{
             required(:nonce) => non_neg_integer,
@@ -2882,6 +2930,9 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
+  @doc """
+  Streams pending transactions with the given fields.
+  """
   @spec stream_pending_transactions(
           fields :: [
             :block_hash

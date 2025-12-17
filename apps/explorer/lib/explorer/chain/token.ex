@@ -539,6 +539,21 @@ defmodule Explorer.Chain.Token do
     end
   end
 
+  @doc """
+  Fetches token counters (transfers count and holders count) for a given token address.
+
+  This function spawns two async tasks to fetch the token transfers count and
+  token holders count concurrently. If a task times out or exits, it falls back
+  to fetching the cached value.
+
+  ## Parameters
+  - `address_hash`: The contract address hash of the token
+  - `timeout`: The timeout in milliseconds for the async tasks
+
+  ## Returns
+  - A tuple `{transfers_count, holders_count}` where each value is an integer or nil
+  """
+  @spec fetch_token_counters(Hash.Address.t(), timeout()) :: {integer() | nil, integer() | nil}
   def fetch_token_counters(address_hash, timeout) do
     total_token_transfers_task =
       Task.async(fn ->
@@ -662,7 +677,7 @@ defmodule Explorer.Chain.Token do
   @doc """
   Gets the token types for a list of contract address hashes.
   """
-  @spec get_token_types([String.t()]) :: [{Hash.Address.t(), String.t()}]
+  @spec get_token_types([Hash.Address.t()]) :: [{Hash.Address.t(), String.t()}]
   def get_token_types(hashes) do
     query =
       from(

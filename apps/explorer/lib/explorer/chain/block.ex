@@ -796,19 +796,20 @@ defmodule Explorer.Chain.Block do
   """
   @spec block_combined_rewards(__MODULE__.t()) :: Wei.t()
   def block_combined_rewards(block) do
-    {:ok, value} =
-      block.rewards
-      |> Enum.reduce(
-        0,
-        fn block_reward, acc ->
-          {:ok, decimal} = Wei.dump(block_reward.reward)
+    block.rewards
+    |> Enum.reduce(
+      0,
+      fn block_reward, acc ->
+        {:ok, decimal} = Wei.dump(block_reward.reward)
 
-          Decimal.add(decimal, acc)
-        end
-      )
-      |> Wei.cast()
-
-    value
+        Decimal.add(decimal, acc)
+      end
+    )
+    |> Wei.cast()
+    |> case do
+      {:ok, value} -> value
+      _ -> %Wei{value: Decimal.new(0)}
+    end
   end
 
   @doc """
