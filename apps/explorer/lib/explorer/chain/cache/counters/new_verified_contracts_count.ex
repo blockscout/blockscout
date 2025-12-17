@@ -100,7 +100,6 @@ defmodule Explorer.Chain.Cache.Counters.NewVerifiedContractsCount do
   defp count_new_verified_contracts do
     query =
       from(contract in SmartContract,
-        select: contract.inserted_at,
         where: fragment("NOW() - ? <= interval '24 hours'", contract.inserted_at)
       )
 
