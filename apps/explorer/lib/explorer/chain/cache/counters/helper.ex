@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
   """
 
   alias Explorer.Chain
+  alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
 
   @block_number_threshold_1 10_000
@@ -177,7 +178,7 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
   @spec ttl(atom, String.t()) :: non_neg_integer()
   def ttl(module, management_variable) do
     min_blockchain_block_number = Application.get_env(:indexer, :first_block)
-    max_block_number = Chain.fetch_max_block_number()
+    max_block_number = Block.fetch_max_block_number()
     blocks_amount = max_block_number - min_blockchain_block_number
     global_ttl_from_var = Application.get_env(:explorer, module)[:global_ttl]
 

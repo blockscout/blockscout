@@ -41,7 +41,7 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       add(:block_hash, references(:blocks, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
 
       # `null` when a pending transaction
-      # denormalized from `blocks.number` to improve `Explorer.Chain.recent_collated_transactions/0` performance
+      # denormalized from `blocks.number` to improve `Explorer.Chain.Transaction.recent_collated_transactions/0` performance
       add(:block_number, :integer, null: true)
 
       add(:from_address_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: false)

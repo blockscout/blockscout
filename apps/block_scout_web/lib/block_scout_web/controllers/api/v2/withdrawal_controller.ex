@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Withdrawal
 
   tags(["withdrawals"])
 
@@ -68,8 +69,8 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
   def withdrawals_counters(conn, _params) do
     conn
     |> json(%{
-      withdrawals_count: Chain.count_withdrawals_from_cache(api?: true),
-      withdrawals_sum: Chain.sum_withdrawals_from_cache(api?: true)
+      withdrawals_count: Withdrawal.count_withdrawals_from_cache(api?: true),
+      withdrawals_sum: Withdrawal.sum_withdrawals_from_cache(api?: true)
     })
   end
 end

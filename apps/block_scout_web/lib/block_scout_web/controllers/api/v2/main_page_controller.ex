@@ -7,7 +7,9 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   use OpenApiSpex.ControllerSpecs
 
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView}
+  alias Explorer.Account.WatchlistAddress
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Chain.Transaction
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
@@ -97,7 +99,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   """
   @spec transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transactions(conn, _params) do
-    recent_transactions = Chain.recent_collated_transactions(false, @transactions_options)
+    recent_transactions = Transaction.recent_collated_transactions(false, @transactions_options)
 
     conn
     |> put_status(200)
@@ -126,7 +128,8 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   @spec watchlist_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def watchlist_transactions(conn, _params) do
     with {:auth, %{watchlist_id: watchlist_id}} <- {:auth, current_user(conn)} do
-      {watchlist_names, transactions} = Chain.fetch_watchlist_transactions(watchlist_id, @transactions_options)
+      {watchlist_names, transactions} =
+        WatchlistAddress.fetch_watchlist_transactions(watchlist_id, @transactions_options)
 
       conn
       |> put_status(200)

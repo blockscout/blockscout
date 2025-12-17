@@ -2,7 +2,6 @@
 defmodule Explorer.Market.Source.CoinGeckoTest do
   use ExUnit.Case
 
-  alias Explorer.Market.Token
   alias Explorer.Market.Source.CoinGecko
   alias Plug.Conn
 

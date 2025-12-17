@@ -9,14 +9,15 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
 
   import Ecto.Query
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
 
   alias Explorer.Chain.{
     Block,
     InternalTransaction,
     PendingBlockOperation,
     PendingOperationsHelper,
-    PendingTransactionOperation
+    PendingTransactionOperation,
+    Transaction
   }
 
   alias Explorer.Chain.InternalTransaction.DeleteQueue
@@ -87,7 +88,7 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
   defp insert_pending_operations(block_numbers) do
     case PendingOperationsHelper.pending_operations_type() do
       "transactions" ->
-        transactions = Chain.get_transactions_of_block_numbers(block_numbers)
+        transactions = Transaction.get_transactions_of_block_numbers(block_numbers)
 
         pto_params =
           transactions

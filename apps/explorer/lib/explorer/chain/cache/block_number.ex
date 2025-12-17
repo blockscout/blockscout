@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Cache.BlockNumber do
     ttl_check_interval: Application.get_env(:explorer, __MODULE__)[:ttl_check_interval],
     global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl]
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Block
 
   def handle_update(_key, nil, value), do: {:ok, value}
 
@@ -51,8 +51,8 @@ defmodule Explorer.Chain.Cache.BlockNumber do
   @spec fetch_from_db(:min | :max) :: non_neg_integer()
   defp fetch_from_db(key) do
     case key do
-      :min -> Chain.fetch_min_block_number()
-      :max -> Chain.fetch_max_block_number()
+      :min -> Block.fetch_min_block_number()
+      :max -> Block.fetch_max_block_number()
     end
   end
 end

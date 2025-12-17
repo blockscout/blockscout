@@ -8,7 +8,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
 
   import Ecto.Query
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
 
   alias Explorer.Chain.{
     Block,
@@ -114,7 +114,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
             transactions =
               inserted
               |> Enum.map(& &1.transaction_hash)
-              |> Chain.get_transactions_by_hashes()
+              |> Transaction.get_transactions_by_hashes()
 
             {[], transactions}
         end

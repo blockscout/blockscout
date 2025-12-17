@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Beacon.DepositTest do
       actual_block = insert(:block, consensus: true, number: reorg.number)
       transaction = insert(:transaction) |> with_block(actual_block)
 
-      reorged_logs = [
+      _reorged_logs = [
         insert(:log,
           address: deposit_contract,
           block: reorg,

@@ -219,7 +219,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
   defp preload_entries(%{block_hash: block_hash} = entry) do
     block =
       block_hash
-      |> Chain.fetch_block_by_hash()
+      |> Block.fetch_block_by_hash()
       |> Repo.preload([:transactions, [transactions: :signed_authorizations]])
 
     entry

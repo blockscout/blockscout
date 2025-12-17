@@ -6,7 +6,6 @@ defmodule Indexer.Fetcher.OnDemand.FirstTrace do
   use GenServer
   use Indexer.Fetcher, restart: :permanent
 
-  alias Explorer.Chain
   alias Explorer.Chain.{Import, InternalTransaction}
   alias Explorer.Chain.Import.Runner.InternalTransactions
 
@@ -32,7 +31,7 @@ defmodule Indexer.Fetcher.OnDemand.FirstTrace do
     hash_string = to_string(transaction.hash)
 
     response =
-      Chain.fetch_first_trace(
+      InternalTransaction.fetch_first_trace(
         [
           %{
             block_hash: transaction.block_hash,
