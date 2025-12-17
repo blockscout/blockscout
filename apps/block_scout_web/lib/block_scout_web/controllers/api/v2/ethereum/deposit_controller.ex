@@ -27,8 +27,7 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
            next_page_params_example: %{
              "index" => 123,
              "items_count" => 50
-           },
-           title_prefix: "BeaconDeposits"
+           }
          )},
       forbidden: ForbiddenResponse.response()
     ]
@@ -86,7 +85,6 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
       ok:
         {"Total count of beacon deposits.", "application/json",
          %Schema{
-           title: "TotalBeaconDepositsCount",
            type: :object,
            properties: %{
              deposits_count: %Schema{type: :integer, nullable: false}

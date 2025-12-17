@@ -9,6 +9,7 @@ defmodule Explorer.Chain.InternalTransaction do
   alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
   alias Explorer.Chain.DenormalizationHelper
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
+  alias Explorer.Migrator.DeleteZeroValueInternalTransactions
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -679,7 +680,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> filter_by_type(type_filter, call_type_filter)
     |> filter_by_call_type(call_type_filter)
     |> limit(^paging_options.page_size)
-    |> order_by([internal_transaction], asc: internal_transaction.block_index)
+    |> order_by([internal_transaction], asc: internal_transaction.transaction_index, asc: internal_transaction.index)
     |> Chain.select_repo(options).all()
   end
 
@@ -708,67 +709,9 @@ defmodule Explorer.Chain.InternalTransaction do
             __MODULE__.t()
           ]
   def address_to_internal_transactions(hash, options \\ []) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    direction = Keyword.get(options, :direction)
-
-    from_block = Chain.from_block(options)
-    to_block = Chain.to_block(options)
-
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    case paging_options do
-      %PagingOptions{key: {0, 0, 0}} ->
-        []
-
-      _ ->
-        if direction == nil || direction == "" do
-          query_to_address_hash_wrapped =
-            __MODULE__
-            |> where_nonpending_block()
-            |> where_address_fields_match(hash, :to_address_hash)
-            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-            |> where_is_different_from_parent_transaction()
-            |> common_where_limit_order(paging_options)
-            |> Chain.wrapped_union_subquery()
-
-          query_from_address_hash_wrapped =
-            __MODULE__
-            |> where_nonpending_block()
-            |> where_address_fields_match(hash, :from_address_hash)
-            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-            |> where_is_different_from_parent_transaction()
-            |> common_where_limit_order(paging_options)
-            |> Chain.wrapped_union_subquery()
-
-          query_created_contract_address_hash_wrapped =
-            __MODULE__
-            |> where_nonpending_block()
-            |> where_address_fields_match(hash, :created_contract_address_hash)
-            |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-            |> where_is_different_from_parent_transaction()
-            |> common_where_limit_order(paging_options)
-            |> Chain.wrapped_union_subquery()
-
-          query_to_address_hash_wrapped
-          |> union_all(^query_from_address_hash_wrapped)
-          |> union_all(^query_created_contract_address_hash_wrapped)
-          |> Chain.wrapped_union_subquery()
-          |> common_where_and_order(paging_options)
-          |> preload(:block)
-          |> Chain.join_associations(necessity_by_association)
-          |> Chain.select_repo(options).all()
-          |> deduplicate_and_trim_internal_transactions(paging_options)
-        else
-          __MODULE__
-          |> where_nonpending_block()
-          |> where_address_fields_match(hash, direction)
-          |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-          |> where_is_different_from_parent_transaction()
-          |> common_where_limit_order(paging_options)
-          |> preload(:block)
-          |> Chain.join_associations(necessity_by_association)
-          |> Chain.select_repo(options).all()
-        end
+    case Keyword.get(options, :paging_options, @default_paging_options) do
+      %PagingOptions{key: {0, 0, 0}} -> []
+      _ -> fetch_from_db_by_address(hash, options)
     end
   end
 
@@ -782,6 +725,113 @@ defmodule Explorer.Chain.InternalTransaction do
       {internal_transaction.transaction_hash, internal_transaction.index}
     end)
     |> Enum.take(paging_options.page_size)
+  end
+
+  @doc """
+    Determines whether internal transactions for the given block number are present in the database.
+
+    When the DeleteZeroValueInternalTransactions migration is enabled, internal
+    transactions for blocks older than the border_number may have been removed
+    from the database. This function returns false for those old blocks,
+    indicating that the data must be fetched on-demand from RPC instead.
+
+    ## Parameters
+    - `block_number`: The block number to check, or nil for pending transactions
+
+    ## Returns
+    - `true` if internal transactions are present in the database
+    - `false` if internal transactions have been deleted and must be fetched on-demand
+  """
+  @spec present_in_db?(non_neg_integer() | nil) :: boolean()
+  def present_in_db?(nil), do: true
+
+  def present_in_db?(block_number) do
+    if Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] do
+      border_number = DeleteZeroValueInternalTransactions.border_number()
+      is_nil(border_number) or border_number < block_number
+    else
+      true
+    end
+  end
+
+  @doc """
+    Fetches internal transactions from the database for the given address hash with specified options.
+
+    When direction is nil or empty, the function performs a union query across
+    all three address roles (to_address, from_address, created_contract_address)
+    and deduplicates the results. When direction is specified, it performs a
+    single query filtering by the specified address field.
+
+    ## Parameters
+    - `hash`: The address hash to query internal transactions for
+    - `options`: Keyword list with the following keys:
+      - `:necessity_by_association` - associations to preload as required or optional
+      - `:direction` - filter by address role (:to, :from, :to_address_hash, :from_address_hash, :created_contract_address_hash, or nil for all)
+      - `:from_block` - starting block number for the query range
+      - `:to_block` - ending block number for the query range
+      - `:paging_options` - pagination options including page_size and key
+
+    ## Returns
+    - List of InternalTransaction structs matching the query, with deduplication applied when direction is nil
+  """
+  @spec fetch_from_db_by_address(Hash.Address.t(), Keyword.t()) :: [__MODULE__.t()]
+  def fetch_from_db_by_address(hash, options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    direction = Keyword.get(options, :direction)
+
+    from_block = Chain.from_block(options)
+    to_block = Chain.to_block(options)
+
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    if direction == nil || direction == "" do
+      query_to_address_hash_wrapped =
+        __MODULE__
+        |> where_nonpending_block()
+        |> where_address_fields_match(hash, :to_address_hash)
+        |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+        |> where_is_different_from_parent_transaction()
+        |> common_where_limit_order(paging_options)
+        |> Chain.wrapped_union_subquery()
+
+      query_from_address_hash_wrapped =
+        __MODULE__
+        |> where_nonpending_block()
+        |> where_address_fields_match(hash, :from_address_hash)
+        |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+        |> where_is_different_from_parent_transaction()
+        |> common_where_limit_order(paging_options)
+        |> Chain.wrapped_union_subquery()
+
+      query_created_contract_address_hash_wrapped =
+        __MODULE__
+        |> where_nonpending_block()
+        |> where_address_fields_match(hash, :created_contract_address_hash)
+        |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+        |> where_is_different_from_parent_transaction()
+        |> common_where_limit_order(paging_options)
+        |> Chain.wrapped_union_subquery()
+
+      query_to_address_hash_wrapped
+      |> union_all(^query_from_address_hash_wrapped)
+      |> union_all(^query_created_contract_address_hash_wrapped)
+      |> Chain.wrapped_union_subquery()
+      |> common_where_and_order(paging_options)
+      |> preload(:block)
+      |> Chain.join_associations(necessity_by_association)
+      |> Chain.select_repo(options).all()
+      |> deduplicate_and_trim_internal_transactions(paging_options)
+    else
+      __MODULE__
+      |> where_nonpending_block()
+      |> where_address_fields_match(hash, direction)
+      |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+      |> where_is_different_from_parent_transaction()
+      |> common_where_limit_order(paging_options)
+      |> preload(:block)
+      |> Chain.join_associations(necessity_by_association)
+      |> Chain.select_repo(options).all()
+    end
   end
 
   defp common_where_limit_order(query, paging_options) do
@@ -970,15 +1020,19 @@ defmodule Explorer.Chain.InternalTransaction do
     end
   end
 
-  defp page_block_internal_transaction(query, %PagingOptions{key: %{block_index: block_index}}) do
+  defp page_block_internal_transaction(query, %PagingOptions{key: %{transaction_index: transaction_index, index: index}}) do
     query
-    |> where([internal_transaction], internal_transaction.block_index > ^block_index)
+    |> where(
+      [internal_transaction],
+      (internal_transaction.transaction_index == ^transaction_index and internal_transaction.index > ^index) or
+        internal_transaction.transaction_index > ^transaction_index
+    )
   end
 
   defp page_block_internal_transaction(query, _), do: query
 
-  def internal_transaction_to_block_paging_options(%__MODULE__{block_index: block_index}) do
-    %{"block_index" => block_index}
+  def internal_transaction_to_block_paging_options(%__MODULE__{transaction_index: transaction_index, index: index}) do
+    %{"transaction_index" => transaction_index, "index" => index}
   end
 
   defp where_consensus_transactions(query) do

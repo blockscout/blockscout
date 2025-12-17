@@ -27,8 +27,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
            next_page_params_example: %{
              "index" => 50,
              "items_count" => 50
-           },
-           title_prefix: "Withdrawals"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]

@@ -882,7 +882,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
           transaction =
             :transaction
             |> insert()
-            |> with_block(block)
+            |> with_block(block, index: index)
 
           insert(:internal_transaction,
             transaction: transaction,

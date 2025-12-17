@@ -5,13 +5,13 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   alias Explorer.{Chain, PagingOptions}
 
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.InternalTransaction
 
   import BlockScoutWeb.Chain,
     only: [
       split_list_by_page: 1,
       paging_options: 1,
-      next_page_params: 3
+      next_page_params: 3,
+      fetch_internal_transactions: 1
     ]
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
@@ -42,8 +42,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
              "transaction_index" => 68,
              "block_number" => 22_133_247,
              "items_count" => 50
-           },
-           title_prefix: "InternalTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -62,7 +61,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
 
       result =
         options
-        |> InternalTransaction.fetch()
+        |> fetch_internal_transactions()
         |> split_list_by_page()
 
       {internal_transactions, next_page} = result

@@ -246,6 +246,18 @@ defmodule ConfigHelper do
   def parse_bool_env_var(env_var, default_value \\ "false"),
     do: String.downcase(safe_get_env(env_var, default_value)) == "true"
 
+  @spec parse_path_env_var(String.t(), String.t() | nil) :: String.t() | nil
+  def parse_path_env_var(env_var, default_value \\ nil) do
+    env_var
+    |> System.get_env(default_value)
+    |> case do
+      "//" <> _ = path -> raise "Invalid path in environment variable #{env_var}: #{path}"
+      "/" <> _ = path -> path
+      path when is_binary(path) -> "/" <> path
+      other -> other
+    end
+  end
+
   @spec cache_ttl_check_interval(boolean()) :: non_neg_integer() | false
   def cache_ttl_check_interval(disable_indexer?) do
     if(disable_indexer?, do: :timer.seconds(1), else: false)

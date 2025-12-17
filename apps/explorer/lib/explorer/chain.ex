@@ -1138,7 +1138,13 @@ defmodule Explorer.Chain do
           address_current_token_balances: imported[:address_current_token_balances] || []
         }
 
+        filtered_addresses_to_import =
+          MultichainSearch.filter_addresses_to_multichain_import(assets_to_import[:addresses], options[:broadcast])
+
+        assets_to_import = Map.put(assets_to_import, :addresses, filtered_addresses_to_import)
+
         MultichainSearch.send_data_to_queue(assets_to_import)
+
         result
 
       other_result ->

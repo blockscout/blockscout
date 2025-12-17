@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Application do
 
   alias BlockScoutWeb.{Endpoint, HealthEndpoint, RateLimit.Hammer}
   alias BlockScoutWeb.Utility.RateLimitConfigHelper
+  alias Explorer
 
   if @disable_api? do
     def start(_type, _args) do
@@ -60,10 +61,20 @@ defmodule BlockScoutWeb.Application do
     :ok
   end
 
+  alias Indexer.Prometheus.Metrics, as: IndexerMetrics
+
+  defp indexer_metric_worker do
+    if Explorer.mode() in [:indexer, :all] do
+      [{IndexerMetrics, []}]
+    else
+      []
+    end
+  end
+
   if @disable_api? do
     defp setup_and_define_children do
       BlockScoutWeb.Prometheus.Exporter.setup()
-      {[], []}
+      {indexer_metric_worker(), []}
     end
   else
     defp setup_and_define_children do
@@ -79,7 +90,6 @@ defmodule BlockScoutWeb.Application do
       }
 
       alias BlockScoutWeb.Utility.EventHandlersMetrics
-      alias Explorer.Chain.Metrics.IndexerMetrics
       alias Explorer.Chain.Metrics.PublicMetrics, as: PublicChainMetrics
 
       Exporter.setup()
@@ -93,21 +103,22 @@ defmodule BlockScoutWeb.Application do
         "Current API rate limit by IP #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_ip])} reqs/sec"
       )
 
+      base_workers = [
+        {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
+        {MainPage, name: MainPage},
+        {Main, name: Main},
+        {SmartContract, name: SmartContract},
+        {TokenTransfer, name: TokenTransfer},
+        {BlocksIndexedCounter, name: BlocksIndexedCounter},
+        {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
+        {EventHandlersMetrics, []},
+        {PublicChainMetrics, []},
+        Hammer.child_for_supervisor()
+      ]
+
       # Define workers and child supervisors to be supervised
       {
-        [
-          {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
-          {MainPage, name: MainPage},
-          {Main, name: Main},
-          {SmartContract, name: SmartContract},
-          {TokenTransfer, name: TokenTransfer},
-          {BlocksIndexedCounter, name: BlocksIndexedCounter},
-          {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
-          {EventHandlersMetrics, []},
-          {PublicChainMetrics, []},
-          {IndexerMetrics, []},
-          Hammer.child_for_supervisor()
-        ],
+        base_workers ++ indexer_metric_worker(),
         [
           {Absinthe.Subscription, Endpoint}
         ]

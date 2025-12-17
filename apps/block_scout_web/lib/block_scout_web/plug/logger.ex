@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Plug.Logger do
   """
 
   require Logger
+  alias BlockScoutWeb.API.RPC.RPCTranslator
   alias Plug.Conn
   @behaviour Plug
 
@@ -50,7 +51,8 @@ defmodule BlockScoutWeb.Plug.Logger do
 
   defp endpoint(conn) do
     if conn.query_string do
-      "#{conn.request_path}?#{conn.query_string}"
+      redacted_query_string = RPCTranslator.redact_apikey(conn.query_string)
+      "#{conn.request_path}?#{redacted_query_string}"
     else
       conn.request_path
     end

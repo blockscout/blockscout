@@ -4,16 +4,29 @@
 
 ### 🚀 Features
 
+- Update InternalTransactionsAddressPlaceholder upserts ([#13696](https://github.com/blockscout/blockscout/pull/13696))
+- Internal transactions on demand fetcher ([#13604](https://github.com/blockscout/blockscout/pull/13604))
+- Indexer config API endpoint ([#13679](https://github.com/blockscout/blockscout/pull/13679))
 - Add DIA market source ([#12678](https://github.com/blockscout/blockscout/issues/12678))
 - Add metadata to eth bytecode DB lookup request ([#13625](https://github.com/blockscout/blockscout/issues/13625))
 - Support ZRC-2 tokens for `zilliqa` chain type ([#13443](https://github.com/blockscout/blockscout/issues/13443))
-- Indexer monitor Prometheus metrics ([#13539](https://github.com/blockscout/blockscout/issues/13539))
-- Hot smart-contracts ([#13471](https://github.com/blockscout/blockscout/issues/13471))
+- Indexer monitor Prometheus metrics ([#13539](https://github.com/blockscout/blockscout/issues/13539), [#13668](https://github.com/blockscout/blockscout/pull/13668), [#13670](https://github.com/blockscout/blockscout/pull/13670))
+- Hot smart-contracts ([#13471](https://github.com/blockscout/blockscout/issues/13471), [#13669](https://github.com/blockscout/blockscout/pull/13669))
 - Support OP Jovian upgrade, other enhancements ([#13538](https://github.com/blockscout/blockscout/issues/13538))
 - Scope celo under optimism chain type ([#13375](https://github.com/blockscout/blockscout/issues/13375))
 
 ### 🐛 Bug Fixes
 
+- `batch_number` input param is now integer for OP and Scroll API endpoints ([#13727](https://github.com/blockscout/blockscout/pull/13727))
+- Set timeout: :infinity for delete zero value migration ([#13708](https://github.com/blockscout/blockscout/pull/13708))
+- Limit batch size for placeholders insertion ([#13699](https://github.com/blockscout/blockscout/pull/13699))
+- Add missed reputation fetch ([#13695](https://github.com/blockscout/blockscout/pull/13695))
+- Fix NFTMediaHandler postgres parameters overflow error ([#13694](https://github.com/blockscout/blockscout/pull/13694))
+- Add smart contract preload to hot contracts query ([#13691](https://github.com/blockscout/blockscout/pull/13691))
+- Restore fetcher name to dev console output ([#13681](https://github.com/blockscout/blockscout/pull/13681))
+- JSON RPC encoding for signed authorizations ([#13678](https://github.com/blockscout/blockscout/pull/13678))
+- Fix 500 for pending tx in tokentx RPC API endpoint ([#13666](https://github.com/blockscout/blockscout/pull/13666))
+- Fix 500 for pending tx in gettxinfo RPC API endpoint([#13665](https://github.com/blockscout/blockscout/pull/13665))
 - `Mix.env()` in `runtime.exs` ([#13641](https://github.com/blockscout/blockscout/issues/13641))
 - Celo aggregated election rewards migrator test ([#13639](https://github.com/blockscout/blockscout/issues/13639))
 - Fix filecoin web tests ([#13634](https://github.com/blockscout/blockscout/issues/13634))
@@ -36,6 +49,14 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- GitHub Actions workflows: stop using ELIXIR_VERSION & OTP_VERSION from org/repo variables ([#13718](https://github.com/blockscout/blockscout/pull/13718))
+- Refactoring of the application mode config ([#13715](https://github.com/blockscout/blockscout/pull/13715))
+- Eliminate warnings in the Swagger file ([#13714](https://github.com/blockscout/blockscout/pull/13714))
+- Change URL to Solidity binaries list ([#13711](https://github.com/blockscout/blockscout/pull/13711))
+- Add osaka to the default list of supported EVM versions ([#13680](https://github.com/blockscout/blockscout/pull/13680))
+- Filter out empty addresses from multichain export ([#13674](https://github.com/blockscout/blockscout/pull/13674))
+- Validate NFT_MEDIA_HANDLER_BUCKET_FOLDER env ([#13671](https://github.com/blockscout/blockscout/pull/13671))
+- Enhance RPC API errors logging ([#13664](https://github.com/blockscout/blockscout/pull/13664))
 - Use chain id `31337` for `anvil` ([#13644](https://github.com/blockscout/blockscout/issues/13644))
 - Update devcontainer image to use Elixir 1.19.4 ([#13645](https://github.com/blockscout/blockscout/issues/13645))
 - Elixir 1.19.3 -> 1.19.4 ([#13643](https://github.com/blockscout/blockscout/issues/13643))
@@ -53,6 +74,7 @@
 - Increase genesis file content fetch timeout ([#13527](https://github.com/blockscout/blockscout/issues/13527))
 
 ### New ENV variables
+
 | Variable              | Description                                                                                                                                                      | Parameters                                                                                      |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `INDEXER_DISABLE_HOT_SMART_CONTRACTS_FETCHER`                 | If `true`, `Indexer.Fetcher.Stats.HotSmartContracts` won't be started. Implemented in [#13471](https://github.com/blockscout/blockscout/pull/13471).                                                                                                                                                                                                                                                                                                                                                                             | Version: v9.3.0\+ <br />Default: `false` <br />Applications: Indexer                                        |

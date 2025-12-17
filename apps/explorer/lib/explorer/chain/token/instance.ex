@@ -831,7 +831,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   def batch_upsert_cdn_results(instances) do
     {_, result} =
-      Repo.insert_all(__MODULE__, instances,
+      Repo.safe_insert_all(__MODULE__, instances,
         on_conflict: {:replace, [:thumbnails, :media_type, :updated_at, :cdn_upload_error]},
         conflict_target: [:token_id, :token_contract_address_hash],
         returning: true

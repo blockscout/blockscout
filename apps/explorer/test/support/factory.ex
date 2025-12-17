@@ -70,7 +70,13 @@ defmodule Explorer.Factory do
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
-  alias Explorer.Utility.{EventNotification, MissingBalanceOfToken, MissingBlockRange}
+  alias Explorer.Utility.{
+    AddressIdToAddressHash,
+    EventNotification,
+    InternalTransactionsAddressPlaceholder,
+    MissingBalanceOfToken,
+    MissingBlockRange
+  }
 
   alias Ueberauth.Strategy.Auth0
   alias Ueberauth.Auth.{Extra, Info}
@@ -317,6 +323,22 @@ defmodule Explorer.Factory do
       hash: address_hash()
     }
     |> Map.merge(address_factory_chain_type_fields())
+  end
+
+  def address_id_to_address_hash_factory do
+    %AddressIdToAddressHash{
+      address_id: sequence("address_id", & &1),
+      address_hash: address_hash()
+    }
+  end
+
+  def deleted_internal_transactions_address_placeholder_factory do
+    %InternalTransactionsAddressPlaceholder{
+      address_id: sequence("address_id", & &1),
+      block_number: block_number(),
+      count_tos: 1,
+      count_froms: 1
+    }
   end
 
   case @chain_type do
@@ -1168,7 +1190,7 @@ defmodule Explorer.Factory do
     contract_code_info = contract_code_info()
 
     {:ok, data} = Explorer.Chain.Data.cast(contract_code_info.bytecode)
-    bytecode_md5 = Helper.contract_code_md5(data.bytes)
+    bytecode_md5 = Helper.md5(data.bytes)
 
     %SmartContract{
       address_hash: insert(:address, contract_code: contract_code_info.bytecode, verified: true).hash,

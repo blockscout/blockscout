@@ -15,7 +15,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       param_to_block_number: 1,
       put_key_value_to_paging_options: 3,
       split_list_by_page: 1,
-      parse_block_hash_or_number_param: 1
+      parse_block_hash_or_number_param: 1,
+      block_to_internal_transactions: 2
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -199,8 +200,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "Blocks"
+           }
          )}
     ]
 
@@ -244,8 +244,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "ArbitrumBatchBlocks"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -292,8 +291,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "OptimismBatchBlocks"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -341,8 +339,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "block_number" => 22_566_361,
              "items_count" => 50
-           },
-           title_prefix: "ScrollBatchBlocks"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -391,8 +388,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
              "block_number" => 12_345_678,
              "index" => 103,
              "items_count" => 50
-           },
-           title_prefix: "BlockTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -438,17 +434,17 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [block_hash_or_number_param(), internal_transaction_type_param(), internal_transaction_call_type_param()] ++
-        define_paging_params(["block_index", "items_count"]),
+        define_paging_params(["transaction_index", "index", "items_count"]),
     responses: [
       ok:
         {"Internal transactions in the specified block.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
            next_page_params_example: %{
-             "block_index" => 8,
+             "transaction_index" => 3,
+             "index" => 8,
              "items_count" => 50
-           },
-           title_prefix: "BlockInternalTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -474,7 +470,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> Keyword.merge(internal_transaction_type_options(params))
         |> Keyword.merge(internal_transaction_call_type_options(params))
 
-      internal_transactions_plus_one = InternalTransaction.block_to_internal_transactions(block.hash, full_options)
+      internal_transactions_plus_one = block_to_internal_transactions(block, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
@@ -514,8 +510,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "index" => 88_192_653,
              "items_count" => 50
-           },
-           title_prefix: "BlockWithdrawals"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -618,8 +613,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            next_page_params_example: %{
              "index" => 123,
              "items_count" => 50
-           },
-           title_prefix: "BlockBeaconDeposits"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()

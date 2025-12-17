@@ -157,9 +157,21 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   defp prepare_common_token_transfer(token_transfer, max_block_number, decoded_input) do
     tt_denormalization_fields =
       if DenormalizationHelper.tt_denormalization_finished?() do
-        %{"timeStamp" => to_string(DateTime.to_unix(token_transfer.transaction.block_timestamp))}
+        %{
+          "timeStamp" =>
+            if(token_transfer.transaction.block_timestamp,
+              do: to_string(DateTime.to_unix(token_transfer.transaction.block_timestamp)),
+              else: ""
+            )
+        }
       else
-        %{"timeStamp" => to_string(DateTime.to_unix(token_transfer.block.timestamp))}
+        %{
+          "timeStamp" =>
+            if(token_transfer.block.timestamp,
+              do: to_string(DateTime.to_unix(token_transfer.block.timestamp)),
+              else: ""
+            )
+        }
       end
 
     %{

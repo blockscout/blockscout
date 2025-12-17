@@ -44,7 +44,10 @@ defmodule Explorer.Chain.ContractMethod do
     # Enforce ContractMethod ShareLocks order (see docs: sharelocks.md)
     ordered_successes = Enum.sort_by(successes, &{&1.identifier, &1.abi})
 
-    Repo.insert_all(__MODULE__, ordered_successes, on_conflict: :nothing, conflict_target: [:identifier, :abi])
+    Repo.insert_all(__MODULE__, ordered_successes,
+      on_conflict: :nothing,
+      conflict_target: {:unsafe_fragment, ~s<(identifier, md5(abi::text))>}
+    )
   end
 
   def import_all do

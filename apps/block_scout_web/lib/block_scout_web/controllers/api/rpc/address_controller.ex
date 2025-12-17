@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.RPC.Helper
+  alias BlockScoutWeb.Chain, as: BlockScoutWebChain
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.Etherscan.{Addresses, Blocks}
@@ -549,7 +550,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   defp list_internal_transactions(transaction_or_address_hash_param_or_no_param, options) do
-    case Etherscan.list_internal_transactions(transaction_or_address_hash_param_or_no_param, options) do
+    case BlockScoutWebChain.list_internal_transactions(transaction_or_address_hash_param_or_no_param, options) do
       [] -> {:error, :not_found}
       internal_transactions -> {:ok, internal_transactions}
     end

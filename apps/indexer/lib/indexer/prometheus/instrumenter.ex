@@ -44,6 +44,22 @@ defmodule Indexer.Prometheus.Instrumenter do
 
   @gauge [name: :latest_block_timestamp, help: "Latest block timestamp"]
 
+  # metrics of indexing monitor
+  @gauge [name: :missing_blocks_count, help: "Number of blocks missing in the chain"]
+  @gauge [
+    name: :missing_internal_transactions_count,
+    help: "Number of blocks with not yet fetched internal transactions"
+  ]
+  @gauge [name: :missing_current_token_balances_count, help: "Number of missing current token balances"]
+  @gauge [name: :missing_archival_token_balances_count, help: "Number of missing token balances in history"]
+  @gauge [name: :unfetched_token_instances_count, help: "Number of unfetched token instances"]
+  @gauge [name: :failed_token_instances_metadata_count, help: "Number of failed token instances metadata"]
+  @gauge [name: :token_instances_not_uploaded_to_cdn_count, help: "Token instances not uploaded to CDN"]
+  @gauge [name: :multichain_search_db_main_export_queue_count, help: "Size of the main multichain export queue"]
+  @gauge [name: :multichain_search_db_export_balances_queue_count, help: "Size of the balances export queue"]
+  @gauge [name: :multichain_search_db_export_counters_queue_count, help: "Size of the counters export queue"]
+  @gauge [name: :multichain_search_db_export_token_info_queue_count, help: "Size of the token info export queue"]
+
   @spec setup() :: :ok
   def setup do
     min_blockchain_block_number =
@@ -163,4 +179,78 @@ defmodule Indexer.Prometheus.Instrumenter do
       :ok
     end
   end
+
+  @doc """
+  Defines the metric for the number of blocks missing in the chain.
+  """
+  @spec missing_blocks_count(integer()) :: :ok
+  def missing_blocks_count(value), do: Gauge.set([name: :missing_blocks_count], value)
+
+  @doc """
+  Defines the metric for the number of blocks with not yet fetched internal transactions.
+  """
+  @spec missing_internal_transactions_count(integer()) :: :ok
+  def missing_internal_transactions_count(value), do: Gauge.set([name: :missing_internal_transactions_count], value)
+
+  @doc """
+  Defines the metric for the number of missing current token balances.
+  """
+  @spec missing_current_token_balances_count(integer()) :: :ok
+  def missing_current_token_balances_count(value),
+    do: Gauge.set([name: :missing_current_token_balances_count], value)
+
+  @doc """
+  Defines the metric for the number of missing token balances in history.
+  """
+  @spec missing_archival_token_balances_count(integer()) :: :ok
+  def missing_archival_token_balances_count(value), do: Gauge.set([name: :missing_archival_token_balances_count], value)
+
+  @doc """
+  Defines the metric for the number of unfetched token instances.
+  """
+  @spec unfetched_token_instances_count(integer()) :: :ok
+  def unfetched_token_instances_count(value),
+    do: Gauge.set([name: :unfetched_token_instances_count], value)
+
+  @doc """
+  Defines the metric for the number of failed token instances metadata.
+  """
+  @spec failed_token_instances_metadata_count(integer()) :: :ok
+  def failed_token_instances_metadata_count(value),
+    do: Gauge.set([name: :failed_token_instances_metadata_count], value)
+
+  @doc """
+  Defines the metric for the number of token instances not uploaded to CDN.
+  """
+  @spec token_instances_not_uploaded_to_cdn_count(integer()) :: :ok
+  def token_instances_not_uploaded_to_cdn_count(value),
+    do: Gauge.set([name: :token_instances_not_uploaded_to_cdn_count], value)
+
+  @doc """
+  Defines the metric for the size of the main multichain export queue.
+  """
+  @spec multichain_search_db_main_export_queue_count(integer()) :: :ok
+  def multichain_search_db_main_export_queue_count(value),
+    do: Gauge.set([name: :multichain_search_db_main_export_queue_count], value)
+
+  @doc """
+  Defines the metric for the size of the balances export queue.
+  """
+  @spec multichain_search_db_export_balances_queue_count(integer()) :: :ok
+  def multichain_search_db_export_balances_queue_count(value),
+    do: Gauge.set([name: :multichain_search_db_export_balances_queue_count], value)
+
+  @doc """
+  Defines the metric for the size of the counters export queue.
+  """
+  @spec multichain_search_db_export_counters_queue_count(integer()) :: :ok
+  def multichain_search_db_export_counters_queue_count(value),
+    do: Gauge.set([name: :multichain_search_db_export_counters_queue_count], value)
+
+  @doc """
+  Defines the metric for the size of the token info export queue.
+  """
+  @spec multichain_search_db_export_token_info_queue_count(integer()) :: :ok
+  def multichain_search_db_export_token_info_queue_count(value),
+    do: Gauge.set([name: :multichain_search_db_export_token_info_queue_count], value)
 end

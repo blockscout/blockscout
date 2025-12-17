@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Metrics.IndexerMetrics do
+defmodule Indexer.Prometheus.Metrics do
   @moduledoc """
   Module responsible for periodically setting indexer metrics.
   """
@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Metrics.IndexerMetrics do
   use GenServer
 
   alias Explorer.Chain.Metrics.Queries.IndexerMetrics, as: IndexerMetricsQueries
-  alias Explorer.Prometheus.Instrumenter
+  alias Indexer.Prometheus.Instrumenter
 
   @interval :timer.hours(1)
   @default_metrics_list [
@@ -24,7 +24,7 @@ defmodule Explorer.Chain.Metrics.IndexerMetrics do
   end
 
   def init(_) do
-    if Application.get_env(:explorer, __MODULE__)[:enabled] do
+    if Application.get_env(:indexer, __MODULE__)[:enabled] do
       send(self(), :set_metrics)
       {:ok, %{}}
     else
@@ -41,7 +41,7 @@ defmodule Explorer.Chain.Metrics.IndexerMetrics do
 
   defp metrics_list do
     additional_metrics =
-      Application.get_env(:explorer, __MODULE__)[:specific_metrics_enabled?]
+      Application.get_env(:indexer, __MODULE__)[:specific_metrics_enabled?]
       |> Enum.filter(fn {_, enabled?} -> enabled? == true end)
       |> Enum.map(fn {metric, _} -> metric end)
 
