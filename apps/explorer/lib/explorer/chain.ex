@@ -91,8 +91,6 @@ defmodule Explorer.Chain do
   @revert_msg_prefix_5 "execution reverted: "
   @revert_msg_prefix_6_empty "execution reverted"
 
-  @limit_showing_transactions 10_000
-
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -1923,8 +1921,6 @@ defmodule Explorer.Chain do
     |> Withdrawal.page_withdrawals(paging_options)
     |> limit(^paging_options.page_size)
   end
-
-  def limit_showing_transactions, do: @limit_showing_transactions
 
   @doc """
     Dynamically joins and preloads associations in a query based on necessity.

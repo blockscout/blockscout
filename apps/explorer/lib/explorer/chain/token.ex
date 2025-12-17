@@ -662,7 +662,7 @@ defmodule Explorer.Chain.Token do
   @doc """
   Gets the token types for a list of contract address hashes.
   """
-  @spec get_token_types([String.t()]) :: [{Hash.Address.t(), String.t()}]
+  @spec get_token_types([Hash.Address.t()]) :: [{Hash.Address.t(), String.t()}]
   def get_token_types(hashes) do
     query =
       from(

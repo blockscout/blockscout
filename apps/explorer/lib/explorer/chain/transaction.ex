@@ -2504,6 +2504,12 @@ defmodule Explorer.Chain.Transaction do
   @limit_showing_transactions 10_000
 
   @doc """
+  Returns the maximum number of transactions that can be shown in the UI.
+  """
+  @spec limit_showing_transactions :: non_neg_integer()
+  def limit_showing_transactions, do: @limit_showing_transactions
+
+  @doc """
   Returns the paged list of collated transactions that occurred recently from newest to oldest using `block_number`
   and `index`.
 
@@ -2830,8 +2836,7 @@ defmodule Explorer.Chain.Transaction do
     transactions_to_update =
       from(pending in __MODULE__,
         join: duplicate in subquery(query),
-        on: duplicate.nonce == pending.nonce,
-        on: duplicate.from_address_hash == pending.from_address_hash,
+        on: duplicate.nonce == pending.nonce and duplicate.from_address_hash == pending.from_address_hash,
         where: pending.hash in ^hashes and is_nil(pending.block_hash)
       )
 
